@@ -1,0 +1,31 @@
+name: Deploy Application
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  create-deployment-artifacts:
+    name: Create deployment artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Compile CSS and Javascript
+        run: |
+          npm install
+          npm run prod
+
+      - name: Configure PHP 8.0
+        uses: shivammathur/setup-php@master
+        with:
+            php-version: 8.0
+            extensions: mbstring, ctype, fileinfo, openssl, PDO, bcmath, json, tokenizer, xml
+      - name: Composer install
+        run: |
+          composer install --no-dev --no-interaction --prefer-dist
+
+      - name: Create deployment artifact
+        run: tar -czf app.tar.gz *
