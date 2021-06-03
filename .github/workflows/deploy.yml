@@ -2,7 +2,7 @@ name: Laravel
 
 on:
   push:
-    branches: [ develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -57,11 +57,16 @@ jobs:
         uses: actions/checkout@v2
       - name: Deployment
         uses: appleboy/ssh-action@master
+        env:
+          DOT_ENV: ${{ secrets.DOT_ENV_PRODUCTION }}
+          BASE_PATH: ${{ secrets.PATH }}
         with:
           host: ${{ secrets.SSH_HOST }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           username: ${{ secrets.SSH_USERNAME }}
+          envs: DOT_ENV,BASE_PATH
           script: |
-            cd ${{ secrets.PATH }}
-            git checkout -f
-            git pull origin main
+            cd ${BASE_PATH}
+            printf "%s" "$DOT_ENV" > "${BASE_PATH}.env"
+            bash server_deploy.sh
+
