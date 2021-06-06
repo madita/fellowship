@@ -8,7 +8,7 @@ php artisan down || true
 
     git config --local user.email "action@github.com"
     git config --local user.name "GitHub Action"
-    
+
     # Update codebase
     git checkout -f
     git pull origin main
@@ -17,7 +17,6 @@ php artisan down || true
     composer install --no-interaction --prefer-dist --optimize-autoloader
     composer dump-autoload
 
-    chgrp -R www-data storage bootstrap/cache
     chmod -R ug+rwx storage bootstrap/cache
 
     # Install dependencies based on lock file
