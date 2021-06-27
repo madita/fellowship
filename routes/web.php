@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Route::get('/', function () {
+//     return view('welcome');
+// });
+//Auth::routes(['verify' => true]);
+Auth::routes();
+
+Route::get('/{any}', 'App\Http\Controllers\SpaController@index')->where('any', '.*');
