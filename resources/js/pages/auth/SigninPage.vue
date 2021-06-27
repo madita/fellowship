@@ -9,7 +9,8 @@
                 <v-form ref="form" v-model="isFormValid" lazy-validation>
                     <v-text-field
                         v-model="form.email"
-                        :rules="[rules.required]"
+                        :rules="[rules.required, rules.email]"
+                        :error-messages="errorMessages.email"
                         :validate-on-blur="false"
                         :error="error"
                         :label="$t('login.email')"
@@ -25,7 +26,7 @@
                         :rules="[rules.required]"
                         :type="showPassword ? 'text' : 'password'"
                         :error="error"
-                        :error-messages="errorMessages"
+                        :error-messages="errorMessages.message"
                         :label="$t('login.password')"
                         name="password"
                         outlined
@@ -110,7 +111,11 @@ export default {
 
             // form error
             error: false,
-            errorMessages: '',
+            errorMessages: {
+                message: '',
+                email:'',
+                password:''
+            },
 
             errorProvider: false,
             errorProviderMessages: '',
@@ -130,7 +135,11 @@ export default {
 
             // input rules
             rules: {
-                required: (value) => (value && Boolean(value)) || 'Required'
+                required: (value) => (value && Boolean(value)) || 'Required',
+                email: value => {
+                    const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+                    return pattern.test(value) || 'Invalid e-mail.'
+                },
             }
         }
     },
@@ -143,50 +152,32 @@ export default {
             this.isSignInDisabled = true
 
 
-            // await this.signIn(this.form).then((response) => {
-            //     console.log('response',response)
-            //     this.availabilityMessage = response.data.message;
-            // }).catch((error) => {
-            //     console.log('error33',error)
-            //     this.availabilityMessage = false;
-            //
-            // })
+            await this.signIn(this.form).then(() => {
+                this.$router.replace({name: 'dashboard'})
+                //stupid wordaround
+                // this.$router.push({ path: "/"})
+                //     .then(() => this.$router.replace({ name: "dashboard" }))
+                //     .catch(() => {})
+            })
+                .catch(error => {
+                    const data = error.response.data;
 
-            try {
-                const data = await this.signIn(this.form)
-                this.$router.replace({ name: 'dashboard' })
-            } catch (error) {
-                console.log('error',error)
-                this.error = true
-                this.errorMessages = error.email
-                this.isLoading = false
-                this.isSignInDisabled = false
-            }
+                    this.error = true
+                    this.errorMessages.message = data.message
+                    this.errorMessages.email = data.errors.email[0]
+                    this.isLoading = false
+                    this.isSignInDisabled = false
+                });
+
+
         },
-        // submit() {
-        //     if (this.$refs.form.validate()) {
-        //         this.isLoading = true
-        //         this.isSignInDisabled = true
-        //         this.handleLogin();
-        //         //this.signIn(this.email, this.password)
-        //     }
-        // },
-        // // signIn(email, password) {
-        // //   this.$router.push('/')
-        // // },
-        // signInProvider(provider) {
-        // },
-        // handleLogin() {
-        //     axios.get('/sanctum/csrf-cookie').then(response => {
-        //         axios.post('/login', this.form).then(response => {
-        //             console.log('User signed in!');
-        //             this.$router.push('/dashboard')
-        //         }).catch(error => console.log(error)); // credentials didn't match
-        //     });
-        // },
         resetErrors() {
             this.error = false
-            this.errorMessages = ''
+            this.errorMessages = {
+                message: '',
+                email:'',
+                password:''
+            }
 
             this.errorProvider = false
             this.errorProviderMessages = ''

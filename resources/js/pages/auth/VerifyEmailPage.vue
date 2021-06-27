@@ -1,18 +1,28 @@
 <template>
-  <v-card class="pa-2">
-    <h1>Please verify the email</h1>
-    <div class="mb-6 overline">Please check your email for the link to verify the email.</div>
+    <div>
+        <v-alert v-if="error" type="error">
+            Oops! Something went wrong!
+        </v-alert>
+        <v-alert v-if="message" type="success">
+            {{ message }}
+        </v-alert>
+        <v-card class="pa-2">
+            <h1>Please verify the email</h1>
+            <div class="mb-6 overline">Please check your email for the link to verify the email.</div>
 
-    <v-btn
-      :loading="isLoading"
-      :disabled="disabled"
-      block
-      depressed
-      x-large
-      color="primary"
-      @click="resend"
-    >Re-send email {{ seconds }}</v-btn>
-  </v-card>
+            <v-btn
+                :loading="isLoading"
+                :disabled="disabled"
+                block
+                depressed
+                x-large
+                color="primary"
+                @click="submit"
+            >Re-send email {{ seconds }}
+            </v-btn>
+        </v-card>
+    </div>
+
 </template>
 
 <script>
@@ -25,45 +35,67 @@
 |
 */
 
+import axios from "axios";
+import {mapGetters} from "vuex";
+
 const TIMEOUT = 10
 
 export default {
-  data() {
-    return {
-      isLoading: false,
-      disabled: true,
-      times: 0,
-      resendInterval: null,
-      secondsToEnable: TIMEOUT,
-      seconds: ''
-    }
-  },
-  mounted() {
-    this.setTimer()
-  },
-  beforeDestroy() {
-    clearInterval(this.resendInterval)
-  },
-  methods: {
-    async resend() {
-      this.setTimer()
-    },
-    setTimer() {
-      this.disabled = true
-      this.times++
-      this.secondsToEnable = TIMEOUT * this.times
-
-      this.resendInterval = setInterval(() => {
-        if (this.secondsToEnable === 0) {
-          clearInterval(this.resendInterval)
-          this.seconds = ''
-          this.disabled = false
-        } else {
-          this.seconds = `( ${this.secondsToEnable} )`
-          this.secondsToEnable--
+    data() {
+        return {
+            isLoading: false,
+            disabled: false,
+            times: 0,
+            resendInterval: null,
+            secondsToEnable: TIMEOUT,
+            seconds: '',
+            error: false,
+            message: ''
         }
-      }, 1000)
+    },
+    beforeDestroy() {
+        clearInterval(this.resendInterval)
+    },
+    methods: {
+        async resend() {
+            this.isLoading = true
+            await axios.post('/email/resend').then(response => {
+                this.message = "Email was sent!"
+            }).catch(({response: {data}}) => {
+                if (data.errors.email !== undefined) {
+                    this.error = true
+                    this.errorMessages = data.errors.email[0]
+                }
+            }).finally(() => {
+                this.isLoading = false
+            })
+        },
+        submit(e) {
+            this.setTimer()
+            this.resend()
+        },
+
+        // async resend() {
+        //   this.setTimer()
+        // },
+        setTimer() {
+            this.message = "";
+            this.disabled = true
+            this.times++
+            this.secondsToEnable = TIMEOUT * this.times
+
+            this.resendInterval = setInterval(() => {
+                if (this.secondsToEnable === 0) {
+                    clearInterval(this.resendInterval)
+                    this.seconds = ''
+                    this.disabled = false
+                } else {
+                    this.seconds = `( ${this.secondsToEnable} )`
+                    this.secondsToEnable--
+                }
+            }, 1000)
+        },
+
     }
-  }
 }
 </script>

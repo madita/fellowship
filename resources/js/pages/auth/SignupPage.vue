@@ -9,7 +9,7 @@
                 <v-form ref="form" v-model="isFormValid" lazy-validation>
                     <v-text-field
                         v-model="user.name"
-                        :rules="[rules.required]"
+                        :rules="[rules.required, rules.email]"
                         :validate-on-blur="false"
                         :error="errorName"
                         :error-messages="errorNameMessage"
@@ -22,7 +22,7 @@
 
                     <v-text-field
                         v-model="user.email"
-                        :rules="[rules.required]"
+                        :rules="[rules.required, rules.email]"
                         :validate-on-blur="false"
                         :error="errorEmail"
                         :error-messages="errorEmailMessage"
@@ -168,7 +168,11 @@ export default {
 
             // input rules
             rules: {
-                required: (value) => (value && Boolean(value)) || 'Required'
+                required: (value) => (value && Boolean(value)) || 'Required',
+                email: value => {
+                    const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+                    return pattern.test(value) || 'Invalid e-mail.'
+                },
             }
         }
     },
@@ -177,31 +181,37 @@ export default {
             signIn: 'auth/login'
         }),
         async register() {
-            // this.processing = true
+            this.processing = true
             await axios.post('/register', this.user).then(response => {
                 this.signIn()
-                this.$router.replace({ name: 'dashboard' })
+                this.$router.replace({name: 'dashboard'})
             }).catch(({response: {data}}) => {
-                alert(data.message)
+                if (data.errors.name !== undefined) {
+                    this.errorName = true
+                    this.errorNameMessage = data.errors.name[0]
+                }
+
+                if (data.errors.email !== undefined) {
+                    this.errorEmail = true
+                    this.errorEmailMessage = data.errors.email[0]
+                }
+
+                if (data.errors.password !== undefined) {
+                    this.errorPassword = true
+                    this.errorPasswordMessage = data.errors.password[0]
+                }
             }).finally(() => {
-                this.processing = false
+                this.isLoading = false
+                this.isSignUpDisabled = false
             })
         },
         submit() {
             // if (this.$refs.form.validate()) {
-                this.isLoading = true
-                this.isSignUpDisabled = true
-                this.register()
-                // this.signUp(this.email, this.password)
+            this.isLoading = true
+            this.isSignUpDisabled = true
+            this.register()
+            // this.signUp(this.email, this.password)
             // }
-        },
-        signUp(email, password) {
-
-            axios.post('/register', this.form).then(response => {
-                console.log('User registered!');
-                //this.$router.push('/dashboard')
-            }).catch(error => console.log(error));
-
         },
         signInProvider(provider) {
         },

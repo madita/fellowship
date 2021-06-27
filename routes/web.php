@@ -17,6 +17,6 @@ use Illuminate\Support\Facades\Route;
 //     return view('welcome');
 // });
 //Auth::routes(['verify' => true]);
-Auth::routes();
+Auth::routes(['verify' => true]);
 
 Route::get('/{any}', 'App\Http\Controllers\SpaController@index')->where('any', '.*');

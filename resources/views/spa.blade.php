@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="icon" href="/favicon.ico">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title>Lux Laravel Starter</title>
+        <title>Fellowship Community</title>
 
         <!-- Quicksand Font -->
         <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">

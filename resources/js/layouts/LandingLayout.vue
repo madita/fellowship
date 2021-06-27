@@ -8,24 +8,27 @@
 
                 <v-spacer></v-spacer>
 
-                <template v-if="!authenticated">
-                    <div class="d-none d-md-block">
-                        <v-btn text class="mx-1" @click="$vuetify.goTo('#feature1');">
-                            Feature 1
-                        </v-btn>
+
+                <div class="d-none d-md-block">
+                    <v-btn text class="mx-1" @click="$vuetify.goTo('#feature1');">
+                        Feature 1
+                    </v-btn>
+                    <template v-if="!authenticated">
                         <v-btn text class="mx-1" to="/auth/signin">
                             Sign In
                         </v-btn>
-                    </div>
-                    <v-btn outlined large to="/auth/signup">
-                        Sign Up
-                    </v-btn>
-                </template>
-                <template v-else>
-                    <v-btn text class="mx-1" @click.prevent="signOut">
+
+                        <v-btn outlined large to="/auth/signup">
+                            Sign Up
+                        </v-btn>
+                    </template>
+
+                    <v-btn v-else text class="mx-1" @click.prevent="signOut">
                         Sign Out
                     </v-btn>
-                </template>
+                </div>
+
+
 
             </v-container>
         </v-app-bar>
