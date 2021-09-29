@@ -1,17 +1,87 @@
-const mix = require('laravel-mix');
+const path = require('path')
+const fs = require('fs-extra')
+const mix = require('laravel-mix')
+const { VuetifyLoaderPlugin } = require('vuetify-loader')
+
+const publicDir = path.resolve(__dirname, './public')
 
 /*
- |--------------------------------------------------------------------------
- | Mix Asset Management
- |--------------------------------------------------------------------------
- |
- | Mix provides a clean, fluent API for defining some Webpack build steps
- | for your Laravel applications. By default, we are compiling the CSS
- | file for the application as well as bundling up all the JS files.
- |
- */
+|---------------------------------------------------------------------
+| Inject Vuetify variables in SASS
+|---------------------------------------------------------------------
+*/
+Mix.listen('configReady', (config) => {
+  const scssRule = config.module.rules.find((r) => r.test.toString() === /\.scss$/.toString())
 
-mix.js('resources/js/app.js', 'public/js')
-    .postCss('resources/css/app.css', 'public/css', [
-        //
-    ]);
+  scssRule.oneOf.forEach((ruleset) => {
+    const scssOptions = ruleset.use.find((l) => l.loader === 'sass-loader').options
+
+    scssOptions.additionalData = '@import \'./resources/sass/vuetify/variables\';'
+  })
+
+  const sassRule = config.module.rules.find((r) => r.test.toString() === /\.sass$/.toString())
+
+  sassRule.oneOf.forEach((ruleset) => {
+    const sassOptions = ruleset.use.find((l) => l.loader === 'sass-loader').options
+
+    sassOptions.additionalData = '@import \'./resources/sass/vuetify/variables\''
+  })
+})
+
+/*
+|---------------------------------------------------------------------
+| Load the Vuetify Loader Plugin
+|---------------------------------------------------------------------
+*/
+mix.extend('vuetify', new class {
+  webpackConfig (config) {
+    config.plugins.push(new VuetifyLoaderPlugin())
+  }
+})
+
+mix.vuetify()
+
+if (mix.inProduction()) {
+  mix.version()
+} else {
+  mix.sourceMaps()
+}
+
+/*
+|---------------------------------------------------------------------
+| Build and copy Vue application assets to 'public/dist' folder
+|---------------------------------------------------------------------
+*/
+mix.js('resources/js/app.js', 'public/dist/js').vue()
+  .sass('resources/sass/app.scss', 'public/dist/css')
+  .webpackConfig({
+    resolve: {
+      extensions: ['.js', '.vue', '.json'],
+      alias: {
+        'vue$': 'vue/dist/vue.esm.js',
+        '@': path.join(__dirname, './resources/js'),
+        '~': path.join(__dirname, './resources/js')
+      }
+    },
+    output: {
+      chunkFilename: 'dist/js/[chunkhash].js',
+      path: path.resolve(__dirname, './public/build')
+    }
+  })
+
+mix.then(() => {
+  process.nextTick(publishAssets)
+})
+
+function publishAssets () {
+  if (mix.inProduction()) {
+    const dist = path.join(publicDir, 'dist')
+
+    // clean dist folder
+    if (fs.existsSync(dist)) fs.removeSync(dist)
+  }
+
+  if (fs.existsSync(path.join(publicDir, 'build', 'dist'))) fs.copySync(path.join(publicDir, 'build', 'dist'), path.join(publicDir, 'dist'))
+  if (fs.existsSync(path.join(publicDir, 'build', 'images'))) fs.copySync(path.join(publicDir, 'build', 'images'), path.join(publicDir, 'images'))
+  if (fs.existsSync(path.join(publicDir, 'build'))) fs.removeSync(path.join(publicDir, 'build'))
+}

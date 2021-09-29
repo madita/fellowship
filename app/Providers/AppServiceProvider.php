@@ -24,7 +24,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //todo change to postgress? mysql mariadb workarounf
         Schema::defaultStringLength(191);
     }
 }
