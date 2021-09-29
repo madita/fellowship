@@ -42,11 +42,11 @@ return [
         ],
 
         'beanstalkd' => [
-            'driver' => 'beanstalkd',
-            'host' => 'localhost',
-            'queue' => 'default',
+            'driver'      => 'beanstalkd',
+            'host'        => 'localhost',
+            'queue'       => 'default',
             'retry_after' => 90,
-            'block_for' => 0,
+            'block_for'   => 0,
         ],
 
         'sqs' => [

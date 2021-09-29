@@ -40,6 +40,6 @@ class LoginController extends Controller
 
     public function showLoginForm()
     {
-       return redirect('/auth/signin');
+        return redirect('/auth/signin');
     }
 }
