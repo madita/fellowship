@@ -171,8 +171,6 @@ export default {
 
         async signOut() {
             await this.signOutAction()
-
-            this.$router.replace({name: 'home'})
         },
         routeHome() {
             this.$router.replace({name: 'home'})

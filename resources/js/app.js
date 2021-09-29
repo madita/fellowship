@@ -64,7 +64,7 @@ Vue.config.productionTip = false
                 response => response,
                 error => {
                     if (error.response.status === 401) {
-                        this.$store.dispatch('logout')
+                        this.$store.dispatch('auth/signOut')
                     }
                     return Promise.reject(error)
                 }
