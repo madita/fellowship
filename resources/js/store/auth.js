@@ -4,24 +4,20 @@ export default {
     namespaced: true,
     state: {
         authenticated: false,
-        user: null
+
+        user: {
+            email_verified_at: ""
+        }
     },
 
     getters: {
         isLogged: state => !!state.user,
 
-        isVerified: state => !!state.user && state.user.email_verified_at,
+        isVerified: state => !!state.user && !!state.user.email_verified_at,
 
         authenticated(state) {
             return state.authenticated
         },
-        //
-        // isVerified(state) {
-        //
-        //     const user = state.user
-        //
-        //     return user !== null && user.email_verified_at;
-        // },
 
         user(state) {
             return state.user

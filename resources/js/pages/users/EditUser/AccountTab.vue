@@ -186,7 +186,7 @@ export default {
   },
 
     mounted() {
-      console.log('sadasd',this.user)
+
     }
 }
 </script>

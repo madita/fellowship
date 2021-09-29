@@ -9,7 +9,7 @@
                 <v-form ref="form" v-model="isFormValid" lazy-validation>
                     <v-text-field
                         v-model="user.name"
-                        :rules="[rules.required, rules.email]"
+                        :rules="[rules.required]"
                         :validate-on-blur="false"
                         :error="errorName"
                         :error-messages="errorNameMessage"

@@ -1,23 +1,35 @@
+import auth from './middleware/auth'
+import guest from './middleware/guest'
+
 export default [{
     path: '/auth/signin',
     name: 'auth-signin',
     component: () => import(/* webpackChunkName: "auth-signin" */ '@/pages/auth/SigninPage.vue'),
     meta: {
-        layout: 'auth'
+        layout: 'auth',
+        middleware: [
+            guest
+        ]
     }
 }, {
     path: '/auth/signup',
     name: 'auth-signup',
     component: () => import(/* webpackChunkName: "auth-signup" */ '@/pages/auth/SignupPage.vue'),
     meta: {
-        layout: 'auth'
+        layout: 'auth',
+        middleware: [
+            guest
+        ]
     }
 }, {
     path: '/auth/verify-email',
     name: 'auth-verify-email',
     component: () => import(/* webpackChunkName: "auth-verify-email" */ '@/pages/auth/VerifyEmailPage.vue'),
     meta: {
-        layout: 'auth'
+        layout: 'auth',
+        middleware: [
+            auth
+        ]
     }
 }, {
     path: '/auth/forgot-password',

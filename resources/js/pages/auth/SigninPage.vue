@@ -92,7 +92,7 @@
 |
 */
 import axios from 'axios'
-import { mapActions } from 'vuex'
+import {mapActions, mapGetters} from 'vuex'
 export default {
     data() {
         return {
@@ -153,11 +153,11 @@ export default {
 
 
             await this.signIn(this.form).then(() => {
-                this.$router.replace({name: 'dashboard'})
-                //stupid wordaround
-                // this.$router.push({ path: "/"})
-                //     .then(() => this.$router.replace({ name: "dashboard" }))
-                //     .catch(() => {})
+                if(this.isVerified) {
+                    this.$router.replace({name: 'dashboard'})
+                } else {
+                    this.$router.replace({name: 'auth-verify-email'})
+                }
             })
                 .catch(error => {
                     const data = error.response.data;
@@ -182,6 +182,12 @@ export default {
             this.errorProvider = false
             this.errorProviderMessages = ''
         }
+    },
+    computed: {
+        ...mapGetters({
+            authenticated: 'auth/authenticated',
+            isVerified: 'auth/isVerified',
+        })
     }
 }
 </script>

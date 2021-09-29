@@ -113,7 +113,6 @@ export default {
 
             await axios.post('/password/reset', data).then(response => {
                 this.message = response.message
-                console.log(response)
             }).catch(({response: {data}}) => {
                 this.errorMessages = data.errors
                 if (data.errors.email !== undefined) {
@@ -127,8 +126,6 @@ export default {
         submit(e) {
             this.token = this.$route.params.token
             this.email = this.$route.query.email
-
-            console.log(this.email)
 
             if (this.$refs.form.validate()) {
                 this.confirmPasswordReset(this.email)

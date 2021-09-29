@@ -17,7 +17,7 @@
             <!-- Navigation menu info -->
             <template v-slot:prepend>
                 <div class="pa-2">
-                    <div class="title font-weight-bold text-uppercase primary--text">{{ product.name }}</div>
+                    <div @click="routeHome" class="cursor-pointer title font-weight-bold text-uppercase primary--text">{{ product.name }}</div>
                     <div class="overline grey--text">{{ product.version }}</div>
                 </div>
             </template>
@@ -174,10 +174,19 @@ export default {
 
             this.$router.replace({name: 'home'})
         },
+        routeHome() {
+            this.$router.replace({name: 'home'})
+        },
         onKeyup(e) {
             this.$refs.search.focus()
         }
     }
 }
 </script>
+
+<style>
+.cursor-pointer {
+    cursor: pointer;
+}
+</style>
 
