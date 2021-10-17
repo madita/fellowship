@@ -1,5 +1,8 @@
 <template>
     <div>
+        <v-alert v-if="isVerified" type="warning">
+            You are alredy veryfied :)
+        </v-alert>
         <v-alert v-if="error" type="error">
             Oops! Something went wrong!
         </v-alert>
@@ -56,10 +59,13 @@ export default {
     beforeDestroy() {
         clearInterval(this.resendInterval)
     },
+    mounted() {
+       this.disabled = this.isVerified
+    },
     methods: {
         async resend() {
             this.isLoading = true
-            await axios.post('/email/resend').then(response => {
+            await axios.post('/email/resend').then(() => {
                 this.message = "Email was sent!"
             }).catch(({response: {data}}) => {
                 if (data.errors.email !== undefined) {
@@ -70,7 +76,7 @@ export default {
                 this.isLoading = false
             })
         },
-        submit(e) {
+        submit() {
             this.setTimer()
             this.resend()
         },
@@ -95,7 +101,12 @@ export default {
                 }
             }, 1000)
         },
-
+    },
+    computed: {
+        ...mapGetters({
+            authenticated: 'auth/authenticated',
+            isVerified: 'auth/isVerified',
+        })
     }
 }
 </script>

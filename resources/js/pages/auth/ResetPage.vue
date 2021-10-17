@@ -1,7 +1,9 @@
 <template>
     <v-card class="pa-2">
         <v-alert
-            v-for="message in errorMessages" type="error">
+            v-for="(message,index) in errorMessages"
+            :key="`error-${index}`"
+            type="error">
             {{ message[0] }}
         </v-alert>
         <v-card-title class="justify-center display-1 mb-2">Set new password</v-card-title>
@@ -123,7 +125,7 @@ export default {
                 this.isLoading = false
             })
         },
-        submit(e) {
+        submit() {
             this.token = this.$route.params.token
             this.email = this.$route.query.email
 
