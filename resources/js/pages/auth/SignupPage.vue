@@ -119,7 +119,7 @@
 | Template for user sign up with external providers buttons
 |
 */
-import {mapActions} from 'vuex'
+import {mapActions, mapGetters} from 'vuex'
 
 export default {
     data() {
@@ -178,13 +178,21 @@ export default {
     },
     methods: {
         ...mapActions({
-            signIn: 'auth/login'
+            signIn: 'auth/signIn'
         }),
         async register() {
             this.processing = true
-            await axios.post('/register', this.user).then(response => {
-                this.signIn()
-                this.$router.replace({name: 'dashboard'})
+            await axios.post('/register', this.user).then(() => {
+                this.signIn().then(() => {
+                    if(this.isVerified) {
+                        this.$router.replace({name: 'dashboard'})
+                    } else {
+                        this.$router.replace({name: 'auth-verify-email'})
+                    }
+                    // this.$router.replace({name: 'dashboard'})
+                }).catch(error => {
+                    console.log("WTF???" , error)
+                });
             }).catch(({response: {data}}) => {
                 if (data.errors.name !== undefined) {
                     this.errorName = true
@@ -226,6 +234,12 @@ export default {
             this.errorProvider = false
             this.errorProviderMessages = ''
         }
+    },
+    computed: {
+        ...mapGetters({
+            authenticated: 'auth/authenticated',
+            isVerified: 'auth/isVerified',
+        })
     }
 }
 </script>
