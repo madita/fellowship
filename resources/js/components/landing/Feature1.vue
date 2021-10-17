@@ -8,7 +8,7 @@
           <div class="text-h6 text-lg-h5 mt-5">Lorem ipsum dolor sit amet consectetur adipisicing elit. Natus impedit error labore doloremque fugit! Dolor fugit molestiae vero quos quisquam nobis, eos debitis magni omnis ea incidunt amet voluptate dignissimos!</div>
         </v-col>
         <v-col cols="12" lg="6">
-          <v-img :src="require('@/assets/images/feature1.jpg')" class="elevation-6" max-height="480"></v-img>
+          <v-img :src="require('@/assets/images/feature1.jpg').default" class="elevation-6" max-height="480"></v-img>
         </v-col>
       </v-row>
     </v-container>

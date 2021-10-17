@@ -5,34 +5,12 @@ const { VuetifyLoaderPlugin } = require('vuetify-loader')
 
 /*
 |---------------------------------------------------------------------
-| Inject Vuetify variables in SASS
-|---------------------------------------------------------------------
-*/
-Mix.listen('configReady', (config) => {
-    const scssRule = config.module.rules.find((r) => r.test.toString() === /\.scss$/.toString())
-
-    scssRule.oneOf.forEach((ruleset) => {
-        const scssOptions = ruleset.use.find((l) => l.loader === 'sass-loader').options
-
-        scssOptions.additionalData = '@import \'./resources/sass/vuetify/variables\';'
-    })
-
-    const sassRule = config.module.rules.find((r) => r.test.toString() === /\.sass$/.toString())
-
-    sassRule.oneOf.forEach((ruleset) => {
-        const sassOptions = ruleset.use.find((l) => l.loader === 'sass-loader').options
-
-        sassOptions.additionalData = '@import \'./resources/sass/vuetify/variables\''
-    })
-})
-
-/*
-|---------------------------------------------------------------------
 | Load the Vuetify Loader Plugin
 |---------------------------------------------------------------------
 */
 mix.extend('vuetify', new class {
     webpackConfig (config) {
+        // config.module.rules.push(webpackConfig.module.rules)
         config.plugins.push(new VuetifyLoaderPlugin())
     }
 })
