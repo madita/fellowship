@@ -53,9 +53,9 @@ jobs:
           path: ~/artifacts.tar.gz
           retention-days: 1
 
-  deploy-master:
+  deploy-main:
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: "ubuntu-20.04"
     steps:
       - name: Download deployment artifacts
