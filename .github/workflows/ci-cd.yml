@@ -69,6 +69,6 @@ jobs:
           ssh_user: ${{ secrets.SSH_USERNAME }}
           ssh_host: ${{ secrets.SSH_HOST }}
           ssh_port: 22
-          private_ssh_key: "${{ secrets.SSH_KEY }}"
+          private_ssh_key: "${{ secrets.SSH_PRIVATE_KEY }}"
           ssh_known_hosts: "${{ secrets.SSH_KNOWN_HOSTS }}"
         run: tar -xf artifacts.tar.gz .github/deployment/prepare.sh -O | bash -se -- "$base_directory" "$ssh_user" "$ssh_host" "$ssh_port" "$private_ssh_key" "$ssh_known_hosts"
