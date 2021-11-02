@@ -11,7 +11,7 @@ php artisan down || true
 
     # Update codebase
     git checkout -f
-    git pull origin main
+    git pull origin develop
 
     # Install dependencies based on lock file
     composer install --no-interaction --prefer-dist --optimize-autoloader

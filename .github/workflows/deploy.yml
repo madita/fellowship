@@ -2,9 +2,9 @@ name: Laravel
 
 on:
   push:
-    branches: [ main ]
+    branches: [ develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ develop ]
 
 jobs:
   laravel-tests:
@@ -25,6 +25,10 @@ jobs:
         run: |
           mkdir -p database
           touch database/database.sqlite
+      - name: Compile assets
+        run: |
+          npm install
+          npm run production
       - name: Execute tests (Unit and Feature tests) via PHPUnit
         env:
           DB_CONNECTION: sqlite
@@ -62,8 +66,8 @@ jobs:
       - name: Deployment
         uses: appleboy/ssh-action@master
         env:
-          DOT_ENV: ${{ secrets.DOT_ENV_PRODUCTION }}
-          BASE_PATH: ${{ secrets.PATH }}
+          DOT_ENV: ${{ secrets.DOT_ENV_STAGING }}
+          BASE_PATH: ${{ secrets.PATH_STAGING }}
         with:
           host: ${{ secrets.SSH_HOST }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
