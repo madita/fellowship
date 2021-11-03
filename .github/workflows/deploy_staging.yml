@@ -2,7 +2,10 @@ name: Laravel
 
 on:
   push:
-    branches: [ develop ]
+    branches:
+      - main
+      - develop
+      - features/**
   pull_request:
     branches: [ develop ]
 
@@ -63,6 +66,11 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+      - name: Do Something with env files
+        env:
+          DOT_ENV: ${{ secrets.DOT_ENV_STAGING }}
+        run: |
+          echo $DOT_ENV > .env
       - name: Deployment
         uses: appleboy/ssh-action@master
         env:
@@ -75,6 +83,5 @@ jobs:
           envs: DOT_ENV,BASE_PATH
           script: |
             cd ${BASE_PATH}
-            printf "%s" "$DOT_ENV" > "${BASE_PATH}.env"
             bash server_deploy.sh
 
