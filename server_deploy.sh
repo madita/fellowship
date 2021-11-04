@@ -10,7 +10,7 @@ php artisan down || true
     git config --local user.name "GitHub Action"
 
     # Update codebase
-    git checkout -f
+    git checkout develop -f
     git pull origin develop
 
     # Install dependencies based on lock file
