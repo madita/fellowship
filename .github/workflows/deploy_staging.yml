@@ -3,7 +3,6 @@ name: Laravel
 on:
   push:
     branches:
-      - main
       - develop
       - features/**
   pull_request:
