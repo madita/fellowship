@@ -11,6 +11,7 @@ import verified from './middleware/verified'
 import PagesRoutes from './pages.routes'
 import UsersRoutes from './users.routes'
 import LandingRoutes from './landing.routes'
+import AdminRoutes from './admin.routes'
 
 Vue.use(Router)
 
@@ -27,6 +28,7 @@ export const routes = [{
     ...PagesRoutes,
     ...UsersRoutes,
     ...LandingRoutes,
+    ...AdminRoutes,
     {
         path: '/blank',
         name: 'blank',

@@ -17,3 +17,11 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');
+Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\PostController');
+Route::resource('datatable/users', 'App\Http\Controllers\DataTable\UserController');
+
+
+
+
