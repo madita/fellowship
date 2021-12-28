@@ -22,6 +22,9 @@ import './plugins/clipboard'
 import './plugins/moment'
 import './plugins/lodash'
 
+//HELPERS
+import helpers from './helper/permission'
+
 // FILTERS
 import './filters/capitalize'
 import './filters/lowercase'
@@ -48,6 +51,12 @@ Vue.config.productionTip = false
 | https://vuejs.org/v2/guide/instance.html
 |
 */
+Vue.use({
+    install() {
+        Vue.helpers = helpers;
+        Vue.prototype.$helpers = helpers;
+    }
+});
 
 // store.dispatch('auth/me').then(() => {
     new Vue({

@@ -7,8 +7,11 @@ use App\Models\User;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 
 abstract class DataTableController extends Controller
@@ -31,7 +34,7 @@ abstract class DataTableController extends Controller
     /**
      * The entity builder.
      *
-     * @var Illuminate\Database\Eloquent\Builder
+     * @var Builder
      */
     protected $builder;
 
@@ -100,7 +103,7 @@ abstract class DataTableController extends Controller
      * Get records to be used for output.
      *
      * @param Request $request
-     * @return Illuminate\Support\Collection
+     * @return Collection
      */
     public function getRecords(Request $request)
     {
@@ -116,16 +119,16 @@ abstract class DataTableController extends Controller
             $pagination = (int)$request->get('itemsPerPage') <=0 ?(int)$request->get('itemsLength') : (int)$request->get('itemsPerPage');
             return $builder->orderBy('id', 'asc')->get()->makeHidden($forget)->paginate($pagination);
         } catch (QueryException $e) {
-            return [];
+            return collect([]);
         }
     }
 
     /**
      * Show a list of entities.
      *
-     * @return Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function index(Request $request)
+    public function index(Request $request) : JsonResponse
     {
         return response()->json([
             'data' => [
@@ -148,7 +151,7 @@ abstract class DataTableController extends Controller
      * Create an entity.
      *
      * @param Request $request
-     * @return Illuminate\Http\Response
+     * @return Response|void
      */
     public function store(Request $request)
     {
@@ -165,7 +168,7 @@ abstract class DataTableController extends Controller
      * @param integer $id
      * @param Request $request
      *
-     * @return Illuminate\Http\Response
+     * @return Response
      */
     public function update($id, Request $request)
     {
@@ -178,7 +181,7 @@ abstract class DataTableController extends Controller
      * @param integer $id
      * @param Request $request
      *
-     * @return Illuminate\Http\Response
+     * @return Response|void
      */
     public function destroy($ids, Request $request)
     {
@@ -194,7 +197,7 @@ abstract class DataTableController extends Controller
      *
      * @return array
      */
-    protected function getDatabaseColumnNames()
+    protected function getDatabaseColumnNames() : array
     {
         return array_merge(Schema::getColumnListing($this->builder->getModel()->getTable()), $this->getAppends());
     }

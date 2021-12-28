@@ -1,5 +1,6 @@
 import auth from './middleware/auth'
 import verified from "./middleware/verified";
+import permission from "./middleware/permission";
 
 export default [{
     path: '/admin',
@@ -9,7 +10,7 @@ export default [{
     name: 'admin-pages',
     meta: {
         middleware: [
-            auth, verified
+            auth, permission, verified
         ]
     },
     component: () => import(/* webpackChunkName: "admin-pages" */ '@/pages/admin/Page.vue')
@@ -18,7 +19,7 @@ export default [{
     name: 'admin-posts',
     meta: {
         middleware: [
-            auth, verified
+            auth, permission, verified
         ]
     },
     component: () => import(/* webpackChunkName: "admin-pages" */ '@/pages/admin/Post.vue')
@@ -27,8 +28,26 @@ export default [{
     name: 'admin-users',
     meta: {
         middleware: [
-            auth, verified
+            auth, permission, verified
         ]
     },
     component: () => import(/* webpackChunkName: "admin-pages" */ '@/pages/admin/User.vue')
+},{
+    path: '/admin/roles',
+    name: 'admin-roles',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-pages" */ '@/pages/admin/Role.vue')
+},{
+    path: '/admin/permissions',
+    name: 'admin-permissions',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-pages" */ '@/pages/admin/Permission.vue')
 }]

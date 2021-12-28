@@ -185,7 +185,12 @@ export default {
     'feedback': 'Feedback',
     'support': 'Unterstützung',
     'landingPage': 'Landing Page',
-    'pricingPage': 'Preisseite'
+    'admin': 'Verwaltung',
+    'adminRoles': 'Rollen',
+    'adminPermission': 'Rechte',
+    'adminUsers': 'Benutzer',
+    'adminPages': 'Seiten',
+    'adminPosts': 'Beiträge'
   },
   '$vuetify': {
     'badge': 'Abzeichen',

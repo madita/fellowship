@@ -7,7 +7,10 @@ export default {
 
         user: {
             email_verified_at: ""
-        }
+        },
+
+        roles: {},
+        permissions: {}
     },
 
     getters: {
@@ -17,6 +20,14 @@ export default {
 
         authenticated(state) {
             return state.authenticated
+        },
+
+        permissions(state) {
+            return state.permissions
+        },
+
+        roles(state) {
+            return state.roles
         },
 
         user(state) {
@@ -33,6 +44,17 @@ export default {
         SET_USER(state, value) {
             state.user = value
             localStorage.setItem('user', JSON.stringify(value))
+        },
+
+        SET_ROLES(state, value) {
+            state.roles = value
+
+            localStorage.setItem("roles", JSON.stringify(value));
+        },
+
+        SET_PERMISSIONS(state, value) {
+            state.permissions = value
+            localStorage.setItem("permissions", JSON.stringify(value));
         }
     },
     actions: {
@@ -52,12 +74,19 @@ export default {
         me({commit}) {
             return axios.get('/api/user').then((response) => {
                 commit('SET_AUTHENTICATED', true)
-                commit('SET_USER', response.data)
+                commit('SET_USER', response.data.user)
+                commit('SET_ROLES', response.data.roles)
+                commit('SET_PERMISSIONS', response.data.permissions)
+
                 // commit('setUserData', response.data)
             }).catch(() => {
                 commit('SET_AUTHENTICATED', false)
                 commit('SET_USER', null)
+                commit('SET_ROLES', {})
+                commit('SET_PERMISSIONS', {})
                 localStorage.removeItem('user')
+                localStorage.removeItem('roles')
+                localStorage.removeItem('permissions')
                 location.reload()
             })
         }
