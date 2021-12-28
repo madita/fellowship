@@ -19,5 +19,12 @@
         </noscript>
         <div id="app"></div>
         <script src="{{ mix('dist/js/app.js') }}"></script>
+        <script>
+            window.App = {!! json_encode([
+                'csrfToken' => csrf_token(),
+                'baseUrl' => url('/'),
+                'routes' => collect(\Route::getRoutes())->mapWithKeys(function ($route) { return [$route->getName() => $route->uri()]; })
+            ]) !!};
+        </script>
     </body>
 </html>

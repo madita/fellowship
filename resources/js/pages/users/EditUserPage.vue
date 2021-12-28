@@ -12,7 +12,7 @@
         </div>
 
         <div
-            v-if="user.role === 'ADMIN'"
+            v-if="roles.includes('admin')"
             class="d-flex align-center font-weight-bold primary--text my-2"
         >
             <v-icon small color="primary">mdi-security</v-icon>
@@ -65,17 +65,6 @@ export default {
     },
     data() {
         return {
-            // user: {
-            //   'id':32,
-            //   'email':'bfitchew0@ezinearticles.com',
-            //   'name':'Bartel Fitchew',
-            //   'verified':false,
-            //   'created':'2019-08-09T03:14:12Z',
-            //   'lastSignIn':'2019-08-14T20:00:53Z',
-            //   'disabled':true,
-            //   'role':'ADMIN',
-            //   'avatar':'/images/avatars/avatar1.svg'
-            // },
             tab: null,
             breadcrumbs: [
                 {
@@ -93,6 +82,7 @@ export default {
         ...mapGetters({
             authenticated: 'auth/authenticated',
             user: 'auth/user',
+            roles: 'auth/roles',
         })
     }
 }

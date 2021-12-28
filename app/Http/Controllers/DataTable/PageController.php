@@ -9,11 +9,6 @@ use App\Http\Controllers\DataTable\DataTableController;
 
 class PageController extends DataTableController
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
     public function builder()
     {
         return Page::query();
