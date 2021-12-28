@@ -135,7 +135,7 @@
                                                     cols="12"
                                                 >
                                                     <v-textarea
-                                                        v-if="response.column_fields[column]=='textarea'"
+                                                        v-if="response.column_fields[column]==='textarea'"
                                                         :label="column"
                                                         :id="column"
                                                         v-model="editedItem[column]"
@@ -143,7 +143,7 @@
                                                     ></v-textarea>
 
                                                     <v-checkbox
-                                                        v-else-if="response.column_fields[column]=='checkbox'"
+                                                        v-else-if="response.column_fields[column]==='checkbox'"
                                                         v-model="editedItem[column]"
                                                         :label="column"
                                                     ></v-checkbox>
@@ -194,12 +194,15 @@
                             </v-dialog>
                         </v-toolbar>
                     </template>
+                    <!--suppress HtmlUnknownAttribute -->
                     <template v-slot:item.created_at="{ item }">
                         {{ new Date(item.created_at).toLocaleString() }}
                     </template>
+                    <!--suppress HtmlUnknownAttribute -->
                     <template v-slot:item.updated_at="{ item }">
                         {{ new Date(item.updated_at).toLocaleString() }}
                     </template>
+                    <!--suppress HtmlUnknownAttribute -->
                     <template v-slot:item.actions="{ item }">
                         <v-icon
                             small
@@ -234,10 +237,8 @@
 
 <script>
     import queryString from 'querystring'
-    import VSelectList from "../../../../public/dist/js/8f7a4f442a011bfbb59a";
 
     export default {
-        components: {VSelectList},
         props: [
             'endpoint'
         ],
@@ -342,7 +343,7 @@
                     this.response = response.data.data
 
                     this.response.updatable.forEach(item =>
-                        this.defaultItem[item] = this.response.column_fields[item]=='checkbox'?0:''
+                        this.defaultItem[item] = this.response.column_fields[item]==='checkbox'?0:''
                     )
                     this.editedItem = this.defaultItem
                     this.loading = false
