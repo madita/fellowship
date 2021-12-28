@@ -20,6 +20,7 @@ import './plugins/echarts'
 import './plugins/animate'
 import './plugins/clipboard'
 import './plugins/moment'
+import './plugins/lodash'
 
 // FILTERS
 import './filters/capitalize'
