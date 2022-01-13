@@ -22,7 +22,7 @@ export default [{
             auth, permission, verified
         ]
     },
-    component: () => import(/* webpackChunkName: "admin-pages" */ '@/pages/admin/Post.vue')
+    component: () => import(/* webpackChunkName: "admin-posts" */ '@/pages/admin/Post.vue')
 } ,{
     path: '/admin/users',
     name: 'admin-users',
@@ -31,7 +31,7 @@ export default [{
             auth, permission, verified
         ]
     },
-    component: () => import(/* webpackChunkName: "admin-pages" */ '@/pages/admin/User.vue')
+    component: () => import(/* webpackChunkName: "admin-users" */ '@/pages/admin/User.vue')
 },{
     path: '/admin/roles',
     name: 'admin-roles',
@@ -40,7 +40,7 @@ export default [{
             auth, permission, verified
         ]
     },
-    component: () => import(/* webpackChunkName: "admin-pages" */ '@/pages/admin/Role.vue')
+    component: () => import(/* webpackChunkName: "admin-roles" */ '@/pages/admin/Role.vue')
 },{
     path: '/admin/permissions',
     name: 'admin-permissions',
@@ -49,5 +49,14 @@ export default [{
             auth, permission, verified
         ]
     },
-    component: () => import(/* webpackChunkName: "admin-pages" */ '@/pages/admin/Permission.vue')
+    component: () => import(/* webpackChunkName: "admin-permissions" */ '@/pages/admin/Permission.vue')
+},{
+    path: '/admin/announcements',
+    name: 'admin-announcements',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-announcements" */ '@/pages/admin/Announcement.vue')
 }]

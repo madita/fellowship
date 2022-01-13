@@ -67,7 +67,7 @@ Vue.use({
         created () {
             const userInfo = localStorage.getItem('user')
             if (userInfo) {
-                const userData = JSON.parse(userInfo)
+                // const userData = JSON.parse(userInfo)
                 this.$store.dispatch('auth/me')
             }
             axios.interceptors.response.use(

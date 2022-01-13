@@ -191,7 +191,8 @@ export default {
         adminPermission: 'Permissions',
         adminUsers: 'Users',
         adminPages: 'Pages',
-        adminPosts: 'Posts'
+        adminPosts: 'Posts',
+        adminAnnouncement: 'Announcement'
 
     },
     // Vuetify components translations

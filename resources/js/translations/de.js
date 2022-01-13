@@ -190,7 +190,8 @@ export default {
     'adminPermission': 'Rechte',
     'adminUsers': 'Benutzer',
     'adminPages': 'Seiten',
-    'adminPosts': 'Beiträge'
+    'adminPosts': 'Beiträge',
+    'adminAnnouncement': 'Verkündung'
   },
   '$vuetify': {
     'badge': 'Abzeichen',

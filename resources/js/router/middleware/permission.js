@@ -20,6 +20,9 @@ export default function permission ({ to, from, store, next }){
             case "admin-posts":
                 return permissions.includes("manage-post")
 
+            case "admin-announcements":
+                return permissions.includes("manage-post")
+
 
 
             default:
