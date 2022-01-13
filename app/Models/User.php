@@ -48,6 +48,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
     ];
 
+    public function receivesBroadcastNotificationsOn() {
+        return 'users.'.$this->id;
+    }
+
     public function pages()
     {
         return $this->hasMany(Page::class);

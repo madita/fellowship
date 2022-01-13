@@ -6,6 +6,7 @@ export default [
       { icon: 'mdi-file-outline', key: 'menu.adminUsers', text: 'Users', link: '/admin/users' },
       { icon: 'mdi-file-outline', key: 'menu.adminPages', text: 'Pages', link: '/admin/pages' },
       { icon: 'mdi-file-outline', key: 'menu.adminPosts', text: 'Posts', link: '/admin/posts' },
+      { icon: 'mdi-file-outline', key: 'menu.adminAnnouncement', text: 'Announcement', link: '/admin/announcements' },
     ]
   }
 ]

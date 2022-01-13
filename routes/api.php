@@ -1,5 +1,5 @@
 <?php
-
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+//Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     $user = $request->user();
@@ -21,6 +22,19 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
     return ['user' => $user, 'roles' => $roles, 'permissions' => $permissions];
 });
+
+//
+Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 'account.'], function () {
+//    Route::get('/my-notification', 'App\Http\Controllers\NotificationController@index')->name('mynotification.index');
+// Return collection to use with vue
+    Route::get('/notification', 'App\Http\Controllers\NotificationController@notification')->name('notification.index');
+    Route::delete('/notification/delete/{id}', 'App\Http\Controllers\NotificationController@notificationdelete');
+    Route::get('/notification/allasread', 'App\Http\Controllers\NotificationController@notificationread');
+    Route::get('/notification/markasread/{id}', 'App\Http\Controllers\NotificationController@notificationsingleread');
+});
+
+
+
 
 
 Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
