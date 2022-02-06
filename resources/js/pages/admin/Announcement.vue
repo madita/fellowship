@@ -85,7 +85,7 @@ export default {
 
         save () {
             this.isLoading = true
-            axios.post('/api/admin/announcement', this.form).then((response) => {
+            axios.post('/api/admin/announcement', this.form).then(() => {
 
                 this.message = 'Tadaaa'
                 this.type = 'success'
@@ -95,7 +95,7 @@ export default {
                     body: '',
                     action: '',
                     url: '',
-                    footer: ''
+                    thanks: ''
                 }
                 this.resetError();
                 this.isLoading = false

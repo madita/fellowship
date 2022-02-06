@@ -25,9 +25,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 //
 Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 'account.'], function () {
-//    Route::get('/my-notification', 'App\Http\Controllers\NotificationController@index')->name('mynotification.index');
-// Return collection to use with vue
-    Route::get('/notification', 'App\Http\Controllers\NotificationController@notification')->name('notification.index');
+
+    Route::get('/notifications', 'App\Http\Controllers\NotificationController@index')->name('notification.index');
+    Route::get('/notification', 'App\Http\Controllers\NotificationController@notification')->name('notification.unread');
     Route::delete('/notification/delete/{id}', 'App\Http\Controllers\NotificationController@notificationdelete');
     Route::get('/notification/allasread', 'App\Http\Controllers\NotificationController@notificationread');
     Route::get('/notification/markasread/{id}', 'App\Http\Controllers\NotificationController@notificationsingleread');
