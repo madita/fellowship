@@ -14,26 +14,44 @@ class NotificationController extends Controller
         $user = User::find($userId);
         $notifications = $user->notifications;
 
-//        return view('account.notification.index', compact('notifications'));
+        return response($notifications);
     }
 
     public function notification(){
-        $notifications = auth()->user()->unreadNotifications;
-        return $notifications;
+        /** @var User $user */
+        $user = auth()->user();
+        return $user->unreadNotifications;
     }
 
     public function notificationread(){
-        auth()->user()->unreadNotifications->markAsRead();
+        /** @var User $user */
+        $user = auth()->user();
+        $user->unreadNotifications->markAsRead();
         return ['message' => 'All notifications are mark as read.'];
     }
 
     public function notificationdelete(Request $request){
-        auth()->user()->notifications($request->id)->delete();
-        return ['message' => 'Notifications was deleted successfully.'];
+
+        /** @var User $user */
+        $user = auth()->user();
+        $notification = $user->notifications()->find($request->id);
+        if(!$notification) {
+            return ['message' => 'notifications does not exist.'];
+        }
+
+        $notification->delete();
+        return ['message' => 'Notification was deleted successfully.'];
     }
 
     public function notificationsingleread(Request $request){
-        auth()->user()->unreadNotifications($request->id)->update(['read_at' => now()]);;
+        /** @var User $user */
+        $user = auth()->user();
+        $notification = $user->notifications()->find($request->id);
+
+        if(!$notification) {
+           return ['message' => 'notifications does not exist.'];
+        }
+        $notification->markAsRead();
         return ['message' => 'notifications was marked as read.'];
     }
 }

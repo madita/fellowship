@@ -61,7 +61,7 @@ class Announcement extends Notification
             'subject' => $this->message['subject'],
             'body' => $this->message['body'],
             'notifier' => auth()->user(),
-            'url' => $this->message['action'],
+            'url' => $this->message['url'],
             'action' => $this->message['action'],
             'thanks' => $this->message['thanks']
         ];
