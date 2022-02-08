@@ -25,7 +25,7 @@ import simpleLayout from './layouts/SimpleLayout'
 import landingLayout from './layouts/LandingLayout'
 import authLayout from './layouts/AuthLayout'
 import errorLayout from './layouts/ErrorLayout'
-import { mapGetters, mapActions } from 'vuex'
+import { mapGetters } from 'vuex'
 
 /*
 |---------------------------------------------------------------------
@@ -50,9 +50,7 @@ export default {
       }),
     ...mapState('app', ['toast']),
     isRouterLoaded: function() {
-      if (this.$route.name !== null) return true
-
-      return false
+      return this.$route !== undefined && this.$route.name !== null;
     },
     currentLayout: function() {
       const layout = this.$route.meta.layout || 'default'

@@ -3,7 +3,7 @@
         <v-app-bar flat height="80">
             <v-container class="py-0 px-0 px-sm-2 fill-height">
                 <router-link to="/dashboard" class="d-flex align-center text-decoration-none mr-2">
-                    <img :src="require('@/assets/images/logo.png').default" height="70"/>
+                    <img :src="require('@/assets/images/logo.png').default" alt="Logo of FellowShip" height="70"/>
                 </router-link>
 
                 <v-spacer></v-spacer>
@@ -114,7 +114,7 @@
 </template>
 
 <script>
-import config from '@/configs'
+import config from '../configs'
 import {mapActions, mapGetters} from 'vuex'
 
 export default {
