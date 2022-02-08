@@ -4,12 +4,11 @@ on:
   push:
     branches:
       - develop
-      - features/**
   pull_request:
     branches: [ develop ]
 
 jobs:
-  laravel-tests:
+  run-tests:
 
     runs-on: ubuntu-latest
 
@@ -36,6 +35,8 @@ jobs:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/database.sqlite
         run: vendor/bin/phpunit
+      - name: Execute tests (Unit and Feature tests) via Jest
+        run: npm run test
 
 
   build:
