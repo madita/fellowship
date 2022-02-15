@@ -33,6 +33,12 @@ Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 
     Route::get('/notification/markasread/{id}', 'App\Http\Controllers\NotificationController@notificationsingleread');
 });
 
+Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('/', 'App\Http\Controllers\Chat\ChatController@index')->name('chat');
+    Route::get('/messages', 'App\Http\Controllers\Chat\ChatMessageController@index');
+    Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
+
+});
 
 
 

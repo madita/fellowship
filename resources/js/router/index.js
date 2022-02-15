@@ -8,6 +8,7 @@ import auth from './middleware/auth'
 import verified from './middleware/verified'
 
 // Routes
+import ComponentsRoutes from './components.routes'
 import PagesRoutes from './pages.routes'
 import UsersRoutes from './users.routes'
 import LandingRoutes from './landing.routes'
@@ -25,6 +26,7 @@ export const routes = [{
     },
     component: () => import(/* webpackChunkName: "dashboard" */ '@/pages/dashboard/DashboardPage.vue')
 },
+    ...ComponentsRoutes,
     ...PagesRoutes,
     ...UsersRoutes,
     ...LandingRoutes,
@@ -80,12 +82,6 @@ router.beforeEach((to, from, next) => {
         ...context,
         next: middlewarePipeline(context, middleware, 1)
     })
-})
-
-/**
- * After each route update
- */
-router.afterEach((to, from) => {
 })
 
 export default router

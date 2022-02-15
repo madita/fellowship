@@ -24,7 +24,6 @@ export default {
                 return permissions.includes("manage-post")
 
 
-
             default:
                 return false;
         }

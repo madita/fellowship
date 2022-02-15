@@ -31,7 +31,7 @@ window.Echo = new Echo({
     encrypted: true,
     key: process.env.MIX_PUSHER_APP_KEY,
     forceTLS: true,
-    authorizer: (channel, options) => {
+    authorizer: (channel) => {
         return {
             authorize: (socketId, callback) => {
                 axios.post('/broadcasting/auth', {
