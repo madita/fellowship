@@ -3,19 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 //use App\Helpers\WebhookHelper;
-use GuzzleHttp\Client as HttpClient;
 
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Notifications\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
-use App\Models\User;
-use App\Http\Controllers\Controller;
-
-
-use App\Notifications\Announcement;
 
 class AnnouncementController extends Controller
 {
-
     public function __construct()
     {
         $this->middleware('auth');
@@ -25,24 +21,27 @@ class AnnouncementController extends Controller
      * Display a listing of the resource.
      *
      * @param Request $request
-     * @return \Illuminate\Http\Response
+     *
      * @throws \Illuminate\Auth\Access\AuthorizationException
+     *
+     * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
-        return;
+
     }
 
-    public function create(){
+    public function create()
+    {
         //return View('admin.annoucement.create');
     }
 
-    public function store(Request $request){
-
+    public function store(Request $request)
+    {
         $request->validate([
             'subject' => 'required|max:255',
-            'body' => 'required|max:255',
-            'thanks' => 'required|max:255',
+            'body'    => 'required|max:255',
+            'thanks'  => 'required|max:255',
         ]);
 
         $message = $request->all();
@@ -52,11 +51,8 @@ class AnnouncementController extends Controller
         Notification::send($users, $announcement);
 
         return response()->json([
-            'success' => true,
+            'success'      => true,
             'announcement' => $announcement,
         ]);
-
     }
-
-
 }

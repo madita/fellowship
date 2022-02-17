@@ -15,7 +15,7 @@ class CreateSystemTables extends Migration
     {
 
         /**
-         * Pages
+         * Pages.
          */
         Schema::create('pages', function (Blueprint $table) {
             $table->integer('id', true);
@@ -31,9 +31,8 @@ class CreateSystemTables extends Migration
         });
 
         /**
-         * Blog
+         * Blog.
          */
-
         Schema::create('posts', function (Blueprint $table) {
             $table->integer('id', true);
             $table->string('title');
@@ -44,9 +43,8 @@ class CreateSystemTables extends Migration
             $table->timestamps();
         });
 
-
         /**
-         *  Misc
+         *  Misc.
          */
         Schema::create('statuses', function (Blueprint $table) {
             $table->increments('id');
@@ -64,7 +62,6 @@ class CreateSystemTables extends Migration
             //$table->integer('icon_id');
             $table->timestamps();
         });
-
     }
 
     /**
@@ -74,11 +71,9 @@ class CreateSystemTables extends Migration
      */
     public function down()
     {
-
         Schema::drop('likeable');
         Schema::drop('statuses');
         Schema::drop('pages');
         Schema::drop('posts');
-
     }
 }

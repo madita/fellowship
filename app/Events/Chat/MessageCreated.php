@@ -6,14 +6,15 @@ use App\Models\Chat\Message;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 class MessageCreated implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
     public $message;
 
@@ -33,8 +34,8 @@ class MessageCreated implements ShouldBroadcast
 
         return [
             'message' => array_merge($this->message->toArray(), [
-                'selfOwned' => false
-            ])
+                'selfOwned' => false,
+            ]),
         ];
     }
 

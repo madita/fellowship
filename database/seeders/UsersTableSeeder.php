@@ -13,14 +13,13 @@ class UsersTableSeeder extends Seeder
      *
      * @return void
      */
-
     public function run()
     {
         $user = User::create([
-            'username' => 'disorganizer',
-            'email' => 'disorganizer@disorganizer.net',
-            'password' => bcrypt('admin'),
-            'email_verified_at' => Carbon::now()
+            'username'          => 'disorganizer',
+            'email'             => 'disorganizer@disorganizer.net',
+            'password'          => bcrypt('admin'),
+            'email_verified_at' => Carbon::now(),
         ]);
 
         $user->assignRole('admin');
@@ -32,12 +31,11 @@ class UsersTableSeeder extends Seeder
          $profile->last_name = 'M4';
          $profile->save();*/
 
-
         $user = User::create([
-            'username' => 'madita',
-            'email' => 'rogi@stadtwache.net',
-            'password' => bcrypt('igorina'),
-            'email_verified_at' => Carbon::now()
+            'username'          => 'madita',
+            'email'             => 'rogi@stadtwache.net',
+            'password'          => bcrypt('igorina'),
+            'email_verified_at' => Carbon::now(),
         ]);
 
         $user->assignRole('user');

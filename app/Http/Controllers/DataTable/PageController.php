@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use Auth;
 use App\Models\Page;
+use Auth;
 use Illuminate\Http\Request;
-use App\Http\Controllers\DataTable\DataTableController;
 
 class PageController extends DataTableController
 {
@@ -24,14 +23,14 @@ class PageController extends DataTableController
         return  [
             'title',
             'body',
-            'published'
+            'published',
         ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'body' => 'textarea',
+            'body'      => 'textarea',
             'published' => 'checkbox',
         ];
     }

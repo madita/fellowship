@@ -6,7 +6,6 @@ use App\Events\Chat\MessageCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Chat\StoreMessageRequest;
 use App\Models\Chat\Message;
-use Illuminate\Http\Request;
 
 class ChatMessageController extends Controller
 {
@@ -20,7 +19,7 @@ class ChatMessageController extends Controller
     public function store(StoreMessageRequest $request)
     {
         $message = $request->user()->messages()->create([
-            'body' => $request->body
+            'body' => $request->body,
         ]);
 
         broadcast(new MessageCreated($message))->toOthers();
