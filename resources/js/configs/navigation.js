@@ -1,4 +1,3 @@
-import menuPages from './menus/pages.menu'
 import menuAdmin from './menus/admin.menu'
 
 export default {
@@ -8,6 +7,7 @@ export default {
     key: '',
     items: [
       { icon: 'mdi-view-dashboard-outline', key: 'menu.dashboard', text: 'Dashboard', link: '/dashboard' },
+      { icon: 'mdi-message-text-outline', key: 'menu.chat', text: 'Chat', link: '/chat' },
       { icon: 'mdi-file-outline', key: 'menu.blank', text: 'Blank Page', link: '/blank' }
     ]
   }, {
