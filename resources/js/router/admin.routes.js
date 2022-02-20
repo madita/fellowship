@@ -14,6 +14,15 @@ export default [{
         ]
     },
     component: () => import(/* webpackChunkName: "admin-pages" */ '@/pages/admin/Page.vue')
+},{
+    path: '/admin/pages/:form/:id?',
+    name: 'admin-pages-form',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-pages-form" */ '@/pages/admin/PageForm.vue')
 }, {
     path: '/admin/posts',
     name: 'admin-posts',

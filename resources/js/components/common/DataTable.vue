@@ -142,6 +142,12 @@
                                                         :value="editedItem[column]"
                                                     ></v-textarea>
 
+                                                    <simple-editor
+                                                        v-else-if="response.column_fields[column]==='wysiwyg'"
+                                                        v-model="editedItem[column]"
+                                                        :value="editedItem[column]">
+                                                    </simple-editor>
+
                                                     <v-checkbox
                                                         v-else-if="response.column_fields[column]==='checkbox'"
                                                         v-model="editedItem[column]"
@@ -205,6 +211,14 @@
                     <!--suppress HtmlUnknownAttribute -->
                     <template v-slot:item.actions="{ item }">
                         <v-icon
+                            v-if="response.allow.hasForm"
+                            small
+                            class="mr-2"
+                            @click="editItemForm(item)"
+                        >
+                            mdi-file-document-edit
+                        </v-icon>
+                        <v-icon
                             small
                             class="mr-2"
                             @click="editItem(item)"
@@ -237,8 +251,13 @@
 
 <script>
     import queryString from 'querystring'
+    import SimpleEditor from './SimpleEditor'
 
     export default {
+        components: {
+            queryString,
+            SimpleEditor
+        },
         props: [
             'endpoint'
         ],
@@ -364,6 +383,10 @@
                 // console.log('this.editedItem',this.editedItem)
 
                 this.dialog = true
+            },
+
+            editItemForm (item) {
+                this.$router.push(`${this.$route.path}/edit/${item.id}`)
             },
 
             deleteItem (item) {

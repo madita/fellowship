@@ -9,6 +9,8 @@ use App\Http\Controllers\DataTable\DataTableController;
 
 class PageController extends DataTableController
 {
+    protected $hasForm = true;
+
     public function builder()
     {
         return Page::query();
@@ -24,15 +26,33 @@ class PageController extends DataTableController
         return  [
             'title',
             'body',
-            'published'
+            'published',
+            'sign_in_only'
         ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'body' => 'textarea',
+            'body' => 'wysiwyg',
             'published' => 'checkbox',
+            'sign_in_only' => 'checkbox',
+        ];
+    }
+
+    public function getDisplayableColumns()
+    {
+        return [
+            'id',
+            'published',
+            'sign_in_only',
+            'slug',
+            'title',
+            'type',
+            'user_id',
+            'parent_id',
+            'created_at',
+            'updated_at'
         ];
     }
 

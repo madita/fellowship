@@ -34,12 +34,22 @@ Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 
 });
 
 Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function () {
-    Route::get('/', 'App\Http\Controllers\Chat\ChatController@index')->name('chat');
+//    Route::get('/', 'App\Http\Controllers\Chat\ChatController@index')->name('chat');
     Route::get('/messages', 'App\Http\Controllers\Chat\ChatMessageController@index');
     Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
 
 });
 
+Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
+Route::get('/pages/{page}/edit', '\App\Http\Controllers\PageController@show');
+Route::patch('/pages/{page}/edit', '\App\Http\Controllers\PageController@update');
+
+//Route::group(['prefix' => '/pages', 'middleware' => ['auth:sanctum']], function () {
+//    Route::get('/', 'App\Http\Controllers\Chat\ChatController@index')->name('chat');
+//    Route::get('/messages', 'App\Http\Controllers\Chat\ChatMessageController@index');
+//    Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
+//
+//});
 
 
 

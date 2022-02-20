@@ -31,6 +31,9 @@ abstract class DataTableController extends Controller
      */
     protected $allowDeletion = true;
 
+    /*Does Edit Form for model exist?*/
+    protected $hasForm = false;
+
     /**
      * The entity builder.
      *
@@ -140,6 +143,7 @@ abstract class DataTableController extends Controller
                 'column_map' => $this->getCustomColumnsNames(),
                 'column_fields' => $this->getCustomInputFields(),
                 'allow' => [
+                    'hasForm' => $this->hasForm,
                     'creation' => $this->allowCreation,
                     'deletion' => $this->allowDeletion,
                 ]

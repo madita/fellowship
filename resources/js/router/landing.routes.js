@@ -5,4 +5,12 @@ export default [{
   meta: {
     layout: 'landing'
   }
-}]
+},
+    {
+        path: '/p/:slug',
+        name: 'pages',
+        component: () => import(/* webpackChunkName: "landing-pages" */ '@/pages/landing/Pages.vue'),
+        meta: {
+            layout: 'landing'
+        }
+    }]

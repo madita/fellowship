@@ -1,5 +1,6 @@
 export default function permission ({ to, from, store, next }){
 
+    /** middleware for routes **/
     const hasAccess = function (name) {
         const permissions = store.getters['auth/permissions'];
 
@@ -15,6 +16,7 @@ export default function permission ({ to, from, store, next }){
                 return permissions.includes("manage-role")
 
             case "admin-pages":
+            case "admin-pages-form":
                 return permissions.includes("manage-page")
 
             case "admin-posts":
