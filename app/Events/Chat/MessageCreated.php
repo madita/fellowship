@@ -35,7 +35,7 @@ class MessageCreated implements ShouldBroadcast
         return [
             'message' => array_merge($this->message->toArray(), [
                 'selfOwned' => false,
-            ])
+            ]),
         ];
     }
 

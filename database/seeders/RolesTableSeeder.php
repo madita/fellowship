@@ -16,19 +16,19 @@ class RolesTableSeeder extends Seeder
     public function run()
     {
        $role = Role::create([
-           'name' => 'admin',
-           'guard_name' => 'api',
+           'name'         => 'admin',
+           'guard_name'   => 'api',
            'display_name' => 'Admin',
-           'description' => 'Admin'
+           'description'  => 'Admin'
        ]);
 
         $role->givePermissionTo(Permission::all());
 
         Role::create([
-            'name' => 'user',
-            'guard_name' => 'api',
+            'name'         => 'user',
+            'guard_name'   => 'api',
             'display_name' => 'User',
-            'description' => 'User'
+            'description'  => 'User'
         ]);
     }
 }

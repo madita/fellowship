@@ -26,7 +26,7 @@ class UserController extends DataTableController
         return [
             'id',
             'name',
-            'created_at'
+            'created_at',
         ];
     }
 
@@ -41,8 +41,8 @@ class UserController extends DataTableController
     public function update($id, Request $request)
     {
         $this->validate($request, [
-            'name' => 'required',
-            'email' => 'required|unique:users,email,' . $id . '|email',
+            'name'       => 'required',
+            'email'      => 'required|unique:users,email,' . $id . '|email',
             'created_at' => 'date'
         ]);
 

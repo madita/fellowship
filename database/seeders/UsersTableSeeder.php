@@ -17,9 +17,9 @@ class UsersTableSeeder extends Seeder
     public function run()
     {
         $user = User::create([
-            'username' => 'disorganizer',
-            'email' => 'disorganizer@disorganizer.net',
-            'password' => bcrypt('admin'),
+            'username'          => 'disorganizer',
+            'email'             => 'disorganizer@disorganizer.net',
+            'password'          => bcrypt('admin'),
             'email_verified_at' => Carbon::now()
         ]);
 
@@ -34,9 +34,9 @@ class UsersTableSeeder extends Seeder
 
 
         $user = User::create([
-            'username' => 'madita',
-            'email' => 'rogi@stadtwache.net',
-            'password' => bcrypt('igorina'),
+            'username'          => 'madita',
+            'email'             => 'rogi@stadtwache.net',
+            'password'          => bcrypt('igorina'),
             'email_verified_at' => Carbon::now()
         ]);
 

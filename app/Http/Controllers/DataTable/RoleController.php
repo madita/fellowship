@@ -19,7 +19,7 @@ class RoleController extends DataTableController
     public function getCustomColumnsNames()
     {
         return [
-            'name' => 'Name',
+            'name'         => 'Name',
             'display_name' => 'Display Name',
         ];
     }
@@ -30,7 +30,7 @@ class RoleController extends DataTableController
             'id',
             'name',
             'display_name',
-            'created_at'
+            'created_at',
         ];
     }
 
@@ -38,7 +38,7 @@ class RoleController extends DataTableController
     {
         return [
             'name',
-            'display_name'
+            'display_name',
         ];
     }
 
@@ -46,6 +46,7 @@ class RoleController extends DataTableController
      * Create an entity.
      *
      * @param Request $request
+     *
      * @return Response|void
      */
     public function store(Request $request)

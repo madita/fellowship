@@ -19,7 +19,7 @@ class PostController extends Controller
     }
 
     /**
-     * view landing pages
+     * view posts.
      * @param $slug
      * @return JsonResponse|\never
      */
@@ -28,9 +28,9 @@ class PostController extends Controller
         $post = Post::where('slug', '=', $slug)->first();
         $posts = Post::all();
 
-        if (!$post || $post->status !== 'published')
+        if (!$post || $post->status !== 'published') {
             return abort(404);
-
+        }
 
         return response()
             ->json(['data' => $post]);
@@ -41,8 +41,9 @@ class PostController extends Controller
         //$post = Post::where('slug', '=', $slug)->first();
         $posts = Post::all();
 
-        if (!$post)
+        if (!$post) {
             return abort(404);
+        }
 
 //        if ($post->sign_in_only && !Auth::check())
 //            return redirect('/')->withErrors(config('constants.NA'));

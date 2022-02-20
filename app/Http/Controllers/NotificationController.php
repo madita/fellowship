@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 
 class NotificationController extends Controller
 {
@@ -17,20 +17,23 @@ class NotificationController extends Controller
         return response($notifications);
     }
 
-    public function notification(){
+    public function notification()
+    {
         /** @var User $user */
         $user = auth()->user();
         return $user->unreadNotifications;
     }
 
-    public function notificationread(){
+    public function notificationread()
+    {
         /** @var User $user */
         $user = auth()->user();
         $user->unreadNotifications->markAsRead();
         return ['message' => 'All notifications are mark as read.'];
     }
 
-    public function notificationdelete(Request $request){
+    public function notificationdelete(Request $request)
+    {
 
         /** @var User $user */
         $user = auth()->user();
@@ -43,7 +46,8 @@ class NotificationController extends Controller
         return ['message' => 'Notification was deleted successfully.'];
     }
 
-    public function notificationsingleread(Request $request){
+    public function notificationsingleread(Request $request)
+    {
         /** @var User $user */
         $user = auth()->user();
         $notification = $user->notifications()->find($request->id);

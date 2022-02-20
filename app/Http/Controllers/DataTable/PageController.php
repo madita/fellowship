@@ -27,15 +27,15 @@ class PageController extends DataTableController
             'title',
             'body',
             'published',
-            'sign_in_only'
+            'sign_in_only',
         ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'body' => 'wysiwyg',
-            'published' => 'checkbox',
+            'body'         => 'wysiwyg',
+            'published'    => 'checkbox',
             'sign_in_only' => 'checkbox',
         ];
     }
@@ -52,7 +52,7 @@ class PageController extends DataTableController
             'user_id',
             'parent_id',
             'created_at',
-            'updated_at'
+            'updated_at',
         ];
     }
 

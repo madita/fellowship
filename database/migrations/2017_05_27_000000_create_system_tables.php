@@ -15,7 +15,7 @@ class CreateSystemTables extends Migration
     {
 
         /**
-         * Pages
+         * Pages.
          */
         Schema::create('pages', function (Blueprint $table) {
             $table->integer('id', true);
@@ -31,7 +31,7 @@ class CreateSystemTables extends Migration
         });
 
         /**
-         * Blog
+         * Blog.
          */
 
         Schema::create('posts', function (Blueprint $table) {
@@ -46,7 +46,7 @@ class CreateSystemTables extends Migration
 
 
         /**
-         *  Misc
+         *  Misc.
          */
         Schema::create('statuses', function (Blueprint $table) {
             $table->increments('id');

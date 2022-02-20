@@ -12,12 +12,12 @@ class Page extends Model{
     use Sluggable;
 
 	protected $fillable = [
-							'published',
-							'title',
-							'slug',
-							'body',
-							'user_id'
-						];
+    	'published',
+    	'title',
+    	'slug',
+    	'body',
+    	'user_id'
+    ];
 
 	protected $primaryKey = 'id';
 	protected $table = 'pages';
@@ -27,7 +27,7 @@ class Page extends Model{
         return [
             'slug' => [
                 'source' => 'title'
-            ]
+            ],
         ];
     }
 

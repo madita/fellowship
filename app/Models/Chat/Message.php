@@ -8,17 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class Message extends Model
 {
     protected $fillable = [
-        'body'
+        'body',
     ];
 
     protected $appends = [
-        'selfOwned'
+        'selfOwned',
     ];
 
     public function getSelfOwnedAttribute()
     {
         /** @var User $user */
         $user = auth()->user();
+
         return $this->user_id === $user->id;
     }
 

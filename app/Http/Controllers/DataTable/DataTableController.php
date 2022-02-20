@@ -81,24 +81,24 @@ abstract class DataTableController extends Controller
         }
 
         if (!($this->builder = $this->builder()) instanceof Builder) {
-            throw new Exception("Entity builder not instance of Builder.");
+            throw new Exception('Entity builder not instance of Builder.');
         }
     }
 
     public function getHeaders()
     {
-        $columnNames =$this->getCustomColumnsNames();
+        $columnNames = $this->getCustomColumnsNames();
 
         return collect($this->getDisplayableColumns())->map(function ($column) use ($columnNames) {
             return [
-                'text' => isset($columnNames[$column])?$columnNames[$column]:$column,
+                'text'     => isset($columnNames[$column])?$columnNames[$column]:$column,
                 'sortable' => false,
-                'value' => $column
+                'value'    => $column
             ];
         })->add([
-            'text' => 'Actions',
+            'text'     => 'Actions',
             'sortable' => false,
-            'value' => 'actions'
+            'value'    => 'actions'
         ]);
     }
 
@@ -119,7 +119,7 @@ abstract class DataTableController extends Controller
         try {
             //if model has appended attributes and append attributes  not in displayable colimns...forget them
             $forget = array_diff($this->getAppends(), $this->getDisplayableColumns());
-            $pagination = (int)$request->get('itemsPerPage') <=0 ?(int)$request->get('itemsLength') : (int)$request->get('itemsPerPage');
+            $pagination = (int) $request->get('itemsPerPage') <=0 ?(int) $request->get('itemsLength') : (int)$request->get('itemsPerPage');
             return $builder->orderBy('id', 'asc')->get()->makeHidden($forget)->paginate($pagination);
         } catch (QueryException $e) {
             return collect([]);
@@ -131,7 +131,7 @@ abstract class DataTableController extends Controller
      *
      * @return JsonResponse
      */
-    public function index(Request $request) : JsonResponse
+    public function index(Request $request): JsonResponse
     {
         return response()->json([
             'data' => [
@@ -169,7 +169,7 @@ abstract class DataTableController extends Controller
     /**
      * Update an entity.
      *
-     * @param integer $id
+     * @param int $id
      * @param Request $request
      *
      * @return Response
@@ -182,7 +182,7 @@ abstract class DataTableController extends Controller
     /**
      * Delete an entity.
      *
-     * @param integer $id
+     * @param int $id
      * @param Request $request
      *
      * @return Response|void
@@ -201,7 +201,7 @@ abstract class DataTableController extends Controller
      *
      * @return array
      */
-    protected function getDatabaseColumnNames() : array
+    protected function getDatabaseColumnNames(): array
     {
         return array_merge(Schema::getColumnListing($this->builder->getModel()->getTable()), $this->getAppends());
     }
@@ -215,7 +215,7 @@ abstract class DataTableController extends Controller
      * If the request has the columns required to search.
      *
      * @param Request $request
-     * @return boolean
+     * @return bool
      */
     protected function hasSearchQuery(Request $request)
     {
@@ -233,35 +233,35 @@ abstract class DataTableController extends Controller
         return Arr::get([
             'equals' => [
                 'operator' => '=',
-                'value' => $value,
+                'value'    => $value,
             ],
             'contains' => [
                 'operator' => 'LIKE',
-                'value' => "%{$value}%",
+                'value'    => "%{$value}%",
             ],
             'starts_with' => [
                 'operator' => 'LIKE',
-                'value' => "{$value}%",
+                'value'    => "{$value}%",
             ],
             'ends_with' => [
                 'operator' => 'LIKE',
-                'value' => "%{$value}",
+                'value'    => "%{$value}",
             ],
             'greater_than' => [
                 'operator' => '>',
-                'value' => $value,
+                'value'    => $value,
             ],
             'less_than' => [
                 'operator' => '<',
-                'value' => $value,
+                'value'    => $value,
             ],
             'greater_than_or_equal_to' => [
                 'operator' => '>=',
-                'value' => $value,
+                'value'    => $value,
             ],
             'less_than_or_equal_to' => [
                 'operator' => '<=',
-                'value' => $value,
+                'value'    => $value,
             ],
         ], $operator);
     }

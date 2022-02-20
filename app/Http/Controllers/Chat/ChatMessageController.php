@@ -6,7 +6,6 @@ use App\Events\Chat\MessageCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Chat\StoreMessageRequest;
 use App\Models\Chat\Message;
-use Illuminate\Http\Request;
 
 class ChatMessageController extends Controller
 {

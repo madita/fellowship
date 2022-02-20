@@ -1,20 +1,20 @@
 <?php
 namespace App\Models;
-use Illuminate\Database\Eloquent\Model;
-use Cviebrock\EloquentSluggable\Sluggable;
 
+use Cviebrock\EloquentSluggable\Sluggable;
+use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model {
 
     use Sluggable;
 
 	protected $fillable = [
-							'status',
-							'title',
-							'slug',
-							'body',
-							'user_id'
-						];
+		'status',
+		'title',
+		'slug',
+		'body',
+		'user_id'
+    ];
 
 	protected $primaryKey = 'id';
 	protected $table = 'posts';
@@ -24,7 +24,7 @@ class Post extends Model {
         return [
             'slug' => [
                 'source' => 'title'
-            ]
+            ],
         ];
     }
 //    protected $revisionable = [

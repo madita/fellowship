@@ -28,11 +28,13 @@ class PageController extends Controller
         $page = Page::where('slug', '=', $slug)->first();
         $pages = Page::all();
 
-        if (!$page || !$page->published)
+        if (!$page || !$page->published) {
             return abort(404);
+        }
 
-        if ($page->sign_in_only && !Auth::check())
+        if ($page->sign_in_only && !Auth::check()) {
             return abort(403);
+        }
 
         return response()
             ->json(['data' => $page]);
@@ -43,8 +45,9 @@ class PageController extends Controller
         //$page = Page::where('slug', '=', $slug)->first();
         $pages = Page::all();
 
-        if (!$page)
+        if (!$page) {
             return abort(404);
+        }
 
 //        if ($page->sign_in_only && !Auth::check())
 //            return redirect('/')->withErrors(config('constants.NA'));
