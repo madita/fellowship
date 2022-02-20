@@ -20,7 +20,7 @@ class ChatMessageController extends Controller
     public function store(StoreMessageRequest $request)
     {
         $message = $request->user()->messages()->create([
-            'body' => $request->body
+            'body' => $request->body,
         ]);
 
         broadcast(new MessageCreated($message))->toOthers();

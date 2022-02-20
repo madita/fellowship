@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
@@ -20,14 +19,14 @@ abstract class DataTableController extends Controller
     /**
      * If an entity is allowed to be created.
      *
-     * @var boolean
+     * @var bool
      */
     protected $allowCreation = true;
 
     /**
      * Allow deletion.
      *
-     * @var boolean
+     * @var bool
      */
     protected $allowDeletion = true;
 
@@ -49,7 +48,8 @@ abstract class DataTableController extends Controller
     public function getDisplayableColumns()
     {
         return array_diff(
-            $this->getDatabaseColumnNames(), $this->builder->getModel()->getHidden()
+            $this->getDatabaseColumnNames(),
+            $this->builder->getModel()->getHidden()
         );
     }
 
@@ -135,15 +135,15 @@ abstract class DataTableController extends Controller
     {
         return response()->json([
             'data' => [
-                'table' => $this->builder->getModel()->getTable(),
-                'headers' => $this->getHeaders(),
-                'records' => $this->getRecords($request),
-                'updatable' => array_values($this->getUpdatableColumns()),
-                'displayable' => array_values($this->getDisplayableColumns()),
-                'column_map' => $this->getCustomColumnsNames(),
+                'table'         => $this->builder->getModel()->getTable(),
+                'headers'       => $this->getHeaders(),
+                'records'       => $this->getRecords($request),
+                'updatable'     => array_values($this->getUpdatableColumns()),
+                'displayable'   => array_values($this->getDisplayableColumns()),
+                'column_map'    => $this->getCustomColumnsNames(),
                 'column_fields' => $this->getCustomInputFields(),
-                'allow' => [
-                    'hasForm' => $this->hasForm,
+                'allow'         => [
+                    'hasForm'  => $this->hasForm,
                     'creation' => $this->allowCreation,
                     'deletion' => $this->allowDeletion,
                 ]
@@ -233,35 +233,35 @@ abstract class DataTableController extends Controller
         return Arr::get([
             'equals' => [
                 'operator' => '=',
-                'value' => $value
+                'value' => $value,
             ],
             'contains' => [
                 'operator' => 'LIKE',
-                'value' => "%{$value}%"
+                'value' => "%{$value}%",
             ],
             'starts_with' => [
                 'operator' => 'LIKE',
-                'value' => "{$value}%"
+                'value' => "{$value}%",
             ],
             'ends_with' => [
                 'operator' => 'LIKE',
-                'value' => "%{$value}"
+                'value' => "%{$value}",
             ],
             'greater_than' => [
                 'operator' => '>',
-                'value' => $value
+                'value' => $value,
             ],
             'less_than' => [
                 'operator' => '<',
-                'value' => $value
+                'value' => $value,
             ],
             'greater_than_or_equal_to' => [
                 'operator' => '>=',
-                'value' => $value
+                'value' => $value,
             ],
             'less_than_or_equal_to' => [
                 'operator' => '<=',
-                'value' => $value
+                'value' => $value,
             ],
         ], $operator);
     }

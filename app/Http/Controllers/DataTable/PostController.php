@@ -31,8 +31,8 @@ class PostController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'body' => 'textarea',
-            'status' => 'radio',
+            'body' => 'wysiwyg',
+            'status' => ['select'=> ['draft', 'published']],
         ];
     }
 

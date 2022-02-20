@@ -134,8 +134,16 @@
                                                 <v-col
                                                     cols="12"
                                                 >
+                                                    <template v-if="typeof(response.column_fields[column]) === 'object'">
+                                                        <v-select
+                                                            v-if="'select' in response.column_fields[column]"
+                                                            :items="response.column_fields[column]['select']"
+                                                            v-model="editedItem[column]"
+                                                            :label="column"
+                                                        ></v-select>
+                                                    </template>
                                                     <v-textarea
-                                                        v-if="response.column_fields[column]==='textarea'"
+                                                        v-else-if="response.column_fields[column]==='textarea'"
                                                         :label="column"
                                                         :id="column"
                                                         v-model="editedItem[column]"
@@ -160,6 +168,7 @@
 
                                                         :label="column"
                                                     ></v-text-field>
+
 
                                                     <!--                                                        <span class="help-block" v-if="creating.errors[column]">-->
                                                     <!--                                <strong>{{ creating.errors[column][0] }}</strong>-->
