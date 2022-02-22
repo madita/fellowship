@@ -15,7 +15,6 @@ use Illuminate\Support\Facades\Schema;
 
 abstract class DataTableController extends Controller
 {
-
     /**
      * If an entity is allowed to be created.
      *
@@ -91,14 +90,14 @@ abstract class DataTableController extends Controller
 
         return collect($this->getDisplayableColumns())->map(function ($column) use ($columnNames) {
             return [
-                'text'     => isset($columnNames[$column])?$columnNames[$column]:$column,
+                'text'     => isset($columnNames[$column]) ? $columnNames[$column] : $column,
                 'sortable' => false,
-                'value'    => $column
+                'value'    => $column,
             ];
         })->add([
             'text'     => 'Actions',
             'sortable' => false,
-            'value'    => 'actions'
+            'value'    => 'actions',
         ]);
     }
 
@@ -106,6 +105,7 @@ abstract class DataTableController extends Controller
      * Get records to be used for output.
      *
      * @param Request $request
+     *
      * @return Collection
      */
     public function getRecords(Request $request)
@@ -119,7 +119,8 @@ abstract class DataTableController extends Controller
         try {
             //if model has appended attributes and append attributes  not in displayable colimns...forget them
             $forget = array_diff($this->getAppends(), $this->getDisplayableColumns());
-            $pagination = (int) $request->get('itemsPerPage') <=0 ?(int) $request->get('itemsLength') : (int)$request->get('itemsPerPage');
+            $pagination = (int) $request->get('itemsPerPage') <= 0 ? (int) $request->get('itemsLength') : (int) $request->get('itemsPerPage');
+
             return $builder->orderBy('id', 'asc')->get()->makeHidden($forget)->paginate($pagination);
         } catch (QueryException $e) {
             return collect([]);
@@ -146,8 +147,8 @@ abstract class DataTableController extends Controller
                     'hasForm'  => $this->hasForm,
                     'creation' => $this->allowCreation,
                     'deletion' => $this->allowDeletion,
-                ]
-            ]
+                ],
+            ],
         ]);
     }
 
@@ -155,6 +156,7 @@ abstract class DataTableController extends Controller
      * Create an entity.
      *
      * @param Request $request
+     *
      * @return Response|void
      */
     public function store(Request $request)
@@ -169,7 +171,7 @@ abstract class DataTableController extends Controller
     /**
      * Update an entity.
      *
-     * @param int $id
+     * @param int     $id
      * @param Request $request
      *
      * @return Response
@@ -182,7 +184,7 @@ abstract class DataTableController extends Controller
     /**
      * Delete an entity.
      *
-     * @param int $id
+     * @param int     $id
      * @param Request $request
      *
      * @return Response|void
@@ -215,6 +217,7 @@ abstract class DataTableController extends Controller
      * If the request has the columns required to search.
      *
      * @param Request $request
+     *
      * @return bool
      */
     protected function hasSearchQuery(Request $request)
@@ -226,6 +229,7 @@ abstract class DataTableController extends Controller
      * Resolve the given operator to perform a query.
      *
      * @param string $operator
+     *
      * @return string
      */
     protected function resolveQueryParts($operator, $value)

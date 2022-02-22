@@ -20,7 +20,9 @@ class PostController extends Controller
 
     /**
      * view posts.
+     *
      * @param $slug
+     *
      * @return JsonResponse|\never
      */
     public function view($slug)
@@ -60,7 +62,7 @@ class PostController extends Controller
         $post->save();
 
         return response()->json([
-            'data' => 'succes'
+            'data' => 'succes',
         ]);
     }
 }

@@ -26,7 +26,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 //
 Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 'account.'], function () {
-
     Route::get('/notifications', 'App\Http\Controllers\NotificationController@index')->name('notification.index');
     Route::get('/notification', 'App\Http\Controllers\NotificationController@notification')->name('notification.unread');
     Route::delete('/notification/delete/{id}', 'App\Http\Controllers\NotificationController@notificationdelete');
@@ -38,14 +37,11 @@ Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function (
 //    Route::get('/', 'App\Http\Controllers\Chat\ChatController@index')->name('chat');
     Route::get('/messages', 'App\Http\Controllers\Chat\ChatMessageController@index');
     Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
-
 });
 
 Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
 
-
 Route::get('/posts/{slug}', '\App\Http\Controllers\PostController@view');
-
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/pages/{page}/edit', '\App\Http\Controllers\PageController@show');
@@ -53,9 +49,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     Route::get('/posts/{page}/edit', '\App\Http\Controllers\PostController@show');
     Route::patch('/posts/{page}/edit', '\App\Http\Controllers\PostController@update');
-
 });
-
 
 Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
     Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');
@@ -67,5 +61,3 @@ Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function (
     Route::get('datatable/permissions/permissions', 'App\Http\Controllers\DataTable\PermissionController@permissions');
     Route::resource('datatable/permissions', 'App\Http\Controllers\DataTable\PermissionController');
 });
-
-

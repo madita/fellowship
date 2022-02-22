@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use Illuminate\Http\Request;
-use App\Http\Controllers\DataTable\DataTableController;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class PermissionController extends DataTableController
 {
@@ -19,8 +18,9 @@ class PermissionController extends DataTableController
     public function roles()
     {
         $roles = Role::with('permissions')->get();
+
         return response()->json([
-            'data' => $roles
+            'data' => $roles,
         ]);
     }
 
@@ -36,35 +36,34 @@ class PermissionController extends DataTableController
         });
 //        dd($roles);
         foreach ($roles as $roleId => $rolePermissions) {
-            $role = Role::findById($roleId,'api');
+            $role = Role::findById($roleId, 'api');
             $role->syncPermissions($rolePermissions);
 //            dd($rolePermissions);
 //            Permission::findById()
         }
 //        $roles = Role::with('permissions')->get();
         return response()->json([
-            'data' => 'done'
+            'data' => 'done',
         ]);
     }
 
     public function permissions()
     {
         $permissions = Permission::all();
+
         return response()->json([
-            'data' => $permissions
+            'data' => $permissions,
         ]);
     }
 
     public function show()
     {
-
     }
-
 
     public function getCustomColumnsNames()
     {
         return [
-            'name' => 'Name',
+            'name'         => 'Name',
             'display_name' => 'Display Name',
         ];
     }
@@ -77,7 +76,7 @@ class PermissionController extends DataTableController
             'display_name',
             'description',
             'category',
-            'created_at'
+            'created_at',
         ];
     }
 
@@ -90,7 +89,6 @@ class PermissionController extends DataTableController
 
     public function update($id, Request $request)
     {
-
         $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
     }
 }

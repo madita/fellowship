@@ -19,8 +19,10 @@ class PageController extends Controller
     }
 
     /**
-     * view landing pages
+     * view landing pages.
+     *
      * @param $slug
+     *
      * @return JsonResponse|\never
      */
     public function view($slug)
@@ -64,7 +66,7 @@ class PageController extends Controller
         $page->save();
 
         return response()->json([
-            'data' => 'succes'
+            'data' => 'succes',
         ]);
     }
 }

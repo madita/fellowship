@@ -9,7 +9,6 @@ use App\Notifications\Announcement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 
-
 class AnnouncementController extends Controller
 {
     public function __construct()
@@ -21,12 +20,13 @@ class AnnouncementController extends Controller
      * Display a listing of the resource.
      *
      * @param Request $request
+     *
      * @throws \Illuminate\Auth\Access\AuthorizationException
+     *
      * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
-
     }
 
     public function create()
@@ -36,7 +36,6 @@ class AnnouncementController extends Controller
 
     public function store(Request $request)
     {
-
         $request->validate([
             'subject' => 'required|max:255',
             'body'    => 'required|max:255',
@@ -50,11 +49,8 @@ class AnnouncementController extends Controller
         Notification::send($users, $announcement);
 
         return response()->json([
-            'success' => true,
+            'success'      => true,
             'announcement' => $announcement,
         ]);
-
     }
-
-
 }
