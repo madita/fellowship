@@ -1,9 +1,10 @@
 <?php
+
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\Role;
 use App\Models\Permission;
+use App\Models\Role;
+use Illuminate\Database\Seeder;
 
 class RolesTableSeeder extends Seeder
 {
@@ -12,15 +13,14 @@ class RolesTableSeeder extends Seeder
      *
      * @return void
      */
-
     public function run()
     {
-       $role = Role::create([
-           'name'         => 'admin',
-           'guard_name'   => 'api',
-           'display_name' => 'Admin',
-           'description'  => 'Admin'
-       ]);
+        $role = Role::create([
+            'name'         => 'admin',
+            'guard_name'   => 'api',
+            'display_name' => 'Admin',
+            'description'  => 'Admin',
+        ]);
 
         $role->givePermissionTo(Permission::all());
 
@@ -28,7 +28,7 @@ class RolesTableSeeder extends Seeder
             'name'         => 'user',
             'guard_name'   => 'api',
             'display_name' => 'User',
-            'description'  => 'User'
+            'description'  => 'User',
         ]);
     }
 }

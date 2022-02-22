@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use Auth;
 use App\Models\Post;
+use Auth;
 use Illuminate\Http\Request;
-use App\Http\Controllers\DataTable\DataTableController;
 
 class PostController extends DataTableController
 {
@@ -24,14 +23,14 @@ class PostController extends DataTableController
         return  [
             'title',
             'body',
-            'status'
+            'status',
         ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'body' => 'wysiwyg',
+            'body'   => 'wysiwyg',
             'status' => ['select'=> ['draft', 'published']],
         ];
     }

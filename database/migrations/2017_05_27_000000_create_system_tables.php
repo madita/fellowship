@@ -33,7 +33,6 @@ class CreateSystemTables extends Migration
         /**
          * Blog.
          */
-
         Schema::create('posts', function (Blueprint $table) {
             $table->integer('id', true);
             $table->string('title');
@@ -43,7 +42,6 @@ class CreateSystemTables extends Migration
             $table->string('status'); //published, draft
             $table->timestamps();
         });
-
 
         /**
          *  Misc.
@@ -64,7 +62,6 @@ class CreateSystemTables extends Migration
             //$table->integer('icon_id');
             $table->timestamps();
         });
-
     }
 
     /**
@@ -74,11 +71,9 @@ class CreateSystemTables extends Migration
      */
     public function down()
     {
-
         Schema::drop('likeable');
         Schema::drop('statuses');
         Schema::drop('pages');
         Schema::drop('posts');
-
     }
 }

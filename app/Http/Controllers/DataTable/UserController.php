@@ -42,8 +42,8 @@ class UserController extends DataTableController
     {
         $this->validate($request, [
             'name'       => 'required',
-            'email'      => 'required|unique:users,email,' . $id . '|email',
-            'created_at' => 'date'
+            'email'      => 'required|unique:users,email,'.$id.'|email',
+            'created_at' => 'date',
         ]);
 
         $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
@@ -55,5 +55,4 @@ class UserController extends DataTableController
 //            'isAdmin'
 //        ];
 //    }
-
 }

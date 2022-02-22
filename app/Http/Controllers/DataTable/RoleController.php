@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers\DataTable;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Spatie\Permission\Models\Role;
-use Illuminate\Http\Request;
-use App\Http\Controllers\DataTable\DataTableController;
 
 class RoleController extends DataTableController
 {
