@@ -30,10 +30,10 @@
               <v-text-field v-model="user.email" label="Email" hide-details></v-text-field>
 
               <div class="d-flex flex-column">
-                <v-checkbox v-model="user.verified" dense label="Email Verified"></v-checkbox>
+                <v-checkbox v-model="user.email_verified_at" dense label="Email Verified"></v-checkbox>
                 <div>
                   <v-btn
-                    v-if="!user.verified"
+                    v-if="!user.email_verified_at"
                   >
                     <v-icon left small>mdi-email</v-icon>Send Verification Email
                   </v-btn>
@@ -126,10 +126,10 @@
           <v-expansion-panel-header class="title">Metadata</v-expansion-panel-header>
           <v-expansion-panel-content class="body-2">
             <span class="font-weight-bold">Created</span>
-            {{ user.created | formatDate('lll') }}
+            {{ user.created_at | formatDate('lll') }}
             <br />
             <span class="font-weight-bold">Last Sign In</span>
-            {{ user.lastSignIn | formatDate('lll') }}
+            {{ user.last_login_at | formatDate('lll') }}
           </v-expansion-panel-content>
         </v-expansion-panel>
         <v-expansion-panel>
