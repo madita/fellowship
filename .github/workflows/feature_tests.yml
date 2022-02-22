@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - features/**
+      - develop
 
 jobs:
   run-tests:
