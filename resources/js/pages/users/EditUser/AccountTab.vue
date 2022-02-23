@@ -41,14 +41,14 @@
               </div>
 
               <div class="mt-2">
-                <v-btn color="primary" @click>Save</v-btn>
+                <v-btn color="primary" @click="updateUser">Save</v-btn>
               </div>
             </div>
           </div>
         </v-card-text>
       </v-card>
 
-      <v-expansion-panels v-model="panel" multiple class="mt-3">
+      <v-expansion-panels v-if="roles.includes('admin')" v-model="panel" multiple class="mt-3">
         <v-expansion-panel>
           <v-expansion-panel-header class="title">Actions</v-expansion-panel-header>
           <v-expansion-panel-content>
@@ -170,6 +170,8 @@
 </template>
 
 <script>
+import {mapGetters} from 'vuex'
+
 export default {
   props: {
     user: {
@@ -183,7 +185,25 @@ export default {
       deleteDialog: false,
       disableDialog: false
     }
-  },
+  },methods: {
+      updateUser() {
+          axios.patch(`/api/datatable/users/${this.user.id}`, this.user).then(() => {
+              console.log('done')
+          }).catch((error) => {
+              console.log(error);
+              if (error.response.status === 422) {
+                  this.editing.errors = error.response.data
+              }
+          })
+      }
+    },
+    computed: {
+        ...mapGetters({
+            authenticated: 'auth/authenticated',
+            // user: 'auth/user',
+            roles: 'auth/roles',
+        })
+    },
 
     mounted() {
 
