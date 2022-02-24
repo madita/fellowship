@@ -37,6 +37,17 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'isAdmin',
+        'initials'
+    ];
+
+
+    /**
      * The attributes that should be hidden for arrays.
      *
      * @var array
@@ -54,6 +65,46 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Determine if the user is an administrator.
+     *
+     * @return bool
+     */
+    public function isAdmin()
+    {
+        return $this->hasRole('admin');
+    }
+
+    /**
+     * Determine if the user is an administrator.
+     *
+     * @return bool
+     */
+    public function getIsAdminAttribute()
+    {
+        return $this->isAdmin();
+    }
+
+    public function getInitals()
+    {
+        if ($this->name) {
+            $initials = explode(" ", strtoupper($this->name));
+            $initial = substr($initials[0], 0, 1);
+            if (count($initials) > 1) {
+                $initial .= substr($initials[count($initials) - 1], 0, 1);
+            }
+            return $initial;
+        }
+
+        return strtoupper(substr($this->username, 0, 1));
+    }
+
+
+    public function getInitialsAttribute()
+    {
+        return $this->getInitals();
+    }
 
     public function receivesBroadcastNotificationsOn()
     {
