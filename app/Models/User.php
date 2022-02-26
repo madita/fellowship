@@ -11,8 +11,9 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
     use HasApiTokens;
     use HasFactory;
@@ -42,6 +43,7 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array
      */
     protected $appends = [
+        'avatar',
         'isAdmin',
         'initials'
     ];
@@ -104,6 +106,24 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getInitialsAttribute()
     {
         return $this->getInitals();
+    }
+
+    public function getAvatar()
+    {
+        return $this->getFirstMediaUrl('avatars', 'thumb');
+    }
+
+    public function getAvatarAttribute()
+    {
+        return $this->getAvatar();
+    }
+
+
+    public function registerMediaConversions(Media $media = null) : void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(50)
+            ->height(50);
     }
 
     public function receivesBroadcastNotificationsOn()
