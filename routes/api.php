@@ -31,6 +31,8 @@ Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 
     Route::delete('/notification/delete/{id}', 'App\Http\Controllers\NotificationController@notificationdelete');
     Route::get('/notification/allasread', 'App\Http\Controllers\NotificationController@notificationread');
     Route::get('/notification/markasread/{id}', 'App\Http\Controllers\NotificationController@notificationsingleread');
+
+    Route::post('/avatar', 'App\Http\Controllers\UserController@uploadAvatar');
 });
 
 Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function () {

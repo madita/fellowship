@@ -23,7 +23,7 @@ import './plugins/moment'
 import './plugins/lodash'
 
 //HELPERS
-import helpers from './helper/permission'
+import helpers from './helpers'
 
 // FILTERS
 import './filters/capitalize'

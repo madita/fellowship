@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class LoginController extends Controller
@@ -45,21 +45,11 @@ class LoginController extends Controller
         return redirect('/auth/signin');
     }
 
-//    protected function sendLoginResponse(Request $request)
-//    {
-//        $request->session()->regenerate();
-//
-//        $this->clearLoginAttempts($request);
-//
-//
-//        dd($this->authenticated($request, $this->guard()->user()));
-//
-////        if ($response = $this->authenticated($request, $this->guard()->user())) {
-////            return $response;
-////        }
-////
-////        return $request->wantsJson()
-////            ? new JsonResponse([], 204)
-////            : redirect()->intended($this->redirectPath());
-//    }
+    public function authenticated(Request $request, $user)
+    {
+        $user->update([
+            'last_login_at' => Carbon::now()->toDateTimeString(),
+            'last_login_ip' => $request->getClientIp(),
+        ]);
+    }
 }
