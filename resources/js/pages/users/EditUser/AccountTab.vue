@@ -25,9 +25,9 @@
                                 max-height="90"
                             ></v-img>
                             <!--                <v-text-field label="Select Image" @click='pickFile' v-model='avatar' prepend-icon='attach_file'></v-text-field>-->
-                            <image-upload v-show="false" name="avatar" class="mr-1" @loaded="onLoad"></image-upload>
+                            <image-upload v-show="false" ref="avatar" name="avatar" class="mr-1" @loaded="onLoad"></image-upload>
 
-                            <v-btn class="mt-1" small>Edit Avatar</v-btn>
+                            <v-btn class="mt-1" @click="trigger" small>Edit Avatar</v-btn>
                         </div>
                         <div class="flex-grow-1 pt-2 pa-sm-2">
                             <v-text-field v-model="user.name" label="Display name" placeholder="name"></v-text-field>
@@ -204,8 +204,7 @@ export default {
         }
     }, methods: {
         onLoad(avatar) {
-            console.log(avatar)
-            this.avatar = avatar.src;
+            this.user.avatar = avatar.src;
             this.persist(avatar.file);
         },
 
@@ -213,14 +212,15 @@ export default {
             let data = new FormData();
 
             data.append('avatar', avatar);
-            this.user.file = data;
-
             axios.post(`/api/account/avatar`, data)
-                .then(() => flash('Avatar uploaded!'));
+                .then(() => {});
+        },
+        trigger () {
+            this.$refs.avatar.$el.click()
         },
         updateUser() {
             axios.patch(`/api/datatable/users/${this.user.id}`, this.user).then(() => {
-                console.log('done')
+                // console.log('done')
             }).catch((error) => {
                 console.log(error);
                 if (error.response.status === 422) {

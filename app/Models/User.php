@@ -110,7 +110,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function getAvatar()
     {
-        return $this->getFirstMediaUrl('avatars', 'thumb');
+        return $this->getMedia('avatars')->last()->getFullUrl('thumb');
     }
 
     public function getAvatarAttribute()
@@ -122,8 +122,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function registerMediaConversions(Media $media = null) : void
     {
         $this->addMediaConversion('thumb')
-            ->width(50)
-            ->height(50);
+            ->width(100)
+            ->height(100);
     }
 
     public function receivesBroadcastNotificationsOn()
