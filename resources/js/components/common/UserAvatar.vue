@@ -1,6 +1,6 @@
 <template>
     <v-avatar :color="background" size="45">
-        <v-img v-if="user.avatar2" :src="user.avatar"></v-img>
+        <v-img v-if="user.avatar" :src="user.avatar"></v-img>
         <span v-else :style="styleObject" :class="user.initials.length === 1 ? 'text-h4' : 'text-h5'">{{user.initials}}</span>
     </v-avatar>
 </template>
