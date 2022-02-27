@@ -8,10 +8,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
@@ -45,9 +45,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     protected $appends = [
         'avatar',
         'isAdmin',
-        'initials'
+        'initials',
     ];
-
 
     /**
      * The attributes that should be hidden for arrays.
@@ -91,17 +90,17 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function getInitals()
     {
         if ($this->name) {
-            $initials = explode(" ", strtoupper($this->name));
+            $initials = explode(' ', strtoupper($this->name));
             $initial = substr($initials[0], 0, 1);
             if (count($initials) > 1) {
                 $initial .= substr($initials[count($initials) - 1], 0, 1);
             }
+
             return $initial;
         }
 
         return strtoupper(substr($this->username, 0, 1));
     }
-
 
     public function getInitialsAttribute()
     {
@@ -110,9 +109,10 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function getAvatar()
     {
-        if(!count($this->getMedia('avatars'))) {
-            return "";
+        if (!count($this->getMedia('avatars'))) {
+            return '';
         }
+
         return $this->getMedia('avatars')->last()->getFullUrl('thumb');
     }
 
@@ -121,8 +121,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->getAvatar();
     }
 
-
-    public function registerMediaConversions(Media $media = null) : void
+    public function registerMediaConversions(Media $media = null): void
     {
         $this->addMediaConversion('thumb')
             ->width(100)

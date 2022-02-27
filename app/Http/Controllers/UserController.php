@@ -17,7 +17,7 @@ class UserController extends Controller
     public function uploadAvatar()
     {
         request()->validate([
-            'avatar' => ['required', 'image']
+            'avatar' => ['required', 'image'],
         ]);
 
         $user = auth()->user();
