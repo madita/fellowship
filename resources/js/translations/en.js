@@ -156,6 +156,7 @@ export default {
         others: 'Others',
         email: 'Email',
         chat: 'Chat',
+        events: 'Events',
         todo: 'To Do',
         board: 'Task Board',
         users: 'Users',
