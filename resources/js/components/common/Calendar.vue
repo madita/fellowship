@@ -20,7 +20,7 @@
                     @click="prev"
                 >
                     <v-icon small>
-                        fas fa-angle-left
+                        mdi-chevron-left
                     </v-icon>
                 </v-btn>
                 <v-btn
@@ -31,7 +31,7 @@
                     @click="next"
                 >
                     <v-icon small>
-                        faf fa-angle-right
+                        mdi-chevron-right
                     </v-icon>
                 </v-btn>
                 <v-toolbar-title v-if="$refs.calendar">
@@ -51,24 +51,24 @@
                         >
                             <span>{{ typeToLabel[type] }}</span>
                             <v-icon right>
-                                fas fa-chevron-down
+                                mdi-chevron-down
                             </v-icon>
                         </v-btn>
                     </template>
                     <v-list>
-                        <v-list-item @click="type = 'day'">
+                        <v-list-item @click="changeType('day')">
                             <v-list-item-title>Day</v-list-item-title>
                         </v-list-item>
-                        <v-list-item @click="type = 'week'">
+                        <v-list-item @click="changeType('week')">
                             <v-list-item-title>Week</v-list-item-title>
                         </v-list-item>
-                        <v-list-item @click="type = 'month'">
+                        <v-list-item @click="changeType('month')">
                             <v-list-item-title>Month</v-list-item-title>
                         </v-list-item>
-                        <v-list-item @click="type = '4day'">
+                        <v-list-item @click="changeType('4day')">
                             <v-list-item-title>4 days</v-list-item-title>
                         </v-list-item>
-                        <v-list-item @click="view = 'list'">
+                        <v-list-item @click="listView()">
                             <v-list-item-title>List</v-list-item-title>
                         </v-list-item>
                     </v-list>
@@ -76,27 +76,30 @@
             </v-toolbar>
         </v-sheet>
         <v-sheet height="600">
-            <template v-if="view == 'list'">
-                <ul>
-                    <li v-for="event in $refs.calendar.getVisibleEvents()">
-                        {{ event.input.name }}
-                    </li>
-                </ul>
-            </template>
+            <v-list-item-group
+                color="primary"
+                v-if="view === 'list'">
+                <v-list-item v-for="event in this.events" :key="`event-${event.id}`" two-line
+                             @click="$router.push({name: 'event-show', params: { id: event.id },})">
+                    <v-list-item-content>
+                        <v-list-item-title>{{ event.name }}</v-list-item-title>
+                        <v-list-item-subtitle>{{ event.start }} - {{ event.end }}</v-list-item-subtitle>
+                    </v-list-item-content>
+                </v-list-item>
+            </v-list-item-group>
             <v-calendar
-                v-show="view !='list'"
+                v-show="view !== 'list'"
                 ref="calendar"
                 v-model="focus"
                 color="primary"
                 :weekdays="weekday"
-                :events="events"
+                :events="getEvents"
                 locale="de"
                 :event-color="getEventColor"
                 :type="type"
                 @click:event="showEvent"
                 @click:more="viewDay"
                 @click:date="viewDay"
-                @change="updateRange"
             ></v-calendar>
             <v-menu
                 v-model="selectedOpen"
@@ -113,20 +116,25 @@
                         :color="selectedEvent.color"
                         dark
                     >
-                        <v-btn icon>
-                            <v-icon>fas fa-edit</v-icon>
-                        </v-btn>
                         <v-toolbar-title v-html="selectedEvent.name"></v-toolbar-title>
                         <v-spacer></v-spacer>
-                        <v-btn icon>
-                            <v-icon>fas fa-heart</v-icon>
-                        </v-btn>
-                        <v-btn icon>
-                            <v-icon>mdi-dots-vertical</v-icon>
-                        </v-btn>
+
                     </v-toolbar>
                     <v-card-text>
-                        <span v-html="selectedEvent.details"></span>
+                        <v-row>
+                            <v-col cols="8"><span v-html="selectedEvent.description"></span></v-col>
+                            <v-col cols="4"><span>{{
+                                    selectedEvent.startDate | formatDate('DD.MM.YYYY')
+                                }} at {{ selectedEvent.startTime }}
+                                </span>
+                                <span>
+                                {{
+                                        selectedEvent.endDate | formatDate('DD.MM.YYYY')
+                                    }} at {{ selectedEvent.endTime }}</span>
+                            </v-col>
+
+                        </v-row>
+
                     </v-card-text>
                     <v-card-actions>
                         <v-btn
@@ -135,6 +143,13 @@
                             @click="selectedOpen = false"
                         >
                             Cancel
+                        </v-btn>
+                        <v-btn
+                            text
+                            color="secondary"
+                            @click="$router.push({name: 'event-show', params: { id: selectedEvent.id },})"
+                        >
+                            Register
                         </v-btn>
                     </v-card-actions>
                 </v-card>
@@ -155,7 +170,8 @@ export default {
             month: 'Month',
             week: 'Week',
             day: 'Day',
-            '4day': '4 Days'
+            '4day': '4 Days',
+            category: 'List'
         },
         selectedEvent: {},
         selectedElement: null,
@@ -165,14 +181,11 @@ export default {
         names: ['Meeting', 'Holiday', 'PTO', 'Travel', 'Event', 'Birthday', 'Conference', 'Party'],
     }),
     mounted() {
-        console.log('events', this.data);
         this.events = this.data.map(item => {
-            console.log(item);
             const start = this.getStart(item)
             const end = this.getEnd(item)
-            return {name: item.title, start: start, end: end, color: "blue"}
+            return {...item, name: item.title, start: start, end: end, color: "blue"}
         });
-        console.log('test', this.$refs.calendar.value)
         this.$refs.calendar.checkChange()
     },
     methods: {
@@ -192,6 +205,14 @@ export default {
         next() {
             this.$refs.calendar.next()
         },
+        listView() {
+            this.type = 'category';
+            this.view = 'list';
+        },
+        changeType(type) {
+            this.type = type;
+            this.view = 'calendar';
+        },
         showEvent({nativeEvent, event}) {
             const open = () => {
                 this.selectedEvent = event
@@ -209,32 +230,6 @@ export default {
             }
 
             nativeEvent.stopPropagation()
-        },
-        updateRange({start, end}) {
-            // const events = []
-            //
-            // const min = new Date(`${start.date}T00:00:00`)
-            // const max = new Date(`${end.date}T23:59:59`)
-            // const days = (max.getTime() - min.getTime()) / 86400000
-            // const eventCount = this.rnd(days, days + 20)
-            //
-            // for (let i = 0; i < eventCount; i++) {
-            //     const allDay = this.rnd(0, 3) === 0
-            //     const firstTimestamp = this.rnd(min.getTime(), max.getTime())
-            //     const first = new Date(firstTimestamp - (firstTimestamp % 900000))
-            //     const secondTimestamp = this.rnd(2, allDay ? 288 : 8) * 900000
-            //     const second = new Date(first.getTime() + secondTimestamp)
-            //
-            //     events.push({
-            //         name: this.names[this.rnd(0, this.names.length - 1)],
-            //         start: first,
-            //         end: second,
-            //         color: this.colors[this.rnd(0, this.colors.length - 1)],
-            //         timed: !allDay,
-            //     })
-            // }
-            //
-            // this.events = events
         },
         rnd(a, b) {
             return Math.floor((b - a + 1) * Math.random()) + a
@@ -262,5 +257,14 @@ export default {
             return end;
         }
     },
+    computed: {
+        getEvents() {
+            return this.data.map(item => {
+                const start = this.getStart(item)
+                const end = this.getEnd(item)
+                return {...item, name: item.title, start: start, end: end, color: "blue"}
+            });
+        }
+    }
 }
 </script>

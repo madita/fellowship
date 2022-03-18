@@ -49,7 +49,9 @@ class EventController extends Controller
                 $event->cover_position = request()->get("cover_position");
             }
         }
-        $event->user_id = auth()->user()->id;
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        $event->user_id = $user->id;
 
         $event->type = request()->get("type");
 
@@ -92,7 +94,9 @@ class EventController extends Controller
     public function show(Event $event, $slug = null)
     {
         if (auth()->user()) {
-            $isGoing = DB::table("event_guests")->where("event_id", "=", $event->id)->where("user_id", "=", auth()->user()->id)->first();
+            /** @var \App\Models\User $user */
+            $user = auth()->user();
+            $isGoing = DB::table("event_guests")->where("event_id", "=", $event->id)->where("user_id", "=", $user->id)->first();
         }
 
         return response()->json([
@@ -152,26 +156,18 @@ class EventController extends Controller
 
         $eventGuest = $user->eventGuest()->where('event_id', $event->id)->first();
 
-        if($eventGuest) {
+        if ($eventGuest) {
             $event->allUsers()->updateExistingPivot($user->id, ['type' => $answer]);
         } else {
             $event->allUsers()->attach($user->id, ['type' => $answer]);
         }
 
-
-
-
-//        $check = DB::table("event_guests")->where("user_id", "=", auth()->user()->id)->where("event_id", "=", $event)->first();
-//
-//        if (!is_null($check)) {
-//            if ($check->type != $answer) {
-//                DB::table("event_guests")->where("user_id", "=", auth()->user()->id)->where("event_id", "=", $event)->update(["type" => $answer]);
-//            }
-//        } else {
-//            DB::table("event_guests")->insert(["user_id" => auth()->user()->id, "event_id" => $event->id, "type" => $answer]);
-//        }
-
-
-        return response()->json(['ok']);
+        //        return response()->json($user->eventGuest()->find($event->id)->pivot);
+        return response()->json(
+            [
+                'going'    => $event->going()->get(),
+                'notgoing' => $event->notgoing()->get(),
+                'maybe'    => $event->maybegoing()->get()
+        ]);
     }
 }

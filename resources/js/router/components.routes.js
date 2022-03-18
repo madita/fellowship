@@ -12,7 +12,7 @@ export default [{
 },
     {
         path: '/events',
-        name: 'event',
+        name: 'events',
         component: () => import(/* webpackChunkName: "events" */ '@/components/event/EventPage.vue'),
         meta: {
             middleware: [
@@ -22,7 +22,7 @@ export default [{
     },
     {
         path: '/events/create',
-        name: 'event',
+        name: 'event-create',
         component: () => import(/* webpackChunkName: "event-create" */ '@/components/event/EventForm.vue'),
         meta: {
             middleware: [
@@ -42,7 +42,7 @@ export default [{
     },
     {
         path: '/events/:id/edit',
-        name: 'event',
+        name: 'event-edit',
         component: () => import(/* webpackChunkName: "event-edit" */ '@/components/event/EventForm.vue'),
         meta: {
             middleware: [

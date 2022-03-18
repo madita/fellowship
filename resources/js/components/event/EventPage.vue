@@ -1,6 +1,8 @@
 <template>
   <div class="flex-grow-1">
-      <calendar v-if="!loading" :data="events"></calendar>
+      <v-container>
+          <calendar v-if="!loading" :data="events"></calendar>
+      </v-container>
   </div>
 </template>
 

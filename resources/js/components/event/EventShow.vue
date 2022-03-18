@@ -1,41 +1,48 @@
 <template>
     <div class="flex-grow-1 event-show">
 
-        <v-sheet
-            class="event-hero"
-            color="primary"
-            width="100%"
-            height="50vh"
-        >
+        <v-skeleton-loader
+            v-if="isLoading"
+            class="ma-10"
+            type="card-avatar, article, actions"
+        ></v-skeleton-loader>
 
-            <v-container class="fill-height pa-9">
-                <v-row>
-                    <v-col><span>{{
-                            event.startDate | formatDate('DD.MM.YYYY')
-                        }} at {{ event.startTime }} - {{
-                            event.endDate | formatDate('DD.MM.YYYY')
-                        }} at {{ event.endTime }}</span>
+        <template v-else>
+            <v-sheet
+                class="event-hero"
+                color="primary"
+                width="100%"
+                height="50vh"
+            >
 
-                        <h1 class="event-title">{{ event.title }}</h1></v-col>
-                </v-row>
-            </v-container>
+                <v-container class="fill-height pa-9">
+                    <v-row>
+                        <v-col><span>{{
+                                event.startDate | formatDate('DD.MM.YYYY')
+                            }} at {{ event.startTime }} - {{
+                                event.endDate | formatDate('DD.MM.YYYY')
+                            }} at {{ event.endTime }}</span>
 
-        </v-sheet>
+                            <h1 class="event-title">{{ event.title }}</h1></v-col>
+                    </v-row>
+                </v-container>
 
-        <v-container>
-            <div class="calendar-day">
-                <div class="calendar-day-top"></div>
-                <div class="calendar-day-bottom">{{ event.startDate | formatDate('D') }}</div>
-            </div>
+            </v-sheet>
 
-            <v-row justify="center">
-                <v-col cols="8">
-                    <div v-html="event.description"></div>
-                </v-col>
-                <v-col v-if="!isLoading" cols="4" class="align-content-end">
-                    <v-btn :disabled="getIsGoing('yes')" @click="register('yes')">Yes</v-btn>
-                    <v-btn :disabled="getIsGoing('no')" @click="register('no')">No</v-btn>
-                    <v-btn :disabled="getIsGoing('maybe')" @click="register('maybe')">Maybe</v-btn>
+            <v-container>
+                <div class="calendar-day">
+                    <div class="calendar-day-top"></div>
+                    <div class="calendar-day-bottom">{{ event.startDate | formatDate('D') }}</div>
+                </div>
+
+                <v-row justify="center">
+                    <v-col cols="8">
+                        <div v-html="event.description"></div>
+                    </v-col>
+                    <v-col cols="4" class="align-content-end">
+                        <v-btn :disabled="getIsGoing('yes')" @click="register('yes')">Yes</v-btn>
+                        <v-btn :disabled="getIsGoing('no')" @click="register('no')">No</v-btn>
+                        <v-btn :disabled="getIsGoing('maybe')" @click="register('maybe')">Maybe</v-btn>
 
                     <v-subheader>Is Going ({{ eventData.going.length }})</v-subheader>
                     <user-avatar v-for="user in eventData.going" :key="`going-${user.id}`" :user="user"></user-avatar>
@@ -44,9 +51,11 @@
                     <v-subheader>Not Going ({{ eventData.notgoing.length }})</v-subheader>
                     <user-avatar v-for="user in eventData.notgoing" :key="`notgoing-${user.id}`" :user="user"></user-avatar>
 
-                </v-col>
-            </v-row>
-        </v-container>
+                    </v-col>
+                </v-row>
+            </v-container>
+        </template>
+
     </div>
 </template>
 
@@ -70,13 +79,11 @@ export default {
             message: ""
         }
     },
-
     methods: {
         getEvent() {
             this.isLoading = true
             return axios.get(`/api/events/${this.id}`).then((response) => {
                 this.eventData = response.data.data;
-                console.log(this.eventData.isGoing)
                 this.event = response.data.data.event;
 
                 this.isLoading = false
@@ -84,7 +91,11 @@ export default {
         },
         register(answer) {
             axios.get(`${this.endpoint}/${this.id}/going/${answer}`).then((response) => {
-                // this.page = {title:"", body:""};
+                this.eventData.isGoing.type = answer;
+                this.eventData.going = response.data.going
+                this.eventData.notgoing = response.data.notgoing
+                this.eventData.maybe = response.data.maybe
+
                 this.message = "Answer saved"
             }).catch((error) => {
                 if (error.response.status === 422) {
