@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 class CreateTaxonomieTable extends Migration
 {
@@ -13,8 +13,7 @@ class CreateTaxonomieTable extends Migration
      */
     public function up()
     {
-        Schema::create('terms', function(Blueprint $table)
-        {
+        Schema::create('terms', function (Blueprint $table) {
             $table->increments('id');
 
             $table->string('name')->nullable()->unique();
@@ -28,8 +27,7 @@ class CreateTaxonomieTable extends Migration
             $table->softDeletes();
         });
 
-        Schema::create('taxonomies', function(Blueprint $table)
-        {
+        Schema::create('taxonomies', function (Blueprint $table) {
             $table->increments('id');
 
             $table->integer('term_id')
@@ -53,8 +51,7 @@ class CreateTaxonomieTable extends Migration
             $table->unique(['term_id', 'taxonomy']);
         });
 
-        Schema::create('taxables', function(Blueprint $table)
-        {
+        Schema::create('taxables', function (Blueprint $table) {
             $table->integer('taxonomy_id')
                 ->nullable()
                 ->unsigned()

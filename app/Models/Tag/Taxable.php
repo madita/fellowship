@@ -1,14 +1,11 @@
-<?php namespace App\Models\Tag;
+<?php
+
+namespace App\Models\Tag;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Cviebrock\EloquentSluggable\Sluggable;
-use App\Models\Tag\Taxonomy;
-
 
 class Taxable extends Model
 {
-
     protected $table = 'taxables';
     /**
      * @inheritdoc
@@ -16,7 +13,7 @@ class Taxable extends Model
     protected $fillable = [
         'taxonomy_id',
         'taxable_id',
-        'taxable_type'
+        'taxable_type',
     ];
 
     /**
@@ -26,6 +23,7 @@ class Taxable extends Model
     {
         return $this->morphTo();
     }
+
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
