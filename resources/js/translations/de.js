@@ -156,6 +156,7 @@ export default {
     'others': 'Andere',
     'email': 'Email',
     'chat': 'Plaudern',
+    'events': 'Termine',
     'todo': 'Machen',
     'board': 'Task Board',
     'users': 'Benutzer',

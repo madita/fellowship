@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Chat\Message;
+use App\Models\Event\Event;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -146,5 +147,12 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function messages()
     {
         return $this->hasMany(Message::class);
+    }
+
+    public function eventGuest()
+    {
+        return $this->belongsToMany(Event::class, 'event_guests')
+            ->withPivot('type')
+            ->withTimestamps();
     }
 }
