@@ -149,8 +149,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->hasMany(Message::class);
     }
 
-    public function eventGuest(){
-        return $this->belongsToMany(Event::class, "event_guests")
+    public function eventGuest()
+    {
+        return $this->belongsToMany(Event::class, 'event_guests')
             ->withPivot('type')
             ->withTimestamps();
     }

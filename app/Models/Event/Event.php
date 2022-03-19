@@ -8,14 +8,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Event extends Model
 {
-    use Sluggable, SoftDeletes;
+    use Sluggable;
+    use SoftDeletes;
 
     public function sluggable(): array
     {
         return [
             'slug' => [
-                'source' => 'title'
-            ]
+                'source' => 'title',
+            ],
         ];
     }
 
@@ -24,7 +25,8 @@ class Event extends Model
         return $this->hasOne("App\\Models\\Event\EventDetail");
     }
 
-    public function user(){
+    public function user()
+    {
         return $this->belongsTo("App\\Models\User");
     }
 
@@ -32,12 +34,12 @@ class Event extends Model
 //        return $this->hasMany("App\\Models\\Post")->orderBy("created_at", "desc")->with("comments")->withTrashed();
 //    }
 
-    public function getImage(){
-
-        if($this->image){
-            return "/uploads/" . $this->image;
-        }else{
-            return "img/cover.jpeg";
+    public function getImage()
+    {
+        if ($this->image) {
+            return '/uploads/'.$this->image;
+        } else {
+            return 'img/cover.jpeg';
         }
     }
 
@@ -63,24 +65,28 @@ class Event extends Model
 //        return count(array_filter($images));
 //    }
 
-    public function going(){
-        return $this->belongsToMany("App\\Models\\User", "event_guests")->wherePivot("type", "=", "yes");
+    public function going()
+    {
+        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'yes');
     }
 
-    public function notgoing(){
-        return $this->belongsToMany("App\\Models\\User", "event_guests")->wherePivot("type", "=", "no");
+    public function notgoing()
+    {
+        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'no');
     }
 
-    public function maybegoing(){
-        return $this->belongsToMany("App\\Models\\User", "event_guests")->wherePivot("type", "=", "maybe");
+    public function maybegoing()
+    {
+        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'maybe');
     }
 
 //    public function categories(){
 //        return $this->belongsToMany("App\\Models\\Category");
 //    }
 
-    public function allUsers(){
-        return $this->belongsToMany("App\\Models\\User", "event_guests")
+    public function allUsers()
+    {
+        return $this->belongsToMany('App\\Models\\User', 'event_guests')
             ->withPivot('type')
             ->withTimestamps();
     }

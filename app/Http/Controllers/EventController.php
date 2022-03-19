@@ -26,50 +26,50 @@ class EventController extends Controller
     public function index()
     {
         $events = Event::all();
+
         return response()->json([
-                                    'data' => [
-                                        'events' => $events],]);
+            'data' => [
+                'events' => $events, ], ]);
     }
 
     public function store(Request $request)
     {
         $this->validate($request, [
-            'title' => 'required',//            'email'      => 'required|unique:users,email,'.$id.'|email',
+            'title' => 'required', //            'email'      => 'required|unique:users,email,'.$id.'|email',
         ]);
 
+        $event = new Event();
+        $event->title = request()->get('title');
+        $event->description = request()->get('description');
 
-        $event              = new Event();
-        $event->title       = request()->get("title");
-        $event->description = request()->get("description");
+        if (request()->get('image')) {
+            $event->image = request()->get('image');
 
-        if (request()->get("image")) {
-            $event->image = request()->get("image");
-
-            if (request()->get("cover_position")) {
-                $event->cover_position = request()->get("cover_position");
+            if (request()->get('cover_position')) {
+                $event->cover_position = request()->get('cover_position');
             }
         }
         /** @var \App\Models\User $user */
         $user = auth()->user();
         $event->user_id = $user->id;
 
-        $event->type = request()->get("type");
+        $event->type = request()->get('type');
 
-        if ($dates = request()->get("dates")) {
+        if ($dates = request()->get('dates')) {
             $dates[1] = isset($dates[1]) ? $dates[1] : $dates[0];
-            $start    = ($dates[1] > $dates[0]) ? $dates[0] : $dates[1];
-            $end      = ($dates[1] > $dates[0]) ? $dates[1] : $dates[0];
+            $start = ($dates[1] > $dates[0]) ? $dates[0] : $dates[1];
+            $end = ($dates[1] > $dates[0]) ? $dates[1] : $dates[0];
 
             $event->startDate = $start;
-            $event->endDate   = $end;
+            $event->endDate = $end;
         }
 
-        if (request()->get("startTime")) {
-            $event->startTime = request()->get("startTime");
+        if (request()->get('startTime')) {
+            $event->startTime = request()->get('startTime');
         }
 
-        if (request()->get("endTime")) {
-            $event->endTime = request()->get("endTime");
+        if (request()->get('endTime')) {
+            $event->endTime = request()->get('endTime');
         }
 
         $event->save();
@@ -79,9 +79,9 @@ class EventController extends Controller
         //            }
 
         return response()->json([
-                                    'data' => [
-                                        'message' => 'Event created',
-                                        'event'   => $event],]);
+            'data' => [
+                'message' => 'Event created',
+                'event'   => $event, ], ]);
     }
 
     /**
@@ -96,39 +96,36 @@ class EventController extends Controller
         if (auth()->user()) {
             /** @var \App\Models\User $user */
             $user = auth()->user();
-            $isGoing = DB::table("event_guests")->where("event_id", "=", $event->id)->where("user_id", "=", $user->id)->first();
+            $isGoing = DB::table('event_guests')->where('event_id', '=', $event->id)->where('user_id', '=', $user->id)->first();
         }
 
         return response()->json([
-                                    'data' => [
-                                        'event'    => $event,
-                                        'going'    => $event->going()->get(),
-                                        'notgoing' => $event->notgoing()->get(),
-                                        'maybe'    => $event->maybegoing()->get(),
-                                        'isGoing'  => $isGoing],]);
-
+            'data' => [
+                'event'    => $event,
+                'going'    => $event->going()->get(),
+                'notgoing' => $event->notgoing()->get(),
+                'maybe'    => $event->maybegoing()->get(),
+                'isGoing'  => $isGoing, ], ]);
     }
-
 
     public function edit(Event $event)
     {
         return response()->json([
-                                    'data' => [
-                                        'event' => $event],]);
+            'data' => [
+                'event' => $event, ], ]);
     }
-
 
     public function update(Request $request, Event $event)
     {
         $this->validate($request, [
-            'title' => 'required',//            'email'      => 'required|unique:users,email,'.$id.'|email',
+            'title' => 'required', //            'email'      => 'required|unique:users,email,'.$id.'|email',
         ]);
 
         $event->update($request->fill());
 
         return response()->json([
-                                    'data' => [
-                                        'event' => $event],]);
+            'data' => [
+                'event' => $event, ], ]);
     }
 
     /**
@@ -146,7 +143,6 @@ class EventController extends Controller
 
         return response()->json(['deleted']);
     }
-
 
     public function isGoing(Event $event, $answer)
     {
@@ -167,7 +163,8 @@ class EventController extends Controller
             [
                 'going'    => $event->going()->get(),
                 'notgoing' => $event->notgoing()->get(),
-                'maybe'    => $event->maybegoing()->get()
-        ]);
+                'maybe'    => $event->maybegoing()->get(),
+            ]
+        );
     }
 }
