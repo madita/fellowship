@@ -193,6 +193,9 @@ export default {
         adminUsers: 'Users',
         adminPages: 'Pages',
         adminPosts: 'Posts',
+        adminTags: 'Tags',
+        adminTaxonomie: 'Taxonomie',
+        adminTerms: 'Terms',
         adminAnnouncement: 'Announcement'
 
     },
