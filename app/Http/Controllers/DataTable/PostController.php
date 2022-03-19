@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Models\Post;
-use Auth;
 use Illuminate\Http\Request;
 
 class PostController extends DataTableController
@@ -15,7 +14,7 @@ class PostController extends DataTableController
 
     public function store(Request $request)
     {
-        Auth::user()->posts()->create($request->only($this->getUpdatableColumns()));
+        auth()->user()->posts()->create($request->only($this->getUpdatableColumns()));
     }
 
     public function getUpdatableColumns()

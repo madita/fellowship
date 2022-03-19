@@ -192,6 +192,9 @@ export default {
     'adminUsers': 'Benutzer',
     'adminPages': 'Seiten',
     'adminPosts': 'Beiträge',
+    'adminTags': 'Schlagworte',
+    'adminTaxonomie': 'Taxonomie',
+    'adminTerms': 'Begriffe',
     'adminAnnouncement': 'Verkündung'
   },
   '$vuetify': {
