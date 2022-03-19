@@ -4,7 +4,6 @@ namespace App\Http\Controllers\DataTable;
 
 use App\Models\Tag\Taxonomy;
 use Illuminate\Http\Request;
-use App\Http\Controllers\DataTable\DataTableController;
 
 class TaxonomyController extends DataTableController
 {
@@ -22,14 +21,14 @@ class TaxonomyController extends DataTableController
     {
         return  [
             'taxonomy',
-            'desc'
+            'desc',
         ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'body' => 'textarea',
+            'body'   => 'textarea',
             'status' => 'radio',
         ];
     }

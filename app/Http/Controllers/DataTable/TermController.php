@@ -4,7 +4,6 @@ namespace App\Http\Controllers\DataTable;
 
 use App\Models\Tag\Term;
 use Illuminate\Http\Request;
-use App\Http\Controllers\DataTable\DataTableController;
 
 class TermController extends DataTableController
 {
@@ -23,7 +22,7 @@ class TermController extends DataTableController
         return  [
             'name',
             'slug',
-            'desc'
+            'desc',
         ];
     }
 

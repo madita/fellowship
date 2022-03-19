@@ -1,8 +1,9 @@
-<?php namespace App\Models\Tag;
+<?php
+
+namespace App\Models\Tag;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Cviebrock\EloquentSluggable\Sluggable;
 
 class Taxonomy extends Model
 {
@@ -33,9 +34,11 @@ class Taxonomy extends Model
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function term() {
+    public function term()
+    {
         return $this->belongsTo(Term::class);
     }
+
     /**
      * Get the parent taxonomy.
      *
@@ -45,6 +48,7 @@ class Taxonomy extends Model
     {
         return $this->belongsTo(Taxonomy::class, 'parent_id');
     }
+
     /**
      * Get the children taxonomies.
      *
@@ -59,6 +63,7 @@ class Taxonomy extends Model
     {
         return $this->children()->with('childrenRecursive');
     }
+
     /**
      * An example for a related posts model.
      *
@@ -78,43 +83,49 @@ class Taxonomy extends Model
     {
         return $this->morphedByMany('App\Models\Page', 'taxable', 'taxables');
     }
+
     /**
      * Scope taxonomies.
      *
-     * @param  object  $query
-     * @param  string  $taxonomy
+     * @param object $query
+     * @param string $taxonomy
+     *
      * @return mixed
      */
     public function scopeTaxonomy($query, $taxonomy)
     {
         return $query->where('taxonomy', $taxonomy);
     }
+
     /**
      * Scope terms.
      *
-     * @param  object  $query
-     * @param  string  $term
-     * @param  string  $taxonomy
+     * @param object $query
+     * @param string $term
+     * @param string $taxonomy
+     *
      * @return mixed
      */
     public function scopeTerm($query, $term, $taxonomy = 'major')
     {
-        return $query->whereHas('term', function($q) use($term, $taxonomy) {
+        return $query->whereHas('term', function ($q) use ($term) {
             $q->where('name', $term);
         });
     }
+
     /**
      * A simple search scope.
      *
-     * @param  object  $query
-     * @param  string  $searchTerm
-     * @param  string  $taxonomy
+     * @param object $query
+     * @param string $searchTerm
+     * @param string $taxonomy
+     *
      * @return mixed
      */
     public function scopeSearch($query, $searchTerm, $taxonomy = 'major')
     {
-        return $query->whereHas('term', function($q) use($searchTerm, $taxonomy) {
-            $q->where('name', 'like', '%'. $searchTerm .'%');
+        return $query->whereHas('term', function ($q) use ($searchTerm) {
+            $q->where('name', 'like', '%'.$searchTerm.'%');
         });
     }
 }
