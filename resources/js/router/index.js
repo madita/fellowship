@@ -42,6 +42,14 @@ export const routes = [{
         component: () => import(/* webpackChunkName: "blank" */ '@/pages/BlankPage.vue')
     },
     {
+        path: '/p/:slug',
+        name: 'pages',
+        component: () => import(/* webpackChunkName: "landing-pages" */ '@/pages/landing/Pages.vue'),
+        meta: {
+            layout: 'landing'
+        }
+    },
+    {
         path: '*',
         name: 'error',
         component: () => import(/* webpackChunkName: "error" */ '@/pages/error/NotFoundPage.vue'),

@@ -58,6 +58,22 @@ class PageController extends Controller
             ->json(['data' => $page]);
     }
 
+    public function history($slug)
+    {
+        $page = Page::where('slug', '=', $slug)->first();
+
+        if (!$page || !$page->published) {
+            return abort(404);
+        }
+
+        if ($page->sign_in_only && !auth()->check()) {
+            return abort(403);
+        }
+
+        return response()
+            ->json(['data' => $page->revisionHistory]);
+    }
+
     public function update(Request $request, Page $page)
     {
         $data = $request->all();

@@ -2,12 +2,22 @@
 
 namespace App\Models;
 
+use App\Traits\HasTaxonomies;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Venturecraft\Revisionable\RevisionableTrait;
 
-class Page extends Model
+class Page extends Model implements HasMedia
 {
+    use InteractsWithMedia;
+    use HasTaxonomies;
+    use RevisionableTrait;
     use Sluggable;
+
+    protected $revisionEnabled = true;
+    protected $revisionCreationsEnabled = true;
 
     protected $fillable = [
         'published',
@@ -28,12 +38,6 @@ class Page extends Model
             ],
         ];
     }
-
-//    protected $revisionable = [
-//        'title',
-//        'slug',
-//        'body',
-//    ];
 
     public function user()
     {
