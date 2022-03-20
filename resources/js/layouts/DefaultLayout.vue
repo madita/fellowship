@@ -4,6 +4,10 @@
         class="d-flex flex-grow-1"
         @shortkey="onKeyup"
     >
+
+    <a class="skip-nav-link" href="#main-content">
+                skip navigation     
+    </a>
         <!-- Navigation -->
         <v-navigation-drawer
             v-model="drawer"
@@ -112,7 +116,7 @@
             </v-card>
         </v-app-bar>
 
-        <v-main>
+        <v-main id="main-content">
             <v-container class="fill-height" :fluid="!isContentBoxed">
                 <v-layout>
                     <slot></slot>
@@ -185,6 +189,21 @@ export default {
 <style>
 .cursor-pointer {
     cursor: pointer;
+}
+
+/*skip to main content*/
+.skip-nav-link {
+    background: yellow;
+    padding: 0.5rem 1.5rem;
+    border-radius: 0 0 0.25rem 0.25rem;
+    position: absolute;
+    left: 0.5rem;
+    transform: translateY(-200%);
+    transition: transform 325ms ease-in;
+}
+
+.skip-nav-link:focus {
+    transform: translateY(-60%);
 }
 </style>
 
