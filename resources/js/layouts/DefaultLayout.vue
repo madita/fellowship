@@ -117,7 +117,7 @@
         </v-app-bar>
 
         <v-main id="main-content">
-            <v-container class="fill-height" :fluid="!isContentBoxed">
+            <v-container class="fill-height pa-0" :fluid="!isContentBoxed">
                 <v-layout>
                     <slot></slot>
                 </v-layout>

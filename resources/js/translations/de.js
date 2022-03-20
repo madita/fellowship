@@ -91,6 +91,7 @@ export default {
   'login': {
     'title': 'Anmelden',
     'email': 'Email',
+    'username': 'Benutzername oder Email',
     'password': 'Passwort',
     'button': 'Anmelden',
     'orsign': 'Oder melden Sie sich mit an',
@@ -102,6 +103,7 @@ export default {
   'register': {
     'title': 'Benutzerkonto anlegen',
     'name': 'Vollständiger Name',
+    'username': 'Benutzername',
     'email': 'Email',
     'password': 'Passwort',
     'button': 'Benutzerkonto anlegen',
@@ -156,6 +158,7 @@ export default {
     'others': 'Andere',
     'email': 'Email',
     'chat': 'Plaudern',
+    'events': 'Termine',
     'todo': 'Machen',
     'board': 'Task Board',
     'users': 'Benutzer',
@@ -191,6 +194,9 @@ export default {
     'adminUsers': 'Benutzer',
     'adminPages': 'Seiten',
     'adminPosts': 'Beiträge',
+    'adminTags': 'Schlagworte',
+    'adminTaxonomie': 'Taxonomie',
+    'adminTerms': 'Begriffe',
     'adminAnnouncement': 'Verkündung'
   },
   '$vuetify': {

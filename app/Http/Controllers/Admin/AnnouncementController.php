@@ -27,6 +27,7 @@ class AnnouncementController extends Controller
      */
     public function index(Request $request)
     {
+        return null;
     }
 
     public function create()

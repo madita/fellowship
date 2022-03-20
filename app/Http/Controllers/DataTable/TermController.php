@@ -2,39 +2,44 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use App\Models\Post;
+use App\Models\Tag\Term;
 use Illuminate\Http\Request;
 
-class PostController extends DataTableController
+class TermController extends DataTableController
 {
     public function builder()
     {
-        return Post::query();
+        return Term::query();
     }
 
     public function store(Request $request)
     {
-        auth()->user()->posts()->create($request->only($this->getUpdatableColumns()));
+        Term::create($request->only($this->getUpdatableColumns()));
     }
 
     public function getUpdatableColumns()
     {
         return  [
-            'title',
-            'body',
-            'status',
+            'name',
+            'slug',
+            'desc',
         ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'body'   => 'wysiwyg',
-            'status' => ['select'=> ['draft', 'published']],
+            'name' => 'input',
+            'desc' => 'textarea',
         ];
     }
 
-//    public function update($id, PostRequest $request)
+    public function getCustomColumnsNames()
+    {
+        return [];
+    }
+
+//    public function update($id, TaxonomyRequest $request)
 //    {
 //        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
 //    }

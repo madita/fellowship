@@ -34,7 +34,7 @@ class PageController extends Controller
             return abort(404);
         }
 
-        if ($page->sign_in_only && !Auth::check()) {
+        if ($page->sign_in_only && !auth()->check()) {
             return abort(403);
         }
 

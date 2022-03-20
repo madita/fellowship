@@ -51,6 +51,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     Route::get('/posts/{page}/edit', '\App\Http\Controllers\PostController@show');
     Route::patch('/posts/{page}/edit', '\App\Http\Controllers\PostController@update');
+
+    Route::get('/events/{event}/going/{answer}', "\App\Http\Controllers\EventController@isGoing");
+    Route::resource('events', "\App\Http\Controllers\EventController");
 });
 
 Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
@@ -58,6 +61,8 @@ Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function (
     Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\PostController');
     Route::resource('datatable/users', 'App\Http\Controllers\DataTable\UserController');
     Route::resource('datatable/roles', 'App\Http\Controllers\DataTable\RoleController');
+    Route::resource('datatable/taxonomies', 'App\Http\Controllers\DataTable\TaxonomyController');
+    Route::resource('datatable/terms', 'App\Http\Controllers\DataTable\TermController');
     Route::get('datatable/permissions/roles', 'App\Http\Controllers\DataTable\PermissionController@roles');
     Route::post('datatable/permissions/roles', 'App\Http\Controllers\DataTable\PermissionController@updateRolePermissions');
     Route::get('datatable/permissions/permissions', 'App\Http\Controllers\DataTable\PermissionController@permissions');

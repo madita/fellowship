@@ -2,39 +2,43 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use App\Models\Post;
+use App\Models\Tag\Taxonomy;
 use Illuminate\Http\Request;
 
-class PostController extends DataTableController
+class TaxonomyController extends DataTableController
 {
     public function builder()
     {
-        return Post::query();
+        return Taxonomy::query();
     }
 
     public function store(Request $request)
     {
-        auth()->user()->posts()->create($request->only($this->getUpdatableColumns()));
+        Taxonomy::create($request->only($this->getUpdatableColumns()));
     }
 
     public function getUpdatableColumns()
     {
         return  [
-            'title',
-            'body',
-            'status',
+            'taxonomy',
+            'desc',
         ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'body'   => 'wysiwyg',
-            'status' => ['select'=> ['draft', 'published']],
+            'body'   => 'textarea',
+            'status' => 'radio',
         ];
     }
 
-//    public function update($id, PostRequest $request)
+    public function getCustomColumnsNames()
+    {
+        return ['sort'=>'sort'];
+    }
+
+//    public function update($id, TaxonomyRequest $request)
 //    {
 //        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
 //    }

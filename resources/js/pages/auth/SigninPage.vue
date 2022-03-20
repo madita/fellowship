@@ -9,11 +9,11 @@
                 <v-form ref="form" v-model="isFormValid" lazy-validation>
                     <v-text-field
                         v-model="form.email"
-                        :rules="[rules.required, rules.email]"
-                        :error-messages="errorMessages.email"
+                        :rules="[rules.required]"
+                        :error-messages="errorUsernameMessages"
                         :validate-on-blur="false"
                         :error="error"
-                        :label="$t('login.email')"
+                        :label="$t('login.username')"
                         name="email"
                         outlined
                         @keyup.enter="submit"
@@ -91,7 +91,7 @@
 | Sign in template for user authentication into the application
 |
 */
-import axios from 'axios'
+
 import {mapActions, mapGetters} from 'vuex'
 export default {
     data() {
@@ -111,8 +111,10 @@ export default {
 
             // form error
             error: false,
+            errorUsernameMessages:"",
             errorMessages: {
                 message: '',
+                username:'',
                 email:'',
                 password:''
             },
@@ -164,7 +166,13 @@ export default {
 
                     this.error = true
                     this.errorMessages.message = data.message
-                    this.errorMessages.email = data.errors.email[0]
+                    if(data.errors.email !== undefined) {
+                        this.errorMessages.email = data.errors.email[0]
+                    }
+                    if(data.errors.username !== undefined) {
+                        this.errorMessages.username = data.errors.username[0]
+                    }
+                    this.errorUsernameMessages = this.errorMessages.username ?? this.errorMessages.email
                     this.isLoading = false
                     this.isSignInDisabled = false
                 });

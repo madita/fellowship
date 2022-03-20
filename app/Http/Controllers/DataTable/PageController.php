@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Models\Page;
-use Auth;
 use Illuminate\Http\Request;
 
 class PageController extends DataTableController
@@ -17,7 +16,7 @@ class PageController extends DataTableController
 
     public function store(Request $request)
     {
-        Auth::user()->pages()->create($request->only($this->getUpdatableColumns()));
+        auth()->user()->pages()->create($request->only($this->getUpdatableColumns()));
     }
 
     public function getUpdatableColumns()

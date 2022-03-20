@@ -91,6 +91,7 @@ export default {
     login: {
         title: 'Sign In',
         email: 'Email',
+        username: 'Username or Email',
         password: 'Password',
         button: 'Sign In',
         orsign: 'Or sign in with',
@@ -102,6 +103,7 @@ export default {
     register: {
         title: 'Create Account',
         name: 'Full name',
+        username: 'Username',
         email: 'Email',
         password: 'Password',
         button: 'Create Account',
@@ -156,6 +158,7 @@ export default {
         others: 'Others',
         email: 'Email',
         chat: 'Chat',
+        events: 'Events',
         todo: 'To Do',
         board: 'Task Board',
         users: 'Users',
@@ -192,6 +195,9 @@ export default {
         adminUsers: 'Users',
         adminPages: 'Pages',
         adminPosts: 'Posts',
+        adminTags: 'Tags',
+        adminTaxonomie: 'Taxonomie',
+        adminTerms: 'Terms',
         adminAnnouncement: 'Announcement'
 
     },
