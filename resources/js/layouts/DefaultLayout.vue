@@ -4,10 +4,6 @@
         class="d-flex flex-grow-1"
         @shortkey="onKeyup"
     >
-
-    <a class="skip-nav-link" href="#main-content">
-                skip navigation     
-    </a>
         <!-- Navigation -->
         <v-navigation-drawer
             v-model="drawer"
@@ -18,6 +14,9 @@
             :light="menuTheme === 'light'"
             :dark="menuTheme === 'dark'"
         >
+        <a class="skip-nav-link" href="#main-content">
+                skip navigation     
+        </a>
             <!-- Navigation menu info -->
             <template v-slot:prepend>
                 <div class="pa-2">
@@ -198,12 +197,12 @@ export default {
     border-radius: 0 0 0.25rem 0.25rem;
     position: absolute;
     left: 0.5rem;
-    transform: translateY(-200%);
+    transform: translateY(-350%);
     transition: transform 325ms ease-in;
 }
 
 .skip-nav-link:focus {
-    transform: translateY(-60%);
+    transform: translateY(-230%);
 }
 </style>
 
