@@ -172,11 +172,6 @@ export default {
 <style scoped>
 /*skip to main content*/
 .skip-nav-link {
-    background: yellow;
-    padding: 0.5rem 1.5rem;
-    border-radius: 0 0 0.25rem 0.25rem;
-    position: absolute;
-    left: 0.5rem;
     transform: translateY(-200%);
     transition: transform 325ms ease-in;
 }
