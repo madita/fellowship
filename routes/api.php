@@ -42,7 +42,7 @@ Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function (
 });
 
 Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
-
+Route::get('/pages/{page}/history', '\App\Http\Controllers\PageController@history');
 Route::get('/posts/{slug}', '\App\Http\Controllers\PostController@view');
 
 Route::group(['middleware' => ['auth:sanctum']], function () {

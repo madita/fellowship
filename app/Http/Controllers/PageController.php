@@ -28,7 +28,7 @@ class PageController extends Controller
     public function view($slug)
     {
         $page = Page::where('slug', '=', $slug)->first();
-        $pages = Page::all();
+        //$pages = Page::all();
 
         if (!$page || !$page->published) {
             return abort(404);
@@ -39,7 +39,7 @@ class PageController extends Controller
         }
 
         return response()
-            ->json(['data' => $page]);
+            ->json($page);
     }
 
     public function show(Page $page)
@@ -58,9 +58,9 @@ class PageController extends Controller
             ->json(['data' => $page]);
     }
 
-    public function history($slug)
+    public function history(Page $page)
     {
-        $page = Page::where('slug', '=', $slug)->first();
+//        $page = Page::where('slug', '=', $slug)->first();
 
         if (!$page || !$page->published) {
             return abort(404);
@@ -70,8 +70,14 @@ class PageController extends Controller
             return abort(403);
         }
 
+        $history = collect($page->revisions)->map(function (\App\Models\Revision $revision) {
+            $revision['user'] = $revision->executor()->first();
+            $revision['diff'] = $revision->getDiff();
+            return $revision;
+        });
+
         return response()
-            ->json(['data' => $page->revisionHistory]);
+            ->json($history->toArray());
     }
 
     public function update(Request $request, Page $page)
