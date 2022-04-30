@@ -1,5 +1,5 @@
 <?php
-
+//https://github.com/Lecturize/Laravel-Taxonomies/blob/master/src/Traits/HasCategories.php
 namespace App\Traits;
 
 use App\Helpers\TaxonomyHelper;
@@ -14,7 +14,7 @@ trait HasTaxonomies
      *
      * @return \Illuminate\Database\Eloquent\Relations\MorphMany
      */
-    public function taxed()
+    public function taxable()
     {
         return $this->morphMany(Taxable::class, 'taxable');
     }
@@ -30,34 +30,96 @@ trait HasTaxonomies
     }
 
     /**
-     * Add one or multiple terms in a given taxonomy.
-     *
-     * @param mixed  $terms
-     * @param string $taxonomy
-     * @param int    $parent
-     * @param int    $order
+     * Convenience method to sync categories.
      */
-    public function addTerm($terms, $taxonomy, $parent = 0, $order = 0)
+    public function syncCategories(string $terms, string $taxonomy): void
     {
-        $terms = TaxonomyHelper::makeTermsArray($terms);
-        $this->createTaxables($terms, $taxonomy, $parent, $order);
-
-        $terms = Term::whereIn('name', $terms)->pluck('id')->all();
-
-        if (count($terms) > 0) {
-            foreach ($terms as $term) {
-
-                //if ($this->taxonomies()->where('taxonomy', $taxonomy)->where('term_id', $term)->first())
-                //   continue;
-                $tax = Taxonomy::where('term_id', $term)->first();
-                //dd($tax);
-                $this->taxonomies()->attach($tax->id);
-            }
-
-            return;
-        }
-        $this->taxonomies()->detach();
+        $this->detachCategories();
+        $this->setCategories($terms, $taxonomy);
     }
+
+    /**
+     * Convenience method for attaching a given taxonomy to this model.
+     */
+    public function attachTaxonomy(int $taxonomy_id): void
+    {
+        if (! $this->taxonomies()->where('id', $taxonomy_id)->first())
+            $this->taxonomies()->attach($taxonomy_id);
+    }
+
+    /**
+     * Convenience method for detaching a given taxonomy to this model.
+     */
+    public function detachTaxonomy(int $taxonomy_id): void
+    {
+        if ($this->taxonomies()->where('id', $taxonomy_id)->first())
+            $this->taxonomies()->detach($taxonomy_id);
+    }
+
+    /**
+     * Convenience method to set categories.
+     */
+    public function setCategories(string $categories, string $taxonomy): void
+    {
+        $this->removeAllTerms();
+        $this->addCategories($categories, $taxonomy);
+    }
+
+    /**
+     * Add one or multiple terms (categories) within a given taxonomy.
+     *
+     * @param  string|array  $terms
+     */
+    public function addTerms($terms, string $taxonomy, ?Taxonomy $parent = null): self
+    {
+        $taxonomies = Taxonomy::createCategories($terms, $taxonomy, $parent);
+
+        if (count($taxonomies) > 0)
+            foreach ($taxonomies as $taxonomy)
+                $this->taxonomies()->attach($taxonomy->id);
+
+        return $this;
+    }
+
+    /**
+     * Convenience method to add category to this model.
+     *
+     * @param  string|array  $terms
+     */
+    public function addTerm($terms, string $taxonomy, ?Taxonomy $parent = null): self
+    {
+        return $this->addTerms($terms, $taxonomy, $parent);
+    }
+
+//    /**
+//     * Add one or multiple terms in a given taxonomy.
+//     *
+//     * @param mixed  $terms
+//     * @param string $taxonomy
+//     * @param int    $parent
+//     * @param int    $order
+//     */
+//    public function addTerm($terms, $taxonomy, $parent = 0, $order = 0)
+//    {
+//        $terms = TaxonomyHelper::makeTermsArray($terms);
+//        $this->createTaxables($terms, $taxonomy, $parent, $order);
+//
+//        $terms = Term::whereIn('name', $terms)->pluck('id')->all();
+//
+//        if (count($terms) > 0) {
+//            foreach ($terms as $term) {
+//
+//                //if ($this->taxonomies()->where('taxonomy', $taxonomy)->where('term_id', $term)->first())
+//                //   continue;
+//                $tax = Taxonomy::where('term_id', $term)->first();
+//                //dd($tax);
+//                $this->taxonomies()->attach($tax->id);
+//            }
+//
+//            return;
+//        }
+//        $this->taxonomies()->detach();
+//    }
 
     /**
      * Convenience method for attaching this models taxonomies to the given parent taxonomy.

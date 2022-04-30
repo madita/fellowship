@@ -1,28 +1,105 @@
 <template>
-  <div class="flex-grow-1">
-      <v-alert v-if="message" type="success">
-          {{ message }}
-      </v-alert>
+    <div class="flex-grow-1">
+        <v-container>
+            <v-row>
+                <v-col>
+                    <v-alert v-if="message" type="success">
+                        {{ message }}
+                    </v-alert>
 
-      <v-text-field
-          v-model="page.title"
-      ></v-text-field>
+                    <v-text-field
+                        v-model="page.title"
+                    ></v-text-field>
 
-      <simple-editor  v-model="page.body" :value="page.body" id="text-body" name="content"></simple-editor>
+                    <simple-editor v-model="page.body" :value="page.body" id="text-body" name="content"></simple-editor>
 
-      <v-checkbox
-          v-model="page.published"
-          label="Published"
-      ></v-checkbox>
+                    <v-checkbox
+                        v-model="page.published"
+                        label="Published"
+                    ></v-checkbox>
 
-      <v-checkbox
-          v-model="page.sign_in_only"
-          label="Sign in only"
-      ></v-checkbox>
+                    <v-checkbox
+                        v-model="page.sign_in_only"
+                        label="Sign in only"
+                    ></v-checkbox>
 
 
-      <v-btn @click="save">{{form}}</v-btn>
-  </div>
+                    <v-btn @click="save">{{ form }}</v-btn>
+                </v-col>
+                <v-col>
+                    <v-combobox
+                        v-model="taxonomieValue"
+                        :items="taxonomie"
+                        item-text="taxonomy"
+                        :search-input.sync="searchTax"
+                        hide-selected
+                        label="Taxonomy"
+                        persistent-hint
+                        small-chips
+                        clearable
+                    >
+                    </v-combobox>
+
+                    <v-combobox
+                        v-model="termValue"
+                        :items="terms"
+                        item-text="name"
+                        :search-input.sync="searchTerm"
+                        hide-selected
+                        label="Terms"
+                        multiple
+                        persistent-hint
+                        small-chips
+                        clearable
+                        deletable-chips
+                    >
+                        <template v-slot:no-data>
+                            <v-list-item>
+                                <v-list-item-content>
+                                    <v-list-item-title>
+                                        No results matching "<strong>{{ searchTax }}</strong>". Press <kbd>enter</kbd> to create a new one
+                                    </v-list-item-title>
+                                </v-list-item-content>
+                            </v-list-item>
+                        </template>
+                        <template v-slot:selection="{ attrs, item, parent, selected }">
+                            <v-chip
+                                v-if="item === Object(item)"
+                                v-bind="attrs"
+                                :color="`${item.color} lighten-3`"
+                                :input-value="selected"
+                                label
+                                small
+                            >
+          <span class="pr-2">
+            {{ item.name }}
+          </span>
+                                <v-icon
+                                    small
+                                    :color="`${item.color} lighten`"
+                                    @click="parent.selectItem(item)"
+                                >
+                                    $delete
+                                </v-icon>
+                            </v-chip>
+                        </template>
+                        <template v-slot:item="{ index, item }">
+                            <v-chip
+                                :color="`${item.color} lighten-3`"
+                                dark
+                                label
+                                small
+                            >
+                                {{ item.name }}
+                            </v-chip>
+
+                        </template>
+                    </v-combobox>
+                </v-col>
+            </v-row>
+        </v-container>
+
+    </div>
 </template>
 
 <script>
@@ -35,16 +112,44 @@ export default {
     data() {
         return {
             loading: true,
-            page: {title:"", body:""},
-            endpoint:'/api/datatable/pages',
-            form:"create"|"edit",
-            id:null,
-            message:""
+            page: {title: "", body: "", taxonomieValue:[], termValue:[]},
+            endpoint: '/api/datatable/pages',
+            form: "create" | "edit",
+            id: null,
+            message: "",
+            searchTax: null,
+            searchTerm: null,
+            terms: [],
+            taxonomie: [],
+            taxonomieValue: [],
+            termValue: [],
+            colors: ['green', 'purple', 'indigo', 'cyan', 'teal', 'orange'],
+            nonce: 1
         }
     },
+    watch: {
+        termValue (val, prev) {
+            if (val.length === prev.length) return
 
+            this.termValue = val.map(v => {
+                if (typeof v === 'string') {
+                    v = {
+                        name: v,
+                        color: this.colors[this.nonce - 1],
+                    }
+
+                    this.search = null
+                    this.terms.push(v)
+
+                    this.nonce++
+                }
+
+                return v
+            })
+        },
+    },
     methods: {
-        getPage(){
+        getPage() {
             this.loading = true
             return axios.get(`/api/pages/${this.id}/edit`).then((response) => {
                 this.page = response.data.data
@@ -52,14 +157,31 @@ export default {
                 this.loading = false
             });
         },
-        save () {
+        //https://fellowship.test/api/datatable/pages?column=id&operator=equals&value=&page=1&itemsPerPage=-1&pageStart=0&pageStop=6&pageCount=1&itemsLength=6
+        getTaxonomie() {
+            this.loading = true
+            return axios.get(`/api/tag/taxonomies`).then((response) => {
+                this.taxonomie = response.data
+
+                this.loading = false
+            });
+        },
+        getTerms() {
+            this.loading = true
+            return axios.get(`/api/tag/terms`).then((response) => {
+                this.terms = response.data.map(x => {return {name:x.name, color: x.color}})
+
+                this.loading = false
+            });
+        },
+        save() {
             if (this.form === "edit") {
                 this.update()
             } else {
                 this.store()
             }
         },
-        update () {
+        update() {
             axios.patch(`${this.endpoint}/${this.id}`, this.page).then(() => {
                 this.message = "Page updated"
             }).catch((error) => {
@@ -68,9 +190,12 @@ export default {
                 }
             })
         },
-        store () {
+        store() {
+            this.page.termValue = this.termValue;
+            this.page.taxonomieValue = this.taxonomieValue
+
             axios.post(`${this.endpoint}`, this.page).then(() => {
-                this.page = {title:"", body:""};
+                this.page = {title: "", body: ""};
                 this.message = "Page saved ..link"
             }).catch((error) => {
                 if (error.response.status === 422) {
@@ -82,14 +207,17 @@ export default {
     },
 
     created() {
-        if(this.$route.params.form) {
+        if (this.$route.params.form) {
             this.form = this.$route.params.form;
         }
 
-        if(this.$route.params.id) {
+        if (this.$route.params.id) {
             this.id = this.$route.params.id;
             this.getPage();
         }
+
+        this.getTaxonomie()
+        this.getTerms()
 
     }
 }

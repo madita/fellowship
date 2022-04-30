@@ -14,7 +14,11 @@ class PostController extends DataTableController
 
     public function store(Request $request)
     {
-        auth()->user()->posts()->create($request->only($this->getUpdatableColumns()));
+        $post = auth()->user()->posts()->create($request->only($this->getUpdatableColumns()));
+
+        if($request->get('termValue')) {
+            $post->addTerms($request->get('termValue'), 'blog');
+        }
     }
 
     public function getUpdatableColumns()

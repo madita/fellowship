@@ -41,6 +41,10 @@ Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function (
     Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
 });
 
+Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
+Route::get('/tag/terms', '\App\Http\Controllers\TaxonomyController@getTerms');
+
+
 Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
 Route::get('/pages/{page}/history', '\App\Http\Controllers\PageController@history');
 Route::get('/posts/{slug}', '\App\Http\Controllers\PostController@view');

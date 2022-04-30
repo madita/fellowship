@@ -16,7 +16,17 @@ class PageController extends DataTableController
 
     public function store(Request $request)
     {
-        auth()->user()->pages()->create($request->only($this->getUpdatableColumns()));
+        $page = auth()->user()->pages()->create($request->only($this->getUpdatableColumns()));
+
+        $taxonomy = null;
+        if($request->get('taxonomieValue')) {
+            $taxonomy = $request->get('taxonomieValue');
+        }
+
+        if($request->get('termValue')) {
+            $page->addTerms($request->get('termValue'), $taxonomy['taxonomy']);
+        }
+
     }
 
     public function getUpdatableColumns()

@@ -2,6 +2,7 @@
 
 namespace App\Models\Tag;
 
+use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -127,5 +128,53 @@ class Taxonomy extends Model
         return $query->whereHas('term', function ($q) use ($searchTerm) {
             $q->where('name', 'like', '%'.$searchTerm.'%');
         });
+    }
+
+    /**
+     * Creates terms and taxonomies.
+     *
+     * @param  string|array        $categories
+     * @param  string              $taxonomy
+     * @param  \App\Models\Tag\Taxonomy|null  $parent
+     * @param  int|null            $sort
+     * @return Collection
+     */
+    public static function createCategories($categories, string $taxonomy, ? Taxonomy $parent = null, ?int $sort = null): ?Collection
+    {
+        if (is_string($categories))
+            $categories = explode('|', $categories);
+
+        $terms      = collect();
+        $taxonomies = collect();
+
+        if (count($categories) > 0)
+            foreach ($categories as $category) {
+                $term = Term::firstOrCreate(['name' => $category['name']]);
+                $term->color = $category['color'];
+                $term->save();
+                $terms->push($term);
+            }
+
+
+        foreach ($terms as $term) {
+            $tax = Taxonomy::firstOrNew([
+                                                 'term_id'  => $term->id,
+                                                 'taxonomy' => $taxonomy,
+                                             ]);
+
+            if ($tax) {
+                if ($parent instanceof Taxonomy && $tax->parent_id !== $parent->id)
+                    $tax->parent_id = $parent->id;
+
+                if (is_integer($sort) && $tax->sort !== $sort)
+                    $tax->sort = $sort;
+
+                $tax->save();
+
+                $taxonomies->push($tax);
+            }
+        }
+
+        return $taxonomies;
     }
 }
