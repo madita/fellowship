@@ -61,15 +61,16 @@ class TaxonomyHelper
             foreach ($terms as $term) {
                 $term_id = Term::where('name', $term)->first()->id;
 
-                if (Taxonomy::where('taxonomy', $taxonomy)->where('term_id', $term_id)->where('parent', $parent)->where('sort', $order)->first()) {
+                if (Taxonomy::where('taxonomy', $taxonomy)->where('term_id', $term_id)->where('parent_id', $parent)->first()) {
+                    //->where('sort', $order)->first()
                     continue;
                 }
 
                 $model = new Taxonomy();
                 $model->taxonomy = $taxonomy;
                 $model->term_id = $term_id;
-                $model->parent = $parent;
-                $model->sort = $order;
+                $model->parent_id = $parent;
+//                $model->sort = $order;
                 $model->save();
             }
         }

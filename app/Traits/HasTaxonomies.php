@@ -86,40 +86,40 @@ trait HasTaxonomies
      *
      * @param  string|array  $terms
      */
-    public function addTerm($terms, string $taxonomy, ?Taxonomy $parent = null): self
-    {
-        return $this->addTerms($terms, $taxonomy, $parent);
-    }
-
-//    /**
-//     * Add one or multiple terms in a given taxonomy.
-//     *
-//     * @param mixed  $terms
-//     * @param string $taxonomy
-//     * @param int    $parent
-//     * @param int    $order
-//     */
-//    public function addTerm($terms, $taxonomy, $parent = 0, $order = 0)
+//    public function addTerm($terms, string $taxonomy, ?Taxonomy $parent = null): self
 //    {
-//        $terms = TaxonomyHelper::makeTermsArray($terms);
-//        $this->createTaxables($terms, $taxonomy, $parent, $order);
-//
-//        $terms = Term::whereIn('name', $terms)->pluck('id')->all();
-//
-//        if (count($terms) > 0) {
-//            foreach ($terms as $term) {
-//
-//                //if ($this->taxonomies()->where('taxonomy', $taxonomy)->where('term_id', $term)->first())
-//                //   continue;
-//                $tax = Taxonomy::where('term_id', $term)->first();
-//                //dd($tax);
-//                $this->taxonomies()->attach($tax->id);
-//            }
-//
-//            return;
-//        }
-//        $this->taxonomies()->detach();
+//        return $this->addTerms($terms, $taxonomy, $parent);
 //    }
+
+    /**
+     * Add one or multiple terms in a given taxonomy.
+     *
+     * @param mixed  $terms
+     * @param string $taxonomy
+     * @param int    $parent
+     * @param int    $order
+     */
+    public function addTerm($terms, $taxonomy, $parent = 0, $order = 0)
+    {
+        $terms = TaxonomyHelper::makeTermsArray($terms);
+        $this->createTaxables($terms, $taxonomy, $parent, $order);
+
+        $terms = Term::whereIn('name', $terms)->pluck('id')->all();
+
+        if (count($terms) > 0) {
+            foreach ($terms as $term) {
+
+                //if ($this->taxonomies()->where('taxonomy', $taxonomy)->where('term_id', $term)->first())
+                //   continue;
+                $tax = Taxonomy::where('term_id', $term)->first();
+                //dd($tax);
+                $this->taxonomies()->attach($tax->id);
+            }
+
+            return;
+        }
+        $this->taxonomies()->detach();
+    }
 
     /**
      * Convenience method for attaching this models taxonomies to the given parent taxonomy.

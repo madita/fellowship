@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Models\Page;
+use App\Models\Tag\Taxonomy;
 use Illuminate\Http\Request;
 
 class PageController extends DataTableController
@@ -19,12 +20,17 @@ class PageController extends DataTableController
         $page = auth()->user()->pages()->create($request->only($this->getUpdatableColumns()));
 
         $taxonomy = null;
-        if($request->get('taxonomieValue')) {
-            $taxonomy = $request->get('taxonomieValue');
+        if($request->get('taxonomy')) {
+            $taxonomy = $request->get('taxonomy');
+            $taxonomy = $taxonomy['taxonomy'];
+
+            if($request->get('categories')) {
+                $page->addTerms($request->get('categories'), $taxonomy);
+            }
         }
 
-        if($request->get('termValue')) {
-            $page->addTerms($request->get('termValue'), $taxonomy['taxonomy']);
+        if($request->get('terms')) {
+            $page->addTerms($request->get('terms'),'tags');
         }
 
     }

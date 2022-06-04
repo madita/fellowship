@@ -2,12 +2,14 @@
     <div class="flex-grow-1">
         <v-container>
             <v-row>
-                <v-col>
+                <v-col
+                cols="8">
                     <v-alert v-if="message" type="success">
                         {{ message }}
                     </v-alert>
 
                     <v-text-field
+                        label="Title"
                         v-model="page.title"
                     ></v-text-field>
 
@@ -26,19 +28,52 @@
 
                     <v-btn @click="save">{{ form }}</v-btn>
                 </v-col>
-                <v-col>
+                <v-col
+                cols="4">
                     <v-combobox
-                        v-model="taxonomieValue"
-                        :items="taxonomie"
+                        v-model="taxonomyValue"
+                        :items="taxonomy"
                         item-text="taxonomy"
+                        @change="setTaxonomy"
                         :search-input.sync="searchTax"
                         hide-selected
                         label="Taxonomy"
                         persistent-hint
                         small-chips
-                        clearable
                     >
                     </v-combobox>
+
+                    <v-combobox
+                        v-model="categoryValue"
+                        :items="categories"
+                        item-text="name"
+                        label="Category"
+                        multiple
+                        chips
+                        clearable
+                    ></v-combobox>
+
+                    <a href="#" @click="addCategory=!addCategory">Add new category</a>
+
+
+                    <template v-if="addCategory">
+                        <v-text-field
+                            required
+                            v-model="newCategory"
+                            :rules="[rules.required]"
+                        ></v-text-field>
+                        <v-combobox
+                            v-model="parentValue"
+                            :items="parents"
+                            item-text="name"
+                            label="Parent Category"
+                            chips
+                            clearable
+                        ></v-combobox>
+
+                        <v-btn @click="saveCategory">Add New Category</v-btn>
+
+                    </template>
 
                     <v-combobox
                         v-model="termValue"
@@ -112,7 +147,8 @@ export default {
     data() {
         return {
             loading: true,
-            page: {title: "", body: "", taxonomieValue:[], termValue:[]},
+            addCategory: false,
+            page: {title: "", body: "", taxonomy:[], terms:[], categories:[]},
             endpoint: '/api/datatable/pages',
             form: "create" | "edit",
             id: null,
@@ -120,9 +156,17 @@ export default {
             searchTax: null,
             searchTerm: null,
             terms: [],
-            taxonomie: [],
-            taxonomieValue: [],
+            taxonomy: null,
+            taxonomyValue: "category",
             termValue: [],
+            newCategory:"",
+            categories: [],
+            categoryValue: [],
+            parents: [],
+            parentValue: null,
+            rules: {
+                required: value => !!value || 'Required.'
+            },
             colors: ['green', 'purple', 'indigo', 'cyan', 'teal', 'orange'],
             nonce: 1
         }
@@ -158,20 +202,46 @@ export default {
             });
         },
         //https://fellowship.test/api/datatable/pages?column=id&operator=equals&value=&page=1&itemsPerPage=-1&pageStart=0&pageStop=6&pageCount=1&itemsLength=6
-        getTaxonomie() {
+        getTaxonomy() {
             this.loading = true
             return axios.get(`/api/tag/taxonomies`).then((response) => {
-                this.taxonomie = response.data
+                this.taxonomy = response.data
 
                 this.loading = false
             });
         },
         getTerms() {
             this.loading = true
-            return axios.get(`/api/tag/terms`).then((response) => {
+            return axios.get(`/api/tag/terms/tags`).then((response) => {
                 this.terms = response.data.map(x => {return {name:x.name, color: x.color}})
 
                 this.loading = false
+            });
+        },
+        setTaxonomy() {
+            this.getCategories(this.taxonomyValue.taxonomy)
+        },
+        getCategories(taxonomy) {
+            this.loading = true
+            return axios.get(`/api/tag/terms/${taxonomy}`).then((response) => {
+
+                this.categories = this.parents = response.data
+
+                this.loading = false
+            });
+        },
+        saveCategory() {
+
+            // this.loading = true
+            let data = {term: this.newCategory, taxonomy: this.taxonomyValue, parent: this.parentValue}
+
+            axios.post(`/api/tag/terms`, data).then(() => {
+
+                this.getCategories(this.taxonomyValue.taxonomy)
+                this.categoryValue.push(this.newCategory);
+                // this.categories = this.parents = response.data
+
+                // this.loading = false
             });
         },
         save() {
@@ -191,8 +261,10 @@ export default {
             })
         },
         store() {
-            this.page.termValue = this.termValue;
-            this.page.taxonomieValue = this.taxonomieValue
+            this.page.terms = this.termValue;
+            this.page.taxonomy = this.taxonomyValue
+            this.page.categories = this.categoryValue
+
 
             axios.post(`${this.endpoint}`, this.page).then(() => {
                 this.page = {title: "", body: ""};
@@ -216,7 +288,8 @@ export default {
             this.getPage();
         }
 
-        this.getTaxonomie()
+        this.getTaxonomy()
+        this.getCategories('category')
         this.getTerms()
 
     }

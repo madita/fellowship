@@ -42,7 +42,8 @@ Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function (
 });
 
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
-Route::get('/tag/terms', '\App\Http\Controllers\TaxonomyController@getTerms');
+Route::get('/tag/terms/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTerms');
+Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
 
 
 Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
@@ -62,6 +63,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
     Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');
+//    Route::get('datatable/pages/categories/{taxonomy}', 'App\Http\Controllers\DataTable\PageController@getCategories');
     Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\PostController');
     Route::resource('datatable/users', 'App\Http\Controllers\DataTable\UserController');
     Route::resource('datatable/roles', 'App\Http\Controllers\DataTable\RoleController');

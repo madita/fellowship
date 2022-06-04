@@ -178,7 +178,7 @@ abstract class DataTableController extends Controller
      */
     public function update($id, Request $request)
     {
-        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
+       return $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
     }
 
     /**
@@ -282,6 +282,7 @@ abstract class DataTableController extends Controller
     {
         $queryParts = $this->resolveQueryParts($request->operator, $request->value);
 
+        /** @noinspection PhpIllegalStringOffsetInspection */
         return $builder->where(
             $request->column,
             $queryParts['operator'],
@@ -292,5 +293,10 @@ abstract class DataTableController extends Controller
     public function getAppends()
     {
         return [];
+    }
+
+    public function getCategories($taxonomy)
+    {
+        $this->builder->getModel()->getTerms($taxonomy);
     }
 }
