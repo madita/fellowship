@@ -48,6 +48,8 @@ Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms')
 
 Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
 Route::get('/pages/{page}/history', '\App\Http\Controllers\PageController@history');
+//Route::get('/pages/tag/{term}', '\App\Http\Controllers\PageController@showWithTerm');
+Route::get('/pages/{taxonomy}/{category}', '\App\Http\Controllers\PageController@showWithCategory');
 Route::get('/posts/{slug}', '\App\Http\Controllers\PostController@view');
 
 Route::group(['middleware' => ['auth:sanctum']], function () {

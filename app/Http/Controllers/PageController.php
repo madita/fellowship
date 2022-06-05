@@ -38,8 +38,14 @@ class PageController extends Controller
             return abort(403);
         }
 
+        $taxonomies = $page->getTaxonomies('taxonomy')->unique();
+
+        $tax = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use($page)  {
+            return  [$taxonomy => $page->getTerms($taxonomy)];
+        });
+
         return response()
-            ->json($page);
+            ->json(['page' => $page, 'taxonomies' => $tax]);
     }
 
     public function show(Page $page)
@@ -51,11 +57,28 @@ class PageController extends Controller
             return abort(404);
         }
 
+        $taxonomies = $page->getTaxonomies('taxonomy')->unique();
+
+        $tax = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use($page)  {
+            return  [$taxonomy => $page->getTerms($taxonomy)->pluck(['name'])];
+        });
+
 //        if ($page->sign_in_only && !Auth::check())
 //            return redirect('/')->withErrors(config('constants.NA'));
 
         return response()
-            ->json(['data' => $page]);
+            ->json(['page' => $page, 'taxonomies' => $tax]);
+    }
+
+
+
+    public function showWithCategory($taxonomy, $category)
+    {
+
+        $pages = Page::withTerm($category, 'tags')->where('published', true)->get();
+
+        return response()
+            ->json(['pages' => $pages]);
     }
 
     public function history(Page $page)

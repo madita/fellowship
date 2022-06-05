@@ -196,7 +196,16 @@ export default {
         getPage() {
             this.loading = true
             return axios.get(`/api/pages/${this.id}/edit`).then((response) => {
-                this.page = response.data.data
+                this.page = response.data.page
+
+                let taxonomies = response.data.taxonomies;
+                this.termValue = taxonomies.tags;
+
+                delete taxonomies.tags;
+                this.taxonomyValue = Object.keys(taxonomies);
+
+                this.categoryValue = taxonomies[this.taxonomyValue]
+
 
                 this.loading = false
             });

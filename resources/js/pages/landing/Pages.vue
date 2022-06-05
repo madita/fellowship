@@ -48,6 +48,12 @@
                     </v-simple-table>
                 </div>
                 <div v-else v-html="page.body"></div>
+                <v-chip :color="tag.color" v-for="tag in tags" :key="`tag-${tag.id}`" @click="goToTerm(tag.slug)">{{ tag.name }}</v-chip>
+
+                <div v-for="(taxonomy, key) in taxonomies">
+                    {{key}}:  <v-chip :color="tag.color" v-for="tag in taxonomy" :key="`tax-${tag.id}`" @click="goToCategory(tag.slug, key)">{{ tag.name }}</v-chip>
+                </div>
+
             </v-container>
         </v-sheet>
     </div>
@@ -64,6 +70,8 @@ export default {
             showHistory: false,
             showHistoryItem: false,
             page: [],
+            tags: [],
+            taxonomies: [],
             history: [],
             historyItem: [],
             slug:""
@@ -74,7 +82,12 @@ export default {
         getPage(){
             this.loading = true
             return axios.get(`/api/pages/${this.slug}`).then((response) => {
-                this.page = response.data
+                this.page = response.data.page
+                let taxonomies = response.data.taxonomies
+                this.tags = taxonomies.tags;
+
+                delete taxonomies.tags;
+                this.taxonomies = taxonomies;
 
                 this.loading = false
             }).catch((error) => {
@@ -115,6 +128,12 @@ export default {
             this.showHistory = false
             this.showHistoryItem = true
             this.historyItem = this.history[index]
+        },
+        goToTerm(item) {
+            this.$router.push(`/pages/tags/${item}`)
+        },
+        goToCategory(category, taxonomy) {
+            this.$router.push(`/pages/${taxonomy}/${category}`)
         }
     },
 
