@@ -22,4 +22,12 @@ export default [
         meta: {
             layout: 'landing'
         }
+    },
+    {
+        path: '/tags/:term/:model?',
+        name: 'taxable',
+        component: () => import(/* webpackChunkName: "landing-posts" */ '@/pages/landing/Tags.vue'),
+        meta: {
+            layout: 'landing'
+        }
     }]

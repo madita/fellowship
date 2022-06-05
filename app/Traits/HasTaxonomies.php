@@ -208,7 +208,7 @@ trait HasTaxonomies
             $term_ids = $this->getTaxonomies('term_id');
         }
 
-        return Term::whereIn('id', $term_ids)->where('name', $term_name)->first();
+        return Term::whereIn('id', $term_ids)->where('slug', $term_name)->first();
     }
 
     /**
@@ -331,5 +331,15 @@ trait HasTaxonomies
         return $query->whereHas('taxable', function ($q) use ($taxonomy_ids) {
             $q->whereIn('taxonomy_id', $taxonomy_ids);
         });
+    }
+
+    /**
+     * Attributes being revisioned.
+     *
+     * @var array
+     */
+    public function getTaxableTitle()
+    {
+        return property_exists($this, 'taxable_title') ? $this->taxable_title : null;
     }
 }

@@ -43,7 +43,7 @@ export const routes = [{
     },
     {
         path: '/p/:slug',
-        name: 'pages',
+        name: 'page',
         component: () => import(/* webpackChunkName: "landing-pages" */ '@/pages/landing/Pages.vue'),
         meta: {
             layout: 'landing'

@@ -30,7 +30,8 @@ export default {
         return {
             loading: true,
             pages: [],
-            term:""
+            taxonomy:"",
+            category:""
         }
     },
 

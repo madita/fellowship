@@ -24,6 +24,8 @@ class Page extends Model implements HasMedia
         'user_id',
     ];
 
+    protected $taxable_title = 'title';
+
     protected $primaryKey = 'id';
     protected $table = 'pages';
 
