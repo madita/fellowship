@@ -1,7 +1,10 @@
 <template>
     <div>
         <v-sheet>
-            <v-container class="py-6 pt-lg-15">
+            <v-container class="py-6 pt-lg-5">
+
+                <v-breadcrumbs :items="breadcrumbs" class="pa-0 py-2"></v-breadcrumbs>
+
                 <h1>{{page.title}}</h1>
                 <v-btn v-if="!showHistory && !showHistoryItem" @click="loadHistory">History</v-btn>
                 <v-btn v-if="showHistory || showHistoryItem" @click="showPage">Show Page</v-btn>
@@ -48,6 +51,9 @@
                     </v-simple-table>
                 </div>
                 <div v-else v-html="page.body"></div>
+                <div v-for="child in page.children"><router-link :to="`/p/${child.slug}`" class="font-weight-bold">
+                    {{child.title}}
+                </router-link></div>
                 <v-chip :color="tag.color" v-for="tag in tags" :key="`tag-${tag.id}`" @click="goToTerm(tag.slug)">{{ tag.name }}</v-chip>
 
                 <div v-for="(taxonomy, key) in taxonomies">
@@ -74,7 +80,9 @@ export default {
             taxonomies: [],
             history: [],
             historyItem: [],
-            slug:""
+            slug:"",
+            parents:[],
+            breadcrumbs: [],
         }
     },
 
@@ -83,8 +91,17 @@ export default {
             this.loading = true
             return axios.get(`/api/pages/${this.slug}`).then((response) => {
                 this.page = response.data.page
+                this.parents = Object.values(response.data.parents)
+
+                console.log('this.parents',this.parents)
                 let taxonomies = response.data.taxonomies
                 this.tags = taxonomies.tags;
+
+                this.breadcrumbs = this.parents.map(x =>  ({
+                    text:x.title, to:'/p/'+x.slug
+                })).reverse();
+
+                this.breadcrumbs.push({text:this.page.title})
 
                 delete taxonomies.tags;
                 this.taxonomies = taxonomies;

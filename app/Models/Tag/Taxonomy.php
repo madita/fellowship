@@ -149,8 +149,14 @@ class Taxonomy extends Model
 
         if (count($categories) > 0)
             foreach ($categories as $category) {
-                $term = Term::firstOrCreate(['name' => $category['name']]);
-                $term->color = $category['color'];
+                if(is_string($category)) {
+                    $term = Term::firstOrCreate(['name' => $category]);
+                } else {
+                    $term = Term::firstOrCreate(['name' => $category['name']]);
+                    $term->color = $category['color'];
+                }
+
+
                 $term->save();
                 $terms->push($term);
             }

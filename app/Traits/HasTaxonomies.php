@@ -32,9 +32,11 @@ trait HasTaxonomies
     /**
      * Convenience method to sync categories.
      */
-    public function syncCategories(string $terms, string $taxonomy): void
+    public function syncTerms(string|array $terms, string $taxonomy): void
     {
-        $this->detachCategories();
+//        $this->detachCategories();
+        $tax = Taxonomy::where('taxonomy', $taxonomy)->first();
+        $this->detachTaxonomy($tax->id);
         $this->setCategories($terms, $taxonomy);
     }
 
@@ -56,13 +58,32 @@ trait HasTaxonomies
             $this->taxonomies()->detach($taxonomy_id);
     }
 
+    public function detachCategories(): int
+    {
+        return $this->taxonomies()->detach();
+    }
+
+    public function detachCategory(string $term_title, string $taxonomy = ''): ?int
+    {
+        if (! $term = $this->getCategory($term_title, $taxonomy))
+            return null;
+
+        if ($taxonomy) {
+            $taxonomy = $this->taxonomies()->where('taxonomy', $taxonomy)->where('term_id', $term->id)->first();
+        } else {
+            $taxonomy = $this->taxonomies()->where('term_id', $term->id)->first();
+        }
+
+        return $this->taxonomies()->detach($taxonomy->id);
+    }
+
     /**
      * Convenience method to set categories.
      */
-    public function setCategories(string $categories, string $taxonomy): void
+    public function setCategories(string|array $categories, string $taxonomy): void
     {
-        $this->removeAllTerms();
-        $this->addCategories($categories, $taxonomy);
+//        $this->removeAllTerms();
+        $this->addTerms($categories, $taxonomy);
     }
 
     /**
@@ -243,7 +264,7 @@ trait HasTaxonomies
             $taxonomy = $this->taxonomies()->where('term_id', $term->id)->first();
         }
 
-        return $this->taxed()->where('taxonomy_id', $taxonomy->id)->delete();
+        return $this->taxonomies()->detach($taxonomy->id);
     }
 
     /**
@@ -253,7 +274,7 @@ trait HasTaxonomies
      */
     public function removeAllTerms()
     {
-        return $this->taxed()->delete();
+        return $this->detachCategories();
     }
 
     /**

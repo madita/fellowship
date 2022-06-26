@@ -21,7 +21,8 @@ class Page extends Model implements HasMedia
         'title',
         'slug',
         'body',
-        'user_id',
+//        'user_id',
+        'parent_id',
     ];
 
     protected $taxable_title = 'title';
@@ -46,6 +47,35 @@ class Page extends Model implements HasMedia
 
     public function user()
     {
-        return $this->belongsTo('App\User');
+        return $this->belongsTo('App\Models\User');
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Page::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Page::class, 'parent_id');
+    }
+
+    public function childrenRecursive()
+    {
+        return $this->children()->with('childrenRecursive');
+    }
+
+    public function getParentsAttribute()
+    {
+        $parents = collect([]);
+
+        $parent = $this->parent;
+
+        while(!is_null($parent)) {
+            $parents->push($parent);
+            $parent = $parent->parent;
+        }
+
+        return $parents;
     }
 }

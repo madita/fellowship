@@ -3,7 +3,7 @@
         <v-container>
             <v-row>
                 <v-col
-                cols="8">
+                    cols="8">
                     <v-alert v-if="message" type="success">
                         {{ message }}
                     </v-alert>
@@ -29,7 +29,23 @@
                     <v-btn @click="save">{{ form }}</v-btn>
                 </v-col>
                 <v-col
-                cols="4">
+                    cols="4">
+                    <v-select
+                        v-model="page.parent"
+                        :items="pages"
+                        label="Pages"
+                        persistent-hint
+                        return-object
+                        single-line
+                    >
+                        <template v-slot:selection="{ attrs, item, parent, selected }">
+                            {{ item.title }} ({{ item.slug }})
+                        </template>
+                        <template v-slot:item="{ index, item }">
+                            {{ item.title }} ({{ item.slug }})
+                        </template>
+                    </v-select>
+
                     <v-combobox
                         v-model="taxonomyValue"
                         :items="taxonomy"
@@ -37,6 +53,7 @@
                         @change="setTaxonomy"
                         :search-input.sync="searchTax"
                         hide-selected
+                        :disabled="isDisabled"
                         label="Taxonomy"
                         persistent-hint
                         small-chips
@@ -49,7 +66,8 @@
                         item-text="name"
                         label="Category"
                         multiple
-                        chips
+                        small-chips
+                        deletable-chips
                         clearable
                     ></v-combobox>
 
@@ -148,18 +166,20 @@ export default {
         return {
             loading: true,
             addCategory: false,
-            page: {title: "", body: "", taxonomy:[], terms:[], categories:[]},
+            page: {title: "", body: "", parent: null, taxonomy: [], terms: [], categories: []},
+            pages: [],
             endpoint: '/api/datatable/pages',
             form: "create" | "edit",
             id: null,
             message: "",
             searchTax: null,
             searchTerm: null,
+            searchPage: null,
             terms: [],
             taxonomy: null,
             taxonomyValue: "category",
             termValue: [],
-            newCategory:"",
+            newCategory: "",
             categories: [],
             categoryValue: [],
             parents: [],
@@ -172,7 +192,7 @@ export default {
         }
     },
     watch: {
-        termValue (val, prev) {
+        termValue(val, prev) {
             if (val.length === prev.length) return
 
             this.termValue = val.map(v => {
@@ -197,15 +217,31 @@ export default {
             this.loading = true
             return axios.get(`/api/pages/${this.id}/edit`).then((response) => {
                 this.page = response.data.page
+                this.page.parent = response.data.parent
 
                 let taxonomies = response.data.taxonomies;
-                this.termValue = taxonomies.tags;
 
-                delete taxonomies.tags;
-                this.taxonomyValue = Object.keys(taxonomies);
+                if (taxonomies.hasOwnProperty('tags')) {
+                    this.termValue = taxonomies.tags;
+                    delete taxonomies.tags;
+                }
 
-                this.categoryValue = taxonomies[this.taxonomyValue]
+                if(Object.keys(taxonomies).length > 0)
+                this.taxonomyValue = Object.keys(taxonomies)[0];
 
+                if (this.taxonomyValue.length > 0 && taxonomies.hasOwnProperty(this.taxonomyValue)) {
+                    //TODO categorie update needs fixing can only delete all values
+                    this.categoryValue = taxonomies[this.taxonomyValue]
+                }
+
+
+                this.loading = false
+            });
+        },
+        getPages() {
+//https://fellowship.test/api/datatable/pages?column=id&operator=equals&value=&page=1&itemsPerPage=72&pageStart=0&pageStop=72&pageCount=1&itemsLength=72
+            return axios.get(`/api/datatable/pages?page=1&itemsPerPage=100000&pageStart=-1&pageStop=100000000&pageCount=-1&itemsLength=-1`).then((response) => {
+                this.pages = response.data.data.records.data
 
                 this.loading = false
             });
@@ -222,7 +258,9 @@ export default {
         getTerms() {
             this.loading = true
             return axios.get(`/api/tag/terms/tags`).then((response) => {
-                this.terms = response.data.map(x => {return {name:x.name, color: x.color}})
+                this.terms = response.data.map(x => {
+                    return {name: x.name, color: x.color}
+                })
 
                 this.loading = false
             });
@@ -261,6 +299,10 @@ export default {
             }
         },
         update() {
+            this.page.terms = this.termValue;
+            this.page.taxonomy = this.taxonomyValue
+            this.page.categories = this.categoryValue
+
             axios.patch(`${this.endpoint}/${this.id}`, this.page).then(() => {
                 this.message = "Page updated"
             }).catch((error) => {
@@ -286,6 +328,11 @@ export default {
             })
         },
     },
+    computed: {
+      isDisabled() {
+          return this.id > 0 && this.categoryValue.length > 0
+      }
+    },
 
     created() {
         if (this.$route.params.form) {
@@ -300,6 +347,7 @@ export default {
         this.getTaxonomy()
         this.getCategories('category')
         this.getTerms()
+        this.getPages()
 
     }
 }

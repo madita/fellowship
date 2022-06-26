@@ -19,14 +19,18 @@ class PageController extends DataTableController
     {
         $page = auth()->user()->pages()->create($request->only($this->getUpdatableColumns()));
 
-        $taxonomy = null;
-        if($request->get('taxonomy')) {
+        if($request->get('parent')) {
+            $parent = $request->get('parent');
+
+            $page->parent_id = $parent['id'];
+            $page->save();
+        }
+
+        if($request->get('taxonomy') && $request->get('categories')) {
             $taxonomy = $request->get('taxonomy');
             $taxonomy = $taxonomy['taxonomy'];
 
-            if($request->get('categories')) {
-                $page->addTerms($request->get('categories'), $taxonomy);
-            }
+            $page->addTerms($request->get('categories'), $taxonomy);
         }
 
         if($request->get('terms')) {
@@ -34,6 +38,38 @@ class PageController extends DataTableController
         }
 
     }
+
+        public function update($id, Request $request)
+        {
+//d
+            $page = Page::find($id);
+            $page->update($request->only($this->getUpdatableColumns()));
+
+//
+            if($request->get('parent')) {
+                $parent = $request->get('parent');
+
+
+                $page->parent_id = $parent['id'];
+                $page->update();
+            }
+
+            $page->detachCategories();
+
+            if($request->get('taxonomy') && $request->get('categories')) {
+                $taxonomy = $request->get('taxonomy');
+                if(!is_string($taxonomy)) {
+                    $taxonomy = $taxonomy['taxonomy'];
+                }
+
+                $page->addTerms($request->get('categories'), $taxonomy);
+            }
+
+            if($request->get('terms')) {
+                $page->addTerms($request->get('terms'),'tags');
+            }
+
+        }
 
     public function getUpdatableColumns()
     {
@@ -70,8 +106,5 @@ class PageController extends DataTableController
         ];
     }
 
-//    public function update($id, PageRequest $request)
-//    {
-//        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
-//    }
+
 }

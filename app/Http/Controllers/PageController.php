@@ -15,7 +15,7 @@ class PageController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+
     }
 
     /**
@@ -27,7 +27,8 @@ class PageController extends Controller
      */
     public function view($slug)
     {
-        $page = Page::where('slug', '=', $slug)->first();
+        $page = Page::where('slug', '=', $slug)->with('children')->first();
+        $parent = null;
         //$pages = Page::all();
 
         if (!$page || !$page->published) {
@@ -44,14 +45,16 @@ class PageController extends Controller
             return  [$taxonomy => $page->getTerms($taxonomy)];
         });
 
+
         return response()
-            ->json(['page' => $page, 'taxonomies' => $tax]);
+            ->json(['page' => $page, 'parents' => $page->parents, 'taxonomies' => $tax]);
     }
 
     public function show(Page $page)
     {
+
         //$page = Page::where('slug', '=', $slug)->first();
-        $pages = Page::all();
+//        $pages = Page::all();
 
         if (!$page) {
             return abort(404);
@@ -67,19 +70,19 @@ class PageController extends Controller
 //            return redirect('/')->withErrors(config('constants.NA'));
 
         return response()
-            ->json(['page' => $page, 'taxonomies' => $tax]);
+            ->json(['page' => $page, 'parent'=> $page->parent, 'taxonomies' => $tax]);
     }
 
 
 
-    public function showWithCategory($taxonomy, $category)
-    {
-
-        $pages = Page::withTerm($category, 'tags')->where('published', true)->get();
-
-        return response()
-            ->json(['pages' => $pages]);
-    }
+//    public function showWithCategory($taxonomy, $category)
+//    {
+//
+//        $pages = Page::withTerm($category, 'tags')->where('published', true)->get();
+//
+//        return response()
+//            ->json(['pages' => $pages]);
+//    }
 
     public function history(Page $page)
     {
