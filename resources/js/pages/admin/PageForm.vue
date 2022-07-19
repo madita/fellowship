@@ -13,20 +13,9 @@
                         v-model="page.title"
                     ></v-text-field>
 
-                    <simple-editor v-model="page.body" :value="page.body" id="text-body" name="content"></simple-editor>
+<!--                    <simple-editor v-model="page.body" :value="page.body" id="text-body" name="content"></simple-editor>-->
+                        <tiptap v-model="page.body" :value="page.body" id="text-body" name="content"/>
 
-                    <v-checkbox
-                        v-model="page.published"
-                        label="Published"
-                    ></v-checkbox>
-
-                    <v-checkbox
-                        v-model="page.sign_in_only"
-                        label="Sign in only"
-                    ></v-checkbox>
-
-
-                    <v-btn @click="save">{{ form }}</v-btn>
                 </v-col>
                 <v-col
                     cols="4">
@@ -148,6 +137,19 @@
 
                         </template>
                     </v-combobox>
+
+                    <v-checkbox
+                        v-model="page.published"
+                        label="Published"
+                    ></v-checkbox>
+
+                    <v-checkbox
+                        v-model="page.sign_in_only"
+                        label="Sign in only"
+                    ></v-checkbox>
+
+
+                    <v-btn @click="save">{{ form }}</v-btn>
                 </v-col>
             </v-row>
         </v-container>
@@ -156,11 +158,12 @@
 </template>
 
 <script>
-import SimpleEditor from '../../components/common/SimpleEditor'
+// import SimpleEditor from '../../components/common/SimpleEditor'
+import Tiptap from '../../components/common/tiptap/Tiptap'
 
 export default {
     components: {
-        SimpleEditor
+        Tiptap
     },
     data() {
         return {
@@ -299,6 +302,7 @@ export default {
             }
         },
         update() {
+            console.log('pageupdate',this.page)
             this.page.terms = this.termValue;
             this.page.taxonomy = this.taxonomyValue
             this.page.categories = this.categoryValue
