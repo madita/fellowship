@@ -42,7 +42,6 @@ export default {
             this.loading = true
             return axios.get(`/api/taxables?term=${this.term}&taxonomy=${this.taxonomy}&model=${this.model}`).then((response) => {
                 this.taxables = response.data
-                console.log('taxables',this.taxables)
 
             }).catch((error) => {
                 if (error.response.status === 404) {

@@ -89,13 +89,13 @@ export default {
             if (item.username) {
                 this.command({ id: item.id, name: item.name, username: item.username })
             }
-            //selected hashtga
+            //selected hashtag
             else if (item.name) {
-                this.command({ id: item.id, name: item.name, color: item.color })
+                this.command({ id: item.id, name: item.name, color: item.color, slug: item.slug })
             }
             // selected page
             else if (item.title) {
-                this.command({ id: item.id, title: item.title })
+                this.command({ id: item.id, title: item.title, slug: item.slug })
             }
             else if (item) {
                 this.command({ id: item })

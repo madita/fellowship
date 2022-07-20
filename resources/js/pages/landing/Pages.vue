@@ -93,7 +93,6 @@ export default {
                 this.page = response.data.page
                 this.parents = Object.values(response.data.parents)
 
-                console.log('this.parents',this.parents)
                 let taxonomies = response.data.taxonomies
                 this.tags = taxonomies.tags;
 

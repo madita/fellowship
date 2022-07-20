@@ -6,24 +6,20 @@ const WikiMention = Mention.extend({
         return {
             id: {
                 default: null,
-                parseHTML: element => element.getAttribute('data-id'),
+                parseHTML: element => element.getAttribute('page-id'),
                 renderHTML: attributes => {
                     if (!attributes.id) {
                         return {}
                     }
 
                     return {
-                        'data-id': attributes.id,
+                        'page-id': attributes.id,
                     }
                 },
             },
             slug: {
                 default: null,
-                parseHTML: (element) => {
-                    return {
-                        slug: element.getAttribute("data-slug")
-                    };
-                },
+                parseHTML: element => element.getAttribute('data-slug'),
                 renderHTML: (attributes) => {
                     if (!attributes.slug) {
                         return {};
@@ -31,23 +27,6 @@ const WikiMention = Mention.extend({
 
                     return {
                         "data-slug": attributes.slug
-                    };
-                }
-            },
-            name: {
-                default: null,
-                parseHTML: (element) => {
-                    return {
-                        name: element.getAttribute("data-name")
-                    };
-                },
-                renderHTML: (attributes) => {
-                    if (!attributes.name) {
-                        return {};
-                    }
-
-                    return {
-                        "data-name": attributes.name
                     };
                 }
             },
@@ -69,19 +48,20 @@ const WikiMention = Mention.extend({
     parseHTML() {
         return [
             {
-                tag: "span[data-title]"
+                tag: "a[page-id]"
             }
         ];
     },
-    renderHTML(props) {
-        const { node } = props;
+    renderHTML({ node }) {
+
         return [
             "a",
             {
                 "style": "font-weight:600;",
-                "pagekey": node.attrs.id,
+                "page-id": node.attrs.id,
                 "data-title": node.attrs.title,
-                "data-linked-resource-type": "wikiinfo",
+                "data-slug": node.attrs.slug,
+                "data-linked-resource-type": "wikiable",
                 "href": `/p/${node.attrs.slug}`
             },
 

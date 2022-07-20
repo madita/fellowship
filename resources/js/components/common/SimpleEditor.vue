@@ -27,7 +27,6 @@ import 'quill/dist/quill.snow.css'
 import 'quill/dist/quill.bubble.css'
 import { quillEditor, Quill } from 'vue-quill-editor'
 import ImageResize from 'quill-image-resize';
-    import axios from 'axios'
 
 // Register ImageResize module
 Quill.register('modules/imageResize', ImageResize);
@@ -164,7 +163,8 @@ const toolbarOptions = {
                         // Set cursor to the end
                         quill.setSelection(length + 1);
                     }
-                    console.log('upload',this.form.images)}
+                    console.log('upload',this.form.images)
+                }
             },
 
             // handleImageAdded(file, Editor, cursorLocation) {

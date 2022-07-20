@@ -7,31 +7,27 @@ const HashtagMention = Mention.extend({
         return {
             id: {
                 default: null,
-                parseHTML: element => element.getAttribute('data-id'),
+                parseHTML: element => element.getAttribute('term-id'),
                 renderHTML: attributes => {
                     if (!attributes.id) {
                         return {}
                     }
 
                     return {
-                        'data-id': attributes.id,
+                        'term-id': attributes.id,
                     }
                 },
             },
             name: {
                 default: null,
-                parseHTML: (element) => {
-                    return {
-                        name: element.getAttribute("data-name")
-                    };
-                },
+                parseHTML: element => element.getAttribute('data-tag'),
                 renderHTML: (attributes) => {
                     if (!attributes.name) {
                         return {};
                     }
 
                     return {
-                        "data-name": attributes.name
+                        "data-tag": attributes.name
                     };
                 }
             },
@@ -39,12 +35,9 @@ const HashtagMention = Mention.extend({
                 default: null,
                 parseHTML: element => element.getAttribute('data-color'),
                 renderHTML: attributes => {
-                    if (!attributes.color) {
-                        return {}
-                    }
-
                     return {
                         'data-color': attributes.color,
+                        style: `color: ${attributes.color}`,
                     }
                 },
             },
@@ -53,24 +46,21 @@ const HashtagMention = Mention.extend({
     parseHTML() {
         return [
             {
-                tag: "span[data-name]"
+                tag: "a[term-id]"
             }
         ];
     },
     renderHTML({ node }) {
-        // const { node } = props;
-        console.log('node',node)
-
         return [
             "a",
             {
                 "style": `font-weight:600;color:${node.attrs.color}`,
-                "userkey": node.attrs.id,
+                "term-id": node.attrs.id,
                 "data-tag": node.attrs.name,
-                "data-linked-resource-type": "hashtaginfo",
+                "data-color": node.attrs.color,
+                "data-linked-resource-type": "terms",
                 "href": `/tag/${node.attrs.id}`
             },
-
             `#${node.attrs.name}`
         ];
     }

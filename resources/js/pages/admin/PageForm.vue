@@ -302,7 +302,6 @@ export default {
             }
         },
         update() {
-            console.log('pageupdate',this.page)
             this.page.terms = this.termValue;
             this.page.taxonomy = this.taxonomyValue
             this.page.categories = this.categoryValue

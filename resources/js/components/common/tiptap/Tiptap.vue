@@ -140,9 +140,6 @@ export default {
         value(value) {
             const isSame = this.editor.getHTML() === value
 
-            // JSON
-            // const isSame = JSON.stringify(this.editor.getJSON()) === JSON.stringify(value)
-
             if (isSame) {
                 return
             }
@@ -153,37 +150,12 @@ export default {
     },
 
     mounted() {
-        console.log('value',this.value)
         this.editor = new Editor({
             extensions: [
                 StarterKit,
                 CharacterCount.configure({
                     limit: this.limit,
                 }),
-                // Mention.extend({
-                //     name: "mention",
-                // }).configure({
-                //     HTMLAttributes: {
-                //         class: 'mention',
-                //     },
-                //     renderLabel({ options, node }) {
-                //         // const { node } = props;
-                //
-                //         return [
-                //             "a",
-                //             {
-                //                 "style": "font-weight:600;",
-                //                 "user": node.attrs.id,
-                //                 "data-username": node.attrs.label,
-                //                 "data-linked-resource-type": "userinfo",
-                //                 "href": `/user/${node.attrs.id}`
-                //             },
-                //
-                //             `${options.suggestion.char}${node.attrs.label ?? node.attrs.id}`
-                //         ];
-                //     },
-                //     suggestion,
-                // }),
                 CustomMention.extend({
                     name: "mention",
                 }).configure({
@@ -208,18 +180,9 @@ export default {
                     suggestion:wiki,
                 }),
             ],
-            content: ''+this.value,
+            content: this.value,
             onUpdate: () => {
-                // You can access to both HTML and JSON type of your content
-                // const json = this.getJSON();
-                // const html = this.getHTML();
-
-                // console.log({html, json})
                 this.$emit('input', this.editor.getHTML())
-                // send the content to an API here
-                // this.content = json.content[0].content[0].text
-                //     ? json.content[0].content[0].text
-                //     : "";
             }
         })
     },

@@ -7,14 +7,14 @@ const CustomMention = Mention.extend({
         return {
             id: {
                 default: null,
-                parseHTML: element => element.getAttribute('data-id'),
+                parseHTML: element => element.getAttribute('user-id'),
                 renderHTML: attributes => {
                     if (!attributes.id) {
                         return {}
                     }
 
                     return {
-                        'data-id': attributes.id,
+                        'user-id': attributes.id,
                     }
                 },
             },
@@ -70,7 +70,7 @@ const CustomMention = Mention.extend({
     parseHTML() {
         return [
             {
-                tag: "span[data-name]"
+                tag: "a[user-id]"
             }
         ];
     },
@@ -80,10 +80,10 @@ const CustomMention = Mention.extend({
             "a",
             {
                 "style": "font-weight:600;",
-                "userkey": node.attrs.id,
+                "user-id": node.attrs.id,
                 "data-username": node.attrs.username,
-                "data-linked-resource-type": "userinfo",
-                "href": `/user/${node.attrs.id}`
+                "data-linked-resource-type": "user",
+                "href": `/user/${node.attrs.username}`
             },
 
             `@${node.attrs.username}`
