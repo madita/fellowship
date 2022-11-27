@@ -14,9 +14,9 @@ export default {
     // },
 
     items: async function(editor) {
-        const response = await axios('/api/tag/terms/tags')
+        const response = await axios('/api/tag/terms/wiki')
 
-        return response.data.filter(item => item.name.toLowerCase().startsWith(editor.query.toLowerCase())).slice(0, 5)
+        return response.data.filter(item => item.title.toLowerCase().startsWith(editor.query.toLowerCase())).slice(0, 5)
     }.bind(this),
 
     render: () => {

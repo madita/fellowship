@@ -48,7 +48,7 @@ const WikiMention = Mention.extend({
     parseHTML() {
         return [
             {
-                tag: "a[page-id]"
+                tag: "a[wiki-id]"
             }
         ];
     },
@@ -58,11 +58,11 @@ const WikiMention = Mention.extend({
             "a",
             {
                 "style": "font-weight:600;",
-                "page-id": node.attrs.id,
+                "wiki-id": node.attrs.id,
                 "data-title": node.attrs.title,
                 "data-slug": node.attrs.slug,
                 "data-linked-resource-type": "wikiable",
-                "href": `/p/${node.attrs.slug}`
+                "href": `/wiki/${node.attrs.slug}`
             },
 
             `${node.attrs.title}`

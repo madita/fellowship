@@ -6,10 +6,10 @@
                 :class="{ 'is-selected': index === selectedIndex }"
                 v-for="(item, index) in items"
                 :key="index"
-                @click="selectItem(index)"
             >
-                <template v-if="item.title">{{  item.title }}({{ item.slug}})</template>
-                <template v-else>{{ item.username ?? item.name ?? item }}</template>
+                <template  @click="selectItem(index)" v-if="item.title">{{  item.title }}({{ item.slug}})</template>
+                <template  @click="selectItem(index)" v-else>{{ item.username ?? item.title ?? item }}</template>
+                <input type="text" v-model="alternative" @keydown.enter="setAlternative(item)">
 
             </button>
         </template>
@@ -35,6 +35,7 @@ export default {
 
     data() {
         return {
+            alternative:"",
             selectedIndex: 0,
         }
     },
@@ -80,6 +81,10 @@ export default {
 
         enterHandler() {
             this.selectItem(this.selectedIndex)
+        },
+
+        setAlternative(item) {
+            this.command({ id: item.id, title: item.title, slug: item.slug, alternative:this.alternative })
         },
 
         selectItem(index) {

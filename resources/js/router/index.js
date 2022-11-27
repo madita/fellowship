@@ -12,6 +12,7 @@ import ComponentsRoutes from './components.routes'
 import PagesRoutes from './pages.routes'
 import UsersRoutes from './users.routes'
 import LandingRoutes from './landing.routes'
+import WikiRoutes from './wiki.routes'
 import AdminRoutes from './admin.routes'
 
 Vue.use(Router)
@@ -30,6 +31,7 @@ export const routes = [{
     ...PagesRoutes,
     ...UsersRoutes,
     ...LandingRoutes,
+    ...WikiRoutes,
     ...AdminRoutes,
     {
         path: '/blank',

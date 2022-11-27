@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 //Broadcast::routes(['middleware' => ['auth:sanctum']]);
+Route::resource('wiki', "\App\Http\Controllers\WikiController");
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     $user = $request->user();

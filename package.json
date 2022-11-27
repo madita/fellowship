@@ -14,6 +14,7 @@
     },
     "dependencies": {
         "@tiptap/extension-character-count": "^2.0.0-beta.31",
+        "@tiptap/extension-image": "^2.0.0-beta.194",
         "@tiptap/extension-mention": "^2.0.0-beta.102",
         "@tiptap/starter-kit": "^2.0.0-beta.190",
         "@tiptap/vue-2": "^2.0.0-beta.84",
@@ -43,6 +44,7 @@
         "vue-quill-editor": "^3.0.6",
         "vue-router": "^3.2.0",
         "vue-shortkey": "^3.1.7",
+        "vue2-dropzone": "^3.6.0",
         "vue2-google-maps": "^0.10.7",
         "vuedraggable": "^2.24.0",
         "vuetify": "^2.4.3",

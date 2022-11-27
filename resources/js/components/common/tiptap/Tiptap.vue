@@ -1,5 +1,6 @@
 <template>
     <div class="tiptap">
+        <ImageModal ref="ytmodal" @onConfirm="addCommand" />
         <div v-if="editor">
             <button @click="editor.chain().focus().toggleBold().run()" :class="{ 'is-active': editor.isActive('bold') }">
                 <v-icon>mdi-format-bold</v-icon>
@@ -64,7 +65,18 @@
             <button @click="editor.chain().focus().toggleCodeBlock().run()" :class="{ 'is-active': editor.isActive('codeBlock') }">
                 <v-icon>mdi-file-code-outline</v-icon>
             </button>
+            <button @click="openModal();">
+                <svg width="14" height="14" viewBox="0 0 58 58">
+                    <path
+                        d="M57 6H1a1 1 0 0 0-1 1v44c0 .6.4 1 1 1h56c.6 0 1-.4 1-1V7c0-.6-.4-1-1-1zm-1 44H2V8h54v42z"
+                    />
+                    <path
+                        d="M16 28.1A5.6 5.6 0 1 0 16 17 5.6 5.6 0 0 0 16 28zm0-9.1a3.6 3.6 0 1 1 0 7.1 3.6 3.6 0 0 1 0-7.1zM7 46c.2 0 .5 0 .7-.2L24 31.4l10.3 10.3a1 1 0 1 0 1.4-1.4l-4.8-4.8 9.2-10 11.2 10.2a1 1 0 0 0 1.4-1.4l-12-11a1 1 0 0 0-1.4 0l-9.8 10.8-4.8-4.8a1 1 0 0 0-1.3 0l-17 15A1 1 0 0 0 7 46z"
+                    />
+                </svg>
+            </button>
         </div>
+
         <editor-content :editor="editor" v-model="form.body"/>
 
         <div v-if="editor && limit" :class="{'character-count': true, 'character-count--warning': editor.storage.characterCount.characters() === limit}">
@@ -107,20 +119,26 @@
 <script>
 import CharacterCount from '@tiptap/extension-character-count'
 import StarterKit from '@tiptap/starter-kit'
+import Image from '@tiptap/extension-image'
 import WikiMention from './mention/WikiMention'
 import CustomMention from './mention/CustomMention'
 import HashtagMention from './mention/HashtagMention'
 import { Editor, EditorContent } from '@tiptap/vue-2'
+import ImageModal from "./ImageModal";
 
 import suggestion from './mention/suggestion'
 import hashtag from './mention/hashtag'
 import wiki from './mention/wiki'
+
+// import Image from './Image';
+
 
 
 export default {
     components: {
         StarterKit,
         EditorContent,
+        ImageModal
     },
 
     props: ['value', 'limit'],
@@ -148,11 +166,26 @@ export default {
 
         }
     },
+    methods: {
+        openModal(command) {
+            // console.log('testmodal')
+            this.$refs.ytmodal.showModal(command);
+        },
+        addCommand(data) {
+            if (data.command !== null) {
+                data.command(data.data);
+            }
+        },
+        setContent() {
+            this.editor.setContent(this.content);
+        }
+    },
 
     mounted() {
         this.editor = new Editor({
             extensions: [
                 StarterKit,
+                Image,
                 CharacterCount.configure({
                     limit: this.limit,
                 }),
@@ -206,9 +239,9 @@ export default {
         margin-top: 0.75em;
     }
 
-    /*min-height: 100px;
-    max-height: 100px;
-    overflow: scroll;*/
+    min-height: 100px;
+    max-height: 200px;
+    overflow-y: scroll;
 
     ul,
     ol {

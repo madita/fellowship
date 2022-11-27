@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Models\Page;
-use App\Models\Tag\Taxonomy;
+//use App\Models\Tag\Taxonomy;
 use Illuminate\Http\Request;
 
 class PageController extends DataTableController
@@ -17,6 +17,7 @@ class PageController extends DataTableController
 
     public function store(Request $request)
     {
+//        dd($request);
         $page = auth()->user()->pages()->create($request->only($this->getUpdatableColumns()));
 
         if($request->get('parent')) {
@@ -29,12 +30,13 @@ class PageController extends DataTableController
         if($request->get('taxonomy') && $request->get('categories')) {
             $taxonomy = $request->get('taxonomy');
             $taxonomy = $taxonomy['taxonomy'];
-
-            $page->addTerms($request->get('categories'), $taxonomy);
+//            dd('hm');
+            $page->addCategories($request->get('categories'), $taxonomy);
         }
 
+
         if($request->get('terms')) {
-            $page->addTerms($request->get('terms'),'tags');
+            $page->addCategories($request->get('terms'),'tags');
         }
 
     }
@@ -62,11 +64,11 @@ class PageController extends DataTableController
                     $taxonomy = $taxonomy['taxonomy'];
                 }
 
-                $page->addTerms($request->get('categories'), $taxonomy);
+                $page->addCategories($request->get('categories'), $taxonomy);
             }
 
             if($request->get('terms')) {
-                $page->addTerms($request->get('terms'),'tags');
+                $page->addCategories($request->get('terms'),'tags');
             }
 
         }
@@ -75,7 +77,7 @@ class PageController extends DataTableController
     {
         return  [
             'title',
-            'body',
+            'content',
             'published',
             'sign_in_only',
         ];
@@ -84,7 +86,7 @@ class PageController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'body'         => 'wysiwyg',
+            'content'         => 'wysiwyg',
             'published'    => 'checkbox',
             'sign_in_only' => 'checkbox',
         ];

@@ -39,10 +39,10 @@ class PageController extends Controller
             return abort(403);
         }
 
-        $taxonomies = $page->getTaxonomies('taxonomy')->unique();
+        $taxonomies = $page->getCategories('taxonomy')->unique();
 
         $tax = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use($page)  {
-            return  [$taxonomy => $page->getTerms($taxonomy)];
+            return  [$taxonomy => $page->getCategories($taxonomy)];
         });
 
 
@@ -63,7 +63,7 @@ class PageController extends Controller
         $taxonomies = $page->getTaxonomies('taxonomy')->unique();
 
         $tax = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use($page)  {
-            return  [$taxonomy => $page->getTerms($taxonomy)->pluck(['name'])];
+            return  [$taxonomy => $page->getCategories($taxonomy)->pluck(['name'])];
         });
 
 //        if ($page->sign_in_only && !Auth::check())

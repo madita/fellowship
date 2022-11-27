@@ -3,26 +3,32 @@
 namespace App\Models;
 
 use App\Traits\HasTaxonomies;
+use App\Traits\Wikiable;
+use Lecturize\Taxonomies\Contracts\CanHaveCategories;
+//use Lecturize\Taxonomies\Traits\HasCategories;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use App\Traits\Revisionable;
 
-class Page extends Model implements HasMedia
+class Page extends Model implements HasMedia, CanHaveCategories
 {
     use InteractsWithMedia;
     use HasTaxonomies;
     use Revisionable;
+    use Wikiable;
     use Sluggable;
 
     protected $fillable = [
         'published',
         'title',
         'slug',
-        'body',
-//        'user_id',
+        'content',
         'parent_id',
+        'user_id',
+        'created_at',
+        'updated_at',
     ];
 
     protected $taxable_title = 'title';
@@ -39,10 +45,15 @@ class Page extends Model implements HasMedia
         ];
     }
 
+    protected $wikiable = [
+        'title' => 'title',
+        'slug' => 'slug'
+    ];
+
     protected $revisionable = [
         'title',
         'slug',
-        'body',
+        'content',
     ];
 
     public function user()

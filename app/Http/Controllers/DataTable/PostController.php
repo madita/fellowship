@@ -17,7 +17,7 @@ class PostController extends DataTableController
         $post = auth()->user()->posts()->create($request->only($this->getUpdatableColumns()));
 
         if($request->get('termValue')) {
-            $post->addTerms($request->get('termValue'), 'blog');
+            $post->addCategories($request->get('termValue'), 'blog');
         }
     }
 

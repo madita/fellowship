@@ -4,13 +4,13 @@
             <v-container class="py-6 pt-lg-15">
                 <v-list-item-group
                     color="primary"
-                    v-for="(taxable, type) in taxables"
+                    v-for="(taxable, type) in taxables.type"
                     :key="`${type}-${$taxable}`"
                 >{{type}}
                     <v-list-item
                         v-for="(model) in taxable"
                         :key="`${model.data.slug}`"
-                        @click="goTo(model.data.slug, type)"
+                        @click="goTo(model.data.slug, model.taxonomy[0].taxonomy)"
                     >
                         <v-list-item-content>
                             <v-list-item-title v-text="model.taxable_title"></v-list-item-title>
@@ -41,7 +41,7 @@ export default {
         getTaxables(){
             this.loading = true
             return axios.get(`/api/taxables?term=${this.term}&taxonomy=${this.taxonomy}&model=${this.model}`).then((response) => {
-                this.taxables = response.data
+                this.taxables = response.data.data
 
             }).catch((error) => {
                 if (error.response.status === 404) {

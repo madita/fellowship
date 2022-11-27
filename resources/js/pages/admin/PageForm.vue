@@ -14,7 +14,7 @@
                     ></v-text-field>
 
 <!--                    <simple-editor v-model="page.body" :value="page.body" id="text-body" name="content"></simple-editor>-->
-                        <tiptap v-model="page.body" :value="page.body" id="text-body" name="content"/>
+                        <tiptap v-model="page.content" :value="page.content" id="text-content" name="content"/>
 
                 </v-col>
                 <v-col
@@ -52,7 +52,7 @@
                     <v-combobox
                         v-model="categoryValue"
                         :items="categories"
-                        item-text="name"
+                        item-text="title"
                         label="Category"
                         multiple
                         small-chips
@@ -72,7 +72,7 @@
                         <v-combobox
                             v-model="parentValue"
                             :items="parents"
-                            item-text="name"
+                            item-text="title"
                             label="Parent Category"
                             chips
                             clearable
@@ -85,7 +85,7 @@
                     <v-combobox
                         v-model="termValue"
                         :items="terms"
-                        item-text="name"
+                        item-text="title"
                         :search-input.sync="searchTerm"
                         hide-selected
                         label="Terms"
@@ -114,7 +114,7 @@
                                 small
                             >
           <span class="pr-2">
-            {{ item.name }}
+            {{ item.title }}
           </span>
                                 <v-icon
                                     small
@@ -132,7 +132,7 @@
                                 label
                                 small
                             >
-                                {{ item.name }}
+                                {{ item.title }}
                             </v-chip>
 
                         </template>
@@ -169,7 +169,7 @@ export default {
         return {
             loading: true,
             addCategory: false,
-            page: {title: "", body: "", parent: null, taxonomy: [], terms: [], categories: []},
+            page: {title: "", content: "", parent: null, taxonomy: [], terms: [], categories: []},
             pages: [],
             endpoint: '/api/datatable/pages',
             form: "create" | "edit",
@@ -201,7 +201,7 @@ export default {
             this.termValue = val.map(v => {
                 if (typeof v === 'string') {
                     v = {
-                        name: v,
+                        title: v,
                         color: this.colors[this.nonce - 1],
                     }
 
@@ -262,7 +262,7 @@ export default {
             this.loading = true
             return axios.get(`/api/tag/terms/tags`).then((response) => {
                 this.terms = response.data.map(x => {
-                    return {name: x.name, color: x.color}
+                    return x.title
                 })
 
                 this.loading = false
@@ -315,13 +315,13 @@ export default {
             })
         },
         store() {
-            this.page.terms = this.termValue;
+            this.page.terms = this.termValue
             this.page.taxonomy = this.taxonomyValue
             this.page.categories = this.categoryValue
 
 
             axios.post(`${this.endpoint}`, this.page).then(() => {
-                this.page = {title: "", body: ""};
+                this.page = {title: "", content: ""};
                 this.message = "Page saved ..link"
             }).catch((error) => {
                 if (error.response.status === 422) {

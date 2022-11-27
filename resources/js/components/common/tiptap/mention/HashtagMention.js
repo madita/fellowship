@@ -18,16 +18,16 @@ const HashtagMention = Mention.extend({
                     }
                 },
             },
-            name: {
+            title: {
                 default: null,
                 parseHTML: element => element.getAttribute('data-tag'),
                 renderHTML: (attributes) => {
-                    if (!attributes.name) {
+                    if (!attributes.title) {
                         return {};
                     }
 
                     return {
-                        "data-tag": attributes.name
+                        "data-tag": attributes.title
                     };
                 }
             },
@@ -39,6 +39,28 @@ const HashtagMention = Mention.extend({
                         'data-color': attributes.color,
                         style: `color: ${attributes.color}`,
                     }
+                },
+            },
+            slug: {
+                default: null,
+                parseHTML: element => element.getAttribute('term-slug'),
+                renderHTML: attributes => {
+                    if (!attributes.slug) {
+                        return {}
+                    }
+
+                    return {
+                        'term-slug': attributes.slug,
+                    }
+                },
+            },
+            alternative: {
+                default: null,
+                parseHTML: element => element.getAttribute('alternative'),
+                renderHTML: attributes => {
+                    return {
+                        "alternative": attributes.alternative
+                    };
                 },
             },
         };
@@ -56,12 +78,13 @@ const HashtagMention = Mention.extend({
             {
                 "style": `font-weight:600;color:${node.attrs.color}`,
                 "term-id": node.attrs.id,
-                "data-tag": node.attrs.name,
+                "data-tag": node.attrs.title,
                 "data-color": node.attrs.color,
                 "data-linked-resource-type": "terms",
-                "href": `/tag/${node.attrs.id}`
+                "alternative": node.attrs.alternative,
+                "href": `/tag/${node.attrs.slug}`
             },
-            `#${node.attrs.name}`
+            `#${node.attrs.alternative ?? node.attrs.title}`
         ];
     }
 

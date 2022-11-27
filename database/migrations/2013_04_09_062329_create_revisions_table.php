@@ -28,8 +28,8 @@ class CreateRevisionsTable extends Migration
             $table->string('action');
             $table->string('revisionable_type');
             $table->integer('revisionable_id');
-            $table->text('old_value')->nullable();
-            $table->text('new_value')->nullable();
+            $table->longtext('old_value')->nullable();
+            $table->longtext('new_value')->nullable();
             $table->integer('user_id')->nullable();
             $table->string('ip')->nullable();
             $table->string('ip_forwarded')->nullable();

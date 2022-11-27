@@ -1,11 +1,35 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
+/**
+ * Class TaxonomiesTable
+ */
 class CreateTaxonomieTable extends Migration
 {
+    /**
+     * Table names.
+     *
+     * @var string  $terms       The terms table name.
+     * @var string  $taxonomies  The taxonomies table name.
+     * @var string  $pivot       The pivot table name.
+     */
+    protected $terms;
+    protected $taxonomies;
+    protected $pivot;
+
+    /**
+     * Create a new migration instance.
+     */
+    public function __construct()
+    {
+        $this->terms      = config('lecturize.taxonomies.terms.table',      config('lecturize.taxonomies.terms_table',      'terms'));
+        $this->taxonomies = config('lecturize.taxonomies.taxonomies.table', config('lecturize.taxonomies.taxonomies_table', 'taxonomies'));
+        $this->pivot      = config('lecturize.taxonomies.pivot.table',      config('lecturize.taxonomies.pivot_table',      'taxables'));
+    }
+
     /**
      * Run the migrations.
      *
@@ -13,53 +37,71 @@ class CreateTaxonomieTable extends Migration
      */
     public function up()
     {
-        Schema::create('terms', function (Blueprint $table) {
+        Schema::create($this->terms, function(Blueprint $table)
+        {
             $table->increments('id');
 
-            $table->string('name')->nullable()->unique();
+            $table->string('title')->nullable()->unique();
             $table->string('slug')->nullable()->unique();
-            $table->smallInteger('sort')->unsigned()->default(0);
-            $table->string('desc')->nullable();
-            $table->boolean('archived')->default(false);
-            $table->string('color', 7)->default('#000000');
+            $table->longText('content')->nullable();
+            $table->text('lead')->nullable();
+
 
             $table->timestamps();
             $table->softDeletes();
         });
 
-        Schema::create('taxonomies', function (Blueprint $table) {
+        Schema::create($this->taxonomies, function(Blueprint $table)
+        {
             $table->increments('id');
+            $table->uuid('uuid')->nullable();
+            $table->integer('parent_id')->nullable()->unsigned()->index();
 
             $table->integer('term_id')
                 ->nullable()
                 ->unsigned()
                 ->references('id')
-                ->on('terms')
+                ->on($this->terms)
                 ->onDelete('cascade');
 
             $table->string('taxonomy')->default('default');
-            $table->string('desc')->nullable();
-            $table->boolean('archived')->default(false);
-            $table->string('color', 7)->default('#000000');
+            $table->text('description')->nullable();
+            $table->longText('content')->nullable();
+            $table->text('lead')->nullable();
+            $table->text('meta_desc')->nullable();
 
-            $table->integer('parent_id')->unsigned()->default(0);
-            $table->smallInteger('weight')->unsigned()->default(0);
+
+            $table->integer('parent')->unsigned()->default(0);
+
+            $table->smallInteger('sort')->unsigned()->default(0);
+
+            $table->boolean('visible')->default(1);
+            $table->boolean('searchable')->default(1);
+//            $table->json('properties')->nullable();
+            $table->longText('properties')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
 
+            $table->foreign('parent_id')
+                ->references('id')
+                ->on($this->taxonomies)
+                ->onDelete('cascade');
+
             $table->unique(['term_id', 'taxonomy']);
         });
 
-        Schema::create('taxables', function (Blueprint $table) {
+        Schema::create($this->pivot, function(Blueprint $table)
+        {
             $table->integer('taxonomy_id')
                 ->nullable()
                 ->unsigned()
                 ->references('id')
-                ->on('taxonomies');
+                ->on($this->taxonomies);
+
+            $table->primary(['taxonomy_id', 'taxable_type', 'taxable_id']);
 
             $table->nullableMorphs('taxable');
-            $table->bigInteger('term_order')->default(0);
         });
     }
 
@@ -70,8 +112,8 @@ class CreateTaxonomieTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('taxables');
-        Schema::dropIfExists('taxonomies');
-        Schema::dropIfExists('terms');
+        Schema::dropIfExists($this->pivot);
+        Schema::dropIfExists($this->taxonomies);
+        Schema::dropIfExists($this->terms);
     }
 }

@@ -63,7 +63,7 @@
                     :itemsPerPage="response.records.per_page"
                     :pageCount="response.records.last_page"
                     :headers="response.headers"
-                    :items="response.records.data"
+                    :items="filteredRecords"
                     :server-items-length="response.records.total"
                     :search="quickSearchQuery"
                     :loading="loading"
@@ -337,29 +337,29 @@
             }
         },
         computed: {
-            // filteredRecords () {
-            //     let data = this.response.records.data
-            //
-            //     data = data.filter((row) => {
-            //         return Object.keys(row).some((key) => {
-            //             return String(row[key]).toLowerCase().indexOf(this.quickSearchQuery.toLowerCase()) > -1
-            //         })
-            //     })
-            //
-            //     if (this.sort.key) {
-            //         data = _.orderBy(data, (i) => {
-            //             let value = i[this.sort.key]
-            //
-            //             if (!isNaN(parseFloat(value)) && isFinite(value)) {
-            //                 return parseFloat(value)
-            //             }
-            //
-            //             return String(i[this.sort.key]).toLowerCase()
-            //         }, this.sort.order)
-            //     }
-            //
-            //     return data
-            // },
+            filteredRecords () {
+                let data = this.response.records.data
+
+                data = data.filter((row) => {
+                    return Object.keys(row).some((key) => {
+                        return String(row[key]).toLowerCase().indexOf(this.quickSearchQuery.toLowerCase()) > -1
+                    })
+                })
+
+                if (this.sort.key) {
+                    data = _.orderBy(data, (i) => {
+                        let value = i[this.sort.key]
+
+                        if (!isNaN(parseFloat(value)) && isFinite(value)) {
+                            return parseFloat(value)
+                        }
+
+                        return String(i[this.sort.key]).toLowerCase()
+                    }, this.sort.order)
+                }
+
+                return data
+            },
             canSelectItems () {
                 return this.filteredRecords.length <= 500
             }

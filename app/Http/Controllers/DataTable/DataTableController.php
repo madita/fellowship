@@ -297,6 +297,6 @@ abstract class DataTableController extends Controller
 
     public function getCategories($taxonomy)
     {
-        $this->builder->getModel()->getTerms($taxonomy);
+        $this->builder->getModel()->getCategories($taxonomy);
     }
 }

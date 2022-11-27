@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use App\Models\Tag\Term;
+use Lecturize\Taxonomies\Models\Term;
 use Illuminate\Http\Request;
 
 class TermController extends DataTableController

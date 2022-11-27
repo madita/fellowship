@@ -3,7 +3,7 @@
 namespace App\Helpers;
 
 use App\Models\Tag\Taxonomy;
-use App\Models\Tag\Term;
+use Lecturize\Taxonomies\Models\Term;
 
 class TaxonomyHelper
 {
@@ -27,19 +27,19 @@ class TaxonomyHelper
     public static function createTerms(array $terms)
     {
         if (count($terms) > 0) {
-            $found = Term::whereIn('name', $terms)->pluck('name')->all();
+            $found = Term::whereIn('title', $terms)->pluck('title')->all();
 
             if (!is_array($found)) {
                 $found = [];
             }
 
-            foreach (array_diff($terms, $found) as $name) {
-                if (Term::where('name', $name)->first()) {
+            foreach (array_diff($terms, $found) as $title) {
+                if (Term::where('title', $title)->first()) {
                     continue;
                 }
 
                 $term = new Term();
-                $term->name = $name;
+                $term->title = $title;
                 $term->save();
             }
         }
@@ -55,13 +55,13 @@ class TaxonomyHelper
     {
         if (count($terms) > 0) {
             // only keep terms with existing entries in terms table
-            $terms = Term::whereIn('name', $terms)->pluck('name')->all();
+            $terms = Term::whereIn('title', $terms)->pluck('title')->all();
 
             // create taxonomy entries for given terms
             foreach ($terms as $term) {
-                $term_id = Term::where('name', $term)->first()->id;
+                $term_id = Term::where('title', $term)->first()->id;
 
-                if (Taxonomy::where('taxonomy', $taxonomy)->where('term_id', $term_id)->where('parent_id', $parent)->first()) {
+                if (Taxonomy::where('taxonomy', $taxonomy)->where('term_id', $term_id)->first()) {
                     //->where('sort', $order)->first()
                     continue;
                 }
@@ -69,7 +69,10 @@ class TaxonomyHelper
                 $model = new Taxonomy();
                 $model->taxonomy = $taxonomy;
                 $model->term_id = $term_id;
-                $model->parent_id = $parent;
+                if($parent > 0) {
+                    $model->parent_id = $parent;
+                }
+
 //                $model->sort = $order;
                 $model->save();
             }

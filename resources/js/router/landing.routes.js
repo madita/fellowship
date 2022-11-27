@@ -15,14 +15,14 @@ export default [
                 layout: 'landing'
             }
     },
-    {
-        path: '/pages/:taxonomy/:category',
-        name: 'pages-category',
-        component: () => import(/* webpackChunkName: "landing-posts" */ '@/pages/landing/PagesTag.vue'),
-        meta: {
-            layout: 'landing'
-        }
-    },
+    // {
+    //     path: '/pages/:taxonomy/:category',
+    //     name: 'pages-category',
+    //     component: () => import(/* webpackChunkName: "landing-posts" */ '@/pages/landing/PagesTag.vue'),
+    //     meta: {
+    //         layout: 'landing'
+    //     }
+    // },
     {
         path: '/tags/:term/:model?',
         name: 'taxable',
