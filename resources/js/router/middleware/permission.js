@@ -25,7 +25,8 @@ export default function permission ({ to, from, store, next }){
             case "admin-announcements":
                 return permissions.includes("manage-post")
 
-
+            case "wiki-edit":
+                return permissions.includes("manage-page")
 
             default:
                 return false;

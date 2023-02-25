@@ -99,7 +99,7 @@
                             <v-list-item>
                                 <v-list-item-content>
                                     <v-list-item-title>
-                                        No results matching "<strong>{{ searchTax }}</strong>". Press <kbd>enter</kbd> to create a new one
+                                        No results matching "<strong>{{ searchTerm }}</strong>". Press <kbd>enter</kbd> to create a new one
                                     </v-list-item-title>
                                 </v-list-item-content>
                             </v-list-item>
@@ -219,24 +219,27 @@ export default {
         getPage() {
             this.loading = true
             return axios.get(`/api/pages/${this.id}/edit`).then((response) => {
+
                 this.page = response.data.page
                 this.page.parent = response.data.parent
 
                 let taxonomies = response.data.taxonomies;
+                let terms = response.data.terms;
 
                 if (taxonomies.hasOwnProperty('tags')) {
                     this.termValue = taxonomies.tags;
                     delete taxonomies.tags;
                 }
 
-                if(Object.keys(taxonomies).length > 0)
-                this.taxonomyValue = Object.keys(taxonomies)[0];
+                // if(Object.keys(taxonomies).length > 0)
+                this.taxonomyValue = taxonomies[0];
 
-                if (this.taxonomyValue.length > 0 && taxonomies.hasOwnProperty(this.taxonomyValue)) {
+                if (this.taxonomyValue.length > 0 && terms.hasOwnProperty(this.taxonomyValue)) {
                     //TODO categorie update needs fixing can only delete all values
-                    this.categoryValue = taxonomies[this.taxonomyValue]
+                    this.categoryValue = terms[this.taxonomyValue]
                 }
 
+                this.getCategories(this.taxonomyValue)
 
                 this.loading = false
             });
@@ -261,7 +264,7 @@ export default {
         getTerms() {
             this.loading = true
             return axios.get(`/api/tag/terms/tags`).then((response) => {
-                this.terms = response.data.map(x => {
+                this.terms = response.data.terms.map(x => {
                     return x.title
                 })
 
@@ -275,7 +278,7 @@ export default {
             this.loading = true
             return axios.get(`/api/tag/terms/${taxonomy}`).then((response) => {
 
-                this.categories = this.parents = response.data
+                this.categories = this.parents = response.data.terms
 
                 this.loading = false
             });
@@ -304,7 +307,7 @@ export default {
         update() {
             this.page.terms = this.termValue;
             this.page.taxonomy = this.taxonomyValue
-            this.page.categories = this.categoryValue
+            this.page.categories = this.categoryValue.map(x => { return x.title ?? x})
 
             axios.patch(`${this.endpoint}/${this.id}`, this.page).then(() => {
                 this.message = "Page updated"
@@ -346,9 +349,12 @@ export default {
             this.id = this.$route.params.id;
             this.getPage();
         }
+         else {
+            this.getCategories('category')
+        }
 
         this.getTaxonomy()
-        this.getCategories('category')
+
         this.getTerms()
         this.getPages()
 

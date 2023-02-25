@@ -375,4 +375,9 @@ trait HasTaxonomies
     {
         return property_exists($this, 'taxable_title') ? $this->taxable_title : null;
     }
+
+    public function getTaxonomies()
+    {
+        return property_exists($this, 'taxable_title') ? $this->taxable_title : null;
+    }
 }

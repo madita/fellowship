@@ -46,6 +46,7 @@ Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxon
 Route::get('/tag/terms/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTerms');
 Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
 Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
+Route::get('/tag/{term}/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTermInfo');
 
 
 Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');

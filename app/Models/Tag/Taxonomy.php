@@ -73,6 +73,35 @@ class Taxonomy extends TaxonomyBase
 //        return $this->children()->with('childrenRecursive');
 //    }
 
+//    public function parent()
+//    {
+//        return $this->belongsTo(Taxonomy::class, 'parent_id');
+//    }
+//
+//    public function children()
+//    {
+//        return $this->hasMany(Taxonomy::class, 'parent_id');
+//    }
+
+    public function childrenRecursive()
+    {
+        return $this->children()->with('childrenRecursive');
+    }
+
+//    public function getTaxonomyAttribute()
+//    {
+//        $parents = collect([]);
+//
+//        $parent = $this->parent;
+//
+//        while(!is_null($parent)) {
+//            $parents->push($parent);
+//            $parent = $parent->parent;
+//        }
+//
+//        return $parents;
+//    }
+
     /**
      * An example for a related posts model.
      *

@@ -26,6 +26,18 @@ class WikiController extends Controller
 
     }
 
+    public function getUpdatableColumns($type)
+    {
+        switch ($type) {
+            case 'page': return  [
+                'title',
+                'content',
+                'published',
+                'sign_in_only',
+            ];
+        }
+    }
+
     /**
      * view landing pages.
      *
@@ -46,6 +58,7 @@ class WikiController extends Controller
                 'title'      => $wiki->title,
                 'slug'       => $wiki->slug,
                 'type'       => Str::lower(Str::afterLast($wiki->wikiable_type, '\\')),
+                'model'       => $wiki->wikiable_type,
                 //                    'taxable_title' => $data->{$data->getTaxableTitle()},
                 'data'       => $data,
                 'taxonomies' => $taxonomies];
@@ -93,7 +106,9 @@ class WikiController extends Controller
         $wiki = Wiki::where('slug', '=', $slug)->first();
 
         if ($wiki === null) {
-            return response()->json(['message' => 'Create Wiki page', 'slug' => $slug]);
+            $data = ['slug' => $slug, 'title' => Str::ucfirst($slug), 'content' => ""];
+//            return response()->json(['status' => 404, 'message' => 'Create Wiki page', 'page' => $data]);
+            return response(['status' => 404, 'message' => 'Create Wiki page', 'page' => $data], 404);
         }
 
         $model = $wiki->wikiable_type;
@@ -101,8 +116,9 @@ class WikiController extends Controller
         $data = $model::where('id', $wiki->wikiable_id)->first();
 
         $taxonomies = $data->getCategories('wiki')->unique();
+        $terms = $data->getCategories('tags')->unique();
 
-        return response()->json(['page' => $data, 'parents' => $data->parents, 'taxonomies' => $taxonomies]);
+        return response()->json(['page' => $data, 'parents' => $data->parents, 'terms' => $taxonomies, 'tags' => $terms]);
     }
 
 
@@ -111,9 +127,119 @@ class WikiController extends Controller
 
     }
 
-    public function update(Request $request, $wikiable)
+    public function store(Request $request)
     {
+//        dd($request->all());
+        $page = auth()->user()->pages()->create(
+            [
+                'title'      => $request->get('title'),
+                'content'    => $request->get('content'),
+                'sign_in_only' => 0,
+                'published' => 1
+            ]
+        );
+
+        if($request->get('categories')) {
+//            $taxonomy = $request->get('taxonomy');
+//            $taxonomy = $taxonomy['taxonomy'];
+//            //            dd('hm');
+//            $page->addCategories($request->get('categories'), $taxonomy);
+
+            foreach ($request->get('categories') as $term) {
+                if(isset($term['title'])) {
+                    $page->addCategory($term['title'], 'wiki');
+                } else {
+                    $page->addCategory($term, 'wiki');
+                }
+            }
+        }
+
+
+        if($request->get('terms')) {
+
+            foreach ($request->get('terms') as $term) {
+                if(isset($term['title'])) {
+                    $page->addCategory($term['title'], 'tags');
+                } else {
+                    $page->addCategory($term, 'tags');
+                }
+            }
+        }
+        $wiki = new Wiki(['title' => $page->title, 'slug' => $request->get('slug')]);
+
+        $page->wikiable()->save($wiki);
+    }
+
+    public function update(Request $request, $slug)
+    {
+//        dd('update', $request->all(), $slug);
+
+//
+//        $wiki = $request->all();
+//
+//        $model = $wiki['type'];
+//        $data = $model::where('id', $wiki['id'])->first();
+
+
+
+        $wiki = Wiki::where('slug', '=', $slug)->first();
+        $model = $wiki->wikiable_type;
+
+        $data = $model::where('id', $wiki->wikiable_id)->first();
+
+
+
+        $data->update($request->only($this->getUpdatableColumns($request->get('type'))));
+
+        //
+        if($request->get('parent')) {
+            $parent = $request->get('parent');
+
+
+            $data->parent_id = $parent['id'];
+            $data->update();
+        }
+
+        $data->detachCategories();
+
+        if($request->get('taxonomy') && $request->get('categories')) {
+            $taxonomy = $request->get('taxonomy');
+            if(!is_string($taxonomy)) {
+                $taxonomy = $taxonomy['taxonomy'];
+            }
+
+//            $data->addCategories($request->get('categories'), $taxonomy);
+            if($request->get('categories')) {
+
+                foreach ($request->get('categories') as $term) {
+                    if(isset($term['title'])) {
+                        $data->addCategory($term['title'], 'wiki');
+                    } else {
+                        $data->addCategory($term, 'wiki');
+                    }
+                }
+            }
+        }
+
+        if($request->get('terms')) {
+
+            foreach ($request->get('terms') as $term) {
+                if(isset($term['title'])) {
+                    $data->addCategory($term['title'], 'tags');
+                } else {
+                    $data->addCategory($term, 'tags');
+                }
+            }
+        }
+
+
+//        if($request->get('terms')) {
+//            $data->addCategories($request->get('terms'),'tags');
+//        }
+
 
     }
+
+
 
 }

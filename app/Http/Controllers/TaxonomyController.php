@@ -40,7 +40,22 @@ class TaxonomyController extends Controller
             $terms = Term::all();
         }
 
-        return response()->json($terms);
+        $capital = $terms->sortBy('slug')->groupBy(function($item,$key) {
+            return $item['slug'][0];
+        });
+
+        $data = [
+            'terms' => $terms,
+            'total' => $terms->count(),
+            'capital' => $capital
+        ];
+
+        return response()->json($data);
+    }
+
+    public function getTermInfo($term,$taxonomy = null, Request $request)
+    {
+        return response()->json($term);
     }
 
     public function getTaxables(Request $request)
@@ -78,6 +93,7 @@ class TaxonomyController extends Controller
         $taxableCollection = collect($taxables->orderBy('taxable_type')->orderBy('taxable_id')->get())->map(function (Taxable $taxable) use($taxonomy) {
             $model = app($taxable->taxable_type);
             $data  = $model::where('id', $taxable->taxable_id)->first();
+//            dd($data);
 
                 return [
                     'type'          => Str::lower(Str::afterLast($taxable->taxable_type, '\\')),
@@ -94,7 +110,7 @@ class TaxonomyController extends Controller
         });
 
         $data = [
-            'category' => $taxonomy->get(),
+            'category' => $taxonomy->with('children')->first(),
             'data' => [
                 'total' => $taxableCollection->unique('data')->count(),
                 'type' => $taxableCollection->unique('data')->groupBy('type'),
@@ -116,12 +132,16 @@ class TaxonomyController extends Controller
         $term     = $request->get('term');
         $taxonomy = $request->get('taxonomy');
         $parent   = $request->get('parent');
+        $parent_id = 0;
 
-        $parent_id = $parent === null ? 0:$parent['parent_id'];
+        if($parent !== null) {
+            $parent_id = isset($parent['parent_id']) ? $parent['parent_id']:0;
+        }
 
 //        dd($parent_id);
+        $tax = isset($taxonomy['taxonomy']) ? $taxonomy['taxonomy']: $taxonomy;
 
-        TaxonomyHelper::createTaxables($term, $taxonomy['taxonomy'], $parent_id);
+        TaxonomyHelper::createTaxables($term, $tax, $parent_id);
 
         return response()->json(['success' => true, 'term' => $term]);
     }

@@ -1,9 +1,6 @@
 import store from "../store"
 
 
-
-
-
 export default {
 
     hasAccess (name) {
@@ -21,6 +18,9 @@ export default {
                 return permissions.includes("manage-page")
 
             case "admin-posts":
+                return permissions.includes("manage-post")
+
+            case "wiki-edit":
                 return permissions.includes("manage-post")
 
 

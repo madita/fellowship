@@ -1,22 +1,17 @@
 <template>
     <div class="d-flex flex-grow-1 flex-row mt-2">
         <v-container class="mb-15">
-<!--            <template v-if="authenticated">-->
-<!--                <v-btn text class="mx-1" :to="`/wiki/${slug}`">-->
-<!--                    Cancel-->
-<!--                </v-btn>-->
-<!--            </template>-->
+            <template v-if="authenticated">
+                <v-btn text class="mx-1" :to="`/wiki/${slug}`">
+                    Cancel
+                </v-btn>
+            </template>
 
-            <v-alert type="info">Die Seite existiert nicht, wenn du sie erstellen willst fülle das Formular aus.</v-alert>
             <v-row>
                 <v-col
                     cols="8">
                     <v-alert v-if="message" type="success">
                         {{ message }}
-                    </v-alert>
-
-                    <v-alert v-if="editing.errors.length > 0" type="error">
-                        {{ editing.errors }}
                     </v-alert>
 
                     <v-text-field
@@ -46,23 +41,24 @@
                         </template>
                     </v-select>
 
-                    <!--                    <v-combobox-->
-                    <!--                        v-model="taxonomyValue"-->
-                    <!--                        :items="taxonomies"-->
-                    <!--                        item-text="taxonomy"-->
-                    <!--                        @change="setTaxonomy"-->
-                    <!--                        :search-input.sync="searchTax"-->
-                    <!--                        hide-selected-->
-                    <!--                        :disabled="isDisabled"-->
-                    <!--                        label="Taxonomy"-->
-                    <!--                        persistent-hint-->
-                    <!--                        small-chips-->
-                    <!--                    >-->
-                    <!--                    </v-combobox>-->
+<!--                    <v-combobox-->
+<!--                        v-model="taxonomyValue"-->
+<!--                        :items="taxonomies"-->
+<!--                        item-text="taxonomy"-->
+<!--                        @change="setTaxonomy"-->
+<!--                        :search-input.sync="searchTax"-->
+<!--                        hide-selected-->
+<!--                        :disabled="isDisabled"-->
+<!--                        label="Taxonomy"-->
+<!--                        persistent-hint-->
+<!--                        small-chips-->
+<!--                    >-->
+<!--                    </v-combobox>-->
 
                     <v-combobox
                         v-model="categoryValue"
                         :items="categories"
+                        :search-input.sync="searchTax"
                         item-text="title"
                         label="Category"
                         multiple
@@ -152,7 +148,7 @@
 
 
 
-                    <v-btn @click="store">Save</v-btn>
+                    <v-btn @click="update">Save</v-btn>
                 </v-col>
             </v-row>
 
@@ -191,11 +187,6 @@ export default {
             categories: [],
             categoryValue: [],
             parentValue: null,
-            editing: {
-                id: null,
-                form: {},
-                errors: []
-            },
             rules: {
                 required: value => !!value || 'Required.'
             },
@@ -211,16 +202,12 @@ export default {
                 this.parents = response.data.parents
                 this.taxonomies = response.data.terms
 
+                this.termValue = response.data.tags
+
                 this.categoryValue = this.taxonomies;
             }).catch((error) => {
-
                 if (error.response.status === 404) {
                     // this.$router.push('/error/not-found')
-                    this.wikipage = error.response.data.page
-                    this.parents = error.response.data.parents
-                    this.taxonomies = error.response.data.terms
-
-                    this.categoryValue = this.taxonomies;
                 }
                 if (error.response.status === 401) {
                     this.$router.push('/auth/signin')
@@ -242,6 +229,16 @@ export default {
                 this.loading = false
             });
         },
+        getTerms() {
+            this.loading = true
+            return axios.get(`/api/tag/terms/tags`).then((response) => {
+                this.terms = response.data.terms.map(x => {
+                    return x.title
+                })
+
+                this.loading = false
+            });
+        },
         saveCategory() {
 
             // this.loading = true
@@ -256,24 +253,42 @@ export default {
                 // this.loading = false
             });
         },
-
-        store() {
-            this.wikipage.terms = this.termValue
+        // save() {
+        //     if (this.form === "edit") {
+        //         this.update()
+        //     } else {
+        //         this.store()
+        //     }
+        // },
+        update() {
+            this.wikipage.terms = this.termValue;
             this.wikipage.taxonomy = this.taxonomyValue
             this.wikipage.categories = this.categoryValue
 
-
-            axios.post(`/api/wiki`, this.wikipage).then(() => {
-                this.wikipage = {title: "", content: ""};
-                this.message = "Wiki page created"
-                this.$router.push(`/wiki/${this.slug}`)
+            axios.patch(`/api/wiki/${this.slug}`, this.wikipage).then(() => {
+                this.message = "Wiki Page updated"
             }).catch((error) => {
                 if (error.response.status === 422) {
-                    // this.creating.errors = error.response.data
                     this.editing.errors = error.response.data
                 }
             })
         },
+        // store() {
+        //     this.page.terms = this.termValue
+        //     this.page.taxonomy = this.taxonomyValue
+        //     this.page.categories = this.categoryValue
+        //
+        //
+        //     axios.post(`${this.endpoint}`, this.page).then(() => {
+        //         this.page = {title: "", content: ""};
+        //         this.message = "Wiki page updated"
+        //     }).catch((error) => {
+        //         if (error.response.status === 422) {
+        //             // this.creating.errors = error.response.data
+        //             this.editing.errors = error.response.data
+        //         }
+        //     })
+        // },
     },
     watch: {
         termValue(val, prev) {
@@ -310,6 +325,7 @@ export default {
         }
 
         this.getCategories()
+        this.getTerms()
 
 
     }

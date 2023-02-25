@@ -1,12 +1,25 @@
 <template>
     <div class="d-flex flex-grow-1 flex-row mt-2">
         <v-container class="mb-15">
+            <v-progress-circular v-if="loading"
+                :size="150"
+                color="primary"
+                indeterminate
+            ></v-progress-circular>
+            <template v-if="!loading">
+                <v-alert>{{message}}</v-alert>
+                <v-btn v-if="authenticated "text class="text-right mx-1" :to="`/wiki/${slug}/${mode}`">
+                    {{mode}}
+                </v-btn>
 
                 <h2>{{wikipage.title}}</h2>
 
                 <span v-html="wikipage.content"></span>
 
-               <v-chip :key="`term-${term.id}`"   @click="goTo(term.slug, 'wiki-category')" v-for="term in taxonomies">{{term.title}}</v-chip>
+                <v-chip class="ml-1" :key="`term-${term.id}`"   @click="goTo(term.slug, 'wiki-category')" v-for="term in terms">{{term.title}}</v-chip>
+                <v-chip class="ml-1" :key="`tag-${tag.id}`"  v-for="tag in tags">#{{tag.title}}</v-chip>
+
+            </template>
 
         </v-container>
 
@@ -22,23 +35,34 @@ export default {
     },
     data() {
         return {
+            loading:false,
             wikipage:{},
+            mode:"",
+            message:"",
             parents:[],
-            taxonomies:[],
+            terms:[{title:""}],
+            tags:[{title:""}],
             slug:""
         }
     },
     methods: {
         getWikiPage(){
-            this.loading = true
             return axios.get(`/api/wiki/${this.slug}`).then((response) => {
+                // this.data = response.data
                 this.wikipage = response.data.page
                 this.parents = response.data.parents
-                this.taxonomies = response.data.taxonomies
-               console.log(this.taxonomies)
+                this.terms = response.data.terms
+                this.tags = response.data.tags
+                this.mode = "edit"
+                this.loading = false
             }).catch((error) => {
                 if (error.response.status === 404) {
-                    this.$router.push('/error/not-found')
+                    //this.$router.push('/error/not-found')
+                    this.wikipage = error.response.data.page
+                    this.loading = false
+                    this.message = "Die Seite existiert nicht..willst du sie erstellen."
+                    this.mode = "create"
+                    this.$router.push(`/wiki/${this.wikipage.slug}/create`)
                 }
                 if (error.response.status === 401) {
                     this.$router.push('/auth/signin')
@@ -51,11 +75,13 @@ export default {
     },
     computed: {
         ...mapGetters({
+            authenticated: 'auth/authenticated',
             user: 'auth/user',
         })
     },
     mounted() {
 
+        this.loading = true
         if(this.$route.params.slug) {
             this.slug = this.$route.params.slug;
             this.getWikiPage();

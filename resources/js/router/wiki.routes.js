@@ -1,3 +1,7 @@
+import auth from './middleware/auth'
+import verified from "./middleware/verified";
+import permission from "./middleware/permission";
+
 export default [
     {
         path: '/wiki',
@@ -16,7 +20,7 @@ export default [
         }
     },
     {
-        path: '/wiki/category/:slug',
+        path: '/wiki/category/:slug?',
         name: 'wiki-category',
         component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Category.vue'),
         meta: {
@@ -30,4 +34,26 @@ export default [
         meta: {
             layout: 'landing'
         }
+    },
+    {
+        path: '/wiki/:slug/create',
+        name: 'wiki-edit',
+        component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Create.vue'),
+        meta: {
+            layout: 'landing',
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+    },
+    {
+        path: '/wiki/:slug/edit',
+        name: 'wiki-edit',
+        component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Edit.vue'),
+        meta: {
+            layout: 'landing',
+            middleware: [
+                auth, permission, verified
+            ]
+        },
     }]

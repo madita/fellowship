@@ -59,18 +59,24 @@ class PageController extends Controller
         if (!$page) {
             return abort(404);
         }
+        $terms = $page->getCategories();
 
-        $taxonomies = $page->getTaxonomies('taxonomy')->unique();
 
-        $tax = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use($page)  {
-            return  [$taxonomy => $page->getCategories($taxonomy)->pluck(['name'])];
+        $taxonomies = $page->taxonomies()
+            ->whereIn('term_id', $terms->pluck(['id']))
+            ->pluck('taxonomy')->unique();
+
+
+        $taxterms = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use($page)  {
+            return  [$taxonomy => $page->getCategories($taxonomy)->pluck(['title'])];
         });
+
 
 //        if ($page->sign_in_only && !Auth::check())
 //            return redirect('/')->withErrors(config('constants.NA'));
 
         return response()
-            ->json(['page' => $page, 'parent'=> $page->parent, 'taxonomies' => $tax]);
+            ->json(['page' => $page, 'parent'=> $page->parent, 'taxonomies' => $taxonomies, 'terms' => $taxterms]);
     }
 
 

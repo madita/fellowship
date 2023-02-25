@@ -35,4 +35,8 @@ Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms')
 //});
 //
 
+//migration
+Route::get('migration/wiki', "\App\Http\Controllers\Admin\MigrationController@wiki");
+
+
 Route::get('/{any}', 'App\Http\Controllers\SpaController@index')->where('any', '.*');
