@@ -266,7 +266,7 @@ export default {
             axios.post(`/api/wiki`, this.wikipage).then(() => {
                 this.wikipage = {title: "", content: ""};
                 this.message = "Wiki page created"
-                this.$router.push(`/wiki/${this.slug}`)
+                // this.$router.push(`/wiki/${this.slug}`)
             }).catch((error) => {
                 if (error.response.status === 422) {
                     // this.creating.errors = error.response.data

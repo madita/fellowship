@@ -20,9 +20,14 @@ export default {
             case "admin-posts":
                 return permissions.includes("manage-post")
 
+            case "wiki-create":
+                return permissions.includes("manage-post")
             case "wiki-edit":
                 return permissions.includes("manage-post")
-
+            case "wiki-category-create":
+                return permissions.includes("manage-post")
+            case "wiki-category-edit":
+                return permissions.includes("manage-post")
 
             default:
                 return false;

@@ -8,13 +8,14 @@
             ></v-progress-circular>
             <template v-if="!loading">
                 <v-alert>{{message}}</v-alert>
-                <v-btn v-if="authenticated "text class="text-right mx-1" :to="`/wiki/${slug}/${mode}`">
+                <v-btn v-if="authenticated" class="text-right mx-1" :to="`/wiki/${slug}/${mode}`">
                     {{mode}}
                 </v-btn>
 
                 <h2>{{wikipage.title}}</h2>
 
                 <span v-html="wikipage.content"></span>
+                <span v-html="wikipage.description"></span>
 
                 <v-chip class="ml-1" :key="`term-${term.id}`"   @click="goTo(term.slug, 'wiki-category')" v-for="term in terms">{{term.title}}</v-chip>
                 <v-chip class="ml-1" :key="`tag-${tag.id}`"  v-for="tag in tags">#{{tag.title}}</v-chip>
@@ -62,7 +63,7 @@ export default {
                     this.loading = false
                     this.message = "Die Seite existiert nicht..willst du sie erstellen."
                     this.mode = "create"
-                    this.$router.push(`/wiki/${this.wikipage.slug}/create`)
+                    // this.$router.push(`/wiki/${this.wikipage.slug}/create`)
                 }
                 if (error.response.status === 401) {
                     this.$router.push('/auth/signin')
@@ -93,6 +94,9 @@ export default {
 </script>
 
 <style>
+.new {
+    color: red!important;
+}
 .card-outter {
     position: relative;
     padding-bottom: 50px;

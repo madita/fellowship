@@ -151,6 +151,7 @@ export default {
     'dashboard': 'Instrumententafel',
     'logout': 'Ausloggen',
     'profile': 'Profil',
+     'wiki': 'Wiki',
     'blank': 'Leere Seite',
     'pages': 'Seiten',
     'others': 'Andere',

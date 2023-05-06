@@ -58,7 +58,7 @@ const WikiMention = Mention.extend({
             "a",
             {
                 "style": "font-weight:600;",
-                "wiki-id": node.attrs.id,
+                "data-wiki-id": node.attrs.id,
                 "data-title": node.attrs.title,
                 "data-slug": node.attrs.slug,
                 "data-linked-resource-type": "wikiable",

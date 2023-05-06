@@ -12,17 +12,17 @@
                 </button>
             </header>
 
-            <div v-if="tab == 1">
+            <div v-if="tab === 1">
                 <p>Here is a test image URL</p>
                 <pre>https://i.imgur.com/0ogkTp7.jpg</pre>
                 <label for="url">Image URL:</label>
                 <input v-model="imageSrc" id="url" />
             </div>
-            <div v-if="tab == 2">
+            <div v-if="tab === 2">
                 <label for="up">Really simple input upload:</label>
                 <input type="file" @change="fileChange" id="up" ref="file" />
             </div>
-            <div v-if="tab == 0">
+            <div v-if="tab === 0">
                 <vue-dropzone
                     ref="myVueDropzone"
                     id="dropzone"
@@ -49,7 +49,7 @@
 
 <script>
 import vue2Dropzone from "vue2-dropzone";
-import "vue2-dropzone/dist/vue2Dropzone.min.css";
+//import "vue2-dropzone/dist/vue2Dropzone.min.css";
 import axios from "axios";
 
 export default {
@@ -143,6 +143,7 @@ export default {
     bottom: 0;
     right: 0;
     background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9999999;
 }
 
 .modal-content {

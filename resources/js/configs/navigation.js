@@ -9,6 +9,7 @@ export default {
       { icon: 'mdi-view-dashboard-outline', key: 'menu.dashboard', text: 'Dashboard', link: '/dashboard' },
       { icon: 'mdi-message-text-outline', key: 'menu.chat', text: 'Chat', link: '/chat' },
       { icon: 'mdi-calendar', key: 'menu.events', text: 'Events', link: '/events' },
+      { icon: 'mdi-file-outline', key: 'menu.wiki', text: 'Wiki', link: '/wiki' },
       { icon: 'mdi-file-outline', key: 'menu.blank', text: 'Blank Page', link: '/blank' }
     ]
   }, {

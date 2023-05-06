@@ -15,6 +15,7 @@ class CreateWikiablesTable extends Migration
             $table->string('slug');
             $table->string('wikiable_type');
             $table->unsignedInteger('wikiable_id');
+            $table->string('status')->nullable();
             $table->nullableTimestamps();
 
             $table->unique(

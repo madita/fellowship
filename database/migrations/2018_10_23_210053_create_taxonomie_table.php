@@ -69,6 +69,7 @@ class CreateTaxonomieTable extends Migration
             $table->longText('content')->nullable();
             $table->text('lead')->nullable();
             $table->text('meta_desc')->nullable();
+            $table->text('color')->nullable();
 
 
             $table->integer('parent')->unsigned()->default(0);

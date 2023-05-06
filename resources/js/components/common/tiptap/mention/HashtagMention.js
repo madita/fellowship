@@ -20,7 +20,7 @@ const HashtagMention = Mention.extend({
             },
             title: {
                 default: null,
-                parseHTML: element => element.getAttribute('data-tag'),
+                parseHTMtableL: element => element.getAttribute('data-tag'),
                 renderHTML: (attributes) => {
                     if (!attributes.title) {
                         return {};
@@ -77,7 +77,7 @@ const HashtagMention = Mention.extend({
             "a",
             {
                 "style": `font-weight:600;color:${node.attrs.color}`,
-                "term-id": node.attrs.id,
+                "data-term-id": node.attrs.id,
                 "data-tag": node.attrs.title,
                 "data-color": node.attrs.color,
                 "data-linked-resource-type": "terms",

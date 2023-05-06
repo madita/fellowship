@@ -8,7 +8,7 @@
                     consectetur adipisicing elit. Commodi ex facilis ad atque natus tenetur debitis qui quisquam iure
                     amet.</h2>
                 <div class="mt-8">
-                    <v-btn x-large class="my-1 mx-sm-1 w-full w-sm-auto" color="primary">Start free trial</v-btn>
+                    <v-btn to="/auth/signup" x-large class="my-1 mx-sm-1 w-full w-sm-auto" color="primary">Join Now!</v-btn>
                     <v-btn x-large class="my-1 mx-sm-1 w-full w-sm-auto">Learn more</v-btn>
                 </div>
             </v-container>

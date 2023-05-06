@@ -40,7 +40,7 @@ class TaxonomyController extends Controller
             $terms = Term::all();
         }
 
-        $capital = $terms->sortBy('slug')->groupBy(function($item,$key) {
+        $capital = $terms->sortBy(['slug'])->groupBy(function($item,$key) {
             return $item['slug'][0];
         });
 
@@ -53,7 +53,7 @@ class TaxonomyController extends Controller
         return response()->json($data);
     }
 
-    public function getTermInfo($term,$taxonomy = null, Request $request)
+    public function getTermInfo($term)
     {
         return response()->json($term);
     }
@@ -67,7 +67,8 @@ class TaxonomyController extends Controller
 
 
         if (!isset($term->id)) {
-            return response()->json(['message' => 'No data found']);
+
+            return response()->json(['message' => 'No data found', 'data' => null, 'category' => null]);
         }
 
         $taxonomy = Taxonomy::where('term_id', $term->id);
@@ -110,7 +111,7 @@ class TaxonomyController extends Controller
         });
 
         $data = [
-            'category' => $taxonomy->with('children')->first(),
+            'category' => $taxonomy->with('children')->with('parent')->first(),
             'data' => [
                 'total' => $taxableCollection->unique('data')->count(),
                 'type' => $taxableCollection->unique('data')->groupBy('type'),

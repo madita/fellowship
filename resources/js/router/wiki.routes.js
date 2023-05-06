@@ -16,7 +16,10 @@ export default [
         name: 'wiki-create',
         component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Create.vue'),
         meta: {
-            layout: 'landing'
+            layout: 'landing',
+            middleware: [
+                auth, permission, verified
+            ]
         }
     },
     {
@@ -25,6 +28,28 @@ export default [
         component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Category.vue'),
         meta: {
             layout: 'landing'
+        }
+    },
+    {
+        path: '/wiki/category/:slug/create',
+        name: 'wiki-category-create',
+        component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Category-Create.vue'),
+        meta: {
+            layout: 'landing',
+            middleware: [
+                auth, permission, verified
+            ]
+        }
+    },
+    {
+        path: '/wiki/category/:slug/edit',
+        name: 'wiki-category-edit',
+        component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Category-Edit.vue'),
+        meta: {
+            layout: 'landing',
+            middleware: [
+                auth, permission, verified
+            ]
         }
     },
     {
@@ -37,7 +62,7 @@ export default [
     },
     {
         path: '/wiki/:slug/create',
-        name: 'wiki-edit',
+        name: 'wiki-create-slug',
         component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Create.vue'),
         meta: {
             layout: 'landing',

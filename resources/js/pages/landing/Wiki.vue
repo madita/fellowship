@@ -1,17 +1,18 @@
 <template>
     <div class="d-flex flex-grow-1 flex-row mt-2">
+
         <v-container class="mb-15">
-            TODO Filter and Loader pagination? links zu wichtigsten seiten...
-            <v-progress-circular v-if="loading"
-                                 :size="150"
-                                 color="primary"
-                                 indeterminate
-            ></v-progress-circular>
-            <template v-for="(wiki, type) in wikiable">
-                <h2>{{type}}</h2>
-            <v-flex d-flex>
+            <p><v-text-field
+                label="Search"
+                v-model="searchText"
+                hide-details="auto"
+                @keyup="onSearchInput"
+            ></v-text-field></p>
+
+
+            <v-flex d-flex v-if="wikiable.length>0">
                 <v-layout wrap>
-                    <v-flex md4 :key="`wiki-${item.data.id}`" v-for="item in wiki">
+                    <v-flex md4 :key="`wiki-${item.data.id}`" v-for="item in wikiable">
                         <v-card class="pa-2 ma-1 card-outter"
                                  min-height="374" max-height="374" max-width="374">
                             <v-card-title>{{item.title}}</v-card-title>
@@ -28,7 +29,12 @@
                     </v-flex>
                 </v-layout>
             </v-flex>
-            </template>
+            <v-progress-circular v-if="loading"
+                                 :size="150"
+                                 color="primary"
+                                 indeterminate
+            ></v-progress-circular>
+
         </v-container>
         <v-container></v-container>
 
@@ -44,28 +50,106 @@ export default {
     },
     data() {
         return {
+            page:1,
             loading: false,
-            wikiable:[]
+            wikiable:[],
+            response:[],
+            wikiableTotal:0,
+            searchText:"",
+            searchRequest: null,
         }
     },
     methods: {
-        getWikiPages(){
-            return axios.get(`/api/wiki`).then((response) => {
-                this.wikiable = response.data;
-                this.loading = false
-            }).catch((error) => {
-                if (error.response.status === 404) {
-                    this.$router.push('/error/not-found')
+        async getWikiPages(){
+            try {
+                this.loading = true;
+                const response = await fetch(`/api/wiki?page=${this.page}&q=${this.searchText}`);
+                const data = await response.json();
+                this.response = data;
+                // console.log(Object.entries(data));
+                this.wikiable = [...this.wikiable, ...data.data];
+
+
+                this.page++;
+                this.loading = false;
+            } catch (error) {
+                console.error(error);
+                this.loading = false;
+            }
+        },
+        // async getSearchWiki() {
+        //     this.wikiable = [];
+        //     this.page = 1;
+        //     this.loading = true;
+        //
+        //     const query = this.searchText.trim();
+        //
+        //     // Cancel previous search request
+        //     if (this.searchRequest) {
+        //         this.searchRequest.abort();
+        //     }
+        //
+        //     // Make a new search request
+        //     this.searchRequest = new AbortController();
+        //
+        //     try {
+        //         const response = await fetch(`/api/wiki?page=${this.page}&q=${this.searchText}`);
+        //         const data = await response.json();
+        //         this.wikiable = [...data.data];
+        //         this.loading = false;
+        //     } catch (error) {
+        //         console.error(error);
+        //         this.loading = false;
+        //     }
+        //
+        // },
+        async search(query) {
+            const response = await fetch(`/api/wiki?page=${this.page}&q=${query}`);
+            const data = await response.json();
+            this.response = data;
+            return data.data;
+        },
+        async onSearchInput() {
+            this.wikiable = [];
+            this.page = 1;
+            const query = this.searchText.trim();
+
+            // Cancel previous search request
+            if (this.searchRequest) {
+                this.searchRequest.abort();
+            }
+
+            // Make a new search request
+            const controller = new AbortController();
+            this.searchRequest = controller;
+            try {
+                this.wikiable = await this.searchWithAbort(query, controller.signal);
+                this.page++;
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error(err);
                 }
-                if (error.response.status === 401) {
-                    this.$router.push('/auth/signin')
-                }
-            });
+            }
+        },
+        async searchWithAbort(query, signal) {
+            const response = await fetch(`/api/wiki?page=${this.page}&q=${query}`, { signal });
+            const data = await response.json();
+            this.response = data;
+            return data.data;
+        },
+        handleScroll() {
+            const scrollHeight = document.documentElement.scrollHeight;
+            const scrollTop = document.documentElement.scrollTop;
+            const clientHeight = document.documentElement.clientHeight;
+
+            if (this.response.total > this.response.to && scrollTop + clientHeight >= scrollHeight && !this.loading) {
+                this.getWikiPages();
+            }
         },
         getWikiPage(){
             //TODO loader
             this.loading = true
-            return axios.get(`/api/wiki/${this.slug}`).then((response) => {
+            return axios.get(`/api/wiki/${this.slug}`).then(() => {
             }).catch((error) => {
                 if (error.response.status === 404) {
                     this.$router.push('/error/not-found')
@@ -82,12 +166,22 @@ export default {
     computed: {
         ...mapGetters({
             user: 'auth/user',
-        })
+        }),
+
     },
+
     mounted() {
-        this.loading = true
         this.getWikiPages();
-    }
+        window.addEventListener("scroll", this.handleScroll);
+        // document.addEventListener('keyup', this.search);
+    },
+    beforeDestroy() {
+        window.removeEventListener("scroll", this.handleScroll);
+        if (this.searchRequest) {
+            this.searchRequest.abort();
+        }
+        // document.removeEventListener('keyup', this.search);
+    },
 }
 </script>
 

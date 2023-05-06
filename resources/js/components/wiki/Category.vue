@@ -1,12 +1,19 @@
 <template>
     <div>
+
         <v-sheet v-if="slug.length > 0 && !loading">
+            <v-alert v-if="categories === null" type="info">Die Kategorie existiert nicht</v-alert>
             <v-container class="py-2 pt-lg-5">
+<!--                <v-alert>{{message}}</v-alert>-->
+                <v-btn v-if="authenticated" class="text-right mx-1" :to="`/wiki/category/${slug}/${mode}`">
+                    {{mode}}
+                </v-btn>
                 <h1>{{info.term.title}}</h1>
                 <p v-html="description"></p>
 
-                <div :style="cssVars" class="sub-category py-1 pt-lg-1" v-if="info.children.length > 0">
+                <div class="sub-category py-1 pt-lg-1" v-if="info.children.length > 0">
                     <h2>Unterkategorien</h2>
+                    <div :style="subCssVars">
                     <v-list-item-group
                         color="primary"
                         v-for="(category, capital) in $helpers.groupTerms(this.info.children)"
@@ -22,11 +29,14 @@
                             </v-list-item-content>
                         </v-list-item>
                     </v-list-item-group>
+                    </div>
                 </div>
             </v-container>
 
 
-            <v-container :style="cssVars" class="category py-6 pt-lg-5">
+            <v-container class="category py-6 pt-lg-5">
+                <h2>Seiten in der Kategorie "{{info.term.title}}" ({{categories.total}})</h2>
+                <div :style="catCssVars">
                 <v-list-item-group
                     color="primary"
                     v-for="(category, capital) in categories.capital"
@@ -42,17 +52,23 @@
                         </v-list-item-content>
                     </v-list-item>
                 </v-list-item-group>
+                </div>
             </v-container>
         </v-sheet>
         <v-sheet v-if="!slug.length && !loading">
             <v-container class="py-2 pt-lg-5">
                 <h1>Kategorien</h1>
-                <p>Todo Suche</p>
+                <p><v-text-field
+                    label="Search"
+                    v-model="textSearch"
+                    hide-details="auto"
+                ></v-text-field></p>
             </v-container>
-            <v-container :style="cssVars" class="category py-6 pt-lg-5">
+            <v-container class="category py-6 pt-lg-5">
+                <div :style="catCssVars">
                 <v-list-item-group
                     color="primary"
-                    v-for="(category, capital) in categories.capital"
+                    v-for="(category, capital) in catFilter"
                     :key="`${capital}-${category}`"
                 >{{capital.toUpperCase()}}
                     <v-list-item
@@ -65,6 +81,7 @@
                         </v-list-item-content>
                     </v-list-item>
                 </v-list-item-group>
+                </div>
             </v-container>
         </v-sheet>
     </div>
@@ -81,22 +98,27 @@ export default {
         return {
             loading:true,
             categories:[],
+            catTotal:0,
             children:[],
             info:{},
             slug:"",
+            mode:"edit",
             description: "",
+            textSearch: "",
         }
     },
     methods: {
         getWikiCategory(){
-
             this.loading = true
             return axios.get(`/api/taxables?term=${this.slug}&taxonomy=&model=`).then((response) => {
                 this.categories = response.data.data
                 this.info = response.data.category
+                // console.log('dsfksdfdsf', this.info)
 
 
-                this.description = (this.info.description !== this.info.term.title) ? this.info.description:"";
+                if(this.info !== null) {
+                    this.description = (this.info.description !== this.info.term.title) ? this.info.description:"";
+                }
 
                 // this.children = $helpers.groupTerms(this.info.children)
 
@@ -107,10 +129,22 @@ export default {
                 // })
 
 
+
+
+
+                if(this.categories === null) {
+                    this.message = "Die Kategorie existiert nicht..willst du sie erstellen."
+                    this.mode = "create"
+                    this.info = {term: this.slug, children:[]}
+                    this.categories = {total:0}
+                    this.$router.push(`/wiki/category/${this.slug}/create`)
+                }
                 this.loading = false
 
 
+
             }).catch((error) => {
+                console.log(error)
                 // if (error.response.status === 404) {
                 //     this.$router.push('/error/not-found')
                 // }
@@ -124,6 +158,10 @@ export default {
             return axios.get(`/api/tag/terms/wiki`).then((response) => {
                 this.loading = false
                 this.categories = response.data
+                this.catTotal = this.categories.total
+                console.log('tast',Object.keys(this.categories.capital).length)
+                // console.log('tast1',this.categories.capital.length)
+                this.info = {term: this.slug}
             });
         },
         goTo(slug, type) {
@@ -135,14 +173,53 @@ export default {
     },
     computed: {
         ...mapGetters({
+            authenticated: 'auth/authenticated',
             user: 'auth/user',
         }),
-        cssVars () {
+        catCssVars () {
+
             return {
-                '--cat-column-count': this.categories.length >= 9 ? 3: 1,
-                '--subcat-column-count': this.info.children.length >= 5 ? 3: 1
+                'column-count': (this.catTotal  >= 9) || (Object.keys(this.categories.capital).length >= 5) ? 3: 1
             }
-        }
+        },
+        subCssVars () {
+            return {
+                'column-count': this.info.children.length >= 5 ? 3: 1
+            }
+        },
+        catFilter: function() {
+            var textSearch = this.textSearch;
+
+            // return this.categories.capital.filter(function(el) {
+            //     return el.title.toLowerCase().indexOf(textSearch.toLowerCase()) !== -1;
+            // });
+
+            let filtered = [];
+
+            console.log('test',this.categories.length)
+
+            const capitals = this.categories.capital;
+            const categories = Object.keys(this.categories.capital);
+
+            let total = 0;
+            categories.forEach(function(capital) {
+
+                // console.log(capitals[capital])
+                let filteredCapital = [];
+                capitals[capital].forEach(function(cat) {
+                    if (cat.title.toLowerCase().indexOf(textSearch.toLowerCase()) !== -1) {
+                        filteredCapital.push(cat);
+                        total++;
+                    }
+                })
+                if(filteredCapital.length > 0) {
+                    filtered[capital] = filteredCapital;
+                }
+
+            })
+            this.catTotal = total;
+            return Object.assign({}, filtered); // {0:"a", 1:"b", 2:"c"};
+        },
     },
     mounted() {
 
@@ -159,13 +236,13 @@ export default {
 </script>
 
 <style>
-.category {
-    column-count: var(--cat-column-count);
-}
+/*.category {*/
+/*    column-count: var(--cat-column-count);*/
+/*}*/
 
-.sub-category {
-    column-count: var(--subcat-column-count);
-}
+/*.sub-category {*/
+/*    column-count: var(--subcat-column-count);*/
+/*}*/
 
 .card-outter {
     position: relative;

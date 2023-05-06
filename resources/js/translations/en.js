@@ -151,6 +151,7 @@ export default {
         dashboard: 'Dashboard',
         logout: 'Logout',
         profile: 'Profile',
+        wiki: 'Wiki',
         blank: 'Blank Page',
         pages: 'Pages',
         others: 'Others',
