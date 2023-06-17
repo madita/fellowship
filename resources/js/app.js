@@ -22,11 +22,15 @@ import './plugins/clipboard'
 import './plugins/moment'
 import './plugins/lodash'
 
+//HELPERS
+import helpers from './helpers'
+
 // FILTERS
 import './filters/capitalize'
 import './filters/lowercase'
 import './filters/uppercase'
 import './filters/formatDate'
+import './filters/humanDiff'
 
 // STYLES
 // Main Theme SCSS
@@ -48,6 +52,12 @@ Vue.config.productionTip = false
 | https://vuejs.org/v2/guide/instance.html
 |
 */
+Vue.use({
+    install() {
+        Vue.helpers = helpers;
+        Vue.prototype.$helpers = helpers;
+    }
+});
 
 // store.dispatch('auth/me').then(() => {
     new Vue({
@@ -58,7 +68,7 @@ Vue.config.productionTip = false
         created () {
             const userInfo = localStorage.getItem('user')
             if (userInfo) {
-                const userData = JSON.parse(userInfo)
+                // const userData = JSON.parse(userInfo)
                 this.$store.dispatch('auth/me')
             }
             axios.interceptors.response.use(

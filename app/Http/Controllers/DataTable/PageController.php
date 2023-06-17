@@ -2,17 +2,12 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use Auth;
 use App\Models\Page;
 use Illuminate\Http\Request;
-use App\Http\Controllers\DataTable\DataTableController;
 
 class PageController extends DataTableController
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
+    protected $hasForm = true;
 
     public function builder()
     {
@@ -21,7 +16,7 @@ class PageController extends DataTableController
 
     public function store(Request $request)
     {
-        Auth::user()->pages()->create($request->only($this->getUpdatableColumns()));
+        auth()->user()->pages()->create($request->only($this->getUpdatableColumns()));
     }
 
     public function getUpdatableColumns()
@@ -29,15 +24,33 @@ class PageController extends DataTableController
         return  [
             'title',
             'body',
-            'published'
+            'published',
+            'sign_in_only',
         ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'body' => 'textarea',
-            'published' => 'checkbox',
+            'body'         => 'wysiwyg',
+            'published'    => 'checkbox',
+            'sign_in_only' => 'checkbox',
+        ];
+    }
+
+    public function getDisplayableColumns()
+    {
+        return [
+            'id',
+            'published',
+            'sign_in_only',
+            'slug',
+            'title',
+            'type',
+            'user_id',
+            'parent_id',
+            'created_at',
+            'updated_at',
         ];
     }
 

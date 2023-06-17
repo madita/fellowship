@@ -3,35 +3,39 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 
 abstract class DataTableController extends Controller
 {
-
     /**
      * If an entity is allowed to be created.
      *
-     * @var boolean
+     * @var bool
      */
     protected $allowCreation = true;
 
     /**
      * Allow deletion.
      *
-     * @var boolean
+     * @var bool
      */
     protected $allowDeletion = true;
+
+    /*Does Edit Form for model exist?*/
+    protected $hasForm = false;
 
     /**
      * The entity builder.
      *
-     * @var Illuminate\Database\Eloquent\Builder
+     * @var Builder
      */
     protected $builder;
 
@@ -43,7 +47,8 @@ abstract class DataTableController extends Controller
     public function getDisplayableColumns()
     {
         return array_diff(
-            $this->getDatabaseColumnNames(), $this->builder->getModel()->getHidden()
+            $this->getDatabaseColumnNames(),
+            $this->builder->getModel()->getHidden()
         );
     }
 
@@ -75,24 +80,24 @@ abstract class DataTableController extends Controller
         }
 
         if (!($this->builder = $this->builder()) instanceof Builder) {
-            throw new Exception("Entity builder not instance of Builder.");
+            throw new Exception('Entity builder not instance of Builder.');
         }
     }
 
     public function getHeaders()
     {
-        $columnNames =$this->getCustomColumnsNames();
+        $columnNames = $this->getCustomColumnsNames();
 
         return collect($this->getDisplayableColumns())->map(function ($column) use ($columnNames) {
             return [
-                'text' => isset($columnNames[$column])?$columnNames[$column]:$column,
+                'text'     => isset($columnNames[$column]) ? $columnNames[$column] : $column,
                 'sortable' => false,
-                'value' => $column
+                'value'    => $column,
             ];
         })->add([
-            'text' => 'Actions',
+            'text'     => 'Actions',
             'sortable' => false,
-            'value' => 'actions'
+            'value'    => 'actions',
         ]);
     }
 
@@ -100,7 +105,8 @@ abstract class DataTableController extends Controller
      * Get records to be used for output.
      *
      * @param Request $request
-     * @return Illuminate\Support\Collection
+     *
+     * @return Collection
      */
     public function getRecords(Request $request)
     {
@@ -113,34 +119,36 @@ abstract class DataTableController extends Controller
         try {
             //if model has appended attributes and append attributes  not in displayable colimns...forget them
             $forget = array_diff($this->getAppends(), $this->getDisplayableColumns());
-            $pagination = (int)$request->get('itemsPerPage') <=0 ?(int)$request->get('itemsLength') : (int)$request->get('itemsPerPage');
+            $pagination = (int) $request->get('itemsPerPage') <= 0 ? (int) $request->get('itemsLength') : (int) $request->get('itemsPerPage');
+
             return $builder->orderBy('id', 'asc')->get()->makeHidden($forget)->paginate($pagination);
         } catch (QueryException $e) {
-            return [];
+            return collect([]);
         }
     }
 
     /**
      * Show a list of entities.
      *
-     * @return Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         return response()->json([
             'data' => [
-                'table' => $this->builder->getModel()->getTable(),
-                'headers' => $this->getHeaders(),
-                'records' => $this->getRecords($request),
-                'updatable' => array_values($this->getUpdatableColumns()),
-                'displayable' => array_values($this->getDisplayableColumns()),
-                'column_map' => $this->getCustomColumnsNames(),
+                'table'         => $this->builder->getModel()->getTable(),
+                'headers'       => $this->getHeaders(),
+                'records'       => $this->getRecords($request),
+                'updatable'     => array_values($this->getUpdatableColumns()),
+                'displayable'   => array_values($this->getDisplayableColumns()),
+                'column_map'    => $this->getCustomColumnsNames(),
                 'column_fields' => $this->getCustomInputFields(),
-                'allow' => [
+                'allow'         => [
+                    'hasForm'  => $this->hasForm,
                     'creation' => $this->allowCreation,
                     'deletion' => $this->allowDeletion,
-                ]
-            ]
+                ],
+            ],
         ]);
     }
 
@@ -148,7 +156,8 @@ abstract class DataTableController extends Controller
      * Create an entity.
      *
      * @param Request $request
-     * @return Illuminate\Http\Response
+     *
+     * @return Response|void
      */
     public function store(Request $request)
     {
@@ -162,10 +171,10 @@ abstract class DataTableController extends Controller
     /**
      * Update an entity.
      *
-     * @param integer $id
+     * @param int     $id
      * @param Request $request
      *
-     * @return Illuminate\Http\Response
+     * @return Response
      */
     public function update($id, Request $request)
     {
@@ -175,10 +184,10 @@ abstract class DataTableController extends Controller
     /**
      * Delete an entity.
      *
-     * @param integer $id
+     * @param int     $id
      * @param Request $request
      *
-     * @return Illuminate\Http\Response
+     * @return Response|void
      */
     public function destroy($ids, Request $request)
     {
@@ -194,7 +203,7 @@ abstract class DataTableController extends Controller
      *
      * @return array
      */
-    protected function getDatabaseColumnNames()
+    protected function getDatabaseColumnNames(): array
     {
         return array_merge(Schema::getColumnListing($this->builder->getModel()->getTable()), $this->getAppends());
     }
@@ -208,7 +217,8 @@ abstract class DataTableController extends Controller
      * If the request has the columns required to search.
      *
      * @param Request $request
-     * @return boolean
+     *
+     * @return bool
      */
     protected function hasSearchQuery(Request $request)
     {
@@ -219,6 +229,7 @@ abstract class DataTableController extends Controller
      * Resolve the given operator to perform a query.
      *
      * @param string $operator
+     *
      * @return string
      */
     protected function resolveQueryParts($operator, $value)
@@ -226,35 +237,35 @@ abstract class DataTableController extends Controller
         return Arr::get([
             'equals' => [
                 'operator' => '=',
-                'value' => $value
+                'value'    => $value,
             ],
             'contains' => [
                 'operator' => 'LIKE',
-                'value' => "%{$value}%"
+                'value'    => "%{$value}%",
             ],
             'starts_with' => [
                 'operator' => 'LIKE',
-                'value' => "{$value}%"
+                'value'    => "{$value}%",
             ],
             'ends_with' => [
                 'operator' => 'LIKE',
-                'value' => "%{$value}"
+                'value'    => "%{$value}",
             ],
             'greater_than' => [
                 'operator' => '>',
-                'value' => $value
+                'value'    => $value,
             ],
             'less_than' => [
                 'operator' => '<',
-                'value' => $value
+                'value'    => $value,
             ],
             'greater_than_or_equal_to' => [
                 'operator' => '>=',
-                'value' => $value
+                'value'    => $value,
             ],
             'less_than_or_equal_to' => [
                 'operator' => '<=',
-                'value' => $value
+                'value'    => $value,
             ],
         ], $operator);
     }

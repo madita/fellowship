@@ -171,7 +171,7 @@ return [
          */
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
-        // App\Providers\BroadcastServiceProvider::class,
+        App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
@@ -211,7 +211,6 @@ return [
         'Lang'         => Illuminate\Support\Facades\Lang::class,
         'Log'          => Illuminate\Support\Facades\Log::class,
         'Mail'         => Illuminate\Support\Facades\Mail::class,
-        'Notification' => Illuminate\Support\Facades\Notification::class,
         'Notification' => Illuminate\Support\Facades\Notification::class,
         'Password'     => Illuminate\Support\Facades\Password::class,
         'Queue'        => Illuminate\Support\Facades\Queue::class,

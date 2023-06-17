@@ -14,6 +14,9 @@
             :light="menuTheme === 'light'"
             :dark="menuTheme === 'dark'"
         >
+        <a class="skip-nav-link" href="#main-content">
+                skip navigation     
+        </a>
             <!-- Navigation menu info -->
             <template v-slot:prepend>
                 <div class="pa-2">
@@ -112,8 +115,8 @@
             </v-card>
         </v-app-bar>
 
-        <v-main>
-            <v-container class="fill-height" :fluid="!isContentBoxed">
+        <v-main id="main-content">
+            <v-container class="fill-height pa-0" :fluid="!isContentBoxed">
                 <v-layout>
                     <slot></slot>
                 </v-layout>
@@ -183,8 +186,14 @@ export default {
 </script>
 
 <style>
-.cursor-pointer {
-    cursor: pointer;
+/*skip to main content*/
+.skip-nav-link {
+    transform: translateY(-350%);
+    transition: transform 325ms ease-in;
+}
+
+.skip-nav-link:focus {
+    transform: translateY(-230%);
 }
 </style>
 

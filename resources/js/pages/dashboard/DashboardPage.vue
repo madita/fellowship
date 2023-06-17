@@ -15,8 +15,7 @@ export default {
     data() {
         return {
             loadingInterval: null,
-
-            isLoading1: true
+            isLoading: true
         }
     },
     mounted() {

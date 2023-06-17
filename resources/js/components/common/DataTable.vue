@@ -134,13 +134,27 @@
                                                 <v-col
                                                     cols="12"
                                                 >
+                                                    <template v-if="typeof(response.column_fields[column]) === 'object'">
+                                                        <v-select
+                                                            v-if="'select' in response.column_fields[column]"
+                                                            :items="response.column_fields[column]['select']"
+                                                            v-model="editedItem[column]"
+                                                            :label="column"
+                                                        ></v-select>
+                                                    </template>
                                                     <v-textarea
-                                                        v-if="response.column_fields[column]==='textarea'"
+                                                        v-else-if="response.column_fields[column]==='textarea'"
                                                         :label="column"
                                                         :id="column"
                                                         v-model="editedItem[column]"
                                                         :value="editedItem[column]"
                                                     ></v-textarea>
+
+                                                    <simple-editor
+                                                        v-else-if="response.column_fields[column]==='wysiwyg'"
+                                                        v-model="editedItem[column]"
+                                                        :value="editedItem[column]">
+                                                    </simple-editor>
 
                                                     <v-checkbox
                                                         v-else-if="response.column_fields[column]==='checkbox'"
@@ -154,6 +168,7 @@
 
                                                         :label="column"
                                                     ></v-text-field>
+
 
                                                     <!--                                                        <span class="help-block" v-if="creating.errors[column]">-->
                                                     <!--                                <strong>{{ creating.errors[column][0] }}</strong>-->
@@ -205,6 +220,14 @@
                     <!--suppress HtmlUnknownAttribute -->
                     <template v-slot:item.actions="{ item }">
                         <v-icon
+                            v-if="response.allow.hasForm"
+                            small
+                            class="mr-2"
+                            @click="editItemForm(item)"
+                        >
+                            mdi-file-document-edit
+                        </v-icon>
+                        <v-icon
                             small
                             class="mr-2"
                             @click="editItem(item)"
@@ -237,8 +260,13 @@
 
 <script>
     import queryString from 'querystring'
+    import SimpleEditor from './SimpleEditor'
 
     export default {
+        components: {
+            queryString,
+            SimpleEditor
+        },
         props: [
             'endpoint'
         ],
@@ -364,6 +392,10 @@
                 // console.log('this.editedItem',this.editedItem)
 
                 this.dialog = true
+            },
+
+            editItemForm (item) {
+                this.$router.push(`${this.$route.path}/edit/${item.id}`)
             },
 
             deleteItem (item) {

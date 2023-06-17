@@ -1,9 +1,12 @@
 <template>
     <div>
         <v-app-bar flat height="80">
+            <a class="skip-nav-link" href="#main-content">
+                skip navigation     
+            </a>
             <v-container class="py-0 px-0 px-sm-2 fill-height">
                 <router-link to="/dashboard" class="d-flex align-center text-decoration-none mr-2">
-                    <img :src="require('@/assets/images/logo.png').default" height="70"/>
+                    <img :src="require('@/assets/images/logo.png').default" alt="Logo of FellowShip" height="70"/>
                 </router-link>
 
                 <v-spacer></v-spacer>
@@ -33,7 +36,7 @@
             </v-container>
         </v-app-bar>
 
-        <v-main>
+        <v-main id="main-content">
             <router-view :key="$route.fullPath"></router-view>
 
             <v-footer color="transparent">
@@ -114,7 +117,7 @@
 </template>
 
 <script>
-import config from '@/configs'
+import config from '../configs'
 import {mapActions, mapGetters} from 'vuex'
 
 export default {
@@ -165,3 +168,15 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+/*skip to main content*/
+.skip-nav-link {
+    transform: translateY(-200%);
+    transition: transform 325ms ease-in;
+}
+
+.skip-nav-link:focus {
+    transform: translateY(-60%);
+}
+</style>

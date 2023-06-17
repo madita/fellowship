@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
 
 class LoginController extends Controller
 {
@@ -41,5 +43,21 @@ class LoginController extends Controller
     public function showLoginForm()
     {
         return redirect('/auth/signin');
+    }
+
+    public function username()
+    {
+        $field = (filter_var(request()->email, FILTER_VALIDATE_EMAIL) || !request()->email) ? 'email' : 'username';
+        request()->merge([$field => request()->email]);
+
+        return $field;
+    }
+
+    public function authenticated(Request $request, $user)
+    {
+        $user->update([
+            'last_login_at' => Carbon::now()->toDateTimeString(),
+            'last_login_ip' => $request->getClientIp(),
+        ]);
     }
 }
