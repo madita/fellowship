@@ -46,7 +46,6 @@ trait HasTaxonomies
 
         if (count($terms) > 0) {
             foreach ($terms as $term) {
-
                 //if ($this->taxonomies()->where('taxonomy', $taxonomy)->where('term_id', $term)->first())
                 //   continue;
                 $tax = Taxonomy::where('term_id', $term)->first();
