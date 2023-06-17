@@ -17,7 +17,7 @@ class Wiki extends Model
      * @var array
      */
     protected $fillable = [
-        'title', 'slug',
+        'title', 'slug', 'status',
     ];
 //
 //    public function wikiable() {

@@ -71,10 +71,13 @@ const router = new Router({
     routes
 })
 
+let lastLink = null;
+
 /**
  * Before each route update
  */
 router.beforeEach((to, from, next) => {
+    lastLink = from.fullPath; // Store the last visited link
     if (!to.meta.middleware) {
         return next()
     }

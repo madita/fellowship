@@ -52,9 +52,9 @@ class WikiController extends Controller
         $page = request()->input('page', 1); // Current page number, default to 1
 
         if($query === null || $query === "") {
-            $wikidata = Wiki::paginate($perPage);
+            $wikidata = Wiki::where('status',null)->paginate($perPage);
         } else {
-            $wikidata = Wiki::where('title', 'LIKE', '%' . $query . '%')->paginate(9);
+            $wikidata = Wiki::where('title', 'LIKE', '%' . $query . '%')->where('status',null)->paginate($perPage);
         }
 
         $total = $wikidata->total();
@@ -183,7 +183,7 @@ class WikiController extends Controller
 
         //        $data->content = Str::replace()
 
-        return response()->json(['page' => $data, 'parents' => $data->parents, 'terms' => $taxonomies, 'tags' => $terms]);
+        return response()->json(['page' => $data, 'wiki' => $wiki, 'parents' => $data->parents, 'terms' => $taxonomies, 'tags' => $terms]);
     }
 
 

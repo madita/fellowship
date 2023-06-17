@@ -11,8 +11,10 @@
                 <v-btn v-if="authenticated" class="text-right mx-1" :to="`/wiki/${slug}/${mode}`">
                     {{mode}}
                 </v-btn>
-
                 <h2>{{wikipage.title}}</h2>
+                <span class="mb-1" v-if="redirect.length > 0 && redirect!=='no'">
+                    (Weitergeleitet von <a :href="`/wiki/${redirect}?redirect=no`">{{redirect}}</a>)
+                </span>
 
                 <span v-html="wikipage.content"></span>
                 <span v-html="wikipage.description"></span>
@@ -38,6 +40,8 @@ export default {
         return {
             loading:false,
             wikipage:{},
+            wiki:{},
+            redirect:"",
             mode:"",
             message:"",
             parents:[],
@@ -51,6 +55,19 @@ export default {
             return axios.get(`/api/wiki/${this.slug}`).then((response) => {
                 // this.data = response.data
                 this.wikipage = response.data.page
+                this.wiki = response.data.wiki
+
+                console.log('redirect', this.redirect)
+
+                if(this.wiki.status === "redirect" && this.redirect!="no") {
+
+                    const pattern = /href="([^"]+)"/;
+                    const match = this.wikipage.content.match(pattern);
+                    const link = match ? match[1] : '';
+
+                    this.$router.push(`${link}?redirect=${this.slug}`)
+                }
+
                 this.parents = response.data.parents
                 this.terms = response.data.terms
                 this.tags = response.data.tags
@@ -63,7 +80,7 @@ export default {
                     this.loading = false
                     this.message = "Die Seite existiert nicht..willst du sie erstellen."
                     this.mode = "create"
-                    // this.$router.push(`/wiki/${this.wikipage.slug}/create`)
+                    this.$router.push(`/wiki/${this.wikipage.slug}/create`)
                 }
                 if (error.response.status === 401) {
                     this.$router.push('/auth/signin')
@@ -82,11 +99,18 @@ export default {
     },
     mounted() {
 
+        // console.log('lastlink', eventBus.lastLink)
+
         this.loading = true
         if(this.$route.params.slug) {
             this.slug = this.$route.params.slug;
             this.getWikiPage();
         }
+
+        if(this.$route.query.redirect) {
+           this.redirect = this.$route.query.redirect
+        }
+
 
 
     }

@@ -1,5 +1,5 @@
 export default function permission ({ to, from, store, next }){
-
+ //this is the one
     /** middleware for routes **/
     const hasAccess = function (name) {
         const permissions = store.getters['auth/permissions'];
@@ -26,6 +26,8 @@ export default function permission ({ to, from, store, next }){
                 return permissions.includes("manage-post")
 
             case "wiki-create":
+                return permissions.includes("manage-page")
+            case "wiki-create-slug":
                 return permissions.includes("manage-page")
             case "wiki-edit":
                 return permissions.includes("manage-page")

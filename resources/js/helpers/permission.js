@@ -3,36 +3,38 @@ import store from "../store"
 
 export default {
 
-    hasAccess (name) {
-        const permissions = store.getters['auth/permissions'];
-
-        switch (name) {
-
-            case "admin-users":
-                return permissions.includes("manage-user")
-
-            case "admin-roles":
-                return permissions.includes("manage-role")
-
-            case "admin-pages":
-                return permissions.includes("manage-page")
-
-            case "admin-posts":
-                return permissions.includes("manage-post")
-
-            case "wiki-create":
-                return permissions.includes("manage-post")
-            case "wiki-edit":
-                return permissions.includes("manage-post")
-            case "wiki-category-create":
-                return permissions.includes("manage-post")
-            case "wiki-category-edit":
-                return permissions.includes("manage-post")
-
-            default:
-                return false;
-        }
-    },
+    // hasAccess (name) {
+    //     const permissions = store.getters['auth/permissions'];
+    //
+    //     switch (name) {
+    //
+    //         case "admin-users":
+    //             return permissions.includes("manage-user")
+    //
+    //         case "admin-roles":
+    //             return permissions.includes("manage-role")
+    //
+    //         case "admin-pages":
+    //             return permissions.includes("manage-page")
+    //
+    //         case "admin-posts":
+    //             return permissions.includes("manage-post")
+    //
+    //         case "wiki-create":
+    //             return permissions.includes("manage-post")
+    //         case "wiki-create-slug":
+    //             return permissions.includes("manage-post")
+    //         case "wiki-edit":
+    //             return permissions.includes("manage-post")
+    //         case "wiki-category-create":
+    //             return permissions.includes("manage-post")
+    //         case "wiki-category-edit":
+    //             return permissions.includes("manage-post")
+    //
+    //         default:
+    //             return false;
+    //     }
+    // },
     hasRole (role) {
         const roles = store.getters['auth/roles'];
         if(Object.keys(roles).length === 0) {

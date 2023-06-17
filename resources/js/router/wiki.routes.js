@@ -6,7 +6,7 @@ export default [
     {
         path: '/wiki',
         name: 'wiki-index',
-        component: () => import(/* webpackChunkName: "wiki" */ '@/pages/landing/Wiki.vue'),
+        component: () => import(/* webpackChunkName: "wiki-index" */ '@/pages/landing/Wiki.vue'),
         meta: {
             layout: 'landing'
         }
@@ -14,7 +14,7 @@ export default [
     {
         path: '/wiki/create',
         name: 'wiki-create',
-        component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Create.vue'),
+        component: () => import(/* webpackChunkName: "wiki-create" */ '@/components/wiki/Create.vue'),
         meta: {
             layout: 'landing',
             middleware: [
@@ -25,7 +25,7 @@ export default [
     {
         path: '/wiki/category/:slug?',
         name: 'wiki-category',
-        component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Category.vue'),
+        component: () => import(/* webpackChunkName: "wiki-category" */ '@/components/wiki/Category.vue'),
         meta: {
             layout: 'landing'
         }
@@ -33,7 +33,7 @@ export default [
     {
         path: '/wiki/category/:slug/create',
         name: 'wiki-category-create',
-        component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Category-Create.vue'),
+        component: () => import(/* webpackChunkName: "wiki-category-create" */ '@/components/wiki/Category-Create.vue'),
         meta: {
             layout: 'landing',
             middleware: [
@@ -44,7 +44,7 @@ export default [
     {
         path: '/wiki/category/:slug/edit',
         name: 'wiki-category-edit',
-        component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Category-Edit.vue'),
+        component: () => import(/* webpackChunkName: "wiki-category-edit" */ '@/components/wiki/Category-Edit.vue'),
         meta: {
             layout: 'landing',
             middleware: [
@@ -63,7 +63,7 @@ export default [
     {
         path: '/wiki/:slug/create',
         name: 'wiki-create-slug',
-        component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Create.vue'),
+        component: () => import(/* webpackChunkName: "wiki-create-slug" */ '@/components/wiki/Create.vue'),
         meta: {
             layout: 'landing',
             middleware: [
@@ -74,7 +74,7 @@ export default [
     {
         path: '/wiki/:slug/edit',
         name: 'wiki-edit',
-        component: () => import(/* webpackChunkName: "wiki-page" */ '@/components/wiki/Edit.vue'),
+        component: () => import(/* webpackChunkName: "wiki-edit" */ '@/components/wiki/Edit.vue'),
         meta: {
             layout: 'landing',
             middleware: [
