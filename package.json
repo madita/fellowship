@@ -46,7 +46,7 @@
         "vuex-persistedstate": "^4.1.0"
     },
     "devDependencies": {
-        "@indielayer/eslint-config-vue": "^2.1.2",
+        "@indielayer/eslint-config-vue": "^3.1.1",
         "@vue/cli-plugin-babel": "^3.3.0",
         "@vue/cli-plugin-eslint": "^4.5.14",
         "@vue/cli-service": "^3.12.1",
