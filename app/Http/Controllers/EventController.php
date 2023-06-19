@@ -146,7 +146,6 @@ class EventController extends Controller
 
     public function isGoing(Event $event, $answer)
     {
-
         /** @var \App\Models\User $user */
         $user = auth()->user();
 

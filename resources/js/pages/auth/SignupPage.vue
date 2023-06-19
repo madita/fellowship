@@ -9,12 +9,24 @@
                 <v-form ref="form" v-model="isFormValid" lazy-validation>
                     <v-text-field
                         v-model="user.name"
-                        :rules="[rules.required]"
                         :validate-on-blur="false"
                         :error="errorName"
                         :error-messages="errorNameMessage"
                         :label="$t('register.name')"
                         name="name"
+                        outlined
+                        @keyup.enter="submit"
+                        @change="resetErrors"
+                    ></v-text-field>
+
+                    <v-text-field
+                        v-model="user.username"
+                        :rules="[rules.required]"
+                        :validate-on-blur="false"
+                        :error="errorUsername"
+                        :error-messages="errorUsernameMessage"
+                        :label="$t('register.username')"
+                        name="username"
                         outlined
                         @keyup.enter="submit"
                         @change="resetErrors"

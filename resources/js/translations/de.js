@@ -91,6 +91,7 @@ export default {
   'login': {
     'title': 'Anmelden',
     'email': 'Email',
+    'username': 'Benutzername oder Email',
     'password': 'Passwort',
     'button': 'Anmelden',
     'orsign': 'Oder melden Sie sich mit an',
@@ -102,6 +103,7 @@ export default {
   'register': {
     'title': 'Benutzerkonto anlegen',
     'name': 'Vollständiger Name',
+    'username': 'Benutzername',
     'email': 'Email',
     'password': 'Passwort',
     'button': 'Benutzerkonto anlegen',

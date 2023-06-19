@@ -45,6 +45,14 @@ class LoginController extends Controller
         return redirect('/auth/signin');
     }
 
+    public function username()
+    {
+        $field = (filter_var(request()->email, FILTER_VALIDATE_EMAIL) || !request()->email) ? 'email' : 'username';
+        request()->merge([$field => request()->email]);
+
+        return $field;
+    }
+
     public function authenticated(Request $request, $user)
     {
         $user->update([

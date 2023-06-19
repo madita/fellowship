@@ -13,7 +13,6 @@ class CreateSystemTables extends Migration
      */
     public function up()
     {
-
         /**
          * Pages.
          */
