@@ -22,7 +22,7 @@
         <div class="sticky" style="top: 90px">
           <div class="title mb-2">Contents</div>
           <div v-for="faq in faqs" :key="faq.id" class="mb-1">
-            <v-btn text color="primary" @click="$vuetify.goTo(`#${faq.id}`, { offset: 30 })">{{ faq.title }}</v-btn>
+            <v-btn text color="bg-primary" @click="$vuetify.goTo(`#${faq.id}`, { offset: 30 })">{{ faq.title }}</v-btn>
           </div>
         </div>
       </v-col>
@@ -35,10 +35,10 @@
               v-for="(item,i) in faq.items"
               :key="i"
             >
-              <v-expansion-panel-header class="font-weight-black">{{ item.title }}</v-expansion-panel-header>
-              <v-expansion-panel-content>
+              <v-expansion-panel-title class="font-weight-black">{{ item.title }}</v-expansion-panel-title>
+              <v-expansion-panel-text>
                 {{ item.content }}
-              </v-expansion-panel-content>
+              </v-expansion-panel-text>
             </v-expansion-panel>
           </v-expansion-panels>
         </div>

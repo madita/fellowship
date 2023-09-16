@@ -1,4 +1,4 @@
-export default [
+export const landing =  [
     {
         path: '/',
         name: 'home',
@@ -31,3 +31,5 @@ export default [
             layout: 'landing'
         }
     }]
+
+export default landing

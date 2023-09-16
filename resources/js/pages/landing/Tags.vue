@@ -2,8 +2,8 @@
     <div>
         <v-sheet>
             <v-container class="py-6 pt-lg-15">
-                <v-list-item-group
-                    color="primary"
+                <v-list-group
+                    color="bg-primary"
                     v-for="(taxable, type) in taxables.type"
                     :key="`${type}-${$taxable}`"
                 >{{type}}
@@ -16,7 +16,7 @@
                             <v-list-item-title v-text="model.taxable_title"></v-list-item-title>
                         </v-list-item-content>
                     </v-list-item>
-                </v-list-item-group>
+                </v-list-group>
             </v-container>
         </v-sheet>
     </div>

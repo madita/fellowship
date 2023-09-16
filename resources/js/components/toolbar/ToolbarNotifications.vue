@@ -2,13 +2,12 @@
     <v-menu offset-y left transition="slide-y-transition">
         <template v-slot:activator="{ on }">
             <v-badge
-                bordered
                 :content="notifications.length"
                 :value="notifications.length"
                 offset-x="22"
                 offset-y="22"
             >
-                <v-btn icon v-on="on">
+                <v-btn ico>
                     <v-icon>mdi-bell-outline</v-icon>
                 </v-btn>
             </v-badge>
@@ -18,22 +17,22 @@
         <!-- dropdown card -->
         <v-card>
             <v-list three-line dense max-width="400">
-                <v-list-item-group>
-                <v-subheader class="pa-2 font-weight-bold">Notifications</v-subheader>
+                <v-list-group>
+                <v-list-subheader class="pa-2 font-weight-bold">Notifications</v-list-subheader>
                 <div v-for="(item, index) in notifications" :key="index">
                     <v-divider v-if="index > 0 && index < notifications.length" inset></v-divider>
 
                     <v-list-item>
-                        <v-list-item-avatar size="32" color="primary">
-                            <v-icon dark small>mdi-noodles</v-icon>
-                        </v-list-item-avatar>
-                        <v-list-item-content @click="$router.push({name: 'my-notification', params: { id: index },})">
+<!--                        <v-list-item-avatar size="32" color="primary">-->
+<!--                            <v-icon dark small>mdi-noodles</v-icon>-->
+<!--                        </v-list-item-avatar>-->
+                        <v-list-item icon="mdi-noodles" @click="$router.push({name: 'my-notification', params: { id: index },})">
                             <v-list-item-title v-text="item.data.subject"></v-list-item-title>
                             <v-list-item-subtitle class="caption" v-text="item.data.body"></v-list-item-subtitle>
                             <v-btn  :href="item.data.url" target="_blank" depressed small>{{item.data.action}}</v-btn>
-                        </v-list-item-content>
+                        </v-list-item>
                         <v-list-item-action class="align-self-center">
-                            <v-list-item-action-text v-text="">{{item.created_at | humanDiff()}}</v-list-item-action-text>
+                            {{item.created_at | humanDiff()}}
                             <div class="d-flex">
                                 <v-icon
                                     class="d-inline-flex"
@@ -54,7 +53,7 @@
                         </v-list-item-action>
                     </v-list-item>
                 </div>
-                </v-list-item-group>
+                </v-list-group>
             </v-list>
 
             <div class="text-center py-2">

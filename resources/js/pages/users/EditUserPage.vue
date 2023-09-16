@@ -6,16 +6,16 @@
                 <v-breadcrumbs :items="breadcrumbs" class="pa-0 py-2"></v-breadcrumbs>
             </div>
             <v-spacer></v-spacer>
-            <v-btn icon @click>
+            <v-btn icon>
                 <v-icon>mdi-refresh</v-icon>
             </v-btn>
         </div>
 
         <div
             v-if="roles.includes('admin')"
-            class="d-flex align-center font-weight-bold primary--text my-2"
+            class="d-flex align-center font-weight-bold text-primary my-2"
         >
-            <v-icon small color="primary">mdi-security</v-icon>
+            <v-icon small color="bg-primary">mdi-security</v-icon>
             <span class="ma-1">Administrator</span>
         </div>
 

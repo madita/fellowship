@@ -1,11 +1,9 @@
 <template>
     <v-menu offset-y left transition="slide-y-transition">
         <template v-slot:activator="{ on }">
-            <v-btn icon class="elevation-2" v-on="on">
+            <v-btn icon class="elevation-2">
                 <v-badge
                     color="success"
-                    dot
-                    bordered
                     offset-x="10"
                     offset-y="10"
                 >
@@ -15,8 +13,9 @@
         </template>
 
         <!-- user menu list -->
-        <v-list dense nav>
+        <v-list dense>
             <v-list-item
+                :icon="item.icon"
                 v-for="(item, index) in menu"
                 :key="index"
                 :to="item.link"
@@ -24,23 +23,23 @@
                 :disabled="item.disabled"
                 link
             >
-                <v-list-item-icon>
-                    <v-icon small :class="{ 'grey--text': item.disabled }">{{ item.icon }}</v-icon>
-                </v-list-item-icon>
-                <v-list-item-content>
+<!--                <v-list-item-icon>-->
+<!--                    <v-icon small :class="{ 'grey&#45;&#45;text': item.disabled }">{{ item.icon }}</v-icon>-->
+<!--                </v-list-item-icon>-->
+
                     <v-list-item-title>{{ item.key ? $t(item.key) : item.text }}</v-list-item-title>
-                </v-list-item-content>
+
             </v-list-item>
 
             <v-divider class="my-1"></v-divider>
 
-            <v-list-item @click.prevent="signOut">
-                <v-list-item-icon>
-                    <v-icon small>mdi-logout-variant</v-icon>
-                </v-list-item-icon>
-                <v-list-item-content>
+            <v-list-item @click.prevent="signOut" icon="mdi-logout-variant">
+<!--                <v-list-item-icon>-->
+<!--                    <v-icon small>mdi-logout-variant</v-icon>-->
+<!--                </v-list-item-icon>-->
+
                     <v-list-item-title>{{ $t('menu.logout') }}</v-list-item-title>
-                </v-list-item-content>
+
             </v-list-item>
         </v-list>
     </v-menu>
@@ -48,7 +47,7 @@
 
 <script>
 import config from '../../configs'
-import UserAvatar from "../common/UserAvatar";
+import UserAvatar from "../common/UserAvatar.vue";
 import {mapActions, mapGetters} from "vuex";
 /*
 |---------------------------------------------------------------------

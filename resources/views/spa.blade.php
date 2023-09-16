@@ -11,7 +11,8 @@
         <!-- Quicksand Font -->
         <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-        <link href="{{ mix('dist/css/app.css') }}" rel="stylesheet">
+{{--        <link href="{{ mix('dist/css/app.css') }}" rel="stylesheet">--}}
+        @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     </head>
     <body>
         <noscript>
@@ -25,6 +26,6 @@
                 'routes' => collect(\Route::getRoutes())->mapWithKeys(function ($route) { return [$route->getName() => $route->uri()]; })
             ]) !!};
         </script>
-        <script src="{{ mix('dist/js/app.js') }}"></script>
+{{--        <script src="{{ mix('dist/js/app.js') }}"></script>--}}
     </body>
 </html>

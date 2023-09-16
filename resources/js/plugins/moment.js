@@ -1,8 +1,7 @@
-import Vue from 'vue'
-import moment from 'moment'
 
-/**
- * Date library momentjs
- * https://momentjs.com/
- */
-Vue.prototype.$moment = moment
+import { inject } from 'vue';
+
+export default function moment() {
+    const $moment = inject('$moment');
+    return { $moment };
+}

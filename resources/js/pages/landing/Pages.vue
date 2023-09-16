@@ -9,16 +9,16 @@
                 <v-btn v-if="!showHistory && !showHistoryItem" @click="loadHistory">History</v-btn>
                 <v-btn v-if="showHistory || showHistoryItem" @click="showPage">Show Page</v-btn>
                 <div v-if="showHistory">
-                    <v-list-item-group
+                    <v-list-group
                         color="primary">
                         <v-list-item v-for="(item, index) in history" :key="`history-${index}`" two-line
                                      @click="loadHistoryItem(index)">
-                            <v-list-item-content>
+
                                 <v-list-item-title>{{item.action}} by {{ item.user.username }}</v-list-item-title>
                                 <v-list-item-subtitle>{{ item.created_at | humanDiff() }}</v-list-item-subtitle>
-                            </v-list-item-content>
+
                         </v-list-item>
-                    </v-list-item-group>
+                    </v-list-group>
                 </div>
                 <div v-else-if="showHistoryItem">
 

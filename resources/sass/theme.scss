@@ -4,4 +4,7 @@
 // Custom Vuetify Style Overrides
 @import './vuetify/overrides.scss';
 
-@import '~vuetify/src/styles/main.sass';
+//@import '~vuetify/src/styles/main.sass';
+@import '/node_modules/vuetify/lib/styles/main.sass';
+
+

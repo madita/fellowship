@@ -11,7 +11,7 @@
                         v-model="form.email"
                         :rules="[rules.required]"
                         :error-messages="errorUsernameMessages"
-                        :validate-on-blur="false"
+                        validate-on="blur"
                         :error="error"
                         :label="$t('login.username')"
                         name="email"
@@ -39,7 +39,7 @@
                         :loading="isLoading"
                         :disabled="isSignInDisabled"
                         block
-                        x-large
+                        size="large"
                         color="primary"
                         @click="submit"
                     >{{ $t('login.button') }}
@@ -53,9 +53,9 @@
                         :key="provider.id"
                         :loading="provider.isLoading"
                         :disabled="isSignInDisabled"
-                        class="mb-2 primary lighten-2 primary--text text--darken-3"
+                        class="mb-2 primary lighten-2 text-primary text--darken-3"
                         block
-                        x-large
+                        size="large"
                         to="/"
                     >
                         <v-icon small left>mdi-{{ provider.id }}</v-icon>
@@ -155,13 +155,15 @@ export default {
 
 
             await this.signIn(this.form).then(() => {
+                console.log('test yes')
                 if(this.isVerified) {
-                    this.$router.replace({name: 'dashboard'})
+                    this.$router.push({name: 'dashboard'})
                 } else {
-                    this.$router.replace({name: 'auth-verify-email'})
+                    this.$router.push({name: 'auth-verify-email'})
                 }
             })
                 .catch(error => {
+                    console.log('test no', error)
                     const data = error.response.data;
 
                     this.error = true

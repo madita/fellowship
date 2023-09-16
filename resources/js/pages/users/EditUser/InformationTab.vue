@@ -52,7 +52,7 @@
         <div class="d-flex">
           <v-btn>Reset</v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="primary">Save</v-btn>
+          <v-btn color="bg-primary">Save</v-btn>
         </div>
       </v-form>
     </v-card-text>

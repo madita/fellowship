@@ -45,7 +45,7 @@
             :loading="isLoading"
             block
             depressed
-            x-large
+            size="large"
             color="primary"
             @click="submit"
         >Set new password and Sign In

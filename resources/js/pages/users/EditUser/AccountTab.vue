@@ -46,7 +46,7 @@
                             </div>
 
                             <div class="mt-2">
-                                <v-btn color="primary" @click="updateUser">Save</v-btn>
+                                <v-btn color="bg-primary" @click="updateUser">Save</v-btn>
                             </div>
                         </div>
                     </div>
@@ -55,14 +55,13 @@
 
             <v-expansion-panels v-if="roles.includes('admin')" v-model="panel" multiple class="mt-3">
                 <v-expansion-panel>
-                    <v-expansion-panel-header class="title">Actions</v-expansion-panel-header>
-                    <v-expansion-panel-content>
+                    <v-expansion-panel-title class="title">Actions</v-expansion-panel-title>
+                    <v-expansion-panel-text>
                         <div class="mb-2">
                             <div class="title">Reset User Password</div>
                             <div class="subtitle mb-2">Sends a reset password email to the user.</div>
                             <v-btn
                                 class="mb-2"
-                                @click
                             >
                                 <v-icon left small>mdi-email</v-icon>
                                 Send Reset Password Email
@@ -89,13 +88,13 @@
                             <div class="my-2">
                                 <v-btn
                                     v-if="user.role === 'ADMIN'"
-                                    color="primary"
+                                    color="bg-primary"
                                     @click="user.role = 'USER'"
                                 >
                                     <v-icon left small>mdi-security</v-icon>
                                     Remove admin access
                                 </v-btn>
-                                <v-btn v-else color="primary" @click="user.role = 'ADMIN'">
+                                <v-btn v-else color="bg-primary" @click="user.role = 'ADMIN'">
                                     <v-icon left small>mdi-security</v-icon>
                                     Set User as Admin
                                 </v-btn>
@@ -133,23 +132,23 @@
                                 Delete User
                             </v-btn>
                         </div>
-                    </v-expansion-panel-content>
+                    </v-expansion-panel-text>
                 </v-expansion-panel>
                 <v-expansion-panel>
-                    <v-expansion-panel-header class="title">Metadata</v-expansion-panel-header>
-                    <v-expansion-panel-content class="body-2">
+                    <v-expansion-panel-title class="title">Metadata</v-expansion-panel-title>
+                    <v-expansion-panel-text class="body-2">
                         <span class="font-weight-bold">Created</span>
                         {{ user.created_at | formatDate('lll') }}
                         <br/>
                         <span class="font-weight-bold">Last Sign In</span>
                         {{ user.last_login_at | formatDate('lll') }}
-                    </v-expansion-panel-content>
+                    </v-expansion-panel-text>
                 </v-expansion-panel>
                 <v-expansion-panel>
-                    <v-expansion-panel-header class="title">Raw Data</v-expansion-panel-header>
-                    <v-expansion-panel-content>
+                    <v-expansion-panel-title class="title">Raw Data</v-expansion-panel-title>
+                    <v-expansion-panel-text>
                         <pre class="body-2">{{ user }}</pre>
-                    </v-expansion-panel-content>
+                    </v-expansion-panel-text>
                 </v-expansion-panel>
             </v-expansion-panels>
         </div>

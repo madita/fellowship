@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import NavMenu from './NavMenu'
+import NavMenu from './NavMenu.vue'
 
 export default {
   components: {

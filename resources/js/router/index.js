@@ -1,8 +1,8 @@
-import Vue from 'vue'
-import Router from 'vue-router'
-import store from '../store'
+import * as Vue from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
+import * as store from '../store'
 
-import middlewarePipeline from './middlewarePipeline'
+import { middlewarePipeline } from './middlewarePipeline.js';
 
 import auth from './middleware/auth'
 import verified from './middleware/verified'
@@ -15,7 +15,7 @@ import LandingRoutes from './landing.routes'
 import WikiRoutes from './wiki.routes'
 import AdminRoutes from './admin.routes'
 
-Vue.use(Router)
+//Vue.use(Router)
 
 export const routes = [{
     path: '/dashboard',
@@ -52,7 +52,7 @@ export const routes = [{
         }
     },
     {
-        path: '*',
+        path: '/:catchAll(.*)',
         name: 'error',
         component: () => import(/* webpackChunkName: "error" */ '@/pages/error/NotFoundPage.vue'),
         meta: {
@@ -60,9 +60,8 @@ export const routes = [{
         }
     }]
 
-const router = new Router({
-    mode: 'history',
-    base: process.env.BASE_URL || '/',
+const router = createRouter({
+    history: createWebHistory(import.meta.env.BASE_URL),
     scrollBehavior(to, from, savedPosition) {
         if (savedPosition) return savedPosition
 
@@ -78,11 +77,17 @@ let lastLink = null;
  */
 router.beforeEach((to, from, next) => {
     lastLink = from.fullPath; // Store the last visited link
+    console.log('to middleware',to)
     if (!to.meta.middleware) {
         return next()
     }
 
     const middleware = to.meta.middleware
+
+    if (!Array.isArray(middleware) || typeof middleware[0] !== 'function') {
+        console.error('Invalid middleware', middleware);
+        return next();
+    }
 
     const context = {
         to,

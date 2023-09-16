@@ -15,7 +15,7 @@
                     <v-text-field
                         v-model="email"
                         :rules="[rules.required, rules.email]"
-                        :validate-on-blur="false"
+                        validate-on="blur"
                         :error="error"
                         :error-messages="errorMessages"
                         :label="$t('forgot.email')"
@@ -28,7 +28,7 @@
                     <v-btn
                         :loading="isLoading"
                         block
-                        x-large
+                        size="large"
                         color="primary"
                         @click="submit"
                     >{{ $t('forgot.button') }}

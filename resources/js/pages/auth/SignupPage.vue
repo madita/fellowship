@@ -9,7 +9,7 @@
                 <v-form ref="form" v-model="isFormValid" lazy-validation>
                     <v-text-field
                         v-model="user.name"
-                        :validate-on-blur="false"
+                        validate-on="blur"
                         :error="errorName"
                         :error-messages="errorNameMessage"
                         :label="$t('register.name')"
@@ -22,7 +22,7 @@
                     <v-text-field
                         v-model="user.username"
                         :rules="[rules.required]"
-                        :validate-on-blur="false"
+                        validate-on="blur"
                         :error="errorUsername"
                         :error-messages="errorUsernameMessage"
                         :label="$t('register.username')"
@@ -35,7 +35,7 @@
                     <v-text-field
                         v-model="user.email"
                         :rules="[rules.required, rules.email]"
-                        :validate-on-blur="false"
+                        validate-on="blur"
                         :error="errorEmail"
                         :error-messages="errorEmailMessage"
                         :label="$t('register.email')"
@@ -77,7 +77,7 @@
                         :loading="isLoading"
                         :disabled="isSignUpDisabled"
                         block
-                        x-large
+                        size="large"
                         color="primary"
                         @click="submit"
                     >{{ $t('register.button') }}
@@ -91,9 +91,9 @@
                         :key="provider.id"
                         :loading="provider.isLoading"
                         :disabled="isSignUpDisabled"
-                        class="mb-2 primary lighten-2 primary--text text--darken-3"
+                        class="mb-2 primary lighten-2 text-primary text--darken-3"
                         block
-                        x-large
+                        size="large"
                         @click="signInProvider(provider)"
                     >
                         <v-icon small left>mdi-{{ provider.id }}</v-icon>

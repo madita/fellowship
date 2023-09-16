@@ -26,7 +26,7 @@
                     ></v-text-field>
 
                     <!--                    <simple-editor v-model="page.body" :value="page.body" id="text-body" name="content"></simple-editor>-->
-                    <tiptap v-model="content" :value="content" id="text-content" name="content"/>
+                    <tiptap v-model="content" :model-value="content" id="text-content" name="content"/>
 
                 </v-col>
                 <v-col

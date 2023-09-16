@@ -15,12 +15,12 @@
             :dark="menuTheme === 'dark'"
         >
         <a class="skip-nav-link" href="#main-content">
-                skip navigation     
+                skip navigation
         </a>
             <!-- Navigation menu info -->
             <template v-slot:prepend>
                 <div class="pa-2">
-                    <div @click="routeHome" class="cursor-pointer title font-weight-bold text-uppercase primary--text">{{ product.name }}</div>
+                    <div @click="routeHome" class="cursor-pointer title font-weight-bold text-uppercase text-primary">{{ product.name }}</div>
                     <div class="overline grey--text">{{ product.version }}</div>
                 </div>
             </template>
@@ -79,7 +79,7 @@
                         <v-text-field
                             ref="search"
                             class="mx-1 hidden-xs-only"
-                            :placeholder="$t('menu.search')"
+                            placeholder="Search/Suche"
                             prepend-inner-icon="mdi-magnify"
                             hide-details
                             filled
@@ -93,9 +93,9 @@
                             <v-icon>mdi-magnify</v-icon>
                         </v-btn>
 
-                        <toolbar-language/>
+<!--                        <toolbar-language/>-->
 
-                        <toolbar-apps/>
+<!--                        <toolbar-apps/>-->
 
                         <template v-if="authenticated">
                             <div :class="[$vuetify.rtl ? 'ml-1' : 'mr-1']">
@@ -122,7 +122,7 @@
                 </v-layout>
             </v-container>
 
-            <v-footer app inset>
+            <v-footer inset>
                 <v-spacer></v-spacer>
                 <div class="overline">
                     @fellowship
@@ -138,11 +138,11 @@ import {mapActions, mapGetters, mapState} from 'vuex'
 // navigation menu configurations
 import config from '../configs'
 
-import MainMenu from '../components/navigation/MainMenu'
-import ToolbarUser from '../components/toolbar/ToolbarUser'
-import ToolbarApps from '../components/toolbar/ToolbarApps'
-import ToolbarLanguage from '../components/toolbar/ToolbarLanguage'
-import ToolbarNotifications from '../components/toolbar/ToolbarNotifications'
+import MainMenu from '../components/navigation/MainMenu.vue'
+import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
+import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
+import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
+import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue'
 
 export default {
     components: {

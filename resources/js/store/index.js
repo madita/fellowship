@@ -1,17 +1,17 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+// import Vue from 'vue'
+import { createStore } from 'vuex';
 import auth from './auth'
 import createPersistedState from "vuex-persistedstate";
 
 // Global vuex
 import AppModule from './app'
 
-Vue.use(Vuex)
+// Vue.use(Vuex)
 
 /**
  * Main Vuex Store
  */
-const store = new Vuex.Store({
+const store = createStore({
     modules: {
         auth,
         app: AppModule

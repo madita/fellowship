@@ -25,8 +25,9 @@
 
             <v-list three-line>
                 <v-list-item-group v-model="notificationModel">
-                <template v-for="(item) in notifications">
+
                     <v-list-item
+                        v-for="(item) in notifications"
                         :key="item.title"
                     >
                         <v-list-item-avatar>
@@ -48,7 +49,7 @@
                             </v-icon>
                         </v-list-item-action>
                     </v-list-item>
-                </template>
+
                 </v-list-item-group>
             </v-list>
         </v-card>

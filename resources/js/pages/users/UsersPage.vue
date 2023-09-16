@@ -6,7 +6,7 @@
         <v-breadcrumbs :items="breadcrumbs" class="pa-0 py-2"></v-breadcrumbs>
       </div>
       <v-spacer></v-spacer>
-      <v-btn color="primary">
+      <v-btn color="bg-primary">
         Create User
       </v-btn>
     </div>
@@ -25,14 +25,14 @@
               </transition>
             </template>
             <v-list dense>
-              <v-list-item @click>
+              <v-list-item>
                 <v-list-item-title>Verify</v-list-item-title>
               </v-list-item>
-              <v-list-item @click>
+              <v-list-item>
                 <v-list-item-title>Disable</v-list-item-title>
               </v-list-item>
               <v-divider></v-divider>
-              <v-list-item @click>
+              <v-list-item>
                 <v-list-item-title>Delete</v-list-item-title>
               </v-list-item>
             </v-list>
@@ -56,7 +56,6 @@
             icon
             small
             class="ml-2"
-            @click
           >
             <v-icon>mdi-refresh</v-icon>
           </v-btn>

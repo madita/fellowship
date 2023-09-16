@@ -2,7 +2,7 @@ import auth from './middleware/auth'
 import verified from "./middleware/verified";
 import permission from "./middleware/permission";
 
-export default [
+export const wiki = [
     {
         path: '/wiki',
         name: 'wiki-index',
@@ -82,3 +82,5 @@ export default [
             ]
         },
     }]
+
+export default wiki

@@ -1,7 +1,7 @@
 import auth from './middleware/auth'
 import guest from './middleware/guest'
 
-export default [{
+export const pages  = [{
     path: '/auth/signin',
     name: 'auth-signin',
     component: () => import(/* webpackChunkName: "auth-signin" */ '@/pages/auth/SigninPage.vue'),
@@ -78,3 +78,5 @@ export default [{
     name: 'utility-help',
     component: () => import(/* webpackChunkName: "utility-help" */ '@/pages/utility/HelpPage.vue')
 }]
+
+export default pages

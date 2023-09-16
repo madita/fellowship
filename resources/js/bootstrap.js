@@ -1,4 +1,7 @@
-window._ = require('lodash')
+import { default as axios } from 'axios'
+import { default as _ } from 'lodash'
+import Echo from 'laravel-echo'
+import Pusher from 'pusher-js'
 
 /**
  * We'll load the axios HTTP library which allows us to easily issue requests
@@ -6,8 +9,8 @@ window._ = require('lodash')
  * CSRF token as a header based on the value of the "XSRF" token cookie.
  */
 
-window.axios = require('axios')
-
+window._ = _
+window.axios = axios
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
 
 // axios.defaults.withCredentials = true;
@@ -19,17 +22,14 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
  * allows your team to easily build robust real-time web applications.
  */
 
-import Echo from 'laravel-echo';
-
-window.Pusher = require('pusher-js');
 
 Pusher.logToConsole = true;
 
 window.Echo = new Echo({
     broadcaster: "pusher",
-    cluster: process.env.MIX_PUSHER_APP_CLUSTER,
+    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
     encrypted: true,
-    key: process.env.MIX_PUSHER_APP_KEY,
+    key: import.meta.env.VITE_PUSHER_APP_KEY,
     forceTLS: true,
     authorizer: (channel) => {
         return {

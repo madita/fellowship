@@ -13,7 +13,7 @@
             <v-list-item v-for="item in users" :key="item.id" class="mb-1">
 <!--                <user-avatar :user="item" class="mx-1" />-->
                 <v-list-item-content>
-                    <v-list-item-title :class="{ 'primary--text': item.id === user.id }">{{ item.username }}</v-list-item-title>
+                    <v-list-item-title :class="{ 'text-primary': item.id === user.id }">{{ item.username }}</v-list-item-title>
                 </v-list-item-content>
             </v-list-item>
         </v-list>

@@ -8,6 +8,6 @@
 
 <style scoped>
 .logos-bg {
-  fill: var(--v-surface-base);
+  fill: #f2f5f8;
 }
 </style>

@@ -76,7 +76,7 @@
             </v-toolbar>
         </v-sheet>
         <v-sheet height="600">
-            <v-list-item-group
+            <v-list-group
                 color="primary"
                 v-if="view === 'list'">
                 <v-list-item v-for="event in this.events" :key="`event-${event.id}`" two-line
@@ -86,7 +86,7 @@
                         <v-list-item-subtitle>{{ event.start }} - {{ event.end }}</v-list-item-subtitle>
                     </v-list-item-content>
                 </v-list-item>
-            </v-list-item-group>
+            </v-list-group>
             <v-calendar
                 v-show="view !== 'list'"
                 ref="calendar"

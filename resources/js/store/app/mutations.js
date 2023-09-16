@@ -1,4 +1,4 @@
-import Vuetify from '../../plugins/vuetify'
+//import Vuetify from '../../plugins/vuetify'
 
 export default {
   /**

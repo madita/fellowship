@@ -1,11 +1,25 @@
 <template>
   <v-app>
     <!-- Layout component -->
-    <component :is="currentLayout" v-if="isRouterLoaded">
-      <transition name="fade" mode="out-in">
-        <router-view />
-      </transition>
-    </component>
+<!--    <component :is="currentLayout" v-if="isRouterLoaded">-->
+<!--      <transition name="fade" mode="out-in">-->
+<!--        <router-view />-->
+<!--      </transition>-->
+<!--    </component>-->
+
+      <component :is="currentLayout" v-if="isRouterLoaded">
+          <router-view v-slot="{ Component }">
+              <transition name="fade" mode="out-in">
+                  <component :is="Component" />
+              </transition>
+          </router-view>
+      </component>
+
+<!--      <router-view v-slot="{ Component }">-->
+<!--          <transition name="fade" mode="out-in">-->
+<!--              <component :is="currentLayout" v-if="isRouterLoaded"/>-->
+<!--          </transition>-->
+<!--      </router-view>-->
 
     <v-snackbar v-model="toast.show" :timeout="toast.timeout" :color="toast.color" bottom>
       {{ toast.message }}
@@ -20,11 +34,11 @@ import { mapState } from 'vuex'
 import config from './configs'
 
 // Layouts
-import defaultLayout from './layouts/DefaultLayout'
-import simpleLayout from './layouts/SimpleLayout'
-import landingLayout from './layouts/LandingLayout'
-import authLayout from './layouts/AuthLayout'
-import errorLayout from './layouts/ErrorLayout'
+import defaultLayout from './layouts/DefaultLayout.vue'
+import simpleLayout from './layouts/SimpleLayout.vue'
+import landingLayout from './layouts/LandingLayout.vue'
+import authLayout from './layouts/AuthLayout.vue'
+import errorLayout from './layouts/ErrorLayout.vue'
 import { mapGetters } from 'vuex'
 
 /*

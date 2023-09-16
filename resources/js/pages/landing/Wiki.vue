@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex flex-grow-1 flex-row mt-2">
-        
+
         <v-container class="mb-15">
             <p><v-text-field
                 label="Search"
@@ -31,7 +31,7 @@
             </v-flex>
             <v-progress-circular v-if="loading"
                                  :size="150"
-                                 color="primary"
+                                 color="bg-primary"
                                  indeterminate
             ></v-progress-circular>
 

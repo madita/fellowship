@@ -238,28 +238,28 @@
 </template>
 
 <script>
-import CharacterCount from '@tiptap/extension-character-count'
-import StarterKit from '@tiptap/starter-kit'
-import Image from '@tiptap/extension-image'
-import { generateHTML } from '@tiptap/html'
-import Table from '@tiptap/extension-table'
-import TableCell from '@tiptap/extension-table-cell'
-import TableHeader from '@tiptap/extension-table-header'
-import TableRow from '@tiptap/extension-table-row'
-
-import WikiMention from './mention/WikiMention'
-import CustomMention from './mention/CustomMention'
-import HashtagMention from './mention/HashtagMention'
-import { BubbleMenu, Editor, EditorContent } from '@tiptap/vue-2'
-
-import Link from '@tiptap/extension-link'
-import ImageModal from "./ImageModal";
-
-import TableOfContents from './TableOfContents.js'
-
-import suggestion from './mention/suggestion'
-import hashtag from './mention/hashtag'
-import wiki from './mention/wiki'
+// import CharacterCount from '@tiptap/extension-character-count'
+// import StarterKit from '@tiptap/starter-kit'
+// import Image from '@tiptap/extension-image'
+// import { generateHTML } from '@tiptap/html'
+// import Table from '@tiptap/extension-table'
+// import TableCell from '@tiptap/extension-table-cell'
+// import TableHeader from '@tiptap/extension-table-header'
+// import TableRow from '@tiptap/extension-table-row'
+//
+// import WikiMention from './mention/WikiMention'
+// import CustomMention from './mention/CustomMention'
+// import HashtagMention from './mention/HashtagMention'
+// import { BubbleMenu, Editor, EditorContent } from '@tiptap/vue-2'
+//
+// import Link from '@tiptap/extension-link'
+// import ImageModal from "./ImageModal";
+//
+// import TableOfContents from './TableOfContents.js'
+//
+// import suggestion from './mention/suggestion'
+// import hashtag from './mention/hashtag'
+// import wiki from './mention/wiki'
 
 // import Image from './Image';
 
@@ -267,17 +267,17 @@ import wiki from './mention/wiki'
 
 export default {
     components: {
-        StarterKit,
-        EditorContent,
-        ImageModal,
-        generateHTML,
-        Table,
-        TableCell,
-        TableHeader,
-        TableRow,
-        BubbleMenu,
-        Link,
-        TableOfContents
+        // StarterKit,
+        // EditorContent,
+        // ImageModal,
+        // generateHTML,
+        // Table,
+        // TableCell,
+        // TableHeader,
+        // TableRow,
+        // BubbleMenu,
+        // Link,
+        // TableOfContents
     },
 
     props: ['value', 'limit'],
