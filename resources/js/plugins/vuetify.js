@@ -12,6 +12,7 @@ import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import i18n from './vue-i18n';
 import config from '../configs';
+
 // import {lightTheme}, {darkTheme} from '../configs/theme.js'
 
 const light = {

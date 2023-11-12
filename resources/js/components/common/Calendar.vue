@@ -5,7 +5,7 @@
                 flat
             >
                 <v-btn
-                    outlined
+                    variant="outlined"
                     class="mr-4"
                     color="grey darken-2"
                     @click="setToday"
@@ -14,7 +14,6 @@
                 </v-btn>
                 <v-btn
                     fab
-                    text
                     small
                     color="grey darken-2"
                     @click="prev"
@@ -25,7 +24,6 @@
                 </v-btn>
                 <v-btn
                     fab
-                    text
                     small
                     color="grey darken-2"
                     @click="next"
@@ -34,9 +32,9 @@
                         mdi-chevron-right
                     </v-icon>
                 </v-btn>
-                <v-toolbar-title v-if="$refs.calendar">
-                    {{ $refs.calendar.title }}
-                </v-toolbar-title>
+<!--                <v-toolbar-title v-if="$refs.calendar">-->
+<!--                    {{ $refs.calendar.title }}-->
+<!--                </v-toolbar-title>-->
                 <v-spacer></v-spacer>
                 <v-menu
                     bottom
@@ -44,10 +42,9 @@
                 >
                     <template v-slot:activator="{ on, attrs }">
                         <v-btn
-                            outlined
+                            variant="outlined"
                             color="grey darken-2"
                             v-bind="attrs"
-                            v-on="on"
                         >
                             <span>{{ typeToLabel[type] }}</span>
                             <v-icon right>
@@ -81,26 +78,24 @@
                 v-if="view === 'list'">
                 <v-list-item v-for="event in this.events" :key="`event-${event.id}`" two-line
                              @click="$router.push({name: 'event-show', params: { id: event.id },})">
-                    <v-list-item-content>
                         <v-list-item-title>{{ event.name }}</v-list-item-title>
                         <v-list-item-subtitle>{{ event.start }} - {{ event.end }}</v-list-item-subtitle>
-                    </v-list-item-content>
                 </v-list-item>
             </v-list-group>
-            <v-calendar
-                v-show="view !== 'list'"
-                ref="calendar"
-                v-model="focus"
-                color="primary"
-                :weekdays="weekday"
-                :events="getEvents"
-                locale="de"
-                :event-color="getEventColor"
-                :type="type"
-                @click:event="showEvent"
-                @click:more="viewDay"
-                @click:date="viewDay"
-            ></v-calendar>
+<!--            <v-calendar-->
+<!--                v-show="view !== 'list'"-->
+<!--                ref="calendar"-->
+<!--                v-model="focus"-->
+<!--                color="primary"-->
+<!--                :weekdays="weekday"-->
+<!--                :events="getEvents"-->
+<!--                locale="de"-->
+<!--                :event-color="getEventColor"-->
+<!--                :type="type"-->
+<!--                @click:event="showEvent"-->
+<!--                @click:more="viewDay"-->
+<!--                @click:date="viewDay"-->
+<!--            ></v-calendar>-->
             <v-menu
                 v-model="selectedOpen"
                 :close-on-content-click="false"
@@ -138,14 +133,12 @@
                     </v-card-text>
                     <v-card-actions>
                         <v-btn
-                            text
                             color="secondary"
                             @click="selectedOpen = false"
                         >
                             Cancel
                         </v-btn>
                         <v-btn
-                            text
                             color="secondary"
                             @click="$router.push({name: 'event-show', params: { id: selectedEvent.id },})"
                         >
@@ -163,7 +156,7 @@ export default {
     props: ['data'],
     data: () => ({
         focus: '',
-        view: 'calendar',
+        view: 'list',
         weekday: [1, 2, 3, 4, 5, 6, 0],
         type: 'month',
         typeToLabel: {
@@ -186,7 +179,7 @@ export default {
             const end = this.getEnd(item)
             return {...item, name: item.title, start: start, end: end, color: "blue"}
         });
-        this.$refs.calendar.checkChange()
+        // this.$refs.calendar.checkChange()
     },
     methods: {
         viewDay({date}) {
@@ -200,10 +193,10 @@ export default {
             this.focus = ''
         },
         prev() {
-            this.$refs.calendar.prev()
+            // this.$refs.calendar.prev()
         },
         next() {
-            this.$refs.calendar.next()
+            // this.$refs.calendar.next()
         },
         listView() {
             this.type = 'category';

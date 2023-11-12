@@ -14,7 +14,7 @@
                         :error-messages="errorNameMessage"
                         :label="$t('register.name')"
                         name="name"
-                        outlined
+                        variant="outlined"
                         @keyup.enter="submit"
                         @change="resetErrors"
                     ></v-text-field>
@@ -27,7 +27,7 @@
                         :error-messages="errorUsernameMessage"
                         :label="$t('register.username')"
                         name="username"
-                        outlined
+                        variant="outlined"
                         @keyup.enter="submit"
                         @change="resetErrors"
                     ></v-text-field>
@@ -40,7 +40,7 @@
                         :error-messages="errorEmailMessage"
                         :label="$t('register.email')"
                         name="email"
-                        outlined
+                        variant="outlined"
                         @keyup.enter="submit"
                         @change="resetErrors"
                     ></v-text-field>
@@ -54,7 +54,7 @@
                         :error-messages="errorPasswordMessage"
                         :label="$t('register.password')"
                         name="password"
-                        outlined
+                        variant="outlined"
                         @change="resetErrors"
                         @keyup.enter="submit"
                         @click:append="showPassword = !showPassword"
@@ -68,7 +68,7 @@
                         :error-messages="errorPasswordMessage"
                         :label="$t('register.password')"
                         name="password_confirmation"
-                        outlined
+                        variant="outlined"
                         @change="resetErrors"
                         @keyup.enter="submit"
                     ></v-text-field>
@@ -131,7 +131,9 @@
 | Template for user sign up with external providers buttons
 |
 */
-import {mapActions, mapGetters} from 'vuex'
+// import {mapActions, mapGetters} from 'vuex'
+
+import {useAuthStore} from "@/store/authStore.js";
 
 export default {
     data() {
@@ -189,9 +191,10 @@ export default {
         }
     },
     methods: {
-        ...mapActions({
-            signIn: 'auth/signIn'
-        }),
+        async signIn(credentials) {
+            const auth = useAuthStore()
+            await auth.signIn(credentials)
+        },
         async register() {
             this.processing = true
             await axios.post('/register', this.user).then(() => {
@@ -248,10 +251,14 @@ export default {
         }
     },
     computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            isVerified: 'auth/isVerified',
-        })
+        authenticated() {
+            const authStore = useAuthStore();
+            return authStore.isLoggedIn;
+        },
+        isVerified() {
+            const authStore = useAuthStore();
+            return authStore.isVerified;
+        },
     }
 }
 </script>

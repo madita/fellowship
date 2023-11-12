@@ -1,7 +1,8 @@
 import * as Vue from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import * as store from '../store'
+// import * as store from '../store'
 
+// import authMiddleware from './middleware/auth-middleware'
 import { middlewarePipeline } from './middlewarePipeline.js';
 
 import auth from './middleware/auth'
@@ -92,7 +93,6 @@ router.beforeEach((to, from, next) => {
     const context = {
         to,
         from,
-        store,
         next
     }
 

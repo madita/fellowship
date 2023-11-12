@@ -5,7 +5,7 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 // import vuetify from '@vuetify/vite-plugin'
 // import vuetify from 'vite-plugin-vuetify'
 
-// import path from 'path'
+import path from 'path'
 
 
 export default defineConfig({
@@ -27,6 +27,9 @@ export default defineConfig({
             '~bootstrap': path.resolve(__dirname, 'node_modules/bootstrap'),
             '@': path.resolve(__dirname, 'resources/js'),
         },
+    },
+    optimizeDeps: {
+        exclude: ['pinia']
     },
     define: {
         // Vue-i18n feature flags

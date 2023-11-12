@@ -10,9 +10,12 @@
       link
     >
 
-        <v-icon :small="small" :class="{ 'grey--text': menuItem.disabled }">
-          {{ menuItem.icon || 'mdi-circle-medium' }}
-        </v-icon>
+
+        <template v-slot:prepend>
+            <v-icon :small="small" :class="{ 'grey--text': menuItem.disabled }">
+                {{ menuItem.icon || 'mdi-circle-medium' }}
+            </v-icon>
+        </template>
 
         <v-list-item-title>
           {{ menuItem.key ? $t(menuItem.key) : menuItem.text }}
@@ -27,8 +30,10 @@
       :to="menuItem.link"
       link
     >
+        <template v-slot:prepend>
+            <v-icon v-if="!subgroup" :small="small">{{ menuItem.icon || 'mdi-circle-medium' }}</v-icon>
+        </template>
       <template v-slot:activator>
-          <v-icon v-if="!subgroup" :small="small">{{ menuItem.icon || 'mdi-circle-medium' }}</v-icon>
           <v-list-item-title>
             {{ menuItem.key ? $t(menuItem.key) : menuItem.text }}
           </v-list-item-title>

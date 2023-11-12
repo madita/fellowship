@@ -21,7 +21,7 @@
                 :error-messages="errorNewPasswordMessage"
                 name="password"
                 label="New Password"
-                outlined
+                variant="outlined"
                 class="mt-4"
                 @change="resetErrors"
                 @keyup.enter="confirmPasswordReset"
@@ -36,7 +36,7 @@
                 :error-messages="errorNewPasswordMessage"
                 :label="$t('register.password')"
                 name="password_confirmation"
-                outlined
+                variant="outlined"
                 @change="resetErrors"
                 @keyup.enter="submit"
             ></v-text-field>
@@ -44,7 +44,7 @@
         <v-btn
             :loading="isLoading"
             block
-            depressed
+            variant="flat"
             size="large"
             color="primary"
             @click="submit"

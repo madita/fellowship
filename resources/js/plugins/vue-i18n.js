@@ -10,7 +10,8 @@ const messages = {}
 availableLocales.forEach((l) => { messages[l.code] = l.messages })
 
 export const i18n = new createI18n({
-  locale: 'en',
+  locale: locale,
+  locales: locales,
   fallbackLocale,
   messages
 })

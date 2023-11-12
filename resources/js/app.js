@@ -1,17 +1,25 @@
 import './bootstrap'
-// import 'vuetify/styles' // Global CSS has to be imported
+import 'vuetify/styles' // Global CSS has to be imported
 import { createApp } from 'vue'
 import App from './App.vue'
+import { createPinia } from 'pinia'
+import mitt from 'mitt'
+
+import { useAuthStore } from '@/store/authStore.js'
+import { useUserStore } from '@/store/userStore.js'
+// import { createPinia } from '@pinia/store'
 
 // VUEX - https://vuex.vuejs.org/
-import store from './store'
+// import store from './store'
 
 // VUE-ROUTER - https://router.vuejs.org/
 import router from './router'
 
-//register vue
-const vueApp = createApp(App)
 
+//register vue
+const emitter = mitt()
+const vueApp = createApp(App)
+const pinia = createPinia()
 //auto register vue components
 // const components = import.meta.glob('../components/*.vue', {eager: true})
 // Object.entries(components).forEach(([path, definition]) => {
@@ -28,17 +36,18 @@ const vueApp = createApp(App)
 // import * as directives from "vuetify/directives";
 //
 // PLUGINS
-import vuetify from './plugins/vuetify'
-import i18n from './plugins/vue-i18n'
-import './plugins/vue-google-maps'
-import './plugins/vue-shortkey'
-import './plugins/vue-head'
-import './plugins/vue-gtag'
-import './plugins/apexcharts'
-import './plugins/echarts'
-import './plugins/animate'
-import './plugins/clipboard'
-import './plugins/moment'
+import vuetify from './plugins/vuetify.js'
+import i18n from './plugins/vue-i18n.js'
+import './plugins/vue-google-maps.js'
+import './plugins/vue-shortkey.js'
+import './plugins/vue-head.js'
+import './plugins/vue-gtag.js'
+import './plugins/apexcharts.js'
+import './plugins/echarts.js'
+import './plugins/animate.js'
+import './plugins/clipboard.js'
+import formatDate from './plugins/formatDate.js'
+// import './plugins/moment'
 // import './plugins/lodash'
 
 //HELPERS
@@ -48,12 +57,15 @@ import helpers from './helpers'
 import { capitalize } from './helpers/filters.js';
 
 // STYLES
+
 // Main Theme SCSS
 import '../sass/theme.scss'
 
 // Animation library - https://animate.style/
 import 'animate.css/animate.min.css'
 import VueShortkey from 'vue-shortkey'
+import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
+import PerfectScrollbar from 'vue3-perfect-scrollbar';
 //
 
 // Set this to false to prevent the production tip on Vue startup.
@@ -84,15 +96,46 @@ vueApp.config.globalProperties.$helpers = helpers
 
 
 // createApp(App).use(vuetify).mount('#app')
+vueApp.use(pinia)
 vueApp.use(i18n)
 vueApp.use(vuetify)
-vueApp.use(store)
+vueApp.use(PerfectScrollbar);
+// vueApp.use(store)
 // vueApp.use(permissions)
 vueApp.use(router)
-// Vue.use(require('vue-shortkey'))
-vueApp.use(VueShortkey)
-vueApp.mount("#app")
 
+vueApp.use(formatDate);
+// Vue.use(require('vue-shortkey'))
+// vueApp.use(VueShortkey)
+// vueApp.mount("#app")
+vueApp.config.globalProperties.emitter = emitter
+router.isReady().then(() => vueApp.mount("#app"))
+// vueApp.mount("#app")
+
+vueApp.config.globalProperties.$filters = {
+    formatDate(value) {
+        return '$' + value
+    }
+}
+
+// Check user session on app initialization
+async function checkUserSession() {
+    try {
+        const response = await axios.get('/api/user');
+        const userStore = useUserStore();
+        userStore.updateState(response.data);  // Assuming you have a setUser method in your store
+    } catch (error) {
+        if (error.response && error.response.status === 401) {
+            const authStore = useAuthStore();
+            if(authStore.isLoggedIn) {
+                authStore.resetStore();
+                console.log('automatic logout')
+            }
+        }
+    }
+}
+
+checkUserSession();
 // store.dispatch('auth/me').then(() => {
 //     new Vue({
 //         i18n,

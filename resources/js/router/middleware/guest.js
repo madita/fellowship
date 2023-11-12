@@ -1,4 +1,4 @@
-import store from '../../store'
+// import store from '../../store'
 
 // export default function guest ({ to, from, store, next }){
 //     const isLogged = store.getters['auth/authenticated'];
@@ -11,10 +11,17 @@ import store from '../../store'
 //
 //     return next()
 // }
-export default function guest ({ to, from, next }){
-    const isLogged = store.getters['auth/authenticated'];
+// Import the Pinia store
+import { useAuthStore } from '../../store/authStore.js'
 
-    if(isLogged){
+export default function guest({ to, from, next }) {
+    // Access the auth store's state
+    const auth = useAuthStore()
+
+    // Access the isAuthenticated state directly
+    const isLogged = auth.authenticated
+
+    if (isLogged) {
         return next({
             name: 'home'
         })

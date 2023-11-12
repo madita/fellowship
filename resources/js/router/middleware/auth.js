@@ -1,11 +1,13 @@
-export default function auth ({ to, from, store, next }){
-    const isLogged = store.getters['auth/authenticated'];
+import { useAuthStore } from "@/store/authStore.js";
 
-    if(!isLogged){
+export default function auth({ to, from, next }) {
+    const authStore = useAuthStore();
+
+    if (!authStore.isLoggedIn) {
         return next({
-            name: 'auth-signin'
-        })
+            name: "auth-signin",
+        });
     }
 
-    return next()
+    return next();
 }

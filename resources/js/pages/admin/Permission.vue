@@ -1,6 +1,6 @@
 <template>
   <div class="flex-grow-1">
-      <v-simple-table>
+      <v-table>
           <template v-slot:default>
               <thead>
               <tr>
@@ -30,7 +30,7 @@
               </tr>
               </tbody>
           </template>
-      </v-simple-table>
+      </v-table>
       <v-btn
           color="blue darken-1"
           text

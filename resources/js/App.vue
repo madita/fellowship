@@ -7,29 +7,32 @@
 <!--      </transition>-->
 <!--    </component>-->
 
-      <component :is="currentLayout" v-if="isRouterLoaded">
-          <router-view v-slot="{ Component }">
-              <transition name="fade" mode="out-in">
-                  <component :is="Component" />
-              </transition>
-          </router-view>
-      </component>
+<!--      <component :is="currentLayout" v-if="isRouterLoaded">-->
+<!--          <router-view v-slot="{ Component }">-->
+<!--              <transition name="fade" mode="out-in">-->
+<!--                  <component :is="Component" />-->
+<!--              </transition>-->
+<!--          </router-view>-->
+<!--      </component>-->
 
+      <Component :is="currentLayout" v-if="$route && isRouterLoaded">
+          <RouterView :key="$route.fullPath" />
+      </Component>
 <!--      <router-view v-slot="{ Component }">-->
 <!--          <transition name="fade" mode="out-in">-->
 <!--              <component :is="currentLayout" v-if="isRouterLoaded"/>-->
 <!--          </transition>-->
 <!--      </router-view>-->
 
-    <v-snackbar v-model="toast.show" :timeout="toast.timeout" :color="toast.color" bottom>
-      {{ toast.message }}
-      <v-btn v-if="toast.timeout === 0" color="white" text @click="toast.show = false">{{ $t('common.close') }}</v-btn>
-    </v-snackbar>
+<!--    <v-snackbar v-model="toast.show" :timeout="toast.timeout" :color="toast.color" bottom>-->
+<!--      {{ toast.message }}-->
+<!--      <v-btn v-if="toast.timeout === 0" color="white" text @click="toast.show = false">{{ $t('common.close') }}</v-btn>-->
+<!--    </v-snackbar>-->
   </v-app>
 </template>
 
 <script>
-import { mapState } from 'vuex'
+// import { mapState } from 'vuex'
 
 import config from './configs'
 
@@ -39,7 +42,12 @@ import simpleLayout from './layouts/SimpleLayout.vue'
 import landingLayout from './layouts/LandingLayout.vue'
 import authLayout from './layouts/AuthLayout.vue'
 import errorLayout from './layouts/ErrorLayout.vue'
-import { mapGetters } from 'vuex'
+// import { mapGetters } from 'vuex'
+
+
+// Import the Pinia store hook
+import { useAuthStore } from '@/store/authStore.js';
+import { useAppStore } from '@/store/app/index.js';
 
 /*
 |---------------------------------------------------------------------
@@ -58,11 +66,22 @@ export default {
     errorLayout
   },
   computed: {
-      ...mapGetters({
-          authenticated: 'auth/authenticated',
-          user: 'auth/user',
-      }),
-    ...mapState('app', ['toast']),
+      authenticated() {
+          const authStore = useAuthStore();
+          return authStore.isLoggedIn;
+      },
+      user() {
+          const userStore = useUserStore();
+          return userStore.user;
+      },
+      // toast() {
+      //     // If you have also migrated the `app` store to Pinia,
+      //     // you'll access it similarly using its Pinia hook.
+      //     // For the sake of this example, I'll assume you have a `useAppStore` hook.
+      //     // If not, you'll need to migrate that Vuex store module as well.
+      //     const appStore = useAppStore();
+      //     return appStore.toast;
+      // },
     isRouterLoaded: function() {
       return this.$route !== undefined && this.$route.name !== null;
     },

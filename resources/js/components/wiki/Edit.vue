@@ -2,7 +2,7 @@
     <div class="d-flex flex-grow-1 flex-row mt-2">
         <v-container class="mb-15">
             <template v-if="authenticated">
-                <v-btn text class="mx-1" :to="`/wiki/${slug}`">
+                <v-btn class="mx-1" :to="`/wiki/${slug}`">
                     Cancel
                 </v-btn>
             </template>
@@ -20,7 +20,7 @@
                     ></v-text-field>
 
                     <!--                    <simple-editor v-model="page.body" :value="page.body" id="text-body" name="content"></simple-editor>-->
-                    <tiptap v-model="wikipage.content" :value="wikipage.content" id="text-content" name="content"/>
+                    <tiptap v-model:modelValue="wikipage.content" :value="wikipage.content" id="text-content" name="content"/>
 
                 </v-col>
                 <v-col
@@ -34,32 +34,32 @@
                         single-line
                     >
                         <template v-slot:selection="{ attrs, item, parent, selected }">
-                            {{ item.title }} ({{ item.slug }})
+                            {{ item?.title }} ({{ item.slug }})
                         </template>
                         <template v-slot:item="{ index, item }">
-                            {{ item.title }} ({{ item.slug }})
+                            {{ item?.title }} ({{ item.slug }})
                         </template>
                     </v-select>
 
-<!--                    <v-combobox-->
-<!--                        v-model="taxonomyValue"-->
-<!--                        :items="taxonomies"-->
-<!--                        item-text="taxonomy"-->
-<!--                        @change="setTaxonomy"-->
-<!--                        :search-input.sync="searchTax"-->
-<!--                        hide-selected-->
-<!--                        :disabled="isDisabled"-->
-<!--                        label="Taxonomy"-->
-<!--                        persistent-hint-->
-<!--                        small-chips-->
-<!--                    >-->
-<!--                    </v-combobox>-->
+                    <!--                    <v-combobox-->
+                    <!--                        v-model="taxonomyValue"-->
+                    <!--                        :items="taxonomies"-->
+                    <!--                        item-text="taxonomy"-->
+                    <!--                        @change="setTaxonomy"-->
+                    <!--                        :search-input.sync="searchTax"-->
+                    <!--                        hide-selected-->
+                    <!--                        :disabled="isDisabled"-->
+                    <!--                        label="Taxonomy"-->
+                    <!--                        persistent-hint-->
+                    <!--                        small-chips-->
+                    <!--                    >-->
+                    <!--                    </v-combobox>-->
 
                     <v-combobox
                         v-model="categoryValue"
                         :items="categories"
                         :search-input.sync="searchTax"
-                        item-text="title"
+                        item-title="title"
                         label="Category"
                         multiple
                         small-chips
@@ -79,7 +79,7 @@
                         <v-combobox
                             v-model="parentValue"
                             :items="parents"
-                            item-text="title"
+                            item-title="title"
                             label="Parent Category"
                             chips
                             clearable
@@ -92,7 +92,7 @@
                     <v-combobox
                         v-model="termValue"
                         :items="terms"
-                        item-text="title"
+                        item-title="title"
                         :search-input.sync="searchTerm"
                         hide-selected
                         label="Terms"
@@ -104,11 +104,11 @@
                     >
                         <template v-slot:no-data>
                             <v-list-item>
-                                <v-list-item-content>
+
                                     <v-list-item-title>
                                         No results matching "<strong>{{ searchTerm }}</strong>". Press <kbd>enter</kbd> to create a new one
                                     </v-list-item-title>
-                                </v-list-item-content>
+
                             </v-list-item>
                         </template>
                         <template v-slot:selection="{ attrs, item, parent, selected }">
@@ -146,8 +146,6 @@
                     </v-combobox>
 
 
-
-
                     <v-btn @click="update">Save</v-btn>
                 </v-col>
             </v-row>
@@ -159,139 +157,52 @@
 
 <script>
 
-import {mapGetters} from "vuex";
-import Tiptap from '../common/tiptap/Tiptap'
+// import {mapGetters} from "vuex";
+import { ref, reactive, computed, watch, onMounted } from 'vue';
+import Tiptap from '../common/tiptap/Tiptap.vue'
+import {useAuthStore} from '@/store/authStore.js'
+import {useUserStore} from '@/store/userStore.js'
+import {useRouter} from "vue-router";
 
 export default {
     components: {
         Tiptap
     },
-    data() {
-        return {
-            addCategory: false,
-            isDisabled: false,
-            wikipage:{},
-            parents:[],
-            pages:[],
-            taxonomies:[],
-            slug:"",
-            message:"",
-            searchTax: null,
-            searchTerm: null,
-            searchPage: null,
-            terms: [],
-            taxonomy: null,
-            taxonomyValue: "wiki",
-            termValue: [],
-            newCategory: "",
-            categories: [],
-            categoryValue: [],
-            parentValue: null,
-            rules: {
-                required: value => !!value || 'Required.'
-            },
-            colors: ['green', 'purple', 'indigo', 'cyan', 'teal', 'orange'],
-            nonce: 1
-        }
-    },
-    methods: {
-        getWikiPage(){
-            this.loading = true
-            return axios.get(`/api/wiki/${this.slug}`).then((response) => {
-                this.wikipage = response.data.page
-                this.parents = response.data.parents
-                this.taxonomies = response.data.terms
+    setup(props, {emit}) {
+        let slug = ref(null);
+        let wikipage = ref({});
+        let message = ref('');
+        let parents = reactive([]);
+        let taxonomyValue = ref([]);
+        let taxonomies = ref([]);
+        let termValue = ref([]);
+        let categories = ref([]);
+        let categoryValue = ref([]);
+        let pages = ref([]);
+        let searchTerm = ref();
+        let searchTax = ref();
+        let loading = ref(true);
 
-                this.termValue = response.data.tags
+        let terms = ref([]);
+        let colors = ref(['green', 'purple', 'indigo', 'cyan', 'teal', 'orange']);
+        let nonce = ref(1);
+        let addCategory = ref(false);
+        const authStore = useAuthStore();
+        const authenticated = computed(() => authStore.authenticated);
+        const user = computed(() => authStore.user);
+        const router = useRouter();
 
-                this.categoryValue = this.taxonomies;
-            }).catch((error) => {
-                if (error.response.status === 404) {
-                    // this.$router.push('/error/not-found')
-                }
-                if (error.response.status === 401) {
-                    this.$router.push('/auth/signin')
-                }
-            });
-        },
-        goTo(slug, type) {
-            this.$router.push({ name: type, params: { slug: slug } })
-        },
-        // setTaxonomy() {
-        //     this.getCategories(this.taxonomyValue.taxonomy)
-        // },
-        getCategories() {
-            this.loading = true
-            return axios.get(`/api/tag/terms/wiki`).then((response) => {
+        onMounted(() => {
+            if (router.currentRoute.value.params.slug) {
+                slug.value = router.currentRoute.value.params.slug;
+                getWikiPage();
+            }
 
-                this.categories = this.parents = response.data.terms
+            getCategories()
+            getTerms()
+        });
 
-                this.loading = false
-            });
-        },
-        getTerms() {
-            this.loading = true
-            return axios.get(`/api/tag/terms/tags`).then((response) => {
-                this.terms = response.data.terms.map(x => {
-                    return x.title
-                })
-
-                this.loading = false
-            });
-        },
-        saveCategory() {
-
-            // this.loading = true
-            let data = {term: this.newCategory, taxonomy: this.taxonomyValue, parent: this.parentValue}
-
-            axios.post(`/api/tag/terms`, data).then(() => {
-
-                this.getCategories(this.taxonomyValue.taxonomy)
-                this.categoryValue.push(this.newCategory);
-                // this.categories = this.parents = response.data
-
-                // this.loading = false
-            });
-        },
-        // save() {
-        //     if (this.form === "edit") {
-        //         this.update()
-        //     } else {
-        //         this.store()
-        //     }
-        // },
-        update() {
-            this.wikipage.terms = this.termValue;
-            this.wikipage.taxonomy = this.taxonomyValue
-            this.wikipage.categories = this.categoryValue
-
-            axios.patch(`/api/wiki/${this.slug}`, this.wikipage).then(() => {
-                this.message = "Wiki Page updated"
-            }).catch((error) => {
-                if (error.response.status === 422) {
-                    this.editing.errors = error.response.data
-                }
-            })
-        },
-        // store() {
-        //     this.page.terms = this.termValue
-        //     this.page.taxonomy = this.taxonomyValue
-        //     this.page.categories = this.categoryValue
-        //
-        //
-        //     axios.post(`${this.endpoint}`, this.page).then(() => {
-        //         this.page = {title: "", content: ""};
-        //         this.message = "Wiki page updated"
-        //     }).catch((error) => {
-        //         if (error.response.status === 422) {
-        //             // this.creating.errors = error.response.data
-        //             this.editing.errors = error.response.data
-        //         }
-        //     })
-        // },
-    },
-    watch: {
-        termValue(val, prev) {
+        watch(termValue, (val, prev) => {
             if (val.length === prev.length) return
 
             this.termValue = val.map(v => {
@@ -309,25 +220,139 @@ export default {
 
                 return v
             })
-        },
-    },
-    computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            user: 'auth/user',
-        })
-    },
-    mounted() {
+        });
 
-        if(this.$route.params.slug) {
-            this.slug = this.$route.params.slug;
-            this.getWikiPage();
+        // watch(() => wikipage.value.content, content => {
+        //     // console.log('updatedtcontent', content)
+        //     //const isSame = editor.value.getHTML() === value;
+        //
+        //     // if (isSame) {
+        //     //     return;
+        //     // }
+        //
+        //     // editor.value.commands.setContent(value);
+        // });
+
+
+        // watch(
+        //     () => wikipage.value.content,
+        //     (content) => {
+        //         console.log('content change', content)
+        //         wikipage.value.content = content
+        //     },
+        //     { deep: true }
+        // );
+
+        // Your methods go here, but they're just regular functions now:
+        function getWikiPage() {
+            loading.value = true
+            console.log('test', slug)
+            return axios.get(`/api/wiki/${slug.value}`).then((response) => {
+                wikipage.value = response.data.page
+
+                parents = response.data.parents
+                taxonomies.value = response.data.terms
+
+                termValue.value = response.data.tags
+
+                categoryValue.value = taxonomies.value;
+            }).catch((error) => {
+                if (error.response.status === 404) {
+                    // this.$router.push('/error/not-found')
+                }
+                if (error.response.status === 401) {
+                    //this.$router.push('/auth/signin')
+                }
+            });
         }
 
-        this.getCategories()
-        this.getTerms()
+        function goTo(slug, type) {
+            //this.$router.push({name: type, params: {slug: slug}})
+        }
 
+        function getCategories() {
+            loading.value = true
+            return axios.get(`/api/tag/terms/wiki`).then((response) => {
 
+                categories.value = parents = response.data.terms
+
+                loading.value = false
+            });
+        }
+
+        function getTerms() {
+            loading.value = true
+            return axios.get(`/api/tag/terms/tags`).then((response) => {
+                terms.value = response.data.terms.map(x => {
+                    return x.title
+                })
+
+                loading.value = false
+            });
+        }
+
+        function saveCategory() {
+            // this.loading.value = true
+            let data = {term: newCategory, taxonomy: taxonomyValue, parent: parentValue}
+
+            axios.post(`/api/tag/terms`, data).then(() => {
+
+                getCategories(this.taxonomyValue.taxonomy)
+                categoryValue.push(this.newCategory);
+                // this.categories = this.parents = response.data
+
+                // this.loading.value = false
+            });
+        }
+
+        function updateContent(content) {
+            wikipage.value.content = content
+        }
+
+        function update() {
+            wikipage.value.terms = termValue.value;
+            wikipage.value.taxonomy = taxonomyValue.value
+            wikipage.value.categories = categoryValue.value
+
+            axios.patch(`/api/wiki/${slug.value}`, wikipage.value).then(() => {
+                message.value = "Wiki Page updated"
+            }).catch((error) => {
+                if (error.response.status === 422) {
+                    editing.errors = error.response.data
+                }
+            })
+        }
+
+        // ... and so on for your other methods
+
+        // Return anything that should be available in the template:
+        return {
+            slug,
+            wikipage,
+            parents,
+            taxonomies,
+            termValue,
+            categoryValue,
+            terms,
+            colors,
+            nonce,
+            authenticated,
+            user,
+            addCategory,
+            message,
+            searchTerm,
+            searchTax,
+            pages,
+            loading,
+            categories,
+            getWikiPage,
+            goTo,
+            getCategories,
+            getTerms,
+            saveCategory,
+            update,
+            updateContent
+        };
     }
 }
 </script>
@@ -337,6 +362,7 @@ export default {
     position: relative;
     padding-bottom: 50px;
 }
+
 .card-actions {
     position: absolute;
     bottom: 0;

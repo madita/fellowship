@@ -18,7 +18,7 @@
                         <div class="caption">{{ nextEvent.date }}</div>
                     </v-card-text>
                     <v-card-actions>
-                        <v-btn color="primary" text to="/events">View All Events</v-btn>
+                        <v-btn color="primary" to="/events">View All Events</v-btn>
                     </v-card-actions>
                 </v-card>
             </v-col>
@@ -30,18 +30,17 @@
                         <v-divider></v-divider>
                         <v-list dense>
                             <v-list-item v-for="(activity, index) in recentActivity" :key="index">
-                                <v-list-item-icon>
+
                                     <v-icon>{{ activity.icon }}</v-icon>
-                                </v-list-item-icon>
-                                <v-list-item-content>
+
                                     <div>{{ activity.title }}</div>
                                     <div class="caption">{{ activity.date }}</div>
-                                </v-list-item-content>
+
                             </v-list-item>
                         </v-list>
                     </v-card-text>
                     <v-card-actions>
-                        <v-btn color="primary" text to="/activity">View All Activity</v-btn>
+                        <v-btn color="primary"  to="/activity">View All Activity</v-btn>
                     </v-card-actions>
                 </v-card>
             </v-col>
@@ -53,18 +52,18 @@
                         <v-divider></v-divider>
                         <v-list dense>
                             <v-list-item v-for="(member, index) in newMembers" :key="index">
-                                <v-list-item-avatar>
+
                                     <v-img :src="member.avatar"></v-img>
-                                </v-list-item-avatar>
-                                <v-list-item-content>
+
+
                                     <div>{{ member.name }}</div>
                                     <div class="caption">{{ member.joinDate }}</div>
-                                </v-list-item-content>
+
                             </v-list-item>
                         </v-list>
                     </v-card-text>
                     <v-card-actions>
-                        <v-btn color="primary" text to="/members">View All Members</v-btn>
+                        <v-btn color="primary" to="/members">View All Members</v-btn>
                     </v-card-actions>
                 </v-card>
             </v-col>
@@ -74,6 +73,10 @@
 </template>
 
 <script>
+import {useAuthStore} from "@/store/authStore.js";
+
+import {useUserStore} from '@/store/userStore.js'
+
 
 export default {
     components: {},
@@ -144,6 +147,14 @@ export default {
     },
     beforeDestroy() {
         this.clear()
+    },
+    computed: {
+        user() {
+            const userStore = useUserStore();
+            // userStore.storeInfo()
+            console.log('userStoredashboard',userStore.user)
+            return userStore.user;
+        },
     },
     methods: {
         clear() {

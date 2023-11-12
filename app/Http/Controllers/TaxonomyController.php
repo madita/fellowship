@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Helpers\TaxonomyHelper;
 use App\Models\Tag\Taxable;
-use App\Models\Tag\Taxonomy;
+//use App\Models\Tag\Taxonomy;
+
+use Lecturize\Taxonomies\Models\Taxonomy;
 //use App\Models\Tag\Term;
 use Lecturize\Taxonomies\Models\Term;
 
@@ -39,6 +41,7 @@ class TaxonomyController extends Controller
         } else {
             $terms = Term::all();
         }
+
 
         $capital = $terms->sortBy(['slug'])->groupBy(function($item,$key) {
             return $item['slug'][0];

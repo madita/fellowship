@@ -1,8 +1,13 @@
-export default function permission ({ to, from, store, next }){
+import {useUserStore} from "@/store/userStore.js";
+
+export default function permission ({ to, from, next }){
  //this is the one
     /** middleware for routes **/
+
+    const userStore = useUserStore()
     const hasAccess = function (name) {
-        const permissions = store.getters['auth/permissions'];
+        // const permissions = store.getters['auth/permissions'];
+        const permissions = userStore.permissions
 
         switch (name) {
 

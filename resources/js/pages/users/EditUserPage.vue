@@ -34,56 +34,81 @@
             </div>
         </div>
 
-        <v-tabs v-model="tab" :show-arrows="false" background-color="transparent">
-            <v-tab to="#tabs-account">Account</v-tab>
-            <v-tab to="#tabs-information">Information</v-tab>
+
+        <v-tabs
+            v-model="activeTab"
+            bg-color="transparent"
+        >
+            <v-tab value="account">Account</v-tab>
+            <v-tab value="info">Information</v-tab>
+
         </v-tabs>
 
-        <v-tabs-items v-model="tab">
-            <v-tab-item value="tabs-account">
-                <account-tab ref="tabs-account" :user="user"></account-tab>
-            </v-tab-item>
+        <v-card>
+        <v-card-text>
+            <v-window v-model="activeTab">
+                <v-window-item value="account">
+                    <account-tab :user="user" :roles="roles"></account-tab>
+                </v-window-item>
 
-            <v-tab-item value="tabs-information">
-                <information-tab ref="tabs-information" :user="user"></information-tab>
-            </v-tab-item>
-        </v-tabs-items>
+                <v-window-item value="info">
+                    <information-tab :user="user"></information-tab>
+                </v-window-item>
+
+            </v-window>
+        </v-card-text>
+        </v-card>
+
     </div>
 </template>
 
 <script>
-import CopyLabel from '../../components/common/CopyLabel'
-import AccountTab from './EditUser/AccountTab'
-import InformationTab from './EditUser/InformationTab'
-import {mapGetters} from 'vuex'
+import { ref, computed } from 'vue';
+import { useAuthStore } from '@/store/authStore.js'
+import { useUserStore } from '@/store/userStore.js'
+import CopyLabel from '../../components/common/CopyLabel.vue';
+import AccountTab from './EditUser/AccountTab.vue';
+import InformationTab from './EditUser/InformationTab.vue';
 
 export default {
     components: {
         CopyLabel,
         AccountTab,
-        InformationTab
+        InformationTab,
     },
-    data() {
+    setup() {
+        const authStore = useAuthStore();
+        const userStore = useUserStore();
+
+        const breadcrumbs = [
+            {
+                text: 'Users',
+                to: '/users/list',
+                exact: true
+            },
+            {
+                text: 'Edit User'
+            }
+        ]
+
+        const activeTab = ref(null);
+        const bc = ref([
+            { text: 'Users', to: '/users/list', exact: true },
+            { text: 'Edit User' },
+        ]);
+
+        const authenticated = computed(() => authStore.isLoggedIn);
+        const user = computed(() => userStore.user);
+        const roles = computed(() => userStore.roles);
+
         return {
-            tab: null,
-            breadcrumbs: [
-                {
-                    text: 'Users',
-                    to: '/users/list',
-                    exact: true
-                },
-                {
-                    text: 'Edit User'
-                }
-            ]
-        }
+            breadcrumbs,
+            activeTab,
+            bc,
+            authenticated,
+            user,
+            roles,
+        };
     },
-    computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            user: 'auth/user',
-            roles: 'auth/roles',
-        })
-    }
-}
+};
 </script>

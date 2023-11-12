@@ -1,6 +1,6 @@
 <template>
     <div class="tiptap">
-        <ImageModal ref="ytmodal" @onConfirm="addCommand" />
+<!--        <ImageModal ref="ytmodal" @onConfirm="addCommand" />-->
         <div v-if="editor">
             <button @click="editor.chain().focus().toggleBold().run()" :class="{ 'is-active': editor.isActive('bold') }">
                 <v-icon>mdi-format-bold</v-icon>
@@ -198,7 +198,7 @@
 <!--            </button>-->
 <!--        </bubble-menu>-->
 
-        <editor-content :editor="editor" v-model="form.body"/>
+        <editor-content :editor="editor"/>
 
         <div v-if="editor && limit" :class="{'character-count': true, 'character-count--warning': editor.storage.characterCount.characters() === limit}">
             <svg
@@ -238,132 +238,85 @@
 </template>
 
 <script>
-// import CharacterCount from '@tiptap/extension-character-count'
-// import StarterKit from '@tiptap/starter-kit'
-// import Image from '@tiptap/extension-image'
-// import { generateHTML } from '@tiptap/html'
-// import Table from '@tiptap/extension-table'
-// import TableCell from '@tiptap/extension-table-cell'
-// import TableHeader from '@tiptap/extension-table-header'
-// import TableRow from '@tiptap/extension-table-row'
-//
-// import WikiMention from './mention/WikiMention'
-// import CustomMention from './mention/CustomMention'
-// import HashtagMention from './mention/HashtagMention'
-// import { BubbleMenu, Editor, EditorContent } from '@tiptap/vue-2'
-//
-// import Link from '@tiptap/extension-link'
-// import ImageModal from "./ImageModal";
-//
-// import TableOfContents from './TableOfContents.js'
-//
-// import suggestion from './mention/suggestion'
-// import hashtag from './mention/hashtag'
-// import wiki from './mention/wiki'
+import { ref, watch, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
+import { BubbleMenu, useEditor, Editor, EditorContent } from '@tiptap/vue-3';
 
-// import Image from './Image';
+import CharacterCount from '@tiptap/extension-character-count'
 
+import WikiMention from './mention/WikiMention.js'
+import CustomMention from './mention/CustomMention.js'
+import HashtagMention from './mention/HashtagMention.js'
+
+import suggestion from './mention/suggestion.js'
+import hashtag from './mention/hashtag.js'
+import wiki from './mention/wiki.js'
+
+import StarterKit from '@tiptap/starter-kit'
+import Document from '@tiptap/extension-document'
+import Gapcursor from '@tiptap/extension-gapcursor'
+import Paragraph from '@tiptap/extension-paragraph'
+import Table from '@tiptap/extension-table'
+import TableCell from '@tiptap/extension-table-cell'
+import TableHeader from '@tiptap/extension-table-header'
+import TableRow from '@tiptap/extension-table-row'
+import Text from '@tiptap/extension-text'
+import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
 
 
 export default {
     components: {
-        // StarterKit,
-        // EditorContent,
-        // ImageModal,
-        // generateHTML,
-        // Table,
-        // TableCell,
-        // TableHeader,
-        // TableRow,
-        // BubbleMenu,
-        // Link,
-        // TableOfContents
+        StarterKit,
+        EditorContent,
+        BubbleMenu,
+        Table,
+        TableCell,
+        TableHeader,
+        TableRow,
+        Text,
+        Paragraph,
+        Image,
+        Link,
+
+
+        // ... other components
     },
 
-    props: ['value', 'limit'],
+    // props: ['value', 'limit'],
+    // emits: ['update:content'],
 
-    data() {
-        return {
-            editor: null,
-            html: "",
-            form: {
-                body: this.value,
-                images: [],
-                imageNames: []
-            },
+    props: {
+        modelValue: {
+            type: String,
+            default: '',
+        },
+        limit: {
+            type: Number,
+            default:null
         }
     },
 
-    watch: {
-        value(value) {
-            const isSame = this.editor.getHTML() === value
+    emits: ['update:modelValue'],
 
-            if (isSame) {
-                return
-            }
+    setup(props, { emit }) {
 
-            this.editor.commands.setContent(value)
 
-        }
-    },
-    methods: {
-        openModal(command) {
-            // console.log('testmodal')
-            this.$refs.ytmodal.showModal(command);
-        },
-        addCommand(data) {
-            if (data.command !== null) {
-                data.command(data.data);
-            }
-        },
-        setContent() {
-            this.editor.setContent(this.content);
-        },
-        setLink() {
-            const previousUrl = this.editor.getAttributes('link').href
-            const url = window.prompt('URL', previousUrl)
+        const html = ref("");
 
-            // cancelled
-            if (url === null) {
-                return
-            }
-
-            // empty
-            if (url === '') {
-                this.editor
-                    .chain()
-                    .focus()
-                    .extendMarkRange('link')
-                    .unsetLink()
-                    .run()
-
-                return
-            }
-
-            // update link
-            this.editor
-                .chain()
-                .focus()
-                .extendMarkRange('link')
-                .setLink({ href: url })
-                .run()
-        },
-    },
-
-    mounted() {
-        this.editor = new Editor({
+        const editor = useEditor({
+            content: props.modelValue,
             extensions: [
                 StarterKit,
-                Image,
                 Table,
                 TableCell,
                 TableHeader,
                 TableRow,
+                Image.configure({ inline: true }),
                 Link.configure({
                     openOnClick: false,
                 }),
                 CharacterCount.configure({
-                    limit: this.limit,
+                    limit: props.limit,
                 }),
                 CustomMention.extend({
                     name: "mention",
@@ -388,29 +341,84 @@ export default {
                     },
                     suggestion:wiki,
                 }),
-
-
             ],
-            content: this.value,
-            onUpdate: () => {
-                this.$emit('input', this.editor.getHTML())
+            onUpdate: ({ editor  }) => {
+
+                emit('update:modelValue', editor.getHTML());
+                // editor.commands.setContent(editor.getHTML(), false, {preserveWhitespace: "full"});
             },
+        });
 
-        })
 
-        this.html = this.editor.getHTML()
-    },
+        watch(() => props.modelValue, (value) => {
 
-    computed: {
-        percentage() {
-            return Math.round((100 / this.limit) * this.editor.storage.characterCount.characters())
-        },
-    },
+            const isSame = editor.value.getHTML() === value
+            // const isSame = JSON.stringify(this.editor.getJSON()) === JSON.stringify(value)
 
-    beforeUnmount() {
-        this.editor.destroy()
-    },
+            if (isSame) {
+                return
+            }
+
+            editor.value.commands.setContent(value, false)
+            // const isSame = this.editor.getHTML() === value
+
+            // JSON
+
+            // this.editor.commands.setContent(value, false)
+        });
+
+        const openModal = (command) => {
+            // ... logic remains unchanged
+            // this.$refs.ytmodal.showModal(command);
+        };
+
+        const addCommand = (data) => {
+            if (data.command !== null) {
+                data.command(data.data);
+            }
+        };
+
+        const setContent = () => {
+             // editor.setContent(this.content);
+        };
+
+        // ... other methods
+
+        onMounted(() => {
+
+            // console.log('tiptap', form)
+
+            // editor.value = new Editor({
+            //     // ... the rest of your editor configuration
+            //     onUpdate: () => {
+            //         emit('input', editor.value.getHTML());
+            //     }
+            // });
+
+            // html.value = editor.value.getHTML();
+        });
+
+        const percentage = computed(() => {
+            return Math.round((100 / props.limit) * editor.value.storage.characterCount.characters());
+        });
+
+        onBeforeUnmount(() => {
+            editor.value.destroy();
+        });
+
+        return {
+            editor,
+            html,
+            openModal,
+            addCommand,
+            // ... other methods
+            percentage
+        };
+    }
+
+
 }
+
 </script>
 
 <style lang="scss">

@@ -21,11 +21,16 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+// import { mapState } from 'vuex'
+
+import {useAppStore} from "../store/app/index.js";
 
 export default {
   computed: {
-    ...mapState('app', ['product'])
+      product: state => {
+          const app = useAppStore()
+          return app.product
+      },
   }
 }
 </script>

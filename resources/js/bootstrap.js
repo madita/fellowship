@@ -23,7 +23,11 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
  */
 
 
-Pusher.logToConsole = true;
+// Pusher.logToConsole = true;
+
+window.Pusher = Pusher;
+
+
 
 window.Echo = new Echo({
     broadcaster: "pusher",

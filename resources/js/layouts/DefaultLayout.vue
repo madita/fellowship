@@ -1,22 +1,17 @@
 <template>
-    <div
-        v-shortkey="['ctrl', '/']"
-        class="d-flex flex-grow-1"
-        @shortkey="onKeyup"
-    >
+    <div>
         <!-- Navigation -->
         <v-navigation-drawer
             v-model="drawer"
-            app
             floating
             class="elevation-1"
             :right="$vuetify.rtl"
             :light="menuTheme === 'light'"
             :dark="menuTheme === 'dark'"
         >
-        <a class="skip-nav-link" href="#main-content">
+            <a class="skip-nav-link" href="#main-content">
                 skip navigation
-        </a>
+            </a>
             <!-- Navigation menu info -->
             <template v-slot:prepend>
                 <div class="pa-2">
@@ -37,7 +32,6 @@
                         :href="item.href"
                         :target="item.target"
                         small
-                        text
                     >
                         {{ item.key ? $t(item.key) : item.text }}
                     </v-btn>
@@ -79,7 +73,7 @@
                         <v-text-field
                             ref="search"
                             class="mx-1 hidden-xs-only"
-                            placeholder="Search/Suche"
+                            :placeholder="$t('menu.search')"
                             prepend-inner-icon="mdi-magnify"
                             hide-details
                             filled
@@ -93,9 +87,9 @@
                             <v-icon>mdi-magnify</v-icon>
                         </v-btn>
 
-<!--                        <toolbar-language/>-->
+                                                <toolbar-language/>
 
-<!--                        <toolbar-apps/>-->
+<!--                                                <toolbar-apps/>-->
 
                         <template v-if="authenticated">
                             <div :class="[$vuetify.rtl ? 'ml-1' : 'mr-1']">
@@ -105,7 +99,7 @@
                             <toolbar-user/>
                         </template>
                         <template v-else>
-                            <v-btn text class="mx-1" to="/auth/signin">
+                            <v-btn class="mx-1" to="/auth/signin">
                                 Sign In
                             </v-btn>
                         </template>
@@ -133,9 +127,13 @@
 </template>
 
 <script>
-import {mapActions, mapGetters, mapState} from 'vuex'
+import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from "@/store/authStore.js";
+import { useUserStore } from "@/store/userStore.js";
+// import { useAppStore } from '@/api/useApi.js'
+import {useAppStore} from "@/store/app/index.js"
+import { useMagicKeys, whenever } from '@vueuse/core'
 
-// navigation menu configurations
 import config from '../configs'
 
 import MainMenu from '../components/navigation/MainMenu.vue'
@@ -152,34 +150,52 @@ export default {
         ToolbarLanguage,
         ToolbarNotifications
     },
-    data() {
-        return {
-            drawer: null,
-            showSearch: false,
+    setup() {
+        const drawer = ref(null)
+        const showSearch = ref(false)
+        const navigation = ref(config.navigation)
 
-            navigation: config.navigation
-        }
-    },
-    computed: {
-        ...mapState('app', ['product', 'isContentBoxed', 'menuTheme', 'toolbarTheme', 'isToolbarDetached']),
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            user: 'auth/user',
-        })
-    },
-    methods: {
-        ...mapActions({
-            signOutAction: 'auth/signOut'
-        }),
+        const appStore = useAppStore()
+        const authStore = useAuthStore()
+        const userStore = useUserStore()
 
-        async signOut() {
-            await this.signOutAction()
-        },
-        routeHome() {
+        const product = computed(() => appStore.product)
+        const isContentBoxed = computed(() => appStore.isContentBoxed)
+        const menuTheme = computed(() => appStore.menuTheme)
+        const toolbarTheme = computed(() => appStore.toolbarTheme)
+        const isToolbarDetached = computed(() => appStore.isToolbarDetached)
+        const authenticated = computed(() => authStore.isLoggedIn)
+        const user = computed(() => userStore.user)
+
+        const keys = useMagicKeys()
+
+        function routeHome() {
             this.$router.replace({name: 'home'})
-        },
-        onKeyup(e) {
-            this.$refs.search.focus()
+        }
+
+        async function signOut() {
+            await authStore.signOut()
+        }
+
+        onMounted(() => {
+            whenever(keys['Ctrl+/'], () => {
+                console.log('Shift+Space have been pressed')
+            })
+        })
+
+        return {
+            drawer,
+            showSearch,
+            navigation,
+            product,
+            isContentBoxed,
+            menuTheme,
+            toolbarTheme,
+            isToolbarDetached,
+            authenticated,
+            user,
+            signOut,
+            routeHome
         }
     }
 }
@@ -196,4 +212,3 @@ export default {
     transform: translateY(-230%);
 }
 </style>
-

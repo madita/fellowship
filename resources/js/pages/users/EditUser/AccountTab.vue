@@ -138,10 +138,10 @@
                     <v-expansion-panel-title class="title">Metadata</v-expansion-panel-title>
                     <v-expansion-panel-text class="body-2">
                         <span class="font-weight-bold">Created</span>
-                        {{ user.created_at | formatDate('lll') }}
+                        {{ $formatDate(new Date(user?.created_at), 'd LLL yyyy') }}
                         <br/>
                         <span class="font-weight-bold">Last Sign In</span>
-                        {{ user.last_login_at | formatDate('lll') }}
+                        {{ $formatDate(new Date(user?.last_login_at), 'd LLL yyyy') }}
                     </v-expansion-panel-text>
                 </v-expansion-panel>
                 <v-expansion-panel>
@@ -182,8 +182,12 @@
 </template>
 
 <script>
-import {mapGetters} from 'vuex'
-import ImageUpload from "../../../components/common/ImageUpload";
+import { ref, computed } from 'vue';
+import ImageUpload from "../../../components/common/ImageUpload.vue";
+// import { format } from '../../../plugins/formatDate.js'
+// import { enGB, de } from 'date-fns/locale'
+
+// Import necessary Vuetify components
 
 export default {
     components: {
@@ -192,32 +196,37 @@ export default {
     props: {
         user: {
             default: () => ({})
+        },
+        roles: {
+            default: () => ({})
         }
     },
-    data() {
-        return {
-            avatar: null,
-            panel: [1],
-            deleteDialog: false,
-            disableDialog: false
-        }
-    }, methods: {
-        onLoad(avatar) {
-            this.user.avatar = avatar.src;
-            this.persist(avatar.file);
-        },
+    setup(props) {
+        const avatar = ref(null);
+        const panel = ref([1]);
+        const deleteDialog = ref(false);
+        const disableDialog = ref(false);
 
-        persist(avatar) {
+        // We can use similar logic for other methods
+        const onLoad = (avatarImage) => {
+            props.user.avatar = avatarImage.src;
+            persist(avatarImage.file);
+        };
+
+        const persist = (avatar) => {
             let data = new FormData();
 
             data.append('avatar', avatar);
             axios.post(`/api/account/avatar`, data)
                 .then(() => {});
-        },
-        trigger () {
+        };
+
+        const trigger = () => {
+            // Assuming ref is still set on the ImageUpload component
             this.$refs.avatar.$el.click()
-        },
-        updateUser() {
+        };
+
+        const updateUser = () => {
             axios.patch(`/api/datatable/users/${this.user.id}`, this.user).then(() => {
                 // console.log('done')
             }).catch((error) => {
@@ -227,17 +236,20 @@ export default {
                 }
             })
         }
-    },
-    computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            // user: 'auth/user',
-            roles: 'auth/roles',
-        })
-    },
 
-    mounted() {
+        // Other methods remain largely unchanged...
 
+        return {
+            avatar,
+            panel,
+            deleteDialog,
+            disableDialog,
+            onLoad,
+            persist,
+            trigger,
+            updateUser,
+            // ... other methods
+        }
     }
 }
 </script>

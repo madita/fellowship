@@ -38,7 +38,7 @@
                     <v-combobox
                         v-model="taxonomyValue"
                         :items="taxonomy"
-                        item-text="taxonomy"
+                        item-title="taxonomy"
                         @change="setTaxonomy"
                         :search-input.sync="searchTax"
                         hide-selected
@@ -52,7 +52,7 @@
                     <v-combobox
                         v-model="categoryValue"
                         :items="categories"
-                        item-text="title"
+                        item-title="title"
                         label="Category"
                         multiple
                         small-chips
@@ -72,7 +72,7 @@
                         <v-combobox
                             v-model="parentValue"
                             :items="parents"
-                            item-text="title"
+                            item-title="title"
                             label="Parent Category"
                             chips
                             clearable
@@ -85,7 +85,7 @@
                     <v-combobox
                         v-model="termValue"
                         :items="terms"
-                        item-text="title"
+                        item-title="title"
                         :search-input.sync="searchTerm"
                         hide-selected
                         label="Terms"

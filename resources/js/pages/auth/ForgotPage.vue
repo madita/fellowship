@@ -20,7 +20,7 @@
                         :error-messages="errorMessages"
                         :label="$t('forgot.email')"
                         name="email"
-                        outlined
+                        variant="outlined"
                         @keyup.enter="submit"
                         @change="resetErrors"
                     ></v-text-field>
