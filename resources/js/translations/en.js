@@ -91,6 +91,7 @@ export default {
     login: {
         title: 'Sign In',
         email: 'Email',
+        username: 'Username or Email',
         password: 'Password',
         button: 'Sign In',
         orsign: 'Or sign in with',
@@ -102,6 +103,7 @@ export default {
     register: {
         title: 'Create Account',
         name: 'Full name',
+        username: 'Username',
         email: 'Email',
         password: 'Password',
         button: 'Create Account',

@@ -33,7 +33,7 @@
           <v-btn
               :loading="isLoading"
               block
-              x-large
+              size="large"
               color="primary"
               @click="save"
           >{{ $t('save') }}

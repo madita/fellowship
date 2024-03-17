@@ -1,17 +1,30 @@
 <template>
     <div class="items">
         <template v-if="items.length">
-            <button
-                class="item"
-                :class="{ 'is-selected': index === selectedIndex }"
-                v-for="(item, index) in items"
-                :key="index"
-            >
-                <template  @click="selectItem(index)" v-if="item.title">{{  item.title }}({{ item.slug}})</template>
-                <template  @click="selectItem(index)" v-else>{{ item.username ?? item.title ?? item }}</template>
-                <input type="text" v-model="alternative" @keydown.enter="setAlternative(item)">
+<!--            <button-->
+<!--                class="item"-->
+<!--                :class="{ 'is-selected': index === selectedIndex }"-->
+<!--                v-for="(item, index) in items"-->
+<!--                :key="index"-->
+<!--            >-->
+<!--                <template  @click="selectItem(index)" v-if="item.title">{{  item.title }}({{ item.slug}})</template>-->
+<!--                <template  @click="selectItem(index)" v-else>{{ item.username ?? item.title ?? item }}</template>-->
+<!--                <input v-if="index === selectedIndex" type="text" v-model="alternative" @keydown.enter="setAlternative(item)"/>-->
 
-            </button>
+<!--            </button>-->
+
+            <div  class="item"
+                   :class="{ 'is-selected': index === selectedIndex }"
+                   v-for="(item, index) in items"
+                   :key="index"
+                 >
+                <span @click="selectItem(index)" v-if="item.title">{{  item.title }}({{ item.slug}})</span>
+                <span @click="selectItem(index)" v-else>{{ item.username ?? item.title ?? item }}</span>
+                <input  :ref="setInputRef" v-if="index === selectedIndex" type="text" v-model="alternative" @keydown.enter="setAlternative(item)"/>
+
+
+
+            </div>
         </template>
         <div class="item" v-else>
             No result
@@ -20,6 +33,8 @@
 </template>
 
 <script>
+import { ref } from 'vue';
+
 export default {
     props: {
         items: {
@@ -33,13 +48,35 @@ export default {
         },
     },
 
-    data() {
-        return {
-            alternative:"",
-            selectedIndex: 0,
-        }
-    },
+    setup(props, { emit }) {
+        const alternative = ref('');
+        const selectedIndex = ref(0);
+        const inputsRef = ref([]);
 
+        const setInputRef = (el) => {
+            if (el) {
+                inputsRef.value.push(el);
+            }
+        };
+
+        const focusInput = (index) => {
+            // Clear the old refs
+            inputsRef.value = inputsRef.value.filter((input) => document.body.contains(input));
+            if (inputsRef.value[index]) {
+                inputsRef.value[index].focus();
+            }
+        };
+
+        // ... other setup code
+
+        return {
+            alternative,
+            selectedIndex,
+            setInputRef,
+            focusInput,
+            // ... other exposed properties and methods
+        };
+    },
     watch: {
         items() {
             this.selectedIndex = 0
@@ -48,6 +85,7 @@ export default {
 
     methods: {
         onKeyDown({ event }) {
+            console.log('event',event)
             if (event.key === 'ArrowUp') {
                 this.upHandler()
                 return true
@@ -68,6 +106,11 @@ export default {
                 return true
             }
 
+            if (event.code === 'Space') {
+                this.focusInput()
+                return true
+            }
+
             return false
         },
 
@@ -83,8 +126,17 @@ export default {
             this.selectItem(this.selectedIndex)
         },
 
+        focusInput() {
+            this.alternativeInput.focus();
+        },
+
         setAlternative(item) {
-            this.command({ id: item.id, title: item.title, slug: item.slug, alternative:this.alternative })
+            console.log('setalternative',item)
+            if (item.username) {
+                this.command({ id: item.id, name: item.name, username: item.username, slug: item.slug, alternative:this.alternative })
+            } else {
+                this.command({ id: item.id, title: item.title, slug: item.slug, alternative:this.alternative })
+            }
         },
 
         selectItem(index) {

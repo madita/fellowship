@@ -1,40 +1,76 @@
-import Vue from 'vue'
+// Instead of Vue, import { createApp } from Vue
+import { createApp } from 'vue';
 
-// For full framework
-import Vuetify from 'vuetify/lib/framework'
-// For a-la-carte components - https://vuetifyjs.com/en/customization/a-la-carte/
-// import Vuetify from 'vuetify/lib'
+// Adjust your Vuetify imports
+// import { Vuetify } from 'vuetify'; // Modify based on the correct path in Vuetify 3
+import "vuetify/styles";
+import { createVuetify } from 'vuetify';
+import '@mdi/font/css/materialdesignicons.css'
+import { aliases, mdi } from 'vuetify/iconsets/mdi'
+import 'vuetify/dist/vuetify.min.css';
+import * as components from "vuetify/components";
+import * as directives from "vuetify/directives";
+import i18n from './vue-i18n';
+import config from '../configs';
 
-import * as directives from 'vuetify/lib/directives'
-import i18n from './vue-i18n'
-import config from '../configs'
+// import {lightTheme}, {darkTheme} from '../configs/theme.js'
 
-/**
- * Vuetify Plugin
- * Main components library
- *
- * https://vuetifyjs.com/
- *
- */
-Vue.use(Vuetify, {
-  directives
-})
-
-export default new Vuetify({
-  rtl: config.theme.isRTL,
-  theme: {
-    dark: config.theme.globalTheme === 'dark',
-    options: {
-      customProperties: true
+const light = {
+    dark: false,
+        colors: {
+        background: '#ffffff',
+            surface: '#f2f5f8',
+            // primary: '#0096c7',
+            primary: '#115571',
+            secondary: '#a0b9c8',
+            accent: '#048ba8',
+            error: '#ef476f',
+            info: '#2196F3',
+            success: '#06d6a0',
+            warning: '#ffd166'
     },
-    themes: {
-      dark: config.theme.dark,
-      light: config.theme.light
-    }
-  },
-  lang: {
-    current: config.locales.locale,
-    // To use Vuetify own translations without Vue-i18n comment the next line
-    t: (key, ...params) => i18n.t(key, params)
-  }
-})
+}
+
+const dark = {
+    colors: {
+        background: '#ffffff',
+        surface: '#f2f5f8',
+        // primary: '#0096c7',
+        primary: '#115571',
+        secondary: '#a0b9c8',
+        accent: '#048ba8',
+        error: '#ef476f',
+        info: '#2196F3',
+        success: '#06d6a0',
+        warning: '#ffd166'
+    },
+}
+
+
+// Create your Vuetify instance
+const vuetify = createVuetify({
+    components,
+    directives,
+    rtl: config.theme.isRTL,
+    icons: {
+        defaultSet: 'mdi',
+        aliases,
+        sets: {
+            mdi,
+        },
+    },
+    theme: {
+        defaultTheme: 'light',
+        themes: {
+            light,
+            dark,
+        },
+    },
+    lang: {
+        current: config.locales.locale,
+        // Adjust the translation function based on your i18n setup
+        t: (key, ...params) => i18n.t(key, params),
+    },
+});
+
+export default vuetify;

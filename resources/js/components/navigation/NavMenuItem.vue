@@ -6,21 +6,22 @@
       :to="menuItem.link"
       :exact="menuItem.exact"
       :disabled="menuItem.disabled"
-      active-class="primary--text"
+      selected-class="text-primary"
       link
     >
-      <v-list-item-icon>
-        <v-icon :small="small" :class="{ 'grey--text': menuItem.disabled }">
-          {{ menuItem.icon || 'mdi-circle-medium' }}
-        </v-icon>
-      </v-list-item-icon>
-      <v-list-item-content>
+
+
+        <template v-slot:prepend>
+            <v-icon :small="small" :class="{ 'grey--text': menuItem.disabled }">
+                {{ menuItem.icon || 'mdi-circle-medium' }}
+            </v-icon>
+        </template>
+
         <v-list-item-title>
           {{ menuItem.key ? $t(menuItem.key) : menuItem.text }}
         </v-list-item-title>
-      </v-list-item-content>
-    </v-list-item>
 
+    </v-list-item>
     <v-list-group
       v-else-if="menuItem.items && $helpers.applyPermissions(menuItem)"
       :value="menuItem.regex ? menuItem.regex.test($route.path) : false"
@@ -29,16 +30,13 @@
       :to="menuItem.link"
       link
     >
-
+        <template v-slot:prepend>
+            <v-icon v-if="!subgroup" :small="small">{{ menuItem.icon || 'mdi-circle-medium' }}</v-icon>
+        </template>
       <template v-slot:activator>
-        <v-list-item-icon v-if="!subgroup">
-          <v-icon :small="small">{{ menuItem.icon || 'mdi-circle-medium' }}</v-icon>
-        </v-list-item-icon>
-        <v-list-item-content>
           <v-list-item-title>
             {{ menuItem.key ? $t(menuItem.key) : menuItem.text }}
           </v-list-item-title>
-        </v-list-item-content>
       </template>
 
       <slot></slot>

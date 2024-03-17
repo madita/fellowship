@@ -1,69 +1,46 @@
-import store from "../store"
+// Import the Pinia auth store
+// import { useAuthStore } from '@/store/authStore'
+import { useUserStore } from '@/store/userStore'
 
+// Instantiate the auth store
 
 export default {
-
-    // hasAccess (name) {
-    //     const permissions = store.getters['auth/permissions'];
-    //
-    //     switch (name) {
-    //
-    //         case "admin-users":
-    //             return permissions.includes("manage-user")
-    //
-    //         case "admin-roles":
-    //             return permissions.includes("manage-role")
-    //
-    //         case "admin-pages":
-    //             return permissions.includes("manage-page")
-    //
-    //         case "admin-posts":
-    //             return permissions.includes("manage-post")
-    //
-    //         case "wiki-create":
-    //             return permissions.includes("manage-post")
-    //         case "wiki-create-slug":
-    //             return permissions.includes("manage-post")
-    //         case "wiki-edit":
-    //             return permissions.includes("manage-post")
-    //         case "wiki-category-create":
-    //             return permissions.includes("manage-post")
-    //         case "wiki-category-edit":
-    //             return permissions.includes("manage-post")
-    //
-    //         default:
-    //             return false;
-    //     }
-    // },
-    hasRole (role) {
-        const roles = store.getters['auth/roles'];
-        if(Object.keys(roles).length === 0) {
-            return false;
+    hasRole(role) {
+        const userStore = useUserStore()
+        const roles = userStore.roles
+        // Access the roles directly from the store
+        if (roles === null) {
+            return false
         }
-        return roles.includes(role)
+        return userStore.roles.includes(role)
     },
-    can (permission) {
-        const permissions = store.getters['auth/permissions'];
-        if(Object.keys(permissions).length === 0) {
-            return false;
+
+    can(permission) {
+        const userStore = useUserStore()
+        const permissions = userStore.permissions
+
+        // Access the permissions directly from the store
+        if (permissions == null) {
+            return false
         }
         return permissions.includes(permission)
     },
-   applyPermissions(menuItem) {
-       const menuHasPermission = menuItem.hasOwnProperty('permission');
-       const menuHasRole = menuItem.hasOwnProperty('role');
 
-       if(!menuHasRole && !menuHasPermission) {
-           return true;
-       }
+    applyPermissions(menuItem) {
+        // const auth = useAuthStore()
 
-       if(menuHasRole && menuHasPermission) {
-           return this.can(menuItem.permission) || this.hasRole(menuItem.role);
-       } else {
-           //else means item has ROLE OR Permission not both
-           return menuHasPermission ? this.can(menuItem.permission): this.hasRole(menuItem.role)
-       }
+        const menuHasPermission = menuItem.hasOwnProperty('permission')
+        const menuHasRole = menuItem.hasOwnProperty('role')
 
-   }
-};
+        if (!menuHasRole && !menuHasPermission) {
+            return true
+        }
 
+        if (menuHasRole && menuHasPermission) {
+            return this.can(menuItem.permission) || this.hasRole(menuItem.role)
+        } else {
+            // Else means item has ROLE OR Permission, not both
+            return menuHasPermission ? this.can(menuItem.permission) : this.hasRole(menuItem.role)
+        }
+    }
+}

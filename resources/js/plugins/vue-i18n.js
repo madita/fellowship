@@ -1,26 +1,19 @@
-import Vue from 'vue'
-import VueI18n from 'vue-i18n'
+import { createI18n } from 'vue-i18n'
+import locales from '../configs/locales.js'
 
-import config from '../configs'
+const { locale, availableLocales, fallbackLocale } = locales
 
-const { locale, availableLocales, fallbackLocale } = config.locales
-
-/**
- * Vue Translations
- * https://kazupon.github.io/vue-i18n/
- */
-Vue.use(VueI18n)
-
+// function loadLocaleMessages(locale) {
+//     return import(`../translations/${locale}.js`);
+// }
 const messages = {}
-
 availableLocales.forEach((l) => { messages[l.code] = l.messages })
 
-export const i18n = new VueI18n({
-  locale,
+export const i18n = new createI18n({
+  locale: locale,
+  locales: locales,
   fallbackLocale,
   messages
 })
-
-i18n.locales = availableLocales
 
 export default i18n

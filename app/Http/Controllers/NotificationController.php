@@ -36,7 +36,6 @@ class NotificationController extends Controller
 
     public function notificationdelete(Request $request)
     {
-
         /** @var User $user */
         $user = auth()->user();
         $notification = $user->notifications()->find($request->id);

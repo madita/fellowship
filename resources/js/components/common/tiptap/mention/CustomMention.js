@@ -65,6 +65,15 @@ const CustomMention = Mention.extend({
                     }
                 },
             },
+            alternative: {
+                default: null,
+                parseHTML: element => element.getAttribute('alternative'),
+                renderHTML: attributes => {
+                    return {
+                        "alternative": attributes.alternative
+                    };
+                },
+            },
         };
     },
     parseHTML() {
@@ -83,10 +92,11 @@ const CustomMention = Mention.extend({
                 "user-id": node.attrs.id,
                 "data-username": node.attrs.username,
                 "data-linked-resource-type": "user",
-                "href": `/user/${node.attrs.username}`
+                "href": `/user/${node.attrs.username}`,
+                "alternative": node.attrs.alternative,
             },
 
-            `@${node.attrs.username}`
+                `@${node.attrs.alternative ?? node.attrs.username}`
         ];
     }
 

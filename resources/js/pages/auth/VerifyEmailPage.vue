@@ -17,8 +17,8 @@
                 :loading="isLoading"
                 :disabled="disabled"
                 block
-                depressed
-                x-large
+                variant="flat"
+                size="large"
                 color="primary"
                 @click="submit"
             >Re-send email {{ seconds }}
@@ -39,7 +39,8 @@
 */
 
 import axios from "axios";
-import {mapGetters} from "vuex";
+import {useAuthStore} from "@/store/authStore.js";
+// import {mapGetters} from "vuex";
 
 const TIMEOUT = 10
 
@@ -103,10 +104,14 @@ export default {
         },
     },
     computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            isVerified: 'auth/isVerified',
-        })
+        authenticated() {
+            const authStore = useAuthStore();
+            return authStore.isLoggedIn;
+        },
+        isVerified() {
+            const authStore = useAuthStore();
+            return authStore.isVerified;
+        },
     }
 }
 </script>

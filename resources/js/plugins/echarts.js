@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import * as Vue from 'vue'
 import VueECharts from 'vue-echarts'
 
 /**
@@ -14,4 +14,4 @@ import 'echarts/lib/chart/line'
 import 'echarts/lib/chart/pie'
 import 'echarts/lib/chart/radar'
 
-Vue.component('e-charts', VueECharts)
+// Vue.component('e-charts', VueECharts)

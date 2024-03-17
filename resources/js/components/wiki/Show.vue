@@ -31,7 +31,8 @@
 
 <script>
 
-import {mapGetters} from "vuex";
+// import {mapGetters} from "vuex";
+import {useAuthStore} from "@/store/authStore.js";
 
 export default {
     components: {
@@ -92,10 +93,14 @@ export default {
         },
     },
     computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            user: 'auth/user',
-        })
+        authenticated() {
+            const authStore = useAuthStore();
+            return authStore.isLoggedIn;
+        },
+        user() {
+            const authStore = useAuthStore();
+            return authStore.user;
+        },
     },
     mounted() {
 

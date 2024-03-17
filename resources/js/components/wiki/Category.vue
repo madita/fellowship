@@ -14,7 +14,7 @@
                 <div class="sub-category py-1 pt-lg-1" v-if="info.children.length > 0">
                     <h2>Unterkategorien</h2>
                     <div :style="subCssVars">
-                    <v-list-item-group
+                    <v-list-group
                         color="primary"
                         v-for="(category, capital) in $helpers.groupTerms(this.info.children)"
                         :key="`${capital}-${category}`"
@@ -24,11 +24,9 @@
                             :key="`${child.slug}`"
                             @click="goToCategory(child.slug)"
                         >
-                            <v-list-item-content>
                                 <v-list-item-title v-text="child.title"></v-list-item-title>
-                            </v-list-item-content>
                         </v-list-item>
-                    </v-list-item-group>
+                    </v-list-group>
                     </div>
                 </div>
             </v-container>
@@ -37,7 +35,7 @@
             <v-container class="category py-6 pt-lg-5">
                 <h2>Seiten in der Kategorie "{{info.term.title}}" ({{categories.total}})</h2>
                 <div :style="catCssVars">
-                <v-list-item-group
+                <v-list-group
                     color="primary"
                     v-for="(category, capital) in categories.capital"
                     :key="`${capital}-${category}`"
@@ -51,7 +49,7 @@
                             <v-list-item-title v-text="model.taxable_title"></v-list-item-title>
                         </v-list-item-content>
                     </v-list-item>
-                </v-list-item-group>
+                </v-list-group>
                 </div>
             </v-container>
         </v-sheet>
@@ -66,7 +64,7 @@
             </v-container>
             <v-container class="category py-6 pt-lg-5">
                 <div :style="catCssVars">
-                <v-list-item-group
+                <v-list-group
                     color="primary"
                     v-for="(category, capital) in catFilter"
                     :key="`${capital}-${category}`"
@@ -80,7 +78,7 @@
                             <v-list-item-title v-text="term.title"></v-list-item-title>
                         </v-list-item-content>
                     </v-list-item>
-                </v-list-item-group>
+                </v-list-group>
                 </div>
             </v-container>
         </v-sheet>
@@ -89,7 +87,7 @@
 
 <script>
 
-import {mapGetters} from "vuex";
+// import {mapGetters} from "vuex";
 
 export default {
     components: {
@@ -172,10 +170,14 @@ export default {
         },
     },
     computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            user: 'auth/user',
-        }),
+        authenticated() {
+            const authStore = useAuthStore();
+            return authStore.isLoggedIn;
+        },
+        user() {
+            const authStore = useAuthStore();
+            return authStore.user;
+        },
         catCssVars () {
 
             return {

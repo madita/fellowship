@@ -1,196 +1,246 @@
 <template>
-    <div class="d-flex flex-grow-1 flex-row mt-2">
+    <v-container fluid>
+        <v-row>
+            <div class="left-part" v-if="1">
+                <!-- <perfect-scrollbar style="height: calc(100vh - 290px)"> -->
+<!--                <slot name="leftpart"></slot>-->
+                <!-- </perfect-scrollbar> -->
 
-        <v-card class="flex-grow-1">
-            <!-- channel toolbar -->
-            <v-app-bar flat height="64">
-                <v-app-bar-nav-icon class="hidden-lg-and-up" @click="$emit('toggle-menu')"></v-app-bar-nav-icon>
-                <div class="title font-weight-bold"># {{ $route.params.id }}</div>
+            </div>
+            <div class="right-part">
 
-                <v-spacer></v-spacer>
+                <div class="d-flex">
+                    <div class="w-100">
+<!--                        <perfect-scrollbar ref="" style="height: calc(100vh - 290px)">-->
+                            <ChatMessages></ChatMessages>
+<!--                        </perfect-scrollbar>-->
 
-                <v-btn class="mx-1" icon @click.stop="usersDrawer = !usersDrawer">
-                    <v-icon>mdi-account-group-outline</v-icon>
-                </v-btn>
-            </v-app-bar>
-
-            <v-divider></v-divider>
-
-            <div class="channel-page">
-                <ChatMessages></ChatMessages>
-
-                <div class="input-box pa-2">
-                    <div class="d-flex position-relative">
-                        <v-text-field
-                            ref="input"
-                            dense
-                            outlined
-                            maxlength="150"
-                            :placeholder="`${$t('chat.message')} #test`"
-                            class="font-weight-bold position-relative"
-                            hide-details
-                            v-model="body"
-                            @keydown="handleMessageInput"
-                        >
-                            <template v-slot:append>
-                                <!--                    <emoji-picker @insert="insertEmoji"></emoji-picker>-->
-                            </template>
-                        </v-text-field>
-                        <v-btn
-                            fab
-                            small
-                            class="mx-1 primary"
-                            :disabled="!body"
-                            @click="handleMessageInput"
-                        >
-                            <v-icon small>mdi-send</v-icon>
-                        </v-btn>
+                    </div>
+                    <div class="right-sidebar">
+                        <v-sheet style="height: calc(100vh - 290px)">
+                            <Users></Users>
+                            <!--                            <ChatInfo :chatDetail="chatDetail" />-->
+                        </v-sheet>
                     </div>
                 </div>
-            </div>
-            <Users></Users>
-            <!--        <form action="#" class="chat__form">-->
-            <!--            <textarea-->
-            <!--                    id="body"-->
-            <!--                    cols="30"-->
-            <!--                    rows="4"-->
-            <!--                    class="chat__form-input"-->
-            <!--                    v-model="body"-->
-            <!--                    @keydown="handleMessageInput"-->
-            <!--            ></textarea>-->
-            <!--            <span class="chat__form-helptext">Hit return to send or Ctrl + Enter for a new line</span>-->
-            <!--        </form>-->
-        </v-card>
-    </div>
+
+            </div><v-divider />
+            <!---Chat send-->
+            <form class="w-100 d-flex align-center pa-4" @submit.prevent="handleMessageInput()">
+                <v-text-field
+                    variant="solo"
+                    hide-details
+                    v-model="body"
+                    color="primary"
+                    class="shadow-none"
+                    density="compact"
+                    placeholder="Type a Message"
+                ></v-text-field>
+                <v-btn icon variant="text" type="submit" class="text-medium-emphasis" :disabled="!body">
+                    <v-icon small>mdi-send</v-icon>
+                </v-btn>
+            </form>
+
+        </v-row>
+<!--        <v-row>-->
+<!--            <v-col :cols="8">-->
+<!--                <v-card>-->
+<!--                    <v-card-title>Chat Room</v-card-title>-->
+<!--                    <v-card-text class="chat-messages">-->
+<!--&lt;!&ndash;                        <div v-for="message in messages" :key="message.id" class="mb-2">&ndash;&gt;-->
+<!--&lt;!&ndash;                            <strong>{{ message.username }}:</strong> {{ message.content }}&ndash;&gt;-->
+<!--&lt;!&ndash;                        </div>&ndash;&gt;-->
+<!--                        <ChatMessages></ChatMessages>-->
+<!--                    </v-card-text>-->
+<!--                    <v-card-actions>-->
+<!--                        <form class="" @submit.prevent="handleMessageInput()">-->
+<!--                        <v-text-field-->
+<!--                            variant="solo"-->
+<!--                            hide-details-->
+<!--                            v-model="body"-->
+<!--                            color="primary"-->
+<!--                            class="shadow-none"-->
+<!--                            density="compact"-->
+<!--                            placeholder="Type a Message"-->
+<!--                        ></v-text-field>-->
+<!--                        <v-btn icon variant="text" type="submit" class="text-medium-emphasis" :disabled="!body">-->
+<!--                            <v-icon small>mdi-send</v-icon>-->
+<!--                        </v-btn>-->
+<!--                        </form>-->
+<!--                    </v-card-actions>-->
+<!--                </v-card>-->
+<!--            </v-col>-->
+<!--            <v-col :cols="4">-->
+<!--                <Users></Users>-->
+<!--            </v-col>-->
+
+<!--        </v-row>-->
+    </v-container>
 </template>
 
 <script>
-import Bus from '../../bus'
-import moment from 'moment'
-import ChatMessages from './Messages'
-import Users from './Users';
-import {mapGetters} from "vuex";
+import {onMounted, ref} from 'vue';
+//import moment from 'moment';
+import ChatMessages from './Messages.vue';
+import Users from './Users.vue';
+import { useUserStore } from "@/store/userStore.js";
+import { useChatStore } from '@/store/chatStore';
+import {useOnlineUsersStore} from "@/store/onlineUsersStore.js";
+// import useEventBus from "@/bus.js";
+const { onlineUsersStore } = useOnlineUsersStore();
 
 export default {
     components: {
         Users,
         ChatMessages
     },
-    data() {
-        return {
-            usersDrawer: true,
-            drawer: null,
-            body: null,
-            bodyBackedUp: null,
-            channels: ['general', 'production', 'qa', 'staging', 'random'],
-            showCreateDialog: false,
-            isLoadingAdd: false,
-            newChannel: ''
+    setup() {
+        const body = ref('');
+        const bodyBackedUp = ref('');
+        const usersDrawer = ref(true);
+        const userStore = useUserStore();
+        // const { emit, on } = useEventBus();
+
+        const chatStore = useChatStore();
+        const onlineUsersStore = useOnlineUsersStore();
+
+
+
+        const handleMessageInput = () => {
+            console.log('addmessage')
+            bodyBackedUp.value = body.value;
+
+
+
+            send()
+
+            // body.value = ''; // Clear input after sending
         }
-    },
-    methods: {
-        addChannel() {
-            if (!this.newChannel) {
-                this.$refs.channel.focus()
 
-                return
-            }
-
-            this.isLoadingAdd = true
-
-            setTimeout(() => {
-                this.isLoadingAdd = false
-                this.channels.push(this.newChannel)
-                this.showCreateDialog = false
-                // this.$router.push(`/apps/chat/channel/${this.newChannel}`)
-                this.newChannel = ''
-            }, 300)
-        },
-        handleMessageInput(e) {
-            this.bodyBackedUp = this.body
-
-            if (e.keyCode === 13 && !e.shiftKey) {
-                e.preventDefault();
-                this.send();
-            }
-        },
-        buildTempMessage() {
+        const buildTempMessage = () => {
             let tempId = Date.now();
-
             return {
                 id: tempId,
-                body: this.body,
+                body: body.value,
                 created_at: moment().utc(0).format('YYYY-MM-DD HH:mm:ss'),
                 selfOwned: true,
                 user: {
-                    username: this.user.username
+                    username: userStore.user.username
                 }
-
             }
-        },
-        send() {
-            if (!this.body || this.body.trim() === '') {
-                return
+        }
+
+        const send = () => {
+            if (!body.value || body.value.trim() === '') {
+                return;
             }
-
-            let tempMessage = this.buildTempMessage();
-
-            Bus.$emit('message.added', tempMessage)
-
+            let tempMessage = buildTempMessage();
             axios.post('/api/chat/messages', {
-                    body: this.body.trim()
+                body: body.value.trim()
+            }).then((response) => {
+                console.log(response)
+
+                chatStore.addMessage(response.data);
                 }
             ).catch(() => {
-                this.body = this.bodyBackedUp
-                Bus.$emit('message.removed', tempMessage)
+                body.value = bodyBackedUp.value;
             });
+            body.value = '';
+        };
 
-            this.body = null
-        }
-    },
-    computed: {
-        ...mapGetters({
-            user: 'auth/user',
+        onMounted(() => {
+            Echo.join('chat')
+                .here((users) => {
+                    console.log('usershere', users)
+                    //emit('chatUsers.here', users)
+                    onlineUsersStore.setUsers(users)
+                })
+                .joining((user) => {
+                    console.log('joining', user)
+                    //emit('chatUsers.joined', user)
+                    onlineUsersStore.addUser(user)
+                })
+                .leaving((user) => {
+                    console.log('leaving', user)
+                    onlineUsersStore.removeUser(user)
+                    //emit('chatUsers.left', user)
+                })
+                .listen('.message-created', (e) => {
+                    //emit('message.added', e.message)
+                    console.log('LISTEnnewmessage', e.message)
+                    chatStore.addMessage(e.message);
+                })
         })
-    },
-    created() {
-        Echo.join('chat')
-            .here((users) => {
-                Bus.$emit('chatUsers.here', users)
-            })
-            .joining((user) => {
-                console.log('joining', user)
-                Bus.$emit('chatUsers.joined', user)
-            })
-            .leaving((user) => {
-                console.log('leaving', user)
-                Bus.$emit('chatUsers.left', user)
-            })
-            .listen('Chat.MessageCreated', (e) => {
-                Bus.$emit('message.added', e.message)
-            })
+
+        return {
+            body,
+            send,
+            handleMessageInput,
+            user: userStore.user
+        }
     }
 }
 </script>
 
-<style lang="scss" scoped>
-// List Transition Animation
+<style lang="scss">
+/* Styles for chat layout */
+.mainbox {
+    position: relative;
+    overflow: hidden;
+}
+left-part {
+    width: 320px;
+    border-right: 1px solid rgb(var(--v-theme-borderColor));
+    min-height: 500px;
+    transition: 0.1s ease-in;
+    flex-shrink: 0;
+}
+.right-part {
+    width: 100%;
+    min-height: 500px;
+    position: relative;
+}
+.rightpartHeight {
+    height: 530px;
+}
+.badg-dotDetail {
+    left: -9px;
+    position: relative;
+    bottom: -10px;
+}
+.right-sidebar {
+    width: 320px;
+    border-left: 1px solid rgb(var(--v-theme-borderColor));
+    transition: 0.1s ease-in;
+    flex-shrink: 0;
+}
+
+.shadow-none .v-field--no-label {
+    --v-field-padding-top: -7px;
+}
+@media (max-width: 960px) {
+    .right-sidebar {
+        position: absolute;
+        right: -320px;
+        &.showLeftPart {
+            right: 0;
+            z-index: 2;
+            box-shadow: 2px 1px 20px rgba(0, 0, 0, 0.1);
+        }
+    }
+}
+/* Transition Animation */
 .list-enter-active {
     transition: all 0.3s;
 }
-
 .list-move {
     transition: transform 0.3s;
 }
-
-.list-enter,
-.list-leave-to {
+.list-enter, .list-leave-to {
     opacity: 0;
     transform: translateX(-10px);
 }
-
-// -- End List Transition Animation
-
+/* Channel page style */
 .channel-page {
     position: absolute;
     top: 65px;
@@ -200,35 +250,22 @@ export default {
     width: 100%;
     display: flex;
     flex-direction: column;
-    //background: url("/images/chat/chat-bg-2.png");
-
     .messages {
         flex-grow: 1;
         margin-bottom: 68px;
         overflow-y: scroll;
-        -webkit-overflow-scrolling: touch;
         min-height: 0;
     }
-
     .input-box {
         position: fixed;
         bottom: 12px;
         width: 100%;
     }
-
-    .messages {
-        padding-bottom: 0;
-    }
-
-    .input-box {
-        position: absolute;
-        bottom: 12px;
-    }
 }
 
-.theme--dark {
-    .channel-page {
-        background: none;
-    }
+
+.chat-messages {
+    max-height: 500px;  /* You can adjust this value based on your preference */
+    overflow-y: auto;
 }
 </style>

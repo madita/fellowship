@@ -1,4 +1,4 @@
-import { VueRenderer } from '@tiptap/vue-2'
+import { VueRenderer } from '@tiptap/vue-3'
 import tippy from 'tippy.js'
 import { PluginKey } from "prosemirror-state";
 
@@ -27,10 +27,10 @@ export default {
             onStart: props => {
                 component = new VueRenderer(MentionList, {
                     // using vue 2:
-                    parent: this,
-                    propsData: props,
-                    // props,
-                    // editor: props.editor,
+                    // parent: this,
+                    // propsData: props,
+                    props,
+                    editor: props.editor,
                 })
 
                 if (!props.clientRect) {

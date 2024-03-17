@@ -52,7 +52,7 @@ class WikiController extends Controller
         $page = request()->input('page', 1); // Current page number, default to 1
 
         if($query === null || $query === "") {
-            $wikidata = Wiki::where('status',null)->paginate($perPage);
+            $wikidata = Wiki::where('status',null)->orderBy('created_at', 'desc')->paginate($perPage);
         } else {
             $wikidata = Wiki::where('title', 'LIKE', '%' . $query . '%')->where('status',null)->paginate($perPage);
         }
@@ -237,13 +237,14 @@ class WikiController extends Controller
 
     public function update(Request $request, $slug)
     {
-        //        dd('update', $request->all(), $slug);
+//                dd('update', $request->all(), $slug);
 
         //
         //        $wiki = $request->all();
         //
         //        $model = $wiki['type'];
         //        $data = $model::where('id', $wiki['id'])->first();
+
 
 
         $wiki  = Wiki::where('slug', '=', $slug)->first();
@@ -265,24 +266,35 @@ class WikiController extends Controller
 
         $data->detachCategories();
 
-        if ($request->get('taxonomy') && $request->get('categories')) {
-            $taxonomy = $request->get('taxonomy');
-            if (!is_string($taxonomy)) {
-                $taxonomy = $taxonomy['taxonomy'];
-            }
+        if ($request->get('categories')) {
 
-            //            $data->addCategories($request->get('categories'), $taxonomy);
-            if ($request->get('categories')) {
-
-                foreach ($request->get('categories') as $term) {
-                    if (isset($term['title'])) {
-                        $data->addCategory($term['title'], 'wiki');
-                    } else {
-                        $data->addCategory($term, 'wiki');
-                    }
+            foreach ($request->get('categories') as $term) {
+                if (isset($term['title'])) {
+                    $data->addCategory($term['title'], 'wiki');
+                } else {
+                    $data->addCategory($term, 'wiki');
                 }
             }
         }
+
+//        if ($request->get('taxonomy') && $request->get('categories')) {
+//            $taxonomy = $request->get('taxonomy');
+//            if (!is_string($taxonomy)) {
+//                $taxonomy = $taxonomy['taxonomy'];
+//            }
+//
+//            //            $data->addCategories($request->get('categories'), $taxonomy);
+//            if ($request->get('categories')) {
+//
+//                foreach ($request->get('categories') as $term) {
+//                    if (isset($term['title'])) {
+//                        $data->addCategory($term['title'], 'wiki');
+//                    } else {
+//                        $data->addCategory($term, 'wiki');
+//                    }
+//                }
+//            }
+//        }
 
         if ($request->get('terms')) {
 

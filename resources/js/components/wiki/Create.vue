@@ -7,7 +7,7 @@
 <!--                </v-btn>-->
 <!--            </template>-->
 
-            <v-alert type="info">Die Seite existiert nicht, wenn du sie erstellen willst fülle das Formular aus.</v-alert>
+            <v-alert v-if="slug.length>0" type="info">Die Seite existiert nicht, wenn du sie erstellen willst fülle das Formular aus.</v-alert>
             <v-row>
                 <v-col
                     cols="8">
@@ -63,7 +63,7 @@
                     <v-combobox
                         v-model="categoryValue"
                         :items="categories"
-                        item-text="title"
+                        item-title="title"
                         label="Category"
                         multiple
                         small-chips
@@ -83,7 +83,7 @@
                         <v-combobox
                             v-model="parentValue"
                             :items="parents"
-                            item-text="title"
+                            item-title="title"
                             label="Parent Category"
                             chips
                             clearable
@@ -96,7 +96,7 @@
                     <v-combobox
                         v-model="termValue"
                         :items="terms"
-                        item-text="title"
+                        item-title="title"
                         :search-input.sync="searchTerm"
                         hide-selected
                         label="Terms"
@@ -163,8 +163,8 @@
 
 <script>
 
-import {mapGetters} from "vuex";
-import Tiptap from '../common/tiptap/Tiptap'
+// import {mapGetters} from "vuex";
+import Tiptap from '../common/tiptap/Tiptap.vue'
 
 export default {
     components: {
@@ -297,10 +297,14 @@ export default {
         },
     },
     computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            user: 'auth/user',
-        })
+        authenticated() {
+            const authStore = useAuthStore();
+            return authStore.isLoggedIn;
+        },
+        user() {
+            const authStore = useAuthStore();
+            return authStore.user;
+        },
     },
     mounted() {
 

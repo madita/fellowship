@@ -26,7 +26,7 @@
                     ></v-text-field>
 
                     <!--                    <simple-editor v-model="page.body" :value="page.body" id="text-body" name="content"></simple-editor>-->
-                    <tiptap v-model="content" :value="content" id="text-content" name="content"/>
+                    <tiptap v-model="content" :model-value="content" id="text-content" name="content"/>
 
                 </v-col>
                 <v-col
@@ -37,7 +37,7 @@
                         <v-combobox
                             v-model="parentValue"
                             :items="parents"
-                            item-text="title"
+                            item-title="title"
                             label="Parent Category"
                             chips
                             clearable
@@ -45,7 +45,7 @@
                         <v-combobox
                             v-model="colorsValue"
                             :items="colors"
-                            item-text="title"
+                            item-title="title"
                             label="Colors"
                             chips
                             clearable
@@ -64,7 +64,7 @@
 
 <script>
 
-import {mapGetters} from "vuex";
+// import {mapGetters} from "vuex";
 import Tiptap from '../common/tiptap/Tiptap'
 
 export default {
@@ -165,10 +165,14 @@ export default {
     },
 
     computed: {
-        ...mapGetters({
-            authenticated: 'auth/authenticated',
-            user: 'auth/user',
-        })
+        authenticated() {
+            const authStore = useAuthStore();
+            return authStore.isLoggedIn;
+        },
+        user() {
+            const authStore = useAuthStore();
+            return authStore.user;
+        },
     },
     mounted() {
 

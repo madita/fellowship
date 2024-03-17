@@ -13,23 +13,19 @@ try {
   console.log(e)
 }
 
-export default {
-  // current locale
-  locale,
+const availableLocales = [
+    {
+        code: 'en',
+        flag: 'us',
+        label: 'EN',
+        messages: en,
+    },
+    {
+        code: 'de',
+        flag: 'de',
+        label: 'DE',
+        messages: de,
+    },
+];
 
-  // when translation is not available fallback to that locale
-  fallbackLocale: 'en',
-
-  // availabled locales for user selection
-  availableLocales: [{
-    code: 'en',
-    flag: 'us',
-    label: 'EN',
-    messages: en
-  }, {
-    code: 'de',
-    flag: 'de',
-    label: 'DE',
-    messages: de
-  }]
-}
+export default { locale, availableLocales };
