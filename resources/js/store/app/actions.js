@@ -1,41 +1,51 @@
-const showToast = ({ state, commit }, message) => {
-  if (state.toast.show) commit('hideToast')
+// Directly changing state within actions
+const showToast = (store, message) => {
+    if (store.toast.show) store.hideToast() // we'll create this action below
 
-  setTimeout(() => {
-    commit('showToast', {
-      color: 'black',
-      message,
-      timeout: 3000
+    setTimeout(() => {
+        store.toast = {
+            color: 'black',
+            message,
+            timeout: 3000,
+            show: true
+        }
     })
-  })
 }
 
-const showError = ({ state, commit }, { message = 'Failed!', error }) => {
-  if (state.toast.show) commit('hideToast')
+const showError = (store, { message = 'Failed!', error }) => {
+    if (store.toast.show) store.hideToast()
 
-  setTimeout(() => {
-    commit('showToast', {
-      color: 'error',
-      message: message + ' ' + error.message,
-      timeout: 10000
+    setTimeout(() => {
+        store.toast = {
+            color: 'error',
+            message: message + ' ' + error.message,
+            timeout: 10000,
+            show: true
+        }
     })
-  })
 }
 
-const showSuccess = ({ state, commit }, message) => {
-  if (state.toast.show) commit('hideToast')
+const showSuccess = (store, message) => {
+    if (store.toast.show) store.hideToast()
 
-  setTimeout(() => {
-    commit('showToast', {
-      color: 'success',
-      message,
-      timeout: 3000
+    setTimeout(() => {
+        store.toast = {
+            color: 'success',
+            message,
+            timeout: 3000,
+            show: true
+        }
     })
-  })
+}
+
+// Extra action used in the above actions
+const hideToast = (store) => {
+    store.toast.show = false
 }
 
 export default {
-  showToast,
-  showError,
-  showSuccess
+    showToast,
+    showError,
+    showSuccess,
+    hideToast
 }

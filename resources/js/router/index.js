@@ -1,8 +1,9 @@
-import Vue from 'vue'
-import Router from 'vue-router'
-import store from '../store'
+import * as Vue from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
+// import * as store from '../store'
 
-import middlewarePipeline from './middlewarePipeline'
+// import authMiddleware from './middleware/auth-middleware'
+import { middlewarePipeline } from './middlewarePipeline.js';
 
 import auth from './middleware/auth'
 import verified from './middleware/verified'
@@ -12,9 +13,10 @@ import ComponentsRoutes from './components.routes'
 import PagesRoutes from './pages.routes'
 import UsersRoutes from './users.routes'
 import LandingRoutes from './landing.routes'
+import WikiRoutes from './wiki.routes'
 import AdminRoutes from './admin.routes'
 
-Vue.use(Router)
+//Vue.use(Router)
 
 export const routes = [{
     path: '/dashboard',
@@ -30,6 +32,7 @@ export const routes = [{
     ...PagesRoutes,
     ...UsersRoutes,
     ...LandingRoutes,
+    ...WikiRoutes,
     ...AdminRoutes,
     {
         path: '/blank',
@@ -42,7 +45,15 @@ export const routes = [{
         component: () => import(/* webpackChunkName: "blank" */ '@/pages/BlankPage.vue')
     },
     {
-        path: '*',
+        path: '/p/:slug',
+        name: 'page',
+        component: () => import(/* webpackChunkName: "landing-pages" */ '@/pages/landing/Pages.vue'),
+        meta: {
+            layout: 'landing'
+        }
+    },
+    {
+        path: '/:catchAll(.*)',
         name: 'error',
         component: () => import(/* webpackChunkName: "error" */ '@/pages/error/NotFoundPage.vue'),
         meta: {
@@ -50,9 +61,8 @@ export const routes = [{
         }
     }]
 
-const router = new Router({
-    mode: 'history',
-    base: process.env.BASE_URL || '/',
+const router = createRouter({
+    history: createWebHistory(import.meta.env.BASE_URL),
     scrollBehavior(to, from, savedPosition) {
         if (savedPosition) return savedPosition
 
@@ -61,20 +71,28 @@ const router = new Router({
     routes
 })
 
+let lastLink = null;
+
 /**
  * Before each route update
  */
 router.beforeEach((to, from, next) => {
+    lastLink = from.fullPath; // Store the last visited link
+    console.log('to middleware',to)
     if (!to.meta.middleware) {
         return next()
     }
 
     const middleware = to.meta.middleware
 
+    if (!Array.isArray(middleware) || typeof middleware[0] !== 'function') {
+        console.error('Invalid middleware', middleware);
+        return next();
+    }
+
     const context = {
         to,
         from,
-        store,
         next
     }
 

@@ -14,4 +14,7 @@ module.exports = {
         '^@/(.*)$': '<rootDir>/resources/$1',
         '^~/(.*)$': '<rootDir>/resources/js/$1',
     },
+    transformIgnorePatterns: [
+        '/node_modules/'
+    ]
 };

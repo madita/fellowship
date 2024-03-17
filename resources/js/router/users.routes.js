@@ -1,6 +1,6 @@
 import auth from './middleware/auth'
 
-export default [{
+export const users = [{
     path: '/users',
     redirect: 'users-list'
 }, {
@@ -43,3 +43,4 @@ export default [{
         }
     ]
 }]
+export default users

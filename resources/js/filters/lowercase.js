@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import * as Vue from 'vue'
 
 Vue.filter('lowercase', (value) => {
   if (!value) return ''

@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Route;
 |
 */
 //Broadcast::routes(['middleware' => ['auth:sanctum']]);
+Route::resource('wiki', "\App\Http\Controllers\WikiController");
+Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
+Route::patch('wiki/category/{slug}', "\App\Http\Controllers\WikiController@updateCategory");
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     $user = $request->user();
@@ -41,8 +44,17 @@ Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function (
     Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
 });
 
-Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
+Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
+Route::get('/tag/terms/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTerms');
+Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
+Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
+Route::get('/tag/{term}/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTermInfo');
 
+
+Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
+Route::get('/pages/{page}/history', '\App\Http\Controllers\PageController@history');
+//Route::get('/pages/tag/{term}', '\App\Http\Controllers\PageController@showWithTerm');
+//Route::get('/pages/{taxonomy}/{category}', '\App\Http\Controllers\PageController@showWithCategory');
 Route::get('/posts/{slug}', '\App\Http\Controllers\PostController@view');
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -58,6 +70,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
     Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');
+//    Route::get('datatable/pages/categories/{taxonomy}', 'App\Http\Controllers\DataTable\PageController@getCategories');
     Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\PostController');
     Route::resource('datatable/users', 'App\Http\Controllers\DataTable\UserController');
     Route::resource('datatable/roles', 'App\Http\Controllers\DataTable\RoleController');
@@ -67,4 +80,28 @@ Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function (
     Route::post('datatable/permissions/roles', 'App\Http\Controllers\DataTable\PermissionController@updateRolePermissions');
     Route::get('datatable/permissions/permissions', 'App\Http\Controllers\DataTable\PermissionController@permissions');
     Route::resource('datatable/permissions', 'App\Http\Controllers\DataTable\PermissionController');
+});
+
+Route::post('/login', function (Request $request) {
+    $data = $request->validate([
+                                   'email' => 'required|email',
+                                   'password' => 'required'
+                               ]);
+
+    $user = User::where('email', $request->email)->first();
+
+    if (!$user || !Hash::check($request->password, $user->password)) {
+        return response([
+                            'message' => ['These credentials do not match our records.']
+                        ], 404);
+    }
+
+    $token = $user->createToken('my-app-token')->plainTextToken;
+
+    $response = [
+        'user' => $user,
+        'token' => $token
+    ];
+
+    return response($response, 201);
 });

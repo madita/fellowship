@@ -1,6 +1,6 @@
 import auth from './middleware/auth'
 
-export default [{
+export const componentsRoutes = [{
     path: '/chat',
     name: 'chat',
     component: () => import(/* webpackChunkName: "chat" */ '@/components/chat/Chat.vue'),
@@ -50,3 +50,5 @@ export default [{
             ]
         }
     }]
+
+export default componentsRoutes;

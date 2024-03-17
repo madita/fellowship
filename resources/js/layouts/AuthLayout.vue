@@ -2,7 +2,7 @@
   <div class="d-flex text-center flex-column flex-md-row flex-grow-1">
     <v-sheet class="layout-side mx-auto mx-md-1 d-none d-md-flex flex-md-column justify-space-between px-2">
       <div class="mt-3 mt-md-10 pa-2">
-        <div class="display-2 font-weight-bold primary--text">
+        <div class="display-2 font-weight-bold text-primary">
           {{ product.name }}
         </div>
         <div class="title my-2">Welcome! Let's build amazing things together.</div>
@@ -21,11 +21,16 @@
 </template>
 
 <script>
-import { mapState } from 'vuex'
+// import { mapState } from 'vuex'
+
+import {useAppStore} from "../store/app/index.js";
 
 export default {
   computed: {
-    ...mapState('app', ['product'])
+      product: state => {
+          const app = useAppStore()
+          return app.product
+      },
   }
 }
 </script>

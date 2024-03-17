@@ -1,7 +1,9 @@
-export default function verified ({ to, from, store, next }){
-    const user = store.getters['auth/user'];
+import { useUserStore } from "@/store/userStore.js";
+export default function verified ({ to, from, next }){
+    const user = useUserStore();
+    console.log('verifieduser', user)
 
-    if(!user.email_verified_at){
+    if(!user.user.email_verified_at){
         return next({
             name: 'auth-verify-email'
         })

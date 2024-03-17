@@ -44,11 +44,11 @@
                         <v-btn :disabled="getIsGoing('no')" @click="register('no')">No</v-btn>
                         <v-btn :disabled="getIsGoing('maybe')" @click="register('maybe')">Maybe</v-btn>
 
-                    <v-subheader>Is Going ({{ eventData.going.length }})</v-subheader>
+                    <v-list-subheader>Is Going ({{ eventData.going.length }})</v-list-subheader>
                     <user-avatar v-for="user in eventData.going" :key="`going-${user.id}`" :user="user"></user-avatar>
-                    <v-subheader>Maybe Going ({{ eventData.maybe.length }})</v-subheader>
+                    <v-list-subheader>Maybe Going ({{ eventData.maybe.length }})</v-list-subheader>
                     <user-avatar v-for="user in eventData.maybe" :key="`maybe-${user.id}`" :user="user"></user-avatar>
-                    <v-subheader>Not Going ({{ eventData.notgoing.length }})</v-subheader>
+                    <v-list-subheader>Not Going ({{ eventData.notgoing.length }})</v-list-subheader>
                     <user-avatar v-for="user in eventData.notgoing" :key="`notgoing-${user.id}`" :user="user"></user-avatar>
 
                     </v-col>

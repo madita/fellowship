@@ -40,14 +40,13 @@
                 max-width="290px"
                 min-width="290px"
             >
-                <template v-slot:activator="{ on, attrs }">
+                <template v-slot:activator="{ probs }">
                     <v-text-field
                         v-model="startTime"
                         label="Starttime"
                         prepend-icon="mdi-clock-time-four-outline"
                         readonly
-                        v-bind="attrs"
-                        v-on="on"
+                        v-bind="probs"
                     ></v-text-field>
                 </template>
                 <v-time-picker
@@ -75,14 +74,13 @@
                 max-width="290px"
                 min-width="290px"
             >
-                <template v-slot:activator="{ on, attrs }">
+                <template v-slot:activator="{ probs }">
                     <v-text-field
                         v-model="endTime"
                         label="Endtime"
                         prepend-icon="mdi-clock-time-four-outline"
                         readonly
-                        v-bind="attrs"
-                        v-on="on"
+                        v-bind="probs"
                     ></v-text-field>
                 </template>
                 <v-time-picker

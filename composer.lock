@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5df9b2203654b94d17d169f14d71c5ae",
+    "content-hash": "0b66be41dbe0a1f9f2538337f24339ac",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -634,6 +634,67 @@
                 }
             ],
             "time": "2023-01-14T14:17:03+00:00"
+        },
+        {
+            "name": "ezyang/htmlpurifier",
+            "version": "v4.16.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ezyang/htmlpurifier.git",
+                "reference": "523407fb06eb9e5f3d59889b3978d5bfe94299c8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/ezyang/htmlpurifier/zipball/523407fb06eb9e5f3d59889b3978d5bfe94299c8",
+                "reference": "523407fb06eb9e5f3d59889b3978d5bfe94299c8",
+                "shasum": ""
+            },
+            "require": {
+                "php": "~5.6.0 || ~7.0.0 || ~7.1.0 || ~7.2.0 || ~7.3.0 || ~7.4.0 || ~8.0.0 || ~8.1.0 || ~8.2.0"
+            },
+            "require-dev": {
+                "cerdic/css-tidy": "^1.7 || ^2.0",
+                "simpletest/simpletest": "dev-master"
+            },
+            "suggest": {
+                "cerdic/css-tidy": "If you want to use the filter 'Filter.ExtractStyleBlocks'.",
+                "ext-bcmath": "Used for unit conversion and imagecrash protection",
+                "ext-iconv": "Converts text to and from non-UTF-8 encodings",
+                "ext-tidy": "Used for pretty-printing HTML"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "library/HTMLPurifier.composer.php"
+                ],
+                "psr-0": {
+                    "HTMLPurifier": "library/"
+                },
+                "exclude-from-classmap": [
+                    "/library/HTMLPurifier/Language/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-2.1-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Edward Z. Yang",
+                    "email": "admin@htmlpurifier.org",
+                    "homepage": "http://ezyang.com"
+                }
+            ],
+            "description": "Standards compliant HTML filter written in PHP",
+            "homepage": "http://htmlpurifier.org/",
+            "keywords": [
+                "html"
+            ],
+            "support": {
+                "issues": "https://github.com/ezyang/htmlpurifier/issues",
+                "source": "https://github.com/ezyang/htmlpurifier/tree/v4.16.0"
+            },
+            "time": "2022-09-18T07:06:19+00:00"
         },
         {
             "name": "fruitcake/laravel-cors",
@@ -1343,16 +1404,16 @@
         },
         {
             "name": "laravel/framework",
-            "version": "v9.52.9",
+            "version": "v9.52.14",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/framework.git",
-                "reference": "c512ece7b1ee393eac5893f37cb2b029a5413b97"
+                "reference": "5366a9035100f858589e1b43bbcb134ffcc81a73"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/framework/zipball/c512ece7b1ee393eac5893f37cb2b029a5413b97",
-                "reference": "c512ece7b1ee393eac5893f37cb2b029a5413b97",
+                "url": "https://api.github.com/repos/laravel/framework/zipball/5366a9035100f858589e1b43bbcb134ffcc81a73",
+                "reference": "5366a9035100f858589e1b43bbcb134ffcc81a73",
                 "shasum": ""
             },
             "require": {
@@ -1537,7 +1598,7 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2023-06-08T20:06:23+00:00"
+            "time": "2023-08-02T14:58:02+00:00"
         },
         {
             "name": "laravel/sanctum",
@@ -2249,6 +2310,83 @@
                 }
             ],
             "time": "2022-04-17T13:12:02+00:00"
+        },
+        {
+            "name": "lecturize/laravel-taxonomies",
+            "version": "v1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Lecturize/Laravel-Taxonomies.git",
+                "reference": "516d3c5fe728348552d1d993a06f879834666051"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Lecturize/Laravel-Taxonomies/zipball/516d3c5fe728348552d1d993a06f879834666051",
+                "reference": "516d3c5fe728348552d1d993a06f879834666051",
+                "shasum": ""
+            },
+            "require": {
+                "cviebrock/eloquent-sluggable": "^8.0|^9.0",
+                "illuminate/database": "^8.0|^9.0",
+                "illuminate/support": "^8.0|^9.0",
+                "php": "^8.0",
+                "webpatser/laravel-uuid": "^3.0|^4.0"
+            },
+            "require-dev": {
+                "doctrine/dbal": "^2.12|^3.3",
+                "mockery/mockery": "~1.0",
+                "orchestra/testbench": "^6.23 || ^7.0",
+                "phpunit/phpunit": "^8.0|^9.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Lecturize\\Taxonomies\\TaxonomiesServiceProvider"
+                    ],
+                    "aliases": {
+                        "Taxonomy": "Lecturize\\Taxonomies\\Facades\\Taxonomy"
+                    }
+                },
+                "branch-alias": {
+                    "dev-master": "1.2.x-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Lecturize\\Taxonomies\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Alexander Manfred Poellmann",
+                    "homepage": "https://twitter.com/AMPoellmann",
+                    "role": "developer"
+                }
+            ],
+            "description": "Simple, nestable Terms & Taxonomies (similar to WordPress) for Laravel.",
+            "homepage": "https://github.com/Lecturize/Laravel-Taxonomies",
+            "keywords": [
+                "categories",
+                "eloquent",
+                "laravel",
+                "model",
+                "nestable",
+                "taxonomies",
+                "terms"
+            ],
+            "support": {
+                "issues": "https://github.com/Lecturize/Laravel-Taxonomies/issues",
+                "source": "https://github.com/Lecturize/Laravel-Taxonomies"
+            },
+            "time": "2022-06-04T16:34:11+00:00"
         },
         {
             "name": "maennchen/zipstream-php",
@@ -4138,6 +4276,72 @@
                 }
             ],
             "time": "2023-04-28T07:47:42+00:00"
+        },
+        {
+            "name": "stevebauman/purify",
+            "version": "v5.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/stevebauman/purify.git",
+                "reference": "639cf2fe17b45f2afaf0688be1316d4aad801f9a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/stevebauman/purify/zipball/639cf2fe17b45f2afaf0688be1316d4aad801f9a",
+                "reference": "639cf2fe17b45f2afaf0688be1316d4aad801f9a",
+                "shasum": ""
+            },
+            "require": {
+                "ezyang/htmlpurifier": "^4.9.0",
+                "illuminate/contracts": "~7.0|~8.0|~9.0|~10.0",
+                "illuminate/support": "~7.0|~8.0|~9.0|~10.0",
+                "php": ">=7.4"
+            },
+            "require-dev": {
+                "orchestra/testbench": "~5.0|~6.0|~7.0",
+                "phpunit/phpunit": "~8.0|~9.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Stevebauman\\Purify\\PurifyServiceProvider"
+                    ],
+                    "aliases": {
+                        "Purify": "Stevebauman\\Purify\\Facades\\Purify"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Stevebauman\\Purify\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Steve Bauman",
+                    "email": "steven_bauman@outlook.com"
+                }
+            ],
+            "description": "An HTML Purifier / Sanitizer for Laravel",
+            "keywords": [
+                "Purifier",
+                "clean",
+                "cleaner",
+                "html",
+                "laravel",
+                "purification",
+                "purify"
+            ],
+            "support": {
+                "issues": "https://github.com/stevebauman/purify/issues",
+                "source": "https://github.com/stevebauman/purify/tree/v5.1.1"
+            },
+            "time": "2023-02-04T16:54:22+00:00"
         },
         {
             "name": "symfony/console",
@@ -6650,6 +6854,64 @@
                 "source": "https://github.com/webmozarts/assert/tree/1.11.0"
             },
             "time": "2022-06-03T18:03:27+00:00"
+        },
+        {
+            "name": "webpatser/laravel-uuid",
+            "version": "4.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/webpatser/laravel-uuid.git",
+                "reference": "df92ebbc5ea71ee9e0d6e2861178be42ef7eb330"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/webpatser/laravel-uuid/zipball/df92ebbc5ea71ee9e0d6e2861178be42ef7eb330",
+                "reference": "df92ebbc5ea71ee9e0d6e2861178be42ef7eb330",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.0|^8.0"
+            },
+            "require-dev": {
+                "fakerphp/faker": "^1.9.1",
+                "phpunit/phpunit": "^9.3.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Webpatser\\Uuid\\UuidServiceProvider"
+                    ],
+                    "aliases": {
+                        "Uuid": "Webpatser\\Uuid\\Uuid"
+                    }
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Webpatser\\Uuid\\": "src/Webpatser/Uuid/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Christoph Kempen",
+                    "email": "christoph@downsized.nl"
+                }
+            ],
+            "description": "Laravel package to generate and to validate a universally unique identifier (UUID) according to the RFC 4122 standard. Support for version 1, 3, 4 and 5 UUIDs are built-in.",
+            "homepage": "https://github.com/webpatser/laravel-uuid",
+            "keywords": [
+                "UUID RFC4122"
+            ],
+            "support": {
+                "issues": "https://github.com/webpatser/laravel-uuid/issues",
+                "source": "https://github.com/webpatser/laravel-uuid"
+            },
+            "time": "2021-03-09T07:19:24+00:00"
         }
     ],
     "packages-dev": [
@@ -6915,16 +7177,16 @@
         },
         {
             "name": "laravel/sail",
-            "version": "v1.22.0",
+            "version": "v1.23.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/sail.git",
-                "reference": "923e1e112b6a8598664dbb0ee79dd3137f1c9d56"
+                "reference": "a2e046f748e87d3ef8b2b381e0e5c5a11f34e46b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/sail/zipball/923e1e112b6a8598664dbb0ee79dd3137f1c9d56",
-                "reference": "923e1e112b6a8598664dbb0ee79dd3137f1c9d56",
+                "url": "https://api.github.com/repos/laravel/sail/zipball/a2e046f748e87d3ef8b2b381e0e5c5a11f34e46b",
+                "reference": "a2e046f748e87d3ef8b2b381e0e5c5a11f34e46b",
                 "shasum": ""
             },
             "require": {
@@ -6976,7 +7238,7 @@
                 "issues": "https://github.com/laravel/sail/issues",
                 "source": "https://github.com/laravel/sail"
             },
-            "time": "2023-05-04T14:52:56+00:00"
+            "time": "2023-06-16T21:20:12+00:00"
         },
         {
             "name": "mockery/mockery",
@@ -9134,5 +9396,5 @@
         "php": "^8.0"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.0.0"
+    "plugin-api-version": "2.3.0"
 }

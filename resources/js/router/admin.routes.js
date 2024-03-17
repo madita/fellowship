@@ -2,7 +2,7 @@ import auth from './middleware/auth'
 import verified from "./middleware/verified";
 import permission from "./middleware/permission";
 
-export default [{
+export const admin = [{
     path: '/admin',
     redirect: 'users-list',
 }, {
@@ -89,3 +89,5 @@ export default [{
         },
         component: () => import(/* webpackChunkName: "admin-announcements" */ '@/pages/admin/Announcement.vue')
     }]
+
+export default admin

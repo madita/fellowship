@@ -48,4 +48,9 @@ class MessageCreated implements ShouldBroadcast
     {
         return new PresenceChannel('chat');
     }
+
+    public function broadcastAs()
+    {
+        return 'message-created';
+    }
 }

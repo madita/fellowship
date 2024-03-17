@@ -23,13 +23,12 @@
               offset-y
               min-width="290px"
             >
-              <template v-slot:activator="{ on, attrs }">
+              <template v-slot:activator="{ probs }">
                 <v-text-field
                   v-model="date"
                   label="Birthday date"
                   readonly
-                  v-bind="attrs"
-                  v-on="on"
+                  v-bind="probs"
                 ></v-text-field>
               </template>
               <v-date-picker
@@ -52,7 +51,7 @@
         <div class="d-flex">
           <v-btn>Reset</v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="primary">Save</v-btn>
+          <v-btn color="bg-primary">Save</v-btn>
         </div>
       </v-form>
     </v-card-text>

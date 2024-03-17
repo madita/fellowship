@@ -1,8 +1,13 @@
-export default function permission ({ to, from, store, next }){
+import {useUserStore} from "@/store/userStore.js";
 
+export default function permission ({ to, from, next }){
+ //this is the one
     /** middleware for routes **/
+
+    const userStore = useUserStore()
     const hasAccess = function (name) {
-        const permissions = store.getters['auth/permissions'];
+        // const permissions = store.getters['auth/permissions'];
+        const permissions = userStore.permissions
 
         switch (name) {
 
@@ -25,8 +30,16 @@ export default function permission ({ to, from, store, next }){
             case "admin-announcements":
                 return permissions.includes("manage-post")
 
-
-
+            case "wiki-create":
+                return permissions.includes("manage-page")
+            case "wiki-create-slug":
+                return permissions.includes("manage-page")
+            case "wiki-edit":
+                return permissions.includes("manage-page")
+            case "wiki-category-create":
+                return permissions.includes("manage-page")
+            case "wiki-category-edit":
+                return permissions.includes("manage-page")
             default:
                 return false;
         }

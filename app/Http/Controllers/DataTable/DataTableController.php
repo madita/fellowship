@@ -110,6 +110,7 @@ abstract class DataTableController extends Controller
      */
     public function getRecords(Request $request)
     {
+
         $builder = $this->builder;
 
         if ($this->hasSearchQuery($request)) {
@@ -119,7 +120,12 @@ abstract class DataTableController extends Controller
         try {
             //if model has appended attributes and append attributes  not in displayable colimns...forget them
             $forget = array_diff($this->getAppends(), $this->getDisplayableColumns());
+//            dd($request);
             $pagination = (int) $request->get('itemsPerPage') <= 0 ? (int) $request->get('itemsLength') : (int) $request->get('itemsPerPage');
+
+//            if($pagination===0) {
+//                $pagination = 10;
+//            }
 
             return $builder->orderBy('id', 'asc')->get()->makeHidden($forget)->paginate($pagination);
         } catch (QueryException $e) {
@@ -178,7 +184,7 @@ abstract class DataTableController extends Controller
      */
     public function update($id, Request $request)
     {
-        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
+       return $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
     }
 
     /**
@@ -282,6 +288,7 @@ abstract class DataTableController extends Controller
     {
         $queryParts = $this->resolveQueryParts($request->operator, $request->value);
 
+        /** @noinspection PhpIllegalStringOffsetInspection */
         return $builder->where(
             $request->column,
             $queryParts['operator'],
@@ -292,5 +299,10 @@ abstract class DataTableController extends Controller
     public function getAppends()
     {
         return [];
+    }
+
+    public function getCategories($taxonomy)
+    {
+        $this->builder->getModel()->getCategories($taxonomy);
     }
 }
