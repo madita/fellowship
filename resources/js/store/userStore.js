@@ -21,10 +21,10 @@ export const useUserStore = defineStore({
 
     actions: {
         updateState(payload) {
-            console.log('userpayload', payload)
-            console.log('userthis.$state', this.$state)
+            // console.log('userpayload', payload)
+            // console.log('userthis.$state', this.$state)
             let newUserState = { ...this.$state, ...payload }
-            console.log('nuserewUserState', newUserState)
+            // console.log('nuserewUserState', newUserState)
             localStorage.removeItem('USER_INFO')
             localStorage.setItem('USER_INFO', JSON.stringify(newUserState))
             this.$reset()
@@ -49,7 +49,7 @@ export const useUserStore = defineStore({
             // }
             let { data: userInfo } = await api.get('/user')
             // let { data:  userInfo } = await axios.get('/api/user')
-            console.log('userInfo',userInfo)
+
             this.updateState(userInfo)
             // this.user = userInfo.user;
             // this.roles = userInfo.roles;

@@ -222,31 +222,10 @@ export default {
             })
         });
 
-        // watch(() => wikipage.value.content, content => {
-        //     // console.log('updatedtcontent', content)
-        //     //const isSame = editor.value.getHTML() === value;
-        //
-        //     // if (isSame) {
-        //     //     return;
-        //     // }
-        //
-        //     // editor.value.commands.setContent(value);
-        // });
 
-
-        // watch(
-        //     () => wikipage.value.content,
-        //     (content) => {
-        //         console.log('content change', content)
-        //         wikipage.value.content = content
-        //     },
-        //     { deep: true }
-        // );
-
-        // Your methods go here, but they're just regular functions now:
         function getWikiPage() {
             loading.value = true
-            console.log('test', slug)
+
             return axios.get(`/api/wiki/${slug.value}`).then((response) => {
                 wikipage.value = response.data.page
 
@@ -306,6 +285,7 @@ export default {
         }
 
         function updateContent(content) {
+            console.log('updatecontent',content)
             wikipage.value.content = content
         }
 
