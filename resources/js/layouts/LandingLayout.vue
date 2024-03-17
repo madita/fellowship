@@ -186,7 +186,7 @@ export default {
     computed: {
         authenticated() {
             const authStore = useAuthStore();
-            console.log('landingauthstore',authStore)
+
             return authStore.isLoggedIn ;
         },
         user() {
@@ -196,7 +196,7 @@ export default {
     },
 
     mounted() {
-      console.log('test',this.authenticated)
+
     }
 }
 </script>

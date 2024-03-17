@@ -1,6 +1,6 @@
 <template>
     <div class="tiptap">
-<!--        <ImageModal ref="ytmodal" @onConfirm="addCommand" />-->
+        <ImageModal ref="modalRef" @onConfirm="addCommand" />
         <div v-if="editor">
             <button @click="editor.chain().focus().toggleBold().run()" :class="{ 'is-active': editor.isActive('bold') }">
                 <v-icon>mdi-format-bold</v-icon>
@@ -159,45 +159,6 @@
             </button>
         </bubble-menu>
 
-
-<!--        <bubble-menu-->
-<!--            :editor="editor"-->
-<!--            :tippy-options="{ duration: 100 }"-->
-<!--            v-if="editor.isActive('table')"-->
-<!--            :-->
-<!--        >-->
-<!--            <button @click="editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()">-->
-<!--                <svg fill="#757575" width="24" height="24" focusable="false"><path fill-rule="nonzero" d="M19 4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h14ZM5 14v4h6v-4H5Zm14 0h-6v4h6v-4Zm0-6h-6v4h6V8ZM5 12h6V8H5v4Z"></path></svg>-->
-<!--            </button>-->
-<!--            <button @click="editor.chain().focus().addColumnBefore().run()">-->
-<!--                <svg fill="#757575" width="24" height="24" focusable="false"><path fill-rule="nonzero" d="M19 4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a1 1 0 0 1-1-1v-2a1 1 0 0 1 2 0v1h8V6H5v1a1 1 0 1 1-2 0V5c0-.6.4-1 1-1h15Zm0 9h-4v5h4v-5ZM8 8c.5 0 1 .4 1 .9V11h2a1 1 0 0 1 .1 2H9v2a1 1 0 0 1-2 .1V13H5a1 1 0 0 1-.1-2H7V9c0-.6.4-1 1-1Zm11-2h-4v5h4V6Z"></path></svg>-->
-<!--            </button>-->
-<!--            <button @click="editor.chain().focus().addColumnAfter().run()">-->
-<!--                <svg fill="#757575" width="24" height="24" focusable="false"><path fill-rule="nonzero" d="M20 4c.6 0 1 .4 1 1v2a1 1 0 0 1-2 0V6h-8v12h8v-1a1 1 0 0 1 2 0v2c0 .5-.4 1-.9 1H5a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h15ZM9 13H5v5h4v-5Zm7-5c.5 0 1 .4 1 .9V11h2a1 1 0 0 1 .1 2H17v2a1 1 0 0 1-2 .1V13h-2a1 1 0 0 1-.1-2H15V9c0-.6.4-1 1-1ZM9 6H5v5h4V6Z"></path></svg>-->
-<!--            </button>-->
-<!--            <button @click="editor.chain().focus().deleteColumn().run()">-->
-<!--                <svg fill="#757575" width="24" height="24" focusable="false"><path fill-rule="nonzero" d="M19 4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h14Zm0 2H5v3h2.5v2H5v2h2.5v2H5v3h14v-3h-2.5v-2H19v-2h-2.5V9H19V6Zm-4.7 1.8 1.2 1L13 12l2.6 3.3-1.2 1-2.3-3-2.3 3-1.2-1L11 12 8.5 8.7l1.2-1 2.3 3 2.3-3Z"></path></svg>-->
-<!--            </button>-->
-<!--            <button @click="editor.chain().focus().addRowBefore().run()">-->
-<!--                <svg fill="#757575" width="24" height="24" focusable="false"><path fill-rule="nonzero" d="M6 4a1 1 0 1 1 0 2H5v6h14V6h-1a1 1 0 0 1 0-2h2c.6 0 1 .4 1 1v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5c0-.6.4-1 1-1h2Zm5 10H5v4h6v-4Zm8 0h-6v4h6v-4ZM12 3c.5 0 1 .4 1 .9V6h2a1 1 0 0 1 0 2h-2v2a1 1 0 0 1-2 .1V8H9a1 1 0 0 1 0-2h2V4c0-.6.4-1 1-1Z"></path></svg>-->
-<!--            </button>-->
-<!--            <button @click="editor.chain().focus().addRowAfter().run()">-->
-<!--                <svg fill="#757575" width="24" height="24" focusable="false"><path fill-rule="nonzero" d="M12 13c.5 0 1 .4 1 .9V16h2a1 1 0 0 1 .1 2H13v2a1 1 0 0 1-2 .1V18H9a1 1 0 0 1-.1-2H11v-2c0-.6.4-1 1-1Zm6 7a1 1 0 0 1 0-2h1v-6H5v6h1a1 1 0 0 1 0 2H4a1 1 0 0 1-1-1V6c0-1.1.9-2 2-2h14a2 2 0 0 1 2 2v13c0 .5-.4 1-.9 1H18ZM11 6H5v4h6V6Zm8 0h-6v4h6V6Z"></path></svg>-->
-<!--            </button>-->
-<!--            <button @click="editor.chain().focus().deleteRow().run()">-->
-<!--                <svg fill="#757575" width="24" height="24" focusable="false"><path fill-rule="nonzero" d="M12 13c.5 0 1 .4 1 .9V16h2a1 1 0 0 1 .1 2H13v2a1 1 0 0 1-2 .1V18H9a1 1 0 0 1-.1-2H11v-2c0-.6.4-1 1-1Zm6 7a1 1 0 0 1 0-2h1v-6H5v6h1a1 1 0 0 1 0 2H4a1 1 0 0 1-1-1V6c0-1.1.9-2 2-2h14a2 2 0 0 1 2 2v13c0 .5-.4 1-.9 1H18ZM11 6H5v4h6V6Zm8 0h-6v4h6V6Z"></path></svg>-->
-<!--            </button>-->
-<!--            <button @click="editor.chain().focus().deleteTable().run()">-->
-<!--                <svg fill="#757575" width="24" height="24" focusable="false"><g fill-rule="nonzero"><path d="M19 4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h14ZM5 6v12h14V6H5Z"></path><path d="m14.4 8.6 1.1 1-2.4 2.4 2.4 2.4-1.1 1.1-2.4-2.4-2.4 2.4-1-1.1 2.3-2.4-2.3-2.4 1-1 2.4 2.3z"></path></g></svg>-->
-<!--            </button>-->
-<!--            <button @click="editor.chain().focus().mergeCells().run()">-->
-<!--                <svg fill="#757575" width="24" height="24" focusable="false"><path fill-rule="nonzero" d="M19 4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h14ZM5 15.5V18h3v-2.5H5Zm14-5h-9V18h9v-7.5ZM19 6h-4v2.5h4V6ZM8 6H5v2.5h3V6Zm5 0h-3v2.5h3V6Zm-8 7.5h3v-3H5v3Z"></path></svg>-->
-<!--            </button>-->
-<!--            <button @click="editor.chain().focus().splitCell().run()">-->
-<!--                <svg fill="#757575" width="24" height="24" focusable="false"><path fill-rule="nonzero" d="M19 4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6c0-1.1.9-2 2-2h14ZM8 15.5H5V18h3v-2.5Zm11-5h-9V18h9v-7.5Zm-2.5 1 1 1-2 2 2 2-1 1-2-2-2 2-1-1 2-2-2-2 1-1 2 2 2-2Zm-8.5-1H5v3h3v-3ZM19 6h-4v2.5h4V6ZM8 6H5v2.5h3V6Zm5 0h-3v2.5h3V6Z"></path></svg>-->
-<!--            </button>-->
-<!--        </bubble-menu>-->
-
         <editor-content :editor="editor"/>
 
         <div v-if="editor && limit" :class="{'character-count': true, 'character-count--warning': editor.storage.characterCount.characters() === limit}">
@@ -238,6 +199,8 @@
 </template>
 
 <script>
+//resize
+//https://codesandbox.io/p/sandbox/vue-3-tiptap-image-resize-forked-v34ns4?file=%2Fsrc%2Fcomponents%2FTipTapImageResize.vue%3A23%2C36-23%2C60
 import { ref, watch, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import { BubbleMenu, useEditor, Editor, EditorContent } from '@tiptap/vue-3';
 
@@ -252,8 +215,8 @@ import hashtag from './mention/hashtag.js'
 import wiki from './mention/wiki.js'
 
 import StarterKit from '@tiptap/starter-kit'
-import Document from '@tiptap/extension-document'
-import Gapcursor from '@tiptap/extension-gapcursor'
+// import Document from '@tiptap/extension-document'
+// import Gapcursor from '@tiptap/extension-gapcursor'
 import Paragraph from '@tiptap/extension-paragraph'
 import Table from '@tiptap/extension-table'
 import TableCell from '@tiptap/extension-table-cell'
@@ -261,7 +224,8 @@ import TableHeader from '@tiptap/extension-table-header'
 import TableRow from '@tiptap/extension-table-row'
 import Text from '@tiptap/extension-text'
 import Link from '@tiptap/extension-link'
-import Image from '@tiptap/extension-image'
+import ImageResize from "./extensions/ImageResize";
+import ImageModal from './ImageModal.vue'
 
 
 export default {
@@ -276,7 +240,9 @@ export default {
         Text,
         Paragraph,
         Image,
+        ImageModal,
         Link,
+        ImageResize,
 
 
         // ... other components
@@ -302,6 +268,7 @@ export default {
 
 
         const html = ref("");
+        const modalRef = ref(null);
 
         const editor = useEditor({
             content: props.modelValue,
@@ -311,7 +278,8 @@ export default {
                 TableCell,
                 TableHeader,
                 TableRow,
-                Image.configure({ inline: true }),
+                ImageModal,
+                ImageResize,
                 Link.configure({
                     openOnClick: false,
                 }),
@@ -369,12 +337,23 @@ export default {
 
         const openModal = (command) => {
             // ... logic remains unchanged
-            // this.$refs.ytmodal.showModal(command);
+            //this.$refs.ytmodal.showModal(command);
+            if (modalRef.value) {
+                // Call a method of MyModal component
+                modalRef.value.showModal(command);
+            }
         };
 
         const addCommand = (data) => {
-            if (data.command !== null) {
-                data.command(data.data);
+            // console.log('addCommand', data)
+            // if (data.command !== null) {
+            //     data.command(data.data);
+            // }
+            const url = data.src
+
+            if (url) {
+                //editor.value.commands.setImage({ src: url })
+                editor.value.chain().focus().setImage({ src: url }).run();
             }
         };
 
@@ -409,6 +388,7 @@ export default {
         return {
             editor,
             html,
+            modalRef,
             openModal,
             addCommand,
             // ... other methods
@@ -543,6 +523,37 @@ export default {
         cursor: ew-resize;
         cursor: col-resize;
     }
+
+    img {
+        width: 100%;
+        height: auto;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+
+        &.ProseMirror-selectednode {
+            outline: 3px solid #68cef8;
+        }
+    }
+    .custom-image-small {
+        max-width: 200px;
+    }
+    .custom-image-medium {
+        max-width: 500px;
+    }
+    .custom-image-large {
+        max-width: 100%;
+    }
+    .custom-image-float-none {
+        float: none;
+    }
+    .custom-image-float-left {
+        float: left;
+    }
+    .custom-image-float-right {
+        float: right;
+    }
+
 }
 
 .tiptap .is-active {
@@ -555,8 +566,8 @@ export default {
     font-family: inherit;
     color: #000;
     margin: 0.1rem;
-    border: 1px solid black;
-    border-radius: 0.3rem;
+    /*border: 1px solid black;
+    border-radius: 0.3rem;*/
     padding: 0.1rem 0.4rem;
     background: white;
 }
@@ -581,8 +592,6 @@ export default {
     box-decoration-break: clone;
 }
 
-
-
 .character-count {
     margin-top: 1rem;
     display: flex;
@@ -601,4 +610,5 @@ export default {
         color: #868e96;
     }
 }
+
 </style>

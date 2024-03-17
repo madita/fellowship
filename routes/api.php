@@ -27,6 +27,9 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return ['user' => $user, 'roles' => $roles, 'permissions' => $permissions];
 });
 
+//Route::post('/upload-image', [ImageUploadController::class, 'upload']);
+Route::post('/upload-image', "\App\Http\Controllers\ImageController@upload");
+
 //
 Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 'account.'], function () {
     Route::get('/notifications', 'App\Http\Controllers\NotificationController@index')->name('notification.index');

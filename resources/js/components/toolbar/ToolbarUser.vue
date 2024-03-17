@@ -54,7 +54,7 @@ export default {
         }
 
         onMounted(() => {
-            console.log(userStore.user);
+
         });
 
         return {
