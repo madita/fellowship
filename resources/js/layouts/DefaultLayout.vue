@@ -111,7 +111,7 @@
 
         <v-main id="main-content">
             <v-container class="fill-height pa-0" :fluid="!isContentBoxed">
-                <v-layout>
+                <v-layout style="height: 100vh;">
                     <slot></slot>
                 </v-layout>
             </v-container>

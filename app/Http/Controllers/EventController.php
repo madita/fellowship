@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Event\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use DateTime;
 
 class EventController extends Controller
 {
@@ -27,13 +28,55 @@ class EventController extends Controller
     {
         $events = Event::all();
 
+        $eventsMapped = $events->map(function ($event)  {
+//            $start = $event->startDate;
+//            $end = $event->endDate;
+//
+//
+//            if($event->startTime !== null) {
+//                $start .= " ".$event->startTime;
+//            }
+//
+//            if($event->endDate !== null) {
+//                $end .= " ".$event->endTime;
+//            }
+
+            $start = (new DateTime($event->startDate))->format(DateTime::ATOM);
+            $end = (new DateTime($event->endDate))->format(DateTime::ATOM);
+
+            if($event->startTime !== null) {
+                $startDateTime = new DateTime($event->startDate . ' ' . $event->startTime);
+                $start = $startDateTime->format(DateTime::ATOM); // Combine and format
+            }
+
+            if($event->endDate === null) {
+                $event->endDate = $event->startDate;
+            }
+
+            if($event->endDate !== null && $event->endTime !== null) {
+                $endDateTime = new DateTime($event->endDate . ' ' . $event->endTime);
+                $end = $endDateTime->format(DateTime::ATOM); // Combine and format
+            }
+
+            return [
+                'id'            => $event->id,
+                'title'         => $event->title,
+                'description'   => $event->description,
+                'start'         => $start,
+                'end'           => $end,
+                'allDay'        => ($event->startTime===null)  ? true:false,
+                'color'         => 'primary'
+            ];
+        });
+
         return response()->json([
             'data' => [
-                'events' => $events, ], ]);
+                'events' => $eventsMapped, ], ]);
     }
 
     public function store(Request $request)
     {
+//        dd($request->all());
         $this->validate($request, [
             'title' => 'required', //            'email'      => 'required|unique:users,email,'.$id.'|email',
         ]);
@@ -55,28 +98,22 @@ class EventController extends Controller
 
         $event->type = request()->get('type');
 
-        if ($dates = request()->get('dates')) {
-            $dates[1] = isset($dates[1]) ? $dates[1] : $dates[0];
-            $start = ($dates[1] > $dates[0]) ? $dates[0] : $dates[1];
-            $end = ($dates[1] > $dates[0]) ? $dates[1] : $dates[0];
+        if ($date = request()->get('date')) {
+            //dd($date);
+            $event->startDate = date('Y-m-d', strtotime($date['date'][0]));
+            $event->endDate =  date('Y-m-d', strtotime($date['date'][1]));
 
-            $event->startDate = $start;
-            $event->endDate = $end;
-        }
+            if($date['startTime']!==null) {
+                $event->startTime = $date['startTime']['hours'].":".$date['startTime']['minutes'].":".$date['startTime']['seconds'];
+            }
 
-        if (request()->get('startTime')) {
-            $event->startTime = request()->get('startTime');
-        }
-
-        if (request()->get('endTime')) {
-            $event->endTime = request()->get('endTime');
+            if($date['endTime'] !== null) {
+                $event->endTime = $date['endTime']['hours'].":".$date['endTime']['minutes'].":".$date['endTime']['seconds'];
+            }
         }
 
         $event->save();
 
-        //            if (request()->get("categories")) {
-        //                $event->categories()->sync(request()->get("categories"));
-        //            }
 
         return response()->json([
             'data' => [

@@ -5,6 +5,7 @@ import { createApp } from 'vue';
 // import { Vuetify } from 'vuetify'; // Modify based on the correct path in Vuetify 3
 import "vuetify/styles";
 import { createVuetify } from 'vuetify';
+import { VCalendar } from 'vuetify/labs/VCalendar'
 import '@mdi/font/css/materialdesignicons.css'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import 'vuetify/dist/vuetify.min.css';
@@ -45,6 +46,8 @@ const dark = {
         warning: '#ffd166'
     },
 }
+
+// const componentsTemp = {...components, VCalendar}
 
 
 // Create your Vuetify instance
