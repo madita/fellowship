@@ -41,34 +41,54 @@ class EventController extends Controller
 //                $end .= " ".$event->endTime;
 //            }
 
-            $start = (new DateTime($event->startDate))->format(DateTime::ATOM);
-            $end = (new DateTime($event->endDate))->format(DateTime::ATOM);
-
-            if($event->startTime !== null) {
-                $startDateTime = new DateTime($event->startDate . ' ' . $event->startTime);
-                $start = $startDateTime->format(DateTime::ATOM); // Combine and format
-            }
-
             if($event->endDate === null) {
                 $event->endDate = $event->startDate;
             }
 
-            if($event->endDate !== null && $event->endTime !== null) {
-                $endDateTime = new DateTime($event->endDate . ' ' . $event->endTime);
-                $end = $endDateTime->format(DateTime::ATOM); // Combine and format
+            $startTemp = $event->startDate;
+            $endTemp = $event->endDate;
+
+            if($event->startTime !== null) {
+                $startTemp =  $event->startDate." ".$event->startTime;
+//                $startDateTime = new DateTime($event->startDate . ' ' . $event->startTime);
+//                $start = $startDateTime->format(DateTime::ATOM); // Combine and format
+            } else {
+                $startTemp =  $event->startDate." 00:00:00";
             }
+
+
+            if($event->endTime !== null) {
+//                $endDateTime = new DateTime($event->endDate . ' ' . $event->endTime);
+//                $end = $endDateTime->format(DateTime::ATOM); // Combine and format
+                $endTemp =  $event->endDate." ".$event->endTime;
+            } else {
+                $endTemp =  $event->endDate." 23:59:59";
+            }
+
+            $start = (new DateTime($startTemp))->format(DateTime::ATOM);
+            $end = (new DateTime($endTemp))->format(DateTime::ATOM);
+
+            $originDate = [
+                'startDate'           => $event->startDate,
+                'startTime'           => $event->startTime,
+                'endDate'           => $event->endDate,
+                'endTime'           => $event->endTime,
+                'start'           => $start,
+                'end'           => $end,
+            ];
 
             return [
                 'id'            => $event->id,
                 'title'         => $event->title,
                 'description'   => $event->description,
-                'start'         => $start,
-                'end'           => $end,
+                'start'         => $startTemp,
+                'end'           => $endTemp,
+                'originDate'    => $originDate,
                 'allDay'        => ($event->startTime===null)  ? true:false,
                 'color'         => 'primary'
             ];
         });
-
+//dd($eventsMapped);
         return response()->json([
             'data' => [
                 'events' => $eventsMapped, ], ]);
