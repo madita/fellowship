@@ -59,7 +59,7 @@ import { capitalize } from './helpers/filters.js';
 // STYLES
 
 // Main Theme SCSS
-import '../sass/theme.scss'
+// import '../sass/theme.scss'
 
 // Animation library - https://animate.style/
 import 'animate.css/animate.min.css'

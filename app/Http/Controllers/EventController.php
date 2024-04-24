@@ -84,6 +84,7 @@ class EventController extends Controller
                 'start'         => $startTemp,
                 'end'           => $endTemp,
                 'originDate'    => $originDate,
+                'location'    => "",
                 'allDay'        => ($event->startTime===null)  ? true:false,
                 'color'         => 'primary'
             ];
@@ -101,6 +102,8 @@ class EventController extends Controller
             'title' => 'required', //            'email'      => 'required|unique:users,email,'.$id.'|email',
         ]);
 
+//        dd($request->all());
+
         $event = new Event();
         $event->title = request()->get('title');
         $event->description = request()->get('description');
@@ -117,6 +120,20 @@ class EventController extends Controller
         $event->user_id = $user->id;
 
         $event->type = request()->get('type');
+
+        if (request()->get('start')) {
+            //dd($date);
+            $event->startDate = date('Y-m-d', strtotime(request()->get('start')));
+            $event->endDate =  date('Y-m-d', strtotime(request()->get('end')));
+
+            if(request()->get('allDay') === true) {
+//                $event->startTime = "00:00:00";
+//                $event->endTime = "23:59:59";
+            } else {
+                $event->startTime = date('H:i:s', strtotime(request()->get('start')));
+                $event->endTime =  date('H:i:s', strtotime(request()->get('end')));
+            }
+        }
 
         if ($date = request()->get('date')) {
             //dd($date);

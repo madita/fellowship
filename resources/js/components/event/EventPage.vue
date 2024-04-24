@@ -1,6 +1,6 @@
 <script setup>
 
-import { ref, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import axios from 'axios';
 import { VCalendar } from 'vuetify/labs/VCalendar'
 import {getDate, format, formatDistanceToNow} from "date-fns";
@@ -17,6 +17,13 @@ import interactionPlugin from '@fullcalendar/interaction'
 import listPlugin from '@fullcalendar/list'
 
 import customViewPlugin from './custom-list-view.js';
+import CalendarEventHandler from "./CalendarEventHandler.vue";
+import VueDatePicker from "@vuepic/vue-datepicker";
+
+import {eventBus} from "../common/eventBus.js";
+
+// import AppDateTimePicker from "../common/app-form-elements/AppDateTimePicker.vue";
+import EventDatePicker from "./EventDatePicker.vue";
 
 // import { INITIAL_EVENTS, createEventId } from './event-utils'
 
@@ -87,6 +94,39 @@ import customViewPlugin from './custom-list-view.js';
 //     }
 // })
 
+const blankEvent = {
+    title: '',
+    start: '',
+    end: '',
+    allDay: false,
+    url: '',
+    extendedProps: {
+        /*
+              ℹ️ We have to use undefined here because if we have blank string as value then select placeholder will be active (moved to top).
+              Hence, we need to set it to undefined or null
+            */
+        calendar: undefined,
+        guests: [],
+        location: '',
+        description: '',
+    },
+}
+const endpoint = '/api/events';
+
+
+const calendarApi = ref(null)
+const refCalendar = ref()
+const loading = ref(false);
+const isEventHandlerSidebarActive = ref(false);
+const isLeftSidebarOpen = ref(true);
+const events = ref([]);
+// const selectedEvent = ref();
+const selectedEvent = ref(structuredClone(blankEvent))
+const startTime = ref();
+const value = ref(new Date());
+const type = ref('month');
+const types = ref(['month', 'week', 'day', 'list']);
+
 
 const fetchEvents = async () => {
     try {
@@ -96,7 +136,7 @@ const fetchEvents = async () => {
             start: new Date(event.start),
             end: new Date(event.end),
         }));
-        console.log('fetchevents',events)
+        // console.log('fetchevents',events)
         return events; // Returns the processed events array.
     } catch (error) {
         console.error("Error fetching events:", error);
@@ -104,57 +144,109 @@ const fetchEvents = async () => {
     }
 };
 
-const handleDateClick = (event) => {
-    console.log('eventklick', event)
+
+const addEvent = async (addevent) => {
+    console.log('addevent', addevent)
+    axios.post(`${endpoint}`, addevent).then(() => {
+        // this.page = {title: "", body: ""};
+        // this.message = "Page saved ..link"
+    }).catch((error) => {
+        if (error.response.status === 422) {
+            // this.creating.errors = error.response.data
+            this.editing.errors = error.response.data
+        }
+    })
 }
 
-const loading = ref(false);
-const isEventHandlerSidebarActive = ref(true);
-const isLeftSidebarOpen = ref(false);
-const events = ref([]);
-const value = ref(new Date());
-const type = ref('month');
-const types = ref(['month', 'week', 'day', 'list']);
+const updateEvent = async (event) => {
+    console.log('updateevent', event)
+    return  await axios.get(`/apps/calendar/${event.id}`, {
+        method: 'PUT',
+        body: event,
+    })
+}
+
+const removeEvent = async (eventId) => {
+    console.log('removedevent', eventId)
+    return await await axios.get(`/apps/calendar/${eventId}`, {
+        method: 'DELETE',
+    })
+}
+
+const jumpToDate = currentDate => {
+    calendarApi.value?.gotoDate(new Date(currentDate))
+}
+
+
+const handleEventClick = (info) => {
+    console.log('eventklick', info)
+    selectedEvent.value = info.event
+
+    // console.log('eventklickevent', selectedEvent.value)
+    // console.log('title', selectedEvent.value.title)
+    // event.value = { ...event.value, start: event.date }
+    isEventHandlerSidebarActive.value = true
+}
+
+const handleDateClick = (info) => {
+    console.log('date', info)
+    // selectedEvent.value = info.event
+    // event.value = { ...event.value, start: event.date }
+    isEventHandlerSidebarActive.value = true
+}
+
 const  calendarOptions =  ref({
-                plugins: [
-                    dayGridPlugin,
-                    timeGridPlugin,
-                    interactionPlugin,
-                    listPlugin,
-                    customViewPlugin
-                ],
-                buttonText: {
-                    custom: 'list'
-                },
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay,custom'
-                },
-                initialView: 'dayGridMonth',
-                initialEvents: [], // alternatively, use the `events` setting to fetch from a feed
-                editable: true,
-                selectable: true,
-                selectMirror: true,
-                dayMaxEvents: true,
-                weekends: true,
-                events: events,
-                eventClick: handleDateClick,
-                // select: this.handleDateSelect,
-                // eventClick: this.handleEventClick,
-                // eventsSet: this.handleEvents
-                /* you can update a remote database when these fire:
-                eventAdd:
-                eventChange:
-                eventRemove:
-                */
-            });
+    plugins: [
+        dayGridPlugin,
+        timeGridPlugin,
+        interactionPlugin,
+        listPlugin,
+        customViewPlugin
+    ],
+    buttonText: {
+        custom: 'list'
+    },
+    headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay,custom'
+    },
+    initialView: 'dayGridMonth',
+    initialEvents: [], // alternatively, use the `events` setting to fetch from a feed
+    editable: false,
+    selectable: true,
+    selectMirror: true,
+    dayMaxEvents: true,
+    weekends: true,
+    events: events,
+    eventClick: handleEventClick,
+    dateClick: handleDateClick,
+    // eventClick: this.handleEventClick,
+    // eventsSet: this.handleEvents
+    /* you can update a remote database when these fire:
+    eventAdd:
+    eventChange:
+    eventRemove:
+    */
+});
+
+watch(isEventHandlerSidebarActive, val => {
+    console.log('watchval', val)
+    if (!val)
+        selectedEvent.value = structuredClone(blankEvent)
+})
+
+eventBus.on('openSidebarWithEvent', (event) => {
+    selectedEvent.value = event;
+    isEventHandlerSidebarActive.value = true;
+});
 
 onMounted(async () => {
     loading.value = true;
     events.value = await fetchEvents();
     console.log('events',events.value)
     loading.value = false;
+    calendarApi.value = refCalendar.value.getApi()
 });
 
 </script>
@@ -164,7 +256,9 @@ onMounted(async () => {
         <VCard>
             <!-- `z-index: 0` Allows overlapping vertical nav on calendar -->
             <v-layout style="z-index: 0;">
+<!--                <EventDatePicker v-model="startdate"></EventDatePicker>-->
                 <!-- 👉 Navigation drawer -->
+
                 <VNavigationDrawer
                     v-model="isLeftSidebarOpen"
                     width="292"
@@ -186,7 +280,25 @@ onMounted(async () => {
 
                     <VDivider />
 
-                    <div class="d-flex align-center justify-center pa-2">
+<!--                    <VueDatePicker-->
+<!--                        locale="de"-->
+<!--                        v-model="startTime"-->
+<!--                        :time-picker="true"-->
+<!--                        :enable-date-picker="false"-->
+<!--                        @update:modelValue="updateStartTime"-->
+<!--                    />-->
+
+                    <div class="d-flex align-center justify-center pa-1">
+                        <VueDatePicker
+                            locale="de"
+                            v-model="startTime"
+                            :enable-time-picker="false"
+                            utc
+                            inline
+                            auto-apply
+                            :preview-format="format"
+                            @update:modelValue="jumpToDate"
+                        />
 <!--                        <AppDateTimePicker-->
 <!--                            v-model="calendarApi"-->
 <!--                            :config="{ inline: true }"-->
@@ -228,13 +340,13 @@ onMounted(async () => {
                 </VMain>
             </v-layout>
         </VCard>
-<!--        <CalendarEventHandler-->
-<!--            v-model:isDrawerOpen="isEventHandlerSidebarActive"-->
-<!--            :event="event"-->
-<!--            @add-event="addEvent"-->
-<!--            @update-event="updateEvent"-->
-<!--            @remove-event="removeEvent"-->
-<!--        />-->
+        <CalendarEventHandler
+            v-model:isDrawerOpen="isEventHandlerSidebarActive"
+            :event="selectedEvent"
+            @add-event="addEvent"
+            @update-event="updateEvent"
+            @remove-event="removeEvent"
+        />
     </v-container>
 </template>
 
@@ -318,7 +430,49 @@ b { /* used for event dates/times */
         width: 5em;
     }
 
+    .fc-list-event-dot {
+        margin: 0 1em;
+    }
+
 }
 
 </style>
+
+<!--<style lang="scss">-->
+<!--//@use "@core/scss/template/libs/full-calendar";-->
+
+<!--.calendars-checkbox {-->
+<!--    .v-label {-->
+<!--        color: rgba(var(&#45;&#45;v-theme-on-surface), var(&#45;&#45;v-high-emphasis-opacity));-->
+<!--        opacity: var(&#45;&#45;v-high-emphasis-opacity);-->
+<!--    }-->
+<!--}-->
+
+<!--.calendar-add-event-drawer {-->
+<!--    &.v-navigation-drawer:not(.v-navigation-drawer&#45;&#45;temporary) {-->
+<!--        border-end-start-radius: 0.375rem;-->
+<!--        border-start-start-radius: 0.375rem;-->
+<!--    }-->
+<!--}-->
+
+<!--.calendar-date-picker {-->
+<!--    display: none;-->
+
+<!--    +.flatpickr-input {-->
+<!--        +.flatpickr-calendar.inline {-->
+<!--            border: none;-->
+<!--            box-shadow: none;-->
+
+<!--            .flatpickr-months {-->
+<!--                border-block-end: none;-->
+<!--            }-->
+<!--        }-->
+<!--    }-->
+
+<!--    & ~ .flatpickr-calendar .flatpickr-weekdays {-->
+<!--        margin-block: 0 4px;-->
+<!--    }-->
+<!--}-->
+<!--</style>-->
+
 
