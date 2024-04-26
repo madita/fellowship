@@ -22,6 +22,8 @@ const props = defineProps({
     event: {},
 })
 
+const isFocused = ref(true)
+
 const emit = defineEmits([
     'update:isDrawerOpen',
     'addEvent',
@@ -42,6 +44,8 @@ const event = ref(JSON.parse(JSON.stringify(props.event)))
 
 const resetEvent = () => {
     event.value = JSON.parse(JSON.stringify(props.event))
+    isStartDateValid.value = true;
+    isEndDateValid.value = true;
     // event.value = props.event
     //   console.log('props...',props.event)
     //   console.log('event...',event.value)
@@ -103,13 +107,16 @@ onMounted(() => {
 
 // 👉 Form
 const onCancel = () => {
-
     // Close drawer
     emit('update:isDrawerOpen', false)
     nextTick(() => {
         refForm.value?.reset()
         resetEvent()
         refForm.value?.resetValidation()
+
+        isStartDateValid.value = true;
+        isEndDateValid.value = true;
+
     })
 }
 
@@ -194,23 +201,7 @@ const rules = {
         class="scrollable-content"
         @update:model-value="dialogModelValueUpdate"
     >
-        <!-- 👉 Header -->
-        <!--    <AppDrawerHeaderSection-->
-        <!--      :title="event.id ? 'Update Event' : 'Add Event'"-->
-        <!--      @cancel="$emit('update:isDrawerOpen', false)"-->
-        <!--    >-->
-        <!--      <template #beforeClose>-->
-        <!--        <IconBtn-->
-        <!--          v-show="event.id"-->
-        <!--          @click="removeEvent"-->
-        <!--        >-->
-        <!--          <VIcon-->
-        <!--            size="18"-->
-        <!--            icon="ri-delete-bin-7-line"-->
-        <!--          />-->
-        <!--        </IconBtn>-->
-        <!--      </template>-->
-        <!--    </AppDrawerHeaderSection>-->
+
         <div class="pa-2 d-flex align-center">
             <h5 class="text-h5">
                 <template v-if="event.id">Update Event</template>
@@ -256,26 +247,33 @@ const rules = {
 
                             <!-- 👉 Start date -->
                             <VCol cols="12">
-                                <div class="vuedatepicker-wrapper">
-                                    <!-- Label -->
-                                    <label class="v-label v-field-label">Start Date</label>
-                                    <!-- Date Picker -->
-                                <VueDatePicker
-                                    class="datepicker-input"
-                                    locale="de"
+<!--                                <div class="vuedatepicker-wrapper">-->
+<!--                                    &lt;!&ndash; Label &ndash;&gt;-->
+<!--                                    <label class="v-label v-field-label">Start Date</label>-->
+<!--                                    &lt;!&ndash; Date Picker &ndash;&gt;-->
+<!--                                <VueDatePicker-->
+<!--                                    class="datepicker-input"-->
+<!--                                    locale="de"-->
+<!--                                    v-model="event.start"-->
+<!--                                    :class="{ 'is-focused': isFocused }"-->
+<!--                                    @focus="isFocused = true"-->
+<!--                                    @blur="isFocused = false"-->
+<!--                                    :enable-time-picker="!event.allDay"-->
+<!--                                    minutes-increment="15"-->
+<!--                                    :rules="rules.date"-->
+<!--                                    utc-->
+<!--                                    auto-apply-->
+<!--                                    :preview-format="format"-->
+<!--                                />-->
+<!--&lt;!&ndash;                                <span v-if="!isStartDateValid" class="error-message">{{ startDateError }}</span>&ndash;&gt;-->
+<!--                                </div>-->
+                                <CustomDatePicker
+                                    label="Start Date"
                                     v-model="event.start"
-                                    :class="{ 'is-focused': isFocused }"
-                                    @focus="isFocused = true"
-                                    @blur="isFocused = false"
-                                    :enable-time-picker="!event.allDay"
-                                    minutes-increment="15"
-                                    :rules="rules.date"
-                                    utc
-                                    auto-apply
-                                    :preview-format="format"
+                                    :error="!isStartDateValid"
+                                    :error-messages="['Date is required']"
+                                    :date-picker-config="{ enableTimePicker: true }"
                                 />
-<!--                                <span v-if="!isStartDateValid" class="error-message">{{ startDateError }}</span>-->
-                                </div>
                             </VCol>
 
                             <!-- 👉 End date -->
@@ -294,18 +292,25 @@ const rules = {
 <!--                                    id="event-date"-->
 <!--                                    :error="isStartDateValid ? 'Please select a valid date':''"-->
 <!--                                />-->
-                                <VueDatePicker
-                                    locale="de"
+                                <CustomDatePicker
+                                    label="End Date"
                                     v-model="event.end"
-                                    :class="{ 'error-class': !isStartDateValid }"
-                                    :enable-time-picker="!event.allDay"
-                                    minutes-increment="15"
-                                    @blur="validateEndDate"
-                                    utc
-                                    auto-apply
-                                    :preview-format="format"
+                                    :error="!isEndDateValid"
+                                    :error-messages="['Date is required']"
+                                    :date-picker-config="{ enableTimePicker: true }"
                                 />
-                                <span v-if="!isEndDateValid" class="error-message">{{ endDateError }}</span>
+<!--                                <VueDatePicker-->
+<!--                                    locale="de"-->
+<!--                                    v-model="event.end"-->
+<!--                                    :class="{ 'error-class': !isStartDateValid }"-->
+<!--                                    :enable-time-picker="!event.allDay"-->
+<!--                                    minutes-increment="15"-->
+<!--                                    @blur="validateEndDate"-->
+<!--                                    utc-->
+<!--                                    auto-apply-->
+<!--                                    :preview-format="format"-->
+<!--                                />-->
+<!--                                <span v-if="!isEndDateValid" class="error-message">{{ endDateError }}</span>-->
                             </VCol>
 
                             <!-- 👉 All day -->
@@ -361,62 +366,8 @@ const rules = {
     </VNavigationDrawer>
 </template>
 <style>
-.datepicker-input input {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.42);
-}
 
-.dp__input {
-    background-color: transparent!important;
-    border-radius: var(--dp-border-radius);
-    font-family: var(--dp-font-family);
-    //border: 1px solid var(--dp-border-color);
-    border: none!important;
-    border-radius: 0!important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.42)!important;
-    outline: none;
-    transition: border-color .2s cubic-bezier(0.645, 0.045, 0.355, 1);
-    width: 100%;
-    font-size: var(--dp-font-size);
-    line-height: calc(var(--dp-font-size)*1.5);
-    padding: var(--dp-input-padding);
-    color: var(--dp-text-color);
-    box-sizing: border-box;
-}
 
-.vuedatepicker-wrapper {
-    position: relative;
-    margin-top: 16px;
-}
 
-.vuedatepicker-label {
-    display: block;
-    color: rgba(0, 0, 0, 0.6);
-    font-size: 1rem;
-    font-weight: normal;
-    margin-bottom: 5px;
-}
-
-.VueDatePicker input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 16px;
-}
-
-.VueDatePicker input.is-focused {
-    border-color: #3f51b5;
-}
-
-.error-class {
-    border-color: red;
-    box-shadow: 0 1px 0 0 red;
-}
-
-.error-message {
-    color: red;
-    font-size: 0.875rem;
-    margin-top: 4px;
-}
 
 </style>

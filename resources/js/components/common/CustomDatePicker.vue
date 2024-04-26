@@ -1,79 +1,149 @@
 <template>
-    <div class="v-input v-text-field v-text-field--is-booted" :class="{ 'v-text-field--focused': isFocused }">
+    <div class="custom-date-picker v-input v-input--is-label-active v-input--is-dirty v-input--is-focused v-input--has-state" :class="{'v-input--error':localError}">
         <div class="v-input__control">
             <div class="v-input__slot">
-                <label :for="id" class="v-label v-label--active" v-if="label">{{ label }}</label>
+                <label :for="id" class="v-label" :class="{ 'v-label--active': isFocused || localModelValue }">{{ label }}</label>
                 <VueDatePicker
                     :id="id"
-                    :model-value="localModelValue"
+                    v-model="localModelValue"
+                    :class="{'v-input--error':localError}"
                     @focus="isFocused = true"
                     @blur="isFocused = false"
                     @input="$emit('update:modelValue', $event)"
                     class="v-text-field__slot"
                 />
-
-            <div v-if="error" class="v-input__details v-input--error"><div class="v-messages" role="alert" aria-live="polite" id="input-34-messages"><div class="v-messages__message">{{ error }}</div></div><!----></div>
             </div>
-<!--            <div class="v-text-field__details">-->
-<!--                <div class="v-messages">-->
-<!--                    <div class="v-messages__wrapper">-->
-<!--                        <div v-if="error" class="v-messages__message">{{ error }}</div>-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--            </div>-->
+            <div class="v-input__details">
+                <div class="v-messages theme--light">
+                    <div class="v-messages__wrapper">
+                        <div v-if="localError" class="v-messages__message" role="alert">{{ errorMessages[0] }}</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import {ref, watch} from 'vue';
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 
 const props = defineProps({
-    modelValue: Date,
+    modelValue: Date|String,
     label: String,
     id: String,
-    error: String
+    error: Boolean,
+    errorMessages: Array
 });
 
 const emit = defineEmits(['update:modelValue']);
 const isFocused = ref(false);
 const localModelValue = ref(props.modelValue);
+const localError = ref(props.error);
+
+// Watch localModelValue to check if a valid date is set
+watch(localModelValue, (newVal) => {
+    // Check if newVal is a valid date (you can adjust the condition based on your requirements)
+    if (newVal && !isNaN(new Date(newVal).getTime())) {
+        localError.value = false; // Reset error if the date is valid
+    } else if (!newVal) {
+        localError.value = props.error; // Set to default error state if no date is set
+    }
+    emit('update:modelValue', newVal); // Emit update event
+});
 
 // Watch for external changes to the modelValue prop
 watch(() => props.modelValue, (newVal) => {
+    console.log('watch', newVal)
     localModelValue.value = newVal;
 });
 
-function handleUpdate(value) {
-    localModelValue.value = value;  // Update local value
-    emit('update:modelValue', value);  // Emit change to parent
-}
+watch(() => props.error, (newVal) => {
+    localError.value = newVal;
+});
+
 </script>
 
 <style scoped>
+.v-input__control {
+        display: block;
+        grid-area: initial;
+}
+
+
+.custom-date-picker .v-messages__message {
+    font-size: 0.75rem;
+    margin-top: 4px;
+
+}
+
+.v-label--active {
+    transform: translateY(-125%) scale(0.75);
+    color: rgba(0, 0, 0, 0.54); /* Vuetify label color when active */
+}
+
+
 .v-input__slot {
     position: relative;
-    outline: none;
+    padding-top: 5px; /* Space for floating label */
+    background-color: rgba(233, 236, 236, 1)!important;
 }
 
-.v-text-field__slot {
-    padding-top: 20px; /* Adjust based on your field size and label size */
+.v-label {
+    position: absolute;
+    left: 33px;
+    top: 18px;
+    cursor: text;
+    transition: font 0.15s cubic-bezier(0.4, 0.0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
-.v-messages__message {
-    font-size: 0.875rem;
+.v-label--active {
+    top: 24px;
+    transform: translateY(-100%) scale(0.75);
+    transform-origin: left;
+    color: #000;
 }
 
-.vue-datepicker {
-    border: none; /* Remove default borders */
+.v-input__details {
+    padding-top: 4px;
+    padding-inline: 16px;
 }
 
-.vue-datepicker input {
-    border: none;
-    font-size: 1rem;
-    height: auto;
-    outline: none;
+.v-input--error {
+    color: red!important;
 }
+
+</style>
+
+<style>
+
+.custom-date-picker {
+    margin-top: 2px; /* Adjust based on your form layout */
+
+    .dp__input {
+        background-color: transparent!important; /* Ensuring background color is set */
+        border: none!important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.42) !important;
+        border-radius: 0!important;
+        font-family: "Roboto", sans-serif; /* Match Vuetify's typography */
+        font-size: 16px; /* Ensuring font size matches Vuetify inputs */
+        width: 100%; /* Full width */
+        box-sizing: border-box; /* Box-sizing border box */
+        letter-spacing: .009375em;
+        min-height: 50px;
+        min-width: 0;
+        opacity: 1;
+        padding-inline: 32px 16px;
+        padding-bottom: 4px;
+        padding-top: 20px;
+    }
+
+    .v-input--error .dp__input {
+        border-bottom: 1px solid red !important;
+    }
+}
+
+
+
 </style>
