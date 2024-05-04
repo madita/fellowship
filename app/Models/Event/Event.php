@@ -67,17 +67,22 @@ class Event extends Model
 
     public function going()
     {
-        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'yes');
+        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'going');
     }
 
     public function notgoing()
     {
-        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'no');
+        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'notgoing');
     }
 
     public function maybegoing()
     {
         return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'maybe');
+    }
+
+    public function answer($answer)
+    {
+        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', $answer);
     }
 
 //    public function categories(){

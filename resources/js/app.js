@@ -129,6 +129,7 @@ async function checkUserSession() {
             const authStore = useAuthStore();
             if(authStore.isLoggedIn) {
                 authStore.resetStore();
+                //TODO refresh page
                 console.log('automatic logout')
             }
         }

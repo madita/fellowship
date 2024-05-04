@@ -18,6 +18,7 @@ import listPlugin from '@fullcalendar/list'
 
 import customViewPlugin from './custom-list-view.js';
 import CalendarEventHandler from "./CalendarEventHandler.vue";
+// import CalendarEventHandlerForm from "./CalendarEventHandlerForm.vue";
 import VueDatePicker from "@vuepic/vue-datepicker";
 
 import {eventBus} from "../common/eventBus.js";
@@ -46,14 +47,18 @@ const calendarApi = ref(null)
 const refCalendar = ref()
 const loading = ref(false);
 const isEventHandlerSidebarActive = ref(false);
+const editMode = ref(false);
 const isLeftSidebarOpen = ref(true);
 const events = ref([]);
 // const selectedEvent = ref();
 const selectedEvent = ref(structuredClone(blankEvent))
+const eventDetails =ref()
 const startTime = ref();
 const value = ref(new Date());
 const type = ref('month');
 const types = ref(['month', 'week', 'day', 'list']);
+const initialTimeZone = 'Europe/Brussels';
+
 
 
 const fetchEvents = async () => {
@@ -72,9 +77,40 @@ const fetchEvents = async () => {
     }
 };
 
+const getEvent = async (eventId) => {
+    try {
+        // loadEventDetails.value = true;
+        const response = await axios.get(`/api/events/${eventId}`);
+        const event = response.data
+        // loadEventDetails.value = false;
+        // console.log('fetchevents',events)
+        return event; // Returns the processed events array.
+    } catch (error) {
+        console.error("Error fetching event:", error);
+        return []; // Return an empty array in case of an error.
+    }
+};
+
+// const getEvent = (eventId) => {
+//
+//     return axios.get(`/api/events/${eventId}`).then((response) => {
+//         console.log(response)
+//         return response.data
+//         // this.eventData = response.data.data;
+//         // this.event = response.data.data.event;
+//
+//         // this.isLoading = false
+//     });
+// }
+//
+const createEvent = () => {
+    isEventHandlerSidebarActive.value = true
+    editMode.value = true
+}
+
 
 const addEvent = async (addevent) => {
-    console.log('addevent', addevent)
+    // console.log('addevent', addevent)
     axios.post(`${endpoint}`, addevent).then(() => {
         // this.page = {title: "", body: ""};
         // this.message = "Page saved ..link"
@@ -87,10 +123,25 @@ const addEvent = async (addevent) => {
 }
 
 const updateEvent = async (event) => {
-    console.log('updateevent', event)
-    return  await axios.get(`/apps/calendar/${event.id}`, {
-        method: 'PUT',
-        body: event,
+    // console.log('updateevent', event)
+    // return  await axios.get(`/apps/calendar/${event.id}`, {
+    //     method: 'PUT',
+    //     body: event,
+    // })
+
+    axios.patch(`${endpoint}/${event.id}`, event).then(() => {
+        // message.value = "Event updated"
+
+        let foundIndex = events.value.findIndex(x => x.id == event.id);
+        // let elementPos = events.value.map(function(x) {return x.id; }).indexOf(event.id);
+        // let objectFound = array[elementPos];
+        console.log('foundIndex', foundIndex)
+        events.value[foundIndex] = event;
+    }).catch((error) => {
+        console.log('error', error)
+        if (error.response.status === 422) {
+            // this.editing.errors = error.response.data
+        }
     })
 }
 
@@ -107,8 +158,11 @@ const jumpToDate = currentDate => {
 
 
 const handleEventClick = (info) => {
-    console.log('eventklick', info)
+    // console.log('eventklick', info)
+
     selectedEvent.value = info.event
+    // eventDetails.value = await getEvent(info.event.id)
+    editMode.value = false
 
     // console.log('eventklickevent', selectedEvent.value)
     // console.log('title', selectedEvent.value.title)
@@ -117,7 +171,11 @@ const handleEventClick = (info) => {
 }
 
 const handleDateClick = (info) => {
-    console.log('date', info)
+    console.log('info', info)
+    selectedEvent.value = structuredClone(blankEvent)
+    editMode.value = true
+    selectedEvent.value.start = info.date;
+    // console.log('date', info)
     // selectedEvent.value = info.event
     // event.value = { ...event.value, start: event.date }
     isEventHandlerSidebarActive.value = true
@@ -146,6 +204,7 @@ const  calendarOptions =  ref({
     selectMirror: true,
     dayMaxEvents: true,
     weekends: true,
+    timeZone: initialTimeZone,
     events: events,
     eventClick: handleEventClick,
     dateClick: handleDateClick,
@@ -160,8 +219,11 @@ const  calendarOptions =  ref({
 
 watch(isEventHandlerSidebarActive, val => {
     console.log('watchval', val)
-    if (!val)
+    if (!val) {
+        editMode.value = true
         selectedEvent.value = structuredClone(blankEvent)
+    }
+
 })
 
 eventBus.on('openSidebarWithEvent', (event) => {
@@ -172,7 +234,7 @@ eventBus.on('openSidebarWithEvent', (event) => {
 onMounted(async () => {
     loading.value = true;
     events.value = await fetchEvents();
-    console.log('events',events.value)
+    // console.log('events',events.value)
     loading.value = false;
     calendarApi.value = refCalendar.value.getApi()
 });
@@ -200,7 +262,7 @@ onMounted(async () => {
                         <VBtn
                             block
                             prepend-icon="ri-add-line"
-                            @click="isEventHandlerSidebarActive = true"
+                            @click="createEvent"
                         >
                             Add event
                         </VBtn>
@@ -266,6 +328,7 @@ onMounted(async () => {
         <CalendarEventHandler
             v-model:isDrawerOpen="isEventHandlerSidebarActive"
             :event="selectedEvent"
+            :editMode="editMode"
             @add-event="addEvent"
             @update-event="updateEvent"
             @remove-event="removeEvent"

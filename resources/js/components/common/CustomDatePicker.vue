@@ -4,11 +4,16 @@
             <div class="v-input__slot">
                 <label :for="id" class="v-label" :class="{ 'v-label--active': isFocused || localModelValue }">{{ label }}</label>
                 <VueDatePicker
+                    locale="de"
                     :id="id"
                     v-model="localModelValue"
                     :class="{'v-input--error':localError}"
+                    :enable-time-picker="!localAllDay"
+                    :timezone="tz"
                     @focus="isFocused = true"
                     @blur="isFocused = false"
+                    utc
+                    auto-apply
                     @input="$emit('update:modelValue', $event)"
                     class="v-text-field__slot"
                 />
@@ -24,8 +29,20 @@
     </div>
 </template>
 
+<!--<VueDatePicker&ndash;&gt;-->
+<!--                                    locale="de"-->
+<!--                                    v-model="event.end"-->
+<!--                                    :class="{ 'error-class': !isStartDateValid }"-->
+<!--                                    :enable-time-picker="!event.allDay"-->
+<!--                                    minutes-increment="15"-->
+<!--                                    @blur="validateEndDate"-->
+<!--                                    utc-->
+<!--                                    auto-apply-->
+<!--                                    :preview-format="format"-->
+<!--                                />-->
+
 <script setup>
-import {ref, watch} from 'vue';
+import {ref, computed, watch} from 'vue';
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 
@@ -33,6 +50,7 @@ const props = defineProps({
     modelValue: Date|String,
     label: String,
     id: String,
+    allDay: Boolean,
     error: Boolean,
     errorMessages: Array
 });
@@ -41,6 +59,48 @@ const emit = defineEmits(['update:modelValue']);
 const isFocused = ref(false);
 const localModelValue = ref(props.modelValue);
 const localError = ref(props.error);
+const localAllDay = ref(props.allDay);
+
+const timezone = ref({ timezone: undefined })
+const selectedTz = ref(11);
+
+const timezones = [
+    { tz: 'Pacific/Midway', offset: -11 },
+    { tz: 'America/Adak', offset: -10 },
+    { tz: 'Pacific/Gambier', offset: -9 },
+    { tz: 'America/Los_Angeles', offset: -8 },
+    { tz: 'America/Denver', offset: -7 },
+    { tz: 'America/Chicago', offset: -6 },
+    { tz: 'America/New_York', offset: -5 },
+    { tz: 'America/Santiago', offset: -4 },
+    { tz: 'America/Sao_Paulo', offset: -3 },
+    { tz: 'America/Noronha', offset: -2 },
+    { tz: 'Atlantic/Cape_Verde', offset: -1 },
+    { tz: 'UTC', offset: 0 },
+    { tz: 'Europe/Berlin', offset: 3 },
+    { tz: 'Europe/Brussels', offset: 1 },
+    { tz: 'Africa/Cairo', offset: 2 },
+    { tz: 'Europe/Minsk', offset: 3 },
+    { tz: 'Europe/Moscow', offset: 4 },
+    { tz: 'Asia/Tashkent', offset: 5 },
+    { tz: 'Asia/Dhaka', offset: 6 },
+    { tz: 'Asia/Novosibirsk', offset: 7 },
+    { tz: 'Australia/Perth', offset: 8 },
+    { tz: 'Asia/Tokyo', offset: 9 },
+    { tz: 'Australia/Hobart', offset: 10 },
+    { tz: 'Asia/Vladivostok', offset: 11 },
+];
+
+const activeTz = computed(() => timezones[selectedTz.value]);
+
+const tz = computed(() => {
+    return { ...timezone.value, timezone: activeTz.value.tz };
+});
+
+const maxDate = computed(() => {
+    const month = getMonth(new Date()) + 1 > 9 ? getMonth(new Date()) + 1 : `0${getMonth(new Date()) + 1}`;
+    return `${getYear(new Date())}-${month}-15T01:00:00Z`;
+});
 
 // Watch localModelValue to check if a valid date is set
 watch(localModelValue, (newVal) => {
@@ -62,6 +122,10 @@ watch(() => props.modelValue, (newVal) => {
 watch(() => props.error, (newVal) => {
     localError.value = newVal;
 });
+
+watch(() => props.allDay, (newAllDay) => {
+    localAllDay.value = newAllDay;
+}, {deep: true, immediate: true});
 
 </script>
 

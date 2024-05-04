@@ -28,84 +28,82 @@ class EventController extends Controller
     {
         $events = Event::all();
 
-        $eventsMapped = $events->map(function ($event)  {
-//            $start = $event->startDate;
-//            $end = $event->endDate;
-//
-//
-//            if($event->startTime !== null) {
-//                $start .= " ".$event->startTime;
-//            }
-//
-//            if($event->endDate !== null) {
-//                $end .= " ".$event->endTime;
-//            }
+        $eventsMapped = $events->map(function ($event) {
+            //            $start = $event->startDate;
+            //            $end = $event->endDate;
+            //
+            //
+            //            if($event->startTime !== null) {
+            //                $start .= " ".$event->startTime;
+            //            }
+            //
+            //            if($event->endDate !== null) {
+            //                $end .= " ".$event->endTime;
+            //            }
 
-            if($event->endDate === null) {
+            if ($event->endDate === null) {
                 $event->endDate = $event->startDate;
             }
 
             $startTemp = $event->startDate;
-            $endTemp = $event->endDate;
+            $endTemp   = $event->endDate;
 
-            if($event->startTime !== null) {
-                $startTemp =  $event->startDate." ".$event->startTime;
-//                $startDateTime = new DateTime($event->startDate . ' ' . $event->startTime);
-//                $start = $startDateTime->format(DateTime::ATOM); // Combine and format
+            if ($event->startTime !== null) {
+                $startTemp = $event->startDate . " " . $event->startTime;
+                //                $startDateTime = new DateTime($event->startDate . ' ' . $event->startTime);
+                //                $start = $startDateTime->format(DateTime::ATOM); // Combine and format
             } else {
-                $startTemp =  $event->startDate." 00:00:00";
+                $startTemp = $event->startDate . " 00:00:00";
             }
 
 
-            if($event->endTime !== null) {
-//                $endDateTime = new DateTime($event->endDate . ' ' . $event->endTime);
-//                $end = $endDateTime->format(DateTime::ATOM); // Combine and format
-                $endTemp =  $event->endDate." ".$event->endTime;
+            if ($event->endTime !== null) {
+                //                $endDateTime = new DateTime($event->endDate . ' ' . $event->endTime);
+                //                $end = $endDateTime->format(DateTime::ATOM); // Combine and format
+                $endTemp = $event->endDate . " " . $event->endTime;
             } else {
-                $endTemp =  $event->endDate." 23:59:59";
+                $endTemp = $event->endDate . " 23:59:59";
             }
 
             $start = (new DateTime($startTemp))->format(DateTime::ATOM);
-            $end = (new DateTime($endTemp))->format(DateTime::ATOM);
+            $end   = (new DateTime($endTemp))->format(DateTime::ATOM);
 
             $originDate = [
-                'startDate'           => $event->startDate,
-                'startTime'           => $event->startTime,
-                'endDate'           => $event->endDate,
-                'endTime'           => $event->endTime,
-                'start'           => $start,
-                'end'           => $end,
-            ];
+                'startDate' => $event->startDate,
+                'startTime' => $event->startTime,
+                'endDate'   => $event->endDate,
+                'endTime'   => $event->endTime,
+                'start'     => $start,
+                'end'       => $end,];
 
             return [
-                'id'            => $event->id,
-                'title'         => $event->title,
-                'description'   => $event->description,
-                'start'         => $startTemp,
-                'end'           => $endTemp,
-                'originDate'    => $originDate,
+                'id'          => $event->id,
+                'title'       => $event->title,
+                'description' => $event->description,
+                'start'       => $startTemp,
+                'end'         => $endTemp,
+                'originDate'  => $originDate,
                 'location'    => "",
-                'allDay'        => ($event->startTime===null)  ? true:false,
-                'color'         => 'primary'
-            ];
+                'allDay'      => ($event->startTime === null) ? true : false,
+                'color'       => 'primary'];
         });
-//dd($eventsMapped);
+        //dd($eventsMapped);
         return response()->json([
-            'data' => [
-                'events' => $eventsMapped, ], ]);
+                                    'data' => [
+                                        'events' => $eventsMapped,],]);
     }
 
     public function store(Request $request)
     {
-//        dd($request->all());
+        //        dd($request->all());
         $this->validate($request, [
             'title' => 'required', //            'email'      => 'required|unique:users,email,'.$id.'|email',
         ]);
 
-//        dd($request->all());
+        //        dd($request->all());
 
-        $event = new Event();
-        $event->title = request()->get('title');
+        $event              = new Event();
+        $event->title       = request()->get('title');
         $event->description = request()->get('description');
 
         if (request()->get('image')) {
@@ -116,7 +114,7 @@ class EventController extends Controller
             }
         }
         /** @var \App\Models\User $user */
-        $user = auth()->user();
+        $user           = auth()->user();
         $event->user_id = $user->id;
 
         $event->type = request()->get('type');
@@ -124,28 +122,28 @@ class EventController extends Controller
         if (request()->get('start')) {
             //dd($date);
             $event->startDate = date('Y-m-d', strtotime(request()->get('start')));
-            $event->endDate =  date('Y-m-d', strtotime(request()->get('end')));
+            $event->endDate   = date('Y-m-d', strtotime(request()->get('end')));
 
-            if(request()->get('allDay') === true) {
-//                $event->startTime = "00:00:00";
-//                $event->endTime = "23:59:59";
+            if (request()->get('allDay') === true) {
+                //                $event->startTime = "00:00:00";
+                //                $event->endTime = "23:59:59";
             } else {
                 $event->startTime = date('H:i:s', strtotime(request()->get('start')));
-                $event->endTime =  date('H:i:s', strtotime(request()->get('end')));
+                $event->endTime   = date('H:i:s', strtotime(request()->get('end')));
             }
         }
 
         if ($date = request()->get('date')) {
             //dd($date);
             $event->startDate = date('Y-m-d', strtotime($date['date'][0]));
-            $event->endDate =  date('Y-m-d', strtotime($date['date'][1]));
+            $event->endDate   = date('Y-m-d', strtotime($date['date'][1]));
 
-            if($date['startTime']!==null) {
-                $event->startTime = $date['startTime']['hours'].":".$date['startTime']['minutes'].":".$date['startTime']['seconds'];
+            if ($date['startTime'] !== null) {
+                $event->startTime = $date['startTime']['hours'] . ":" . $date['startTime']['minutes'] . ":" . $date['startTime']['seconds'];
             }
 
-            if($date['endTime'] !== null) {
-                $event->endTime = $date['endTime']['hours'].":".$date['endTime']['minutes'].":".$date['endTime']['seconds'];
+            if ($date['endTime'] !== null) {
+                $event->endTime = $date['endTime']['hours'] . ":" . $date['endTime']['minutes'] . ":" . $date['endTime']['seconds'];
             }
         }
 
@@ -153,9 +151,9 @@ class EventController extends Controller
 
 
         return response()->json([
-            'data' => [
-                'message' => 'Event created',
-                'event'   => $event, ], ]);
+                                    'data' => [
+                                        'message' => 'Event created',
+                                        'event'   => $event,],]);
     }
 
     /**
@@ -169,24 +167,30 @@ class EventController extends Controller
     {
         if (auth()->user()) {
             /** @var \App\Models\User $user */
-            $user = auth()->user();
+            $user    = auth()->user();
             $isGoing = DB::table('event_guests')->where('event_id', '=', $event->id)->where('user_id', '=', $user->id)->first();
         }
 
-        return response()->json([
-            'data' => [
-                'event'    => $event,
-                'going'    => $event->going()->get(),
-                'notgoing' => $event->notgoing()->get(),
-                'maybe'    => $event->maybegoing()->get(),
-                'isGoing'  => $isGoing, ], ]);
+        //TODO type of event
+        $answers = ['going', 'notgoing', 'maybe'];
+
+        $data = [
+            'event'   => $event,
+            'isGoing' => $isGoing,];
+
+        foreach ($answers as $answer) {
+            $data[$answer] = $event->answer($answer)->get();
+        }
+
+
+        return response()->json($data);
     }
 
     public function edit(Event $event)
     {
         return response()->json([
-            'data' => [
-                'event' => $event, ], ]);
+                                    'data' => [
+                                        'event' => $event,],]);
     }
 
     public function update(Request $request, Event $event)
@@ -195,11 +199,57 @@ class EventController extends Controller
             'title' => 'required', //            'email'      => 'required|unique:users,email,'.$id.'|email',
         ]);
 
-        $event->update($request->fill());
+        //        $event->update($request->fill());
+
+        $event->title       = request()->get('title');
+        $event->description = request()->get('description');
+
+        if (request()->get('image')) {
+            $event->image = request()->get('image');
+
+            if (request()->get('cover_position')) {
+                $event->cover_position = request()->get('cover_position');
+            }
+        }
+        /** @var \App\Models\User $user */
+        $user           = auth()->user();
+        $event->user_id = $user->id;
+
+        $event->type = request()->get('type');
+
+        if (request()->get('start')) {
+            //dd($date);
+            $event->startDate = date('Y-m-d', strtotime(request()->get('start')));
+            $event->endDate   = date('Y-m-d', strtotime(request()->get('end')));
+
+            if (request()->get('allDay') === true) {
+                //                $event->startTime = "00:00:00";
+                //                $event->endTime = "23:59:59";
+            } else {
+                $event->startTime = date('H:i:s', strtotime(request()->get('start')));
+                $event->endTime   = date('H:i:s', strtotime(request()->get('end')));
+            }
+        }
+
+        if ($date = request()->get('date')) {
+            //dd($date);
+            $event->startDate = date('Y-m-d', strtotime($date['date'][0]));
+            $event->endDate   = date('Y-m-d', strtotime($date['date'][1]));
+
+            if ($date['startTime'] !== null) {
+                $event->startTime = $date['startTime']['hours'] . ":" . $date['startTime']['minutes'] . ":" . $date['startTime']['seconds'];
+            }
+
+            if ($date['endTime'] !== null) {
+                $event->endTime = $date['endTime']['hours'] . ":" . $date['endTime']['minutes'] . ":" . $date['endTime']['seconds'];
+            }
+        }
+
+        $event->update();
 
         return response()->json([
-            'data' => [
-                'event' => $event, ], ]);
+                                    'data' => [
+                                        'event' => $event,],]);
     }
 
     /**
@@ -220,6 +270,7 @@ class EventController extends Controller
 
     public function isGoing(Event $event, $answer)
     {
+        //ToDo get just the guests???
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
@@ -236,8 +287,32 @@ class EventController extends Controller
             [
                 'going'    => $event->going()->get(),
                 'notgoing' => $event->notgoing()->get(),
-                'maybe'    => $event->maybegoing()->get(),
-            ]
+                'maybe'    => $event->maybegoing()->get(),]
+        );
+    }
+
+    public function joinEvent(Request $request, Event $event)
+    {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        //        dd($request->all());
+        $answer = $request->get('answer');
+
+        $eventGuest = $user->eventGuest()->where('event_id', $event->id)->first();
+
+        if ($eventGuest) {
+            $event->allUsers()->updateExistingPivot($user->id, ['type' => $answer]);
+        } else {
+            $event->allUsers()->attach($user->id, ['type' => $answer]);
+        }
+
+        //        return response()->json($user->eventGuest()->find($event->id)->pivot);
+        return response()->json(
+            [
+                'going'    => $event->going()->get(),
+                'notgoing' => $event->notgoing()->get(),
+                'maybe'    => $event->maybegoing()->get(),]
         );
     }
 }

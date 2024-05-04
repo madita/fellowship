@@ -5,6 +5,8 @@ import {VForm} from 'vuetify/components/VForm'
 import {format} from "date-fns";
 import VueDatePicker from "@vuepic/vue-datepicker";
 import CustomDatePicker from "../common/CustomDatePicker.vue";
+import UserAvatar from "../common/UserAvatar.vue";
+import axios from "axios";
 // import { useCalendarStore } from './useCalendarStore'
 // import avatar1 from '@images/avatars/avatar-1.png'
 // import avatar2 from '@images/avatars/avatar-2.png'
@@ -19,10 +21,15 @@ const props = defineProps({
         type: Boolean,
         required: true,
     },
+    editMode: {
+        type: Boolean,
+        required: true,
+    },
     event: {},
 })
 
 const isFocused = ref(true)
+const loadEventDetails = ref(true)
 
 const emit = defineEmits([
     'update:isDrawerOpen',
@@ -30,6 +37,8 @@ const emit = defineEmits([
     'updateEvent',
     'removeEvent',
 ])
+
+const localEditMode = ref(props.editModed)
 
 const title = ref()
 
@@ -40,12 +49,18 @@ const refForm = ref()
 // 👉 Event
 // const event = ref({})
 const event = ref(JSON.parse(JSON.stringify(props.event)))
+const eventDetails = ref();
 // const event = ref({...props.event})
 
 const resetEvent = () => {
     event.value = JSON.parse(JSON.stringify(props.event))
     isStartDateValid.value = true;
     isEndDateValid.value = true;
+    if(event.value.id > 0) {
+        getEvent(event.value.id);
+    }
+    // console.log(eventDetails.value);
+
     // event.value = props.event
     //   console.log('props...',props.event)
     //   console.log('event...',event.value)
@@ -59,6 +74,13 @@ const resetEvent = () => {
 watch(() => props.event, (newEvent) => {
     event.value = {...newEvent};
 }, {deep: true, immediate: true});
+
+// watch(() => props.editMode, (editMode) => {
+//     localEditMode.value = editMode;
+// }, {deep: true, immediate: true});
+watch(() => props.editMode, () => {
+    localEditMode.value = props.editMode
+});
 
 watch(() => props.isDrawerOpen, resetEvent)
 
@@ -86,6 +108,7 @@ const handleSubmit = () => {
     validateEndDate();
     refForm.value?.validate().then(({valid}) => {
         if (valid) {
+            localEditMode.value = false;
 
             // If id exist on id => Update event
             if ('id' in event.value)
@@ -102,6 +125,7 @@ const handleSubmit = () => {
 }
 
 onMounted(() => {
+
     //console.log('eventonsidebar', event)
 });
 
@@ -109,6 +133,7 @@ onMounted(() => {
 const onCancel = () => {
     // Close drawer
     emit('update:isDrawerOpen', false)
+    localEditMode.value = false;
     nextTick(() => {
         refForm.value?.reset()
         resetEvent()
@@ -119,6 +144,106 @@ const onCancel = () => {
 
     })
 }
+
+const onYes = () => {
+    //Todo depending on type the awnser changes
+
+    joinEvent(event.value.id, 'going')
+    // Close drawer
+    // emit('update:isDrawerOpen', false)
+
+}
+
+// 👉 Form
+const onNo = () => {
+    // Close drawer
+    // emit('update:isDrawerOpen', false)
+    joinEvent(event.value.id, 'notgoing')
+}
+
+const onMaybe = () => {
+    // Close drawer
+    joinEvent(event.value.id, 'maybe')
+}
+
+const  getIsGoing = (answer) => {
+    //event.value.id > 0
+    if (loadEventDetails.value) {
+        return true;
+    }
+
+    if (eventDetails.value === null && typeof eventDetails.value != undefined) {
+        return false;
+    }
+    return eventDetails.value.isGoing !== undefined && eventDetails.value.isGoing.type === answer
+}
+
+const joinEvent = (eventId, answer) => {
+    // console.log('joinEvent', eventId, answer)
+    eventDetails.value.isGoing.type = answer;
+    //todogetfulldate..days
+    const userData = {
+        answer: answer,
+        bringing: 'stuff',
+        days: '3'
+    }
+
+    axios.post(`/api/events/${eventId}/going`, userData).then(() => {
+        // this.page = {title: "", body: ""};
+        // this.message = "Page saved ..link"
+    }).catch((error) => {
+        if (error.response.status === 422) {
+            // this.creating.errors = error.response.data
+            // this.editing.errors = error.response.data
+        }
+    })
+}
+
+// const getEvent = async (eventId) => {
+//     try {
+//         // loadEventDetails.value = true;
+//         const response = await axios.get(`/api/events/${eventId}`);
+//         const event = response.data
+//         // loadEventDetails.value = false;
+//         // console.log('fetchevents',events)
+//         return event; // Returns the processed events array.
+//     } catch (error) {
+//         console.error("Error fetching event:", error);
+//         return []; // Return an empty array in case of an error.
+//     }
+// };
+
+const getEvent = async (eventId) => {
+    loadEventDetails.value = true;
+    // error.value = null; // Reset previous errors
+
+    try {
+        const response = await axios.get(`/api/events/${eventId}`);
+        eventDetails.value = response.data; // Assuming the data is directly in the response
+        console.log('Event details loaded:', eventDetails.value);
+    } catch (err) {
+        console.error('Failed to load event details:', err);
+        // error.value = 'Failed to load event details'; // Store error message
+        eventDetails.value = null; // Reset event details on error
+    } finally {
+        loadEventDetails.value = false; // Ensure loading state is reset
+    }
+};
+//
+// const getEvent = (eventId) => {
+//     loadEventDetails.value = true;
+//
+//     return axios.get(`/api/events/${eventId}`).then((response) => {
+//         console.log(response)
+//         eventDetails.value = response.data
+//         loadEventDetails.value = false;
+//         console.log('eventDetails.value',eventDetails.value.going)
+//         // this.eventData = response.data.data;
+//         // this.event = response.data.data.event;
+//
+//         // this.isLoading = false
+//     });
+// }
 
 const startDateTimePickerConfig = computed(() => {
     const config = {
@@ -202,14 +327,21 @@ const rules = {
         @update:model-value="dialogModelValueUpdate"
     >
 
-        <div class="pa-2 d-flex align-center">
-            <h5 class="text-h5">
+        <div class="pa-2 d-flex align-center" v-if="localEditMode">
+            <h5 class="text-h5 me-3">
                 <template v-if="event.id">Update Event</template>
                 <template v-else>Add Event</template>
             </h5>
+
             <VSpacer/>
 
             <slot name="beforeClose"/>
+            <VBtn
+                color="primary"
+                class="me-3"
+                @click="localEditMode = false"
+            >View
+            </VBtn>
 
             <!--          <IconBtn-->
             <!--              class="text-medium-emphasis"-->
@@ -222,11 +354,27 @@ const rules = {
             <!--              />-->
             <!--          </IconBtn>-->
         </div>
+        <div class="pa-2 d-flex align-center" v-else>
+            <h5 class="text-h5 me-3">
+
+                {{ event.title }}
+            </h5>
+
+
+            <VSpacer/>
+            <slot name="beforeClose"/>
+            <VBtn
+                color="primary"
+                class="me-3"
+                @click="localEditMode = true"
+            >Edit
+            </VBtn>
+        </div>
 
         <VDivider/>
 
         <PerfectScrollbar :options="{ wheelPropagation: false }">
-            <VCard flat>
+            <VCard flat v-if="localEditMode">
                 <VCardText>
                     <!-- SECTION Form -->
                     <VForm
@@ -247,29 +395,30 @@ const rules = {
 
                             <!-- 👉 Start date -->
                             <VCol cols="12">
-<!--                                <div class="vuedatepicker-wrapper">-->
-<!--                                    &lt;!&ndash; Label &ndash;&gt;-->
-<!--                                    <label class="v-label v-field-label">Start Date</label>-->
-<!--                                    &lt;!&ndash; Date Picker &ndash;&gt;-->
-<!--                                <VueDatePicker-->
-<!--                                    class="datepicker-input"-->
-<!--                                    locale="de"-->
-<!--                                    v-model="event.start"-->
-<!--                                    :class="{ 'is-focused': isFocused }"-->
-<!--                                    @focus="isFocused = true"-->
-<!--                                    @blur="isFocused = false"-->
-<!--                                    :enable-time-picker="!event.allDay"-->
-<!--                                    minutes-increment="15"-->
-<!--                                    :rules="rules.date"-->
-<!--                                    utc-->
-<!--                                    auto-apply-->
-<!--                                    :preview-format="format"-->
-<!--                                />-->
-<!--&lt;!&ndash;                                <span v-if="!isStartDateValid" class="error-message">{{ startDateError }}</span>&ndash;&gt;-->
-<!--                                </div>-->
+                                <!--                                <div class="vuedatepicker-wrapper">-->
+                                <!--                                    &lt;!&ndash; Label &ndash;&gt;-->
+                                <!--                                    <label class="v-label v-field-label">Start Date</label>-->
+                                <!--                                    &lt;!&ndash; Date Picker &ndash;&gt;-->
+                                <!--                                <VueDatePicker-->
+                                <!--                                    class="datepicker-input"-->
+                                <!--                                    locale="de"-->
+                                <!--                                    v-model="event.start"-->
+                                <!--                                    :class="{ 'is-focused': isFocused }"-->
+                                <!--                                    @focus="isFocused = true"-->
+                                <!--                                    @blur="isFocused = false"-->
+                                <!--                                    :enable-time-picker="!event.allDay"-->
+                                <!--                                    minutes-increment="15"-->
+                                <!--                                    :rules="rules.date"-->
+                                <!--                                    utc-->
+                                <!--                                    auto-apply-->
+                                <!--                                    :preview-format="format"-->
+                                <!--                                />-->
+                                <!--&lt;!&ndash;                                <span v-if="!isStartDateValid" class="error-message">{{ startDateError }}</span>&ndash;&gt;-->
+                                <!--                                </div>-->
                                 <CustomDatePicker
                                     label="Start Date"
                                     v-model="event.start"
+                                    :allDay="event.allDay"
                                     :error="!isStartDateValid"
                                     :error-messages="['Date is required']"
                                     :date-picker-config="{ enableTimePicker: true }"
@@ -286,31 +435,32 @@ const rules = {
                                 <!--                  placeholder="Select End Date"-->
                                 <!--                  :config="endDateTimePickerConfig"-->
                                 <!--                />-->
-<!--                                <custom-date-picker-->
-<!--                                    label="Event Date"-->
-<!--                                    v-model="event.end"-->
-<!--                                    id="event-date"-->
-<!--                                    :error="isStartDateValid ? 'Please select a valid date':''"-->
-<!--                                />-->
+                                <!--                                <custom-date-picker-->
+                                <!--                                    label="Event Date"-->
+                                <!--                                    v-model="event.end"-->
+                                <!--                                    id="event-date"-->
+                                <!--                                    :error="isStartDateValid ? 'Please select a valid date':''"-->
+                                <!--                                />-->
                                 <CustomDatePicker
                                     label="End Date"
                                     v-model="event.end"
+                                    :allDay="event.allDay"
                                     :error="!isEndDateValid"
                                     :error-messages="['Date is required']"
                                     :date-picker-config="{ enableTimePicker: true }"
                                 />
-<!--                                <VueDatePicker-->
-<!--                                    locale="de"-->
-<!--                                    v-model="event.end"-->
-<!--                                    :class="{ 'error-class': !isStartDateValid }"-->
-<!--                                    :enable-time-picker="!event.allDay"-->
-<!--                                    minutes-increment="15"-->
-<!--                                    @blur="validateEndDate"-->
-<!--                                    utc-->
-<!--                                    auto-apply-->
-<!--                                    :preview-format="format"-->
-<!--                                />-->
-<!--                                <span v-if="!isEndDateValid" class="error-message">{{ endDateError }}</span>-->
+                                <!--                                <VueDatePicker-->
+                                <!--                                    locale="de"-->
+                                <!--                                    v-model="event.end"-->
+                                <!--                                    :class="{ 'error-class': !isStartDateValid }"-->
+                                <!--                                    :enable-time-picker="!event.allDay"-->
+                                <!--                                    minutes-increment="15"-->
+                                <!--                                    @blur="validateEndDate"-->
+                                <!--                                    utc-->
+                                <!--                                    auto-apply-->
+                                <!--                                    :preview-format="format"-->
+                                <!--                                />-->
+                                <!--                                <span v-if="!isEndDateValid" class="error-message">{{ endDateError }}</span>-->
                             </VCol>
 
                             <!-- 👉 All day -->
@@ -356,6 +506,78 @@ const rules = {
                                 >
                                     Cancel
                                 </VBtn>
+                            </VCol>
+                        </VRow>
+                    </VForm>
+                    <!-- !SECTION -->
+                </VCardText>
+            </VCard>
+
+            <VCard flat v-else>
+                <VCardText>
+                    <!-- SECTION Form -->
+                    <VForm
+
+                    >
+                        <VRow>
+                            <!-- 👉 Title -->
+                            <VCol cols="12">
+                                <div>Are you coming?</div>
+                                <VBtn
+                                    color="primary"
+                                    class="me-3"
+                                    :disabled="getIsGoing('going')"
+                                    @click="onYes"
+                                >
+                                    Yes
+                                </VBtn>
+                                <VBtn
+                                    variant="tonal"
+                                    color="primary"
+                                    class="me-3"
+                                    :disabled="getIsGoing('notgoing')"
+                                    @click="onNo"
+                                >
+                                    No
+                                </VBtn>
+                                <VBtn
+                                    variant="outlined"
+                                    color="secondary"
+                                    :disabled="getIsGoing('maybe')"
+                                    @click="onMaybe"
+                                >
+                                    Maybe
+                                </VBtn>
+                            </VCol>
+
+                            <!-- 👉 Location -->
+                            <VCol cols="12">
+                                <label for="">Location</label>
+                                {{ event.extendedProps.location }}
+                            </VCol>
+
+                            <!-- 👉 Description -->
+                            <VCol cols="12">
+                                <label for="">Description</label>
+                                <div v-html="event.extendedProps.description" ></div>
+
+                            </VCol>
+
+                            <!-- 👉 Form buttons -->
+                            <VCol cols="12">
+
+<!--                                    <div @click="getEvent(event.id)">Load Event Details</div>-->
+                                    <div v-if="loadEventDetails">Loading...</div>
+                                    <div v-else>
+<!--                                        {{ eventDetails.notgoing }}-->
+
+                                <v-list-subheader>Is Going ({{ eventDetails.going.length }})</v-list-subheader>
+                                <user-avatar v-for="user in eventDetails.going" :key="`going-${user.id}`" :user="user"></user-avatar>
+                                <v-list-subheader>Maybe Going ({{ eventDetails.maybe.length }})</v-list-subheader>
+                                <user-avatar v-for="user in eventDetails.maybe" :key="`maybe-${user.id}`" :user="user"></user-avatar>
+                                <v-list-subheader>Not Going ({{ eventDetails.notgoing.length }})</v-list-subheader>
+                                <user-avatar v-for="user in eventDetails.notgoing" :key="`notgoing-${user.id}`" :user="user"></user-avatar>
+                                    </div>
                             </VCol>
                         </VRow>
                     </VForm>
