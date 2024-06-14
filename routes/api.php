@@ -65,6 +65,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::patch('/posts/{page}/edit', '\App\Http\Controllers\PostController@update');
 
     Route::get('/events/{event}/going/{answer}', "\App\Http\Controllers\EventController@isGoing");
+    Route::get('/events/types', "\App\Http\Controllers\EventController@getTypes");
     Route::post('/events/{event}/going', "\App\Http\Controllers\EventController@joinEvent");
     Route::resource('events', "\App\Http\Controllers\EventController");
 });
@@ -81,6 +82,8 @@ Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function (
     Route::post('datatable/permissions/roles', 'App\Http\Controllers\DataTable\PermissionController@updateRolePermissions');
     Route::get('datatable/permissions/permissions', 'App\Http\Controllers\DataTable\PermissionController@permissions');
     Route::resource('datatable/permissions', 'App\Http\Controllers\DataTable\PermissionController');
+    Route::resource('datatable/events', 'App\Http\Controllers\DataTable\EventController');
+    Route::resource('datatable/event-types', 'App\Http\Controllers\DataTable\EventTypeController');
 });
 
 Route::post('/login', function (Request $request) {

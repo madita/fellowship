@@ -159,7 +159,7 @@
 
 <script>
 // import SimpleEditor from '../../components/common/SimpleEditor'
-import Tiptap from '../../components/common/tiptap/Tiptap'
+import Tiptap from '../../components/common/tiptap/Tiptap.vue'
 
 export default {
     components: {

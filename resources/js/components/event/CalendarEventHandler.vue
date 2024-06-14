@@ -26,6 +26,7 @@ const props = defineProps({
         required: true,
     },
     event: {},
+    eventTypes: {},
 })
 
 const isFocused = ref(true)
@@ -172,10 +173,18 @@ const  getIsGoing = (answer) => {
         return true;
     }
 
+    // if(eventDetails.value.isGoing===null) {
+    //     console.log('fdghdfjkgdhfgjkdfghjkfd')
+    //     return true;
+    // }
+
     if (eventDetails.value === null && typeof eventDetails.value != undefined) {
         return false;
     }
-    return eventDetails.value.isGoing !== undefined && eventDetails.value.isGoing.type === answer
+
+    return true;
+    // return eventDetails.value.isGoing !== undefined && eventTypes.value.find(x => x.id === event.value.id).foo;.type === answer
+    // return eventDetails.value.isGoing !== undefined && eventDetails.value.isGoing.type === answer
 }
 
 const joinEvent = (eventId, answer) => {
@@ -337,6 +346,7 @@ const rules = {
 
             <slot name="beforeClose"/>
             <VBtn
+                v-if="event.id"
                 color="primary"
                 class="me-3"
                 @click="localEditMode = false"
@@ -390,6 +400,42 @@ const rules = {
                                     :rules="rules.title"
                                     placeholder="Title"
                                 />
+                            </VCol>
+
+                            <VCol cols="12">
+                                <VSelect
+                                    v-model="event.extendedProps.type"
+                                    label="Type"
+                                    placeholder="Select Event Label"
+                                    :items="eventTypes"
+                                    :item-title="item => item.name"
+                                    :item-value="item => item.id"
+                                >
+                                    <template #selection="{ item }">
+                                        <div
+                                            class="align-center"
+                                            :class="event.extendedProps.type ? 'd-flex' : ''"
+                                        >
+                                            <VIcon
+                                                icon="mdi-circle-medium"
+                                                :color="item.raw.color"
+                                                class="me-2"
+                                            />
+                                            <span>{{ item.raw.name }}</span>
+                                        </div>
+                                    </template>
+
+                                    <template #item="{ item, props: itemProps }">
+                                        <VListItem v-bind="itemProps">
+                                            <template #prepend>
+                                                <VIcon
+                                                    icon="mdi-circle-medium"
+                                                    :color="item.raw.color"
+                                                />
+                                            </template>
+                                        </VListItem>
+                                    </template>
+                                </VSelect>
                             </VCol>
 
 
@@ -513,6 +559,7 @@ const rules = {
                 </VCardText>
             </VCard>
 
+            <!-- Event details to sign up -->
             <VCard flat v-else>
                 <VCardText>
                     <!-- SECTION Form -->
@@ -548,6 +595,11 @@ const rules = {
                                 >
                                     Maybe
                                 </VBtn>
+                            </VCol>
+
+                            <VCol cols="12">
+                                <label for="">Date/Time</label>
+                                {{ event.start }} - {{ event.end }}
                             </VCol>
 
                             <!-- 👉 Location -->

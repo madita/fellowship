@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event\Event;
+use App\Models\Event\EventType;
+use App\Models\Event\EventDetail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use DateTime;
@@ -27,19 +29,9 @@ class EventController extends Controller
     public function index()
     {
         $events = Event::all();
-
-        $eventsMapped = $events->map(function ($event) {
-            //            $start = $event->startDate;
-            //            $end = $event->endDate;
-            //
-            //
-            //            if($event->startTime !== null) {
-            //                $start .= " ".$event->startTime;
-            //            }
-            //
-            //            if($event->endDate !== null) {
-            //                $end .= " ".$event->endTime;
-            //            }
+        $eventTypes = EventType::all()->keyBy('id');
+//        dd($eventTypes);
+        $eventsMapped = $events->map(function ($event) use ($eventTypes) {
 
             if ($event->endDate === null) {
                 $event->endDate = $event->startDate;
@@ -68,6 +60,13 @@ class EventController extends Controller
             $start = (new DateTime($startTemp))->format(DateTime::ATOM);
             $end   = (new DateTime($endTemp))->format(DateTime::ATOM);
 
+            $extendedProps = [
+                'calendar' => 'Treffen'
+            ];
+
+//            $eventType = $event->type()->first();
+//            dd($eventTypes[$event->type_id]['color']);
+
             $originDate = [
                 'startDate' => $event->startDate,
                 'startTime' => $event->startTime,
@@ -83,19 +82,23 @@ class EventController extends Controller
                 'start'       => $startTemp,
                 'end'         => $endTemp,
                 'originDate'  => $originDate,
+                'extendedProps'  => $extendedProps,
                 'location'    => "",
+                'type' => $eventTypes[$event->type_id]['name'],
                 'allDay'      => ($event->startTime === null) ? true : false,
-                'color'       => 'primary'];
+                'color'       => $eventTypes[$event->type_id]['color']];
         });
         //dd($eventsMapped);
         return response()->json([
                                     'data' => [
+                                        'types' => $eventTypes,
                                         'events' => $eventsMapped,],]);
     }
 
     public function store(Request $request)
     {
-        //        dd($request->all());
+//                dd($request->all());
+//        dd(request()->get('extendedProps'));
         $this->validate($request, [
             'title' => 'required', //            'email'      => 'required|unique:users,email,'.$id.'|email',
         ]);
@@ -117,7 +120,7 @@ class EventController extends Controller
         $user           = auth()->user();
         $event->user_id = $user->id;
 
-        $event->type = request()->get('type');
+//        $event->type = request()->get('type');
 
         if (request()->get('start')) {
             //dd($date);
@@ -131,6 +134,19 @@ class EventController extends Controller
                 $event->startTime = date('H:i:s', strtotime(request()->get('start')));
                 $event->endTime   = date('H:i:s', strtotime(request()->get('end')));
             }
+        }
+
+
+        if ($props = request()->get('extendedProps')) {
+
+
+            //$props['location'];
+            //$props['guests'];
+            //dd($date);
+            $event->type_id = $props['type'];
+            $event->description = $props['description'];
+
+
         }
 
         if ($date = request()->get('date')) {
@@ -314,5 +330,14 @@ class EventController extends Controller
                 'notgoing' => $event->notgoing()->get(),
                 'maybe'    => $event->maybegoing()->get(),]
         );
+    }
+
+    public function getTypes() {
+        $eventTypes = EventType::all();
+//        dd($eventTypes);
+
+
+        return response()->json([
+                                    'data' => $eventTypes,]);
     }
 }

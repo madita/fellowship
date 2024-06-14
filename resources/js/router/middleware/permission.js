@@ -25,6 +25,7 @@ export default function permission ({ to, from, next }){
                 return permissions.includes("manage-page")
 
             case "admin-posts":
+            case "admin-events":
                 return permissions.includes("manage-post")
 
             case "admin-announcements":

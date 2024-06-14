@@ -24,7 +24,19 @@ class CreateEventsTable extends Migration
             $table->time('endTime')->nullable();
             $table->date('startDate')->nullable();
             $table->date('endDate')->nullable();
-            $table->string('type')->nullable(); //gathering, meetup, rpg...story
+            $table->tinyInteger('allDat')->nullable();
+            $table->integer('type_id')->unsigned();
+//            $table->string('type')->nullable(); //gathering, meetup, rpg...story
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::create('event_type', function (Blueprint $table) {
+            $table->id();
+            $table->integer('event_id')->unsigned();
+            $table->string('name', 255)->nullable();
+            $table->string('color', 45)->nullable();
+            $table->text('options')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -59,6 +71,7 @@ class CreateEventsTable extends Migration
     {
         Schema::dropIfExists('event_guests');
         Schema::dropIfExists('event_details');
+        Schema::dropIfExists('event_type');
         Schema::dropIfExists('events');
     }
 }

@@ -199,7 +199,8 @@ export default {
         adminTags: 'Tags',
         adminTaxonomie: 'Taxonomie',
         adminTerms: 'Terms',
-        adminAnnouncement: 'Announcement'
+        adminAnnouncement: 'Announcement',
+        adminEvents: 'Event'
 
     },
     // Vuetify components translations

@@ -32,6 +32,24 @@ export const admin = [{
         ]
     },
     component: () => import(/* webpackChunkName: "admin-posts" */ '@/pages/admin/Post.vue')
+},{
+    path: '/admin/events',
+    name: 'admin-events',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-events" */ '@/pages/admin/Event.vue')
+},{
+    path: '/admin/event/types',
+    name: 'admin-event-types',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-event-types" */ '@/pages/admin/EventType.vue')
 }, {
     path: '/admin/users',
     name: 'admin-users',

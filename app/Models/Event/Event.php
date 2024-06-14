@@ -25,6 +25,11 @@ class Event extends Model
         return $this->hasOne("App\\Models\\Event\EventDetail");
     }
 
+    public function type()
+    {
+        return $this->hasOne("App\\Models\\Event\EventType");
+    }
+
     public function user()
     {
         return $this->belongsTo("App\\Models\User");

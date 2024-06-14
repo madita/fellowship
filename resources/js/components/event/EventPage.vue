@@ -1,6 +1,6 @@
 <script setup>
 
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { VCalendar } from 'vuetify/labs/VCalendar'
 import {getDate, format, formatDistanceToNow} from "date-fns";
@@ -50,6 +50,8 @@ const isEventHandlerSidebarActive = ref(false);
 const editMode = ref(false);
 const isLeftSidebarOpen = ref(true);
 const events = ref([]);
+const eventTypes = ref({});
+const selectedEventTypes = ref({});
 // const selectedEvent = ref();
 const selectedEvent = ref(structuredClone(blankEvent))
 const eventDetails =ref()
@@ -57,9 +59,22 @@ const startTime = ref();
 const value = ref(new Date());
 const type = ref('month');
 const types = ref(['month', 'week', 'day', 'list']);
-const initialTimeZone = 'Europe/Brussels';
+const initialTimeZone = 'Europe/Berlin';
 
+const checkAll = computed({
 
+    /*GET: Return boolean `true` => if length of options matches length of selected filters => Length matches when all events are selected
+  SET: If value is `true` => then add all available options in selected filters => Select All
+  Else if => all filters are selected (by checking length of both array) => Empty Selected array  => Deselect All
+  */
+    get: () => selectedEventTypes.value.length === eventTypes.value.length,
+    set: val => {
+        if (val)
+            selectedEventTypes.value = eventTypes.value.map(i => i.name)
+        else if (selectedEventTypes.value.length === eventTypes.value.length)
+            selectedEventTypes.value = []
+    },
+})
 
 const fetchEvents = async () => {
     try {
@@ -74,6 +89,26 @@ const fetchEvents = async () => {
     } catch (error) {
         console.error("Error fetching events:", error);
         return []; // Return an empty array in case of an error.
+    }
+};
+
+const fetchEventTypes = async () => {
+    // loadEventDetails.value = true;
+    // error.value = null; // Reset previous errors
+
+    try {
+        const response = await axios.get(`/api/events/types`);
+        return response.data.data;
+
+        // selectedEventTypes = respones.map
+
+        console.log('Event types loaded:', response);
+    } catch (err) {
+        console.error('Failed to load event types:', err);
+        // error.val
+
+    } finally {
+        //loadEventDetails.value = false; // Ensure loading state is reset
     }
 };
 
@@ -112,6 +147,7 @@ const createEvent = () => {
 const addEvent = async (addevent) => {
     // console.log('addevent', addevent)
     axios.post(`${endpoint}`, addevent).then(() => {
+        event.value = null
         // this.page = {title: "", body: ""};
         // this.message = "Page saved ..link"
     }).catch((error) => {
@@ -204,10 +240,28 @@ const  calendarOptions =  ref({
     selectMirror: true,
     dayMaxEvents: true,
     weekends: true,
-    timeZone: initialTimeZone,
+    timeZone: 'Europe/Berlin',
     events: events,
     eventClick: handleEventClick,
     dateClick: handleDateClick,
+    eventTimeFormat: {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    },
+    eventClassNames({ event: calendarEvent }) {
+        console.log('eventtypes', eventTypes.value)
+        console.log('calendarEvent', calendarEvent)
+        console.log('eventtype', eventTypes.value[calendarEvent.type_id])
+        const colorName = eventTypes.value[calendarEvent._def.type]
+        // const colorName = calendarsColor[calendarEvent._def.extendedProps.calendar]
+        // const colorName = 'green'
+
+        return [
+            // Background Color
+            `bg-light-${colorName} text-${colorName}`,
+        ]
+    }
     // eventClick: this.handleEventClick,
     // eventsSet: this.handleEvents
     /* you can update a remote database when these fire:
@@ -234,6 +288,7 @@ eventBus.on('openSidebarWithEvent', (event) => {
 onMounted(async () => {
     loading.value = true;
     events.value = await fetchEvents();
+    eventTypes.value = await fetchEventTypes();
     // console.log('events',events.value)
     loading.value = false;
     calendarApi.value = refCalendar.value.getApi()
@@ -299,18 +354,18 @@ onMounted(async () => {
                         </h5>
 
                         <div class="d-flex flex-column calendars-checkbox">
-<!--                            <VCheckbox-->
-<!--                                v-model="checkAll"-->
-<!--                                label="View all"-->
-<!--                            />-->
-<!--                            <VCheckbox-->
-<!--                                v-for="event in events"-->
-<!--                                :key="calendar.label"-->
-<!--                                v-model="store.selectedCalendars"-->
-<!--                                :value="calendar.label"-->
-<!--                                :color="calendar.color"-->
-<!--                                :label="calendar.label"-->
-<!--                            />-->
+                            <VCheckbox
+                                v-model="checkAll"
+                                label="View all"
+                            />
+                            <VCheckbox
+                                v-for="type in eventTypes"
+                                :key="type.name"
+                                v-model="selectedEventTypes"
+                                :value="type.name"
+                                :color="type.color"
+                                :label="type.name"
+                            />
                         </div>
                     </div>
                 </VNavigationDrawer>
@@ -328,6 +383,7 @@ onMounted(async () => {
         <CalendarEventHandler
             v-model:isDrawerOpen="isEventHandlerSidebarActive"
             :event="selectedEvent"
+            :eventTypes="eventTypes"
             :editMode="editMode"
             @add-event="addEvent"
             @update-event="updateEvent"
