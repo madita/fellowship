@@ -24,7 +24,7 @@ class CreateEventsTable extends Migration
             $table->time('endTime')->nullable();
             $table->date('startDate')->nullable();
             $table->date('endDate')->nullable();
-            $table->tinyInteger('allDat')->nullable();
+            $table->tinyInteger('allDay')->nullable();
             $table->integer('type_id')->unsigned();
 //            $table->string('type')->nullable(); //gathering, meetup, rpg...story
             $table->timestamps();

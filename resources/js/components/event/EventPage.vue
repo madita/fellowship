@@ -79,6 +79,7 @@ const checkAll = computed({
 const fetchEvents = async () => {
     try {
         const response = await axios.get('/api/events');
+        // console.log('events', response)
         const events = response.data.data.events.map(event => ({
             ...event,
             start: new Date(event.start),
@@ -171,7 +172,7 @@ const updateEvent = async (event) => {
         let foundIndex = events.value.findIndex(x => x.id == event.id);
         // let elementPos = events.value.map(function(x) {return x.id; }).indexOf(event.id);
         // let objectFound = array[elementPos];
-        console.log('foundIndex', foundIndex)
+        // console.log('foundIndex', foundIndex)
         events.value[foundIndex] = event;
     }).catch((error) => {
         console.log('error', error)
@@ -250,11 +251,7 @@ const  calendarOptions =  ref({
         hour12: false
     },
     eventClassNames({ event: calendarEvent }) {
-        console.log('eventtypes', eventTypes.value)
-        console.log('calendarEvent', calendarEvent)
-        console.log('eventtype', eventTypes.value[calendarEvent.type_id])
-        const colorName = eventTypes.value[calendarEvent._def.type]
-        // const colorName = calendarsColor[calendarEvent._def.extendedProps.calendar]
+        const colorName = calendarEvent._def.extendedProps.colorName
         // const colorName = 'green'
 
         return [
@@ -272,7 +269,6 @@ const  calendarOptions =  ref({
 });
 
 watch(isEventHandlerSidebarActive, val => {
-    console.log('watchval', val)
     if (!val) {
         editMode.value = true
         selectedEvent.value = structuredClone(blankEvent)

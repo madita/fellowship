@@ -70,20 +70,20 @@ class Event extends Model
 //        return count(array_filter($images));
 //    }
 
-    public function going()
-    {
-        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'going');
-    }
-
-    public function notgoing()
-    {
-        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'notgoing');
-    }
-
-    public function maybegoing()
-    {
-        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'maybe');
-    }
+//    public function going()
+//    {
+//        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'going');
+//    }
+//
+//    public function notgoing()
+//    {
+//        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'notgoing');
+//    }
+//
+//    public function maybegoing()
+//    {
+//        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'maybe');
+//    }
 
     public function answer($answer)
     {

@@ -66,7 +66,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     Route::get('/events/{event}/going/{answer}', "\App\Http\Controllers\EventController@isGoing");
     Route::get('/events/types', "\App\Http\Controllers\EventController@getTypes");
-    Route::post('/events/{event}/going', "\App\Http\Controllers\EventController@joinEvent");
+    Route::post('/events/{event}/answer', "\App\Http\Controllers\EventController@joinEvent");
     Route::resource('events', "\App\Http\Controllers\EventController");
 });
 

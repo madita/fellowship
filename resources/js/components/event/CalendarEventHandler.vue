@@ -7,13 +7,7 @@ import VueDatePicker from "@vuepic/vue-datepicker";
 import CustomDatePicker from "../common/CustomDatePicker.vue";
 import UserAvatar from "../common/UserAvatar.vue";
 import axios from "axios";
-// import { useCalendarStore } from './useCalendarStore'
-// import avatar1 from '@images/avatars/avatar-1.png'
-// import avatar2 from '@images/avatars/avatar-2.png'
-// import avatar3 from '@images/avatars/avatar-3.png'
-// import avatar5 from '@images/avatars/avatar-5.png'
-// import avatar6 from '@images/avatars/avatar-6.png'
-// import avatar7 from '@images/avatars/avatar-7.png'
+import { isProxy, toRaw } from 'vue';
 
 // 👉 store
 const props = defineProps({
@@ -49,8 +43,21 @@ const refForm = ref()
 
 // 👉 Event
 // const event = ref({})
-const event = ref(JSON.parse(JSON.stringify(props.event)))
+const event = ref(props.event)
+const localEventTypes = ref(JSON.parse(JSON.stringify(props.eventTypes)))
+// const localEventTypes = ref(props.eventTypes)
 const eventDetails = ref();
+
+if (isProxy(props.event)){
+    event.value = toRaw(props.event)
+}
+
+// if (isProxy(props.eventTypes)){
+//     localEventTypes.value = toRaw(props.eventTypes)
+// }
+
+// const eventType = ref()
+// x => x.id === 1)
 // const event = ref({...props.event})
 
 const resetEvent = () => {
@@ -62,11 +69,6 @@ const resetEvent = () => {
     }
     // console.log(eventDetails.value);
 
-    // event.value = props.event
-    //   console.log('props...',props.event)
-    //   console.log('event...',event.value)
-    //   console.log('eventttttttttttttt...',event.value.title)
-    // event.value = {}
     nextTick(() => {
         refForm.value?.resetValidation()
     })
@@ -74,6 +76,12 @@ const resetEvent = () => {
 
 watch(() => props.event, (newEvent) => {
     event.value = {...newEvent};
+}, {deep: true, immediate: true});
+
+watch(() => props.eventTypes, (eventTypes) => {
+    // ref(JSON.parse(JSON.stringify(props.eventTypes)))
+    localEventTypes.value = {...eventTypes};
+    // eventType.value = eventTypes.find(item => item.id === 1);
 }, {deep: true, immediate: true});
 
 // watch(() => props.editMode, (editMode) => {
@@ -85,16 +93,40 @@ watch(() => props.editMode, () => {
 
 watch(() => props.isDrawerOpen, resetEvent)
 
-// watch(() => props.isDrawerOpen, (newValue) => {
-//     if (newValue) {
-//         nextTick(() => {
-//             console.log('props.event', props.event)
-//             event.value = {...props.event};  // reset the event data when drawer opens
-//             console.log('watchevent', event.value)
-//             console.log('watcheventtttt', event.value.title)
-//             refForm.value?.resetValidation();
-//         });
-//     }
+const eventTypeItems = computed(() => {
+
+    return Object.values(localEventTypes.value);
+});
+
+const eventType = computed(() => {
+    let type = {}
+
+    // if (localEventTypes.value && localEventTypes.value.length > 0) {
+
+        type = Object.values(localEventTypes.value).find(item => item.name ===  event.value.extendedProps.type);
+        // do something with result
+    // }
+
+    // const type = props.eventTypes.value.find(x => x.id === 1)
+    // console.log('type', type)
+    // localEventTypes.value.
+    // localEventTypes.value.
+    // return 'test'
+    return type;
+});
+
+const eventTypeOptions = computed(() => {
+    let type = {}
+
+    type = Object.values(localEventTypes.value).find(item => item.name ===  event.value.extendedProps.type);
+    // console.log('111answers',JSON.parse(JSON.stringify(type.options)))
+
+    return JSON.parse(JSON.stringify(type.options));
+});
+
+// const maxDate = computed(() => {
+//     const month = getMonth(new Date()) + 1 > 9 ? getMonth(new Date()) + 1 : `0${getMonth(new Date()) + 1}`;
+//     return `${getYear(new Date())}-${month}-15T01:00:00Z`;
 // });
 
 const removeEvent = () => {
@@ -146,26 +178,26 @@ const onCancel = () => {
     })
 }
 
-const onYes = () => {
-    //Todo depending on type the awnser changes
-
-    joinEvent(event.value.id, 'going')
-    // Close drawer
-    // emit('update:isDrawerOpen', false)
-
-}
-
-// 👉 Form
-const onNo = () => {
-    // Close drawer
-    // emit('update:isDrawerOpen', false)
-    joinEvent(event.value.id, 'notgoing')
-}
-
-const onMaybe = () => {
-    // Close drawer
-    joinEvent(event.value.id, 'maybe')
-}
+// const onYes = () => {
+//     //Todo depending on type the awnser changes
+//
+//     joinEvent(event.value.id, 'going')
+//     // Close drawer
+//     // emit('update:isDrawerOpen', false)
+//
+// }
+//
+// // 👉 Form
+// const onNo = () => {
+//     // Close drawer
+//     // emit('update:isDrawerOpen', false)
+//     joinEvent(event.value.id, 'notgoing')
+// }
+//
+// const onMaybe = () => {
+//     // Close drawer
+//     joinEvent(event.value.id, 'maybe')
+// }
 
 const  getIsGoing = (answer) => {
     //event.value.id > 0
@@ -187,9 +219,13 @@ const  getIsGoing = (answer) => {
     // return eventDetails.value.isGoing !== undefined && eventDetails.value.isGoing.type === answer
 }
 
-const joinEvent = (eventId, answer) => {
+const joinEvent = (answer) => {
+    // console.log('join', answer)
     // console.log('joinEvent', eventId, answer)
-    eventDetails.value.isGoing.type = answer;
+    //todo more options
+    const eventId = event.value.id;
+
+    // eventDetails.value.isGoing['type'] = answer;
     //todogetfulldate..days
     const userData = {
         answer: answer,
@@ -197,7 +233,7 @@ const joinEvent = (eventId, answer) => {
         days: '3'
     }
 
-    axios.post(`/api/events/${eventId}/going`, userData).then(() => {
+    axios.post(`/api/events/${eventId}/answer`, userData).then(() => {
         // this.page = {title: "", body: ""};
         // this.message = "Page saved ..link"
     }).catch((error) => {
@@ -208,20 +244,6 @@ const joinEvent = (eventId, answer) => {
     })
 }
 
-// const getEvent = async (eventId) => {
-//     try {
-//         // loadEventDetails.value = true;
-//         const response = await axios.get(`/api/events/${eventId}`);
-//         const event = response.data
-//         // loadEventDetails.value = false;
-//         // console.log('fetchevents',events)
-//         return event; // Returns the processed events array.
-//     } catch (error) {
-//         console.error("Error fetching event:", error);
-//         return []; // Return an empty array in case of an error.
-//     }
-// };
-
 const getEvent = async (eventId) => {
     loadEventDetails.value = true;
     // error.value = null; // Reset previous errors
@@ -229,30 +251,16 @@ const getEvent = async (eventId) => {
     try {
         const response = await axios.get(`/api/events/${eventId}`);
         eventDetails.value = response.data; // Assuming the data is directly in the response
-        console.log('Event details loaded:', eventDetails.value);
+
     } catch (err) {
         console.error('Failed to load event details:', err);
+        loadEventDetails.value = false;
         // error.value = 'Failed to load event details'; // Store error message
         eventDetails.value = null; // Reset event details on error
     } finally {
         loadEventDetails.value = false; // Ensure loading state is reset
     }
 };
-//
-// const getEvent = (eventId) => {
-//     loadEventDetails.value = true;
-//
-//     return axios.get(`/api/events/${eventId}`).then((response) => {
-//         console.log(response)
-//         eventDetails.value = response.data
-//         loadEventDetails.value = false;
-//         console.log('eventDetails.value',eventDetails.value.going)
-//         // this.eventData = response.data.data;
-//         // this.event = response.data.data.event;
-//
-//         // this.isLoading = false
-//     });
-// }
 
 const startDateTimePickerConfig = computed(() => {
     const config = {
@@ -401,13 +409,12 @@ const rules = {
                                     placeholder="Title"
                                 />
                             </VCol>
-
-                            <VCol cols="12">
+                            <VCol cols="12" v-if="eventTypeItems.length > 0">
                                 <VSelect
                                     v-model="event.extendedProps.type"
                                     label="Type"
                                     placeholder="Select Event Label"
-                                    :items="eventTypes"
+                                    :items="eventTypeItems"
                                     :item-title="item => item.name"
                                     :item-value="item => item.id"
                                 >
@@ -569,32 +576,53 @@ const rules = {
                         <VRow>
                             <!-- 👉 Title -->
                             <VCol cols="12">
+<!--                                {{ // eventTypes }}-->
+
+<!--                              <template if="eventTypes">  {{// eventTypes[event.id].options}}</template>-->
+<!--{{localEventTypes}}gnaa-->
+
+<!--{{// eventType.options}}-->
                                 <div>Are you coming?</div>
-                                <VBtn
-                                    color="primary"
-                                    class="me-3"
-                                    :disabled="getIsGoing('going')"
-                                    @click="onYes"
-                                >
-                                    Yes
-                                </VBtn>
-                                <VBtn
-                                    variant="tonal"
-                                    color="primary"
-                                    class="me-3"
-                                    :disabled="getIsGoing('notgoing')"
-                                    @click="onNo"
-                                >
-                                    No
-                                </VBtn>
-                                <VBtn
-                                    variant="outlined"
-                                    color="secondary"
-                                    :disabled="getIsGoing('maybe')"
-                                    @click="onMaybe"
-                                >
-                                    Maybe
-                                </VBtn>
+                                <template v-if="eventType">
+
+<!--                                    {{eventTypeOptions}}-->
+
+
+                                    <VBtn v-for="(answer, value, index) in eventTypeOptions.answers"
+                                          :key="`answer-${value}`"
+                                          class="me-3"
+
+                                          @click="joinEvent(value)">
+                                        {{answer}}
+
+                                    </VBtn>
+                                </template>
+
+<!--                                <VBtn-->
+<!--                                    color="primary"-->
+<!--                                    class="me-3"-->
+<!--                                    :disabled="getIsGoing('going')"-->
+<!--                                    @click="onYes"-->
+<!--                                >-->
+<!--                                    Yes-->
+<!--                                </VBtn>-->
+<!--                                <VBtn-->
+<!--                                    variant="tonal"-->
+<!--                                    color="primary"-->
+<!--                                    class="me-3"-->
+<!--                                    :disabled="getIsGoing('notgoing')"-->
+<!--                                    @click="onNo"-->
+<!--                                >-->
+<!--                                    No-->
+<!--                                </VBtn>-->
+<!--                                <VBtn-->
+<!--                                    variant="outlined"-->
+<!--                                    color="secondary"-->
+<!--                                    :disabled="getIsGoing('maybe')"-->
+<!--                                    @click="onMaybe"-->
+<!--                                >-->
+<!--                                    Maybe-->
+<!--                                </VBtn>-->
                             </VCol>
 
                             <VCol cols="12">
@@ -621,14 +649,14 @@ const rules = {
 <!--                                    <div @click="getEvent(event.id)">Load Event Details</div>-->
                                     <div v-if="loadEventDetails">Loading...</div>
                                     <div v-else>
+<!--                                        {{ eventDetails}}-->
 <!--                                        {{ eventDetails.notgoing }}-->
+                                        <template v-for="(answer, value) in eventDetails.answers">
 
-                                <v-list-subheader>Is Going ({{ eventDetails.going.length }})</v-list-subheader>
-                                <user-avatar v-for="user in eventDetails.going" :key="`going-${user.id}`" :user="user"></user-avatar>
-                                <v-list-subheader>Maybe Going ({{ eventDetails.maybe.length }})</v-list-subheader>
-                                <user-avatar v-for="user in eventDetails.maybe" :key="`maybe-${user.id}`" :user="user"></user-avatar>
-                                <v-list-subheader>Not Going ({{ eventDetails.notgoing.length }})</v-list-subheader>
-                                <user-avatar v-for="user in eventDetails.notgoing" :key="`notgoing-${user.id}`" :user="user"></user-avatar>
+                                            <v-list-subheader>{{value}} ({{ answer.length }})</v-list-subheader>
+                                            <user-avatar v-for="user in answer" :key="`going-${user.id}`" :user="user"></user-avatar>
+                                        </template>
+
                                     </div>
                             </VCol>
                         </VRow>

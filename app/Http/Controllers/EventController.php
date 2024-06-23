@@ -60,9 +60,9 @@ class EventController extends Controller
             $start = (new DateTime($startTemp))->format(DateTime::ATOM);
             $end   = (new DateTime($endTemp))->format(DateTime::ATOM);
 
-            $extendedProps = [
-                'calendar' => 'Treffen'
-            ];
+//            $extendedProps = [
+//                'calendar' => 'Treffen'
+//            ];
 
 //            $eventType = $event->type()->first();
 //            dd($eventTypes[$event->type_id]['color']);
@@ -82,11 +82,13 @@ class EventController extends Controller
                 'start'       => $startTemp,
                 'end'         => $endTemp,
                 'originDate'  => $originDate,
-                'extendedProps'  => $extendedProps,
+//                'extendedProps'  => $extendedProps,
                 'location'    => "",
                 'type' => $eventTypes[$event->type_id]['name'],
                 'allDay'      => ($event->startTime === null) ? true : false,
+                'colorName'      => $eventTypes[$event->type_id]['color'],
                 'color'       => $eventTypes[$event->type_id]['color']];
+//                'colorName'       => $eventTypes[$event->type_id]['color']];
         });
         //dd($eventsMapped);
         return response()->json([
@@ -189,14 +191,22 @@ class EventController extends Controller
 
         //TODO type of event
         $answers = ['going', 'notgoing', 'maybe'];
+//        $eventType = $event->type->first();
+
+        $eventType =  EventType::find($event->type_id);
+
+
+        $options = json_decode($eventType->options);
+        $answers = [];
+        foreach ($options->answers as $value => $answer) {
+            $answers[$value] = $event->answer($value)->get();
+        }
 
         $data = [
             'event'   => $event,
-            'isGoing' => $isGoing,];
-
-        foreach ($answers as $answer) {
-            $data[$answer] = $event->answer($answer)->get();
-        }
+            'isGoing' => $isGoing,
+            'answers' => $answers,
+            ];
 
 
         return response()->json($data);
@@ -333,11 +343,17 @@ class EventController extends Controller
     }
 
     public function getTypes() {
-        $eventTypes = EventType::all();
+        $eventTypes = EventType::all()->keyBy('id');
+        $eventTypeCollection = collect($eventTypes)->map(function (EventType $type)  {
+            $modified = clone $type; // now it's safe to update
+            $modified->options = json_decode($modified->options);
+
+            return $modified;
+        });
 //        dd($eventTypes);
 
 
         return response()->json([
-                                    'data' => $eventTypes,]);
+                                    'data' => $eventTypeCollection,]);
     }
 }
