@@ -85,6 +85,7 @@ class EventController extends Controller
 //                'extendedProps'  => $extendedProps,
                 'location'    => "",
                 'type' => $eventTypes[$event->type_id]['name'],
+                'type_id' => $event->type_id,
                 'allDay'      => ($event->startTime === null) ? true : false,
                 'colorName'      => $eventTypes[$event->type_id]['color'],
                 'color'       => $eventTypes[$event->type_id]['color']];
@@ -142,10 +143,7 @@ class EventController extends Controller
         if ($props = request()->get('extendedProps')) {
 
 
-            //$props['location'];
-            //$props['guests'];
-            //dd($date);
-            $event->type_id = $props['type'];
+            $event->type_id = $props['type_id'];
             $event->description = $props['description'];
 
 
@@ -189,9 +187,6 @@ class EventController extends Controller
             $isGoing = DB::table('event_guests')->where('event_id', '=', $event->id)->where('user_id', '=', $user->id)->first();
         }
 
-        //TODO type of event
-        $answers = ['going', 'notgoing', 'maybe'];
-//        $eventType = $event->type->first();
 
         $eventType =  EventType::find($event->type_id);
 
@@ -241,7 +236,15 @@ class EventController extends Controller
         $user           = auth()->user();
         $event->user_id = $user->id;
 
-        $event->type = request()->get('type');
+        if($extendedProps = request()->get('extendedProps')) {
+//            dd($extendedProps);
+            $event->type_id = $extendedProps['type_id'];
+        }
+
+
+
+
+//        $event->type = request()->get('type');
 
         if (request()->get('start')) {
             //dd($date);
@@ -311,9 +314,10 @@ class EventController extends Controller
         //        return response()->json($user->eventGuest()->find($event->id)->pivot);
         return response()->json(
             [
-                'going'    => $event->going()->get(),
-                'notgoing' => $event->notgoing()->get(),
-                'maybe'    => $event->maybegoing()->get(),]
+//                'going'    => $event->going()->get(),
+//                'notgoing' => $event->notgoing()->get(),
+//                'maybe'    => $event->maybegoing()->get(),
+        ]
         );
     }
 
@@ -336,9 +340,8 @@ class EventController extends Controller
         //        return response()->json($user->eventGuest()->find($event->id)->pivot);
         return response()->json(
             [
-                'going'    => $event->going()->get(),
-                'notgoing' => $event->notgoing()->get(),
-                'maybe'    => $event->maybegoing()->get(),]
+                'message' => 'joining_'.$answer
+                ]
         );
     }
 

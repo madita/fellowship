@@ -18,6 +18,7 @@ import listPlugin from '@fullcalendar/list'
 
 import customViewPlugin from './custom-list-view.js';
 import CalendarEventHandler from "./CalendarEventHandler.vue";
+import {useCalendarStore} from '../../store/calendarStore.js'
 // import CalendarEventHandlerForm from "./CalendarEventHandlerForm.vue";
 import VueDatePicker from "@vuepic/vue-datepicker";
 
@@ -42,16 +43,20 @@ const blankEvent = {
 }
 const endpoint = '/api/events';
 
+const calendarStore = useCalendarStore();
+// const chatStore = useChatStore();
+
 
 const calendarApi = ref(null)
 const refCalendar = ref()
 const loading = ref(false);
+const loadEventTypes = ref(true);
 const isEventHandlerSidebarActive = ref(false);
 const editMode = ref(false);
 const isLeftSidebarOpen = ref(true);
 const events = ref([]);
-const eventTypes = ref({});
-const selectedEventTypes = ref({});
+const eventTypes = ref([]);
+const selectedEventTypes = ref([]);
 // const selectedEvent = ref();
 const selectedEvent = ref(structuredClone(blankEvent))
 const eventDetails =ref()
@@ -63,19 +68,33 @@ const initialTimeZone = 'Europe/Berlin';
 
 const checkAll = computed({
 
+
     /*GET: Return boolean `true` => if length of options matches length of selected filters => Length matches when all events are selected
   SET: If value is `true` => then add all available options in selected filters => Select All
   Else if => all filters are selected (by checking length of both array) => Empty Selected array  => Deselect All
   */
-    get: () => selectedEventTypes.value.length === eventTypes.value.length,
+    get: () => calendarStore.selectedEventTypes.length === Object.values(calendarStore.eventTypes).length,
     set: val => {
         if (val)
-            selectedEventTypes.value = eventTypes.value.map(i => i.name)
-        else if (selectedEventTypes.value.length === eventTypes.value.length)
-            selectedEventTypes.value = []
+            calendarStore.selectedEventTypes = Object.values(calendarStore.eventTypes).map(i => i.name)
+        else if (calendarStore.selectedEventTypes.length === Object.values(calendarStore.eventTypes).length)
+            calendarStore.selectedEventTypes = []
     },
 })
 
+const filterEvents = computed(() => {
+
+
+    if(calendarStore.selectedEventTypes.length === Object.values(calendarStore.eventTypes).length) {
+        return events.value
+    }
+    return events.value.filter((event) => {
+        // return calendarStore.selectedEventTypes.indexOf(event.type)
+        console.log('eventtype',event.type, calendarStore.selectedEventTypes.indexOf(event.type))
+        return calendarStore.selectedEventTypes.indexOf(event.type) !== -1
+    })
+
+})
 const fetchEvents = async () => {
     try {
         const response = await axios.get('/api/events');
@@ -97,20 +116,27 @@ const fetchEventTypes = async () => {
     // loadEventDetails.value = true;
     // error.value = null; // Reset previous errors
 
-    try {
-        const response = await axios.get(`/api/events/types`);
-        return response.data.data;
 
-        // selectedEventTypes = respones.map
+    axios.get('/api/events/types').then((response) => {
+        // messages = response.data;
+        calendarStore.setEventTypes(response.data.data)
+        //this.messages = chatStore.messages
+    });
 
-        console.log('Event types loaded:', response);
-    } catch (err) {
-        console.error('Failed to load event types:', err);
-        // error.val
-
-    } finally {
-        //loadEventDetails.value = false; // Ensure loading state is reset
-    }
+    // try {
+    //     const response = await axios.get(`/api/events/types`);
+    //     return response.data.data;
+    //
+    //     // selectedEventTypes = respones.map
+    //
+    //     console.log('Event types loaded:', response);
+    // } catch (err) {
+    //     console.error('Failed to load event types:', err);
+    //     // error.val
+    //
+    // } finally {
+    //     //loadEventDetails.value = false; // Ensure loading state is reset
+    // }
 };
 
 const getEvent = async (eventId) => {
@@ -127,18 +153,6 @@ const getEvent = async (eventId) => {
     }
 };
 
-// const getEvent = (eventId) => {
-//
-//     return axios.get(`/api/events/${eventId}`).then((response) => {
-//         console.log(response)
-//         return response.data
-//         // this.eventData = response.data.data;
-//         // this.event = response.data.data.event;
-//
-//         // this.isLoading = false
-//     });
-// }
-//
 const createEvent = () => {
     isEventHandlerSidebarActive.value = true
     editMode.value = true
@@ -183,14 +197,16 @@ const updateEvent = async (event) => {
 }
 
 const removeEvent = async (eventId) => {
-    console.log('removedevent', eventId)
+    // console.log('removedevent', eventId)
     return await await axios.get(`/apps/calendar/${eventId}`, {
         method: 'DELETE',
     })
 }
 
 const jumpToDate = currentDate => {
-    calendarApi.value?.gotoDate(new Date(currentDate))
+
+    const calendarApi = refCalendar.value.getApi();
+    calendarApi.gotoDate(new Date(currentDate));
 }
 
 
@@ -208,7 +224,7 @@ const handleEventClick = (info) => {
 }
 
 const handleDateClick = (info) => {
-    console.log('info', info)
+    // console.log('info', info)
     selectedEvent.value = structuredClone(blankEvent)
     editMode.value = true
     selectedEvent.value.start = info.date;
@@ -242,7 +258,7 @@ const  calendarOptions =  ref({
     dayMaxEvents: true,
     weekends: true,
     timeZone: 'Europe/Berlin',
-    events: events,
+    events: filterEvents,
     eventClick: handleEventClick,
     dateClick: handleDateClick,
     eventTimeFormat: {
@@ -276,18 +292,37 @@ watch(isEventHandlerSidebarActive, val => {
 
 })
 
+// watch(refCalendar, ref => {
+//     console.log('refCalendar', refCalendar, ref)
+//     calendarApi.value = ref.value.getApi()
+// })
+
+// watch(selectedEventTypes, val => {
+//     console.log(selectedEventTypes.value.length, eventTypes.value.length,)
+//     console.log('selectedeventypes', selectedEventTypes, val)
+// })
+
+// watch(eventTypes, val => {
+//     console.log('typeswatch', val)
+//     eventTypes.value= val
+// })
+
 eventBus.on('openSidebarWithEvent', (event) => {
     selectedEvent.value = event;
     isEventHandlerSidebarActive.value = true;
 });
 
 onMounted(async () => {
+    calendarApi.value = refCalendar.value.getApi()
     loading.value = true;
     events.value = await fetchEvents();
-    eventTypes.value = await fetchEventTypes();
+    await fetchEventTypes();
+    // eventTypes.value = await fetchEventTypes();
+    // console.log('eventTypes',eventTypes)
     // console.log('events',events.value)
     loading.value = false;
-    calendarApi.value = refCalendar.value.getApi()
+
+    // calendarApi.value = refCalendar.value.getApi()
 });
 
 </script>
@@ -296,7 +331,7 @@ onMounted(async () => {
     <v-container>
         <VCard>
             <!-- `z-index: 0` Allows overlapping vertical nav on calendar -->
-            <v-layout style="z-index: 0;">
+            <v-layout style="z-index: 0;" v-if="!loading">
 <!--                <EventDatePicker v-model="startdate"></EventDatePicker>-->
                 <!-- 👉 Navigation drawer -->
 
@@ -355,9 +390,9 @@ onMounted(async () => {
                                 label="View all"
                             />
                             <VCheckbox
-                                v-for="type in eventTypes"
+                                v-for="type in calendarStore.eventTypes"
                                 :key="type.name"
-                                v-model="selectedEventTypes"
+                                v-model="calendarStore.selectedEventTypes"
                                 :value="type.name"
                                 :color="type.color"
                                 :label="type.name"
@@ -379,7 +414,6 @@ onMounted(async () => {
         <CalendarEventHandler
             v-model:isDrawerOpen="isEventHandlerSidebarActive"
             :event="selectedEvent"
-            :eventTypes="eventTypes"
             :editMode="editMode"
             @add-event="addEvent"
             @update-event="updateEvent"

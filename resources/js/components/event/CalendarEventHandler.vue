@@ -7,6 +7,7 @@ import VueDatePicker from "@vuepic/vue-datepicker";
 import CustomDatePicker from "../common/CustomDatePicker.vue";
 import UserAvatar from "../common/UserAvatar.vue";
 import axios from "axios";
+import {useCalendarStore} from '../../store/calendarStore.js'
 import { isProxy, toRaw } from 'vue';
 
 // 👉 store
@@ -20,11 +21,14 @@ const props = defineProps({
         required: true,
     },
     event: {},
-    eventTypes: {},
 })
 
 const isFocused = ref(true)
 const loadEventDetails = ref(true)
+const eventTypeSelect = ref()
+const calendarStore = useCalendarStore();
+
+
 
 const emit = defineEmits([
     'update:isDrawerOpen',
@@ -44,7 +48,8 @@ const refForm = ref()
 // 👉 Event
 // const event = ref({})
 const event = ref(props.event)
-const localEventTypes = ref(JSON.parse(JSON.stringify(props.eventTypes)))
+const localEventTypes = computed(() =>calendarStore.eventTypes)
+
 // const localEventTypes = ref(props.eventTypes)
 const eventDetails = ref();
 
@@ -66,6 +71,7 @@ const resetEvent = () => {
     isEndDateValid.value = true;
     if(event.value.id > 0) {
         getEvent(event.value.id);
+        //eventTypeSelect.value = Object.values(localEventTypes.value).find(item => item.id ===  event.value.type_id)
     }
     // console.log(eventDetails.value);
 
@@ -76,13 +82,19 @@ const resetEvent = () => {
 
 watch(() => props.event, (newEvent) => {
     event.value = {...newEvent};
+    eventTypeSelect.value = event.value.type_id
+    // eventTypeSelect.value = Object.values(localEventTypes.value).find(item => item.id ===  event.value.type_id)
 }, {deep: true, immediate: true});
 
-watch(() => props.eventTypes, (eventTypes) => {
-    // ref(JSON.parse(JSON.stringify(props.eventTypes)))
-    localEventTypes.value = {...eventTypes};
-    // eventType.value = eventTypes.find(item => item.id === 1);
-}, {deep: true, immediate: true});
+// watch(() => props.eventTypes, (eventTypes) => {
+//     // ref(JSON.parse(JSON.stringify(props.eventTypes)))
+//     localEventTypes.value = {...eventTypes};
+//     // eventType.value = eventTypes.find(item => item.id === 1);
+// }, {deep: true, immediate: true});
+
+// watch(() => eventTypeSelect, (type) => {
+//     console.log('watchtype',type)
+// }, {deep: true, immediate: true});
 
 // watch(() => props.editMode, (editMode) => {
 //     localEditMode.value = editMode;
@@ -97,7 +109,7 @@ const eventTypeItems = computed(() => {
 
     return Object.values(localEventTypes.value);
 });
-
+// evenType =
 const eventType = computed(() => {
     let type = {}
 
@@ -114,6 +126,17 @@ const eventType = computed(() => {
     // return 'test'
     return type;
 });
+
+//
+// const eventTypeSelect = computed(() => {
+//     let type = {}
+//
+//
+//     type = eventTypeItems.value.find(item => item.id ===  event.value.type_id)
+//     // type = Object.values(localEventTypes.value).find(item => item.id ===  event.value.type_id);
+//
+//     return type;
+// });
 
 const eventTypeOptions = computed(() => {
     let type = {}
@@ -251,6 +274,11 @@ const getEvent = async (eventId) => {
     try {
         const response = await axios.get(`/api/events/${eventId}`);
         eventDetails.value = response.data; // Assuming the data is directly in the response
+        //event.extendedProps.type = eventDetails.type_id
+
+        eventTypeSelect.value = eventDetails.value.type_id
+        // console.log('eventTypeSelect',eventTypeSelect)
+        // console.log('eventDetails',eventDetails)
 
     } catch (err) {
         console.error('Failed to load event details:', err);
@@ -374,10 +402,8 @@ const rules = {
         </div>
         <div class="pa-2 d-flex align-center" v-else>
             <h5 class="text-h5 me-3">
-
                 {{ event.title }}
             </h5>
-
 
             <VSpacer/>
             <slot name="beforeClose"/>
@@ -410,8 +436,9 @@ const rules = {
                                 />
                             </VCol>
                             <VCol cols="12" v-if="eventTypeItems.length > 0">
+
                                 <VSelect
-                                    v-model="event.extendedProps.type"
+                                    v-model="event.extendedProps.type_id"
                                     label="Type"
                                     placeholder="Select Event Label"
                                     :items="eventTypeItems"

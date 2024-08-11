@@ -33,7 +33,7 @@ export default function useAnimate() {
             if (typeof callback === 'function') callback()
         }
 
-        node.addEventListener('animationend', handleAnimationEnd)
+        node.addEventListener('animationend', handleAnimationEnd, {passive: true})
     }
 
     return { animate }
