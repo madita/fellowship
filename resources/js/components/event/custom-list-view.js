@@ -67,7 +67,7 @@ const CustomViewConfig = {
                 html += `<!--<li class="event-day">${new Date(date).toDateString()} - ${eventsByDate[date].length} events</li><ul class="event-list">-->`;
                 html += `<div class="event-list-custom fc-list-day-cushion fc-cell-shaded"><a id="fc-dom-10" class="fc-list-day-text" aria-label="${new Date(date).toDateString()}">${new Date(date).toDateString()}</a><a aria-hidden="true" class="fc-list-day-side-text" aria-label="${new Date(date).toDateString()}">${new Date(date).toLocaleDateString(i18n.locale, { weekday: 'long' })}</a></div><ul class="event-list-custom">`;
                 eventsByDate[date].forEach(event => {
-                    // console.log('event',event)
+                    console.log('event',event)
 
                     const startTime = new Date(event.def.extendedProps.originDate.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const endTime = new Date(event.def.extendedProps.originDate.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -83,7 +83,7 @@ const CustomViewConfig = {
                         }
                         // html += `<span class="fc-list-event-time">${startDate}</span>`;
                     }
-                    html += `<span class="fc-list-event-dot"></span>`;
+                    html += `<span class="fc-list-event-dot" style="border-color: ${event.def.extendedProps.colorName};"></span>`;
                     html += `<span class="fc-list-event-graphic"></span><span class="fc-list-event-title"><a data-id="${event.id}" class="event-link fc-event fc-event-draggable fc-event-start">${event.title}</a></span></li>`;
                     // html += `<li>${event.title} (${startDate} to ${endDate})</li>`;
                 });
@@ -105,12 +105,12 @@ const CustomViewConfig = {
 
     didMount: function(props) {
         // console.log('custom view now loaded');
-        console.log('customviewprops',props)
+        // console.log('customviewprops',props)
         const eventElements = props.el.querySelectorAll('.event-link');
         eventElements.forEach(element => {
             element.addEventListener('click', function() {
                 const eventId = this.getAttribute('data-id');
-                console.log('args', props)
+                // console.log('args', props)
                 // console.log('element', element)
                 const event = {...props.eventStore.defs[eventId]};
 
@@ -119,7 +119,7 @@ const CustomViewConfig = {
                     event.start = event.extendedProps.originDate.start
                     event.end = event.extendedProps.originDate.end
 
-                    console.log('customevent',eventId,event)
+                    // console.log('customevent',eventId,event)
                     // emit('update:isDrawerOpen', true)
                     eventBus.emit('openSidebarWithEvent', event);
                 }
@@ -128,7 +128,7 @@ const CustomViewConfig = {
     },
 
     willUnmount: function(props) {
-        console.log('about to change awa?y from custom view');
+        // console.log('about to change awa?y from custom view');
         // Cleanup: remove event listeners if necessary
         const eventElements = props.el.querySelectorAll('.event-link');
         eventElements.forEach(element => {
