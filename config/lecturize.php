@@ -1,8 +1,9 @@
 <?php
+
 return [
 
     /**
-     * Taxonomies
+     * Taxonomies.
      */
     'taxonomies' => [
 

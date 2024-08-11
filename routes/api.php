@@ -50,7 +50,6 @@ Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
 Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
 Route::get('/tag/{term}/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTermInfo');
 
-
 Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
 Route::get('/pages/{page}/history', '\App\Http\Controllers\PageController@history');
 //Route::get('/pages/tag/{term}', '\App\Http\Controllers\PageController@showWithTerm');
@@ -88,23 +87,23 @@ Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function (
 
 Route::post('/login', function (Request $request) {
     $data = $request->validate([
-                                   'email' => 'required|email',
-                                   'password' => 'required'
-                               ]);
+        'email'    => 'required|email',
+        'password' => 'required',
+    ]);
 
     $user = User::where('email', $request->email)->first();
 
     if (!$user || !Hash::check($request->password, $user->password)) {
         return response([
-                            'message' => ['These credentials do not match our records.']
-                        ], 404);
+            'message' => ['These credentials do not match our records.'],
+        ], 404);
     }
 
     $token = $user->createToken('my-app-token')->plainTextToken;
 
     $response = [
-        'user' => $user,
-        'token' => $token
+        'user'  => $user,
+        'token' => $token,
     ];
 
     return response($response, 201);
