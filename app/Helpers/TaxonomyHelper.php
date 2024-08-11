@@ -69,7 +69,7 @@ class TaxonomyHelper
                 $model = new Taxonomy();
                 $model->taxonomy = $taxonomy;
                 $model->term_id = $term_id;
-                if($parent > 0) {
+                if ($parent > 0) {
                     $model->parent_id = $parent;
                 }
 

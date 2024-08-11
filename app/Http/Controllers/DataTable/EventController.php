@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Models\Event\Event;
-
 //use App\Models\Tag\Taxonomy;
 use Illuminate\Http\Request;
 
@@ -18,7 +17,7 @@ class EventController extends DataTableController
 
     public function store(Request $request)
     {
-                dd($request);
+        dd($request);
 //        $event = auth()->user()->event()->create($request->only($this->getUpdatableColumns()));
 
 //        if ($request->get('parent')) {
@@ -39,7 +38,6 @@ class EventController extends DataTableController
 //        if ($request->get('terms')) {
 //            $event->addCategories($request->get('terms'), 'tags');
 //        }
-
     }
 
     public function update($id, Request $request)
@@ -71,7 +69,6 @@ class EventController extends DataTableController
 //        if ($request->get('terms')) {
 //            $event->addCategories($request->get('terms'), 'tags');
 //        }
-
     }
 
     public function getUpdatableColumns()
@@ -82,14 +79,14 @@ class EventController extends DataTableController
             'startDate',
             'startTime',
             'endDate',
-            'endTime',];
+            'endTime', ];
     }
 
     public function getCustomInputFields()
     {
         return [
             'description'      => 'wysiwyg',
-            ];
+        ];
     }
 
     public function getDisplayableColumns()
@@ -100,8 +97,6 @@ class EventController extends DataTableController
             'description',
             'slug',
             'created_at',
-            'updated_at',];
+            'updated_at', ];
     }
-
-
 }
