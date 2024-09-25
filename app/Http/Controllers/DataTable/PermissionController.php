@@ -41,6 +41,7 @@ class PermissionController extends DataTableController
 //            dd($rolePermissions);
 //            Permission::findById()
         }
+
 //        $roles = Role::with('permissions')->get();
         return response()->json([
             'data' => 'done',

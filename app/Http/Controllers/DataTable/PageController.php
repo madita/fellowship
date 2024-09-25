@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Models\Page;
-
 //use App\Models\Tag\Taxonomy;
 use Illuminate\Http\Request;
 
@@ -35,11 +34,9 @@ class PageController extends DataTableController
             $page->addCategories($request->get('categories'), $taxonomy);
         }
 
-
         if ($request->get('terms')) {
             $page->addCategories($request->get('terms'), 'tags');
         }
-
     }
 
     public function update($id, Request $request)
@@ -51,7 +48,6 @@ class PageController extends DataTableController
         //
         if ($request->get('parent')) {
             $parent = $request->get('parent');
-
 
             $page->parent_id = $parent['id'];
             $page->update();
@@ -71,7 +67,6 @@ class PageController extends DataTableController
         if ($request->get('terms')) {
             $page->addCategories($request->get('terms'), 'tags');
         }
-
     }
 
     public function getUpdatableColumns()
@@ -80,7 +75,7 @@ class PageController extends DataTableController
             'title',
             'content',
             'published',
-            'sign_in_only',];
+            'sign_in_only', ];
     }
 
     public function getCustomInputFields()
@@ -88,7 +83,7 @@ class PageController extends DataTableController
         return [
             'content'      => 'wysiwyg',
             'published'    => 'checkbox',
-            'sign_in_only' => 'checkbox',];
+            'sign_in_only' => 'checkbox', ];
     }
 
     public function getDisplayableColumns()
@@ -103,8 +98,6 @@ class PageController extends DataTableController
             'user_id',
             'parent_id',
             'created_at',
-            'updated_at',];
+            'updated_at', ];
     }
-
-
 }

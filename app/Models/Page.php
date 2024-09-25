@@ -3,14 +3,14 @@
 namespace App\Models;
 
 use App\Traits\HasTaxonomies;
+use App\Traits\Revisionable;
 use App\Traits\Wikiable;
-use Lecturize\Taxonomies\Contracts\CanHaveCategories;
 //use Lecturize\Taxonomies\Traits\HasCategories;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
+use Lecturize\Taxonomies\Contracts\CanHaveCategories;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use App\Traits\Revisionable;
 
 class Page extends Model implements HasMedia, CanHaveCategories
 {
@@ -47,7 +47,7 @@ class Page extends Model implements HasMedia, CanHaveCategories
 
     protected $wikiable = [
         'title' => 'title',
-        'slug' => 'slug'
+        'slug'  => 'slug',
     ];
 
     protected $revisionable = [
@@ -82,7 +82,7 @@ class Page extends Model implements HasMedia, CanHaveCategories
 
         $parent = $this->parent;
 
-        while(!is_null($parent)) {
+        while (!is_null($parent)) {
             $parents->push($parent);
             $parent = $parent->parent;
         }

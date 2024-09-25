@@ -3,11 +3,10 @@
 namespace App\Models\Tag;
 
 use App\Models\Page;
-use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
-use Lecturize\Taxonomies\Models\Taxonomy as TaxonomyBase;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
+use Lecturize\Taxonomies\Models\Taxonomy as TaxonomyBase;
 
 class Taxonomy extends TaxonomyBase
 {
@@ -124,7 +123,6 @@ class Taxonomy extends TaxonomyBase
             ->withTimestamps();
     }
 
-
     /**
      * Scope taxonomies.
      *
@@ -173,10 +171,11 @@ class Taxonomy extends TaxonomyBase
     /**
      * Creates terms and taxonomies.
      *
-     * @param  string|array        $categories
-     * @param  string              $taxonomy
-     * @param  \App\Models\Tag\Taxonomy|null  $parent
-     * @param  int|null            $sort
+     * @param string|array                  $categories
+     * @param string                        $taxonomy
+     * @param \App\Models\Tag\Taxonomy|null $parent
+     * @param int|null                      $sort
+     *
      * @return Collection
      */
 //    public static function createCategories($categories, string $taxonomy, ? Taxonomy $parent = null, ?int $sort = null): ?Collection

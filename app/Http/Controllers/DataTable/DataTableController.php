@@ -110,7 +110,6 @@ abstract class DataTableController extends Controller
      */
     public function getRecords(Request $request)
     {
-
         $builder = $this->builder;
 
         if ($this->hasSearchQuery($request)) {
@@ -184,7 +183,7 @@ abstract class DataTableController extends Controller
      */
     public function update($id, Request $request)
     {
-       return $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
+        return $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
     }
 
     /**

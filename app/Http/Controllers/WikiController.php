@@ -6,11 +6,10 @@ use App\Models\Page;
 use App\Models\Wiki;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
 use Lecturize\Taxonomies\Models\Taxonomy;
 use Lecturize\Taxonomies\Models\Term;
-use function PHPUnit\Framework\isNull;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 class WikiController extends Controller
 {
@@ -21,7 +20,6 @@ class WikiController extends Controller
      */
     public function __construct()
     {
-
     }
 
     public function getUpdatableColumns($type)
@@ -32,7 +30,7 @@ class WikiController extends Controller
                     'title',
                     'content',
                     'published',
-                    'sign_in_only',];
+                    'sign_in_only', ];
         }
     }
 
@@ -48,13 +46,12 @@ class WikiController extends Controller
         $perPage = 9;
         $query = $request->get('q');
 
-
         $page = request()->input('page', 1); // Current page number, default to 1
 
-        if($query === null || $query === "") {
-            $wikidata = Wiki::where('status',null)->orderBy('created_at', 'desc')->paginate($perPage);
+        if ($query === null || $query === '') {
+            $wikidata = Wiki::where('status', null)->orderBy('created_at', 'desc')->paginate($perPage);
         } else {
-            $wikidata = Wiki::where('title', 'LIKE', '%' . $query . '%')->where('status',null)->paginate($perPage);
+            $wikidata = Wiki::where('title', 'LIKE', '%'.$query.'%')->where('status', null)->paginate($perPage);
         }
 
         $total = $wikidata->total();
@@ -63,9 +60,8 @@ class WikiController extends Controller
         //dd($wikidata->toSql());
 
         $wiki = $wikidata->getCollection()->map(function (Wiki $wiki) {
-
             $model = $wiki->wikiable_type;
-            $data  = $model::where('id', $wiki->wikiable_id)->first();
+            $data = $model::where('id', $wiki->wikiable_id)->first();
 
             $taxonomies = $data->getCategories('wiki')->unique();
 
@@ -77,7 +73,6 @@ class WikiController extends Controller
                 //                    'taxable_title' => $data->{$data->getTaxableTitle()},
                 'data'       => $data,
                 'taxonomies' => $taxonomies];
-
         });
 
         $paginator = new LengthAwarePaginator(
@@ -92,32 +87,30 @@ class WikiController extends Controller
 
         $links = [];
 
-        for($cnt = $page; $cnt <= $page+5; $cnt++) {
-
+        for ($cnt = $page; $cnt <= $page + 5; $cnt++) {
             $links[] = [
-                'active' => $cnt===$page?true:false,
-                'label' => $cnt,
-                'url'=> request()->url()."?page{$cnt}&q={$query}"
+                'active' => $cnt === $page ? true : false,
+                'label'  => $cnt,
+                'url'    => request()->url()."?page{$cnt}&q={$query}",
             ];
         }
 
         return response()->json([
-                                    'data' => $paginator->values(),
-                                    'total' => $total,
-                                    'to' => $perPage * $page,
-                                    'per_page' => $perPage,
-                                    'current_page' => $page,
-                                    'first_page' => $paginator->url(1),
-                                    'last_page' => $paginator->lastPage(),
-                                    'next_page_url' => $paginator->nextPageUrl(),
-                                    'prev_page_url' => $paginator->previousPageUrl(),
-                                    'path' => request()->url(),
-                                    'links' => $links
-                                ]);
+            'data'          => $paginator->values(),
+            'total'         => $total,
+            'to'            => $perPage * $page,
+            'per_page'      => $perPage,
+            'current_page'  => $page,
+            'first_page'    => $paginator->url(1),
+            'last_page'     => $paginator->lastPage(),
+            'next_page_url' => $paginator->nextPageUrl(),
+            'prev_page_url' => $paginator->previousPageUrl(),
+            'path'          => request()->url(),
+            'links'         => $links,
+        ]);
 
 //        $wiki->total = $wikidata->total;
 //        $wiki->to = $wiki->per_page*$wiki->current_page;
-
 
 //        return response()->json($paginator);
     }
@@ -131,18 +124,17 @@ class WikiController extends Controller
      */
     public function view($wikiable, $id)
     {
-
     }
 
     public function show($slug)
     {
-
         //        dd($slug);
 
         $wiki = Wiki::where('slug', '=', $slug)->first();
 
         if ($wiki === null) {
-            $data = ['slug' => $slug, 'title' => Str::ucfirst($slug), 'content' => ""];
+            $data = ['slug' => $slug, 'title' => Str::ucfirst($slug), 'content' => ''];
+
             //            return response()->json(['status' => 404, 'message' => 'Create Wiki page', 'page' => $data]);
             return response(['status' => 404, 'message' => 'Create Wiki page', 'page' => $data], 404);
         }
@@ -154,52 +146,47 @@ class WikiController extends Controller
         $content = $data->content;
 
         preg_match_all(
-            "/\[\[(.*?)(\|(.*?))?\]\]/", $content, $matches
+            "/\[\[(.*?)(\|(.*?))?\]\]/",
+            $content,
+            $matches
         );
 
         foreach ($matches[0] as $key => $item) {
-
             //get anker
-            $title = explode("#", $matches[1][$key]);
+            $title = explode('#', $matches[1][$key]);
 
 //            $page  = Page::new(['title'=> $title[0], 'slug' => Str::slug($title[0])]);
 
+            $title = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : $title[0];
+            $alternative = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : null;
 
-                $title       = isset($matches[3][$key]) && trim($matches[3][$key]) != "" ? $matches[3][$key] : $title[0];
-                $alternative = isset($matches[3][$key]) && trim($matches[3][$key]) != "" ? $matches[3][$key] : null;
+            $page = Page::firstOrNew(['title' => $title, 'slug' => Str::slug($title)]);
 
-                $page = Page::firstOrNew(['title' => $title, 'slug' => Str::slug($title)]);
-
-
-                $replace =
-                    "<a data-wiki-id=\"0\" class=\"new\" data-title=\"{$page->title}\" data-linked-resource-type=\"wikiable\" data-alternative=\"{$alternative}\" href=\"/wiki/{$page->slug}\" contenteditable=\"false\">{$title}</a>";
+            $replace =
+                "<a data-wiki-id=\"0\" class=\"new\" data-title=\"{$page->title}\" data-linked-resource-type=\"wikiable\" data-alternative=\"{$alternative}\" href=\"/wiki/{$page->slug}\" contenteditable=\"false\">{$title}</a>";
             $content = Str::replace($item, $replace, $content);
-
-
         }
         $data->content = $content;
         $taxonomies = $data->getCategories('wiki')->unique();
-        $terms      = $data->getCategories('tags')->unique();
+        $terms = $data->getCategories('tags')->unique();
 
         //        $data->content = Str::replace()
 
         return response()->json(['page' => $data, 'wiki' => $wiki, 'parents' => $data->parents, 'terms' => $taxonomies, 'tags' => $terms]);
     }
 
-
     public function history($wikiable, $id)
     {
-
     }
 
     public function store(Request $request)
     {
         //        dd($request->all());
         $page = auth()->user()->pages()->create([
-                                                    'title'        => $request->get('title'),
-                                                    'content'      => $request->get('content'),
-                                                    'sign_in_only' => 0,
-                                                    'published'    => 1]);
+            'title'        => $request->get('title'),
+            'content'      => $request->get('content'),
+            'sign_in_only' => 0,
+            'published'    => 1]);
 
         if ($request->get('categories')) {
             //            $taxonomy = $request->get('taxonomy');
@@ -216,9 +203,7 @@ class WikiController extends Controller
             }
         }
 
-
         if ($request->get('terms')) {
-
             foreach ($request->get('terms') as $term) {
                 if (isset($term['title'])) {
                     $page->addCategory($term['title'], 'tags');
@@ -232,7 +217,6 @@ class WikiController extends Controller
         $page->wikiable()->save($wiki);
 
         return response()->json(['message' => 'success', 'page' => $page]);
-
     }
 
     public function update(Request $request, $slug)
@@ -245,20 +229,16 @@ class WikiController extends Controller
         //        $model = $wiki['type'];
         //        $data = $model::where('id', $wiki['id'])->first();
 
-
-
-        $wiki  = Wiki::where('slug', '=', $slug)->first();
+        $wiki = Wiki::where('slug', '=', $slug)->first();
         $model = $wiki->wikiable_type;
 
         $data = $model::where('id', $wiki->wikiable_id)->first();
-
 
         $data->update($request->only($this->getUpdatableColumns($request->get('type'))));
 
         //
         if ($request->get('parent')) {
             $parent = $request->get('parent');
-
 
             $data->parent_id = $parent['id'];
             $data->update();
@@ -267,7 +247,6 @@ class WikiController extends Controller
         $data->detachCategories();
 
         if ($request->get('categories')) {
-
             foreach ($request->get('categories') as $term) {
                 if (isset($term['title'])) {
                     $data->addCategory($term['title'], 'wiki');
@@ -297,7 +276,6 @@ class WikiController extends Controller
 //        }
 
         if ($request->get('terms')) {
-
             foreach ($request->get('terms') as $term) {
                 if (isset($term['title'])) {
                     $data->addCategory($term['title'], 'tags');
@@ -306,7 +284,6 @@ class WikiController extends Controller
                 }
             }
         }
-
 
         //        if($request->get('terms')) {
         //            $data->addCategories($request->get('terms'),'tags');
@@ -317,25 +294,24 @@ class WikiController extends Controller
 
     public function storeCategory(Request $request)
     {
-       // dd($request);
+        // dd($request);
 
         $term = Term::firstOrCreate(['title' => $request->get('term')]);
 
-        $taxonomy              = Taxonomy::firstOrNew(['taxonomy' => 'wiki', 'term_id' => $term->id]);
+        $taxonomy = Taxonomy::firstOrNew(['taxonomy' => 'wiki', 'term_id' => $term->id]);
         $parent = $request->get('parent');
 //        dd($parent);
 
-        if($parent['parent_id']) {
+        if ($parent['parent_id']) {
             $taxonomy->parent_id = $parent['parent_id'];
         }
 
-        if($request->get('content')) {
+        if ($request->get('content')) {
             $taxonomy->description = $request->get('content');
         }
         $taxonomy->save();
 
         return response()->json(['message' => 'success', 'taxonomy' => $taxonomy]);
-
     }
 
     public function updateCategory(Request $request, $slug)
@@ -350,29 +326,26 @@ class WikiController extends Controller
 //        dd($parent);
 
         $term = Term::find($termNew['term']['id']);
-        if($term->title != $termOld['term']['title']) {
+        if ($term->title != $termOld['term']['title']) {
             $term->title = $termNew['term']['title'];
             $term->slug = Str::slug($termNew['term']['title']);
             $term->update();
         }
 
-        $taxonomy  = Taxonomy::where('term_id',$term->id)->where('taxonomy', 'wiki')->first();
+        $taxonomy = Taxonomy::where('term_id', $term->id)->where('taxonomy', 'wiki')->first();
 //        $parent = $termNew['parent'];
         //        dd($parent);
 
-        if($parent['parent_id']) {
+        if ($parent['parent_id']) {
             $taxonomy->parent_id = $parent['parent_id'];
         }
 
-        if($request->get('content')) {
+        if ($request->get('content')) {
             $taxonomy->description = $request->get('content');
         }
         $taxonomy->update();
 
 //        dd($taxonomy);
-        return response()->json(['message' => 'success', 'slugchange' => $term->title != $termOld['term']['title'] ,'term'=> $term, 'taxonomy' => $taxonomy]);
-
+        return response()->json(['message' => 'success', 'slugchange' => $term->title != $termOld['term']['title'], 'term'=> $term, 'taxonomy' => $taxonomy]);
     }
-
-
 }
