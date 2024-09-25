@@ -42,14 +42,14 @@ export const admin = [{
     },
     component: () => import(/* webpackChunkName: "admin-events" */ '@/pages/admin/Event.vue')
 },{
-    path: '/admin/event/types',
-    name: 'admin-event-types',
+    path: '/admin/events/types',
+    name: 'admin-events-types',
     meta: {
         middleware: [
             auth, permission, verified
         ]
     },
-    component: () => import(/* webpackChunkName: "admin-event-types" */ '@/pages/admin/EventType.vue')
+    component: () => import(/* webpackChunkName: "admin-events-types" */ '@/pages/admin/EventType.vue')
 }, {
     path: '/admin/users',
     name: 'admin-users',
@@ -86,7 +86,7 @@ export const admin = [{
                 auth, verified
             ]
         },
-        component: () => import(/* webpackChunkName: "admin-permissions" */ '@/pages/admin/Taxonomie.vue')
+        component: () => import(/* webpackChunkName: "admin-taxonomie" */ '@/pages/admin/Taxonomie.vue')
     },
     {
         path: '/admin/tags/terms',

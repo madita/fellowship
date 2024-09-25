@@ -18,27 +18,27 @@ class EventController extends DataTableController
 
     public function store(Request $request)
     {
-                dd($request);
-//        $event = auth()->user()->event()->create($request->only($this->getUpdatableColumns()));
+//                dd($request);
+        $event = auth()->user()->events()->create($request->only($this->getUpdatableColumns()));
 
-//        if ($request->get('parent')) {
-//            $parent = $request->get('parent');
-//
-//            $event->parent_id = $parent['id'];
-//            $event->save();
-//        }
-//
-//        if ($request->get('taxonomy') && $request->get('categories')) {
-//            $taxonomy = $request->get('taxonomy');
-//            $taxonomy = $taxonomy['taxonomy'];
-//            //            dd('hm');
-//            $event->addCategories($request->get('categories'), $taxonomy);
-//        }
-//
-//
-//        if ($request->get('terms')) {
-//            $event->addCategories($request->get('terms'), 'tags');
-//        }
+        if ($request->get('parent')) {
+            $parent = $request->get('parent');
+
+            $event->parent_id = $parent['id'];
+            $event->save();
+        }
+
+        if ($request->get('taxonomy') && $request->get('categories')) {
+            $taxonomy = $request->get('taxonomy');
+            $taxonomy = $taxonomy['taxonomy'];
+            //            dd('hm');
+            $event->addCategories($request->get('categories'), $taxonomy);
+        }
+
+
+        if ($request->get('terms')) {
+            $event->addCategories($request->get('terms'), 'tags');
+        }
 
     }
 

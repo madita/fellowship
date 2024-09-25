@@ -5,6 +5,7 @@ namespace App\Http\Controllers\DataTable;
 use App\Models\Event\Event;
 
 //use App\Models\Tag\Taxonomy;
+use App\Models\Event\EventType;
 use Illuminate\Http\Request;
 
 class EventTypeController extends DataTableController
@@ -13,39 +14,20 @@ class EventTypeController extends DataTableController
 
     public function builder()
     {
-        return Event::query();
+        return EventType::query();
     }
 
     public function store(Request $request)
     {
-                dd($request);
-//        $event = auth()->user()->event()->create($request->only($this->getUpdatableColumns()));
-
-//        if ($request->get('parent')) {
-//            $parent = $request->get('parent');
-//
-//            $event->parent_id = $parent['id'];
-//            $event->save();
-//        }
-//
-//        if ($request->get('taxonomy') && $request->get('categories')) {
-//            $taxonomy = $request->get('taxonomy');
-//            $taxonomy = $taxonomy['taxonomy'];
-//            //            dd('hm');
-//            $event->addCategories($request->get('categories'), $taxonomy);
-//        }
-//
-//
-//        if ($request->get('terms')) {
-//            $event->addCategories($request->get('terms'), 'tags');
-//        }
+//                dd($request);
+        $eventType = EventType::create($request->only($this->getUpdatableColumns()));
 
     }
 
     public function update($id, Request $request)
     {
         //            dd($id, $request);
-        $event = Event::find($id);
+        $event = EventType::find($id);
         $event->update($request->only($this->getUpdatableColumns()));
 
         //
@@ -77,18 +59,17 @@ class EventTypeController extends DataTableController
     public function getUpdatableColumns()
     {
         return [
-            'title',
-            'description',
-            'startDate',
-            'startTime',
-            'endDate',
-            'endTime',];
+            'name',
+            'color',
+            'options',
+           ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'description'      => 'wysiwyg',
+            'color'      => 'color',
+            'options'      => 'json',
             ];
     }
 
@@ -96,9 +77,9 @@ class EventTypeController extends DataTableController
     {
         return [
             'id',
-            'title',
-            'description',
+            'name',
             'slug',
+            'color',
             'created_at',
             'updated_at',];
     }

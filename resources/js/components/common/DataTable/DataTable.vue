@@ -1,6 +1,6 @@
 <template>
     <div class="flex-grow-1">
-
+        <v-container>
         <div class="d-flex align-center py-3">
             <div>
                 <div class="display-1">{{ state.response.table }}</div>
@@ -36,7 +36,6 @@
                         clearable
                     ></v-text-field>
                             <v-btn
-                                icon
                                 small
                                 class="ml-2"
                                 @click="getRecords"
@@ -45,7 +44,6 @@
                             </v-btn>
                     <v-btn
                         :loading="state.loading"
-                        icon
                         small
                         class="ml-2"
                         @click="getRecords"
@@ -107,7 +105,8 @@
                                                 color="primary"
                                                 dark
                                                 class="mb-2"
-                                                v-bind="probs"
+                                                @click="isSidebarActive = true"
+
                                             >
                                                 New Item
                                             </v-btn>
@@ -152,11 +151,16 @@
                                                         :value="state.editedItem[column]"
                                                     ></v-textarea>
 
-                                                    <simple-editor
+<!--                                                    <simple-editor-->
+<!--                                                        v-else-if="state.response.column_fields[column]==='wysiwyg'"-->
+<!--                                                        v-model="state.editedItem[column]"-->
+<!--                                                        :value="state.editedItem[column]">-->
+<!--                                                    </simple-editor>-->
+                                                    <tiptap
                                                         v-else-if="state.response.column_fields[column]==='wysiwyg'"
-                                                        v-model="state.editedItem[column]"
-                                                        :value="state.editedItem[column]">
-                                                    </simple-editor>
+                                                        v-model:modelValue="state.editedItem[column]"
+                                                        :value="state.editedItem[column]"
+                                                        id="text-content" name="content"/>
 
                                                     <v-checkbox
                                                         v-else-if="state.response.column_fields[column]==='checkbox'"
@@ -240,37 +244,55 @@
             </v-row>
 
         </v-card>
+            <DataTableForm
+                v-model:isDrawerOpen="isSidebarActive"
+                :item="state.selected"
+                :defaultItem="state.defaultItem"
+                :response="state.response"
+                @add-item="addItem"
+                @update-item="editItem(state.selected)"
+                @remove-item="deleteItem(state.selected)"
+            />
+        </v-container>
     </div>
 </template>
 
 <script>
-import {ref, reactive, computed, onMounted, watch} from 'vue'
+import {ref, reactive, computed, nextTick, onMounted, watch} from 'vue'
 import queryString from 'querystringify'
-import SimpleEditor from './SimpleEditor.vue'
+// import SimpleEditor from './SimpleEditor.vue'
 import axios from 'axios'
-import _ from 'lodash'
+// import _ from 'lodash'
 import { useApi } from '@/api/useAPI.js'
-import AppDataTable from './AppDataTable.vue';
-import {
-    VDataTable,
-    VDataTableServer,
-    VDataTableVirtual,
-} from "vuetify/labs/VDataTable";
-import Tiptap from "@/components/common/tiptap/Tiptap.vue";
+import AppDataTable from '../AppDataTable.vue';
+import DataTableForm from './DataTableForm.vue';
+// import {
+//     VDataTable,
+//     VDataTableServer,
+//     VDataTableVirtual,
+// } from "vuetify/labs/VDataTable";
+// import Tiptap from "@/components/common/tiptap/Tiptap.vue";
+// import CalendarEventHandler from "../event/CalendarEventHandler.vue";
+import Tiptap from '../tiptap/Tiptap.vue'
+// import {eventBus} from "../eventBus.js";
+
+//TODO fix forms and data formats
+//fix edit and crea
+//fix deelte
 
 export default {
     name: 'datat-table',
     components: {
+        // CalendarEventHandler,
         Tiptap,
         AppDataTable,
-        VDataTable,
-        VDataTableServer,
-        VDataTableVirtual,
-        SimpleEditor
+        DataTableForm
     },
     props: ['endpoint'],
     setup(props) {
         const api = useApi()
+
+        const isSidebarActive = ref(false);
 
         const breadcrumbs = ref([{
             text: '',
@@ -339,6 +361,22 @@ export default {
             }
         })
 
+        watch(isSidebarActive, val => {
+            isSidebarActive.value = val
+            console.log('watchval', val)
+            // if (!val) {
+            //     editMode.value = true
+            //     selectedEvent.value = structuredClone(blankEvent)
+            // }
+
+        })
+        //
+        // eventBus.on('openSidebarWithEvent', (event) => {
+        //     selectedEvent.value = event;
+        //     isSidebarActive.value = true;
+        // });
+
+
         const filteredRecords = computed(() => {
             let data = state.response.records.data
 
@@ -375,7 +413,7 @@ export default {
             state.loading = true
             return api.get(`${props.endpoint}?${getQueryParameters()}`).then((response) => {
                 state.response = response.data.data
-                // console.log('response',response)
+                console.log('response',response)
                 state.response.updatable.forEach(item => {
                     console.log('item',item)
                     state.defaultItem[item] = ''
@@ -398,87 +436,104 @@ export default {
             })
         }
 
-        const editItem = (item) => {
-            state.editedIndex = this.response.records.data.indexOf(item)
-            state.editing.id = item.id
-            // this.editedItem = Object.assign({}, item)
-            state.editedItem = _.pick(item, this.response.updatable)
-            // console.log('this.editedItem',this.editedItem)
+        // const addItem = () => {
+        //     console.log('addItem')
+        // }
 
-            state.dialog = true
-        }
+        const addItem = async (addItem) => {
 
-        const editItemForm = (item) => {
-            this.$router.push(`${this.$route.path}/edit/${item.id}`)
-        }
+            axios.post(`/api${props.endpoint}`, addItem).then(() => {
 
-        const deleteItem = (item) => {
-            state.editedIndex = this.response.records.data.indexOf(item)
-            state.editing.id = item.id
-            thstateis.editedItem = Object.assign({}, item)
-            state.dialogDelete = true
-        }
-
-        const deleteItemConfirm = () => {
-            filteredRecords.splice(state.editedIndex, 1)
-            destroy(state.editing.id)
-            closeDelete()
-        }
-
-        const close = () => {
-            this.dialog = false
-            this.$nextTick(() => {
-                this.editedItem = Object.assign({}, this.defaultItem)
-                this.editedIndex = -1
-            })
-        }
-
-        const closeDelete = () => {
-            this.dialogDelete = false
-            this.$nextTick(() => {
-                this.editedItem = Object.assign({}, this.defaultItem)
-                this.editedIndex = -1
-            })
-        }
-
-        const save = () => {
-            if (this.editedIndex > -1) {
-                this.update()
-            } else {
-                this.store()
-            }
-        }
-
-        const update = () => {
-            axios.patch(`${this.endpoint}/${this.editing.id}`, this.editedItem).then(() => {
-                Object.assign(this.response.records.data[this.editedIndex], this.editedItem)
-                this.close()
-                this.getRecords().then(() => {
-                    this.editing.id = null
-                    this.editing.form = null
-                    this.editedItem = Object.assign({}, this.defaultItem)
-                })
             }).catch((error) => {
                 if (error.response.status === 422) {
+                    // this.creating.errors = error.response.data
                     this.editing.errors = error.response.data
                 }
             })
         }
 
-        const store = () => {
-            axios.post(`${this.endpoint}`, this.editedItem).then(() => {
-                this.response.records.data.push(this.editedItem)
-                this.close()
-                this.getRecords().then(() => {
-                    this.editedItem = Object.assign({}, this.defaultItem)
-                    // this.creating.active = false
-                    // this.creating.form = {}
-                    this.creating.errors = []
+        const editItem = (item) => {
+            state.editedIndex = state.response.records.data.indexOf(item)
+            state.editing.id = item.id
+            // state.editedItem = Object.assign({}, item)
+            // state.editedItem = _.pick(item, state.response.updatable)
+            // console.log('state.editedItem',state.editedItem)
+
+            state.dialog = true
+        }
+
+        // const editItemForm = (item) => {
+        //     state.$router.push(`${state.$route.path}/edit/${item.id}`)
+        // }
+
+        const deleteItem = (item) => {
+            state.editedIndex = state.response.records.data.indexOf(item)
+            state.editing.id = item.id
+            state.editedItem.value = Object.assign({}, item)
+            state.dialogDelete = true
+        }
+
+        const deleteItemConfirm = () => {
+            filteredRecords.value.splice(state.editedIndex, 1)
+            destroy(state.editing.id)
+            closeDelete()
+        }
+
+        const close = () => {
+            state.dialog = false
+            nextTick(() => {
+                state.editedItem = Object.assign({}, state.defaultItem)
+                state.editedIndex = -1
+            })
+        }
+
+        const closeDelete = () => {
+            state.dialogDelete = false
+            nextTick(() => {
+                state.editedItem = Object.assign({}, state.defaultItem)
+                state.editedIndex = -1
+            })
+        }
+
+        const save = () => {
+            console.log('save?')
+            if (state.editedIndex > -1) {
+                // state.update()
+            } else {
+                // state.store()
+            }
+        }
+
+        const update = () => {
+            axios.patch(`${state.endpoint}/${state.editing.id}`, state.editedItem).then(() => {
+                Object.assign(state.response.records.data[state.editedIndex], state.editedItem)
+                state.close()
+                state.getRecords().then(() => {
+                    state.editing.id = null
+                    state.editing.form = null
+                    state.editedItem = Object.assign({}, state.defaultItem)
                 })
             }).catch((error) => {
                 if (error.response.status === 422) {
-                    // this.creating.errors = error.response.data
-                    this.editing.errors = error.response.data
+                    state.editing.errors = error.response.data
+                }
+            })
+        }
+
+        const store = () => {
+            axios.post(`${state.endpoint}`, state.editedItem).then(() => {
+                state.response.records.data.push(state.editedItem)
+                state.close()
+                state.getRecords().then(() => {
+                    state.editedItem = Object.assign({}, state.defaultItem)
+                    // state.creating.active = false
+                    // state.creating.form = {}
+                    state.creating.errors = []
+                })
+            }).catch((error) => {
+                if (error.response.status === 422) {
+                    // state.creating.errors = error.response.data
+                    state.editing.errors = error.response.data
                 }
             })
         }
@@ -489,14 +544,14 @@ export default {
                 record = record.map(item => item.id)
             }
 
-            axios.delete(`${this.endpoint}/${record}`).then(() => {
-                this.getRecords()
+            axios.delete(`${state.endpoint}/${record}`).then(() => {
+                state.getRecords()
 
             })
         }
 
         const isUpdatable = (column) => {
-            return this.response.updatable.includes(column)
+            return state.response.updatable.includes(column)
         }
 
         const resetRecords = () => {
@@ -547,7 +602,9 @@ export default {
             filteredRecords,
             getHeaders,
             canSelectItems,
+            addItem,
             editItem,
+            deleteItem,
             deleteItemConfirm,
             close,
             closeDelete,
@@ -557,7 +614,8 @@ export default {
             destroy,
             isUpdatable,
             resetRecords,
-            paginationChange
+            paginationChange,
+            isSidebarActive
             // ... [repeat for all methods]
         }
     }

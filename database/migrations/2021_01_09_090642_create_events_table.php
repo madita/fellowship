@@ -31,10 +31,11 @@ class CreateEventsTable extends Migration
             $table->softDeletes();
         });
 
-        Schema::create('event_type', function (Blueprint $table) {
+        Schema::create('event_types', function (Blueprint $table) {
             $table->id();
-            $table->integer('event_id')->unsigned();
+            //$table->integer('event_id')->unsigned();
             $table->string('name', 255)->nullable();
+//            $table->string('slug')->unique();
             $table->string('color', 45)->nullable();
             $table->text('options')->nullable();
             $table->timestamps();
@@ -57,6 +58,7 @@ class CreateEventsTable extends Migration
             $table->integer('user_id')->unsigned();
             $table->integer('event_id')->unsigned();
             $table->string('type')->nullable(); //yes no maybe? // master, player, guest
+            $table->timestamp('approved_at')->nullable(); //yes no maybe? // master, player, guest
             $table->timestamps();
             $table->softDeletes();
         });
@@ -71,7 +73,7 @@ class CreateEventsTable extends Migration
     {
         Schema::dropIfExists('event_guests');
         Schema::dropIfExists('event_details');
-        Schema::dropIfExists('event_type');
+        Schema::dropIfExists('event_types');
         Schema::dropIfExists('events');
     }
 }

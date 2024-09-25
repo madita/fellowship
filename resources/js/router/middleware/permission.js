@@ -1,59 +1,42 @@
-import {useUserStore} from "@/store/userStore.js";
+import { useUserStore } from "@/store/userStore.js";
 
-export default function permission ({ to, from, next }){
- //this is the one
-    /** middleware for routes **/
-
-    const userStore = useUserStore()
-    const hasAccess = function (name) {
-        // const permissions = store.getters['auth/permissions'];
-        const permissions = userStore.permissions
-
-        switch (name) {
-
-            case "admin-users":
-                return permissions.includes("manage-user")
-
-            case "admin-roles":
-                return permissions.includes("manage-role")
-
-            case "admin-permissions":
-                return permissions.includes("manage-role")
-
-            case "admin-pages":
-            case "admin-pages-form":
-                return permissions.includes("manage-page")
-
-            case "admin-posts":
-            case "admin-events":
-                return permissions.includes("manage-post")
-
-            case "admin-announcements":
-                return permissions.includes("manage-post")
-
-            case "wiki-create":
-                return permissions.includes("manage-page")
-            case "wiki-create-slug":
-                return permissions.includes("manage-page")
-            case "wiki-edit":
-                return permissions.includes("manage-page")
-            case "wiki-category-create":
-                return permissions.includes("manage-page")
-            case "wiki-category-edit":
-                return permissions.includes("manage-page")
-            default:
-                return false;
-        }
+export default function permission({ to, next }) {
+    const userStore = useUserStore();
+    const permissionsMap = {
+        "admin-users": "manage-user",
+        "admin-roles": "manage-role",
+        "admin-permissions": "manage-role",
+        "admin-pages": "manage-page",
+        "admin-pages-form": "manage-page",
+        "admin-posts": "manage-post",
+        "admin-events": "manage-post",
+        "admin-events-types": "manage-post",
+        "admin-announcements": "manage-post",
+        "wiki-create": "manage-page",
+        "wiki-create-slug": "manage-page",
+        "wiki-edit": "manage-page",
+        "wiki-category-create": "manage-page",
+        "wiki-category-edit": "manage-page",
     };
 
+    const requiredPermission = permissionsMap[to.name];
 
-
-    if(!hasAccess(to.name)){
-        return next({
-            name: 'error'
-        })
+    // If the route name is not in the permissions map, throw an error
+    if (!requiredPermission) {
+        console.error(`Permission middleware: Route "${to.name}" is not defined in the permissions map.`);
+        throw new Error(`No permission defined for the route "${to.name}". Please check the permissions configuration.`);
     }
 
-    return next()
-}
+    const hasAccess = userStore.permissions.includes(requiredPermission);
 
+    if (!hasAccess) {
+        // return next({
+        //     name: 'error'
+        // });
+        return next({
+            name: 'access-denied' // Make sure this route is correctly defined in your router
+        });
+    }
+
+    return next();
+}

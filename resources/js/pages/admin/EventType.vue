@@ -1,12 +1,12 @@
 <template>
   <div class="flex-grow-1">
-      test
-<!--      <data-table endpoint="/datatable/eventtypes"></data-table>-->
+
+      <data-table endpoint="/datatable/event-types"></data-table>
   </div>
 </template>
 
 <script>
-import DataTable from '../../components/common/DataTable.vue'
+import DataTable from '../../components/common/DataTable/DataTable.vue'
 
 export default {
     components: {

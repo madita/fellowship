@@ -53,6 +53,14 @@ export const routes = [{
         }
     },
     {
+        path: '/error',
+        name: 'access-denied',
+        component: () => import(/* webpackChunkName: "error" */ '@/pages/error/NotFoundPage.vue'),
+        meta: {
+            layout: 'error'
+        }
+    },
+    {
         path: '/:catchAll(.*)',
         name: 'error',
         component: () => import(/* webpackChunkName: "error" */ '@/pages/error/NotFoundPage.vue'),

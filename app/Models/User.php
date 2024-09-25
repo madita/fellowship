@@ -114,7 +114,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             return '';
         }
 
-        return $this->getMedia('avatars')->last()->getFullUrl('thumb');
+        return $this->getFirstMediaUrl('avatars');
     }
 
     public function getAvatarAttribute()
@@ -147,6 +147,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function messages()
     {
         return $this->hasMany(Message::class);
+    }
+
+    public function events()
+    {
+        return $this->hasMany(Event::class);
     }
 
     public function eventGuest()
