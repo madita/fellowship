@@ -1,4 +1,4 @@
-import * as Vue from 'vue'
+// import * as Vue from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 // import * as store from '../store'
 
@@ -43,6 +43,30 @@ export const routes = [{
             ]
         },
         component: () => import(/* webpackChunkName: "blank" */ '@/pages/BlankPage.vue')
+    },
+    {
+        path: '/game',
+        name: 'game',
+        component: () => import(/* webpackChunkName: "game" */ '@/pages/GameDemo.vue'),
+        meta: {
+            layout: 'landing'
+        }
+    },
+    {
+        path: '/thud',
+        name: 'thud',
+        component: () => import(/* webpackChunkName: "game" */ '@/pages/ThudDemo.vue'),
+        meta: {
+            layout: 'landing'
+        }
+    },
+    {
+        path: '/sheet',
+        name: 'sheet',
+        component: () => import(/* webpackChunkName: "game" */ '@/pages/CharSheetDemo.vue'),
+        meta: {
+            layout: 'landing'
+        }
     },
     {
         path: '/p/:slug',

@@ -56,6 +56,32 @@ class EventTypeController extends DataTableController
 
     }
 
+//    public function jsonOptions()
+//    {
+//        return [
+//            'name',
+//            'color',
+//            'options',
+//        ];
+//    }
+
+    public function getCustomJsonFields()
+    {
+        //this are related to the event model
+        //Todo make it possible to add taxonomies to a type for profiling...
+        return [
+            'answers' => ['going'=>'Yes'],
+            'max' => ['going'=>'10'],
+//            'profile_details' => ['food'=>'tags','journey'=>'tags'],
+            'guest' => ['approval','rsp','hasMax'],
+            'permissions' => ['edit', 'view'],
+            'profile' => ['user', 'admin'],
+            'location' => ['custom', 'real', 'virtual'],
+            'showAttributtes' => ['allDay', 'image', 'endDate', 'startTime', 'endTime', 'hasMedia' ],
+
+        ];
+    }
+
     public function getUpdatableColumns()
     {
         return [

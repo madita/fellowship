@@ -148,6 +148,7 @@ abstract class DataTableController extends Controller
                 'displayable'   => array_values($this->getDisplayableColumns()),
                 'column_map'    => $this->getCustomColumnsNames(),
                 'column_fields' => $this->getCustomInputFields(),
+                'json_fields' => $this->getCustomJsonFields(),
                 'allow'         => [
                     'hasForm'  => $this->hasForm,
                     'creation' => $this->allowCreation,
@@ -214,6 +215,11 @@ abstract class DataTableController extends Controller
     }
 
     public function getCustomInputFields()
+    {
+        return [];
+    }
+
+    public function getCustomJsonFields()
     {
         return [];
     }

@@ -87,8 +87,9 @@ class Event extends Model
 
     public function answer($answer)
     {
-        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', $answer);
+        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', $answer)->withPivot('approved_at');
     }
+
 
 //    public function categories(){
 //        return $this->belongsToMany("App\\Models\\Category");

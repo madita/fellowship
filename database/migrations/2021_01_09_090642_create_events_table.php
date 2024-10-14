@@ -18,13 +18,14 @@ class CreateEventsTable extends Migration
             $table->integer('user_id')->unsigned();
             $table->string('title');
             $table->string('slug')->unique();
-            $table->text('description')->nullable();
+            $table->longText('description')->nullable();
             $table->string('image')->nullable();
             $table->time('startTime')->nullable();
             $table->time('endTime')->nullable();
             $table->date('startDate')->nullable();
             $table->date('endDate')->nullable();
             $table->tinyInteger('allDay')->nullable();
+            $table->tinyInteger('hasMedia')->nullable();
             $table->integer('type_id')->unsigned();
 //            $table->string('type')->nullable(); //gathering, meetup, rpg...story
             $table->timestamps();
@@ -38,6 +39,7 @@ class CreateEventsTable extends Migration
 //            $table->string('slug')->unique();
             $table->string('color', 45)->nullable();
             $table->text('options')->nullable();
+            $table->tinyInteger('approval')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -49,6 +51,7 @@ class CreateEventsTable extends Migration
             $table->string('lng', 45)->nullable();
             $table->text('city')->nullable();
             $table->text('country')->nullable();
+            $table->longText('options')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -58,7 +61,17 @@ class CreateEventsTable extends Migration
             $table->integer('user_id')->unsigned();
             $table->integer('event_id')->unsigned();
             $table->string('type')->nullable(); //yes no maybe? // master, player, guest
+            $table->text('profile')->nullable();
             $table->timestamp('approved_at')->nullable(); //yes no maybe? // master, player, guest
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::create('event_profiles', function (Blueprint $table) {
+            $table->id();
+            $table->integer('user_id')->unsigned();
+            $table->integer('event_type_id')->unsigned();
+            $table->text('options')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -71,6 +84,7 @@ class CreateEventsTable extends Migration
      */
     public function down()
     {
+        Schema::dropIfExists('event_profile');
         Schema::dropIfExists('event_guests');
         Schema::dropIfExists('event_details');
         Schema::dropIfExists('event_types');

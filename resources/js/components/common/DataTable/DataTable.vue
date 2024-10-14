@@ -292,6 +292,14 @@ export default {
     setup(props) {
         const api = useApi()
 
+        // const options = ref ({
+        //     answers: { yes: 'Yes', maybe: 'Maybe' },
+        //     permissions: ['edit', 'view'],
+        //     profil: ['user', 'admin'],
+        //     showAttributtes: ['AllDay', 'startDate', 'endDate'],
+        //     location: ['custom', 'real', 'virtual']
+        // })
+
         const isSidebarActive = ref(false);
 
         const breadcrumbs = ref([{
@@ -580,7 +588,7 @@ export default {
         // Use state.property to access or modify the properties inside methods.
 
         watch(() => state.page, (value) => {
-            console.log('statepage', value)
+            // console.log('statepage', value)
             let pagination = {
                 itemsLength:10,
                 itemsPerPage:10,

@@ -69,7 +69,7 @@ return [
             'host'           => 'localhost',
             'port'           => env('DB_PORT', '3306'),
             'database'       => env('DB_MIGRATION', ''),
-            'username'       => env('DB_MIGRATION', ''),
+            'username'       => env('DB_MIGRATION_USER', ''),
             'password'       => env('DB_MIGRATION_PASSWORD', ''),
             'unix_socket'    => env('DB_SOCKET', ''),
             'charset'        => 'utf8mb4',

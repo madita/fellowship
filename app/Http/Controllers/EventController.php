@@ -179,12 +179,16 @@ class EventController extends Controller
             $isGoing = DB::table('event_guests')->where('event_id', '=', $event->id)->where('user_id', '=', $user->id)->first();
         }
 
+
+
         $eventType = EventType::find($event->type_id);
 
         $options = json_decode($eventType->options);
         $answers = [];
         foreach ($options->answers as $value => $answer) {
-            $answers[$value] = $event->answer($value)->get();
+            $answers[$value] = $event->answer($value)->get([ 'username']);
+
+//            $approved[$value] = $event->;
         }
 
         $data = [

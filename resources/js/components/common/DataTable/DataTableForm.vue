@@ -31,6 +31,8 @@ const emit = defineEmits([
 
 const localEditMode = ref(props.editModed)
 
+// const options = ref()
+
 const title = ref()
 
 // const store = useCalendarStore()
@@ -41,6 +43,14 @@ const refForm = ref()
 // const item = ref({})
 const item = ref(JSON.parse(JSON.stringify(props.item)))
 const itemDetails = ref();
+
+// const options = ref ({
+//     answers: { yes: 'Yes', maybe: 'Maybe' },
+//     permissions: ['edit', 'view'],
+//     profil: ['user', 'admin'],
+//     showAttributtes: ['AllDay', 'startDate', 'endDate'],
+//     location: ['custom', 'real', 'virtual']
+// })
 // const item = ref({...props.item})
 
 // const updateJsonInput = async (json) => {
@@ -88,7 +98,6 @@ const handleSubmit = () => {
         console.log(valid)
         if (valid) {
             localEditMode.value = false;
-            console.log('dsfdsfdsfdf', editedItem)
 
             // If id exist on id => Update item
             if ('id' in editedItem.value)
@@ -397,7 +406,8 @@ watch(() => props.isDrawerOpen, resetItem)
 
                                 <DataTableJsonField
                                     v-else-if="response.column_fields[column]==='json'"
-                                    v-model:jsonValue="editedItem[column]"></DataTableJsonField>
+                                    :options="response.json_fields"
+                                    v-model:modelValue="editedItem[column]"></DataTableJsonField>
 
 
                                 <v-text-field

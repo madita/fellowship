@@ -2,8 +2,6 @@
 import {ref, watch, computed, nextTick, onMounted} from 'vue';
 import {PerfectScrollbar} from 'vue3-perfect-scrollbar'
 import {VForm} from 'vuetify/components/VForm'
-import {format} from "date-fns";
-import VueDatePicker from "@vuepic/vue-datepicker";
 import CustomDatePicker from "../common/CustomDatePicker.vue";
 import UserAvatar from "../common/UserAvatar.vue";
 import axios from "axios";
@@ -28,7 +26,7 @@ const loadEventDetails = ref(true)
 const eventTypeSelect = ref()
 const calendarStore = useCalendarStore();
 
-
+// const approval = ref(true)
 
 const emit = defineEmits([
     'update:isDrawerOpen',
@@ -52,6 +50,7 @@ const localEventTypes = computed(() =>calendarStore.eventTypes)
 
 // const localEventTypes = ref(props.eventTypes)
 const eventDetails = ref();
+const eventAnswers = ref();
 
 if (isProxy(props.event)){
     event.value = toRaw(props.event)
@@ -109,6 +108,8 @@ const eventTypeItems = computed(() => {
 
     return Object.values(localEventTypes.value);
 });
+
+
 // evenType =
 const eventType = computed(() => {
     let type = {}
@@ -119,33 +120,62 @@ const eventType = computed(() => {
         // do something with result
     // }
 
-    // const type = props.eventTypes.value.find(x => x.id === 1)
-    // console.log('type', type)
-    // localEventTypes.value.
-    // localEventTypes.value.
-    // return 'test'
+
     return type;
 });
 
-//
-// const eventTypeSelect = computed(() => {
-//     let type = {}
-//
-//
-//     type = eventTypeItems.value.find(item => item.id ===  event.value.type_id)
-//     // type = Object.values(localEventTypes.value).find(item => item.id ===  event.value.type_id);
-//
-//     return type;
-// });
+
 
 const eventTypeOptions = computed(() => {
     let type = {}
 
-    type = Object.values(localEventTypes.value).find(item => item.name ===  event.value.extendedProps.type);
-    // console.log('111answers',JSON.parse(JSON.stringify(type.options)))
+    // type = Object.values(localEventTypes.value).find(item => item.name ===  event.value.extendedProps.type);
+    type = Object.values(localEventTypes.value).find(item => item.id ===  event.value.extendedProps.type_id);
+
 
     return JSON.parse(JSON.stringify(type.options));
 });
+//
+// const eventAnswers = computed(() => {
+//
+//     let answers
+// console.log('nnnnnnnnnnnnnnnnn',eventDetails.value.answers.length, eventDetails.value)
+//     if(eventDetails.value.answers.length > 0 ) {
+//         console.log('aaaaaaa', eventDetails)
+//         console.log('dsfdsfdfdfss')
+//
+//         if(eventTypeOptions.guest && eventTypeOptions.guest.includes('approval')) {
+//
+//             for (const key in inputObject) {
+//                 if (Array.isArray(inputObject[key])) {
+//                     answers[key] = answers[key].filter(item => item.pivot && item.pivot.approved_at !== null);
+//                 }
+//             }
+//
+//
+//             // console.log(eventTypeOptions.guest)
+//             // answers = eventDetails.value.answers.filter((x) => {
+//             //     return  x.pivot.approved_at!==null
+//             //
+//             // })
+//         } else {
+//             answers = eventDetails.value.answers
+//         }
+//
+//
+//         //
+//         // return answers
+//     }
+//
+//     return answers
+//
+//
+// });
+
+// const approval = computed(() => {
+//
+//     return Object.values(localEventTypes.value);
+// });
 
 // const maxDate = computed(() => {
 //     const month = getMonth(new Date()) + 1 > 9 ? getMonth(new Date()) + 1 : `0${getMonth(new Date()) + 1}`;
@@ -222,6 +252,7 @@ const onCancel = () => {
 //     joinEvent(event.value.id, 'maybe')
 // }
 
+//todo fix isgoing
 const  getIsGoing = (answer) => {
     //event.value.id > 0
     if (loadEventDetails.value) {
@@ -278,7 +309,40 @@ const getEvent = async (eventId) => {
 
         eventTypeSelect.value = eventDetails.value.type_id
         // console.log('eventTypeSelect',eventTypeSelect)
-        // console.log('eventDetails',eventDetails)
+        console.log('eventDetails',eventDetails)
+
+        let answers =  response.data.answers;
+
+        // eventAnswers.value = answers
+
+        // console.log('eventTypeOptions',eventTypeOptions)
+
+        if(eventTypeOptions.value.guest && eventTypeOptions.value.guest.includes('approval')) {
+
+            console.log('test')
+
+            for (const key in answers) {
+                if (Array.isArray(answers[key])) {
+                    answers[key] = answers[key].filter(item => item.pivot && item.pivot.approved_at !== null);
+                }
+            }
+
+            // eventAnswers.value = answers;
+            //
+            // answers = [];
+
+
+            // console.log(eventTypeOptions.guest)
+            // answers = eventDetails.value.answers.filter((x) => {
+            //     return  x.pivot.approved_at!==null
+            //
+            // })
+        }
+
+        eventAnswers.value = answers;
+        answers = [];
+
+
 
     } catch (err) {
         console.error('Failed to load event details:', err);
@@ -427,14 +491,7 @@ const rules = {
                     >
                         <VRow>
                             <!-- 👉 Title -->
-                            <VCol cols="12">
-                                <VTextField
-                                    v-model="event.title"
-                                    label="Title"
-                                    :rules="rules.title"
-                                    placeholder="Title"
-                                />
-                            </VCol>
+
                             <VCol cols="12" v-if="eventTypeItems.length > 0">
 
                                 <VSelect
@@ -472,104 +529,120 @@ const rules = {
                                 </VSelect>
                             </VCol>
 
+                            <template v-if="event.extendedProps.type_id">
 
-                            <!-- 👉 Start date -->
-                            <VCol cols="12">
-                                <!--                                <div class="vuedatepicker-wrapper">-->
-                                <!--                                    &lt;!&ndash; Label &ndash;&gt;-->
-                                <!--                                    <label class="v-label v-field-label">Start Date</label>-->
-                                <!--                                    &lt;!&ndash; Date Picker &ndash;&gt;-->
-                                <!--                                <VueDatePicker-->
-                                <!--                                    class="datepicker-input"-->
-                                <!--                                    locale="de"-->
-                                <!--                                    v-model="event.start"-->
-                                <!--                                    :class="{ 'is-focused': isFocused }"-->
-                                <!--                                    @focus="isFocused = true"-->
-                                <!--                                    @blur="isFocused = false"-->
-                                <!--                                    :enable-time-picker="!event.allDay"-->
-                                <!--                                    minutes-increment="15"-->
-                                <!--                                    :rules="rules.date"-->
-                                <!--                                    utc-->
-                                <!--                                    auto-apply-->
-                                <!--                                    :preview-format="format"-->
-                                <!--                                />-->
-                                <!--&lt;!&ndash;                                <span v-if="!isStartDateValid" class="error-message">{{ startDateError }}</span>&ndash;&gt;-->
-                                <!--                                </div>-->
-                                <CustomDatePicker
-                                    label="Start Date"
-                                    v-model="event.start"
-                                    :allDay="event.allDay"
-                                    :error="!isStartDateValid"
-                                    :error-messages="['Date is required']"
-                                    :date-picker-config="{ enableTimePicker: true }"
-                                />
-                            </VCol>
+                                <VCol cols="12">
+                                    <VTextField
+                                        v-model="event.title"
+                                        label="Title"
+                                        :rules="rules.title"
+                                        placeholder="Title"
+                                    />
+                                </VCol>
 
-                            <!-- 👉 End date -->
-                            <VCol cols="12">
-                                <!--                <AppDateTimePicker-->
-                                <!--                  :key="JSON.stringify(endDateTimePickerConfig)"-->
-                                <!--                  v-model="event.end"-->
 
-                                <!--                  label="End date"-->
-                                <!--                  placeholder="Select End Date"-->
-                                <!--                  :config="endDateTimePickerConfig"-->
-                                <!--                />-->
-                                <!--                                <custom-date-picker-->
-                                <!--                                    label="Event Date"-->
-                                <!--                                    v-model="event.end"-->
-                                <!--                                    id="event-date"-->
-                                <!--                                    :error="isStartDateValid ? 'Please select a valid date':''"-->
-                                <!--                                />-->
-                                <CustomDatePicker
-                                    label="End Date"
-                                    v-model="event.end"
-                                    :allDay="event.allDay"
-                                    :error="!isEndDateValid"
-                                    :error-messages="['Date is required']"
-                                    :date-picker-config="{ enableTimePicker: true }"
-                                />
-                                <!--                                <VueDatePicker-->
-                                <!--                                    locale="de"-->
-                                <!--                                    v-model="event.end"-->
-                                <!--                                    :class="{ 'error-class': !isStartDateValid }"-->
-                                <!--                                    :enable-time-picker="!event.allDay"-->
-                                <!--                                    minutes-increment="15"-->
-                                <!--                                    @blur="validateEndDate"-->
-                                <!--                                    utc-->
-                                <!--                                    auto-apply-->
-                                <!--                                    :preview-format="format"-->
-                                <!--                                />-->
-                                <!--                                <span v-if="!isEndDateValid" class="error-message">{{ endDateError }}</span>-->
-                            </VCol>
+                                <!-- 👉 Start date -->
+                                <VCol cols="12">
+                                    <!--                                <div class="vuedatepicker-wrapper">-->
+                                    <!--                                    &lt;!&ndash; Label &ndash;&gt;-->
+                                    <!--                                    <label class="v-label v-field-label">Start Date</label>-->
+                                    <!--                                    &lt;!&ndash; Date Picker &ndash;&gt;-->
+                                    <!--                                <VueDatePicker-->
+                                    <!--                                    class="datepicker-input"-->
+                                    <!--                                    locale="de"-->
+                                    <!--                                    v-model="event.start"-->
+                                    <!--                                    :class="{ 'is-focused': isFocused }"-->
+                                    <!--                                    @focus="isFocused = true"-->
+                                    <!--                                    @blur="isFocused = false"-->
+                                    <!--                                    :enable-time-picker="!event.allDay"-->
+                                    <!--                                    minutes-increment="15"-->
+                                    <!--                                    :rules="rules.date"-->
+                                    <!--                                    utc-->
+                                    <!--                                    auto-apply-->
+                                    <!--                                    :preview-format="format"-->
+                                    <!--                                />-->
+                                    <!--&lt;!&ndash;                                <span v-if="!isStartDateValid" class="error-message">{{ startDateError }}</span>&ndash;&gt;-->
+                                    <!--                                </div>-->
+                                    <CustomDatePicker
+                                        label="Start Date"
+                                        v-model="event.start"
+                                        :allDay="event.allDay"
+                                        :error="!isStartDateValid"
+                                        :error-messages="['Date is required']"
+                                        :date-picker-config="{ enableTimePicker: true }"
+                                    />
+                                </VCol>
 
-                            <!-- 👉 All day -->
-                            <VCol cols="12">
-                                <VSwitch
-                                    color="primary"
-                                    v-model="event.allDay"
-                                    label="All day"
-                                />
-                            </VCol>
+                                <!-- 👉 End date -->
+                                <VCol cols="12" v-show="eventTypeOptions.showAttributtes.includes('endDate')">
+                                    <!--                <AppDateTimePicker-->
+                                    <!--                  :key="JSON.stringify(endDateTimePickerConfig)"-->
+                                    <!--                  v-model="event.end"-->
 
-                            <!-- 👉 Location -->
-                            <VCol cols="12">
-                                <VTextField
-                                    v-model="event.extendedProps.location"
-                                    :rules="rules.location"
-                                    label="Location"
-                                    placeholder="Meeting room"
-                                />
-                            </VCol>
+                                    <!--                  label="End date"-->
+                                    <!--                  placeholder="Select End Date"-->
+                                    <!--                  :config="endDateTimePickerConfig"-->
+                                    <!--                />-->
+                                    <!--                                <custom-date-picker-->
+                                    <!--                                    label="Event Date"-->
+                                    <!--                                    v-model="event.end"-->
+                                    <!--                                    id="event-date"-->
+                                    <!--                                    :error="isStartDateValid ? 'Please select a valid date':''"-->
+                                    <!--                                />-->
 
-                            <!-- 👉 Description -->
-                            <VCol cols="12">
-                                <VTextarea
-                                    v-model="event.extendedProps.description"
-                                    label="Description"
-                                    placeholder="Meeting description"
-                                />
-                            </VCol>
+                                    <CustomDatePicker
+                                        label="End Date"
+                                        v-model="event.end"
+                                        :allDay="event.allDay"
+                                        :error="!isEndDateValid"
+                                        :error-messages="['Date is required']"
+                                        :date-picker-config="{ enableTimePicker: true }"
+                                    />
+
+                                    <!--                                <VueDatePicker-->
+                                    <!--                                    locale="de"-->
+                                    <!--                                    v-model="event.end"-->
+                                    <!--                                    :class="{ 'error-class': !isStartDateValid }"-->
+                                    <!--                                    :enable-time-picker="!event.allDay"-->
+                                    <!--                                    minutes-increment="15"-->
+                                    <!--                                    @blur="validateEndDate"-->
+                                    <!--                                    utc-->
+                                    <!--                                    auto-apply-->
+                                    <!--                                    :preview-format="format"-->
+                                    <!--                                />-->
+                                    <!--                                <span v-if="!isEndDateValid" class="error-message">{{ endDateError }}</span>-->
+                                </VCol>
+
+                                <!-- 👉 All day -->
+                                <VCol cols="12"  v-show="eventTypeOptions.showAttributtes.includes('allDay')">
+                                    <VSwitch
+                                        color="primary"
+                                        v-model="event.allDay"
+                                        label="All day"
+                                    />
+                                </VCol>
+
+                                <!-- 👉 Location -->
+                                <VCol cols="12">
+                                    <VTextField
+                                        v-model="event.extendedProps.location"
+                                        :rules="rules.location"
+                                        label="Location"
+                                        placeholder="Meeting room"
+                                    />
+                                </VCol>
+
+                                <!-- 👉 Description -->
+                                <VCol cols="12">
+                                    <VTextarea
+                                        v-model="event.extendedProps.description"
+                                        label="Description"
+                                        placeholder="Meeting description"
+                                    />
+                                </VCol>
+
+                            </template>
+
 
                             <!-- 👉 Form buttons -->
                             <VCol cols="12">
@@ -678,11 +751,15 @@ const rules = {
                                     <div v-else>
 <!--                                        {{ eventDetails}}-->
 <!--                                        {{ eventDetails.notgoing }}-->
-                                        <template v-for="(answer, value) in eventDetails.answers">
 
-                                            <v-list-subheader>{{value}} ({{ answer.length }})</v-list-subheader>
-                                            <user-avatar v-for="user in answer" :key="`going-${user.id}`" :user="user"></user-avatar>
-                                        </template>
+
+
+                                            <template v-for="(answer, value) in eventAnswers">
+
+                                                <v-list-subheader>{{value}} ({{ answer.length }})</v-list-subheader>
+                                                <user-avatar v-for="user in answer" :key="`going-${user.id}`" :user="user"></user-avatar>
+                                            </template>
+
 
                                     </div>
                             </VCol>

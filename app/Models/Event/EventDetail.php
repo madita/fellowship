@@ -9,6 +9,12 @@ class EventDetail extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'lat',
+        'lng',
+        'options'
+    ];
+
     public function event()
     {
         return $this->belongsTo("App\\Models\\Event\Event");
