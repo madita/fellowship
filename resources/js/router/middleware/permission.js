@@ -11,6 +11,8 @@ export default function permission({ to, next }) {
         "admin-posts": "manage-post",
         "admin-events": "manage-post",
         "admin-events-types": "manage-post",
+        "admin-gallery": "manage-post",
+        "admin-album": "manage-post",
         "admin-announcements": "manage-post",
         "wiki-create": "manage-page",
         "wiki-create-slug": "manage-page",

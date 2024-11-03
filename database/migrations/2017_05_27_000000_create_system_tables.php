@@ -61,6 +61,30 @@ class CreateSystemTables extends Migration
             //$table->integer('icon_id');
             $table->timestamps();
         });
+
+
+
+        Schema::create('collections', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+//            $table->string('type'); // album collectio, page collections (epic)
+            $table->foreignId('taxonomy_id')->constrained()->onDelete('cascade');
+            $table->timestamps();
+        });
+
+        Schema::create('relateables', function (Blueprint $table) {
+            $table->string('source_type');
+            $table->unsignedInteger('source_id');
+            $table->string('related_type');
+            $table->unsignedInteger('related_id');
+
+            $table->unique(
+                ['source_id', 'source_type', 'related_id', 'related_type'],
+                'relatables_unique'
+            );
+
+        });
+
     }
 
     /**
@@ -70,9 +94,11 @@ class CreateSystemTables extends Migration
      */
     public function down()
     {
-        Schema::drop('likeable');
-        Schema::drop('statuses');
-        Schema::drop('pages');
-        Schema::drop('posts');
+        Schema::dropIfExists('likeable');
+        Schema::dropIfExists('statuses');
+        Schema::dropIfExists('pages');
+        Schema::dropIfExists('posts');
+        Schema::dropIfExists('collections');
+        Schema::dropIfExists('relateables');
     }
 }

@@ -3,6 +3,8 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,8 +68,26 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/events/{event}/going/{answer}', "\App\Http\Controllers\EventController@isGoing");
     Route::get('/events/types', "\App\Http\Controllers\EventController@getTypes");
     Route::post('/events/{event}/answer', "\App\Http\Controllers\EventController@joinEvent");
-    Route::resource('events', "\App\Http\Controllers\EventController");
+//    Route::resource('events', "\App\Http\Controllers\EventController");
+    Route::get('events/create', ['as' => 'event.create', 'uses' => "\App\Http\Controllers\EventController@create"]);
+    Route::get('events', ['as' => 'event.index', 'uses' => "\App\Http\Controllers\EventController@index"]);
+    Route::post('events', ['as' => 'event.store', 'uses' => "\App\Http\Controllers\EventController@store"]);
+    Route::get('events/{event}', ['as' => 'event.show', 'uses' => "\App\Http\Controllers\EventController@show"]);
+    Route::get('events/{event}', ['as' => 'event.update', 'uses' => "\App\Http\Controllers\EventController@update"]);
+    Route::get('events/{event}', ['as' => 'event.destroy', 'uses' => "\App\Http\Controllers\EventController@destroy"]);
+    Route::get('events/{event}/edit', ['as' => 'event.edit', 'uses' => "\App\Http\Controllers\EventController@edit"]);
 });
+
+
+
+Route::get('/collections', [App\Http\Controllers\CollectionController::class, 'index']); // Fetch all collections
+Route::get('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'show']); // Fetch media for a specific collection
+Route::post('/collections', [App\Http\Controllers\CollectionController::class, 'store']); // Create a new collection
+Route::post('/collections/{collection}/media', [App\Http\Controllers\CollectionController::class, 'uploadMedia']); // Upload media to collection
+Route::patch('/media/{media}/caption', [App\Http\Controllers\CollectionController::class, 'updateMediaCaption']); // Update caption for a media item
+Route::delete('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'delete']); // Delete collection
+Route::delete('/media/{media}', [App\Http\Controllers\CollectionController::class, 'deleteMedia']); // Delete a media item
+
 
 Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
     Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');

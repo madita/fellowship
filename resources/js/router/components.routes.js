@@ -1,4 +1,5 @@
 import auth from './middleware/auth'
+import verified from "@/router/middleware/verified.js";
 
 export const componentsRoutes = [{
     path: '/chat',
@@ -9,7 +10,7 @@ export const componentsRoutes = [{
             auth
         ]
     }
-},
+    },
     {
         path: '/events',
         name: 'events',
@@ -47,6 +48,28 @@ export const componentsRoutes = [{
         meta: {
             middleware: [
                 auth
+            ]
+        }
+    },
+    {
+        path: '/gallery',
+        name: 'gallery-index',
+        component: () => import(/* webpackChunkName: "gallery-index" */ '@/components/gallery/Gallery.vue'),
+        meta: {
+            layout: 'landing',
+            middleware: [
+                auth, verified
+            ]
+        }
+    },
+    {
+        path: '/gallery/:album',
+        name: 'gallery-album',
+        component: () => import(/* webpackChunkName: "gallery-album" */ '@/components/gallery/Album.vue'),
+        meta: {
+            layout: 'landing',
+            middleware: [
+                auth, verified
             ]
         }
     }]

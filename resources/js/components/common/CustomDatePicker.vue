@@ -115,7 +115,6 @@ watch(localModelValue, (newVal) => {
 
 // Watch for external changes to the modelValue prop
 watch(() => props.modelValue, (newVal) => {
-    console.log('watch', newVal)
     localModelValue.value = newVal;
 });
 

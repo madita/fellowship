@@ -15,6 +15,7 @@ import UsersRoutes from './users.routes'
 import LandingRoutes from './landing.routes'
 import WikiRoutes from './wiki.routes'
 import AdminRoutes from './admin.routes'
+//import permission from "@/router/middleware/permission.js";
 
 //Vue.use(Router)
 
@@ -73,7 +74,10 @@ export const routes = [{
         name: 'page',
         component: () => import(/* webpackChunkName: "landing-pages" */ '@/pages/landing/Pages.vue'),
         meta: {
-            layout: 'landing'
+            layout: 'landing',
+            middleware: [
+                auth, verified
+            ]
         }
     },
     {

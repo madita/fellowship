@@ -10,6 +10,7 @@ class Event extends Model
 {
     use Sluggable;
     use SoftDeletes;
+    use HasRelateableContent;
 
     public function sluggable(): array
     {

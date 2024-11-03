@@ -29,9 +29,8 @@ const CustomViewConfig = {
 
             let cnt = 0;
             while (currentDate <= endDate) {
-                // console.log(cnt, currentDate, endDate)
-                let isStart = cnt === 0 ? true:false;
-                let isEnd = currentDate.getTime() === endDate.getTime() ? true:false;
+                let isStart = cnt === 0;
+                let isEnd = currentDate.getTime() === endDate.getTime();
                 // console.log('isEnd',isEnd)
                 const dateStr = currentDate.toISOString().split('T')[0];
                 // console.log('dateStr', dateStr, currentDate.toISOString())
@@ -67,7 +66,6 @@ const CustomViewConfig = {
                 html += `<!--<li class="event-day">${new Date(date).toDateString()} - ${eventsByDate[date].length} events</li><ul class="event-list">-->`;
                 html += `<div class="event-list-custom fc-list-day-cushion fc-cell-shaded"><a id="fc-dom-10" class="fc-list-day-text" aria-label="${new Date(date).toDateString()}">${new Date(date).toDateString()}</a><a aria-hidden="true" class="fc-list-day-side-text" aria-label="${new Date(date).toDateString()}">${new Date(date).toLocaleDateString(i18n.locale, { weekday: 'long' })}</a></div><ul class="event-list-custom">`;
                 eventsByDate[date].forEach(event => {
-                    console.log('event',event)
 
                     const startTime = new Date(event.def.extendedProps.originDate.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const endTime = new Date(event.def.extendedProps.originDate.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

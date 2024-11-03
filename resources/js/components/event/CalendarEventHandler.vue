@@ -5,8 +5,8 @@ import {VForm} from 'vuetify/components/VForm'
 import CustomDatePicker from "../common/CustomDatePicker.vue";
 import UserAvatar from "../common/UserAvatar.vue";
 import axios from "axios";
-import {useCalendarStore} from '../../store/calendarStore.js'
-import { isProxy, toRaw } from 'vue';
+import {useCalendarStore} from '@/store/calendarStore.js'
+import {isProxy, toRaw} from 'vue';
 
 // 👉 store
 const props = defineProps({
@@ -46,13 +46,13 @@ const refForm = ref()
 // 👉 Event
 // const event = ref({})
 const event = ref(props.event)
-const localEventTypes = computed(() =>calendarStore.eventTypes)
+const localEventTypes = computed(() => calendarStore.eventTypes)
 
 // const localEventTypes = ref(props.eventTypes)
 const eventDetails = ref();
 const eventAnswers = ref();
 
-if (isProxy(props.event)){
+if (isProxy(props.event)) {
     event.value = toRaw(props.event)
 }
 
@@ -68,7 +68,7 @@ const resetEvent = () => {
     event.value = JSON.parse(JSON.stringify(props.event))
     isStartDateValid.value = true;
     isEndDateValid.value = true;
-    if(event.value.id > 0) {
+    if (event.value.id > 0) {
         getEvent(event.value.id);
         //eventTypeSelect.value = Object.values(localEventTypes.value).find(item => item.id ===  event.value.type_id)
     }
@@ -112,12 +112,12 @@ const eventTypeItems = computed(() => {
 
 // evenType =
 const eventType = computed(() => {
-    let type = {}
+    let type;
 
     // if (localEventTypes.value && localEventTypes.value.length > 0) {
 
-        type = Object.values(localEventTypes.value).find(item => item.name ===  event.value.extendedProps.type);
-        // do something with result
+    type = Object.values(localEventTypes.value).find(item => item.name === event.value.extendedProps.type);
+    // do something with result
     // }
 
 
@@ -125,12 +125,11 @@ const eventType = computed(() => {
 });
 
 
-
 const eventTypeOptions = computed(() => {
-    let type = {}
+    let type
 
     // type = Object.values(localEventTypes.value).find(item => item.name ===  event.value.extendedProps.type);
-    type = Object.values(localEventTypes.value).find(item => item.id ===  event.value.extendedProps.type_id);
+    type = Object.values(localEventTypes.value).find(item => item.id === event.value.extendedProps.type_id);
 
 
     return JSON.parse(JSON.stringify(type.options));
@@ -253,7 +252,7 @@ const onCancel = () => {
 // }
 
 //todo fix isgoing
-const  getIsGoing = (answer) => {
+const getIsGoing = (answer) => {
     //event.value.id > 0
     if (loadEventDetails.value) {
         return true;
@@ -309,17 +308,14 @@ const getEvent = async (eventId) => {
 
         eventTypeSelect.value = eventDetails.value.type_id
         // console.log('eventTypeSelect',eventTypeSelect)
-        console.log('eventDetails',eventDetails)
 
-        let answers =  response.data.answers;
+
+        let answers = response.data.answers;
 
         // eventAnswers.value = answers
 
-        // console.log('eventTypeOptions',eventTypeOptions)
 
-        if(eventTypeOptions.value.guest && eventTypeOptions.value.guest.includes('approval')) {
-
-            console.log('test')
+        if (eventTypeOptions.value.guest && eventTypeOptions.value.guest.includes('approval')) {
 
             for (const key in answers) {
                 if (Array.isArray(answers[key])) {
@@ -341,7 +337,6 @@ const getEvent = async (eventId) => {
 
         eventAnswers.value = answers;
         answers = [];
-
 
 
     } catch (err) {
@@ -614,7 +609,7 @@ const rules = {
                                 </VCol>
 
                                 <!-- 👉 All day -->
-                                <VCol cols="12"  v-show="eventTypeOptions.showAttributtes.includes('allDay')">
+                                <VCol cols="12" v-show="eventTypeOptions.showAttributtes.includes('allDay')">
                                     <VSwitch
                                         color="primary"
                                         v-model="event.allDay"
@@ -676,16 +671,16 @@ const rules = {
                         <VRow>
                             <!-- 👉 Title -->
                             <VCol cols="12">
-<!--                                {{ // eventTypes }}-->
+                                <!--                                {{ // eventTypes }}-->
 
-<!--                              <template if="eventTypes">  {{// eventTypes[event.id].options}}</template>-->
-<!--{{localEventTypes}}gnaa-->
+                                <!--                              <template if="eventTypes">  {{// eventTypes[event.id].options}}</template>-->
+                                <!--{{localEventTypes}}gnaa-->
 
-<!--{{// eventType.options}}-->
+                                <!--{{// eventType.options}}-->
                                 <div>Are you coming?</div>
                                 <template v-if="eventType">
 
-<!--                                    {{eventTypeOptions}}-->
+                                    <!--                                    {{eventTypeOptions}}-->
 
 
                                     <VBtn v-for="(answer, value, index) in eventTypeOptions.answers"
@@ -698,31 +693,31 @@ const rules = {
                                     </VBtn>
                                 </template>
 
-<!--                                <VBtn-->
-<!--                                    color="primary"-->
-<!--                                    class="me-3"-->
-<!--                                    :disabled="getIsGoing('going')"-->
-<!--                                    @click="onYes"-->
-<!--                                >-->
-<!--                                    Yes-->
-<!--                                </VBtn>-->
-<!--                                <VBtn-->
-<!--                                    variant="tonal"-->
-<!--                                    color="primary"-->
-<!--                                    class="me-3"-->
-<!--                                    :disabled="getIsGoing('notgoing')"-->
-<!--                                    @click="onNo"-->
-<!--                                >-->
-<!--                                    No-->
-<!--                                </VBtn>-->
-<!--                                <VBtn-->
-<!--                                    variant="outlined"-->
-<!--                                    color="secondary"-->
-<!--                                    :disabled="getIsGoing('maybe')"-->
-<!--                                    @click="onMaybe"-->
-<!--                                >-->
-<!--                                    Maybe-->
-<!--                                </VBtn>-->
+                                <!--                                <VBtn-->
+                                <!--                                    color="primary"-->
+                                <!--                                    class="me-3"-->
+                                <!--                                    :disabled="getIsGoing('going')"-->
+                                <!--                                    @click="onYes"-->
+                                <!--                                >-->
+                                <!--                                    Yes-->
+                                <!--                                </VBtn>-->
+                                <!--                                <VBtn-->
+                                <!--                                    variant="tonal"-->
+                                <!--                                    color="primary"-->
+                                <!--                                    class="me-3"-->
+                                <!--                                    :disabled="getIsGoing('notgoing')"-->
+                                <!--                                    @click="onNo"-->
+                                <!--                                >-->
+                                <!--                                    No-->
+                                <!--                                </VBtn>-->
+                                <!--                                <VBtn-->
+                                <!--                                    variant="outlined"-->
+                                <!--                                    color="secondary"-->
+                                <!--                                    :disabled="getIsGoing('maybe')"-->
+                                <!--                                    @click="onMaybe"-->
+                                <!--                                >-->
+                                <!--                                    Maybe-->
+                                <!--                                </VBtn>-->
                             </VCol>
 
                             <VCol cols="12">
@@ -739,29 +734,29 @@ const rules = {
                             <!-- 👉 Description -->
                             <VCol cols="12">
                                 <label for="">Description</label>
-                                <div v-html="event.extendedProps.description" ></div>
+                                <div v-html="event.extendedProps.description"></div>
 
                             </VCol>
 
                             <!-- 👉 Form buttons -->
                             <VCol cols="12">
 
-<!--                                    <div @click="getEvent(event.id)">Load Event Details</div>-->
-                                    <div v-if="loadEventDetails">Loading...</div>
-                                    <div v-else>
-<!--                                        {{ eventDetails}}-->
-<!--                                        {{ eventDetails.notgoing }}-->
+                                <!--                                    <div @click="getEvent(event.id)">Load Event Details</div>-->
+                                <div v-if="loadEventDetails">Loading...</div>
+                                <div v-else>
+                                    <!--                                        {{ eventDetails}}-->
+                                    <!--                                        {{ eventDetails.notgoing }}-->
 
 
+                                    <template v-for="(answer, value) in eventAnswers">
 
-                                            <template v-for="(answer, value) in eventAnswers">
+                                        <v-list-subheader>{{value}} ({{ answer.length }})</v-list-subheader>
+                                        <user-avatar v-for="user in answer" :key="`going-${user.id}`"
+                                                     :user="user"></user-avatar>
+                                    </template>
 
-                                                <v-list-subheader>{{value}} ({{ answer.length }})</v-list-subheader>
-                                                <user-avatar v-for="user in answer" :key="`going-${user.id}`" :user="user"></user-avatar>
-                                            </template>
 
-
-                                    </div>
+                                </div>
                             </VCol>
                         </VRow>
                     </VForm>
@@ -772,8 +767,6 @@ const rules = {
     </VNavigationDrawer>
 </template>
 <style>
-
-
 
 
 </style>

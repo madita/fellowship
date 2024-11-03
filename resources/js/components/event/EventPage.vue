@@ -2,7 +2,7 @@
 
 import { ref, watch, computed, onMounted } from 'vue';
 import axios from 'axios';
-import { VCalendar } from 'vuetify/labs/VCalendar'
+// import { VCalendar } from 'vuetify/labs/VCalendar'
 import {getDate, format, formatDistanceToNow} from "date-fns";
 
 // Sample API call to fetch events (update the URL as per your backend)
@@ -104,7 +104,7 @@ const fetchEvents = async () => {
             start: new Date(event.start),
             end: new Date(event.end),
         }));
-        // console.log('fetchevents',events)
+
         return events; // Returns the processed events array.
     } catch (error) {
         console.error("Error fetching events:", error);
@@ -160,7 +160,7 @@ const createEvent = () => {
 
 
 const addEvent = async (addevent) => {
-    // console.log('addevent', addevent)
+
     axios.post(`${endpoint}`, addevent).then(() => {
         event.value = null
         // this.page = {title: "", body: ""};

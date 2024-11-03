@@ -17,26 +17,56 @@ class TaxonomyController extends DataTableController
         Taxonomy::create($request->only($this->getUpdatableColumns()));
     }
 
+
+
+    public function update($id, Request $request)
+    {
+        //            dd($id, $request);
+
+    }
+
+
+
     public function getUpdatableColumns()
     {
-        return  [
+        return [
             'taxonomy',
-            'desc',
-        ];
+            'description',
+            'content',
+            'lead',
+            'meta_desc',
+            'color',
+            'parent',
+            'properties',
+            'sort',
+            ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'body'   => 'textarea',
-            'status' => 'radio',
+            'content'      => 'wysiwyg',
+            'description'    => 'wysiwyg',
+            'color' => 'color', ];
+    }
+
+    public function getDisplayableColumns()
+    {
+        return [
+            'id',
+            'taxonomy',
+            'description',
+            'content',
+            'lead',
+            'meta_desc',
+            'color',
+            'parent',
+            'properties',
+            'sort',
         ];
     }
 
-    public function getCustomColumnsNames()
-    {
-        return ['sort'=>'sort'];
-    }
+
 
 //    public function update($id, TaxonomyRequest $request)
 //    {
