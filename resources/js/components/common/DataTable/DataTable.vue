@@ -371,7 +371,7 @@ export default {
 
         watch(isSidebarActive, val => {
             isSidebarActive.value = val
-            console.log('watchval', val)
+
             // if (!val) {
             //     editMode.value = true
             //     selectedEvent.value = structuredClone(blankEvent)
@@ -387,8 +387,6 @@ export default {
 
         const filteredRecords = computed(() => {
             let data = state.response.records.data
-
-            // console.log('letdata', data)
 
             data = data.filter((row) => {
                 return Object.keys(row).some((key) => {
@@ -421,9 +419,9 @@ export default {
             state.loading = true
             return api.get(`${props.endpoint}?${getQueryParameters()}`).then((response) => {
                 state.response = response.data.data
-                console.log('response',response)
+
                 state.response.updatable.forEach(item => {
-                    console.log('item',item)
+
                     state.defaultItem[item] = ''
                     }
                 )
@@ -573,14 +571,14 @@ export default {
         //itemsPerPage
         //itemsPerPage
         const paginationChange = (e) => {
-            console.log('e',e)
+
             state.pagination = e
-            console.log('search',state.search)
+
             getRecords()
         }
 
         const getHeaders = computed(() => {
-            console.log(state.response.headers)
+
            return  state.response.headers
         })
 

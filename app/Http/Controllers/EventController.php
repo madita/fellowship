@@ -28,8 +28,9 @@ class EventController extends Controller
     public function index()
     {
         $events = Event::all();
+//        $events = DB::select('select * from events');
+//        dd($events);
         $eventTypes = EventType::all()->keyBy('id');
-//        dd($eventTypes);
         $eventsMapped = $events->map(function ($event) use ($eventTypes) {
             if ($event->endDate === null) {
                 $event->endDate = $event->startDate;
@@ -242,6 +243,7 @@ class EventController extends Controller
             $event->endDate = date('Y-m-d', strtotime(request()->get('end')));
 
             if (request()->get('allDay') === true) {
+                //todo
                 //                $event->startTime = "00:00:00";
                 //                $event->endTime = "23:59:59";
             } else {

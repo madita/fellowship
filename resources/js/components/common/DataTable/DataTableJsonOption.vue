@@ -66,7 +66,7 @@ const removeOption = (key) => {
 // Function to trigger edit mode
 // Function to trigger edit mode
 const editOption = (key, value, index) => {
-    console.log('dfdsfdsfdsf',key,value,index)
+
     editIndex.value = index;
     editKey.value = key;
     editValue.value = value;

@@ -73,8 +73,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('events', ['as' => 'event.index', 'uses' => "\App\Http\Controllers\EventController@index"]);
     Route::post('events', ['as' => 'event.store', 'uses' => "\App\Http\Controllers\EventController@store"]);
     Route::get('events/{event}', ['as' => 'event.show', 'uses' => "\App\Http\Controllers\EventController@show"]);
-    Route::get('events/{event}', ['as' => 'event.update', 'uses' => "\App\Http\Controllers\EventController@update"]);
-    Route::get('events/{event}', ['as' => 'event.destroy', 'uses' => "\App\Http\Controllers\EventController@destroy"]);
+    Route::patch('events/{event}', ['as' => 'event.update', 'uses' => "\App\Http\Controllers\EventController@update"]);
+    Route::delete('events/{event}', ['as' => 'event.destroy', 'uses' => "\App\Http\Controllers\EventController@destroy"]);
     Route::get('events/{event}/edit', ['as' => 'event.edit', 'uses' => "\App\Http\Controllers\EventController@edit"]);
 });
 
@@ -104,6 +104,11 @@ Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function (
     Route::resource('datatable/events', 'App\Http\Controllers\DataTable\EventController');
     Route::resource('datatable/event-types', 'App\Http\Controllers\DataTable\EventTypeController');
 });
+
+Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']);
+Route::get('/source-models', [App\Http\Controllers\RelateableController::class, 'getSourceModels']);
+Route::get('/model-items', [App\Http\Controllers\RelateableController::class, 'getModelItems']);
+Route::post('/relate-models', [App\Http\Controllers\RelateableController::class, 'relateModels']);
 
 Route::post('/login', function (Request $request) {
     $data = $request->validate([

@@ -77,6 +77,7 @@ class CreateSystemTables extends Migration
             $table->unsignedInteger('source_id');
             $table->string('related_type');
             $table->unsignedInteger('related_id');
+            $table->timestamps();
 
             $table->unique(
                 ['source_id', 'source_type', 'related_id', 'related_type'],

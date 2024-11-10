@@ -60,6 +60,15 @@ export const admin = [{
     },
     component: () => import(/* webpackChunkName: "admin-users" */ '@/pages/admin/User.vue')
 }, {
+    path: '/admin/gallery',
+    name: 'admin-gallery',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-users" */ '@/pages/admin/Gallery.vue')
+}, {
     path: '/admin/roles',
     name: 'admin-roles',
     meta: {

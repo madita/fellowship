@@ -5,12 +5,16 @@ namespace App\Models\Event;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\HasRelateableContent;
 
 class Event extends Model
 {
     use Sluggable;
     use SoftDeletes;
     use HasRelateableContent;
+
+    protected $table = 'events';
+
 
     public function sluggable(): array
     {

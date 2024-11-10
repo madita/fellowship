@@ -2,7 +2,7 @@
 
 import { ref, watch, computed, onMounted } from 'vue';
 import axios from 'axios';
-// import { VCalendar } from 'vuetify/labs/VCalendar'
+import { VCalendar } from 'vuetify/labs/VCalendar'
 import {getDate, format, formatDistanceToNow} from "date-fns";
 
 // Sample API call to fetch events (update the URL as per your backend)
@@ -18,11 +18,12 @@ import listPlugin from '@fullcalendar/list'
 
 import customViewPlugin from './custom-list-view.js';
 import CalendarEventHandler from "./CalendarEventHandler.vue";
-import {useCalendarStore} from '../../store/calendarStore.js'
+import { useCalendarStore } from '@/store/calendarStore.js';
 // import CalendarEventHandlerForm from "./CalendarEventHandlerForm.vue";
 import VueDatePicker from "@vuepic/vue-datepicker";
 
 import {eventBus} from "../common/eventBus.js";
+import {useChatStore} from "@/store/chatStore.js";
 
 const blankEvent = {
     title: '',
@@ -66,6 +67,8 @@ const type = ref('month');
 const types = ref(['month', 'week', 'day', 'list']);
 const initialTimeZone = 'Europe/Berlin';
 
+
+
 const checkAll = computed({
 
 
@@ -86,73 +89,72 @@ const filterEvents = computed(() => {
 
 
     if(calendarStore.selectedEventTypes.length === Object.values(calendarStore.eventTypes).length) {
-        return events.value
+        return calendarStore.events
     }
-    return events.value.filter((event) => {
+    return calendarStore.events.filter((event) => {
         // return calendarStore.selectedEventTypes.indexOf(event.type)
-        console.log('eventtype',event.type, calendarStore.selectedEventTypes.indexOf(event.type))
         return calendarStore.selectedEventTypes.indexOf(event.type) !== -1
     })
 
 })
-const fetchEvents = async () => {
-    try {
-        const response = await axios.get('/api/events');
-        // console.log('events', response)
-        const events = response.data.data.events.map(event => ({
-            ...event,
-            start: new Date(event.start),
-            end: new Date(event.end),
-        }));
+// const fetchEvents = async () => {
+//     try {
+//         const response = await axios.get('/api/events');
+//         // console.log('events', response)
+//         const events = response.data.data.events.map(event => ({
+//             ...event,
+//             start: new Date(event.start),
+//             end: new Date(event.end),
+//         }));
+//
+//         return events; // Returns the processed events array.
+//     } catch (error) {
+//         console.error("Error fetching events:", error);
+//         return []; // Return an empty array in case of an error.
+//     }
+// };
 
-        return events; // Returns the processed events array.
-    } catch (error) {
-        console.error("Error fetching events:", error);
-        return []; // Return an empty array in case of an error.
-    }
-};
+// const fetchEventTypes = async () => {
+//     // loadEventDetails.value = true;
+//     // error.value = null; // Reset previous errors
+//
+//
+//     axios.get('/api/events/types').then((response) => {
+//         // messages = response.data;
+//         calendarStore.setEventTypes(response.data.data)
+//         //this.messages = chatStore.messages
+//     });
+//
+//     // try {
+//     //     const response = await axios.get(`/api/events/types`);
+//     //     return response.data.data;
+//     //
+//     //     // selectedEventTypes = respones.map
+//     //
+//     //     console.log('Event types loaded:', response);
+//     // } catch (err) {
+//     //     console.error('Failed to load event types:', err);
+//     //     // error.val
+//     //
+//     // } finally {
+//     //     //loadEventDetails.value = false; // Ensure loading state is reset
+//     // }
+// };
 
-const fetchEventTypes = async () => {
-    // loadEventDetails.value = true;
-    // error.value = null; // Reset previous errors
-
-
-    axios.get('/api/events/types').then((response) => {
-        // messages = response.data;
-        calendarStore.setEventTypes(response.data.data)
-        //this.messages = chatStore.messages
-    });
-
-    // try {
-    //     const response = await axios.get(`/api/events/types`);
-    //     return response.data.data;
-    //
-    //     // selectedEventTypes = respones.map
-    //
-    //     console.log('Event types loaded:', response);
-    // } catch (err) {
-    //     console.error('Failed to load event types:', err);
-    //     // error.val
-    //
-    // } finally {
-    //     //loadEventDetails.value = false; // Ensure loading state is reset
-    // }
-};
-
-const getEvent = async (eventId) => {
-    try {
-        // loadEventDetails.value = true;
-        const response = await axios.get(`/api/events/${eventId}`);
-        const event = response.data
-        // loadEventDetails.value = false;
-        // console.log('fetchevents',events)
-        return event; // Returns the processed events array.
-    } catch (error) {
-        console.error("Error fetching event:", error);
-        return []; // Return an empty array in case of an error.
-    }
-};
-
+// const getEvent = async (eventId) => {
+//     try {
+//         // loadEventDetails.value = true;
+//         const response = await axios.get(`/api/events/${eventId}`);
+//         const event = response.data
+//         // loadEventDetails.value = false;
+//         // console.log('fetchevents',events)
+//         return event; // Returns the processed events array.
+//     } catch (error) {
+//         console.error("Error fetching event:", error);
+//         return []; // Return an empty array in case of an error.
+//     }
+// };
+//
 const createEvent = () => {
     isEventHandlerSidebarActive.value = true
     editMode.value = true
@@ -160,6 +162,7 @@ const createEvent = () => {
 
 
 const addEvent = async (addevent) => {
+    console.log('addEvent')
 
     axios.post(`${endpoint}`, addevent).then(() => {
         event.value = null
@@ -174,6 +177,7 @@ const addEvent = async (addevent) => {
 }
 
 const updateEvent = async (event) => {
+    console.log('update')
     // console.log('updateevent', event)
     // return  await axios.get(`/apps/calendar/${event.id}`, {
     //     method: 'PUT',
@@ -198,9 +202,7 @@ const updateEvent = async (event) => {
 
 const removeEvent = async (eventId) => {
     // console.log('removedevent', eventId)
-    return await await axios.get(`/apps/calendar/${eventId}`, {
-        method: 'DELETE',
-    })
+    return await await axios.delete(`${endpoint}/${eventId}`, {})
 }
 
 const jumpToDate = currentDate => {
@@ -315,8 +317,10 @@ eventBus.on('openSidebarWithEvent', (event) => {
 onMounted(async () => {
     calendarApi.value = refCalendar.value.getApi()
     loading.value = true;
-    events.value = await fetchEvents();
-    await fetchEventTypes();
+    // events.value = await calendarStore.fetchEvents();
+    await calendarStore.fetchEvents();
+    await calendarStore.fetchEventTypes();
+    console.log('eventsstore',calendarStore.events)
     // eventTypes.value = await fetchEventTypes();
     // console.log('eventTypes',eventTypes)
     // console.log('events',events.value)
