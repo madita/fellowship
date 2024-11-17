@@ -6,6 +6,7 @@ use App\Helpers\RelateableHelper;
 use App\Models\Collection;
 use App\Models\Event\Event;
 use Illuminate\Http\Request;
+use App\Models\Relateable;
 
 class RelateableController extends Controller
 {
@@ -60,5 +61,57 @@ class RelateableController extends Controller
         $sourceItem->relate($relatedItem);
 
         return response()->json(['message' => 'Item related']);
+    }
+
+    public function getRelatedItems(Request $request)
+    {
+        $modelType = $request->get('modelType');
+        $modelId = $request->get('modelId');
+
+        if (!$modelId || !$modelType) {
+            return response()->json(['error' => 'Model ID and type are required'], 400);
+        }
+
+        $relatedItems = Relateable::with(['source', 'related'])
+            ->where('source_id', $modelId)
+            ->where('source_type', $modelType)
+            ->get();
+
+        // Map the related items with both source and related models
+        $items = $relatedItems->map(function ($item) {
+            $relatedModel = $item->related;
+
+            // Determine the coverImage if the related model is a Collection
+            $coverImage = null;
+            if ($relatedModel instanceof \App\Models\Collection) {
+                $coverMedia = $relatedModel->media->first(fn ($media) => $media->getCustomProperty('is_cover', false))
+                    ?? $relatedModel->media->first();
+                $coverImage = $coverMedia ? $coverMedia->getUrl() : null;
+            }
+
+            return [
+                'source' => [
+                    'id' => $item->source->id,
+                    'type' => $item->source_type,
+                    'title' => $this->getModelLabel($item->source),
+                    'slug' => $item->source->slug,
+                ],
+                'related' => [
+                    'id' => $relatedModel->id,
+                    'type' => $item->related_type,
+                    'title' => $this->getModelLabel($relatedModel),
+                    'slug' => $relatedModel->slug,
+                    'coverImage' => $coverImage, // Include the coverImage for related items
+                ],
+            ];
+        });
+
+        return response()->json(['items' => $items]);
+    }
+
+
+    protected function getModelLabel($model)
+    {
+        return $model->name ?? $model->title ?? 'Unknown';
     }
 }

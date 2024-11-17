@@ -109,6 +109,7 @@ Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getMod
 Route::get('/source-models', [App\Http\Controllers\RelateableController::class, 'getSourceModels']);
 Route::get('/model-items', [App\Http\Controllers\RelateableController::class, 'getModelItems']);
 Route::post('/relate-models', [App\Http\Controllers\RelateableController::class, 'relateModels']);
+Route::post('/related-items', [App\Http\Controllers\RelateableController::class, 'getRelatedItems']);
 
 Route::post('/login', function (Request $request) {
     $data = $request->validate([

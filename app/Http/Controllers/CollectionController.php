@@ -11,10 +11,15 @@ class CollectionController extends Controller
     public function index()
     {
         // Get all collections with their related media
-        $collections = Collection::with('media')->get();
+        $collections = Collection::with('media')->orderBy('created_at', 'desc')->get();
 
         // Format the media to include custom properties properly
         $collections->each(function ($collection) {
+            $coverMedia = $collection->media->first(fn ($media) => $media->getCustomProperty('is_cover', false))
+                ?? $collection->media->first(); // Fallback to the first media item
+
+            $collection->coverImage = $coverMedia ? $coverMedia->getUrl() : null;
+
             $collection->media->each(function ($media) {
                 $media->caption = $media->getCustomProperty('caption');
                 $media->photographer = $media->getCustomProperty('photographer');
@@ -50,7 +55,9 @@ class CollectionController extends Controller
 
 
         $user = auth()->user();
-        $validatedData['user_id'] = $user->id;
+        if($user->id) {
+            $validatedData['user_id'] = $user->id;
+        }
 
         $collection = Collection::create($validatedData);
 
@@ -90,4 +97,27 @@ class CollectionController extends Controller
 
         return response()->json(['message' => 'Caption updated successfully']);
     }
+
+    public function setCoverImage(Request $request, $collectionId)
+    {
+        $collection = Collection::findOrFail($collectionId);
+
+        $this->authorize('update', $collection);
+
+        $request->validate([
+            'media_id' => 'required|integer|exists:media,id',
+        ]);
+
+        $collection = Collection::findOrFail($collectionId);
+
+        // Ensure only one media is marked as the cover
+        $collection->media()->update(['custom_properties->is_cover' => false]);
+
+        // Mark the selected media as the cover
+        $media = $collection->media()->findOrFail($request->media_id);
+        $media->setCustomProperty('is_cover', true)->save();
+
+        return response()->json(['message' => 'Cover image updated successfully.']);
+    }
+
 }

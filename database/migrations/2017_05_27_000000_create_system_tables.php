@@ -67,8 +67,12 @@ class CreateSystemTables extends Migration
         Schema::create('collections', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('slug')->unique();
 //            $table->string('type'); // album collectio, page collections (epic)
-            $table->foreignId('taxonomy_id')->constrained()->onDelete('cascade');
+//            $table->string('cover_image');
+            $table->integer('taxonomy_id')->nullable();
+            $table->integer('user_id');
+//            $table->foreignId('taxonomy_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
 

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, computed, nextTick, onMounted } from 'vue';
+import { ref, watch, computed, nextTick } from 'vue';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import CustomDatePicker from "../common/CustomDatePicker.vue";
 import UserAvatar from "../common/UserAvatar.vue";
@@ -39,6 +39,8 @@ const isEndDateValid = ref(true);
 
 const confirmationDialog = ref(null);
 
+const relatedItems = ref([]);
+
 const openConfirmationDialog = () => {
     console.log('opendialog')
     confirmationDialog.value.isOpen = true;
@@ -66,6 +68,7 @@ const resetEvent = () => {
     isStartDateValid.value = true;
     isEndDateValid.value = true;
     if (event.value.id) getEvent(event.value.id);
+    if (event.value.id) fetchRelatedItems('App\\Models\\Event\\Event', event.value.id);
     nextTick(() => refForm.value?.resetValidation());
 };
 
@@ -135,6 +138,17 @@ const getEvent = async (eventId) => {
     }
 };
 
+const fetchRelatedItems = async (model, eventId) => {
+    try {
+        const response = await axios.post('/api/related-items', {
+            modelType:model, modelId:eventId,
+        });
+        relatedItems.value = response.data.items
+    } catch (error) {
+        console.error('Failed to fetch related items:', error);
+    }
+};
+
 const validateStartDate = () => {
     isStartDateValid.value = !!event.value.start;
 };
@@ -154,8 +168,8 @@ const dialogModelValueUpdate = (val) => {
     emit('update:isDrawerOpen', val);
 };
 
-const relateContent = (val) => {
-    console.log('related content')
+const relateContent = () => {
+    //console.log('related content')
 };
 
 const rules = {
@@ -315,7 +329,7 @@ watch(() => props.isDrawerOpen, resetEvent);
                             <div>Are you coming?</div>
                             <template v-if="eventType">
 
-                                <VBtn v-for="(answer, value, index) in eventTypeOptions.answers"
+                                <VBtn v-for="(answer, value) in eventTypeOptions.answers"
                                       :key="`answer-${value}`"
                                       class="me-3"
 
@@ -329,7 +343,7 @@ watch(() => props.isDrawerOpen, resetEvent);
 
                         <VCol cols="12">
                             <label>Date/Time</label>
-                            {{ event.start }} - {{ event.end }}
+                            {{ new Date(event.start).toLocaleDateString() }} - {{ new Date(event.end).toLocaleDateString() }}
                         </VCol>
 
                         <VCol cols="12">
@@ -347,6 +361,34 @@ watch(() => props.isDrawerOpen, resetEvent);
                                 <v-list-subheader>{{ value }} ({{ answer.length }})</v-list-subheader>
                                 <UserAvatar v-for="user in answer" :key="`going-${user.id}`" :user="user" />
                             </template>
+                        </VCol>
+
+                        <VCol cols="12">
+<!--                            <h3>Related Content</h3>-->
+
+                                    <v-card v-for="item in relatedItems" :key="item.id"
+                                        class="card-hover"
+                                            elevation="10"
+                                            rounded="md"
+                                            :to="`/gallery/${item.related.slug}`"
+                                            :class="`v-theme--ORANGE_THEME`"
+                                    >
+
+                                        <v-img v-if="item.related.coverImage" :src="item.related.coverImage" height="200"></v-img>
+                                        <v-card-text>
+                                            <div class="d-flex align-center gap-3">
+                                                <div>
+                                                    <h6 class="text-h6 mb-1">{{ item.related.title }}</h6>
+                                                    <span class="d-block text-truncate d-flex align-center gap-2 textSecondary"></span>
+                                                </div>
+                                            </div>
+                                        </v-card-text>
+                                    </v-card>
+
+
+
+<!--                                    <router-link :to="`/gallery/${item.related.slug}`">{{ item.related.title }}</router-link>-->
+
                         </VCol>
                     </VRow>
                 </VCardText>
