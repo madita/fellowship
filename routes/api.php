@@ -83,7 +83,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 Route::get('/collections', [App\Http\Controllers\CollectionController::class, 'index']); // Fetch all collections
 Route::get('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'show']); // Fetch media for a specific collection
 Route::post('/collections', [App\Http\Controllers\CollectionController::class, 'store']); // Create a new collection
-Route::post('/collections/{collection}/media', [App\Http\Controllers\CollectionController::class, 'uploadMedia']); // Upload media to collection
+Route::post('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'uploadMedia']); // Upload media to collection
 Route::patch('/media/{media}/caption', [App\Http\Controllers\CollectionController::class, 'updateMediaCaption']); // Update caption for a media item
 Route::delete('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'delete']); // Delete collection
 Route::delete('/media/{media}', [App\Http\Controllers\CollectionController::class, 'deleteMedia']); // Delete a media item

@@ -23,34 +23,26 @@
                 <v-btn @click="$router.back()" color="primary" class="ma-2">Back to Gallery</v-btn>
             </v-col>
 
-            <file-uploader @files-selected="handleFiles" />
+            <file-uploader v-if="album"
+                           @files-selected="handleFiles"
+                           upload-url="/api/collections"
+                           :collection-id="album.id"
+                           @upload-success="handleUploadSuccess"
+                           @upload-failure="handleUploadFailure"/>
 
 
             <v-row justify="end" class="mt-5" >
                 <v-col cols="12" v-if="album && album.media.length">
                     <v-row>
-
                         <v-col>
-<!--                            <LightGallery  :index="selectedFile" :images="album.media" />-->
+                            <!--                            <LightGallery  :index="selectedFile" :images="album.media" />-->
                             <TinyBox :index="selectedFile"
-                                        :images="album.media"
-                                        @change="(i) => {selectedFile = i}" loop no-thumbs />
+                                     :images="album.media"
+                                     @change="(i) => {selectedFile = i}" loop no-thumbs />
                         </v-col>
+                    </v-row>
+                    <v-row>
 
-<!--                        <v-col cols="12" sm="6" md="3" v-for="(media, index) in album.media" :key="index">-->
-<!--                            <v-card-->
-<!--                                    @click="changeIndex(index)"-->
-<!--                                    class="card-hover"-->
-<!--                                    elevation="10"-->
-<!--                                    rounded="md"-->
-<!--                                    link-->
-<!--                                    :class="`v-theme&#45;&#45;ORANGE_THEME`"-->
-<!--                            >-->
-
-<!--                                <v-img :src="media.original_url" :alt="media.file_name" height="200"></v-img>-->
-
-<!--                            </v-card>-->
-<!--                        </v-col>-->
 
 
                         <v-col cols="12" sm="6" md="3" v-for="(media, index) in album.media" :key="index">
@@ -87,7 +79,7 @@
                                                     </v-icon>
 
                                             </template>
-                                            <span>Hochgeladen von: {{ media.photographer }}</span>
+                                            <span>Hochgeladen von: {{ media.uploader }}</span>
                                         </v-tooltip>
 
                                         <v-tooltip

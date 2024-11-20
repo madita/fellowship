@@ -36,6 +36,7 @@ class Collection extends Model implements HasMedia
         return $this->belongsTo(User::class);
     }
 
+
     public function getCoverImageAttribute()
     {
         // Get the media item marked as the cover

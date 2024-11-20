@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class CollectionController extends Controller
@@ -22,7 +23,7 @@ class CollectionController extends Controller
 
             $collection->media->each(function ($media) {
                 $media->caption = $media->getCustomProperty('caption');
-                $media->photographer = $media->getCustomProperty('photographer');
+                $media->uploader = $media->getCustomProperty('uploader');
                 $media->url = $media->getUrl();
             });
         });
@@ -40,7 +41,7 @@ class CollectionController extends Controller
         // Add custom properties to each media item
         $collection->media->each(function ($media) {
             $media->caption = $media->getCustomProperty('caption');
-            $media->photographer = $media->getCustomProperty('photographer');
+            $media->uploader = $media->getCustomProperty('uploader');
         });
 
         return response()->json($collection);
@@ -67,22 +68,47 @@ class CollectionController extends Controller
     // Upload media to a collection
     public function uploadMedia(Request $request, Collection $collection)
     {
+
         $request->validate([
-            'file' => 'required|file|mimes:jpg,jpeg,png,gif|max:2048',
-            'caption' => 'nullable|string|max:255',
+            'files' => 'required|array', // Ensure files is an array
+            'files.*' => 'file|mimes:jpg,jpeg,png,gif|max:2048', // Validate each file
+            'captions' => 'nullable|array', // Optional captions
+            'captions.*' => 'nullable|string|max:255', // Validate each caption
         ]);
 
-        // Add the media item to the collection
-        $media = $collection->addMedia($request->file('file'))->toMediaCollection('gallery');
+        $uploadedMedia = [];
 
-        // Set the caption as a custom property if provided
-        if ($request->has('caption')) {
-            $media->setCustomProperty('caption', $request->input('caption'));
-            $media->save();
+        foreach ($request->file('files') as $index => $file) {
+            // Add each media item to the collection
+
+            $extension = $file->getClientOriginalExtension();
+            $newFilename = Str::uuid() . '.' . $extension;
+
+            $media = $collection->addMedia($file)
+                ->usingFileName($newFilename)
+                ->withCustomProperties(['album' => $collection->name, 'uploader' => auth()->user->username]);
+
+            $media = $collection->addMedia($file)->toMediaCollection('gallery');
+
+            // Set the caption as a custom property if provided
+            if ($request->has('captions') && isset($request->captions[$index])) {
+                $media->setCustomProperty('caption', $request->captions[$index]);
+                $media->save();
+            }
+
+            $uploadedMedia[] = [
+                'id' => $media->id,
+                'url' => $media->getUrl(),
+                'caption' => $media->getCustomProperty('caption', null),
+            ];
         }
 
-        return response()->json(['message' => 'Media uploaded successfully']);
+        return response()->json([
+            'message' => 'Media uploaded successfully',
+            'uploaded_media' => $uploadedMedia,
+        ]);
     }
+
 
     public function updateMediaCaption(Request $request, $mediaId)
     {

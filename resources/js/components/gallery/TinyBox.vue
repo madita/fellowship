@@ -25,7 +25,7 @@
 
         <span
             class="tinybox__content__image__caption"
-        >{{images[index].caption}} Von {{images[index].photographer}} am {{images[index].created_at}}</span>
+        >{{images[index].caption}} Von {{images[index].uploader}} am  {{ new Date(images[index].created_at).toLocaleDateString() }} </span>
 
         <div
             v-if="prevImage !== index"
