@@ -83,10 +83,14 @@ class CollectionController extends Controller
 
             $extension = $file->getClientOriginalExtension();
             $newFilename = Str::uuid() . '.' . $extension;
+            /** @var \App\Models\User $user */
+            $user = auth()->user();
+
+
 
             $media = $collection->addMedia($file)
                 ->usingFileName($newFilename)
-                ->withCustomProperties(['album' => $collection->name, 'uploader' => auth()->user->username]);
+                ->withCustomProperties(['album' => $collection->name, 'uploader' => $user->username]);
 
             $media = $collection->addMedia($file)->toMediaCollection('gallery');
 

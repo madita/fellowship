@@ -19,12 +19,22 @@
 
 <!--                </v-carousel>-->
 <!--            </v-col>-->
-            <v-col cols="12">
+            <v-col cols="6">
                 <v-btn @click="$router.back()" color="primary" class="ma-2">Back to Gallery</v-btn>
             </v-col>
 
-            <file-uploader v-if="album"
-                           @files-selected="handleFiles"
+            <v-col cols="6" class="text-right">
+                <v-btn v-if="!fileUpload" icon="" @click="fileUpload = true" color="primary" class="ma-2">
+                    <v-icon>mdi-plus</v-icon>
+                </v-btn>
+                <v-btn v-if="fileUpload" icon="" @click="fileUpload = false" color="primary" class="ma-2">
+                    <v-icon>mdi-close</v-icon>
+                </v-btn>
+            </v-col>
+
+
+
+            <file-uploader v-if="fileUpload"
                            upload-url="/api/collections"
                            :collection-id="album.id"
                            @upload-success="handleUploadSuccess"
@@ -132,6 +142,7 @@ const album = ref(null);
 const selectedFile = ref(null);
 const hoverIndex = ref(null);
 const newCaption = ref('');
+const fileUpload = ref(false);
 import TinyBox from "./TinyBox.vue";
 // import LightGallery from "./LightGallery.vue";
 import FileUploader from '../common/FileUploader.vue';
@@ -151,6 +162,16 @@ const fetchAlbum = async () => {
 
 const  handleFiles = (files) => {
     console.log('Selected files:', files);
+    // You can now upload the files to your backend, handle them, etc.
+}
+
+const  handleUploadSuccess = (files) => {
+    console.log('handleUploadSuccess :', files);
+    // You can now upload the files to your backend, handle them, etc.
+}
+
+const  handleUploadFailure = (files) => {
+    console.log('handleUploadSuccess :', files);
     // You can now upload the files to your backend, handle them, etc.
 }
 

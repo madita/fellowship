@@ -1,37 +1,38 @@
 <template>
     <v-container fluid class="pa-5">
-        <v-btn class="mb-1" :disabled="files.length === 0" color="primary" @click="uploadFiles">
-            Upload Files
-        </v-btn>
-        <!-- Hidden File Input -->
-        <input
-            type="file"
-            ref="fileInput"
-            class="hidden"
-            multiple
-            @change="handleFilesSelected"
-            :accept="accept"
-        />
-
-        <!-- Dropzone -->
-        <!-- Progress Bar -->
+        <!-- Global Progress Bar -->
         <v-progress-linear
-            v-if="uploadProgress > 0"
-            :value="uploadProgress"
-            height="10"
+            v-if="uploadInProgress"
+            :value="globalProgress"
+            height="5"
             color="blue"
-            class="my-4"
-        >
-            {{ Math.round(uploadProgress) }}%
-        </v-progress-linear>
+            class="global-progress-bar"
+        ></v-progress-linear>
 
+        <!-- Upload Button -->
+        <v-btn
+            :disabled="validFiles.length === 0 || uploadInProgress"
+            color="primary"
+            @click="uploadFiles"
+        >
+            Upload Files ({{ validFiles.length }} Valid)
+        </v-btn>
+        <!-- Dropzone -->
         <div
             class="dropzone"
             @dragover.prevent="dragOver"
             @dragleave.prevent="dragLeave"
             @drop.prevent="dropFiles"
-            :class="{ 'dropzone--dragging': isDragging }"
         >
+            <input
+                type="file"
+                ref="fileInput"
+                class="hidden"
+                multiple
+                @change="handleFilesSelected"
+                :accept="accept"
+            />
+
             <div class="dropzone-content">
                 <v-icon size="48">mdi-cloud-upload</v-icon>
                 <p>
@@ -42,7 +43,7 @@
             </div>
         </div>
 
-        <!-- File Previews -->
+        <!-- File List with Individual Progress and Warnings -->
         <v-row v-if="files.length > 0">
             <v-col
                 v-for="(file, index) in files"
@@ -61,7 +62,7 @@
                             >
                                 <!-- Delete Icon -->
                                 <v-btn
-                                    icon=""
+                                    icon
                                     class="delete-icon"
                                     @click="removeFile(index)"
                                 >
@@ -71,26 +72,46 @@
                                 <div v-show="isHovering" class="file-name-overlay">
                                     {{ file.name }}
                                 </div>
+                                <v-progress-linear
+                                    v-if="file.uploadProgress > 0"
+                                    :value="file.uploadProgress"
+                                    height="4"
+                                    color="blue"
+                                    class="thumbnail-progress-bar"
+                                ></v-progress-linear>
                             </v-img>
                         </template>
                     </v-hover>
-                    <!-- Caption Input -->
                     <v-card-text>
                         <v-text-field
                             v-model="file.caption"
                             label="Add Caption"
                             placeholder="Enter caption"
                         />
+                        <div v-if="file.warning" class="warning">
+                            {{ file.warning }}
+                        </div>
+
                     </v-card-text>
                 </v-card>
             </v-col>
         </v-row>
 
+        <!-- Upload Button -->
+        <v-btn
+            :disabled="validFiles.length === 0 || uploadInProgress"
+            color="primary"
+            @click="uploadFiles"
+        >
+            Upload Files ({{ validFiles.length }} Valid)
+        </v-btn>
     </v-container>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
+import axios from "axios";
+import { useSettingsStore } from "@/store/settingStore";
 
 const props = defineProps({
     accept: {
@@ -107,119 +128,170 @@ const props = defineProps({
     },
 });
 
+const emit = defineEmits(["upload-success", "upload-failure"]);
 
-const emit = defineEmits(["files-changed", "files-selected"]);
-
-const files = ref([]); // File list
+const files = ref([]);
+const uploadInProgress = ref(false); // Indicates if an upload is in progress
+const settingStore = useSettingsStore(); // Access global settings
 const uploadProgress = ref(0); // Tracks upload progress
 const isDragging = ref(false); // Dragging state
-const fileInput = ref(null); // File input reference
 
+// Only valid files are included in the batch
+const validFiles = computed(() =>
+    files.value.filter((file) => !file.warning)
+);
 
+// Calculate global progress
+const globalProgress = computed(() => {
+    if (files.value.length === 0) return 0;
 
-// Upload files to the Laravel endpoint
-const uploadFiles = async () => {
-    if (files.value.length === 0) {
-        console.error('No files to upload.');
-        return;
-    }
+    const totalProgress = files.value.reduce(
+        (acc, file) => acc + file.uploadProgress,
+        0
+    );
 
-    const formData = new FormData();
+    return totalProgress / files.value.length;
+});
 
-    files.value.forEach((file) => {
-        console.log('file', file);
-        formData.append('files[]', file.rawFile); // Use 'files[]' as the key
-        formData.append('captions[]', file.caption || ''); // Use 'captions[]' for captions
+// Add files (process and append with validation)
+const addFiles = (newFiles) => {
+
+    const processedFiles = Array.from(newFiles).map((file) => {
+        const warning =
+            file.size > settingStore.maxFileSize
+                ? `File exceeds max size of ${(settingStore.maxFileSize / 1024 / 1024).toFixed(
+                    2
+                )} MB`
+                : null;
+
+        return {
+            rawFile: file,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            caption: "",
+            preview: isImage(file) ? window.URL.createObjectURL(file) : null,
+            uploadProgress: 0,
+            warning,
+        };
     });
 
+    files.value = [...files.value, ...processedFiles];
+};
 
-    try {
-        const response = await axios.post(`${props.uploadUrl}/${props.collectionId}`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-            onUploadProgress: (progressEvent) => {
-                uploadProgress.value = (progressEvent.loaded / progressEvent.total) * 100; // Calculate percentage
-            },
-        });
-
-        console.log('Files uploaded successfully:', response.data);
-
-        // Emit success event
-        emit('upload-success', response.data);
-
-        // Clear uploaded files
-        files.value = [];
-        uploadProgress.value = 0;
-    } catch (error) {
-        console.error('File upload failed:', error.response?.data || error.message);
-
-        // Emit failure event
-        emit('upload-failure', error.response?.data || error.message);
+// Upload files based on batch or single upload setting
+const uploadFiles = async () => {
+    uploadInProgress.value = true;
+    // console.log('batchUploadEnabled', batchUploadEnabled)
+    if (settingStore.batchUpload) {
+        console.log('batch')
+        await uploadInBatches();
+    } else {
+        console.log('individual')
+        await uploadIndividually();
     }
+
+    emit("upload-success", files.value);
 };
 
 
+const uploadInBatches = async () => {
+    // const validFiles = files.value.filter((file) => !file.warning);
+
+
+    for (let i = 0; i < validFiles.value.length; i += settingStore.maxBatchSize) {
+        const batch = validFiles.value.slice(i, i + settingStore.maxBatchSize);
+        console.log('batch', batch)
+
+        const formData = new FormData();
+        batch.forEach((file) => {
+            formData.append("files[]", file.rawFile);
+            formData.append("captions[]", file.caption || "");
+        });
+
+        console.log('formData', formData)
+
+        try {
+            await axios.post(`${props.uploadUrl}/${props.collectionId}`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+                onUploadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        const progress = (progressEvent.loaded / progressEvent.total) * 100;
+                        batch.forEach((file) => (file.uploadProgress = progress));
+                    }
+                },
+            });
+
+            console.log(`Batch uploaded successfully.`);
+        } catch (error) {
+            console.error(`Failed to upload batch:`, error.response?.data || error.message);
+        }
+    }
+    uploadInProgress.value = false;
+};
+
+// Upload files one at a time
+const uploadIndividually = async () => {
+    // const validFiles = files.value.filter((file) => !file.warning);
+
+    for (const file of validFiles.value) {
+        const formData = new FormData();
+        formData.append("files", file.rawFile);
+        formData.append("caption", file.caption || "");
+
+        try {
+            await axios.post(`${props.uploadUrl}/${props.collectionId}`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+                onUploadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        file.uploadProgress = (progressEvent.loaded / progressEvent.total) * 100;
+                    }
+                },
+            });
+
+            console.log(`File ${file.name} uploaded successfully.`);
+            file.uploadProgress = 100;
+        } catch (error) {
+            console.error(`Failed to upload file ${file.name}:`, error.response?.data || error.message);
+            file.warning = "Failed to upload file.";
+        }
+    }
+    uploadInProgress.value = false;
+};
+
+// Drag-and-drop handlers
+const dragOver = () => {
+    isDragging.value = true;
+};
+
+const dragLeave = () => {
+    isDragging.value = false;
+};
+
+const dropFiles = (event) => {
+    addFiles(event.dataTransfer.files);
+    isDragging.value = false;
+};
 
 const handleFilesSelected = (event) => {
     addFiles(event.target.files);
 };
 
-// Trigger the hidden file input
+const isImage = (file) => file && file.type && file.type.startsWith("image/");
+
+const removeFile = (index) => {
+    URL.revokeObjectURL(files.value[index].preview);
+    files.value.splice(index, 1);
+};
+
 const triggerFileInput = () => {
     fileInput.value.click();
 };
 
-const addFiles = (newFiles) => {
+const fileInput = ref(null);
 
-    const processedFiles = Array.from(newFiles).map((file) => ({
-        rawFile: file, // Keep the original File instance for backend uploads
-        name: file.name, // File name for display
-        size: file.size, // File size for display
-        type: file.type, // File type for validation
-        caption: '', // Optional caption field for user input
-        preview: isImage(file) ? window.URL.createObjectURL(file) : null, // Generate preview for images
-        showName: false, // Custom property to toggle filename visibility
-    }));
-
-    files.value = [...files.value, ...processedFiles];
-};
-
-// Drag over the dropzone
-const dragOver = () => {
-    isDragging.value = true;
-};
-
-// Drag leave the dropzone
-const dragLeave = () => {
-    isDragging.value = false;
-};
-
-// Handle file drop
-const dropFiles = (event) => {
-    // const droppedFiles = Array.from(event.dataTransfer.files);
-    // const droppedFiles = Array.from(event.dataTransfer.files).map((file) => ({
-    //     ...file,
-    //     preview: isImage(file) ? window.URL.createObjectURL(file) : null,
-    //     showName: false,
-    // }));
-
-    addFiles(event.dataTransfer.files);
-    isDragging.value = false;
-};
-
-// Remove a file from the list
-const removeFile = (index) => {
-    if (files.value[index].preview) {
-        window.URL.revokeObjectURL(files.value[index].preview); // Use `window.URL`
-    }
-    files.value.splice(index, 1);
-    emit("files-selected", files.value);
-};
-
-// Check if a file is an image
-const isImage = (file) => {
-    return file && file.type && file.type.startsWith("image/");
-};
 </script>
+
 
 <style scoped>
 .hidden {
@@ -282,6 +354,28 @@ const isImage = (file) => {
     text-align: center;
     padding: 5px;
     font-size: 14px;
+}
+
+.thumbnail-progress-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 5;
+}
+
+.global-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.warning {
+    color: red;
+    font-size: 0.9em;
+    margin-top: 5px;
 }
 
 </style>
