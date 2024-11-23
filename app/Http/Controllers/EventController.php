@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Event\Event;
 use App\Models\Event\EventType;
+use App\Models\Event\EventGuest;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -77,6 +78,7 @@ class EventController extends Controller
                 'id'          => $event->id,
                 'title'       => $event->title,
                 'description' => $event->description,
+                'user_id'     => $event->user_id,
                 'start'       => $startTemp,
                 'end'         => $endTemp,
                 'originDate'  => $originDate,
@@ -351,4 +353,28 @@ class EventController extends Controller
         return response()->json([
             'data' => $eventTypeCollection, ]);
     }
+
+    public function approveGuest(Request $request, Event $event)
+    {
+        $request->validate([
+            'guestId' => 'required|integer',
+            'action' => 'required|string|in:approve,reject',
+        ]);
+
+
+
+//        $guest = EventGuest::findOrFail($request->guestId);
+        $guest = EventGuest::where('user_id',$request->guestId)->where('event_id', $event->id)->first();
+
+        if ($request->action === 'approve') {
+            $guest->approved_at = now();
+        } else {
+            $guest->approved_at = null;
+        }
+
+        $guest->save();
+
+        return response()->json(['message' => 'Guest approval updated successfully']);
+    }
+
 }

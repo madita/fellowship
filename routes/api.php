@@ -76,6 +76,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::patch('events/{event}', ['as' => 'event.update', 'uses' => "\App\Http\Controllers\EventController@update"]);
     Route::delete('events/{event}', ['as' => 'event.destroy', 'uses' => "\App\Http\Controllers\EventController@destroy"]);
     Route::get('events/{event}/edit', ['as' => 'event.edit', 'uses' => "\App\Http\Controllers\EventController@edit"]);
+    Route::post('events/{event}/approve-guest', ['as' => 'event.approve', 'uses' => "\App\Http\Controllers\EventController@approveGuest"]);
 });
 
 

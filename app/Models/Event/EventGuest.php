@@ -14,6 +14,7 @@ class EventGuest extends Model
         'type_id',
         'user_id',
         'options',
+        'approved_at',
         'created_at',
         'updated_at',
     ];

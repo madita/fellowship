@@ -7,6 +7,7 @@ import axios from "axios";
 import { useCalendarStore } from '@/store/calendarStore.js';
 import ConfirmDialog from '../common/ConfirmDialog.vue';
 import RelatedContent from '../common/RelatedContent.vue';
+import {useUserStore} from "@/store/userStore.js";
 
 const props = defineProps({
     isDrawerOpen: Boolean,
@@ -41,8 +42,9 @@ const confirmationDialog = ref(null);
 
 const relatedItems = ref([]);
 
+const userStore = useUserStore();
+
 const openConfirmationDialog = () => {
-    console.log('opendialog')
     confirmationDialog.value.isOpen = true;
 };
 
@@ -61,6 +63,15 @@ const eventType = computed(() => {
     type = Object.values(localEventTypes.value).find(item => item.name === event.value.extendedProps.type);
 
     return type;
+});
+
+const user = computed(() => {
+
+    if(userStore.user) {
+        return userStore.user
+    }
+
+    return {id:null};
 });
 
 const resetEvent = () => {
@@ -117,6 +128,8 @@ const eventTypeOptions = computed(() => {
     // type = Object.values(localEventTypes.value).find(item => item.name ===  event.value.extendedProps.type);
     type = Object.values(localEventTypes.value).find(item => item.id === event.value.extendedProps.type_id);
 
+    if(type === undefined)
+        return []
 
     return JSON.parse(JSON.stringify(type.options));
 });
@@ -130,7 +143,19 @@ const getEvent = async (eventId) => {
     try {
         loadEventDetails.value = true;
         const response = await axios.get(`/api/events/${eventId}`);
+
         eventAnswers.value = response.data.answers;
+
+        //filter out not approved guests?
+        // if (eventTypeOptions.value.guest && eventTypeOptions.value.guest.includes('approval')) {
+        //
+        //     for (const key in eventAnswers.value) {
+        //         if (Array.isArray(eventAnswers.value[key])) {
+        //             eventAnswers.value[key] = eventAnswers.value[key].filter(item => item.pivot && item.pivot.approved_at !== null);
+        //         }
+        //     }
+        //
+        // }
     } catch (err) {
         console.error('Failed to load event details:', err);
     } finally {
@@ -148,6 +173,53 @@ const fetchRelatedItems = async (model, eventId) => {
         console.error('Failed to fetch related items:', error);
     }
 };
+
+const approveGuest = async (guestId, action) => {
+    try {
+        await axios.post(`/api/events/${event.value.id}/approve-guest`, {
+            guestId,
+            action,
+        });
+
+        // Update the event answers to reflect the changes
+        eventAnswers.value = eventAnswers.value.map((group) =>
+            group.map((guest) =>
+                guest.id === guestId ? { ...guest, approved: action === "approve" } : guest
+            )
+        );
+
+        console.log(`Guest ${action}d successfully`);
+    } catch (error) {
+        console.error(`Failed to ${action} guest:`, error);
+    }
+};
+
+const filterGuestsByApproval = (answers) => {
+    const guestsRequiringApproval = {};
+    const approvedGuests = {};
+
+    Object.keys(answers).forEach((status) => {
+        guestsRequiringApproval[status] = [];
+        approvedGuests[status] = [];
+        answers[status].forEach((guest) => {
+
+            //const guestWithStatus = { ...guest, status }; // Add the status to each guest
+
+            if (
+                eventTypeOptions.value.guest &&
+                eventTypeOptions.value.guest.includes("approval") &&
+                !guest.pivot.approved_at
+            ) {
+                guestsRequiringApproval[status].push(guest);
+            } else {
+                approvedGuests[status].push(guest);
+            }
+        });
+    });
+
+    return { guestsRequiringApproval, approvedGuests };
+};
+
 
 const validateStartDate = () => {
     isStartDateValid.value = !!event.value.start;
@@ -276,12 +348,39 @@ watch(() => props.isDrawerOpen, resetEvent);
                                 <VSelect
                                     v-model="event.extendedProps.type_id"
                                     label="Type"
+                                    placeholder="Select Event Label"
                                     :items="eventTypeItems"
-                                    item-title="name"
-                                    item-value="id"
-                                />
+                                    :item-title="item => item.name"
+                                    :item-value="item => item.id"
+                                >
+                                    <template #selection="{ item }">
+                                        <div
+                                            class="align-center"
+                                            :class="event.extendedProps.type ? 'd-flex' : ''"
+                                        >
+                                            <VIcon
+                                                icon="mdi-circle-medium"
+                                                :color="item.raw.color"
+                                                class="me-2"
+                                            />
+                                            <span>{{ item.raw.name }}</span>
+                                        </div>
+                                    </template>
+
+                                    <template #item="{ item, props: itemProps }">
+                                        <VListItem v-bind="itemProps">
+                                            <template #prepend>
+                                                <VIcon
+                                                    icon="mdi-circle-medium"
+                                                    :color="item.raw.color"
+                                                />
+                                            </template>
+                                        </VListItem>
+                                    </template>
+                                </VSelect>
                             </VCol>
 
+                            <template v-if="event.extendedProps.type_id">
                             <VCol cols="12">
                                 <VTextField v-model="event.title" label="Title" :rules="rules.title" />
                             </VCol>
@@ -295,12 +394,20 @@ watch(() => props.isDrawerOpen, resetEvent);
                                 />
                             </VCol>
 
-                            <VCol cols="12">
+                            <VCol cols="12" v-show="eventTypeOptions.showAttributtes.includes('endDate')">
                                 <CustomDatePicker
                                     label="End Date"
                                     v-model="event.end"
                                     :error="!isEndDateValid"
                                     :error-messages="['End date is required']"
+                                />
+                            </VCol>
+
+                            <VCol cols="12" v-show="eventTypeOptions.showAttributtes.includes('allDay')">
+                                <VSwitch
+                                    color="primary"
+                                    v-model="event.allDay"
+                                    label="All day"
                                 />
                             </VCol>
 
@@ -311,6 +418,8 @@ watch(() => props.isDrawerOpen, resetEvent);
                             <VCol cols="12">
                                 <VTextarea v-model="event.extendedProps.description" label="Description" />
                             </VCol>
+                            </template>
+
 
                             <VCol cols="12" class="d-flex justify-end">
                                 <VBtn type="submit" class="me-3">Submit</VBtn>
@@ -348,7 +457,7 @@ watch(() => props.isDrawerOpen, resetEvent);
 
                         <VCol cols="12">
                             <label>Location</label>
-                            {{ event.extendedProps.location }}
+                            {{  event.extendedProps.location }}
                         </VCol>
 
                         <VCol cols="12">
@@ -356,12 +465,57 @@ watch(() => props.isDrawerOpen, resetEvent);
                             <div v-html="event.extendedProps.description"></div>
                         </VCol>
 
+<!--                        <VCol cols="12">-->
+<!--                            <template v-for="(answer, value) in eventAnswers">-->
+<!--                                <v-list-subheader>{{ value }} ({{ answer.length }})</v-list-subheader>-->
+<!--                                <UserAvatar v-for="user in answer" :key="`going-${user.id}`" :user="user" />-->
+<!--                            </template>-->
+<!--                        </VCol>-->
+
                         <VCol cols="12">
-                            <template v-for="(answer, value) in eventAnswers">
-                                <v-list-subheader>{{ value }} ({{ answer.length }})</v-list-subheader>
-                                <UserAvatar v-for="user in answer" :key="`going-${user.id}`" :user="user" />
+                            <template v-for="(guests, status) in filterGuestsByApproval(eventAnswers).approvedGuests">
+                                <v-list-subheader>{{ status }} ({{ guests.length }})</v-list-subheader>
+                                <v-list>
+                                    <v-list-item
+                                        v-for="guest in guests"
+                                        :key="guest.id"
+                                    >
+                                        <UserAvatar :user="guest" />
+                                    </v-list-item>
+                                </v-list>
                             </template>
                         </VCol>
+
+                        <VCol cols="12" v-if="event.extendedProps.user_id == user.id && eventTypeOptions.guest && eventTypeOptions.guest.includes('approval')">
+                            <h3>Guests Requiring Approval</h3>
+                            <template v-for="(guests, status) in filterGuestsByApproval(eventAnswers).guestsRequiringApproval">
+                                <v-list-subheader>{{ status }}</v-list-subheader>
+                                <v-list>
+                                    <v-list-item
+                                        v-for="guest in guests"
+                                        :key="guest.id"
+                                    >
+
+                                        <UserAvatar :user="guest" />
+                                        <v-list-item-action>
+                                            <v-btn
+                                                color="green"
+                                                @click="approveGuest(guest.pivot.user_id, 'approve')"
+                                            >
+                                                Approve
+                                            </v-btn>
+                                            <v-btn
+                                                color="red"
+                                                @click="approveGuest(guest.pivot.user_id, 'reject')"
+                                            >
+                                                Reject
+                                            </v-btn>
+                                        </v-list-item-action>
+                                    </v-list-item>
+                                </v-list>
+                            </template>
+                        </VCol>
+
 
                         <VCol cols="12">
 <!--                            <h3>Related Content</h3>-->
