@@ -4,7 +4,8 @@ import {PerfectScrollbar} from 'vue3-perfect-scrollbar'
 import {VForm} from 'vuetify/components/VForm'
 import axios from "axios";
 import Tiptap from "@/components/common/tiptap/Tiptap.vue";
-import DataTableJsonField from "@/components/common/DataTable/DataTableJsonField.vue";
+import DataTableJson from "@/components/common/DataTable/DataTableJson.vue";
+import DataTableModel from "@/components/common/DataTable/DataTableModel.vue";
 
 
 // 👉 store
@@ -16,6 +17,7 @@ const props = defineProps({
     response: {},
     defaultItem: {},
     item: {},
+    endpoint:'',
 })
 
 const isFocused = ref(true)
@@ -43,6 +45,9 @@ const refForm = ref()
 // const item = ref({})
 const item = ref(JSON.parse(JSON.stringify(props.item)))
 const itemDetails = ref();
+
+const parentItems = ref({});
+const loading = ref({});
 
 // const options = ref ({
 //     answers: { yes: 'Yes', maybe: 'Maybe' },
@@ -91,11 +96,11 @@ const removeItem = () => {
 }
 
 const handleSubmit = () => {
-    // console.log('handlesubmit')
+    console.log('handlesubmit', editedItem)
     // validateStartDate();
     // validateEndDate();
     refForm.value?.validate().then(({valid}) => {
-        console.log(valid)
+        // console.log(valid)
         if (valid) {
             localEditMode.value = false;
 
@@ -134,38 +139,7 @@ const onCancel = () => {
     })
 }
 
-// const onYes = () => {
 
-//
-//     joinItem(item.value.id, 'going')
-//     // Close drawer
-//     // emit('update:isDrawerOpen', false)
-//
-// }
-
-// 👉 Form
-// const onNo = () => {
-//     // Close drawer
-//     // emit('update:isDrawerOpen', false)
-//     joinItem(item.value.id, 'notgoing')
-// }
-//
-// const onMaybe = () => {
-//     // Close drawer
-//     joinItem(item.value.id, 'maybe')
-// }
-//
-// const  getIsGoing = (answer) => {
-//     //item.value.id > 0
-//     if (loadItemDetails.value) {
-//         return true;
-//     }
-//
-//     if (itemDetails.value === null && typeof itemDetails.value != undefined) {
-//         return false;
-//     }
-//     return itemDetails.value.isGoing !== undefined && itemDetails.value.isGoing.type === answer
-// }
 
 const joinItem = (itemId, answer) => {
     // console.log('joinItem', itemId, answer)
@@ -256,6 +230,27 @@ const endDateTimePickerConfig = computed(() => {
 
     return config
 })
+
+
+// const fetchParent = async (column) => {
+//     // console.log('column', column)
+//     if (parentItems.value[column]) return; // Skip if already loaded
+//
+//     const apiUrl = `/api${props.endpoint}`;
+//     // console.log('apiUrl', apiUrl)
+//     if(!apiUrl || apiUrl === '') return;
+//
+//     loading.value[column] = true;
+//     try {
+//         const response = await axios.get(apiUrl);
+//         parentItems.value[column] = response.data.records.data; // Dynamically set options
+//     } catch (error) {
+//         console.error(`Failed to load options for ${column}:`, error);
+//         parentItems.value[column] = []; // Fallback to empty array
+//     } finally {
+//         loading.value[column] = false;
+//     }
+// }
 
 const dialogModelValueUpdate = val => {
     emit('update:isDrawerOpen', val)
@@ -370,6 +365,7 @@ watch(() => props.isDrawerOpen, resetItem)
                                         v-model="editedItem[column]"
                                         :label="column"
                                     ></v-select>
+                                    <template v-else>missing element object</template>
                                 </template>
                                 <v-textarea
                                     v-else-if="response.column_fields[column]==='textarea'"
@@ -404,10 +400,30 @@ watch(() => props.isDrawerOpen, resetItem)
                                     mode="hex"
                                 ></v-color-picker>
 
-                                <DataTableJsonField
+                                <DataTableJson
                                     v-else-if="response.column_fields[column]==='json'"
                                     :options="response.json_fields"
-                                    v-model:modelValue="editedItem[column]"></DataTableJsonField>
+                                    v-model:modelValue="editedItem[column]"></DataTableJson>
+
+                                <DataTableModel
+                                    v-else-if="response.column_fields[column]==='model' || response.column_fields[column]==='parent'"
+                                    :column="column"
+                                    :filter_key="response.filter_fields[column]"
+                                    :filter_value="editedItem[response.filter_fields[column]]"
+                                    :endPoint="endpoint"
+                                    v-model:modelValue="editedItem[column]"></DataTableModel>
+
+<!--                                <v-select-->
+<!--                                    v-else-if="response.column_fields[column]==='parent'"-->
+<!--                                    item-value="id"-->
+<!--                                    item-title="description"-->
+<!--                                    :items="parentItems[column]"-->
+<!--                                    :loading="loading[column]"-->
+<!--                                    :disabled="loading[column]"-->
+<!--                                    v-model="editedItem[column]"-->
+<!--                                    @focus="fetchParent(column)"-->
+<!--                                    :label="column"-->
+<!--                                ></v-select>-->
 
 
                                 <v-text-field
@@ -423,62 +439,7 @@ watch(() => props.isDrawerOpen, resetItem)
                             </v-col>
                         </v-row>
                         <VRow>
-                            <!-- 👉 Title -->
-<!--                            <VCol cols="12">-->
-<!--                                <VTextField-->
-<!--                                    v-model="item.title"-->
-<!--                                    label="Title"-->
-<!--                                    :rules="rules.title"-->
-<!--                                    placeholder="Title"-->
-<!--                                />-->
-<!--                            </VCol>-->
 
-
-<!--                            &lt;!&ndash; 👉 Start date &ndash;&gt;-->
-<!--                            <VCol cols="12">-->
-
-<!--                                <CustomDatePicker-->
-<!--                                    label="Start Date"-->
-<!--                                    v-model="item.start"-->
-<!--                                    :allDay="item.allDay"-->
-<!--                                    :error="!isStartDateValid"-->
-<!--                                    :error-messages="['Date is required']"-->
-<!--                                    :date-picker-config="{ enableTimePicker: true }"-->
-<!--                                />-->
-<!--                            </VCol>-->
-
-<!--                            &lt;!&ndash; 👉 End date &ndash;&gt;-->
-<!--                            <VCol cols="12">-->
-
-<!--                                <CustomDatePicker-->
-<!--                                    label="End Date"-->
-<!--                                    v-model="item.end"-->
-<!--                                    :allDay="item.allDay"-->
-<!--                                    :error="!isEndDateValid"-->
-<!--                                    :error-messages="['Date is required']"-->
-<!--                                    :date-picker-config="{ enableTimePicker: true }"-->
-<!--                                />-->
-
-<!--                            </VCol>-->
-
-<!--                            &lt;!&ndash; 👉 All day &ndash;&gt;-->
-<!--                            <VCol cols="12">-->
-<!--                                <VSwitch-->
-<!--                                    color="primary"-->
-<!--                                    v-model="item.allDay"-->
-<!--                                    label="All day"-->
-<!--                                />-->
-<!--                            </VCol>-->
-
-<!--                            &lt;!&ndash; 👉 Location &ndash;&gt;-->
-<!--                            <VCol cols="12">-->
-<!--                                <VTextField-->
-<!--                                    v-model="item.extendedProps.location"-->
-<!--                                    :rules="rules.location"-->
-<!--                                    label="Location"-->
-<!--                                    placeholder="Meeting room"-->
-<!--                                />-->
-<!--                            </VCol>-->
 
                             <!-- 👉 Description -->
                             <VCol cols="12">

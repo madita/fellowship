@@ -1,6 +1,7 @@
 <template>
   <div class="flex-grow-1">
-      <data-table endpoint="/datatable/taxonomies"></data-table>
+
+      <data-table endpoint="/datatable/event-profiles"></data-table>
   </div>
 </template>
 

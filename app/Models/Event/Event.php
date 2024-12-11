@@ -32,7 +32,7 @@ class Event extends Model
 
     public function type()
     {
-        return $this->hasOne("App\\Models\\Event\EventType");
+        return $this->hasOne("App\\Models\\Event\EventType", "event_type_id");
     }
 
     public function user()

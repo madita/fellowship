@@ -104,6 +104,7 @@ Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function (
     Route::resource('datatable/permissions', 'App\Http\Controllers\DataTable\PermissionController');
     Route::resource('datatable/events', 'App\Http\Controllers\DataTable\EventController');
     Route::resource('datatable/event-types', 'App\Http\Controllers\DataTable\EventTypeController');
+    Route::resource('datatable/event-profiles', 'App\Http\Controllers\DataTable\EventProfileController');
 });
 
 Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']);
@@ -111,6 +112,8 @@ Route::get('/source-models', [App\Http\Controllers\RelateableController::class, 
 Route::get('/model-items', [App\Http\Controllers\RelateableController::class, 'getModelItems']);
 Route::post('/relate-models', [App\Http\Controllers\RelateableController::class, 'relateModels']);
 Route::post('/related-items', [App\Http\Controllers\RelateableController::class, 'getRelatedItems']);
+
+Route::get('/common/items', [App\Http\Controllers\CommonController::class, 'getItems']);
 
 Route::post('/login', function (Request $request) {
     $data = $request->validate([

@@ -2,24 +2,15 @@
 import {ref, watch, onMounted} from 'vue';
 // Modal state for JSON key-value pairs
 const showModal = ref(false);
-// const newKey = ref('');
-// const newValue = ref('');
-// const items = ref([{ key: '', value: '' }]);
-// const generatedJson = ref('');
 
-
-// const emit = defineEmits([
-//     'update:modelValue',
-// ])
 
 const emit = defineEmits([
-    'update:modelOption',
+    'update:modelValue',
 ])
 
 const props = defineProps({
-    name:{},
-    option: {
-    },
+    name: {},
+    option: {},
 });
 
 const item = ref({});
@@ -38,23 +29,16 @@ const defaultOption = ref(JSON.parse(JSON.stringify(props.option)))
 const newOptionKey = ref('');
 const newOptionValue = ref('');
 // const answers = ref({});
-// const profil = ref();
-// const permissions = ref();
-//
-// const showAttributtes = ref();
-//
-// const location = ref();
-//
-// const generatedJson = ref('');
-// Adding a new answer (key-value pair)
+
 const addOption = () => {
-    // console.log('name', options.value[name])
+    // console.log('name', option.value[name])
 
     if (newOptionKey.value && newOptionValue.value) {
         option.value[newOptionKey.value] = newOptionValue.value;
         newOptionKey.value = '';
         newOptionValue.value = '';
         closeModal();
+        // emit('update:modelValue', option.value);
     }
 };
 
@@ -64,7 +48,7 @@ const removeOption = (key) => {
 };
 
 // Function to trigger edit mode
-// Function to trigger edit mode
+
 const editOption = (key, value, index) => {
 
     editIndex.value = index;
@@ -74,6 +58,7 @@ const editOption = (key, value, index) => {
 
 // Function to save edited key-value pair
 const saveEdit = (index) => {
+
     const keys = Object.keys(option.value);
     const oldKey = keys[index];
 
@@ -82,36 +67,25 @@ const saveEdit = (index) => {
         delete option.value[oldKey];
     }
     option.value[editKey.value] = editValue.value;
+    console.log('saveeditoption', option.value)
 
     // Exit edit mode
     editIndex.value = null;
     editKey.value = '';
     editValue.value = '';
-    emit('update:modelOption', option.value);
+
 };
-
-// Generate JSON dynamically based on inputs
-// const generateJson = () => {
-//     // const jsonData = {
-//     //     answers: answers.value,
-//     //     profil: profil.value,
-//     //     permissions: permissions.value,
-//     // };
-//     generatedJson.value = JSON.stringify(options.value, null, 2);
-//
-//     emit('update:modelValue', generatedJson.value);
-// };
-
 
 const closeModal = () => {
     showModal.value = false;
 };
 
 
-
 // Watchers to trigger the JSON generation whenever something changes
-// watch(options, generateJson, { deep: true });
-
+watch(option, (newValue) => {
+    console.log('newValue', newValue)
+    emit('update:modelValue', newValue);
+}, {deep: true});
 
 onMounted(() => {
 
@@ -123,39 +97,40 @@ onMounted(() => {
     <v-row>
         <v-col cols="12">
 
-                        <v-btn v-if="!showModal" @click="showModal = true" class="mb-3">Add {{name}}</v-btn>
-                        <template v-if="showModal">
-                            <v-row>
-                            <v-text-field v-model="newOptionKey" label="Key" class="me-2 v-col-5" />
-                            <v-text-field v-model="newOptionValue" label="Value" class="me-2 v-col-5" />
-                            <v-icon @click="addOption()">mdi-check</v-icon>
-                            <v-icon @click="showModal = false">mdi-close</v-icon>
-                            </v-row>
+            <v-btn v-if="!showModal" @click="showModal = true" class="mb-1">Add {{ name }}</v-btn>
+            <template v-if="showModal">
+                <v-row>
+                    <v-text-field density="compact" v-model="newOptionKey" label="Key" class="me-1 v-col-5"/>
+                    <v-text-field density="compact" v-model="newOptionValue" label="Value" class="me-1 v-col-5"/>
+                    <v-icon @click="addOption()">mdi-check</v-icon>
+                    <v-icon @click="showModal = false">mdi-close</v-icon>
+                </v-row>
 
-                        </template>
-
-
-                        <ul>
+            </template>
 
 
-                        <li v-for="(value, key, index) in option" :key="key" class="answer-item d-flex align-center mb-1 ml-2">
-                            <template v-if="editIndex === index" class="d-flex align-center">
+            <ul>
 
-                                <v-text-field v-model="editKey" label="Key" class="me-2 v-col-5" />
-                                <v-text-field v-model="editValue" label="Value" class="me-2 v-col-5" />
-                                <v-icon @click="saveEdit(index)">mdi-check</v-icon>
 
-                            </template>
-                            <template v-else>
-                                <span>{{ key }}: {{ value }}</span>
-                                <span>
-                                                            <v-icon class="edit-icon" @click="editOption(key, value, index)">mdi-pencil</v-icon>
+                <li v-for="(value, key, index) in option" :key="key" class="answer-item d-flex align-center mb-1 ml-2">
+                    <template v-if="editIndex === index" class="d-flex align-center">
+
+                        <v-text-field density="compact" v-model="editKey" label="Key" class="me-1 v-col-5"/>
+                        <v-text-field density="compact" v-model="editValue" label="Value" class="me-1 v-col-5"/>
+                        <v-icon @click="saveEdit(index)">mdi-check</v-icon>
+
+                    </template>
+                    <template v-else>
+                        <span>{{ key }}: {{ value }}</span>
+                        <span>
+                                                            <v-icon class="edit-icon"
+                                                                    @click="editOption(key, value, index)">mdi-pencil</v-icon>
                                                             <v-icon class="delete-icon" @click="removeOption( key)">mdi-delete</v-icon>
                                                         </span>
 
-                            </template>
-                        </li>
-                        </ul>
+                    </template>
+                </li>
+            </ul>
 
         </v-col>
 
@@ -168,7 +143,7 @@ onMounted(() => {
     display: flex;
     justify-content: space-between; /* Align items to the left and right */
     align-items: center;
-    padding: 8px 0;
+    padding: 1px 0;
 }
 
 .delete-icon, .edit-icon {

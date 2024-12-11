@@ -84,11 +84,12 @@ class EventController extends Controller
                 'originDate'  => $originDate,
                 //                'extendedProps'  => $extendedProps,
                 'location'       => '',
-                'type'           => $eventTypes[$event->type_id]['name'],
-                'type_id'        => $event->type_id,
+                'type'           => $eventTypes[$event->event_type_id]['name'],
+                'event_type_id'        => $event->event_type_id,
                 'allDay'         => ($event->startTime === null) ? true : false,
-                'colorName'      => $eventTypes[$event->type_id]['color'],
-                'color'          => $eventTypes[$event->type_id]['color']];
+                'colorName'      => $eventTypes[$event->event_type_id]['color'],
+                'color'          => $eventTypes[$event->event_type_id]['color'],
+                'event_profile_id'          => $eventTypes[$event->event_type_id]['event_profile_id']];
 //                'colorName'       => $eventTypes[$event->type_id]['color']];
         });
 
@@ -141,7 +142,7 @@ class EventController extends Controller
         }
 
         if ($props = request()->get('extendedProps')) {
-            $event->type_id = $props['type_id'];
+            $event->event_type_id = $props['event_type_id'];
             $event->description = $props['description'];
         }
 
@@ -184,7 +185,7 @@ class EventController extends Controller
 
 
 
-        $eventType = EventType::find($event->type_id);
+        $eventType = EventType::find($event->event_type_id);
 
         $options = json_decode($eventType->options);
         $answers = [];
@@ -234,7 +235,7 @@ class EventController extends Controller
 
         if ($extendedProps = request()->get('extendedProps')) {
 //            dd($extendedProps);
-            $event->type_id = $extendedProps['type_id'];
+            $event->event_type_id = $extendedProps['event_type_id'];
         }
 
 //        $event->type = request()->get('type');

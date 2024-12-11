@@ -14,7 +14,7 @@ class TaxonomyController extends DataTableController
 
     public function store(Request $request)
     {
-        Taxonomy::create($request->only($this->getUpdatableColumns()));
+//        Taxonomy::create($request->only($this->getUpdatableColumns()));
     }
 
 
@@ -31,12 +31,12 @@ class TaxonomyController extends DataTableController
     {
         return [
             'taxonomy',
+            'parent_id',
             'description',
             'content',
             'lead',
             'meta_desc',
             'color',
-            'parent',
             'properties',
             'sort',
             ];
@@ -46,8 +46,9 @@ class TaxonomyController extends DataTableController
     {
         return [
             'content'      => 'wysiwyg',
-            'description'    => 'wysiwyg',
-            'color' => 'color', ];
+            'description'    => 'textarea',
+            'color' => 'color',
+            'parent_id' => 'parent', ];
     }
 
     public function getDisplayableColumns()
@@ -60,7 +61,7 @@ class TaxonomyController extends DataTableController
             'lead',
             'meta_desc',
             'color',
-            'parent',
+            'parent_id',
             'properties',
             'sort',
         ];

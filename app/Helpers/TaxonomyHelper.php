@@ -8,17 +8,19 @@ use Lecturize\Taxonomies\Models\Term;
 class TaxonomyHelper
 {
     /**
-     * @param mixed  $terms
+     * @param mixed $terms
      * @param string $taxonomy
-     * @param int    $parent
-     * @param int    $order
+     * @param int $parent
+     * @param int $order
      */
     public static function createTaxables($terms, $taxonomy, $parent = 0, $order = 0)
     {
         $terms = self::makeTermsArray($terms);
 
         self::createTerms($terms);
-        self::createTaxonomies($terms, $taxonomy, $parent, $order);
+        $taxonomy = self::createTaxonomies($terms, $taxonomy, $parent, $order);
+
+        return $taxonomy;
     }
 
     /**
@@ -46,10 +48,10 @@ class TaxonomyHelper
     }
 
     /**
-     * @param array  $terms
+     * @param array $terms
      * @param string $taxonomy
-     * @param int    $parent
-     * @param int    $order
+     * @param int $parent
+     * @param int $order
      */
     public static function createTaxonomies(array $terms, $taxonomy, $parent = 0, $order = 0)
     {
@@ -75,8 +77,12 @@ class TaxonomyHelper
 
 //                $model->sort = $order;
                 $model->save();
+
+                return $model;
             }
         }
+
+        return null;
     }
 
     /**
@@ -92,6 +98,27 @@ class TaxonomyHelper
             return explode('|', $terms);
         }
 
-        return (array) $terms;
+        return (array)$terms;
     }
+
+    /**
+     * @param string|array $terms
+     *
+     * @return array
+     */
+    public static function getTaxonomy()
+    {
+        $taxonomy = collect(Taxonomy::select('taxonomy')
+            ->distinct()
+            ->get())->map(function (Taxonomy $taxonomy) {
+            return [
+                'name' => $taxonomy->taxonomy,
+                'id' => $taxonomy->taxonomy,
+            ];
+        });
+
+        return $taxonomy;
+    }
+
+
 }

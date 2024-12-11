@@ -6,6 +6,7 @@ import UserAvatar from "../common/UserAvatar.vue";
 import axios from "axios";
 import { useCalendarStore } from '@/store/calendarStore.js';
 import ConfirmDialog from '../common/ConfirmDialog.vue';
+import ProfileDialog from '../common/ProfileDialog.vue';
 import RelatedContent from '../common/RelatedContent.vue';
 import {useUserStore} from "@/store/userStore.js";
 
@@ -23,6 +24,7 @@ const emit = defineEmits([
 ]);
 
 const showConfirmationDialog = ref(false);
+const showProfileDialog = ref(false);
 const showRelateContentDialog = ref(false);
 
 
@@ -32,7 +34,7 @@ const refForm = ref();
 const isFocused = ref(true);
 const loadEventDetails = ref(true);
 
-const event = ref(props.event);
+// const event = ref(JSON.parse(JSON.stringify(props.event)));
 const localEventTypes = computed(() => calendarStore.eventTypes);
 const eventAnswers = ref([]);
 const isStartDateValid = ref(true);
@@ -48,6 +50,16 @@ const openConfirmationDialog = () => {
     confirmationDialog.value.isOpen = true;
 };
 
+const localEvent = ref(null);
+watch(
+    () => props.event,
+    (newEvent) => {
+        localEvent.value = newEvent ? JSON.parse(JSON.stringify(newEvent)) : null;
+    },
+    { immediate: true } // Trigger immediately to initialize localEvent
+);
+
+
 
 
 // const handleCancel = () => {
@@ -60,7 +72,7 @@ const eventTypeItems = computed(() => Object.values(localEventTypes.value));
 const eventType = computed(() => {
     let type;
 
-    type = Object.values(localEventTypes.value).find(item => item.name === event.value.extendedProps.type);
+    type = Object.values(localEventTypes.value).find(item => item.name === localEvent.value.extendedProps.type);
 
     return type;
 });
@@ -75,22 +87,22 @@ const user = computed(() => {
 });
 
 const resetEvent = () => {
-    event.value = JSON.parse(JSON.stringify(props.event));
+    // event.value = JSON.parse(JSON.stringify(props.event));
     isStartDateValid.value = true;
     isEndDateValid.value = true;
-    if (event.value.id) getEvent(event.value.id);
-    if (event.value.id) fetchRelatedItems('App\\Models\\Event\\Event', event.value.id);
+    if (localEvent.value.id) getEvent(localEvent.value.id);
+    if (localEvent.value.id) fetchRelatedItems('App\\Models\\Event\\Event', localEvent.value.id);
     nextTick(() => refForm.value?.resetValidation());
 };
 
 const canJoinEvent = computed(() => {
-    if (!event.value.id) return false;
+    if (!localEvent.value.id) return false;
     const now = new Date();
-    return event.value.end ? new Date(event.value.end) > now : new Date(event.value.start) > now;
+    return localEvent.value.end ? new Date(localEvent.value.end) > now : new Date(localEvent.value.start) > now;
 });
 
 const removeEvent = () => {
-    emit('removeEvent', String(event.value.id));
+    emit('removeEvent', String(localEvent.value.id));
     emit('update:isDrawerOpen', false);
 };
 
@@ -110,12 +122,12 @@ const handleSubmit = () => {
             localEditMode.value = false;
 
             // If id exist on id => Update event
-            if ('id' in event.value)
-                emit('updateEvent', event.value)
+            if ('id' in localEvent.value)
+                emit('updateEvent', localEvent.value)
 
             // Else => add new event
             else
-                emit('addEvent', event.value)
+                emit('addEvent', localEvent.value)
 
             // Close drawer
             emit('update:isDrawerOpen', false)
@@ -126,13 +138,17 @@ const eventTypeOptions = computed(() => {
     let type
 
     // type = Object.values(localEventTypes.value).find(item => item.name ===  event.value.extendedProps.type);
-    type = Object.values(localEventTypes.value).find(item => item.id === event.value.extendedProps.type_id);
+    type = Object.values(localEventTypes.value).find(item => item.id === localEvent.value.extendedProps.event_type_id);
 
     if(type === undefined)
         return []
 
     return JSON.parse(JSON.stringify(type.options));
 });
+
+const eventProfile = computed(() => eventTypeOptions.value.profile?.fields || []);
+
+
 
 
 const onCancel = () => {
@@ -176,7 +192,7 @@ const fetchRelatedItems = async (model, eventId) => {
 
 const approveGuest = async (guestId, action) => {
     try {
-        await axios.post(`/api/events/${event.value.id}/approve-guest`, {
+        await axios.post(`/api/events/${localEvent.value.id}/approve-guest`, {
             guestId,
             action,
         });
@@ -222,18 +238,20 @@ const filterGuestsByApproval = (answers) => {
 
 
 const validateStartDate = () => {
-    isStartDateValid.value = !!event.value.start;
+    isStartDateValid.value = !!localEvent.value.start;
 };
 
 const validateEndDate = () => {
-    isEndDateValid.value = !!event.value.end;
+    isEndDateValid.value = !!localEvent.value.end;
 };
 
-const joinEvent = (answer) => {
-    axios.post(`/api/events/${event.value.id}/answer`, { answer })
-        .catch((error) => {
-            if (error.response.status === 422) console.error('Validation failed:', error);
-        });
+const joinEvent = () => {
+    showProfileDialog.value = true;
+
+    // axios.post(`/api/events/${event.value.id}/answer`, { answer })
+    //     .catch((error) => {
+    //         if (error.response.status === 422) console.error('Validation failed:', error);
+    //     });
 };
 
 const dialogModelValueUpdate = (val) => {
@@ -254,7 +272,16 @@ const handleConfirmation = (isConfirmed) => {
     if (isConfirmed) {
         // Perform the delete action
         console.log('Item deleted');
-        removeEvent(event.value.id)
+        removeEvent(localEvent.value.id)
+    } else {
+        console.log('Action canceled');
+    }
+};
+const handleProfile = (isConfirmed) => {
+    if (isConfirmed) {
+        // Perform the delete action
+        console.log('Item deleted');
+        removeEvent(localEvent.value.id)
     } else {
         console.log('Action canceled');
     }
@@ -270,9 +297,9 @@ function isDateInPast(date) {
     return new Date(date) < currentDate;
 }
 
-watch(() => props.event, (newEvent) => {
-    event.value = { ...newEvent };
-}, { deep: true, immediate: true });
+// watch(() => props.event, (newEvent) => {
+//     event.value = { ...newEvent };
+// }, { deep: true, immediate: true });
 
 watch(() => props.editMode, () => {
     localEditMode.value = props.editMode;
@@ -291,14 +318,14 @@ watch(() => props.isDrawerOpen, resetEvent);
         @update:model-value="dialogModelValueUpdate"
     >
         <div class="pa-2 d-flex align-center" v-if="localEditMode">
-            <h5 class="text-h5 me-3">{{ event.id ? 'Update Event' : 'Add Event' }}</h5>
+            <h5 class="text-h5 me-3">{{ localEvent.id ? 'Update Event' : 'Add Event' }}</h5>
             <VSpacer />
-            <VBtn v-if="event.id" color="primary" class="me-3" @click="localEditMode = !localEditMode">
+            <VBtn v-if="localEvent.id" color="primary" class="me-3" @click="localEditMode = !localEditMode">
                 {{ localEditMode ? 'View' : 'Edit' }}
             </VBtn>
         </div>
         <div class="pa-2 d-flex align-center" v-else>
-            <h5 class="text-h5 me-3">{{ event.title }}</h5>
+            <h5 class="text-h5 me-3">{{ localEvent.title }}</h5>
 
             <VSpacer />
 
@@ -346,7 +373,7 @@ watch(() => props.isDrawerOpen, resetEvent);
                         <VRow>
                             <VCol cols="12" v-if="eventTypeItems.length > 0">
                                 <VSelect
-                                    v-model="event.extendedProps.type_id"
+                                    v-model="localEvent.extendedProps.event_type_id"
                                     label="Type"
                                     placeholder="Select Event Label"
                                     :items="eventTypeItems"
@@ -356,7 +383,7 @@ watch(() => props.isDrawerOpen, resetEvent);
                                     <template #selection="{ item }">
                                         <div
                                             class="align-center"
-                                            :class="event.extendedProps.type ? 'd-flex' : ''"
+                                            :class="localEvent.extendedProps.type ? 'd-flex' : ''"
                                         >
                                             <VIcon
                                                 icon="mdi-circle-medium"
@@ -380,15 +407,15 @@ watch(() => props.isDrawerOpen, resetEvent);
                                 </VSelect>
                             </VCol>
 
-                            <template v-if="event.extendedProps.type_id">
+                            <template v-if="localEvent.extendedProps.event_type_id">
                             <VCol cols="12">
-                                <VTextField v-model="event.title" label="Title" :rules="rules.title" />
+                                <VTextField v-model="localEvent.title" label="Title" :rules="rules.title" />
                             </VCol>
 
                             <VCol cols="12">
                                 <CustomDatePicker
                                     label="Start Date"
-                                    v-model="event.start"
+                                    v-model="localEvent.start"
                                     :error="!isStartDateValid"
                                     :error-messages="['Start date is required']"
                                 />
@@ -397,7 +424,7 @@ watch(() => props.isDrawerOpen, resetEvent);
                             <VCol cols="12" v-show="eventTypeOptions.showAttributtes.includes('endDate')">
                                 <CustomDatePicker
                                     label="End Date"
-                                    v-model="event.end"
+                                    v-model="localEvent.end"
                                     :error="!isEndDateValid"
                                     :error-messages="['End date is required']"
                                 />
@@ -406,17 +433,17 @@ watch(() => props.isDrawerOpen, resetEvent);
                             <VCol cols="12" v-show="eventTypeOptions.showAttributtes.includes('allDay')">
                                 <VSwitch
                                     color="primary"
-                                    v-model="event.allDay"
+                                    v-model="localEvent.allDay"
                                     label="All day"
                                 />
                             </VCol>
 
                             <VCol cols="12">
-                                <VTextField v-model="event.extendedProps.location" label="Location" :rules="rules.location" />
+                                <VTextField v-model="localEvent.extendedProps.location" label="Location" :rules="rules.location" />
                             </VCol>
 
                             <VCol cols="12">
-                                <VTextarea v-model="event.extendedProps.description" label="Description" />
+                                <VTextarea v-model="localEvent.extendedProps.description" label="Description" />
                             </VCol>
                             </template>
 
@@ -450,19 +477,38 @@ watch(() => props.isDrawerOpen, resetEvent);
 
                         </VCol>
 
+                        <!-- Profile Form (Shown only for "Yes") -->
+                        <v-col cols="12" v-for="field in eventProfile" :key="field.name">
+                            <template v-if="field.type === 'select'">
+                                <v-select
+                                    v-model="guestResponses[field.name]"
+                                    :items="field.options"
+                                    :label="field.label"
+                                    outlined
+                                />
+                            </template>
+                            <template v-else-if="field.type === 'text'">
+                                <v-text-field
+                                    v-model="guestResponses[field.name]"
+                                    :label="field.label"
+                                    outlined
+                                />
+                            </template>
+                        </v-col>
+
                         <VCol cols="12">
                             <label>Date/Time</label>
-                            {{ new Date(event.start).toLocaleDateString() }} - {{ new Date(event.end).toLocaleDateString() }}
+                            {{ new Date(localEvent.start).toLocaleDateString() }} - {{ new Date(localEvent.end).toLocaleDateString() }}
                         </VCol>
 
                         <VCol cols="12">
                             <label>Location</label>
-                            {{  event.extendedProps.location }}
+                            {{  localEvent.extendedProps.location }}
                         </VCol>
 
                         <VCol cols="12">
                             <label>Description</label>
-                            <div v-html="event.extendedProps.description"></div>
+                            <div v-html="localEvent.extendedProps.description"></div>
                         </VCol>
 
 <!--                        <VCol cols="12">-->
@@ -486,7 +532,7 @@ watch(() => props.isDrawerOpen, resetEvent);
                             </template>
                         </VCol>
 
-                        <VCol cols="12" v-if="event.extendedProps.user_id == user.id && eventTypeOptions.guest && eventTypeOptions.guest.includes('approval')">
+                        <VCol cols="12" v-if="localEvent.extendedProps.user_id == user.id && eventTypeOptions.guest && eventTypeOptions.guest.includes('approval')">
                             <h3>Guests Requiring Approval</h3>
                             <template v-for="(guests, status) in filterGuestsByApproval(eventAnswers).guestsRequiringApproval">
                                 <v-list-subheader>{{ status }}</v-list-subheader>
@@ -549,6 +595,14 @@ watch(() => props.isDrawerOpen, resetEvent);
             </VCard>
         </PerfectScrollbar>
     </VNavigationDrawer>
+
+    <ProfileDialog
+        v-if="event"
+        v-model="showProfileDialog"
+        :event="event"
+        :resolve="handleProfile"
+    />
+
     <!-- Confirmation Dialog Component -->
     <ConfirmDialog
         v-model="showConfirmationDialog"
@@ -563,7 +617,7 @@ watch(() => props.isDrawerOpen, resetEvent);
         v-model="showRelateContentDialog"
         contentName="Current Event"
         initialSourceType="App\Models\Event\Event"
-        :initialSourceItem="event.id"
+        :initialSourceItem="localEvent.id"
         @confirmRelation="handleRelationConfirmed"
     />
 </template>

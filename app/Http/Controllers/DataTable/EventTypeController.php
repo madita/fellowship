@@ -67,8 +67,7 @@ class EventTypeController extends DataTableController
 
     public function getCustomJsonFields()
     {
-        //this are related to the event model
-        //Todo make it possible to add taxonomies to a type for profiling...
+        //simple options
         return [
             'answers' => ['going'=>'Yes'],
             'max' => ['going'=>'10'],
@@ -86,6 +85,7 @@ class EventTypeController extends DataTableController
     {
         return [
             'name',
+            'event_profile_id',
             'color',
             'options',
            ];
@@ -95,6 +95,7 @@ class EventTypeController extends DataTableController
     {
         return [
             'color'      => 'color',
+            'event_profile_id'      => 'model',
             'options'      => 'json',
             ];
     }
@@ -106,6 +107,7 @@ class EventTypeController extends DataTableController
             'name',
             'slug',
             'color',
+            'event_profile_id',
             'created_at',
             'updated_at',];
     }

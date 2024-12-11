@@ -11,6 +11,7 @@ export default function permission({ to, next }) {
         "admin-posts": "manage-post",
         "admin-events": "manage-post",
         "admin-events-types": "manage-post",
+        "admin-events-profiles": "manage-post",
         "admin-gallery": "manage-post",
         "admin-album": "manage-post",
         "admin-announcements": "manage-post",

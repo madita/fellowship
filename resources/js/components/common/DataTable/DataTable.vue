@@ -249,6 +249,7 @@
                 :item="state.selected"
                 :defaultItem="state.defaultItem"
                 :response="state.response"
+                :endpoint="`${endpoint}`"
                 @add-item="addItem"
                 @update-item="editItem(state.selected)"
                 @remove-item="deleteItem(state.selected)"

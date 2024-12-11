@@ -40,6 +40,7 @@ const blankEvent = {
         guests: [],
         location: '',
         description: '',
+        event_profile_id: 0,
     },
 }
 const endpoint = '/api/events';
@@ -165,7 +166,7 @@ const addEvent = async (addevent) => {
     console.log('addEvent')
 
     axios.post(`${endpoint}`, addevent).then(() => {
-        event.value = null
+        localEvent.value = null
         // this.page = {title: "", body: ""};
         // this.message = "Page saved ..link"
     }).catch((error) => {
@@ -202,7 +203,7 @@ const updateEvent = async (event) => {
 
 const removeEvent = async (eventId) => {
     // console.log('removedevent', eventId)
-    return await await axios.delete(`${endpoint}/${eventId}`, {})
+    return await axios.delete(`${endpoint}/${eventId}`, {})
 }
 
 const jumpToDate = currentDate => {
@@ -311,6 +312,7 @@ watch(isEventHandlerSidebarActive, val => {
 
 eventBus.on('openSidebarWithEvent', (event) => {
     selectedEvent.value = event;
+    editMode.value = false;
     isEventHandlerSidebarActive.value = true;
 });
 
@@ -320,7 +322,7 @@ onMounted(async () => {
     // events.value = await calendarStore.fetchEvents();
     await calendarStore.fetchEvents();
     await calendarStore.fetchEventTypes();
-    console.log('eventsstore',calendarStore.events)
+    // console.log('eventsstore',calendarStore.events)
     // eventTypes.value = await fetchEventTypes();
     // console.log('eventTypes',eventTypes)
     // console.log('events',events.value)
