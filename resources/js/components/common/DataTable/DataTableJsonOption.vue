@@ -21,7 +21,8 @@ const editKey = ref('');
 const editValue = ref('');
 
 const name = ref(props.name)
-const option = ref(JSON.parse(JSON.stringify(props.option)))
+// const option = ref(JSON.parse(JSON.stringify(props.option)))
+const localOption = ref([])
 const defaultOption = ref(JSON.parse(JSON.stringify(props.option)))
 // const options = ref(JSON.parse(JSON.stringify(props.options)))
 // const defaultOptions = ref(JSON.parse(JSON.stringify(props.options)))
@@ -32,9 +33,17 @@ const newOptionValue = ref('');
 
 const addOption = () => {
     // console.log('name', option.value[name])
-
+    Object.keys(localOption).map((key) => [key, localOption[key]]);
     if (newOptionKey.value && newOptionValue.value) {
-        option.value[newOptionKey.value] = newOptionValue.value;
+        const newOption = {
+            key: newOptionKey.value,
+            value: newOptionValue.value,
+        }
+
+        console.log('typeof option', typeof localOption.value)
+        localOption.value.push(newOption)
+        // option.value[]['key'] = newOptionKey.value;
+        // option.value[]['value'] = newOptionValue.value;
         newOptionKey.value = '';
         newOptionValue.value = '';
         closeModal();
@@ -43,31 +52,33 @@ const addOption = () => {
 };
 
 // Remove an existing answer
-const removeOption = (key) => {
-    delete option.value[key];
+const removeOption = (index) => {
+    delete localOption.value[index];
 };
 
 // Function to trigger edit mode
 
-const editOption = (key, value, index) => {
-
+const editOption = (index, value) => {
+console.log('value', value, 'index', index)
     editIndex.value = index;
-    editKey.value = key;
-    editValue.value = value;
+    editKey.value = value.key;
+    editValue.value = value.value;
 };
 
 // Function to save edited key-value pair
 const saveEdit = (index) => {
 
-    const keys = Object.keys(option.value);
-    const oldKey = keys[index];
+    // const keys = Object.keys(option.value);
+    // const oldKey = keys[index];
 
     // Delete old key and set new key-value pair
-    if (oldKey !== editKey.value) {
-        delete option.value[oldKey];
-    }
-    option.value[editKey.value] = editValue.value;
-    console.log('saveeditoption', option.value)
+    // if (oldKey !== editKey.value) {
+    //     delete option.value[oldKey];
+    // }
+    localOption.value[index]['key'] = editKey.value;
+    localOption.value[index]['value'] = editValue.value;
+    // option.value[editKey.value] = editValue.value;
+    // console.log('saveeditoption', option.value)
 
     // Exit edit mode
     editIndex.value = null;
@@ -82,7 +93,7 @@ const closeModal = () => {
 
 
 // Watchers to trigger the JSON generation whenever something changes
-watch(option, (newValue) => {
+watch(localOption, (newValue) => {
     console.log('newValue', newValue)
     emit('update:modelValue', newValue);
 }, {deep: true});
@@ -111,20 +122,18 @@ onMounted(() => {
 
             <ul>
 
-
-                <li v-for="(value, key, index) in option" :key="key" class="answer-item d-flex align-center mb-1 ml-2">
+                <li v-for="(value, index) in option" :key="key" class="answer-item d-flex align-center mb-1 ml-2">
                     <template v-if="editIndex === index" class="d-flex align-center">
-
                         <v-text-field density="compact" v-model="editKey" label="Key" class="me-1 v-col-5"/>
                         <v-text-field density="compact" v-model="editValue" label="Value" class="me-1 v-col-5"/>
                         <v-icon @click="saveEdit(index)">mdi-check</v-icon>
 
                     </template>
                     <template v-else>
-                        <span>{{ key }}: {{ value }}</span>
+                        <span>{{ index }} -  {{ value.key }}: {{ value.value }}</span>
                         <span>
                                                             <v-icon class="edit-icon"
-                                                                    @click="editOption(key, value, index)">mdi-pencil</v-icon>
+                                                                    @click="editOption(index, value)">mdi-pencil</v-icon>
                                                             <v-icon class="delete-icon" @click="removeOption( key)">mdi-delete</v-icon>
                                                         </span>
 

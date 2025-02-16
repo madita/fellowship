@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\DataTable;
 
+use App\Helpers\TaxonomyHelper;
 use App\Models\Tag\Taxonomy;
 use Illuminate\Http\Request;
 
@@ -14,7 +15,27 @@ class TaxonomyController extends DataTableController
 
     public function store(Request $request)
     {
-//        Taxonomy::create($request->only($this->getUpdatableColumns()));
+
+//        dd($request);
+        $taxonomy = Taxonomy::create($request->only($this->getUpdatableColumns()));
+
+//        $data = $request->only($this->getUpdatableColumns());
+
+//        dd($data);
+//
+//
+////        $parent = $request->get('tag_taxonomy_id')??0;
+//
+////        $name = $request->get('name');
+////        $taxonomy = $request->get('taxonomy');
+//
+////        if(!$taxonomy || !$name) {
+////            return response()->json(['message' => 'error']);
+////        }
+//
+//        $taxonomy = TaxonomyHelper::createTaxables($name, $taxonomy, $parent);
+
+        return response()->json(['message' => 'success', 'taxonomy' => $taxonomy], 200);
     }
 
 

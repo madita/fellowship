@@ -39,6 +39,7 @@ const localEventTypes = computed(() => calendarStore.eventTypes);
 const eventAnswers = ref([]);
 const isStartDateValid = ref(true);
 const isEndDateValid = ref(true);
+const profileAnswer = ref(null);
 
 const confirmationDialog = ref(null);
 
@@ -245,13 +246,19 @@ const validateEndDate = () => {
     isEndDateValid.value = !!localEvent.value.end;
 };
 
-const joinEvent = () => {
-    showProfileDialog.value = true;
+const joinEvent = (answer) => {
+    const type = eventType.value
+console.log('answer',answer)
+    if(type.options.profile.includes(answer)) {
+        showProfileDialog.value = true;
+        profileAnswer.value = answer;
+    } else {
+        axios.post(`/api/events/${localEvent.value.id}/answer`, { answer })
+            .catch((error) => {
+                if (error.response.status === 422) console.error('Validation failed:', error);
+            });
+    }
 
-    // axios.post(`/api/events/${event.value.id}/answer`, { answer })
-    //     .catch((error) => {
-    //         if (error.response.status === 422) console.error('Validation failed:', error);
-    //     });
 };
 
 const dialogModelValueUpdate = (val) => {
@@ -280,8 +287,8 @@ const handleConfirmation = (isConfirmed) => {
 const handleProfile = (isConfirmed) => {
     if (isConfirmed) {
         // Perform the delete action
-        console.log('Item deleted');
-        removeEvent(localEvent.value.id)
+        console.log('Profile saved');
+        // removeEvent(localEvent.value.id)
     } else {
         console.log('Action canceled');
     }
@@ -518,6 +525,7 @@ watch(() => props.isDrawerOpen, resetEvent);
 <!--                            </template>-->
 <!--                        </VCol>-->
 
+                
                         <VCol cols="12">
                             <template v-for="(guests, status) in filterGuestsByApproval(eventAnswers).approvedGuests">
                                 <v-list-subheader>{{ status }} ({{ guests.length }})</v-list-subheader>
@@ -597,9 +605,10 @@ watch(() => props.isDrawerOpen, resetEvent);
     </VNavigationDrawer>
 
     <ProfileDialog
-        v-if="event"
+        v-if="localEvent"
         v-model="showProfileDialog"
-        :event="event"
+        :event="localEvent"
+        :answer="profileAnswer"
         :resolve="handleProfile"
     />
 

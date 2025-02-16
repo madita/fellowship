@@ -33,6 +33,7 @@ class EventProfileController extends DataTableController
     public function show($id, Request $request): JsonResponse
     {
         $evnetProfile = EventProfile::find($id);
+//        dd($evnetProfile);
 
 //        dd($evnetProfile);
 
@@ -47,11 +48,8 @@ class EventProfileController extends DataTableController
 
     public function update($id, Request $request)
     {
-
         $event = EventProfile::find($id);
         $event->update($request->only($this->getUpdatableColumns()));
-
-
 
     }
 

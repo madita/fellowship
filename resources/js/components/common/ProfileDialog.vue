@@ -8,7 +8,7 @@
             <VCardText>
 
                 <v-select v-if="eventDays.length>1"
-                          v-model="selectedDays"
+                          v-model="formData['days']"
                           :items="eventDays"
                           label="Days"
                           outlined
@@ -16,10 +16,7 @@
                 />
 
                 <template v-if="profileId > 0">
-                    <v-row v-for="(field, name) in fields.form" :key="`field-${field.name}`">
-                        <v-col
-                            cols="12"
-                        >
+                    <template v-for="(field) in fields.form" :key="`field-${field.name}`">
 
 
                             <v-select
@@ -27,36 +24,39 @@
                                 :items="field.options"
                                 item-title="value"
                                 item-value="key"
-                                v-model="formData[name]"
+                                v-model="formData[field.name]"
                                 :label="field.label"
                             ></v-select>
 
                             <v-select
                                 v-else-if="field.type==='taxonomy'"
-                                :items="getTaxonomy()"
-                                item-title="value"
+                                :items="taxonomieItems[field.name]"
+                                item-title="title"
                                 item-value="id"
-                                v-model="formData[name]"
+                                v-model="formData[field.name]"
                                 :label="field.label"
+                                multiple
+                                chips
+                                @focus ="getTerms(field.name, field.options)"
                             ></v-select>
 
                             <v-textarea
                                 v-else-if="field.type==='textarea'"
-                                :label="column"
-                                :id="column"
-                                v-model="formData[name]"
-                                :value="formData[name]"
+                                :label="name"
+                                :id="name"
+                                v-model="formData[field.name]"
+                                :value="formData[field.name]"
                             ></v-textarea>
 
                             <v-text-field
                                 v-else
                                 :label="field.label"
-                                v-model="formData[name]"
-                                :value="formData[name]"
+                                v-model="formData[field.name]"
+                                :value="formData[field.name]"
                             ></v-text-field>
 
-                        </v-col>
-                    </v-row>
+
+                    </template>
 
                 </template>
 
@@ -76,20 +76,23 @@
 <script setup>
 import {ref, computed, watch} from 'vue';
 import axios from "axios";
+import taxonomie from "@/pages/admin/Taxonomie.vue";
 
 const selectedDays = ref();
 const profile = ref();
 const fields = ref();
+const taxonomieItems = ref([]);
 const formData = ref([]);
 
 // Define the modelValue prop
 const props = defineProps({
     modelValue: Boolean, // Highlight: Bind modelValue to control dialog visibility
     event: Object,
-    resolve: {type: Function, required: true},
+    answer: String,
 });
 
 const localEvent = ref(null);
+const localAnswer = ref(props.answer);
 
 
 const emit = defineEmits(['update:modelValue']); // Highlight: Emit update for modelValue
@@ -102,13 +105,45 @@ const internalModelValue = computed({
 });
 
 function confirm() {
-    props.resolve(true);
+    // props.resolve(true);
     internalModelValue.value = false;
+    profileSubmit(localAnswer.value);
+
+
 }
 
 function cancel() {
     props.resolve(false);
     internalModelValue.value = false;
+}
+
+const profileSubmit = async (answer) => {
+
+    console.log('localAnswer', answer)
+    const data = Object.assign({}, formData.value);
+
+    const params = {'answer': answer, 'data': data  }
+
+    console.log('para', params)
+
+    //
+    await axios.post(`/api/events/${localEvent.value.id}/answer`,  params ).then((response) => {
+
+        // profile.value = response.data
+        //
+        // // fields.value = JSON.parse(profile.value.options)
+        // fields.value = profile.value.options
+
+
+        // this.page = {title: "", body: ""};
+        // this.message = "Page saved ..link"
+    }).catch((error) => {
+        console.log(error)
+        if (error.response.status === 422) {
+            // this.creating.errors = error.response.data
+            this.editing.errors = error.response.data
+        }
+    })
 }
 
 //
@@ -165,28 +200,35 @@ const profileForm = async () => {
     })
 }
 
-const getTaxonomy = async () => {
-    return [];
+const getTerms = async (name, taxonomy ) => {
+    console.log('ngfdkjgfldkgfgkkglf',name)
+
+    // taxonomieItems[name].value = []
 
     // console.log('profileform', localEvent)
     //
-    // await axios.get(`/api/datatable/event-profiles/${profileId.value}`).then((response) => {
-    //
-    //     profile.value = response.data
-    //
-    //     // fields.value = JSON.parse(profile.value.options)
-    //     fields.value = profile.value.options
-    //
-    //
-    //     // this.page = {title: "", body: ""};
-    //     // this.message = "Page saved ..link"
-    // }).catch((error) => {
-    //     console.log(error)
-    //     if (error.response.status === 422) {
-    //         // this.creating.errors = error.response.data
-    //         this.editing.errors = error.response.data
-    //     }
-    // });
+    await axios.get(`/api/tag/terms/${taxonomy}`).then((response) => {
+        console.log('responseterms',response.data)
+
+        // this.categories = this.parents = response.data.terms
+
+        taxonomieItems.value[name] = response.data.terms
+
+        console.log('testgnaaa',name, taxonomieItems.value[name])
+
+        // fields.value = JSON.parse(profile.value.options)
+        // fields.value = profile.value.options
+
+
+        // this.page = {title: "", body: ""};
+        // this.message = "Page saved ..link"
+    }).catch((error) => {
+        console.log('error', error)
+        // if (error.response.status === 422) {
+        //     // this.creating.errors = error.response.data
+        //     this.editing.errors = error.response.data
+        // }
+    });
 }
 
 // const profileForm = async (() => {
@@ -212,9 +254,17 @@ watch(
         console.log('profilewatch', profileId)
         localEvent.value = newEvent ? JSON.parse(JSON.stringify(newEvent)) : null;
         if (profileId.value > 0) {
-            console.log('test')
             profileForm()
         }
+    },
+    {immediate: true} // Trigger immediately to initialize localEvent
+);
+
+watch(
+    () => props.answer,
+    (answer) => {
+        console.log('answerwatch', answer)
+        localAnswer.value = answer;
     },
     {immediate: true} // Trigger immediately to initialize localEvent
 );

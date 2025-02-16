@@ -183,7 +183,14 @@ class EventController extends Controller
             $isGoing = DB::table('event_guests')->where('event_id', '=', $event->id)->where('user_id', '=', $user->id)->first();
         }
 
+        $isGoing->profile = json_decode($isGoing->profile);
 
+
+        $eventGuests = EventGuest::where('event_id', '=', $event->id)->get();
+        $eventGuests = collect($eventGuests)->map(function (EventGuest $guest) {
+            $guest->profile = json_decode($guest->profile);
+            return $guest;
+        });
 
         $eventType = EventType::find($event->event_type_id);
 
@@ -199,6 +206,7 @@ class EventController extends Controller
             'event'   => $event,
             'isGoing' => $isGoing,
             'answers' => $answers,
+            'guests' => $eventGuests,
         ];
 
         return response()->json($data);
@@ -318,18 +326,28 @@ class EventController extends Controller
 
     public function joinEvent(Request $request, Event $event)
     {
+//        dd($request);
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
         //        dd($request->all());
         $answer = $request->get('answer');
 
+        $json = $request->get('data');
+
         $eventGuest = $user->eventGuest()->where('event_id', $event->id)->first();
 
+        $data = [
+            'type' => $answer
+        ];
+        if($json !== null) {
+            $data['profile'] = json_encode($json);
+        }
+
         if ($eventGuest) {
-            $event->allUsers()->updateExistingPivot($user->id, ['type' => $answer]);
+            $event->allUsers()->updateExistingPivot($user->id, $data );
         } else {
-            $event->allUsers()->attach($user->id, ['type' => $answer]);
+            $event->allUsers()->attach($user->id, $data);
         }
 
         //        return response()->json($user->eventGuest()->find($event->id)->pivot);

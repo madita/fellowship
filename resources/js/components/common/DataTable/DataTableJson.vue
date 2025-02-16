@@ -21,7 +21,7 @@ const props = defineProps({
         required: true,
     },
     options: {
-        type: Object,
+        type: [String, Object, Array],
         required: false,
         default: () => {},
     },

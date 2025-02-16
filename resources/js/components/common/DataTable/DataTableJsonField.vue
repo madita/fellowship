@@ -34,7 +34,8 @@ const getTaxonomies = async () => {
 
     // API URL, adjust as per your setup
 
-    const apiUrl = '/api/datatable/taxonomies'
+    // const apiUrl = '/api/datatable/taxonomies'
+    const apiUrl = `/api/common/items?foreign_key=taxonomy`;
 
 
     try {
@@ -90,7 +91,14 @@ onMounted(() => {
 <template>
     <v-row>
         <v-col cols="12">
-            <h4>Form Fields</h4>
+            <v-row>
+
+                <v-col class="ma-1"><h4>Form Fields</h4></v-col>
+                <v-col class="text-right">
+                    <v-btn class="btn btn-secondary text-right" @click="addField" icon="mdi-plus"></v-btn>
+                </v-col>
+            </v-row>
+
             <v-row v-for="(field, name) in fields" :key="name" class="d-flex align-center">
 
 
@@ -145,9 +153,9 @@ onMounted(() => {
                         <v-select
                             clearable
                             v-model="fields[name].options"
-                            item-title="taxonomy"
-                            item-value="id"
-                            :items="taxonomies.data.records"
+                            item-title="name"
+                            item-value="name"
+                            :items="taxonomies"
                             label="Taxonomy"
 
                         ></v-select>
@@ -157,8 +165,10 @@ onMounted(() => {
 
             </v-row>
 
-            <button type="button" class="btn btn-secondary" @click="addField">Add Field</button>
-            <button type="button" class="btn btn-primary" @click="saveForm">Save form</button>
+
+
+<!--            <button type="button" class="btn btn-secondary" @click="addField">Add Field</button>-->
+<!--            <button type="button" class="btn btn-primary text-right" @click="saveForm">Save form</button>-->
 
 
         </v-col>
