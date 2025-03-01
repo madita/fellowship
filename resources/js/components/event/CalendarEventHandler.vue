@@ -1,12 +1,13 @@
 <script setup>
-import { ref, watch, computed, nextTick } from 'vue';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
+import {ref, watch, computed, nextTick} from 'vue';
+import {PerfectScrollbar} from 'vue3-perfect-scrollbar';
 import CustomDatePicker from "../common/CustomDatePicker.vue";
 import UserAvatar from "../common/UserAvatar.vue";
 import axios from "axios";
-import { useCalendarStore } from '@/store/calendarStore.js';
+import {useCalendarStore} from '@/store/calendarStore.js';
 import ConfirmDialog from '../common/ConfirmDialog.vue';
 import ProfileDialog from '../common/ProfileDialog.vue';
+import DetailsDialog from '../common/DetailsDialog.vue';
 import RelatedContent from '../common/RelatedContent.vue';
 import {useUserStore} from "@/store/userStore.js";
 
@@ -23,9 +24,12 @@ const emit = defineEmits([
     'removeEvent',
 ]);
 
+const selectedStatus = ref(null);
+
 const showConfirmationDialog = ref(false);
 const showProfileDialog = ref(false);
 const showRelateContentDialog = ref(false);
+const showDetailsDialog = ref(false);
 
 
 const calendarStore = useCalendarStore();
@@ -37,6 +41,8 @@ const loadEventDetails = ref(true);
 // const event = ref(JSON.parse(JSON.stringify(props.event)));
 const localEventTypes = computed(() => calendarStore.eventTypes);
 const eventAnswers = ref([]);
+const eventGuests = ref([]);
+const isGoing = ref([]);
 const isStartDateValid = ref(true);
 const isEndDateValid = ref(true);
 const profileAnswer = ref(null);
@@ -57,10 +63,8 @@ watch(
     (newEvent) => {
         localEvent.value = newEvent ? JSON.parse(JSON.stringify(newEvent)) : null;
     },
-    { immediate: true } // Trigger immediately to initialize localEvent
+    {immediate: true} // Trigger immediately to initialize localEvent
 );
-
-
 
 
 // const handleCancel = () => {
@@ -80,11 +84,11 @@ const eventType = computed(() => {
 
 const user = computed(() => {
 
-    if(userStore.user) {
+    if (userStore.user) {
         return userStore.user
     }
 
-    return {id:null};
+    return {id: null};
 });
 
 const resetEvent = () => {
@@ -105,6 +109,13 @@ const canJoinEvent = computed(() => {
 const removeEvent = () => {
     emit('removeEvent', String(localEvent.value.id));
     emit('update:isDrawerOpen', false);
+};
+
+const openDialog = () => {
+    console.log('click details')
+    // emit('eventDetails', eventAnswers.value);
+    // emit('update:openDialog', true);
+    showDetailsDialog.value = true
 };
 
 const handleSubmit = () => {
@@ -141,15 +152,13 @@ const eventTypeOptions = computed(() => {
     // type = Object.values(localEventTypes.value).find(item => item.name ===  event.value.extendedProps.type);
     type = Object.values(localEventTypes.value).find(item => item.id === localEvent.value.extendedProps.event_type_id);
 
-    if(type === undefined)
+    if (type === undefined)
         return []
 
     return JSON.parse(JSON.stringify(type.options));
 });
 
 const eventProfile = computed(() => eventTypeOptions.value.profile?.fields || []);
-
-
 
 
 const onCancel = () => {
@@ -162,6 +171,8 @@ const getEvent = async (eventId) => {
         const response = await axios.get(`/api/events/${eventId}`);
 
         eventAnswers.value = response.data.answers;
+        eventGuests.value = response.data.guests;
+        isGoing.value = response.data.isGoing;
 
         //filter out not approved guests?
         // if (eventTypeOptions.value.guest && eventTypeOptions.value.guest.includes('approval')) {
@@ -183,7 +194,7 @@ const getEvent = async (eventId) => {
 const fetchRelatedItems = async (model, eventId) => {
     try {
         const response = await axios.post('/api/related-items', {
-            modelType:model, modelId:eventId,
+            modelType: model, modelId: eventId,
         });
         relatedItems.value = response.data.items
     } catch (error) {
@@ -201,7 +212,7 @@ const approveGuest = async (guestId, action) => {
         // Update the event answers to reflect the changes
         eventAnswers.value = eventAnswers.value.map((group) =>
             group.map((guest) =>
-                guest.id === guestId ? { ...guest, approved: action === "approve" } : guest
+                guest.id === guestId ? {...guest, approved: action === "approve"} : guest
             )
         );
 
@@ -234,7 +245,7 @@ const filterGuestsByApproval = (answers) => {
         });
     });
 
-    return { guestsRequiringApproval, approvedGuests };
+    return {guestsRequiringApproval, approvedGuests};
 };
 
 
@@ -248,12 +259,12 @@ const validateEndDate = () => {
 
 const joinEvent = (answer) => {
     const type = eventType.value
-console.log('answer',answer)
-    if(type.options.profile.includes(answer)) {
+    console.log('answer', answer)
+    if (type.options.profile.includes(answer)) {
         showProfileDialog.value = true;
         profileAnswer.value = answer;
     } else {
-        axios.post(`/api/events/${localEvent.value.id}/answer`, { answer })
+        axios.post(`/api/events/${localEvent.value.id}/answer`, {answer})
             .catch((error) => {
                 if (error.response.status === 422) console.error('Validation failed:', error);
             });
@@ -326,7 +337,7 @@ watch(() => props.isDrawerOpen, resetEvent);
     >
         <div class="pa-2 d-flex align-center" v-if="localEditMode">
             <h5 class="text-h5 me-3">{{ localEvent.id ? 'Update Event' : 'Add Event' }}</h5>
-            <VSpacer />
+            <VSpacer/>
             <VBtn v-if="localEvent.id" color="primary" class="me-3" @click="localEditMode = !localEditMode">
                 {{ localEditMode ? 'View' : 'Edit' }}
             </VBtn>
@@ -334,9 +345,9 @@ watch(() => props.isDrawerOpen, resetEvent);
         <div class="pa-2 d-flex align-center" v-else>
             <h5 class="text-h5 me-3">{{ localEvent.title }}</h5>
 
-            <VSpacer />
+            <VSpacer/>
 
-            <slot name="beforeClose" />
+            <slot name="beforeClose"/>
 
 
             <v-btn icon="mdi-pencil"
@@ -371,7 +382,7 @@ watch(() => props.isDrawerOpen, resetEvent);
 
         </div>
 
-        <VDivider />
+        <VDivider/>
 
         <PerfectScrollbar :options="{ wheelPropagation: false }">
             <VCard flat v-if="localEditMode">
@@ -415,43 +426,44 @@ watch(() => props.isDrawerOpen, resetEvent);
                             </VCol>
 
                             <template v-if="localEvent.extendedProps.event_type_id">
-                            <VCol cols="12">
-                                <VTextField v-model="localEvent.title" label="Title" :rules="rules.title" />
-                            </VCol>
+                                <VCol cols="12">
+                                    <VTextField v-model="localEvent.title" label="Title" :rules="rules.title"/>
+                                </VCol>
 
-                            <VCol cols="12">
-                                <CustomDatePicker
-                                    label="Start Date"
-                                    v-model="localEvent.start"
-                                    :error="!isStartDateValid"
-                                    :error-messages="['Start date is required']"
-                                />
-                            </VCol>
+                                <VCol cols="12">
+                                    <CustomDatePicker
+                                        label="Start Date"
+                                        v-model="localEvent.start"
+                                        :error="!isStartDateValid"
+                                        :error-messages="['Start date is required']"
+                                    />
+                                </VCol>
 
-                            <VCol cols="12" v-show="eventTypeOptions.showAttributtes.includes('endDate')">
-                                <CustomDatePicker
-                                    label="End Date"
-                                    v-model="localEvent.end"
-                                    :error="!isEndDateValid"
-                                    :error-messages="['End date is required']"
-                                />
-                            </VCol>
+                                <VCol cols="12" v-show="eventTypeOptions.showAttributtes.includes('endDate')">
+                                    <CustomDatePicker
+                                        label="End Date"
+                                        v-model="localEvent.end"
+                                        :error="!isEndDateValid"
+                                        :error-messages="['End date is required']"
+                                    />
+                                </VCol>
 
-                            <VCol cols="12" v-show="eventTypeOptions.showAttributtes.includes('allDay')">
-                                <VSwitch
-                                    color="primary"
-                                    v-model="localEvent.allDay"
-                                    label="All day"
-                                />
-                            </VCol>
+                                <VCol cols="12" v-show="eventTypeOptions.showAttributtes.includes('allDay')">
+                                    <VSwitch
+                                        color="primary"
+                                        v-model="localEvent.allDay"
+                                        label="All day"
+                                    />
+                                </VCol>
 
-                            <VCol cols="12">
-                                <VTextField v-model="localEvent.extendedProps.location" label="Location" :rules="rules.location" />
-                            </VCol>
+                                <VCol cols="12">
+                                    <VTextField v-model="localEvent.extendedProps.location" label="Location"
+                                                :rules="rules.location"/>
+                                </VCol>
 
-                            <VCol cols="12">
-                                <VTextarea v-model="localEvent.extendedProps.description" label="Description" />
-                            </VCol>
+                                <VCol cols="12">
+                                    <VTextarea v-model="localEvent.extendedProps.description" label="Description"/>
+                                </VCol>
                             </template>
 
 
@@ -477,13 +489,17 @@ watch(() => props.isDrawerOpen, resetEvent);
                                       class="me-3"
 
                                       @click="joinEvent(value)">
-                                    {{answer}}
+                                    {{ answer }}
 
                                 </VBtn>
                             </template>
 
                         </VCol>
 
+                        <VBtn @click="openDialog()">
+                             Details
+
+                        </VBtn>
                         <!-- Profile Form (Shown only for "Yes") -->
                         <v-col cols="12" v-for="field in eventProfile" :key="field.name">
                             <template v-if="field.type === 'select'">
@@ -505,12 +521,13 @@ watch(() => props.isDrawerOpen, resetEvent);
 
                         <VCol cols="12">
                             <label>Date/Time</label>
-                            {{ new Date(localEvent.start).toLocaleDateString() }} - {{ new Date(localEvent.end).toLocaleDateString() }}
+                            {{ new Date(localEvent.start).toLocaleDateString() }} -
+                            {{ new Date(localEvent.end).toLocaleDateString() }}
                         </VCol>
 
                         <VCol cols="12">
                             <label>Location</label>
-                            {{  localEvent.extendedProps.location }}
+                            {{ localEvent.extendedProps.location }}
                         </VCol>
 
                         <VCol cols="12">
@@ -518,39 +535,49 @@ watch(() => props.isDrawerOpen, resetEvent);
                             <div v-html="localEvent.extendedProps.description"></div>
                         </VCol>
 
-<!--                        <VCol cols="12">-->
-<!--                            <template v-for="(answer, value) in eventAnswers">-->
-<!--                                <v-list-subheader>{{ value }} ({{ answer.length }})</v-list-subheader>-->
-<!--                                <UserAvatar v-for="user in answer" :key="`going-${user.id}`" :user="user" />-->
-<!--                            </template>-->
-<!--                        </VCol>-->
+                        <!--                        <VCol cols="12">-->
+                        <!--                            <template v-for="(answer, value) in eventAnswers">-->
+                        <!--                                <v-list-subheader>{{ value }} ({{ answer.length }})</v-list-subheader>-->
+                        <!--                                <UserAvatar v-for="user in answer" :key="`going-${user.id}`" :user="user" />-->
+                        <!--                            </template>-->
+                        <!--                        </VCol>-->
 
-                
+
                         <VCol cols="12">
                             <template v-for="(guests, status) in filterGuestsByApproval(eventAnswers).approvedGuests">
                                 <v-list-subheader>{{ status }} ({{ guests.length }})</v-list-subheader>
-                                <v-list>
-                                    <v-list-item
-                                        v-for="guest in guests"
-                                        :key="guest.id"
-                                    >
-                                        <UserAvatar :user="guest" />
-                                    </v-list-item>
-                                </v-list>
+                                <UserAvatar
+                                    class="mr-1"
+                                    v-for="guest in guests"
+                                    :key="guest.id"
+                                    :user="guest"/>
+<!--                                <v-list>-->
+<!--                                    <v-list-item-->
+<!--                                        v-for="guest in guests"-->
+<!--                                        :key="guest.id"-->
+<!--                                    >-->
+<!--                                        <UserAvatar :user="guest"/>-->
+<!--                                    </v-list-item>-->
+<!--                                </v-list>-->
                             </template>
                         </VCol>
 
-                        <VCol cols="12" v-if="localEvent.extendedProps.user_id == user.id && eventTypeOptions.guest && eventTypeOptions.guest.includes('approval')">
+                        <VCol cols="12"
+                              v-if="localEvent.extendedProps.user_id == user.id && eventTypeOptions.guest && eventTypeOptions.guest.includes('approval')">
                             <h3>Guests Requiring Approval</h3>
-                            <template v-for="(guests, status) in filterGuestsByApproval(eventAnswers).guestsRequiringApproval">
+                            <template
+                                v-for="(guests, status) in filterGuestsByApproval(eventAnswers).guestsRequiringApproval">
                                 <v-list-subheader>{{ status }}</v-list-subheader>
+                                <UserAvatar
+                                    class="mr-1"
+                                    v-for="guest in guests"
+                                    :key="guest.id"
+                                    :user="guest"/>
                                 <v-list>
                                     <v-list-item
                                         v-for="guest in guests"
                                         :key="guest.id"
                                     >
-
-                                        <UserAvatar :user="guest" />
                                         <v-list-item-action>
                                             <v-btn
                                                 color="green"
@@ -572,30 +599,31 @@ watch(() => props.isDrawerOpen, resetEvent);
 
 
                         <VCol cols="12">
-<!--                            <h3>Related Content</h3>-->
+                            <!--                            <h3>Related Content</h3>-->
 
-                                    <v-card v-for="item in relatedItems" :key="item.id"
-                                        class="card-hover"
-                                            elevation="10"
-                                            rounded="md"
-                                            :to="`/gallery/${item.related.slug}`"
-                                            :class="`v-theme--ORANGE_THEME`"
-                                    >
+                            <v-card v-for="item in relatedItems" :key="item.id"
+                                    class="card-hover"
+                                    elevation="10"
+                                    rounded="md"
+                                    :to="`/gallery/${item.related.slug}`"
+                                    :class="`v-theme--ORANGE_THEME`"
+                            >
 
-                                        <v-img v-if="item.related.coverImage" :src="item.related.coverImage" height="200"></v-img>
-                                        <v-card-text>
-                                            <div class="d-flex align-center gap-3">
-                                                <div>
-                                                    <h6 class="text-h6 mb-1">{{ item.related.title }}</h6>
-                                                    <span class="d-block text-truncate d-flex align-center gap-2 textSecondary"></span>
-                                                </div>
-                                            </div>
-                                        </v-card-text>
-                                    </v-card>
+                                <v-img v-if="item.related.coverImage" :src="item.related.coverImage"
+                                       height="200"></v-img>
+                                <v-card-text>
+                                    <div class="d-flex align-center gap-3">
+                                        <div>
+                                            <h6 class="text-h6 mb-1">{{ item.related.title }}</h6>
+                                            <span
+                                                class="d-block text-truncate d-flex align-center gap-2 textSecondary"></span>
+                                        </div>
+                                    </div>
+                                </v-card-text>
+                            </v-card>
 
 
-
-<!--                                    <router-link :to="`/gallery/${item.related.slug}`">{{ item.related.title }}</router-link>-->
+                            <!--                                    <router-link :to="`/gallery/${item.related.slug}`">{{ item.related.title }}</router-link>-->
 
                         </VCol>
                     </VRow>
@@ -608,6 +636,7 @@ watch(() => props.isDrawerOpen, resetEvent);
         v-if="localEvent"
         v-model="showProfileDialog"
         :event="localEvent"
+        :is-going="isGoing"
         :answer="profileAnswer"
         :resolve="handleProfile"
     />
@@ -629,6 +658,14 @@ watch(() => props.isDrawerOpen, resetEvent);
         :initialSourceItem="localEvent.id"
         @confirmRelation="handleRelationConfirmed"
     />
+
+    <DetailsDialog
+        v-model="showDetailsDialog"
+
+        :eventGuests="eventGuests"
+    />
+
+
 </template>
 
 <style scoped>

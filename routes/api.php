@@ -90,7 +90,8 @@ Route::delete('/collections/{collection}', [App\Http\Controllers\CollectionContr
 Route::delete('/media/{media}', [App\Http\Controllers\CollectionController::class, 'deleteMedia']); // Delete a media item
 
 
-Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
+Route::group(['middleware' => ['auth:sanctum']], function () {
+//Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
     Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');
 //    Route::get('datatable/pages/categories/{taxonomy}', 'App\Http\Controllers\DataTable\PageController@getCategories');
     Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\PostController');

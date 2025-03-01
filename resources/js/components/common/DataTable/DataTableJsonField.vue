@@ -49,9 +49,9 @@ const getTaxonomies = async () => {
 
         // console.log('response', response)
 
-        if (!response.ok) {
-            throw new Error('Failed to fetch items');
-        }
+        // if (!response.ok) {
+        //     throw new Error('Failed to fetch items');
+        // }
 
         taxonomies.value = await response.json();
 
@@ -159,6 +159,16 @@ onMounted(() => {
                             label="Taxonomy"
 
                         ></v-select>
+
+<!--                        <v-combobox-->
+<!--                            v-model="fields[name].options"-->
+<!--                            :items="parents"-->
+<!--                            item-title="name"-->
+<!--                            item-value="name"-->
+<!--                            label="Taxonomy"-->
+<!--                            chips-->
+<!--                            clearable-->
+<!--                        ></v-combobox>-->
                     </template>
                 </v-col>
 

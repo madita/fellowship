@@ -1,156 +1,108 @@
 <script setup>
-import {ref, watch, onMounted} from 'vue';
-// Modal state for JSON key-value pairs
+import { ref, watch } from 'vue';
+
+// Reactive modal state
 const showModal = ref(false);
 
+// Emit event for model updates
+const emit = defineEmits(['update:modelValue']);
 
-const emit = defineEmits([
-    'update:modelValue',
-])
-
+// Define props
 const props = defineProps({
-    name: {},
-    option: {},
+    name: { type: String, required: true },
+    option: { type: Array, default: () => [] }, // Ensure it's an array
 });
 
-const item = ref({});
-
-// States for edit functionality
+// Reactive data
+const localOption = ref([...props.option]); // Deep copy of the prop
+const newOptionKey = ref('');
+const newOptionValue = ref('');
 const editIndex = ref(null);
 const editKey = ref('');
 const editValue = ref('');
 
-const name = ref(props.name)
-// const option = ref(JSON.parse(JSON.stringify(props.option)))
-const localOption = ref([])
-const defaultOption = ref(JSON.parse(JSON.stringify(props.option)))
-// const options = ref(JSON.parse(JSON.stringify(props.options)))
-// const defaultOptions = ref(JSON.parse(JSON.stringify(props.options)))
-
-const newOptionKey = ref('');
-const newOptionValue = ref('');
-// const answers = ref({});
-
+// Function to add a new key-value pair
 const addOption = () => {
-    // console.log('name', option.value[name])
-    Object.keys(localOption).map((key) => [key, localOption[key]]);
-    if (newOptionKey.value && newOptionValue.value) {
-        const newOption = {
-            key: newOptionKey.value,
-            value: newOptionValue.value,
-        }
-
-        console.log('typeof option', typeof localOption.value)
-        localOption.value.push(newOption)
-        // option.value[]['key'] = newOptionKey.value;
-        // option.value[]['value'] = newOptionValue.value;
+    if (newOptionKey.value.trim() && newOptionValue.value.trim()) {
+        localOption.value.push({ key: newOptionKey.value, value: newOptionValue.value });
         newOptionKey.value = '';
         newOptionValue.value = '';
-        closeModal();
-        // emit('update:modelValue', option.value);
+        showModal.value = false;
     }
 };
 
-// Remove an existing answer
+// Function to remove an option
 const removeOption = (index) => {
-    delete localOption.value[index];
+    localOption.value.splice(index, 1);
 };
 
-// Function to trigger edit mode
-
+// Function to start editing an option
 const editOption = (index, value) => {
-console.log('value', value, 'index', index)
     editIndex.value = index;
     editKey.value = value.key;
     editValue.value = value.value;
 };
 
-// Function to save edited key-value pair
+// Function to save an edited option
 const saveEdit = (index) => {
-
-    // const keys = Object.keys(option.value);
-    // const oldKey = keys[index];
-
-    // Delete old key and set new key-value pair
-    // if (oldKey !== editKey.value) {
-    //     delete option.value[oldKey];
-    // }
-    localOption.value[index]['key'] = editKey.value;
-    localOption.value[index]['value'] = editValue.value;
-    // option.value[editKey.value] = editValue.value;
-    // console.log('saveeditoption', option.value)
-
-    // Exit edit mode
-    editIndex.value = null;
-    editKey.value = '';
-    editValue.value = '';
-
+    if (editKey.value.trim() && editValue.value.trim()) {
+        localOption.value[index] = { key: editKey.value, value: editValue.value };
+        editIndex.value = null;
+        editKey.value = '';
+        editValue.value = '';
+    }
 };
 
-const closeModal = () => {
-    showModal.value = false;
-};
-
-
-// Watchers to trigger the JSON generation whenever something changes
+// Watch for changes in localOption and emit updates
 watch(localOption, (newValue) => {
-    console.log('newValue', newValue)
     emit('update:modelValue', newValue);
-}, {deep: true});
-
-onMounted(() => {
-
-});
+}, { deep: true });
 
 </script>
 
 <template>
     <v-row>
         <v-col cols="12">
+            <!-- Add Button -->
+            <v-btn v-if="!showModal" @click="showModal = true" class="mb-1">
+                Add {{ name }}
+            </v-btn>
 
-            <v-btn v-if="!showModal" @click="showModal = true" class="mb-1">Add {{ name }}</v-btn>
+            <!-- Modal for adding new option -->
             <template v-if="showModal">
                 <v-row>
-                    <v-text-field density="compact" v-model="newOptionKey" label="Key" class="me-1 v-col-5"/>
-                    <v-text-field density="compact" v-model="newOptionValue" label="Value" class="me-1 v-col-5"/>
+                    <v-text-field v-model="newOptionKey" label="Key" density="compact" class="me-1 v-col-5" />
+                    <v-text-field v-model="newOptionValue" label="Value" density="compact" class="me-1 v-col-5" />
                     <v-icon @click="addOption()">mdi-check</v-icon>
                     <v-icon @click="showModal = false">mdi-close</v-icon>
                 </v-row>
-
             </template>
 
-
+            <!-- Display Options List -->
             <ul>
-
-                <li v-for="(value, index) in option" :key="key" class="answer-item d-flex align-center mb-1 ml-2">
-                    <template v-if="editIndex === index" class="d-flex align-center">
-                        <v-text-field density="compact" v-model="editKey" label="Key" class="me-1 v-col-5"/>
-                        <v-text-field density="compact" v-model="editValue" label="Value" class="me-1 v-col-5"/>
+                <li v-for="(value, index) in localOption" :key="index" class="answer-item d-flex align-center mb-1 ml-2">
+                    <template v-if="editIndex === index">
+                        <v-text-field v-model="editKey" label="Key" density="compact" class="me-1 v-col-5" />
+                        <v-text-field v-model="editValue" label="Value" density="compact" class="me-1 v-col-5" />
                         <v-icon @click="saveEdit(index)">mdi-check</v-icon>
-
                     </template>
                     <template v-else>
-                        <span>{{ index }} -  {{ value.key }}: {{ value.value }}</span>
+                        <span>{{ index }} - {{ value.key }}: {{ value.value }}</span>
                         <span>
-                                                            <v-icon class="edit-icon"
-                                                                    @click="editOption(index, value)">mdi-pencil</v-icon>
-                                                            <v-icon class="delete-icon" @click="removeOption( key)">mdi-delete</v-icon>
-                                                        </span>
-
+              <v-icon class="edit-icon" @click="editOption(index, value)">mdi-pencil</v-icon>
+              <v-icon class="delete-icon" @click="removeOption(index)">mdi-delete</v-icon>
+            </span>
                     </template>
                 </li>
             </ul>
-
         </v-col>
-
     </v-row>
-
 </template>
 
 <style scoped>
 .answer-item {
     display: flex;
-    justify-content: space-between; /* Align items to the left and right */
+    justify-content: space-between;
     align-items: center;
     padding: 1px 0;
 }
@@ -159,6 +111,4 @@ onMounted(() => {
     cursor: pointer;
     margin-left: 10px;
 }
-
-
 </style>

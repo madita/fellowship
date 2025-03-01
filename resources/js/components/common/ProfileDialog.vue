@@ -28,17 +28,30 @@
                                 :label="field.label"
                             ></v-select>
 
-                            <v-select
+<!--                            <v-select-->
+<!--                                v-else-if="field.type==='taxonomy'"-->
+<!--                                :items="taxonomieItems[field.name]"-->
+<!--                                item-title="title"-->
+<!--                                item-value="id"-->
+<!--                                v-model="formData[field.name]"-->
+<!--                                :label="field.label"-->
+<!--                                multiple-->
+<!--                                chips-->
+<!--                                @focus ="getTerms(field.name, field.options)"-->
+<!--                            ></v-select>-->
+                            <v-combobox
                                 v-else-if="field.type==='taxonomy'"
+                                v-model="formData[field.name]"
                                 :items="taxonomieItems[field.name]"
                                 item-title="title"
                                 item-value="id"
-                                v-model="formData[field.name]"
                                 :label="field.label"
-                                multiple
                                 chips
+                                clearable
+                                multiple
                                 @focus ="getTerms(field.name, field.options)"
-                            ></v-select>
+                            ></v-combobox>
+
 
                             <v-textarea
                                 v-else-if="field.type==='textarea'"
@@ -82,16 +95,18 @@ const selectedDays = ref();
 const profile = ref();
 const fields = ref();
 const taxonomieItems = ref([]);
-const formData = ref([]);
+const formData = ref({});
 
 // Define the modelValue prop
 const props = defineProps({
     modelValue: Boolean, // Highlight: Bind modelValue to control dialog visibility
     event: Object,
+    isGoing: Object,
     answer: String,
 });
 
-const localEvent = ref(null);
+const localEvent = ref(props.event);
+const localisGoing = ref(props.isGoing);
 const localAnswer = ref(props.answer);
 
 
@@ -119,12 +134,13 @@ function cancel() {
 
 const profileSubmit = async (answer) => {
 
-    console.log('localAnswer', answer)
-    const data = Object.assign({}, formData.value);
+    // console.log('localAnswer', answer)
+    // const data = Object.assign({}, formData.value);
+    const data =  formData.value;
 
     const params = {'answer': answer, 'data': data  }
 
-    console.log('para', params)
+    // console.log('para', params)
 
     //
     await axios.post(`/api/events/${localEvent.value.id}/answer`,  params ).then((response) => {
@@ -179,8 +195,6 @@ const profileId = computed(() => {
 
 const profileForm = async () => {
 
-    console.log('profileform', localEvent)
-
     await axios.get(`/api/datatable/event-profiles/${profileId.value}`).then((response) => {
 
         profile.value = response.data
@@ -188,9 +202,6 @@ const profileForm = async () => {
         // fields.value = JSON.parse(profile.value.options)
         fields.value = profile.value.options
 
-
-        // this.page = {title: "", body: ""};
-        // this.message = "Page saved ..link"
     }).catch((error) => {
         console.log(error)
         if (error.response.status === 422) {
@@ -201,20 +212,17 @@ const profileForm = async () => {
 }
 
 const getTerms = async (name, taxonomy ) => {
-    console.log('ngfdkjgfldkgfgkkglf',name)
 
-    // taxonomieItems[name].value = []
 
-    // console.log('profileform', localEvent)
     //
     await axios.get(`/api/tag/terms/${taxonomy}`).then((response) => {
-        console.log('responseterms',response.data)
+        // console.log('responseterms',response.data)
 
         // this.categories = this.parents = response.data.terms
 
         taxonomieItems.value[name] = response.data.terms
 
-        console.log('testgnaaa',name, taxonomieItems.value[name])
+        // console.log('testgnaaa',name, taxonomieItems.value[name])
 
         // fields.value = JSON.parse(profile.value.options)
         // fields.value = profile.value.options
@@ -248,11 +256,47 @@ const getTerms = async (name, taxonomy ) => {
 // });
 // onMounted(profileForm);
 
+// watch(() => formData.value,
+//     (currentValue) => {
+//         console.log("Form data updated:", currentValue);
+//
+//         // Log each key and its properties
+//         Object.keys(currentValue).forEach(key => {
+//             console.log(`Key: ${key}`);
+//             console.log(`Value:`, currentValue[key]);
+//
+//             // If it's an array, log the items inside
+//             if (Array.isArray(currentValue[key])) {
+//                 currentValue[key].forEach((item, index) => {
+//                     console.log(`  ${key}[${index}]:`, item);
+//
+
+//                     if (typeof item === 'string' || item instanceof String) {
+//                         console.log('Add this to trems', item)
+//                     }
+//
+//                     // If items have properties like id/title, log them too
+//                     if (typeof item === 'object' && item !== null) {
+//                         Object.keys(item).forEach(prop => {
+//                             console.log(`    ${prop}: ${item[prop]}`);
+//                         });
+//                     }
+//                 });
+//             }
+//
+//
+//         });
+//     },
+//     {deep: true}
+// );
+
 watch(
     () => props.event,
     (newEvent) => {
-        console.log('profilewatch', profileId)
+        // console.log('profilewatch', profileId)
         localEvent.value = newEvent ? JSON.parse(JSON.stringify(newEvent)) : null;
+        console.log('localEvent', newEvent)
+        console.log('profileId', profileId.value)
         if (profileId.value > 0) {
             profileForm()
         }
@@ -261,12 +305,27 @@ watch(
 );
 
 watch(
-    () => props.answer,
-    (answer) => {
-        console.log('answerwatch', answer)
-        localAnswer.value = answer;
+    () => props.isGoing,
+    (isGoing) => {
+        // console.log('answerwatch', answer)
+        localisGoing.value = isGoing;
+        formData.value = isGoing.profile
+        console.log('isGoing', isGoing)
     },
     {immediate: true} // Trigger immediately to initialize localEvent
 );
+
+watch(
+    () => props.answer,
+    (answer) => {
+        // console.log('answerwatch', answer)
+        localAnswer.value = answer;
+        console.log('narfanswer', answer)
+    },
+    {immediate: true} // Trigger immediately to initialize localEvent
+);
+
+
+
 
 </script>

@@ -126,7 +126,7 @@
                                 </template>
                                 <v-card>
                                     <v-card-title>
-                                        <span class="text-h5">{{ formTitle }}</span>
+<!--                                        <span class="text-h5">{{ formTitle }}</span>-->
                                     </v-card-title>
 
                                     <v-card-text>
@@ -460,18 +460,20 @@ export default {
         }
 
         const editItem = (item) => {
+            console.log('test', item)
+
             state.editedIndex = state.response.records.data.indexOf(item)
             state.editing.id = item.id
-            // state.editedItem = Object.assign({}, item)
+            state.editedItem = Object.assign({}, item)
             // state.editedItem = _.pick(item, state.response.updatable)
             // console.log('state.editedItem',state.editedItem)
 
             state.dialog = true
         }
 
-        // const editItemForm = (item) => {
-        //     state.$router.push(`${state.$route.path}/edit/${item.id}`)
-        // }
+        const editItemForm = (item) => {
+            state.$router.push(`${state.$route.path}/edit/${item.id}`)
+        }
 
         const deleteItem = (item) => {
             state.editedIndex = state.response.records.data.indexOf(item)
@@ -611,6 +613,7 @@ export default {
             canSelectItems,
             addItem,
             editItem,
+            editItemForm,
             deleteItem,
             deleteItemConfirm,
             close,

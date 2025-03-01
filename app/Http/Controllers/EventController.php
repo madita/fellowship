@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\TaxonomyHelper;
+use Lecturize\Taxonomies\Models\Taxonomy;
+use Lecturize\Taxonomies\Models\Term;
 use App\Models\Event\Event;
 use App\Models\Event\EventType;
+use App\Models\Event\EventProfile;
 use App\Models\Event\EventGuest;
 use DateTime;
 use Illuminate\Http\Request;
@@ -177,18 +181,28 @@ class EventController extends Controller
      */
     public function show(Event $event, $slug = null)
     {
+        $isGoing = null;
         if (auth()->user()) {
             /** @var \App\Models\User $user */
             $user = auth()->user();
             $isGoing = DB::table('event_guests')->where('event_id', '=', $event->id)->where('user_id', '=', $user->id)->first();
+            if($isGoing !== null)
+                $isGoing->profile = json_decode($isGoing->profile);
         }
-
-        $isGoing->profile = json_decode($isGoing->profile);
-
 
         $eventGuests = EventGuest::where('event_id', '=', $event->id)->get();
         $eventGuests = collect($eventGuests)->map(function (EventGuest $guest) {
-            $guest->profile = json_decode($guest->profile);
+
+//            $data=array_merge($details, json_decode($guest->profile));
+            $data= json_decode($guest->profile, true);
+//            array_unshift($data, $user);
+////            $data->user = $guest->user()->get([ 'id', 'username']);
+            $data['type'] = $guest->type;
+            $data['id'] = $guest->id;
+
+            $data=array("user"=>$guest->user()->get([ 'id', 'username'])) + $data;
+            $guest = $data;
+
             return $guest;
         });
 
@@ -327,13 +341,61 @@ class EventController extends Controller
     public function joinEvent(Request $request, Event $event)
     {
 //        dd($request);
-        /** @var \App\Models\User $user */
+
+        /** @var \sApp\Models\User $user */
         $user = auth()->user();
 
         //        dd($request->all());
         $answer = $request->get('answer');
 
         $json = $request->get('data');
+
+
+        $eventType = EventType::find($event->event_type_id);
+        $eventProfile = EventProfile::find($eventType->event_profile_id);
+        $profileOptions = json_decode($eventProfile->options);
+
+        $form = collect($profileOptions->form);
+        $taxonomyFields = $form->where('type', 'taxonomy')->values()->all();
+
+
+        /**get through the profile of the event and check
+         * if new terms where added also call the edge case
+         * if on the same time another person added the same Term
+         */
+        foreach ($taxonomyFields as  $item) {
+
+            $parent = Taxonomy::where('taxonomy', $item->options)->first();
+
+            if(!isset($json[$item->name])) {
+                continue;
+            }
+
+            foreach ($json[$item->name] as $index => $termItem) {
+
+                if (is_string($termItem)) {
+
+                    $term = Term::where('title', $termItem)->first();
+
+                    if($term !== null) {
+                        $taxonomy = Taxonomy::where('taxonomy', $item->options)
+                        ->where('term_id', $term->id)->get();
+                    } else {
+                        $taxonomy = TaxonomyHelper::createTaxables($termItem, $item->options, $parent->id);
+                        $term = Term::find($taxonomy->term_id);
+                    }
+
+                    $jsonTerm = [
+                        "id" => $term->id,
+                        "title" => $term->title,
+                        "slug" => $term->slug,
+                        "parent_id" => $parent->id
+                    ];
+
+                    $json[$item->name][$index] = $jsonTerm;
+                }
+            }
+        }
 
         $eventGuest = $user->eventGuest()->where('event_id', $event->id)->first();
 

@@ -57,20 +57,8 @@ class EventProfileController extends DataTableController
 
     public function getCustomJsonFields()
     {
-
         return [
-//            'arrival_type' => ['type'=>'taxonomie'],
             'form' => 'fields',
-//            'arrival_time' => ['type'=>'text'],
-//            'food_preference' => ['type'=>'taxonomie'],
-//            'drinks' => ['type'=>'taxonomie'],
-//            'allergies' => ['type'=>'taxonomie'],
-//            'allergies' => ['type'=>'taxonomie'],
-//            'games' => ['type'=>'taxonomie'],
-//            'stuff' => ['type'=>'taxonomie'],
-//            'other' => ['type'=>'text'],
-
-
         ];
     }
 

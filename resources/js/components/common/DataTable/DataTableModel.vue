@@ -1,163 +1,96 @@
 <script setup>
 import {ref, watch, computed, onMounted} from 'vue';
 
-
+// Reactive state
 const showModal = ref(false);
-
-
-const emit = defineEmits([
-    'update:modelValue',
-])
-
-const props = defineProps({
-    column: '',
-    filter_key: '',
-    filter_value: '',
-    endPoint: '',
-});
-
 const items = ref([]);
-const name = ref('');
-const apiUrl = ref('');
-const model = ref('');
+const model = ref(null);
 const loading = ref(false);
+const error = ref(null);
 const localFilterKey = ref('');
 const localFilterValue = ref('');
-const error = ref(false);
+const apiUrl = ref('');
 
+// Props and Emits
+const emit = defineEmits(['update:modelValue']);
+const props = defineProps({
+    column: {type: String, required: true},
+    filter_key: {type: String, default: ''},
+    filter_value: {type: [String, Number], default: ''},
+    endPoint: {type: String, required: true},
+});
 
-
-
+// Fetch items from API
 const fetchItems = async () => {
     loading.value = true;
     error.value = null;
     items.value = [];
 
-    // API URL, adjust as per your setup
-
-
     try {
-        // Using fetch to make API request
         const response = await fetch(apiUrl.value, {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: {'Content-Type': 'application/json'},
         });
 
-        if (!response.ok) {
-            console.log('Failed to fetch items')
-        }
+        // if (!response.ok) throw new Error('Failed to fetch items');
 
-        items.value = await response.json();
-        // console.log('items.value', items.value)
+        const data = await response.json();
+        console.log('Fetched items:', data);
 
-        if(props.column == 'parent_id') {
-            items.value = items.value.data.records
-        }
-
+        items.value = props.column === 'parent_id' ? data.data.records : data;
     } catch (err) {
         error.value = err.message;
-        console.log('error', err)
+        console.error('Error fetching items:', err);
     } finally {
         loading.value = false;
     }
 };
 
-// Computed property to determine which key to use for item-title
+// Compute item title dynamically
 const itemTitle = computed(() => {
     if (items.value.length > 0) {
-        // Check if 'name' exists in the first item
-        if ('name' in items.value[0]) {
-            return 'name';
-        }
-        // Check if 'title' exists in the first item
-        if ('title' in items.value[0]) {
-            return 'title';
-        }
-        // Fallback to any other possible key, like 'label'
-        if ('label' in items.value[0]) {
-            return 'label';
-        }
-
-        // Fallback to any other possible key, like 'label'
-        if ('description' in items.value[0]) {
-            return 'description';
-        }
-
-        // Fallback to any other possible key, like 'label'
-        if ('taxonomy' in items.value[0]) {
-            return 'description';
-        }
+        const possibleKeys = ['name', 'title', 'label', 'description', 'taxonomy'];
+        return possibleKeys.find((key) => key in items.value[0]) || '';
     }
-    // Default if no appropriate field is found
     return '';
 });
 
+// Filter items based on local filter value
 const filteredItems = computed(() => {
-    let data = items.value
-
-    // console.log('hmmmmm',localFilterValue.value)
-    if(localFilterValue.value === '') {
-        return data
-    }
-
-    data = data.filter((row) => {
-        return row[localFilterKey.value]  === localFilterValue.value;
-    })
-
-
-    return data
-})
-
-
-// watch(model, emit('update:modelValue', model.value))
-// watch(model, emit('update:modelValue', model.value), {deep: true});
-
-watch(() => model.value, (model) => {
-    // console.log('model', model)
-    emit('update:modelValue', model);
-
+    if (!localFilterValue.value) return items.value;
+    return items.value.filter((row) => row[localFilterKey.value] === localFilterValue.value);
 });
 
-watch(() => props.filter_value, (filter) => {
-    localFilterValue.value = filter;
+// Watch `model` and emit value updates
+watch(model, (newValue) => {
+    emit('update:modelValue', newValue);
 });
 
+// Watch `filter_value` prop to update local filter value
+watch(() => props.filter_value, (newValue) => {
+    localFilterValue.value = newValue;
+});
+
+// Initialize component
 onMounted(() => {
-    // console.log('mountedfilter', props.filter_value, props.filter_key)
-    localFilterKey.value = props.filter_key
-    if(props.column == 'parent_id') {
-        apiUrl.value =  `/api${props.endPoint}`;
-
-    } else {
-        apiUrl.value =  `/api/common/items?foreign_key=${props.column}`;
-    }
-
-
-
-
-
+    localFilterKey.value = props.filter_key;
+    apiUrl.value = props.column === 'parent_id' ? `/api${props.endPoint}` : `/api/common/items?foreign_key=${props.column}`;
     fetchItems();
 });
-
 </script>
 
 <template>
-
     <v-select
-        clearable
         v-model="model"
+        :items="filteredItems"
         :item-title="itemTitle"
         item-value="id"
-        :items="filteredItems"
         :label="column"
-
-    ></v-select>
-
-
+        clearable
+        :loading="loading"
+    />
 </template>
 
 <style scoped>
-
+/* Add styles if needed */
 </style>

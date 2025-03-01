@@ -23,7 +23,7 @@ import { useCalendarStore } from '@/store/calendarStore.js';
 import VueDatePicker from "@vuepic/vue-datepicker";
 
 import {eventBus} from "../common/eventBus.js";
-import {useChatStore} from "@/store/chatStore.js";
+// import {useChatStore} from "@/store/chatStore.js";
 
 const blankEvent = {
     title: '',
@@ -54,6 +54,7 @@ const refCalendar = ref()
 const loading = ref(false);
 const loadEventTypes = ref(true);
 const isEventHandlerSidebarActive = ref(false);
+const isDialogActive = ref(false);
 const editMode = ref(false);
 const isLeftSidebarOpen = ref(true);
 const events = ref([]);
@@ -61,7 +62,7 @@ const eventTypes = ref([]);
 const selectedEventTypes = ref([]);
 // const selectedEvent = ref();
 const selectedEvent = ref(structuredClone(blankEvent))
-const eventDetails =ref()
+// const eventDetails =ref()
 const startTime = ref();
 const value = ref(new Date());
 const type = ref('month');
@@ -188,7 +189,7 @@ const updateEvent = async (event) => {
     axios.patch(`${endpoint}/${event.id}`, event).then(() => {
         // message.value = "Event updated"
 
-        let foundIndex = events.value.findIndex(x => x.id == event.id);
+        let foundIndex = events.value.findIndex(x => x.id === event.id);
         // let elementPos = events.value.map(function(x) {return x.id; }).indexOf(event.id);
         // let objectFound = array[elementPos];
         // console.log('foundIndex', foundIndex)
@@ -211,6 +212,21 @@ const jumpToDate = currentDate => {
     const calendarApi = refCalendar.value.getApi();
     calendarApi.gotoDate(new Date(currentDate));
 }
+
+// const openDialog = () => {
+//     console.log('openDialog')
+//     isDialogActive.value = true
+// };
+
+// const eventDetails = (details) => {
+//     console.log('eventGuests trigger',details)
+//     // isDialogActive.value = true
+// };
+
+
+// const handleStateChange = (newState) => {
+//     isActive.value = newState;
+// };
 
 
 const handleEventClick = (info) => {
@@ -293,6 +309,11 @@ watch(isEventHandlerSidebarActive, val => {
         selectedEvent.value = structuredClone(blankEvent)
     }
 
+})
+
+watch(isDialogActive, val => {
+    console.log('openDialogchange', val)
+    isDialogActive.value = val;
 })
 
 // watch(refCalendar, ref => {
@@ -425,6 +446,8 @@ onMounted(async () => {
             @update-event="updateEvent"
             @remove-event="removeEvent"
         />
+
+
     </v-container>
 </template>
 
@@ -516,41 +539,6 @@ b { /* used for event dates/times */
 
 </style>
 
-<!--<style lang="scss">-->
-<!--//@use "@core/scss/template/libs/full-calendar";-->
 
-<!--.calendars-checkbox {-->
-<!--    .v-label {-->
-<!--        color: rgba(var(&#45;&#45;v-theme-on-surface), var(&#45;&#45;v-high-emphasis-opacity));-->
-<!--        opacity: var(&#45;&#45;v-high-emphasis-opacity);-->
-<!--    }-->
-<!--}-->
-
-<!--.calendar-add-event-drawer {-->
-<!--    &.v-navigation-drawer:not(.v-navigation-drawer&#45;&#45;temporary) {-->
-<!--        border-end-start-radius: 0.375rem;-->
-<!--        border-start-start-radius: 0.375rem;-->
-<!--    }-->
-<!--}-->
-
-<!--.calendar-date-picker {-->
-<!--    display: none;-->
-
-<!--    +.flatpickr-input {-->
-<!--        +.flatpickr-calendar.inline {-->
-<!--            border: none;-->
-<!--            box-shadow: none;-->
-
-<!--            .flatpickr-months {-->
-<!--                border-block-end: none;-->
-<!--            }-->
-<!--        }-->
-<!--    }-->
-
-<!--    & ~ .flatpickr-calendar .flatpickr-weekdays {-->
-<!--        margin-block: 0 4px;-->
-<!--    }-->
-<!--}-->
-<!--</style>-->
 
 
