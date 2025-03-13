@@ -1,39 +1,27 @@
 import { sliceEvents, createPlugin } from '@fullcalendar/core';
-import  { i18n } from "@/plugins/vue-i18n.js";
-import {eventBus} from "../common/eventBus.js";
+import { i18n } from "@/plugins/vue-i18n.js";
+import { eventBus } from "../common/eventBus.js";
 
 const CustomViewConfig = {
     classNames: ['custom-view'],
     duration: { month: 1 },
     type: 'list',
-    // eventClick: function(event) {
-    //     console.log('testcustom', event)
-    // },
 
-    content: function(props) {
-        // console.log('props', props);
-
+    content: function (props) {
         let segs = sliceEvents(props, true); // allDay=true
-        // console.log('eventscustom', segs);
 
-        // Group events by each day they span
         const eventsByDate = {};
         segs.forEach(seg => {
-            // console.log('seg', seg)
-            // console.log('seg',seg)
             const start = seg.range.start;
             const end = seg.range.end;
-            // console.log('hmmmstart',start,seg.range)
-            let currentDate = new Date(start); // start day at midnight
-            const endDate = new Date(end); // end day at midnight
+            let currentDate = new Date(start);
+            const endDate = new Date(end);
 
             let cnt = 0;
             while (currentDate <= endDate) {
                 let isStart = cnt === 0;
                 let isEnd = currentDate.getTime() === endDate.getTime();
-                // console.log('isEnd',isEnd)
                 const dateStr = currentDate.toISOString().split('T')[0];
-                // console.log('dateStr', dateStr, currentDate.toISOString())
                 if (!eventsByDate[dateStr]) {
                     eventsByDate[dateStr] = [];
                 }
@@ -46,44 +34,43 @@ const CustomViewConfig = {
                     isStart: isStart,
                     isEnd: isEnd
                 });
-                // Move to the next day
                 currentDate.setDate(currentDate.getDate() + 1);
                 cnt++;
-                // if(currentDate === endDate) {
-                //
-                // }
             }
         });
 
         let html = '<div class="view-title"></div>';
-
-        if(segs.length > 0) {
+        if (segs.length > 0) {
             html += '<ul class="view-events">';
-
-            // Sort dates and generate HTML content
             Object.keys(eventsByDate).sort().forEach(date => {
+                html += `<div class="event-list-custom fc-list-day-cushion fc-cell-shaded">
+                  <a id="fc-dom-10" class="fc-list-day-text" aria-label="${new Date(date).toDateString()}">
+                    ${new Date(date).toDateString()}
+                  </a>
+                  <a aria-hidden="true" class="fc-list-day-side-text" aria-label="${new Date(date).toDateString()}">
+                    ${new Date(date).toLocaleDateString(i18n.locale, { weekday: 'long' })}
+                  </a>
+                </div>
+                <ul class="event-list-custom">`;
 
-                html += `<!--<li class="event-day">${new Date(date).toDateString()} - ${eventsByDate[date].length} events</li><ul class="event-list">-->`;
-                html += `<div class="event-list-custom fc-list-day-cushion fc-cell-shaded"><a id="fc-dom-10" class="fc-list-day-text" aria-label="${new Date(date).toDateString()}">${new Date(date).toDateString()}</a><a aria-hidden="true" class="fc-list-day-side-text" aria-label="${new Date(date).toDateString()}">${new Date(date).toLocaleDateString(i18n.locale, { weekday: 'long' })}</a></div><ul class="event-list-custom">`;
                 eventsByDate[date].forEach(event => {
-
-                    const startTime = new Date(event.def.extendedProps.originDate.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const endTime = new Date(event.def.extendedProps.originDate.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const startTime = new Date(event.def.extendedProps.originDate?.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const endTime = new Date(event.def.extendedProps.originDate?.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     html += `<li>`;
-                    if(event.def.allDay === true || (!event.isStart && !event.isEnd)) {
+                    if (event.def.allDay || (!event.isStart && !event.isEnd)) {
                         html += `<span class="fc-list-event-time">all-day</span>`;
                     } else {
-                        if(event.isStart) {
+                        if (event.isStart) {
                             html += `<span class="fc-list-event-time">${startTime}</span>`;
                         }
-                        if(event.isEnd) {
+                        if (event.isEnd) {
                             html += `<span class="fc-list-event-time">${endTime}</span>`;
                         }
-                        // html += `<span class="fc-list-event-time">${startDate}</span>`;
                     }
-                    html += `<span class="fc-list-event-dot" style="border-color: ${event.def.extendedProps.colorName};"></span>`;
-                    html += `<span class="fc-list-event-graphic"></span><span class="fc-list-event-title"><a data-id="${event.id}" class="event-link fc-event fc-event-draggable fc-event-start">${event.title}</a></span></li>`;
-                    // html += `<li>${event.title} (${startDate} to ${endDate})</li>`;
+                    html += `<span class="fc-list-event-dot" :style="{'border-color': ${event.def.extendedProps.colorName}};"></span>`;
+                    html += `<span class="fc-list-event-graphic"></span><span class="fc-list-event-title">
+                    <a data-id="${event.id}" class="event-link fc-event fc-event-draggable fc-event-start">${event.title}</a>
+                  </span></li>`;
                 });
                 html += '</ul>';
             });
@@ -91,55 +78,41 @@ const CustomViewConfig = {
             html += '<div class="fc-list-empty"><div class="fc-list-empty-cushion">No events to display</div></div>';
         }
 
-        // Construct HTML
-
-
-
-
-        // html += '</ul>';
-
-        return { html: html }
+        return { html: html };
     },
 
-    didMount: function(props) {
-        // console.log('custom view now loaded');
-        // console.log('customviewprops',props)
+    didMount: function (props) {
         const eventElements = props.el.querySelectorAll('.event-link');
         eventElements.forEach(element => {
-            element.addEventListener('click', function() {
-                const eventId = this.getAttribute('data-id');
-                // console.log('args', props)
-                // console.log('element', element)
-                const event = {...props.eventStore.defs[eventId]};
-
-                // console.log('event', event);
+            const handleClick = () => {
+                const eventId = element.getAttribute('data-id');
+                const event = { ...props.eventStore.defs[eventId] };
                 if (event) {
-                    event.start = event.extendedProps.originDate.start
-                    event.end = event.extendedProps.originDate.end
-
-                    // console.log('customevent',eventId,event)
-                    // emit('update:isDrawerOpen', true)
+                    event.start = event.extendedProps.originDate.start;
+                    event.end = event.extendedProps.originDate.end;
+                    event.id = event.publicId;
                     eventBus.emit('openSidebarWithEvent', event);
                 }
-            });
+            };
+
+            element.addEventListener('click', handleClick);
+
+            // Store the handle to remove it later
+            element._handleClick = handleClick;
         });
     },
 
-    willUnmount: function(props) {
-        // console.log('about to change awa?y from custom view');
-        // Cleanup: remove event listeners if necessary
+    willUnmount: function (props) {
         const eventElements = props.el.querySelectorAll('.event-link');
         eventElements.forEach(element => {
-            element.removeEventListener('click', function() {
-                console.log('removeeventlistener')
-            });
+            if (element._handleClick) {
+                element.removeEventListener('click', element._handleClick);
+                // Clean up the stored reference
+                delete element._handleClick;
+            }
         });
     }
-}
-
-// const handleEventClick = () => {
-//     console.log('testcustom')
-// }
+};
 
 export default createPlugin({
     views: {
