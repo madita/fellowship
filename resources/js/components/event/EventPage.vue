@@ -315,6 +315,10 @@ watch(isDialogActive, val => {
     console.log('openDialogchange', val)
     isDialogActive.value = val;
 })
+watch(selectedEvent, val => {
+    console.log('change event', val)
+    selectedEvent.value = val;
+})
 
 // watch(refCalendar, ref => {
 //     console.log('refCalendar', refCalendar, ref)
@@ -332,6 +336,7 @@ watch(isDialogActive, val => {
 // })
 
 eventBus.on('openSidebarWithEvent', (event) => {
+    // console.log('selectedevent', event)
     selectedEvent.value = event;
     editMode.value = false;
     isEventHandlerSidebarActive.value = true;

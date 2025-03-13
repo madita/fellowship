@@ -1,15 +1,15 @@
 <script setup>
-import {ref, watch, computed, nextTick} from 'vue';
-import {PerfectScrollbar} from 'vue3-perfect-scrollbar';
+import { ref, watch, computed, nextTick } from 'vue';
+import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import CustomDatePicker from "../common/CustomDatePicker.vue";
 import UserAvatar from "../common/UserAvatar.vue";
 import axios from "axios";
-import {useCalendarStore} from '@/store/calendarStore.js';
+import { useCalendarStore } from '@/store/calendarStore.js';
 import ConfirmDialog from '../common/ConfirmDialog.vue';
 import ProfileDialog from '../common/ProfileDialog.vue';
 import DetailsDialog from '../common/DetailsDialog.vue';
 import RelatedContent from '../common/RelatedContent.vue';
-import {useUserStore} from "@/store/userStore.js";
+import { useUserStore } from "@/store/userStore.js";
 
 const props = defineProps({
     isDrawerOpen: Boolean,
@@ -25,12 +25,11 @@ const emit = defineEmits([
 ]);
 
 const selectedStatus = ref(null);
-
 const showConfirmationDialog = ref(false);
 const showProfileDialog = ref(false);
 const showRelateContentDialog = ref(false);
 const showDetailsDialog = ref(false);
-
+const guestResponses = ref({});
 
 const calendarStore = useCalendarStore();
 const localEditMode = ref(props.editMode);
@@ -38,19 +37,16 @@ const refForm = ref();
 const isFocused = ref(true);
 const loadEventDetails = ref(true);
 
-// const event = ref(JSON.parse(JSON.stringify(props.event)));
 const localEventTypes = computed(() => calendarStore.eventTypes);
 const eventAnswers = ref([]);
 const eventGuests = ref([]);
-const isGoing = ref([]);
+const isGoing = ref(null);
 const isStartDateValid = ref(true);
 const isEndDateValid = ref(true);
 const profileAnswer = ref(null);
 
 const confirmationDialog = ref(null);
-
 const relatedItems = ref([]);
-
 const userStore = useUserStore();
 
 const openConfirmationDialog = () => {
@@ -62,46 +58,32 @@ watch(
     () => props.event,
     (newEvent) => {
         localEvent.value = newEvent ? JSON.parse(JSON.stringify(newEvent)) : null;
+        if (localEvent.value?.id) {
+            getEvent(localEvent.value.id);
+            fetchRelatedItems('App\\Models\\Event\\Event', localEvent.value.id);
+        }
     },
-    {immediate: true} // Trigger immediately to initialize localEvent
+    { immediate: true }
 );
-
-
-// const handleCancel = () => {
-//     console.log('Deletion canceled');
-// };
-
 
 const eventTypeItems = computed(() => Object.values(localEventTypes.value));
 
 const eventType = computed(() => {
-    let type;
-
-    type = Object.values(localEventTypes.value).find(item => item.name === localEvent.value.extendedProps.type);
-
-    return type;
+    return Object.values(localEventTypes.value).find(item => item.name === localEvent.value?.extendedProps?.type);
 });
 
 const user = computed(() => {
-
-    if (userStore.user) {
-        return userStore.user
-    }
-
-    return {id: null};
+    return userStore.user || { id: null };
 });
 
 const resetEvent = () => {
-    // event.value = JSON.parse(JSON.stringify(props.event));
     isStartDateValid.value = true;
     isEndDateValid.value = true;
-    if (localEvent.value.id) getEvent(localEvent.value.id);
-    if (localEvent.value.id) fetchRelatedItems('App\\Models\\Event\\Event', localEvent.value.id);
     nextTick(() => refForm.value?.resetValidation());
 };
 
 const canJoinEvent = computed(() => {
-    if (!localEvent.value.id) return false;
+    if (!localEvent.value?.id) return false;
     const now = new Date();
     return localEvent.value.end ? new Date(localEvent.value.end) > now : new Date(localEvent.value.start) > now;
 });
@@ -112,78 +94,45 @@ const removeEvent = () => {
 };
 
 const openDialog = () => {
-    console.log('click details')
-    // emit('eventDetails', eventAnswers.value);
-    // emit('update:openDialog', true);
-    showDetailsDialog.value = true
+    showDetailsDialog.value = true;
 };
 
 const handleSubmit = () => {
     validateStartDate();
     validateEndDate();
-    // refForm.value?.validate().then(({ valid }) => {
-    //     if (valid) {
-    //         emit(localEditMode.value ? 'updateEvent' : 'addEvent', event.value);
-    //         emit('update:isDrawerOpen', false);
-    //         localEditMode.value = false;
-    //     }
-    // });
 
-    refForm.value?.validate().then(({valid}) => {
+    refForm.value?.validate().then(({ valid }) => {
         if (valid) {
             localEditMode.value = false;
 
-            // If id exist on id => Update event
             if ('id' in localEvent.value)
-                emit('updateEvent', localEvent.value)
-
-            // Else => add new event
+                emit('updateEvent', localEvent.value);
             else
-                emit('addEvent', localEvent.value)
+                emit('addEvent', localEvent.value);
 
-            // Close drawer
-            emit('update:isDrawerOpen', false)
+            emit('update:isDrawerOpen', false);
         }
-    })
+    });
 };
+
 const eventTypeOptions = computed(() => {
-    let type
-
-    // type = Object.values(localEventTypes.value).find(item => item.name ===  event.value.extendedProps.type);
-    type = Object.values(localEventTypes.value).find(item => item.id === localEvent.value.extendedProps.event_type_id);
-
-    if (type === undefined)
-        return []
-
-    return JSON.parse(JSON.stringify(type.options));
+    const type = Object.values(localEventTypes.value).find(item => item.id === localEvent.value?.extendedProps?.event_type_id);
+    return type === undefined ? [] : JSON.parse(JSON.stringify(type.options));
 });
 
 const eventProfile = computed(() => eventTypeOptions.value.profile?.fields || []);
 
-
 const onCancel = () => {
     emit('update:isDrawerOpen', false);
-}
+};
 
 const getEvent = async (eventId) => {
     try {
         loadEventDetails.value = true;
         const response = await axios.get(`/api/events/${eventId}`);
-
         eventAnswers.value = response.data.answers;
         eventGuests.value = response.data.guests;
         isGoing.value = response.data.isGoing;
-
-        //filter out not approved guests?
-        // if (eventTypeOptions.value.guest && eventTypeOptions.value.guest.includes('approval')) {
-        //
-        //     for (const key in eventAnswers.value) {
-        //         if (Array.isArray(eventAnswers.value[key])) {
-        //             eventAnswers.value[key] = eventAnswers.value[key].filter(item => item.pivot && item.pivot.approved_at !== null);
-        //         }
-        //     }
-        //
-        // }
     } catch (err) {
         console.error('Failed to load event details:', err);
     } finally {
@@ -196,7 +145,7 @@ const fetchRelatedItems = async (model, eventId) => {
         const response = await axios.post('/api/related-items', {
             modelType: model, modelId: eventId,
         });
-        relatedItems.value = response.data.items
+        relatedItems.value = response.data.items;
     } catch (error) {
         console.error('Failed to fetch related items:', error);
     }
@@ -209,14 +158,11 @@ const approveGuest = async (guestId, action) => {
             action,
         });
 
-        // Update the event answers to reflect the changes
         eventAnswers.value = eventAnswers.value.map((group) =>
             group.map((guest) =>
-                guest.id === guestId ? {...guest, approved: action === "approve"} : guest
+                guest.id === guestId ? { ...guest, approved: action === "approve" } : guest
             )
         );
-
-        console.log(`Guest ${action}d successfully`);
     } catch (error) {
         console.error(`Failed to ${action} guest:`, error);
     }
@@ -230,9 +176,6 @@ const filterGuestsByApproval = (answers) => {
         guestsRequiringApproval[status] = [];
         approvedGuests[status] = [];
         answers[status].forEach((guest) => {
-
-            //const guestWithStatus = { ...guest, status }; // Add the status to each guest
-
             if (
                 eventTypeOptions.value.guest &&
                 eventTypeOptions.value.guest.includes("approval") &&
@@ -245,9 +188,8 @@ const filterGuestsByApproval = (answers) => {
         });
     });
 
-    return {guestsRequiringApproval, approvedGuests};
+    return { guestsRequiringApproval, approvedGuests };
 };
-
 
 const validateStartDate = () => {
     isStartDateValid.value = !!localEvent.value.start;
@@ -258,26 +200,103 @@ const validateEndDate = () => {
 };
 
 const joinEvent = (answer) => {
-    const type = eventType.value
-    console.log('answer', answer)
-    if (type.options.profile.includes(answer)) {
+    const type = eventType.value;
+
+    // Don't do anything if selecting the same option that's already selected
+    if (isGoing.value && isGoing.value.type === answer) {
+        return;
+    }
+
+    // Store previous state for potential rollback
+    const previousGoing = isGoing.value ? { ...isGoing.value } : null;
+    const previousAnswer = previousGoing?.type;
+
+    // Optimistically update the UI for immediate feedback
+    isGoing.value = {
+        ...isGoing.value,
+        type: answer
+    };
+
+    // If we have a specific previous answer, remove the user from that list
+    if (previousAnswer && eventAnswers.value[previousAnswer]) {
+        eventAnswers.value[previousAnswer] = eventAnswers.value[previousAnswer].filter(
+            guest => guest.id !== user.value.id
+        );
+    }
+
+    // Add user to new status if needed
+    if (!eventAnswers.value[answer]) {
+        eventAnswers.value[answer] = [];
+    }
+
+    // Check if user is already in this list
+    const userExists = eventAnswers.value[answer].some(guest => guest.id === user.value.id);
+    if (!userExists) {
+        // Create a copy of the user with pivot data
+        const userWithPivot = {
+            ...user.value,
+            pivot: {
+                user_id: user.value.id,
+                //approved_at: new Date().toISOString() // Auto-approve own status
+            }
+        };
+
+        eventAnswers.value[answer].push(userWithPivot);
+    }
+
+    if (type?.options?.profile?.includes(answer)) {
         showProfileDialog.value = true;
         profileAnswer.value = answer;
     } else {
         axios.post(`/api/events/${localEvent.value.id}/answer`, {answer})
+            .then(response => {
+                // Server confirmed the update
+                if (response.data && response.data.going) {
+                    isGoing.value = response.data.going;
+                }
+
+                // We could also refresh the entire list from the server if needed
+                if (response.data && response.data.answers) {
+                    eventAnswers.value = response.data.answers;
+                }
+            })
             .catch((error) => {
-                if (error.response.status === 422) console.error('Validation failed:', error);
+                // Revert optimistic update on error
+                isGoing.value = previousGoing;
+
+                // Restore user to previous answer list if there was one
+                if (previousAnswer) {
+                    if (!eventAnswers.value[previousAnswer]) {
+                        eventAnswers.value[previousAnswer] = [];
+                    }
+
+                    // Only add back if not already there
+                    if (!eventAnswers.value[previousAnswer].some(guest => guest.id === user.value.id)) {
+                        const userWithPivot = {
+                            ...user.value,
+                            pivot: {
+                                user_id: user.value.id,
+                                approved_at: new Date().toISOString()
+                            }
+                        };
+                        eventAnswers.value[previousAnswer].push(userWithPivot);
+                    }
+                }
+
+                // Remove from the new answer list
+                if (eventAnswers.value[answer]) {
+                    eventAnswers.value[answer] = eventAnswers.value[answer].filter(
+                        guest => guest.id !== user.value.id
+                    );
+                }
+
+                if (error.response?.status === 422) console.error('Validation failed:', error);
             });
     }
-
 };
 
 const dialogModelValueUpdate = (val) => {
     emit('update:isDrawerOpen', val);
-};
-
-const relateContent = () => {
-    //console.log('related content')
 };
 
 const rules = {
@@ -288,36 +307,38 @@ const rules = {
 
 const handleConfirmation = (isConfirmed) => {
     if (isConfirmed) {
-        // Perform the delete action
-        console.log('Item deleted');
-        removeEvent(localEvent.value.id)
-    } else {
-        console.log('Action canceled');
+        removeEvent(localEvent.value.id);
     }
 };
+
 const handleProfile = (isConfirmed) => {
-    if (isConfirmed) {
-        // Perform the delete action
-        console.log('Profile saved');
-        // removeEvent(localEvent.value.id)
-    } else {
-        console.log('Action canceled');
-    }
+    // Perform the profile save action
 };
 
 const handleRelationConfirmed = (relation) => {
-    console.log('Relation confirmed:', relation);
-    // Here, handle the relation (e.g., save it to a database, display it in the UI, etc.)
+    // Handle the relation
 };
 
-function isDateInPast(date) {
-    const currentDate = new Date();
-    return new Date(date) < currentDate;
-}
+const formatDateRange = computed(() => {
+    if (!localEvent.value) return '';
 
-// watch(() => props.event, (newEvent) => {
-//     event.value = { ...newEvent };
-// }, { deep: true, immediate: true });
+    const startDate = new Date(localEvent.value.start);
+    const endDate = localEvent.value.end ? new Date(localEvent.value.end) : null;
+
+    const options = {weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'};
+    let formattedDate = startDate.toLocaleDateString(undefined, options);
+
+    if (endDate) {
+        // If same day, just show time
+        if (startDate.toDateString() === endDate.toDateString()) {
+            formattedDate += ` - ${endDate.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'})}`;
+        } else {
+            formattedDate += ` - ${endDate.toLocaleDateString(undefined, options)}`;
+        }
+    }
+
+    return formattedDate;
+});
 
 watch(() => props.editMode, () => {
     localEditMode.value = props.editMode;
@@ -332,77 +353,105 @@ watch(() => props.isDrawerOpen, resetEvent);
         location="end"
         :model-value="props.isDrawerOpen"
         width="420"
-        class="scrollable-content"
+        class="event-drawer"
         @update:model-value="dialogModelValueUpdate"
     >
-        <div class="pa-2 d-flex align-center" v-if="localEditMode">
-            <h5 class="text-h5 me-3">{{ localEvent.id ? 'Update Event' : 'Add Event' }}</h5>
-            <VSpacer/>
-            <VBtn v-if="localEvent.id" color="primary" class="me-3" @click="localEditMode = !localEditMode">
-                {{ localEditMode ? 'View' : 'Edit' }}
-            </VBtn>
-        </div>
-        <div class="pa-2 d-flex align-center" v-else>
-            <h5 class="text-h5 me-3">{{ localEvent.title }}</h5>
+        <!-- Header Section -->
+        <div class="event-drawer-header" :class="{ 'edit-mode': localEditMode }">
+            <div v-if="localEditMode" class="d-flex align-center py-3 px-4">
+                <h5 class="text-h5 font-weight-medium">{{ localEvent?.id ? 'Update Event' : 'Add Event' }}</h5>
+                <VSpacer/>
+                <VBtn
+                    v-if="localEvent?.id"
+                    color="primary"
+                    variant="text"
+                    class="me-2"
+                    @click="localEditMode = !localEditMode"
+                >
+                    {{ localEditMode ? 'View' : 'Edit' }}
+                </VBtn>
+            </div>
 
-            <VSpacer/>
+            <div v-else class="d-flex align-center py-3 px-4">
+                <div>
+                    <h5 class="text-h5 font-weight-medium mb-1">{{ localEvent?.title }}</h5>
+                    <div class="text-subtitle-2 text-medium-emphasis">
+                        <v-icon size="small" class="me-1">mdi-calendar</v-icon>
+                        {{ formatDateRange }}
+                    </div>
+                </div>
 
-            <slot name="beforeClose"/>
+                <VSpacer/>
 
+                <slot name="beforeClose"/>
 
-            <v-btn icon="mdi-pencil"
-                   density="compact"
-                   class="me-3"
-                   @click="localEditMode = true">
+                <div class="action-buttons">
+                    <!-- Removed the details icon from header -->
 
-            </v-btn>
+                    <v-btn
+                        icon="mdi-pencil"
+                        variant="text"
+                        color="primary"
+                        density="comfortable"
+                        class="action-btn"
+                        @click="localEditMode = true"
+                        title="Edit event"
+                    />
 
-            <v-btn icon="mdi-delete"
-                   density="compact"
-                   class="me-3"
-                   @click="showConfirmationDialog = true">
+                    <v-btn
+                        icon="mdi-link-variant"
+                        variant="text"
+                        color="primary"
+                        density="comfortable"
+                        class="action-btn"
+                        @click="showRelateContentDialog = true"
+                        title="Related content"
+                    />
 
-            </v-btn>
+                    <v-btn
+                        icon="mdi-delete"
+                        variant="text"
+                        color="error"
+                        density="comfortable"
+                        class="action-btn"
+                        @click="showConfirmationDialog = true"
+                        title="Delete event"
+                    />
 
-            <v-btn icon="mdi-link-variant"
-                   density="compact"
-                   class="me-3"
-                   @click="showRelateContentDialog = true"
-                   aria-label="Relate Content">
-
-            </v-btn>
-
-            <v-btn icon="mdi-close"
-                   density="compact"
-                   @click="dialogModelValueUpdate(false)"
-                   class="me-3"
-                   aria-label="Close Drawer">
-
-            </v-btn>
-
+                    <v-btn
+                        icon="mdi-close"
+                        variant="text"
+                        density="comfortable"
+                        class="action-btn"
+                        @click="dialogModelValueUpdate(false)"
+                        title="Close"
+                    />
+                </div>
+            </div>
         </div>
 
         <VDivider/>
 
-        <PerfectScrollbar :options="{ wheelPropagation: false }">
-            <VCard flat v-if="localEditMode">
+        <PerfectScrollbar :options="{ wheelPropagation: false }" class="event-drawer-content">
+            <!-- Edit Mode Form -->
+            <VCard flat class="px-2" v-if="localEditMode">
                 <VCardText>
                     <VForm ref="refForm" @submit.prevent="handleSubmit">
                         <VRow>
+                            <!-- Event Type Select -->
                             <VCol cols="12" v-if="eventTypeItems.length > 0">
                                 <VSelect
                                     v-model="localEvent.extendedProps.event_type_id"
                                     label="Type"
-                                    placeholder="Select Event Label"
+                                    placeholder="Select Event Type"
                                     :items="eventTypeItems"
                                     :item-title="item => item.name"
                                     :item-value="item => item.id"
+                                    variant="outlined"
+                                    density="comfortable"
                                 >
                                     <template #selection="{ item }">
-                                        <div
-                                            class="align-center"
-                                            :class="localEvent.extendedProps.type ? 'd-flex' : ''"
-                                        >
+                                        <div class="d-flex align-center">
                                             <VIcon
                                                 icon="mdi-circle-medium"
                                                 :color="item.raw.color"
@@ -425,9 +474,16 @@ watch(() => props.isDrawerOpen, resetEvent);
                                 </VSelect>
                             </VCol>
 
-                            <template v-if="localEvent.extendedProps.event_type_id">
+                            <template v-if="localEvent?.extendedProps?.event_type_id">
                                 <VCol cols="12">
-                                    <VTextField v-model="localEvent.title" label="Title" :rules="rules.title"/>
+                                    <VTextField
+                                        v-model="localEvent.title"
+                                        label="Title"
+                                        :rules="rules.title"
+                                        variant="outlined"
+                                        density="comfortable"
+                                        prepend-inner-icon="mdi-format-title"
+                                    />
                                 </VCol>
 
                                 <VCol cols="12">
@@ -439,7 +495,7 @@ watch(() => props.isDrawerOpen, resetEvent);
                                     />
                                 </VCol>
 
-                                <VCol cols="12" v-show="eventTypeOptions.showAttributtes.includes('endDate')">
+                                <VCol cols="12" v-show="eventTypeOptions.showAttributtes?.includes('endDate')">
                                     <CustomDatePicker
                                         label="End Date"
                                         v-model="localEvent.end"
@@ -448,7 +504,7 @@ watch(() => props.isDrawerOpen, resetEvent);
                                     />
                                 </VCol>
 
-                                <VCol cols="12" v-show="eventTypeOptions.showAttributtes.includes('allDay')">
+                                <VCol cols="12" v-show="eventTypeOptions.showAttributtes?.includes('allDay')">
                                     <VSwitch
                                         color="primary"
                                         v-model="localEvent.allDay"
@@ -457,181 +513,252 @@ watch(() => props.isDrawerOpen, resetEvent);
                                 </VCol>
 
                                 <VCol cols="12">
-                                    <VTextField v-model="localEvent.extendedProps.location" label="Location"
-                                                :rules="rules.location"/>
+                                    <VTextField
+                                        v-model="localEvent.extendedProps.location"
+                                        label="Location"
+                                        :rules="rules.location"
+                                        variant="outlined"
+                                        density="comfortable"
+                                        prepend-inner-icon="mdi-map-marker"
+                                    />
                                 </VCol>
 
                                 <VCol cols="12">
-                                    <VTextarea v-model="localEvent.extendedProps.description" label="Description"/>
+                                    <VTextarea
+                                        v-model="localEvent.extendedProps.description"
+                                        label="Description"
+                                        variant="outlined"
+                                        density="comfortable"
+                                        rows="4"
+                                        counter
+                                        prepend-inner-icon="mdi-text-box-outline"
+                                    />
                                 </VCol>
                             </template>
 
-
                             <VCol cols="12" class="d-flex justify-end">
-                                <VBtn type="submit" class="me-3">Submit</VBtn>
-                                <VBtn variant="outlined" color="secondary" @click="onCancel">Cancel</VBtn>
+                                <VBtn
+                                    type="submit"
+                                    color="primary"
+                                    class="me-3"
+                                >
+                                    Submit
+                                </VBtn>
+                                <VBtn
+                                    variant="outlined"
+                                    color="secondary"
+                                    @click="onCancel"
+                                >
+                                    Cancel
+                                </VBtn>
                             </VCol>
                         </VRow>
                     </VForm>
                 </VCardText>
             </VCard>
 
-            <VCard flat v-else>
-                <VCardText>
-                    <VRow>
-                        <VCol cols="12" v-if="canJoinEvent">
+            <!-- View Mode Content -->
+            <div v-else class="event-view-content">
+                <!-- Event Info Section -->
+                <v-card flat class="event-info-card mb-4">
+                    <v-card-text>
+                        <!-- Location Info -->
+                        <div class="event-info-item mb-4">
+                            <div class="info-label">
+                                <v-icon color="primary" class="mr-2">mdi-map-marker</v-icon>
+                                <span>Location</span>
+                            </div>
+                            <div class="info-content">
+                                {{ localEvent?.extendedProps?.location || 'No location specified' }}
+                            </div>
+                        </div>
 
-                            <div>Are you coming?</div>
-                            <template v-if="eventType">
+                        <!-- Description Info -->
+                        <div class="event-info-item" v-if="localEvent?.extendedProps?.description">
+                            <div class="info-label">
+                                <v-icon color="primary" class="mr-2">mdi-text-box-outline</v-icon>
+                                <span>Description</span>
+                            </div>
+                            <div class="info-content description-content"
+                                 v-html="localEvent.extendedProps.description"></div>
+                        </div>
+                    </v-card-text>
+                </v-card>
 
-                                <VBtn v-for="(answer, value) in eventTypeOptions.answers"
-                                      :key="`answer-${value}`"
-                                      class="me-3"
-
-                                      @click="joinEvent(value)">
-                                    {{ answer }}
-
-                                </VBtn>
-                            </template>
-
-                        </VCol>
-
-                        <VBtn @click="openDialog()">
-                             Details
-
-                        </VBtn>
-                        <!-- Profile Form (Shown only for "Yes") -->
-                        <v-col cols="12" v-for="field in eventProfile" :key="field.name">
-                            <template v-if="field.type === 'select'">
-                                <v-select
-                                    v-model="guestResponses[field.name]"
-                                    :items="field.options"
-                                    :label="field.label"
-                                    outlined
-                                />
-                            </template>
-                            <template v-else-if="field.type === 'text'">
-                                <v-text-field
-                                    v-model="guestResponses[field.name]"
-                                    :label="field.label"
-                                    outlined
-                                />
-                            </template>
-                        </v-col>
-
-                        <VCol cols="12">
-                            <label>Date/Time</label>
-                            {{ new Date(localEvent.start).toLocaleDateString() }} -
-                            {{ new Date(localEvent.end).toLocaleDateString() }}
-                        </VCol>
-
-                        <VCol cols="12">
-                            <label>Location</label>
-                            {{ localEvent.extendedProps.location }}
-                        </VCol>
-
-                        <VCol cols="12">
-                            <label>Description</label>
-                            <div v-html="localEvent.extendedProps.description"></div>
-                        </VCol>
-
-                        <!--                        <VCol cols="12">-->
-                        <!--                            <template v-for="(answer, value) in eventAnswers">-->
-                        <!--                                <v-list-subheader>{{ value }} ({{ answer.length }})</v-list-subheader>-->
-                        <!--                                <UserAvatar v-for="user in answer" :key="`going-${user.id}`" :user="user" />-->
-                        <!--                            </template>-->
-                        <!--                        </VCol>-->
-
-
-                        <VCol cols="12">
-                            <template v-for="(guests, status) in filterGuestsByApproval(eventAnswers).approvedGuests">
-                                <v-list-subheader>{{ status }} ({{ guests.length }})</v-list-subheader>
-                                <UserAvatar
-                                    class="mr-1"
-                                    v-for="guest in guests"
-                                    :key="guest.id"
-                                    :user="guest"/>
-<!--                                <v-list>-->
-<!--                                    <v-list-item-->
-<!--                                        v-for="guest in guests"-->
-<!--                                        :key="guest.id"-->
-<!--                                    >-->
-<!--                                        <UserAvatar :user="guest"/>-->
-<!--                                    </v-list-item>-->
-<!--                                </v-list>-->
-                            </template>
-                        </VCol>
-
-                        <VCol cols="12"
-                              v-if="localEvent.extendedProps.user_id == user.id && eventTypeOptions.guest && eventTypeOptions.guest.includes('approval')">
-                            <h3>Guests Requiring Approval</h3>
-                            <template
-                                v-for="(guests, status) in filterGuestsByApproval(eventAnswers).guestsRequiringApproval">
-                                <v-list-subheader>{{ status }}</v-list-subheader>
-                                <UserAvatar
-                                    class="mr-1"
-                                    v-for="guest in guests"
-                                    :key="guest.id"
-                                    :user="guest"/>
-                                <v-list>
-                                    <v-list-item
-                                        v-for="guest in guests"
-                                        :key="guest.id"
-                                    >
-                                        <v-list-item-action>
-                                            <v-btn
-                                                color="green"
-                                                @click="approveGuest(guest.pivot.user_id, 'approve')"
-                                            >
-                                                Approve
-                                            </v-btn>
-                                            <v-btn
-                                                color="red"
-                                                @click="approveGuest(guest.pivot.user_id, 'reject')"
-                                            >
-                                                Reject
-                                            </v-btn>
-                                        </v-list-item-action>
-                                    </v-list-item>
-                                </v-list>
-                            </template>
-                        </VCol>
-
-
-                        <VCol cols="12">
-                            <!--                            <h3>Related Content</h3>-->
-
-                            <v-card v-for="item in relatedItems" :key="item.id"
-                                    class="card-hover"
-                                    elevation="10"
-                                    rounded="md"
-                                    :to="`/gallery/${item.related.slug}`"
-                                    :class="`v-theme--ORANGE_THEME`"
+                <!-- Response Section -->
+                <v-card
+                    v-if="canJoinEvent"
+                    flat
+                    class="mb-4 response-card"
+                    rounded="lg"
+                    elevation="0"
+                >
+                    <v-card-text>
+                        <h3 class="text-h6 mb-3">Are you coming?</h3>
+                        <div class="d-flex flex-wrap gap-2">
+                            <VBtn
+                                v-for="(answer, value) in eventTypeOptions.answers"
+                                :key="`answer-${value}`"
+                                :color="value === 'yes' ? 'success' : value === 'no' ? 'error' : 'primary'"
+                                :variant="isGoing && isGoing.type === value ? 'elevated' : 'outlined'"
+                                class="response-btn"
+                                @click="joinEvent(value)"
                             >
+                                <v-icon
+                                    v-if="isGoing && isGoing.type === value"
+                                    size="small"
+                                    start
+                                    class="me-1"
+                                >
+                                    mdi-check-circle
+                                </v-icon>
+                                {{ answer }}
+                            </VBtn>
+                        </div>
+                    </v-card-text>
+                </v-card>
 
-                                <v-img v-if="item.related.coverImage" :src="item.related.coverImage"
-                                       height="200"></v-img>
-                                <v-card-text>
-                                    <div class="d-flex align-center gap-3">
-                                        <div>
-                                            <h6 class="text-h6 mb-1">{{ item.related.title }}</h6>
-                                            <span
-                                                class="d-block text-truncate d-flex align-center gap-2 textSecondary"></span>
+                <!-- Attendees Section -->
+                <v-card flat class="attendees-card mb-4" v-if="Object.keys(eventAnswers).length > 0">
+                    <v-card-text>
+                        <div class="d-flex align-center justify-space-between mb-3">
+                            <h3 class="text-h6">Attendees</h3>
+                            <v-btn
+                                icon="mdi-information-outline"
+                                variant="text"
+                                color="primary"
+                                density="comfortable"
+                                size="small"
+                                @click="openDialog()"
+                                title="View detailed attendee list"
+                            />
+                        </div>
+
+                        <div v-for="(guests, status) in filterGuestsByApproval(eventAnswers).approvedGuests"
+                             :key="`status-${status}`"
+                             class="mb-4">
+                            <div class="d-flex align-center mb-2">
+                                <v-chip
+                                    :color="status === 'yes' ? 'success' : status === 'no' ? 'error' : 'primary'"
+                                    size="small"
+                                    class="me-2"
+                                >
+                                    {{ status }}
+                                </v-chip>
+                                <span class="text-subtitle-2">{{ guests.length }} people</span>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-1">
+                                <UserAvatar
+                                    v-for="guest in guests"
+                                    :key="guest.id"
+                                    :user="guest"
+                                    class="mr-1 mb-1"
+                                />
+                            </div>
+                        </div>
+                    </v-card-text>
+                </v-card>
+
+                <!-- Pending Approvals Section -->
+                <v-card
+                    flat
+                    class="approval-card mb-4"
+                    v-if="localEvent?.extendedProps?.user_id == user.id &&
+                         eventTypeOptions.guest &&
+                         eventTypeOptions.guest.includes('approval')"
+                >
+                    <v-card-text>
+                        <h3 class="text-h6 mb-3">Pending Approvals</h3>
+
+                        <div v-for="(guests, status) in filterGuestsByApproval(eventAnswers).guestsRequiringApproval"
+                             :key="`pending-${status}`"
+                             class="mb-4">
+                            <v-list-subheader>{{ status }}</v-list-subheader>
+
+                            <v-list>
+                                <v-list-item
+                                    v-for="guest in guests"
+                                    :key="guest.id"
+                                    class="pending-guest-item"
+                                >
+                                    <template #prepend>
+                                        <UserAvatar :user="guest"/>
+                                    </template>
+
+                                    <v-list-item-title>{{ guest.name }}</v-list-item-title>
+
+                                    <template #append>
+                                        <div class="d-flex">
+                                            <v-btn
+                                                size="small"
+                                                color="success"
+                                                variant="text"
+                                                icon="mdi-check"
+                                                class="me-1"
+                                                @click="approveGuest(guest.pivot.user_id, 'approve')"
+                                            ></v-btn>
+                                            <v-btn
+                                                size="small"
+                                                color="error"
+                                                variant="text"
+                                                icon="mdi-close"
+                                                @click="approveGuest(guest.pivot.user_id, 'reject')"
+                                            ></v-btn>
                                         </div>
-                                    </div>
+                                    </template>
+                                </v-list-item>
+                            </v-list>
+                        </div>
+                    </v-card-text>
+                </v-card>
+
+                <!-- Related Content Section -->
+                <v-card flat class="related-content-card" v-if="relatedItems.length > 0">
+                    <v-card-text>
+                        <h3 class="text-h6 mb-3">Related Content</h3>
+
+                        <div class="related-items-grid">
+                            <v-card
+                                v-for="item in relatedItems"
+                                :key="item.id"
+                                class="related-item-card"
+                                elevation="2"
+                                rounded="lg"
+                                :to="`/gallery/${item.related.slug}`"
+                            >
+                                <v-img
+                                    v-if="item.related.coverImage"
+                                    :src="item.related.coverImage"
+                                    height="140"
+                                    cover
+                                    class="related-item-image"
+                                ></v-img>
+                                <v-img
+                                    v-else
+                                    src="https://via.placeholder.com/300x140"
+                                    height="140"
+                                    cover
+                                    class="related-item-image"
+                                ></v-img>
+
+                                <v-card-text class="pa-3">
+                                    <h4 class="text-subtitle-1 font-weight-medium text-truncate mb-1">
+                                        {{ item.related.title }}
+                                    </h4>
+                                    <p class="text-caption text-medium-emphasis text-truncate">
+                                        {{ item.related.description || 'Related content' }}
+                                    </p>
                                 </v-card-text>
                             </v-card>
-
-
-                            <!--                                    <router-link :to="`/gallery/${item.related.slug}`">{{ item.related.title }}</router-link>-->
-
-                        </VCol>
-                    </VRow>
-                </VCardText>
-            </VCard>
+                        </div>
+                    </v-card-text>
+                </v-card>
+            </div>
         </PerfectScrollbar>
     </VNavigationDrawer>
 
+    <!-- Dialogs -->
     <ProfileDialog
         v-if="localEvent"
         v-model="showProfileDialog"
@@ -641,11 +768,10 @@ watch(() => props.isDrawerOpen, resetEvent);
         :resolve="handleProfile"
     />
 
-    <!-- Confirmation Dialog Component -->
     <ConfirmDialog
         v-model="showConfirmationDialog"
-        title="Delete Confirmation"
-        content="Are you sure you want to delete this item?"
+        title="Delete Event"
+        content="Are you sure you want to delete this event? This action cannot be undone."
         confirmationText="Delete"
         cancellationText="Cancel"
         :resolve="handleConfirmation"
@@ -655,21 +781,121 @@ watch(() => props.isDrawerOpen, resetEvent);
         v-model="showRelateContentDialog"
         contentName="Current Event"
         initialSourceType="App\Models\Event\Event"
-        :initialSourceItem="localEvent.id"
+        :initialSourceItem="localEvent?.id"
         @confirmRelation="handleRelationConfirmed"
     />
 
     <DetailsDialog
         v-model="showDetailsDialog"
-
         :eventGuests="eventGuests"
+        :event="localEvent"
     />
-
-
 </template>
 
 <style scoped>
-.scrollable-content {
+.event-drawer {
     max-height: 100%;
+    border-left: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.event-drawer-header {
+    /*background-color: rgb(var(--v-theme-surface));*/
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.event-drawer-header.edit-mode {
+    /*background-color: rgb(var(--v-theme-surface-variant));*/
+}
+
+.event-drawer-content {
+    height: calc(100vh - 65px);
+}
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+}
+
+.action-btn {
+    margin-left: 4px;
+}
+
+.event-view-content {
+    padding: 16px;
+}
+
+.event-info-card,
+.attendees-card,
+.approval-card,
+.related-content-card {
+    /*border: 1px solid rgba(var(--v-theme-on-surface), 0.08);*/
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.response-card {
+    /*border: 1px solid rgba(var(--v-theme-primary), 0.15);*/
+    border-radius: 12px;
+    overflow: hidden;
+    /*background-color: rgba(var(--v-theme-primary), 0.03);*/
+}
+
+.event-info-item {
+    margin-bottom: 12px;
+}
+
+.info-label {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    /*color: rgb(var(--v-theme-primary));*/
+    margin-bottom: 4px;
+}
+
+.info-content {
+    padding-left: 28px;
+    /*color: rgb(var(--v-theme-on-surface));*/
+}
+
+.description-content {
+    white-space: pre-line;
+}
+
+.response-btn {
+    flex-grow: 1;
+    max-width: 120px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.related-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.related-item-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.related-item-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+.related-item-image {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.pending-guest-item {
+    border-radius: 8px;
+    margin-bottom: 4px;
+}
+
+.pending-guest-item:hover {
+    /*background-color: rgba(var(--v-theme-on-surface), 0.04);*/
 }
 </style>

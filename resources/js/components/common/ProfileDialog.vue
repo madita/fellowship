@@ -307,12 +307,15 @@ watch(
 watch(
     () => props.isGoing,
     (isGoing) => {
-        // console.log('answerwatch', answer)
+        // console.log('isGoing', isGoing, formData.value)
         localisGoing.value = isGoing;
-        formData.value = isGoing.profile
-        console.log('isGoing', isGoing)
-    },
-    {immediate: true} // Trigger immediately to initialize localEvent
+        if(!!isGoing) {
+            formData.value = isGoing.profile
+        }
+        // console.log('isGoing', isGoing, formData.value)
+        //removed immediate option
+    }
+
 );
 
 watch(
