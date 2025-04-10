@@ -162,11 +162,32 @@ const approveGuest = async (guestId, action) => {
             action,
         });
 
-        eventAnswers.value = eventAnswers.value.map((group) =>
-            group.map((guest) =>
-                guest.id === guestId ? { ...guest, approved: action === "approve" } : guest
-            )
-        );
+        // Update the guest's approved status in all answer types
+        const updatedAnswers = {};
+
+        // Process each answer type (going, notgoing, etc.)
+        Object.keys(eventAnswers.value).forEach(answerType => {
+            // Create a new array for this answer type
+            updatedAnswers[answerType] = eventAnswers.value[answerType].map(guest => {
+                // If this is the guest we're approving/rejecting, update their pivot data
+                if (guest.pivot && guest.pivot.user_id === guestId) {
+                    return {
+                        ...guest,
+                        pivot: {
+                            ...guest.pivot,
+                            approved_at: action === "approve" ? new Date().toISOString() : null
+                        }
+                    };
+                }
+                return guest;
+            });
+        });
+
+        // Replace the entire eventAnswers object
+        eventAnswers.value = updatedAnswers;
+
+        // Refresh the event data to ensure we have the latest state
+        getEvent(localEvent.value.id);
     } catch (error) {
         console.error(`Failed to ${action} guest:`, error);
     }

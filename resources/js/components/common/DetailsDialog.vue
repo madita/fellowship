@@ -38,6 +38,17 @@
                             ></v-badge>
                         </v-btn>
 
+                        <v-btn
+                            icon
+                            variant="text"
+                            color="primary"
+                            class="mr-2"
+                            @click="exportToCsv"
+                            title="Export to CSV"
+                        >
+                            <v-icon>mdi-file-export</v-icon>
+                        </v-btn>
+
                         <v-menu
                             v-model="showColumnsBox"
                             :close-on-content-click="false"
@@ -120,6 +131,22 @@
                     <v-card-text>
                         <v-row>
                             <v-col cols="12" sm="6">
+                                <div>
+                                    <div class="text-subtitle-1 mb-2">Attendance Status</div>
+                                    <v-checkbox
+                                        v-for="type in availableTypes"
+                                        :key="type.value"
+                                        v-model="typeFilter"
+                                        :label="type.text"
+                                        :value="type.value"
+                                        density="compact"
+                                        hide-details
+                                        class="mb-1"
+                                    ></v-checkbox>
+                                </div>
+                            </v-col>
+
+                            <v-col cols="12" sm="6">
                                 <v-select v-if="eventDays.length>1"
                                           v-model="filterData['days']"
                                           :items="eventDays"
@@ -142,17 +169,6 @@
                                         :label="field.label"
                                     ></v-select>
 
-                                    <!--                            <v-select-->
-                                    <!--                                v-else-if="field.type==='taxonomy'"-->
-                                    <!--                                :items="taxonomieItems[field.name]"-->
-                                    <!--                                item-title="title"-->
-                                    <!--                                item-value="id"-->
-                                    <!--                                v-model="formData[field.name]"-->
-                                    <!--                                :label="field.label"-->
-                                    <!--                                multiple-->
-                                    <!--                                chips-->
-                                    <!--                                @focus ="getTerms(field.name, field.options)"-->
-                                    <!--                            ></v-select>-->
                                     <v-combobox
                                         v-else-if="field.type==='taxonomy'"
                                         v-model="filterData[field.name]"
@@ -187,75 +203,6 @@
 
                             </template>
 
-<!--                            <v-col cols="12" sm="6">-->
-<!--                                <v-combobox-->
-<!--                                    v-model="filterData.games"-->
-<!--                                    :items="taxonomieItems.games || []"-->
-<!--                                    item-title="title"-->
-<!--                                    item-value="id"-->
-<!--                                    label="Filter by Games"-->
-<!--                                    chips-->
-<!--                                    clearable-->
-<!--                                    multiple-->
-<!--                                    @focus="getTerms('games', 'games')"-->
-<!--                                ></v-combobox>-->
-<!--                            </v-col>-->
-<!--                            <v-col cols="12" sm="6">-->
-<!--                                <v-combobox-->
-<!--                                    v-model="filterData.breakfast"-->
-<!--                                    :items="taxonomieItems.breakfast || []"-->
-<!--                                    item-title="title"-->
-<!--                                    item-value="id"-->
-<!--                                    label="Filter by Breakfast"-->
-<!--                                    chips-->
-<!--                                    clearable-->
-<!--                                    multiple-->
-<!--                                    @focus="getTerms('breakfast', 'breakfast')"-->
-<!--                                ></v-combobox>-->
-<!--                            </v-col>-->
-<!--                        </v-row>-->
-<!--                        <v-row>-->
-<!--                            <v-col cols="12" sm="6">-->
-<!--                                <v-combobox-->
-<!--                                    v-model="filterData.drinks"-->
-<!--                                    :items="taxonomieItems.drinks || []"-->
-<!--                                    item-title="title"-->
-<!--                                    item-value="id"-->
-<!--                                    label="Filter by Drinks"-->
-<!--                                    chips-->
-<!--                                    clearable-->
-<!--                                    multiple-->
-<!--                                    @focus="getTerms('drinks', 'drinks')"-->
-<!--                                ></v-combobox>-->
-<!--                            </v-col>-->
-<!--                            <v-col cols="12" sm="6">-->
-<!--                                <v-combobox-->
-<!--                                    v-model="filterData.meals"-->
-<!--                                    :items="taxonomieItems.meals || []"-->
-<!--                                    item-title="title"-->
-<!--                                    item-value="id"-->
-<!--                                    label="Filter by Meals"-->
-<!--                                    chips-->
-<!--                                    clearable-->
-<!--                                    multiple-->
-<!--                                    @focus="getTerms('meals', 'meals')"-->
-<!--                                ></v-combobox>-->
-<!--                            </v-col>-->
-<!--                        </v-row>-->
-<!--                        <v-row>-->
-<!--                            <v-col cols="12" sm="6">-->
-<!--                                <v-combobox-->
-<!--                                    v-model="filterData.allergies"-->
-<!--                                    :items="taxonomieItems.allergies || []"-->
-<!--                                    item-title="title"-->
-<!--                                    item-value="id"-->
-<!--                                    label="Filter by Allergies"-->
-<!--                                    chips-->
-<!--                                    clearable-->
-<!--                                    multiple-->
-<!--                                    @focus="getTerms('allergies', 'allergies')"-->
-<!--                                ></v-combobox>-->
-<!--                            </v-col>-->
                         </v-row>
                     </v-card-text>
                     <v-card-actions>
@@ -364,13 +311,11 @@ import UserAvatar from "@/components/common/UserAvatar.vue";
 const search = ref('');
 const expanded = ref([]);
 const taxonomieItems = ref({});
-const filterData = ref({
-    games: [],
-    breakfast: [],
-    drinks: [],
-    meals: [],
-    allergies: []
-});
+const filterData = ref({});
+
+// Type filter - will be populated dynamically
+const typeFilter = ref([]); // Default to showing 'going' attendees
+const availableTypes = ref([]);
 
 // Dialog control
 const showFilterDialog = ref(false);
@@ -460,17 +405,37 @@ const visibleHeaders = computed(() => {
     return headers;
 });
 
+// Get unique types from guests and populate availableTypes
+const updateAvailableTypes = () => {
+    if (!localGuests.value) return;
+
+    const types = new Set();
+    localGuests.value.forEach(guest => {
+        if (guest.type) types.add(guest.type);
+    });
+
+    availableTypes.value = Array.from(types).map(type => ({
+        value: type,
+        text: type.charAt(0).toUpperCase() + type.slice(1)
+    }));
+
+    // If typeFilter is empty, set it to include all types
+    if (typeFilter.value.length === 0) {
+        typeFilter.value = availableTypes.value.map(type => type.value);
+    }
+};
+
 const filteredRecords = computed(() => {
     if (!localGuests.value) return [];
 
-    // Start with removing the 'type' property from each record
-    let results = localGuests.value.map(({ id, ...rest }) => rest);
+    // Filter by selected types first
+    let results = localGuests.value.filter(guest => {
+        return typeFilter.value.includes(guest.type);
+    });
 
     // Apply filters for each taxonomy
     Object.keys(filterData.value).forEach(key => {
-
         if(typeof filterData.value[key] === "string") {
-
             results = results.filter(record => {
                 return record[key] === filterData.value[key]
             })
@@ -499,10 +464,6 @@ const filteredRecords = computed(() => {
                 });
             }
         }
-
-
-
-
     });
 
     // Apply text search if present
@@ -521,7 +482,8 @@ const filteredRecords = computed(() => {
         });
     }
 
-    return results;
+    // Remove the 'type' property from each record for display
+    return results.map(({ id, type, ...rest }) => rest);
 });
 
 const getTerms = async (name, taxonomy) => {
@@ -579,6 +541,7 @@ watch(
         // Load all taxonomies when guests data is loaded
         if (newGuests) {
             loadAllTaxonomies();
+            updateAvailableTypes();
         }
     },
     {immediate: true}
@@ -617,7 +580,103 @@ const eventDays = computed(() => {
 
 
 // Watch for changes in filter data to trigger reactivity
-watch(filterData, () => {
-    console.log('Filter data changed:', filterData.value);
-}, {deep: true});
+// watch(filterData, () => {
+//     //console.log('Filter data changed:', filterData.value);
+// }, {deep: true});
+
+// Function to format a value for CSV export
+const formatValueForCsv = (value) => {
+    if (value === null || value === undefined) {
+        return '';
+    }
+
+    // Handle arrays of objects (like games, breakfast, etc.)
+    if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
+        return value.map(item => item.title || item.name || JSON.stringify(item)).join(', ');
+    }
+
+    // Handle arrays of primitive values (like days)
+    if (Array.isArray(value)) {
+        return value.join(', ');
+    }
+
+    // Handle user objects
+    if (typeof value === 'object' && value !== null && Array.isArray(value) && value.length > 0 && value[0].username) {
+        return value[0].username;
+    }
+
+    // Handle other objects
+    if (typeof value === 'object' && value !== null) {
+        return JSON.stringify(value);
+    }
+
+    // Handle string values that might contain commas or quotes
+    if (typeof value === 'string') {
+        // Escape quotes by doubling them and wrap in quotes if contains comma, quote or newline
+        const needsQuotes = value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r');
+        const escapedValue = value.replace(/"/g, '""');
+        return needsQuotes ? `"${escapedValue}"` : escapedValue;
+    }
+
+    return String(value);
+};
+
+// Function to export data to CSV
+const exportToCsv = () => {
+    if (!localGuests.value || localGuests.value.length === 0) {
+        console.error('No data to export');
+        return;
+    }
+
+    // Filter guests by the current type filter
+    const guestsToExport = localGuests.value.filter(guest => {
+        return typeFilter.value.includes(guest.type);
+    });
+
+    if (guestsToExport.length === 0) {
+        console.error('No data to export after filtering');
+        return;
+    }
+
+    // Get visible columns (headers) and add the 'Type' column
+    const headers = ['Type', ...visibleHeaders.value
+        .filter(header => header.key !== 'data-table-expand')
+        .map(header => header.title)];
+
+    // Create CSV header row
+    let csvContent = headers.join(',') + '\n';
+
+    // Add data rows
+    guestsToExport.forEach(guest => {
+        // Start with the type column
+        const row = [formatValueForCsv(guest.type)];
+
+        // Add the rest of the columns
+        visibleHeaders.value
+            .filter(header => header.key !== 'data-table-expand')
+            .forEach(header => {
+                const value = guest[header.key];
+                row.push(formatValueForCsv(value));
+            });
+
+        csvContent += row.join(',') + '\n';
+    });
+
+    // Create a Blob with the CSV data
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    // Create a download link
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    // Set link properties
+    link.setAttribute('href', url);
+    link.setAttribute('download', `event_guests_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+
+    // Add link to document, trigger click, and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 </script>

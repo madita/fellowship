@@ -353,46 +353,48 @@ class EventController extends Controller
 
         $eventType = EventType::find($event->event_type_id);
         $eventProfile = EventProfile::find($eventType->event_profile_id);
-        $profileOptions = json_decode($eventProfile->options);
+        if(isset($eventProfile->options)) {
+            $profileOptions = json_decode($eventProfile->options);
+            $form = collect($profileOptions->form);
 
-        $form = collect($profileOptions->form);
-        $taxonomyFields = $form->where('type', 'taxonomy')->values()->all();
+            $taxonomyFields = $form->where('type', 'taxonomy')->values()->all();
 
 
-        /**get through the profile of the event and check
-         * if new terms where added also call the edge case
-         * if on the same time another person added the same Term
-         */
-        foreach ($taxonomyFields as  $item) {
+            /**get through the profile of the event and check
+             * if new terms where added also call the edge case
+             * if on the same time another person added the same Term
+             */
+            foreach ($taxonomyFields as  $item) {
 
-            $parent = Taxonomy::where('taxonomy', $item->options)->first();
+                $parent = Taxonomy::where('taxonomy', $item->options)->first();
 
-            if(!isset($json[$item->name])) {
-                continue;
-            }
+                if(!isset($json[$item->name])) {
+                    continue;
+                }
 
-            foreach ($json[$item->name] as $index => $termItem) {
+                foreach ($json[$item->name] as $index => $termItem) {
 
-                if (is_string($termItem)) {
+                    if (is_string($termItem)) {
 
-                    $term = Term::where('title', $termItem)->first();
+                        $term = Term::where('title', $termItem)->first();
 
-                    if($term !== null) {
-                        $taxonomy = Taxonomy::where('taxonomy', $item->options)
-                        ->where('term_id', $term->id)->get();
-                    } else {
-                        $taxonomy = TaxonomyHelper::createTaxables($termItem, $item->options, $parent->id);
-                        $term = Term::find($taxonomy->term_id);
+                        if($term !== null) {
+                            $taxonomy = Taxonomy::where('taxonomy', $item->options)
+                            ->where('term_id', $term->id)->get();
+                        } else {
+                            $taxonomy = TaxonomyHelper::createTaxables($termItem, $item->options, $parent->id);
+                            $term = Term::find($taxonomy->term_id);
+                        }
+
+                        $jsonTerm = [
+                            "id" => $term->id,
+                            "title" => $term->title,
+                            "slug" => $term->slug,
+                            "parent_id" => $parent->id
+                        ];
+
+                        $json[$item->name][$index] = $jsonTerm;
                     }
-
-                    $jsonTerm = [
-                        "id" => $term->id,
-                        "title" => $term->title,
-                        "slug" => $term->slug,
-                        "parent_id" => $parent->id
-                    ];
-
-                    $json[$item->name][$index] = $jsonTerm;
                 }
             }
         }
