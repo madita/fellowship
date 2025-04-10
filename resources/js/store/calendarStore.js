@@ -1,123 +1,135 @@
-import { defineStore } from 'pinia'
-import { useApi } from '@/api/useAPI.js'
-import axios from "axios";
-// import axios from "axios";
+// store/calendarStore.js
+import { defineStore } from 'pinia';
+import axios from 'axios';
 
-// const api = useApi()
-
-export const useCalendarStore = defineStore({
-    id: 'calendar',
+export const useCalendarStore = defineStore('calendar', {
     state: () => ({
-        eventTypes: [],
         events: [],
+        upcomingEvents: [],
+        eventTypes: [],
         selectedEventTypes: [],
-        event:[],
-
-    }),
-    actions: {
-        setEventTypes(eventTypes) {
-            this.eventTypes = eventTypes
-
-            this.selectedEventTypes = Object.values(eventTypes).map(i => i.name)
-
-        },
-
-        async fetchEvents() {
-            console.log('fetchEventtypesAAAA')
-            try {
-                const response = await axios.get('/api/events');
-                // console.log('events', response)
-                const events = response.data.data.events.map(event => ({
-                    ...event,
-                    start: new Date(event.start),
-                    end: new Date(event.end),
-                }));
-
-                this.events = events
-
-                // return events; // Returns the processed events array.
-            } catch (error) {
-                console.error("Error fetching events:", error);
-                return []; // Return an empty array in case of an error.
-            }
-        },
-
-        async fetchEventTypes(){
-            // loadEventDetails.value = true;
-            // error.value = null; // Reset previous errors
-
-
-            axios.get('/api/events/types').then((response) => {
-                // messages = response.data;
-                this.setEventTypes(response.data.data)
-                //this.messages = chatStore.messages
-            });
-
-        },
-
-        async getEventasync(eventId) {
-            try {
-                // loadEventDetails.value = true;
-                const response = await axios.get(`/api/events/${eventId}`);
-                this.event = response.data
-                // loadEventDetails.value = false;
-                // console.log('fetchevents',events)
-                return this.event; // Returns the processed events array.
-            } catch (error) {
-                console.error("Error fetching event:", error);
-                return []; // Return an empty array in case of an error.
-            }
-        },
-
-        async addEvent(addevent) {
-
-            axios.post(`${endpoint}`, addevent).then(() => {
-                this.event = null
-                // this.page = {title: "", body: ""};
-                // this.message = "Page saved ..link"
-            }).catch((error) => {
-                if (error.response.status === 422) {
-                    // this.creating.errors = error.response.data
-                    this.editing.errors = error.response.data
-                }
-            })
+        loading: false,
+        error: null,
+        currentViewType: 'dayGridMonth',
+        currentViewDateRange: {
+            start: null,
+            end: null
         }
+    }),
 
-        // createEvent()  {
-        //     isEventHandlerSidebarActive.value = true
-        //     editMode.value = true
-        // },
+    actions: {
+        /**
+         * Set the current view date range based on the calendar current view
+         * @param {Object} dateInfo - Contains start and end dates from FullCalendar
+         */
+        setViewDateRange(dateInfo) {
+            this.currentViewDateRange = {
+                start: dateInfo.startStr.split('T')[0], // Get just the date part
+                end: dateInfo.endStr.split('T')[0]
+            };
+        },
 
+        /**
+         * Fetch events for the current calendar view
+         */
+        async fetchEvents() {
+            this.loading = true;
+            this.error = null;
 
+            try {
+                // Only send date range if we have one
+                const params = {};
 
-        // async fetchEvents() {
-        //     const { data, error } = await useApi(createUrl('/apps/calendar', {
-        //         query: {
-        //             calendars: this.selectedCalendars,
-        //         },
-        //     }))
-        //
-        //     if (error.value)
-        //         return error.value
-        //
-        //     return data.value
-        // },
-        // async addEvent(event) {
-        //     await $api('/apps/calendar', {
-        //         method: 'POST',
-        //         body: event,
-        //     })
-        // },
-        // async updateEvent(event) {
-        //     return await $api(`/apps/calendar/${event.id}`, {
-        //         method: 'PUT',
-        //         body: event,
-        //     })
-        // },
-        // async removeEvent(eventId) {
-        //     return await $api(`/apps/calendar/${eventId}`, {
-        //         method: 'DELETE',
-        //     })
-        // },
+                if (this.currentViewDateRange.start && this.currentViewDateRange.end) {
+                    params.start_date = this.currentViewDateRange.start;
+                    params.end_date = this.currentViewDateRange.end;
+                    params.view_type = this.currentViewType;
+                }
+
+                const response = await axios.get('/api/events', { params });
+
+                if (response.data.data) {
+                    this.events = response.data.data.events || [];
+
+                    // If event types are returned here, update them
+                    if (response.data.data.types) {
+                        this.setEventTypes(response.data.data.types);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching events:', error);
+                this.error = 'Failed to fetch events. Please try again.';
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        /**
+         * Fetch upcoming events for display in the sidebar and overview
+         * @param {Number} days - Number of days to look ahead (default: 7)
+         * @param {Number} limit - Maximum number of events to return (default: 10)
+         */
+        async fetchUpcomingEvents(days = 7, limit = 10) {
+            try {
+                const response = await axios.get('/api/events/upcoming', {
+                    params: { days, limit }
+                });
+
+                if (response.data.data && response.data.data.events) {
+                    this.upcomingEvents = response.data.data.events;
+                }
+            } catch (error) {
+                console.error('Error fetching upcoming events:', error);
+            }
+        },
+
+        /**
+         * Fetch event types
+         */
+        async fetchEventTypes() {
+            try {
+                const response = await axios.get('/api/events/types');
+                if (response.data.data) {
+                    this.setEventTypes(response.data.data);
+                }
+            } catch (error) {
+                console.error('Error fetching event types:', error);
+            }
+        },
+
+        /**
+         * Set event types and initialize selected types
+         * @param {Object} types - Event types from the API
+         */
+        setEventTypes(types) {
+            this.eventTypes = types;
+
+            // Convert types to array if it's an object
+            const typesArray = Array.isArray(types) ? types : Object.values(types);
+
+            // If we haven't selected any types yet, select all by default
+            if (this.selectedEventTypes.length === 0 && typesArray.length > 0) {
+                this.selectedEventTypes = typesArray.map(type => type.name);
+            }
+        },
+
+        /**
+         * Set the current view type
+         * @param {String} viewType - The FullCalendar view type
+         */
+        setCurrentViewType(viewType) {
+            this.currentViewType = viewType;
+        },
+
+        /**
+         * Refresh all calendar data
+         */
+        async refreshCalendarData() {
+            await Promise.all([
+                this.fetchEvents(),
+                this.fetchUpcomingEvents(),
+                this.fetchEventTypes()
+            ]);
+        }
     }
 });

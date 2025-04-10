@@ -116,7 +116,11 @@ const handleSubmit = () => {
 };
 
 const eventTypeOptions = computed(() => {
-    const type = Object.values(localEventTypes.value).find(item => item.id === localEvent.value?.extendedProps?.event_type_id);
+    //the fullcalender uses extendedProps but for all other the values should be accessed directly
+    if(localEvent.value?.extendedProps?.event_type_id) {
+        localEvent.value.event_type_id = localEvent.value?.extendedProps?.event_type_id
+    }
+    const type = Object.values(localEventTypes.value).find(item => item.id === localEvent.value?.event_type_id);
     return type === undefined ? [] : JSON.parse(JSON.stringify(type.options));
 });
 
@@ -198,7 +202,6 @@ const validateStartDate = () => {
 const validateEndDate = () => {
     isEndDateValid.value = !!localEvent.value.end;
 };
-
 const joinEvent = (answer) => {
     const type = eventType.value;
 
@@ -213,41 +216,62 @@ const joinEvent = (answer) => {
 
     // Optimistically update the UI for immediate feedback
     isGoing.value = {
-        ...isGoing.value,
-        type: answer
+        ...(isGoing.value || {}),
+        type: answer,
+        profile: isGoing.value?.profile || {}
     };
 
-    // If we have a specific previous answer, remove the user from that list
-    if (previousAnswer && eventAnswers.value[previousAnswer]) {
-        eventAnswers.value[previousAnswer] = eventAnswers.value[previousAnswer].filter(
-            guest => guest.id !== user.value.id
-        );
+    // FIXED: Create a complete copy of the eventAnswers object to work with
+    const updatedAnswers = {};
+
+    // Copy all current answer lists, but filtering out the current user
+    Object.keys(eventAnswers.value).forEach(answerType => {
+        if (Array.isArray(eventAnswers.value[answerType])) {
+            // Create a new array without the current user
+            updatedAnswers[answerType] = eventAnswers.value[answerType].filter(guest =>
+                guest.id !== user.value.id && guest.pivot.user_id !== user.value.id
+            );
+        } else {
+            // If not an array, just copy whatever it is
+            updatedAnswers[answerType] = eventAnswers.value[answerType];
+        }
+    });
+
+    // Ensure the target answer list exists
+    if (!updatedAnswers[answer]) {
+        updatedAnswers[answer] = [];
     }
 
-    // Add user to new status if needed
-    if (!eventAnswers.value[answer]) {
-        eventAnswers.value[answer] = [];
-    }
+    // Check if user is already in this list (shouldn't be after filtering, but check anyway)
+    const userExists = updatedAnswers[answer].some(guest =>
+        guest.id === user.value.id || guest.pivot?.user_id === user.value.id
+    );
 
-    // Check if user is already in this list
-    const userExists = eventAnswers.value[answer].some(guest => guest.id === user.value.id);
     if (!userExists) {
         // Create a copy of the user with pivot data
         const userWithPivot = {
             ...user.value,
             pivot: {
                 user_id: user.value.id,
-                //approved_at: new Date().toISOString() // Auto-approve own status
+                ...((!type?.options?.profile?.includes(answer)) ? { approved_at: new Date().toISOString() } : {})
             }
         };
 
-        eventAnswers.value[answer].push(userWithPivot);
+        updatedAnswers[answer].push(userWithPivot);
     }
 
+    // FIXED: Replace entire eventAnswers object with our modified copy
+    eventAnswers.value = updatedAnswers;
+
     if (type?.options?.profile?.includes(answer)) {
-        showProfileDialog.value = true;
         profileAnswer.value = answer;
+        showProfileDialog.value = true;
     } else {
+        if (!localEvent.value?.id) {
+            console.error('Event ID is missing');
+            return;
+        }
+
         axios.post(`/api/events/${localEvent.value.id}/answer`, {answer})
             .then(response => {
                 // Server confirmed the update
@@ -255,42 +279,60 @@ const joinEvent = (answer) => {
                     isGoing.value = response.data.going;
                 }
 
-                // We could also refresh the entire list from the server if needed
+                // Replace entire answers object with server response
                 if (response.data && response.data.answers) {
-                    eventAnswers.value = response.data.answers;
+                    eventAnswers.value = JSON.parse(JSON.stringify(response.data.answers));
                 }
             })
             .catch((error) => {
+                console.error('Error updating event answer:', error);
+
                 // Revert optimistic update on error
                 isGoing.value = previousGoing;
 
-                // Restore user to previous answer list if there was one
-                if (previousAnswer) {
-                    if (!eventAnswers.value[previousAnswer]) {
-                        eventAnswers.value[previousAnswer] = [];
-                    }
+                // FIXED: Create a new object for error recovery
+                const recoveryAnswers = {};
 
+                // Copy all current lists except for the attempted answer
+                Object.keys(eventAnswers.value).forEach(answerType => {
+                    if (answerType !== answer) {
+                        recoveryAnswers[answerType] = [...eventAnswers.value[answerType]];
+                    }
+                });
+
+                // Ensure previous answer type exists if we had one
+                if (previousAnswer && !recoveryAnswers[previousAnswer]) {
+                    recoveryAnswers[previousAnswer] = [];
+                }
+
+                // Add user back to previous answer type if there was one
+                if (previousAnswer) {
                     // Only add back if not already there
-                    if (!eventAnswers.value[previousAnswer].some(guest => guest.id === user.value.id)) {
+                    const alreadyExists = recoveryAnswers[previousAnswer].some(guest =>
+                        guest.id === user.value.id || guest.pivot?.user_id === user.value.id
+                    );
+
+                    if (!alreadyExists) {
                         const userWithPivot = {
                             ...user.value,
                             pivot: {
                                 user_id: user.value.id,
-                                approved_at: new Date().toISOString()
+                                approved_at: previousGoing?.pivot?.approved_at || new Date().toISOString()
                             }
                         };
-                        eventAnswers.value[previousAnswer].push(userWithPivot);
+                        recoveryAnswers[previousAnswer].push(userWithPivot);
                     }
                 }
 
-                // Remove from the new answer list
-                if (eventAnswers.value[answer]) {
-                    eventAnswers.value[answer] = eventAnswers.value[answer].filter(
-                        guest => guest.id !== user.value.id
-                    );
+                // Make sure answer type exists
+                if (!recoveryAnswers[answer]) {
+                    recoveryAnswers[answer] = [];
                 }
 
-                if (error.response?.status === 422) console.error('Validation failed:', error);
+                // Replace entire object
+                eventAnswers.value = recoveryAnswers;
+
+                if (error.response?.status === 422) console.error('Validation failed:', error.response.data);
             });
     }
 };
@@ -313,6 +355,9 @@ const handleConfirmation = (isConfirmed) => {
 
 const handleProfile = (isConfirmed) => {
     // Perform the profile save action
+    if (!isConfirmed) {
+        //console.log('AAAcancelprofile')
+    }
 };
 
 const handleRelationConfirmed = (relation) => {
@@ -781,7 +826,7 @@ watch(() => props.isDrawerOpen, resetEvent);
         v-model="showRelateContentDialog"
         contentName="Current Event"
         initialSourceType="App\Models\Event\Event"
-        :initialSourceItem="localEvent?.id"
+        :initialSourceItem="String(localEvent?.id)"
         @confirmRelation="handleRelationConfirmed"
     />
 

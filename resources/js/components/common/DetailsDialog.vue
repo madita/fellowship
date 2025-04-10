@@ -468,29 +468,41 @@ const filteredRecords = computed(() => {
 
     // Apply filters for each taxonomy
     Object.keys(filterData.value).forEach(key => {
-        const selectedIds = filterData.value[key].map(item =>
-            typeof item === 'object' ? item.id : item
-        );
 
-        if (selectedIds.length > 0) {
+        if(typeof filterData.value[key] === "string") {
+
             results = results.filter(record => {
-                // Handle case where the field might not exist on some records
-                if (!record[key]) return false;
+                return record[key] === filterData.value[key]
+            })
+        } else {
+            const selectedIds = filterData.value[key].map(item =>
+                typeof item === 'object' ? item.id : item
+            );
 
-                // Handle array of objects with title property (like games, breakfast, etc.)
-                if (Array.isArray(record[key]) && record[key].length > 0 && record[key][0].hasOwnProperty('id')) {
-                    return record[key].some(item => selectedIds.includes(item.id));
-                }
+            if (selectedIds.length > 0) {
+                results = results.filter(record => {
+                    // Handle case where the field might not exist on some records
+                    if (!record[key]) return false;
 
-                // Handle array of primitive values (like days)
-                if (Array.isArray(record[key])) {
-                    return record[key].some(item => selectedIds.includes(item));
-                }
+                    // Handle array of objects with title property (like games, breakfast, etc.)
+                    if (Array.isArray(record[key]) && record[key].length > 0 && record[key][0].hasOwnProperty('id')) {
+                        return record[key].some(item => selectedIds.includes(item.id));
+                    }
 
-                // Handle simple value
-                return selectedIds.includes(record[key]);
-            });
+                    // Handle array of primitive values (like days)
+                    if (Array.isArray(record[key])) {
+                        return record[key].some(item => selectedIds.includes(item));
+                    }
+
+                    // Handle simple value
+                    return selectedIds.includes(record[key]);
+                });
+            }
         }
+
+
+
+
     });
 
     // Apply text search if present

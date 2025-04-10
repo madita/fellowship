@@ -1,14 +1,11 @@
 <template>
     <!-- Bind modelValue to the dialog's v-model -->
     <VDialog v-model="internalModelValue" max-width="400">
-
-
         <VCard>
-            <!--            <VCardTitle class="text-h5">{{ title || 'Are you sure?' }}</VCardTitle>-->
             <VCardText>
-
-                <v-select v-if="eventDays.length>1"
-                          v-model="formData['days']"
+                <!-- Fix 1: Add v-if to ensure formData.days exists before rendering -->
+                <v-select v-if="eventDays.length > 1 && formData.days"
+                          v-model="formData.days"
                           :items="eventDays"
                           label="Days"
                           outlined
@@ -17,63 +14,42 @@
 
                 <template v-if="profileId > 0">
                     <template v-for="(field) in fields.form" :key="`field-${field.name}`">
+                        <v-select
+                            v-if="field.type==='select'"
+                            :items="field.options"
+                            item-title="value"
+                            item-value="key"
+                            v-model="formData[field.name]"
+                            :label="field.label"
+                        ></v-select>
 
+                        <v-combobox
+                            v-else-if="field.type==='taxonomy'"
+                            v-model="formData[field.name]"
+                            :items="taxonomieItems[field.name]"
+                            item-title="title"
+                            item-value="id"
+                            :label="field.label"
+                            chips
+                            clearable
+                            multiple
+                            @focus ="getTerms(field.name, field.options)"
+                        ></v-combobox>
 
-                            <v-select
-                                v-if="field.type==='select'"
-                                :items="field.options"
-                                item-title="value"
-                                item-value="key"
-                                v-model="formData[field.name]"
-                                :label="field.label"
-                            ></v-select>
+                        <v-textarea
+                            v-else-if="field.type==='textarea'"
+                            :label="field.label"
+                            :id="field.name"
+                            v-model="formData[field.name]"
+                        ></v-textarea>
 
-<!--                            <v-select-->
-<!--                                v-else-if="field.type==='taxonomy'"-->
-<!--                                :items="taxonomieItems[field.name]"-->
-<!--                                item-title="title"-->
-<!--                                item-value="id"-->
-<!--                                v-model="formData[field.name]"-->
-<!--                                :label="field.label"-->
-<!--                                multiple-->
-<!--                                chips-->
-<!--                                @focus ="getTerms(field.name, field.options)"-->
-<!--                            ></v-select>-->
-                            <v-combobox
-                                v-else-if="field.type==='taxonomy'"
-                                v-model="formData[field.name]"
-                                :items="taxonomieItems[field.name]"
-                                item-title="title"
-                                item-value="id"
-                                :label="field.label"
-                                chips
-                                clearable
-                                multiple
-                                @focus ="getTerms(field.name, field.options)"
-                            ></v-combobox>
-
-
-                            <v-textarea
-                                v-else-if="field.type==='textarea'"
-                                :label="name"
-                                :id="name"
-                                v-model="formData[field.name]"
-                                :value="formData[field.name]"
-                            ></v-textarea>
-
-                            <v-text-field
-                                v-else
-                                :label="field.label"
-                                v-model="formData[field.name]"
-                                :value="formData[field.name]"
-                            ></v-text-field>
-
-
+                        <v-text-field
+                            v-else
+                            :label="field.label"
+                            v-model="formData[field.name]"
+                        ></v-text-field>
                     </template>
-
                 </template>
-
-
             </VCardText>
             <VCardActions>
                 <VSpacer/>
@@ -87,44 +63,42 @@
 </template>
 
 <script setup>
-import {ref, computed, watch} from 'vue';
+import {ref, computed, watch, onMounted} from 'vue';
 import axios from "axios";
-import taxonomie from "@/pages/admin/Taxonomie.vue";
 
 const selectedDays = ref();
 const profile = ref();
-const fields = ref();
-const taxonomieItems = ref([]);
-const formData = ref({});
+const fields = ref({form: []}); // Fix 2: Initialize with default structure
+const taxonomieItems = ref({});    // Fix 3: Initialize as object not array
+const formData = ref({             // Fix 4: Initialize formData with days property
+    days: []
+});
 
 // Define the modelValue prop
 const props = defineProps({
-    modelValue: Boolean, // Highlight: Bind modelValue to control dialog visibility
+    modelValue: Boolean,
     event: Object,
     isGoing: Object,
     answer: String,
+    resolve: {type: Function, required: true},
 });
 
-const localEvent = ref(props.event);
-const localisGoing = ref(props.isGoing);
+const localEvent = ref(null);
+const localisGoing = ref(null);
 const localAnswer = ref(props.answer);
 
-
-const emit = defineEmits(['update:modelValue']); // Highlight: Emit update for modelValue
-const textField = ref('');
+const emit = defineEmits(['update:modelValue']);
 
 // Create an internal computed property for modelValue
 const internalModelValue = computed({
     get: () => props.modelValue,
-    set: (value) => emit('update:modelValue', value), // Highlight: Emit changes
+    set: (value) => emit('update:modelValue', value),
 });
 
 function confirm() {
-    // props.resolve(true);
+    props.resolve(true);
     internalModelValue.value = false;
     profileSubmit(localAnswer.value);
-
-
 }
 
 function cancel() {
@@ -133,44 +107,22 @@ function cancel() {
 }
 
 const profileSubmit = async (answer) => {
+    const data = formData.value;
+    const params = {'answer': answer, 'data': data}
 
-    // console.log('localAnswer', answer)
-    // const data = Object.assign({}, formData.value);
-    const data =  formData.value;
-
-    const params = {'answer': answer, 'data': data  }
-
-    // console.log('para', params)
-
-    //
-    await axios.post(`/api/events/${localEvent.value.id}/answer`,  params ).then((response) => {
-
-        // profile.value = response.data
-        //
-        // // fields.value = JSON.parse(profile.value.options)
-        // fields.value = profile.value.options
-
-
-        // this.page = {title: "", body: ""};
-        // this.message = "Page saved ..link"
-    }).catch((error) => {
-        console.log(error)
-        if (error.response.status === 422) {
-            // this.creating.errors = error.response.data
-            this.editing.errors = error.response.data
+    try {
+        await axios.post(`/api/events/${localEvent.value.id}/answer`, params);
+        // Handle success if needed
+    } catch (error) {
+        console.log(error);
+        if (error.response && error.response.status === 422) {
+            this.editing.errors = error.response.data;
         }
-    })
+    }
 }
 
-//
-// // Disable the confirmation button if keyword is required but not matched
-// const confirmationButtonDisabled = computed(() => {
-//     return props.confirmationKeyword && props.confirmationKeyword !== textField.value;
-// });
-
 const eventDays = computed(() => {
-    // console.log('profile',localEvent, props.event)
-    if (!localEvent.value.start || !localEvent.value.end) return [];
+    if (!localEvent.value?.start || !localEvent.value?.end) return [];
 
     const start = new Date(localEvent.value.start);
     const end = new Date(localEvent.value.end);
@@ -187,148 +139,84 @@ const eventDays = computed(() => {
 });
 
 const profileId = computed(() => {
-
-    if (!localEvent.value.extendedProps) return null;
-
-    return localEvent.value.extendedProps.event_profile_id;
+    if (!localEvent.value?.extendedProps) return 0; // Fix 6: Return 0 instead of null
+    return localEvent.value.extendedProps.event_profile_id || 0;
 });
 
 const profileForm = async () => {
+    try {
+        const response = await axios.get(`/api/datatable/event-profiles/${profileId.value}`);
+        profile.value = response.data;
+        fields.value = profile.value.options;
 
-    await axios.get(`/api/datatable/event-profiles/${profileId.value}`).then((response) => {
+        // Fix 7: Create formData object correctly with days array
+        // Instead of trying to spread the form fields (which is an array, not an object)
+        formData.value = {days: []};
 
-        profile.value = response.data
-
-        // fields.value = JSON.parse(profile.value.options)
-        fields.value = profile.value.options
-
-    }).catch((error) => {
-        console.log(error)
-        if (error.response.status === 422) {
-            // this.creating.errors = error.response.data
-            this.editing.errors = error.response.data
+        // Fix 8: Properly initialize form fields
+        if (fields.value && fields.value.form) {
+            fields.value.form.forEach(field => {
+                // Initialize each field with appropriate default value
+                if (field.type === 'taxonomy') {
+                    formData.value[field.name] = [];
+                } else {
+                    formData.value[field.name] = '';
+                }
+            });
         }
-    })
+    } catch (error) {
+        console.log(error);
+        if (error.response && error.response.status === 422) {
+            this.editing.errors = error.response.data;
+        }
+    }
 }
 
-const getTerms = async (name, taxonomy ) => {
-
-
-    //
-    await axios.get(`/api/tag/terms/${taxonomy}`).then((response) => {
-        // console.log('responseterms',response.data)
-
-        // this.categories = this.parents = response.data.terms
-
-        taxonomieItems.value[name] = response.data.terms
-
-        // console.log('testgnaaa',name, taxonomieItems.value[name])
-
-        // fields.value = JSON.parse(profile.value.options)
-        // fields.value = profile.value.options
-
-
-        // this.page = {title: "", body: ""};
-        // this.message = "Page saved ..link"
-    }).catch((error) => {
-        console.log('error', error)
-        // if (error.response.status === 422) {
-        //     // this.creating.errors = error.response.data
-        //     this.editing.errors = error.response.data
-        // }
-    });
+const getTerms = async (name, taxonomy) => {
+    try {
+        const response = await axios.get(`/api/tag/terms/${taxonomy}`);
+        // Fix 9: Initialize object property if not exists
+        if (!taxonomieItems.value[name]) {
+            taxonomieItems.value[name] = [];
+        }
+        taxonomieItems.value[name] = response.data.terms;
+    } catch (error) {
+        console.log('error', error);
+    }
 }
-
-// const profileForm = async (() => {
-//     try {
-//
-//         const response = await axios.get(`/api/datatable/event-profiles/${localEvent.extendedProps.event_profile_id}`);
-//
-//         profile.value = response.data;
-//
-//
-//     } catch (err) {
-//         console.error('Failed to load event details:', err);
-//     } finally {
-//         loadEventDetails.value = false;
-//     }
-//
-// });
-// onMounted(profileForm);
-
-// watch(() => formData.value,
-//     (currentValue) => {
-//         console.log("Form data updated:", currentValue);
-//
-//         // Log each key and its properties
-//         Object.keys(currentValue).forEach(key => {
-//             console.log(`Key: ${key}`);
-//             console.log(`Value:`, currentValue[key]);
-//
-//             // If it's an array, log the items inside
-//             if (Array.isArray(currentValue[key])) {
-//                 currentValue[key].forEach((item, index) => {
-//                     console.log(`  ${key}[${index}]:`, item);
-//
-
-//                     if (typeof item === 'string' || item instanceof String) {
-//                         console.log('Add this to trems', item)
-//                     }
-//
-//                     // If items have properties like id/title, log them too
-//                     if (typeof item === 'object' && item !== null) {
-//                         Object.keys(item).forEach(prop => {
-//                             console.log(`    ${prop}: ${item[prop]}`);
-//                         });
-//                     }
-//                 });
-//             }
-//
-//
-//         });
-//     },
-//     {deep: true}
-// );
 
 watch(
     () => props.event,
     (newEvent) => {
-        // console.log('profilewatch', profileId)
         localEvent.value = newEvent ? JSON.parse(JSON.stringify(newEvent)) : null;
-        console.log('localEvent', newEvent)
-        console.log('profileId', profileId.value)
         if (profileId.value > 0) {
-            profileForm()
+            profileForm();
         }
     },
-    {immediate: true} // Trigger immediately to initialize localEvent
+    {immediate: true}
 );
 
 watch(
     () => props.isGoing,
     (isGoing) => {
-        // console.log('isGoing', isGoing, formData.value)
         localisGoing.value = isGoing;
-        if(!!isGoing) {
-            formData.value = isGoing.profile
+        if (isGoing && isGoing.profile) {
+            // Fix 10: Ensure days property exists
+            const profile = isGoing.profile || {};
+            formData.value = {
+                ...profile,
+                days: profile.days || []
+            };
         }
-        // console.log('isGoing', isGoing, formData.value)
-        //removed immediate option
-    }
-
+    },
+    {immediate: true} // Fix 11: Added immediate: true to initialize correctly
 );
 
 watch(
     () => props.answer,
     (answer) => {
-        // console.log('answerwatch', answer)
         localAnswer.value = answer;
-        console.log('narfanswer', answer)
     },
-    {immediate: true} // Trigger immediately to initialize localEvent
+    {immediate: true}
 );
-
-
-
-
 </script>
