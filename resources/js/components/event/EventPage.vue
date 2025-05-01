@@ -757,7 +757,7 @@ onMounted(async () => {
     .fc {
         height: 100%;
 
-        .fc-header-toolbar {
+        /*.fc-header-toolbar {
             flex-wrap: wrap;
             padding: 0.5rem;
         }
@@ -781,7 +781,7 @@ onMounted(async () => {
 
         .fc-day-today {
             background-color: rgba(var(--v-theme-primary), 0.05) !important;
-        }
+        }*/
     }
 }
 

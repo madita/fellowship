@@ -37,7 +37,7 @@ class CreateEventsTable extends Migration
             //$table->integer('event_id')->unsigned();
             $table->string('name', 255)->nullable();
 //            $table->string('slug')->unique();
-            $table->integer('event_profile_id')->unsigned();
+            $table->integer('event_profile_id')->nullable();
             $table->string('color', 45)->nullable();
             $table->text('options')->nullable();
             $table->tinyInteger('approval')->nullable();

@@ -1,65 +1,48 @@
 <template>
     <div>
-        <!-- menu level 1 -->
-        <nav-menu-item v-for="(level1Item, level1Index) in menu" :key="level1Index" :menu-item="level1Item">
-            <template v-if="level1Item.items">
-
-                <!-- menu level 2 -->
+        <v-list expand density="compact">
+            <!-- menu level 1 -->
+            <template v-for="(level1Item, level1Index) in menu" :key="level1Index">
                 <nav-menu-item
-                    v-for="(level2Item, level2Index) in level1Item.items"
-                    :key="level2Index"
-                    :menu-item="level2Item"
-                    subgroup
-                    small
+                    :menu-item="level1Item"
                 >
-                    <template v-if="level2Item.items">
-
-                        <!-- menu level 3 -->
-                        <nav-menu-item
-                            v-for="(level3Item, level3Index) in level2Item.items"
-                            :key="level3Index"
-                            :menu-item="level3Item"
-                            small
-                        />
+                    <template v-if="level1Item.items && level1Item.items.length">
+                        <!-- menu level 2 -->
+                        <template v-for="(level2Item, level2Index) in level1Item.items" :key="level2Index">
+                            <nav-menu-item
+                                :menu-item="level2Item"
+                                subgroup
+                                small
+                            >
+                                <template v-if="level2Item.items && level2Item.items.length">
+                                    <!-- menu level 3 -->
+                                    <nav-menu-item
+                                        v-for="(level3Item, level3Index) in level2Item.items"
+                                        :key="level3Index"
+                                        :menu-item="level3Item"
+                                        small
+                                    />
+                                </template>
+                            </nav-menu-item>
+                        </template>
                     </template>
                 </nav-menu-item>
             </template>
-        </nav-menu-item>
+        </v-list>
     </div>
 </template>
 
-<script>
+<script setup>
+import { ref } from 'vue'
 import NavMenuItem from './NavMenuItem.vue'
 
-/*
-|---------------------------------------------------------------------
-| Navigation Menu Component
-|---------------------------------------------------------------------
-|
-| Multi-layer navigation menu
-|
-| menu: [{ text: 'Menu Levels',
-|    items: [
-|      { text: 'Menu Levels 2.1' },
-|      { text: 'Menu Levels 2.2',
-|        items: [
-|          { text: 'Menu Levels 3.1' },
-|          { text: 'Menu Levels 3.2' }
-|        ]
-|      }
-|    ]
-|  }]
-|
-*/
-export default {
-    components: {
-        NavMenuItem
-    },
-    props: {
-        menu: {
-            type: Array,
-            default: () => []
-        }
+const props = defineProps({
+    menu: {
+        type: Array,
+        default: () => []
     }
-}
+})
+
+// Track opened menu groups
+const openGroups = ref([])
 </script>

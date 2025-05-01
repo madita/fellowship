@@ -62,7 +62,7 @@ const localError = ref(props.error);
 const localAllDay = ref(props.allDay);
 
 const timezone = ref({ timezone: undefined })
-const selectedTz = ref(11);
+const selectedTz = ref(12);
 
 const timezones = [
     { tz: 'Pacific/Midway', offset: -11 },

@@ -483,7 +483,8 @@ const filteredRecords = computed(() => {
     }
 
     // Remove the 'type' property from each record for display
-    return results.map(({ id, type, ...rest }) => rest);
+    // return results.map(({ id, type, ...rest }) => rest);
+    return results.map(({ id, ...rest }) => rest);
 });
 
 const getTerms = async (name, taxonomy) => {

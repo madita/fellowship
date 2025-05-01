@@ -24,11 +24,14 @@ const editValue = ref('');
 // Function to add a new key-value pair
 const addOption = () => {
     if (newOptionKey.value.trim() && newOptionValue.value.trim()) {
+        console.log('adding option')
+        // options.value[name][newOptionKey.value] = newOptionValue.value;
         localOption.value.push({ key: newOptionKey.value, value: newOptionValue.value });
         newOptionKey.value = '';
         newOptionValue.value = '';
-        showModal.value = false;
+        console.log(localOption)
     }
+    showModal.value = false;
 };
 
 // Function to remove an option
@@ -55,6 +58,8 @@ const saveEdit = (index) => {
 
 // Watch for changes in localOption and emit updates
 watch(localOption, (newValue) => {
+    console.log('watch', newValue)
+    // localOption.value = newValue;
     emit('update:modelValue', newValue);
 }, { deep: true });
 
@@ -80,6 +85,7 @@ watch(localOption, (newValue) => {
 
             <!-- Display Options List -->
             <ul>
+                {{localOption}}
                 <li v-for="(value, index) in localOption" :key="index" class="answer-item d-flex align-center mb-1 ml-2">
                     <template v-if="editIndex === index">
                         <v-text-field v-model="editKey" label="Key" density="compact" class="me-1 v-col-5" />

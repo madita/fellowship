@@ -50,12 +50,31 @@ const closeModal = () => {
     showModal.value = false;
 };
 
+// Function to convert object to array format expected by DataTableJsonOption
+const convertToArray = (option) => {
+    if (Array.isArray(option)) {
+        return option;
+    }
+
+    if (typeof option === 'object' && option !== null) {
+        // Convert object {key1: value1, key2: value2} to [{key: 'key1', value: 'value1'}, {key: 'key2', value: 'value2'}]
+        return Object.entries(option).map(([key, value]) => ({
+            key,
+            value
+        }));
+    }
+
+    // Default to empty array if option is not an object or array
+    return [];
+};
+
 
 // Watchers to trigger the JSON generation whenever something changes
 watch(
     () => props.options,
     (newOptions) => {
         localOptions.value = newOptions ? JSON.parse(JSON.stringify(newOptions)) : null;
+        // localOptions.value = newOptions;
     },
     { immediate: true } // Trigger immediately to initialize localEvent
 );
@@ -71,23 +90,26 @@ onMounted(() => {
 <template>
     <v-row>
         <v-col cols="12">
+            {{localOptions}}
             <h4 v-if="localOptions.length > 0">Options</h4>
 
+
             <v-row v-for="(option, name) in localOptions" :key="name" class="answer-item d-flex align-center mb-1 ml-2">
+                {{option}} {{typeof option === 'object'}} {{Array.isArray(option)}}
                 <template v-if="name === 'form'">
                     <DataTableJsonField v-model:modelFields="localOptions[name]" />
                 </template>
-                <v-select
-                    v-else-if="Array.isArray(option)"
-                    v-model="localOptions[name]"
-                    :items="defaultOptions[name]"
-                    :label="name"
-                    multiple
-                />
+<!--                <v-select-->
+<!--                    v-else-if="Array.isArray(option)"-->
+<!--                    v-model="localOptions[name]"-->
+<!--                    :items="Array.isArray(defaultOptions[name]) ? defaultOptions[name] : []"-->
+<!--                    :label="name"-->
+<!--                    multiple-->
+<!--                />-->
                 <DataTableJsonOption
                     v-else
                     :name="name"
-                    :option="defaultOptions[name]"
+                    :option="convertToArray(defaultOptions[name])"
                     v-model:modelValue="localOptions[name]"
                 />
             </v-row>

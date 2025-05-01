@@ -48,8 +48,9 @@ const fetchItems = async () => {
 
 // Compute item title dynamically
 const itemTitle = computed(() => {
+    console.log(items.value)
     if (items.value.length > 0) {
-        const possibleKeys = ['name', 'title', 'label', 'description', 'taxonomy'];
+        const possibleKeys = ['name', 'title', 'label','taxonomy', 'description'];
         return possibleKeys.find((key) => key in items.value[0]) || '';
     }
     return '';

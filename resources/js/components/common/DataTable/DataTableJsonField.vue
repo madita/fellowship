@@ -2,7 +2,7 @@
 import {ref, watch, onMounted} from 'vue';
 import DataTableJsonOption from "@/components/common/DataTable/DataTableJsonOption.vue";
 // Modal state for JSON key-value pairs
-const showModal = ref(false);
+const showModal = ref([]);
 
 const emit = defineEmits([
     'update:modelFields',
@@ -19,6 +19,24 @@ const formData = ref({});
 
 const closeModal = () => {
     showModal.value = false;
+};
+
+// Function to convert object to array format expected by DataTableJsonOption
+const convertToArray = (option) => {
+    if (Array.isArray(option)) {
+        return option;
+    }
+
+    if (typeof option === 'object' && option !== null) {
+        // Convert object {key1: value1, key2: value2} to [{key: 'key1', value: 'value1'}, {key: 'key2', value: 'value2'}]
+        return Object.entries(option).map(([key, value]) => ({
+            key,
+            value
+        }));
+    }
+
+    // Default to empty array if option is not an object or array
+    return [];
 };
 
 
@@ -143,7 +161,7 @@ onMounted(() => {
                     <template class="form-control v-col-12" v-if="field.type==='select'">
                         <DataTableJsonOption
                             :name=name
-                            :option="fields[name].options"
+                            :option="convertToArray(fields[name].options)"
                             v-model="fields[name].options">
                         </DataTableJsonOption>
 

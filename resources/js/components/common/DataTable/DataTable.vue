@@ -505,32 +505,32 @@ export default {
         }
 
         const save = () => {
-            console.log('save?')
             if (state.editedIndex > -1) {
-                // state.update()
+                update()
             } else {
-                // state.store()
+                store()
             }
         }
 
         const update = () => {
-            axios.patch(`${state.endpoint}/${state.editing.id}`, state.editedItem).then(() => {
+            axios.patch(`/api${props.endpoint}/${state.editing.id}`, state.editedItem).then(() => {
                 Object.assign(state.response.records.data[state.editedIndex], state.editedItem)
-                state.close()
-                state.getRecords().then(() => {
+                close()
+                getRecords().then(() => {
                     state.editing.id = null
                     state.editing.form = null
                     state.editedItem = Object.assign({}, state.defaultItem)
                 })
             }).catch((error) => {
-                if (error.response.status === 422) {
-                    state.editing.errors = error.response.data
-                }
+                console.log('error', error)
+                // if (error.response.status === 422) {
+                //     state.editing.errors = error.response.data
+                // }
             })
         }
 
         const store = () => {
-            axios.post(`${state.endpoint}`, state.editedItem).then(() => {
+            axios.post(`/api${props.endpoint}`, state.editedItem).then(() => {
                 state.response.records.data.push(state.editedItem)
                 state.close()
                 state.getRecords().then(() => {
@@ -553,7 +553,7 @@ export default {
                 record = record.map(item => item.id)
             }
 
-            axios.delete(`${state.endpoint}/${record}`).then(() => {
+            axios.delete(`api/${props.endpoint}/${record}`).then(() => {
                 state.getRecords()
 
             })

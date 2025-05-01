@@ -211,7 +211,8 @@ class EventController extends Controller
         $options = json_decode($eventType->options);
         $answers = [];
         foreach ($options->answers as $value => $answer) {
-            $answers[$value] = $event->answer($value)->get([ 'username']);
+//            dd($answer);
+            $answers[$answer->key] = $event->answer($answer->key)->get([ 'username']);
 
 //            $approved[$value] = $event->;
         }
@@ -355,6 +356,8 @@ class EventController extends Controller
         $eventProfile = EventProfile::find($eventType->event_profile_id);
         if(isset($eventProfile->options)) {
             $profileOptions = json_decode($eventProfile->options);
+
+
             $form = collect($profileOptions->form);
 
             $taxonomyFields = $form->where('type', 'taxonomy')->values()->all();
@@ -364,7 +367,9 @@ class EventController extends Controller
              * if new terms where added also call the edge case
              * if on the same time another person added the same Term
              */
+
             foreach ($taxonomyFields as  $item) {
+
 
                 $parent = Taxonomy::where('taxonomy', $item->options)->first();
 

@@ -17,54 +17,75 @@ class EventTypeTableSeeder extends Seeder
     public function run()
     {
         $eventType = EventType::create([
-            'name'          => 'Treffen',
-            'color'          => '#071CB4',
-            'options'             => '{
-  "answers": {
-    "going": "Yes",
-    "notgoing": "No",
-    "maybe": "Interessted"
-  },
-  "max": {
-    "going": "10"
-  },
-  "guest": [
-    "rsp"
-  ],
-  "permissions": [
-    "edit",
-    "view"
-  ],
-  "profile": [
-    "user",
-    "admin"
-  ],
-  "location": [
-    "custom",
-    "real",
-    "virtual"
-  ],
-  "showAttributtes": [
-    "allDay",
-    "image",
-    "endDate",
-    "startTime",
-    "endTime",
-    "hasMedia"
-  ]
-}',
+            'event_profile_id' => 1,
+            'name' => 'Treffen',
+            'color' => '#071CB4',
+            'options' => '{
+          "answers":
+          [
+        {
+          "key": "going",
+          "value": "Yes"
+        },
+        {
+          "key": "notgoing",
+          "value": "No"
+        },
+        {
+          "key": "maybe",
+          "value": "Interessted"
+        }
+      ],
+          "max": {
+            "going": "10"
+          },
+          "guest": [
+            "rsp"
+          ],
+          "permissions": [
+            "edit",
+            "view"
+          ],
+          "profile": [
+            "going"
+          ],
+          "location": [
+            "custom",
+            "real",
+            "virtual"
+          ],
+          "showAttributtes": [
+            "allDay",
+            "image",
+            "endDate",
+            "startTime",
+            "endTime",
+            "hasMedia"
+          ]
+        }',
 
         ]);
 
+        //make profile for character selection?
         $eventType = EventType::create([
-            'name'          => 'Live',
-            'color'          => '#37B241',
-            'options'             => '{
-  "answers": {
-    "participant": "Yes",
-    "guest": "Guest",
-    "maybe": "Interessted"
-  },
+            'name' => 'Live',
+            'color' => '#37B241',
+            'options' => '{
+  "answers":
+   [
+        {
+          "key": "participant",
+          "value": "Yes"
+        },
+        {
+          "key": "guest",
+          "value": "Guest"
+        },
+        {
+          "key": "maybe",
+          "value": "Interessted"
+        }
+      ],
   "max": {
     "going": "10"
   },
@@ -92,33 +113,33 @@ class EventTypeTableSeeder extends Seeder
 
         ]);
 
+
         $eventType = EventType::create([
-            'name'          => 'Multi',
-            'color'          => '#972828',
-            'options'             => '{
-  "answers": {
-    "going": "Yes"
-  },
+            'name' => 'Multi',
+            'color' => '#972828',
+            'options' => '{
+  "answers":
+   [
+        {
+          "key": "participant",
+          "value": "Yes"
+        }
+      ],
   "max": {
-    "going": "10"
+    "participant": "10"
   },
   "guest": [
     "approval",
-    "rsp",
-    "hasMax"
+    "rsp"
   ],
   "permissions": [
     "edit",
     "view"
   ],
   "profile": [
-    "user",
-    "admin"
+    "participant"
   ],
   "location": [
-    "custom",
-    "real",
-    "virtual"
   ],
   "showAttributtes": [
     "image",

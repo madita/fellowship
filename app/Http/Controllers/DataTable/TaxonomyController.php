@@ -16,24 +16,8 @@ class TaxonomyController extends DataTableController
     public function store(Request $request)
     {
 
-//        dd($request);
+
         $taxonomy = Taxonomy::create($request->only($this->getUpdatableColumns()));
-
-//        $data = $request->only($this->getUpdatableColumns());
-
-//        dd($data);
-//
-//
-////        $parent = $request->get('tag_taxonomy_id')??0;
-//
-////        $name = $request->get('name');
-////        $taxonomy = $request->get('taxonomy');
-//
-////        if(!$taxonomy || !$name) {
-////            return response()->json(['message' => 'error']);
-////        }
-//
-//        $taxonomy = TaxonomyHelper::createTaxables($name, $taxonomy, $parent);
 
         return response()->json(['message' => 'success', 'taxonomy' => $taxonomy], 200);
     }
@@ -42,7 +26,13 @@ class TaxonomyController extends DataTableController
 
     public function update($id, Request $request)
     {
-        //            dd($id, $request);
+        //dd($id, $request);
+
+        $taxonomy = Taxonomy::find($id);
+
+        $taxonomy->update($request->only($this->getUpdatableColumns()));
+
+        return response()->json(['message' => 'success', 'taxonomy' => $taxonomy], 200);
 
     }
 

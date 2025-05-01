@@ -57,9 +57,7 @@ class PermissionController extends DataTableController
         ]);
     }
 
-    public function show()
-    {
-    }
+
 
     public function getCustomColumnsNames()
     {

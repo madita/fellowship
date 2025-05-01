@@ -10,6 +10,7 @@ class EventType extends Model
         'name',
         'color',
         'options',
+        'event_profile_id',
         'created_at',
         'updated_at',
     ];

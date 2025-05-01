@@ -83,9 +83,14 @@ const resetEvent = () => {
 };
 
 const canJoinEvent = computed(() => {
+
     if (!localEvent.value?.id) return false;
-    const now = new Date();
-    return localEvent.value.end ? new Date(localEvent.value.end) > now : new Date(localEvent.value.start) > now;
+    // const now = new Date();
+    const utcDate = new Date();
+    utcDate.setTime(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000);
+    console.log('enddate', localEvent.value.end, utcDate )
+    // return localEvent.value.end ? new Date(localEvent.value.end) > now : new Date(localEvent.value.start) > now;
+    return localEvent.value.end ? new Date(localEvent.value.end) >= utcDate : new Date(localEvent.value.start) >= utcDate;
 });
 
 const removeEvent = () => {
@@ -226,8 +231,8 @@ const validateEndDate = () => {
 const joinEvent = (answer) => {
     const type = eventType.value;
 
-    // Don't do anything if selecting the same option that's already selected
-    if (isGoing.value && isGoing.value.type === answer) {
+    // Don't do anything if selecting the same option that's already selected, but do if profile can be changed...
+    if (isGoing.value && isGoing.value.type === answer && !type?.options?.profile?.includes(answer)) {
         return;
     }
 
@@ -665,10 +670,10 @@ watch(() => props.isDrawerOpen, resetEvent);
                             <VBtn
                                 v-for="(answer, value) in eventTypeOptions.answers"
                                 :key="`answer-${value}`"
-                                :color="value === 'yes' ? 'success' : value === 'no' ? 'error' : 'primary'"
+                                :color="answer.value === 'Yes' ? 'success' : answer.value === 'No' ? 'error' : 'primary'"
                                 :variant="isGoing && isGoing.type === value ? 'elevated' : 'outlined'"
-                                class="response-btn"
-                                @click="joinEvent(value)"
+                                class="response-btn mr-1"
+                                @click="joinEvent(answer.key)"
                             >
                                 <v-icon
                                     v-if="isGoing && isGoing.type === value"
@@ -678,7 +683,7 @@ watch(() => props.isDrawerOpen, resetEvent);
                                 >
                                     mdi-check-circle
                                 </v-icon>
-                                {{ answer }}
+                                {{ answer.value }}
                             </VBtn>
                         </div>
                     </v-card-text>
@@ -705,7 +710,7 @@ watch(() => props.isDrawerOpen, resetEvent);
                              class="mb-4">
                             <div class="d-flex align-center mb-2">
                                 <v-chip
-                                    :color="status === 'yes' ? 'success' : status === 'no' ? 'error' : 'primary'"
+                                    :color="status === 'Yes' ? 'success' : status === 'No' ? 'error' : 'primary'"
                                     size="small"
                                     class="me-2"
                                 >
@@ -726,11 +731,11 @@ watch(() => props.isDrawerOpen, resetEvent);
                     </v-card-text>
                 </v-card>
 
-                <!-- Pending Approvals Section -->
+                <!-- Pending Approvals Section TODO only show if creator(done) or admin-->
                 <v-card
                     flat
                     class="approval-card mb-4"
-                    v-if="localEvent?.extendedProps?.user_id == user.id &&
+                    v-if="localEvent?.extendedProps?.user_id === user.id &&
                          eventTypeOptions.guest &&
                          eventTypeOptions.guest.includes('approval')"
                 >
@@ -826,7 +831,7 @@ watch(() => props.isDrawerOpen, resetEvent);
 
     <!-- Dialogs -->
     <ProfileDialog
-        v-if="localEvent"
+        v-if="localEvent.id > 0"
         v-model="showProfileDialog"
         :event="localEvent"
         :is-going="isGoing"
@@ -852,6 +857,7 @@ watch(() => props.isDrawerOpen, resetEvent);
     />
 
     <DetailsDialog
+        v-if="localEvent.id > 0"
         v-model="showDetailsDialog"
         :eventGuests="eventGuests"
         :event="localEvent"
