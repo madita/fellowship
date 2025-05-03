@@ -540,14 +540,37 @@ const calendarOptions = computed(() => ({
     selectMirror: true,
     dayMaxEvents: true,
     weekends: true,
-    timeZone: 'Europe/Berlin',
-    events: filterEvents.value,
+    // Use UTC timezone for FullCalendar to properly handle the dates
+    timeZone: 'local',
+    events: filterEvents.value.map(event => {
+        // Ensure event dates are properly formatted for FullCalendar
+        const mappedEvent = { ...event };
+        if (mappedEvent.start) {
+            mappedEvent.start = new Date(mappedEvent.start).toISOString();
+        }
+        if (mappedEvent.end) {
+            mappedEvent.end = new Date(mappedEvent.end).toISOString();
+        }
+        return mappedEvent;
+    }),
     eventClick: handleEventClick,
     dateClick: handleDateClick,
     eventTimeFormat: {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false
+    },
+    // Custom event render to display times in local timezone
+    eventDidMount: function(info) {
+        // You can customize how events are displayed here
+        // For example, add custom tooltips with local times
+        if (!info.event.allDay) {
+            const startLocal = new Date(info.event.start);
+            const tooltip = format(startLocal, 'HH:mm');
+
+            // You could add a tooltip or modify the event title/time display
+            // This is optional and depends on your UI requirements
+        }
     },
     eventClassNames({ event: calendarEvent }) {
         const colorName = calendarEvent._def.extendedProps.colorName || 'primary';
@@ -606,7 +629,6 @@ const jumpToEventDate = (eventDate) => {
 };
 
 const handleEventClick = (info) => {
-    console.log('handleEventClick', info)
     selectedEvent.value = info.event;
     editMode.value = false;
     isEventHandlerSidebarActive.value = true;
@@ -615,7 +637,7 @@ const handleEventClick = (info) => {
 const handleDateClick = (info) => {
     selectedEvent.value = structuredClone(blankEvent);
     editMode.value = true;
-    selectedEvent.value.start = info.date;
+    selectedEvent.value.start = new Date(info.date);
     isEventHandlerSidebarActive.value = true;
 };
 
@@ -757,7 +779,7 @@ onMounted(async () => {
     .fc {
         height: 100%;
 
-        /*.fc-header-toolbar {
+        .fc-header-toolbar {
             flex-wrap: wrap;
             padding: 0.5rem;
         }
@@ -781,7 +803,7 @@ onMounted(async () => {
 
         .fc-day-today {
             background-color: rgba(var(--v-theme-primary), 0.05) !important;
-        }*/
+        }
     }
 }
 

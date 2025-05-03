@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, computed, nextTick } from 'vue';
+import { ref, watch, computed, nextTick, onMounted  } from 'vue';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import CustomDatePicker from "../common/CustomDatePicker.vue";
 import UserAvatar from "../common/UserAvatar.vue";
@@ -369,8 +369,7 @@ const dialogModelValueUpdate = (val) => {
 
 const rules = {
     title: [v => !!v || 'Title is required'],
-    date: [v => !!v || 'Date is required'],
-    location: [v => !!v || 'Location is required'],
+    date: [v => !!v || 'Date is required']
 };
 
 const handleConfirmation = (isConfirmed) => {
@@ -411,11 +410,98 @@ const formatDateRange = computed(() => {
     return formattedDate;
 });
 
+// Utility function to round a date to the next hour or 15-minute increment
+const roundDateToNextTimeIncrement = (date) => {
+    const now = new Date(date);
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+    const milliseconds = now.getMilliseconds();
+
+    // Find the next 15-minute increment
+    const minutesToAdd = 15 - (minutes % 15);
+
+    // If already exactly on a 15-minute mark and no seconds/ms, don't increment
+    if (minutesToAdd === 15 && seconds === 0 && milliseconds === 0) {
+        return now;
+    }
+
+    // Round to next 15-minute increment
+    now.setMinutes(minutes + minutesToAdd, 0, 0); // Reset seconds and milliseconds
+
+    return now;
+};
+
+// Handle start date change
+// Handle start date change
+const handleStartDateChange = (newStartDate) => {
+    // First, ensure the start date is properly rounded
+    if (newStartDate && !localEvent.value.allDay) {
+        // Convert to Date object if it's not already
+        const startDate = new Date(newStartDate);
+
+        // Round to next 15-minute increment
+        const roundedStartDate = roundDateToNextTimeIncrement(startDate);
+
+        // Only update if different to avoid loops
+        if (roundedStartDate.getTime() !== startDate.getTime()) {
+            localEvent.value.start = roundedStartDate;
+            newStartDate = roundedStartDate;
+        }
+    }
+
+    if (!localEvent.value.end || new Date(localEvent.value.end) < new Date(newStartDate)) {
+        // For all-day events, set the same date
+        if (localEvent.value.allDay) {
+            localEvent.value.end = newStartDate;
+        } else {
+            // For events with time, set end date 1 hour after start date
+            const endDate = new Date(newStartDate);
+
+            // If the start time was adjusted to the next hour, make sure the end time is still 1 hour later
+            endDate.setHours(endDate.getHours() + 1);
+
+            // Ensure minutes are aligned to 15-minute intervals
+            const minutes = endDate.getMinutes();
+            const roundedMinutes = Math.ceil(minutes / 15) * 15;
+            endDate.setMinutes(roundedMinutes);
+
+            localEvent.value.end = endDate;
+        }
+    }
+}
+
+// Watch for changes in the all-day toggle
+watch(() => localEvent.value.allDay, (isAllDay) => {
+    if (isAllDay && localEvent.value.start && localEvent.value.end) {
+        // If switching to all-day...
+    } else if (!localEvent.value.allDay && localEvent.value.start) {
+        // If switching from all-day to timed, set reasonable defaults
+        // Update start date to next rounded time
+        localEvent.value.start = roundDateToNextTimeIncrement(new Date());
+
+        // Set end date 1 hour after start
+        const endDate = new Date(localEvent.value.start);
+        endDate.setHours(endDate.getHours() + 1);
+        localEvent.value.end = endDate;
+    }
+});
+
 watch(() => props.editMode, () => {
     localEditMode.value = props.editMode;
 });
 
 watch(() => props.isDrawerOpen, resetEvent);
+
+onMounted(() => {
+    if (!localEvent.value.start) {
+        // Set initial start date with proper timezone handling
+        localEvent.value.start = roundDateToNextTimeIncrement(new Date());
+    } else {
+        // If we already have a date (from editing an event), ensure it's displayed correctly
+        // The date picker will handle the timezone conversion with the :utc="true" prop
+    }
+});
+
 </script>
 
 <template>
@@ -563,6 +649,9 @@ watch(() => props.isDrawerOpen, resetEvent);
                                         v-model="localEvent.start"
                                         :error="!isStartDateValid"
                                         :error-messages="['Start date is required']"
+                                        @date-selected="handleStartDateChange"
+                                        :id="'start-date'"
+                                        :all-day="localEvent.allDay"
                                     />
                                 </VCol>
 
@@ -572,6 +661,10 @@ watch(() => props.isDrawerOpen, resetEvent);
                                         v-model="localEvent.end"
                                         :error="!isEndDateValid"
                                         :error-messages="['End date is required']"
+                                        :min-date="localEvent.start"
+                                        :is-end-date="true"
+                                        :id="'end-date'"
+                                        :all-day="localEvent.allDay"
                                     />
                                 </VCol>
 

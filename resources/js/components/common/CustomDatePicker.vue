@@ -10,11 +10,19 @@
                     :class="{'v-input--error':localError}"
                     :enable-time-picker="!localAllDay"
                     :timezone="tz"
+                    :min-date="minDate"
+                    :max-date="maxDate"
+                    :minutes-increment="15"
+                    :hours-increment="1"
+                    :must-show-time-select="!localAllDay"
+                    time-picker-inline
+                    :format="dateFormat"
+                    :preview-format="dateFormat"
                     @focus="isFocused = true"
                     @blur="isFocused = false"
                     utc
                     auto-apply
-                    @input="$emit('update:modelValue', $event)"
+                    @update:model-value="handleModelUpdate"
                     class="v-text-field__slot"
                 />
             </div>
@@ -29,37 +37,40 @@
     </div>
 </template>
 
-<!--<VueDatePicker&ndash;&gt;-->
-<!--                                    locale="de"-->
-<!--                                    v-model="event.end"-->
-<!--                                    :class="{ 'error-class': !isStartDateValid }"-->
-<!--                                    :enable-time-picker="!event.allDay"-->
-<!--                                    minutes-increment="15"-->
-<!--                                    @blur="validateEndDate"-->
-<!--                                    utc-->
-<!--                                    auto-apply-->
-<!--                                    :preview-format="format"-->
-<!--                                />-->
-
 <script setup>
 import {ref, computed, watch} from 'vue';
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 
 const props = defineProps({
-    modelValue: Date|String,
+    modelValue: [Date, String],
     label: String,
     id: String,
     allDay: Boolean,
     error: Boolean,
-    errorMessages: Array
+    errorMessages: Array,
+    minDate: [Date, String], // Add this prop to pass minimum date from parent
+    maxDate: [Date, String], // Add this prop to pass maximum date from parent
+    isEndDate: {
+        type: Boolean,
+        default: false
+    },
+    format: {
+        type: String,
+        default: 'dd.MM.yyyy' // German format by default
+    }
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'date-selected']);
 const isFocused = ref(false);
 const localModelValue = ref(props.modelValue);
 const localError = ref(props.error);
 const localAllDay = ref(props.allDay);
+
+// Date format for the picker (German format: dd.MM.yyyy)
+const dateFormat = computed(() => {
+    return localAllDay.value ? props.format : `${props.format} HH:mm`;
+});
 
 const timezone = ref({ timezone: undefined })
 const selectedTz = ref(12);
@@ -97,20 +108,49 @@ const tz = computed(() => {
     return { ...timezone.value, timezone: activeTz.value.tz };
 });
 
-const maxDate = computed(() => {
-    const month = getMonth(new Date()) + 1 > 9 ? getMonth(new Date()) + 1 : `0${getMonth(new Date()) + 1}`;
-    return `${getYear(new Date())}-${month}-15T01:00:00Z`;
-});
+// Handle model update
+const handleModelUpdate = (newVal) => {
+    // If this is a new date selection and time picking is enabled
+    if (newVal && !localAllDay.value) {
+        // Round to the next hour if this is a new selection
+        const date = new Date(newVal);
+
+        // Only adjust time if it's likely a new selection (not just a time adjustment)
+        // We detect this by checking if the previous value was null or
+        // if the date part has changed (ignoring time)
+        const isNewSelection = !localModelValue.value ||
+            (date.getDate() !== new Date(localModelValue.value).getDate() ||
+                date.getMonth() !== new Date(localModelValue.value).getMonth() ||
+                date.getFullYear() !== new Date(localModelValue.value).getFullYear());
+
+        if (isNewSelection) {
+            // Round to the next full hour
+            const currentMinutes = date.getMinutes();
+            const currentSeconds = date.getSeconds();
+
+            // If we're not already at a full hour, advance to the next one
+            if (currentMinutes > 0 || currentSeconds > 0) {
+                date.setHours(date.getHours() + 1);
+                date.setMinutes(0, 0, 0); // Reset minutes, seconds, milliseconds
+            }
+
+            newVal = date;
+        }
+    }
+
+    localModelValue.value = newVal;
+    emit('update:modelValue', newVal);
+    emit('date-selected', newVal); // Emit a custom event when date is selected
+}
 
 // Watch localModelValue to check if a valid date is set
 watch(localModelValue, (newVal) => {
-    // Check if newVal is a valid date (you can adjust the condition based on your requirements)
+    // Check if newVal is a valid date
     if (newVal && !isNaN(new Date(newVal).getTime())) {
         localError.value = false; // Reset error if the date is valid
     } else if (!newVal) {
         localError.value = props.error; // Set to default error state if no date is set
     }
-    emit('update:modelValue', newVal); // Emit update event
 });
 
 // Watch for external changes to the modelValue prop
@@ -130,8 +170,8 @@ watch(() => props.allDay, (newAllDay) => {
 
 <style scoped>
 .v-input__control {
-        display: block;
-        grid-area: initial;
+    display: block;
+    grid-area: initial;
 }
 
 
@@ -206,7 +246,5 @@ watch(() => props.allDay, (newAllDay) => {
         border-bottom: 1px solid red !important;
     }
 }
-
-
 
 </style>

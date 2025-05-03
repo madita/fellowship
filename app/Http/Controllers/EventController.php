@@ -60,8 +60,8 @@ class EventController extends Controller
                 $endTemp = $event->endDate.' 23:59:59';
             }
 
-            $start = (new DateTime($startTemp))->format(DateTime::ATOM);
-            $end = (new DateTime($endTemp))->format(DateTime::ATOM);
+            $start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
+            $end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
 
 //            $extendedProps = [
 //                'calendar' => 'Treffen'
@@ -83,8 +83,8 @@ class EventController extends Controller
                 'title'       => $event->title,
                 'description' => $event->description,
                 'user_id'     => $event->user_id,
-                'start'       => $startTemp,
-                'end'         => $endTemp,
+                'start'       => $start,
+                'end'         => $end,
                 'originDate'  => $originDate,
                 //                'extendedProps'  => $extendedProps,
                 'location'       => '',
@@ -205,6 +205,30 @@ class EventController extends Controller
 
             return $guest;
         });
+
+        if ($event->startTime !== null) {
+            $startTemp = $event->startDate.' '.$event->startTime;
+            //                $startDateTime = new DateTime($event->startDate . ' ' . $event->startTime);
+            //                $start = $startDateTime->format(DateTime::ATOM); // Combine and format
+        } else {
+            $startTemp = $event->startDate.' 00:00:00';
+        }
+
+        if ($event->endTime !== null) {
+            //                $endDateTime = new DateTime($event->endDate . ' ' . $event->endTime);
+            //                $end = $endDateTime->format(DateTime::ATOM); // Combine and format
+            $endTemp = $event->endDate.' '.$event->endTime;
+        } else {
+            $endTemp = $event->endDate.' 23:59:59';
+        }
+
+//        $start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
+///        $end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
+//
+
+
+        $event->start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
+        $event->end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
 
         $eventType = EventType::find($event->event_type_id);
 

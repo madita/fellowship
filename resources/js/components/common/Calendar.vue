@@ -73,15 +73,15 @@
             </v-toolbar>
         </v-sheet>
         <v-sheet height="600">
-            <v-list-group
-                color="primary"
-                v-if="view === 'list'">
-                <v-list-item v-for="event in this.events" :key="`event-${event.id}`" two-line
-                             @click="$router.push({name: 'event-show', params: { id: event.id },})">
-                        <v-list-item-title>{{ event.name }}</v-list-item-title>
-                        <v-list-item-subtitle>{{ event.start }} - {{ event.end }}</v-list-item-subtitle>
-                </v-list-item>
-            </v-list-group>
+<!--            <v-list-group-->
+<!--                color="primary"-->
+<!--                v-if="view === 'list'">-->
+<!--                <v-list-item v-for="event in this.events" :key="`event-${event.id}`" two-line-->
+<!--                             @click="$router.push({name: 'event-show', params: { id: event.id },})">-->
+<!--                        <v-list-item-title>{{ event.name }}</v-list-item-title>-->
+<!--                        <v-list-item-subtitle>{{ event.start }} - {{ event.end }}</v-list-item-subtitle>-->
+<!--                </v-list-item>-->
+<!--            </v-list-group>-->
 <!--            <v-calendar-->
 <!--                v-show="view !== 'list'"-->
 <!--                ref="calendar"-->
@@ -96,57 +96,57 @@
 <!--                @click:more="viewDay"-->
 <!--                @click:date="viewDay"-->
 <!--            ></v-calendar>-->
-            <v-menu
-                v-model="selectedOpen"
-                :close-on-content-click="false"
-                :activator="selectedElement"
-                offset-x
-            >
-                <v-card
-                    color="grey lighten-4"
-                    min-width="350px"
-                    flat
-                >
-                    <v-toolbar
-                        :color="selectedEvent.color"
-                        dark
-                    >
-                        <v-toolbar-title v-html="selectedEvent.name"></v-toolbar-title>
-                        <v-spacer></v-spacer>
+<!--            <v-menu-->
+<!--                v-model="selectedOpen"-->
+<!--                :close-on-content-click="false"-->
+<!--                :activator="selectedElement"-->
+<!--                offset-x-->
+<!--            >-->
+<!--                <v-card-->
+<!--                    color="grey lighten-4"-->
+<!--                    min-width="350px"-->
+<!--                    flat-->
+<!--                >-->
+<!--                    <v-toolbar-->
+<!--                        :color="selectedEvent.color"-->
+<!--                        dark-->
+<!--                    >-->
+<!--                        <v-toolbar-title v-html="selectedEvent.name"></v-toolbar-title>-->
+<!--                        <v-spacer></v-spacer>-->
 
-                    </v-toolbar>
-                    <v-card-text>
-                        <v-row>
-                            <v-col cols="8"><span v-html="selectedEvent.description"></span></v-col>
-                            <v-col cols="4"><span>{{
-                                    selectedEvent.startDate | formatDate('DD.MM.YYYY')
-                                }} at {{ selectedEvent.startTime }}
-                                </span>
-                                <span>
-                                {{
-                                        selectedEvent.endDate | formatDate('DD.MM.YYYY')
-                                    }} at {{ selectedEvent.endTime }}</span>
-                            </v-col>
+<!--                    </v-toolbar>-->
+<!--                    <v-card-text>-->
+<!--                        <v-row>-->
+<!--                            <v-col cols="8"><span v-html="selectedEvent.description"></span></v-col>-->
+<!--                            <v-col cols="4"><span>{{-->
+<!--                                    selectedEvent.start | formatDate('DD.MM.YYYY H:mm')-->
+<!--                                }} at {{ selectedEvent.startTime }}-->
+<!--                                </span>-->
+<!--                                <span>-->
+<!--                                {{-->
+<!--                                        selectedEvent.end | formatDate('DD.MM.YYYY H:mm')-->
+<!--                                    }}</span>-->
+<!--                            </v-col>-->
 
-                        </v-row>
+<!--                        </v-row>-->
 
-                    </v-card-text>
-                    <v-card-actions>
-                        <v-btn
-                            color="secondary"
-                            @click="selectedOpen = false"
-                        >
-                            Cancel
-                        </v-btn>
-                        <v-btn
-                            color="secondary"
-                            @click="$router.push({name: 'event-show', params: { id: selectedEvent.id },})"
-                        >
-                            Register
-                        </v-btn>
-                    </v-card-actions>
-                </v-card>
-            </v-menu>
+<!--                    </v-card-text>-->
+<!--                    <v-card-actions>-->
+<!--                        <v-btn-->
+<!--                            color="secondary"-->
+<!--                            @click="selectedOpen = false"-->
+<!--                        >-->
+<!--                            Cancel-->
+<!--                        </v-btn>-->
+<!--                        <v-btn-->
+<!--                            color="secondary"-->
+<!--                            @click="$router.push({name: 'event-show', params: { id: selectedEvent.id },})"-->
+<!--                        >-->
+<!--                            Register-->
+<!--                        </v-btn>-->
+<!--                    </v-card-actions>-->
+<!--                </v-card>-->
+<!--            </v-menu>-->
         </v-sheet>
     </div>
 </template>
@@ -170,15 +170,16 @@ export default {
         selectedElement: null,
         selectedOpen: false,
         events: [],
+        timeZone: 'Europe/Berlin',
         colors: ['blue', 'indigo', 'deep-purple', 'cyan', 'green', 'orange', 'grey darken-1'],
         names: ['Meeting', 'Holiday', 'PTO', 'Travel', 'Event', 'Birthday', 'Conference', 'Party'],
     }),
     mounted() {
-        this.events = this.data.map(item => {
-            const start = this.getStart(item)
-            const end = this.getEnd(item)
-            return {...item, name: item.title, start: start, end: end, color: "blue"}
-        });
+        // this.events = this.data.map(item => {
+        //     const start = this.getStart(item)
+        //     const end = this.getEnd(item)
+        //     return {...item, name: item.title, start: start, end: end, color: "blue"}
+        // });
         // this.$refs.calendar.checkChange()
     },
     methods: {
@@ -227,35 +228,36 @@ export default {
         rnd(a, b) {
             return Math.floor((b - a + 1) * Math.random()) + a
         },
-        getStart(event) {
-            let start = "0000-00-00"
-            if (event.startDate !== null) {
-                start = event.startDate
-            }
-            if (event.startTime !== null) {
-                start += " " + event.startTime
-            }
-
-            return start;
-        },
-        getEnd(event) {
-            let end = "0000-00-00"
-            if (event.endDate !== null) {
-                end = event.endDate
-            }
-            if (event.endTime !== null) {
-                end += " " + event.endTime
-            }
-
-            return end;
-        }
+        // getStart(event) {
+        //     let start = "0000-00-00"
+        //     if (event.startDate !== null) {
+        //         start = event.startDate
+        //     }
+        //     if (event.startTime !== null) {
+        //         start += " " + event.startTime
+        //     }
+        //
+        //     return start;
+        // },
+        // getEnd(event) {
+        //     let end = "0000-00-00"
+        //     if (event.endDate !== null) {
+        //         end = event.endDate
+        //     }
+        //     if (event.endTime !== null) {
+        //         end += " " + event.endTime
+        //     }
+        //
+        //     return end;
+        // }
     },
     computed: {
         getEvents() {
             return this.data.map(item => {
-                const start = this.getStart(item)
-                const end = this.getEnd(item)
-                return {...item, name: item.title, start: start, end: end, color: "blue"}
+                // const start = this.getStart(item)
+                // const end = this.getEnd(item)
+                // return {...item, name: item.title, start: start, end: end, color: "blue"}
+                return {...item, name: item.title, color: "blue"}
             });
         }
     }
