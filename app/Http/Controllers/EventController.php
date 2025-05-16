@@ -394,8 +394,11 @@ class EventController extends Controller
 
             foreach ($taxonomyFields as  $item) {
 
-
+                $parentId = null;
                 $parent = Taxonomy::where('taxonomy', $item->options)->first();
+                if($parent !== null) {
+                    $parentId = $parent->id;
+                }
 
                 if(!isset($json[$item->name])) {
                     continue;
@@ -411,7 +414,7 @@ class EventController extends Controller
                             $taxonomy = Taxonomy::where('taxonomy', $item->options)
                             ->where('term_id', $term->id)->get();
                         } else {
-                            $taxonomy = TaxonomyHelper::createTaxables($termItem, $item->options, $parent->id);
+                            $taxonomy = TaxonomyHelper::createTaxables($termItem, $item->options, $parentId);
                             $term = Term::find($taxonomy->term_id);
                         }
 
@@ -419,7 +422,7 @@ class EventController extends Controller
                             "id" => $term->id,
                             "title" => $term->title,
                             "slug" => $term->slug,
-                            "parent_id" => $parent->id
+                            "parent_id" => $parentId
                         ];
 
                         $json[$item->name][$index] = $jsonTerm;

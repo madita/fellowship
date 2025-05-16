@@ -1,7 +1,6 @@
 <template>
     <!-- Bind modelValue to the dialog's v-model -->
     <VDialog v-model="internalModelValue" width="auto">
-
         <v-card
             min-width="400"
             prepend-icon="mdi-calendar"
@@ -92,34 +91,6 @@
                                 </v-card-actions>
                             </v-card>
                         </v-menu>
-
-<!--                        <v-btn-->
-<!--                            icon-->
-<!--                            variant="text"-->
-<!--                            color="primary"-->
-<!--                            @click="showColumnsBox1 = true"-->
-<!--                        >-->
-<!--                            <v-icon>mdi-view-column</v-icon>-->
-<!--                        </v-btn>-->
-<!--                        <v-card v-if="showColumnsBox">-->
-<!--                            <v-card-title>Column Visibility</v-card-title>-->
-<!--                            <v-card-text>-->
-<!--                                <v-select-->
-<!--                                    v-model="visibleColumns"-->
-<!--                                    :items="allColumnOptions"-->
-<!--                                    label="Select Columns"-->
-<!--                                    multiple-->
-<!--                                    chips-->
-<!--                                    closable-chips-->
-<!--                                    variant="outlined"-->
-<!--                                ></v-select>-->
-<!--                            </v-card-text>-->
-<!--                            <v-card-actions>-->
-<!--                                <v-spacer></v-spacer>-->
-<!--                                <v-btn color="error" variant="text" @click="resetColumns">Reset</v-btn>-->
-<!--                                <v-btn color="primary" @click="showColumnsDialog = false">Apply</v-btn>-->
-<!--                            </v-card-actions>-->
-<!--                        </v-card>-->
                     </v-col>
                 </v-row>
             </v-card-text>
@@ -158,8 +129,6 @@
 
                             <template v-if="profileId > 0">
                                 <v-col cols="12" sm="6" v-for="(field) in fields.form" :key="`field-${field.name}`">
-
-
                                     <v-select
                                         v-if="field.type==='select'"
                                         :items="field.options"
@@ -182,11 +151,10 @@
                                         @focus ="getTerms(field.name, field.options)"
                                     ></v-combobox>
 
-
                                     <v-textarea
                                         v-else-if="field.type==='textarea'"
-                                        :label="name"
-                                        :id="name"
+                                        :label="field.label"
+                                        :id="field.name"
                                         v-model="filterData[field.name]"
                                         :value="filterData[field.name]"
                                     ></v-textarea>
@@ -197,12 +165,8 @@
                                         v-model="filterData[field.name]"
                                         :value="filterData[field.name]"
                                     ></v-text-field>
-
-
                                 </v-col>
-
                             </template>
-
                         </v-row>
                     </v-card-text>
                     <v-card-actions>
@@ -237,60 +201,62 @@
             </v-dialog>
 
             <v-data-table
-                v-model:expanded="expanded"
+                :expanded="expanded"
                 :items="filteredRecords"
                 :headers="visibleHeaders"
                 :search="search"
-                expand-mode="single"
                 show-expand
                 item-value="id"
+                item-key="id"
+                @click:expand="handleExpandClick"
             >
-
-                <!-- Custom column filters -->
-                <template v-slot:top>
-                    <v-row class="pa-4">
-                        <!-- Your existing filters can go here -->
-                    </v-row>
-                </template>
-
-                <template v-slot:item.user="{ value }">
-                    <UserAvatar
-                        :user="value[0]"/> {{value[0].username}}
-                </template>
-                <template v-slot:item.days="{ value }">
-                    <v-chip v-for="itemDetail in value" :key="itemDetail.id">{{itemDetail}}</v-chip>
-                </template>
-                <template v-slot:item.games="{ value }">
-                    <v-chip v-for="itemDetail in value" :key="itemDetail.id">{{itemDetail.title}}</v-chip>
-                </template>
-                <template v-slot:item.breakfast="{ value }">
-                    <v-chip v-for="itemDetail in value" :key="itemDetail.id">{{itemDetail.title}}</v-chip>
-                </template>
-                <template v-slot:item.drinks="{ value }">
-                    <v-chip v-for="itemDetail in value" :key="itemDetail.id">{{itemDetail.title}}</v-chip>
-                </template>
-                <template v-slot:item.allergies="{ value }">
-                    <v-chip v-for="itemDetail in value" :key="itemDetail.id">{{itemDetail.title}}</v-chip>
-                </template>
-                <template v-slot:item.meals="{ value }">
-                    <v-chip v-for="itemDetail in value" :key="itemDetail.id">{{itemDetail.title}}</v-chip>
-                </template>
-                <template v-slot:item.remarks="{ value }">
-                    <template v-if="value && value.length > 0"><v-tooltip location="top"><template v-slot:activator="{ props }">
-                        <v-icon v-bind="props">mdi-info</v-icon>
+                <template v-for="header in slotHeaders" :key="header.key" v-slot:[`item.${header.key}`]="{ value }">
+                    <!-- Skip the user column as it has its own template -->
+                    <template v-if="header.key === 'user'">
+                        <UserAvatar
+                            :user="value[0]"/> {{value[0].username}}
                     </template>
-                        <span>Has remarks</span></v-tooltip></template>
-                    <template v-else>-</template>
+                    <template v-if="header.key !== 'user'">
+                        <!-- Arrays with objects (games, breakfast, etc.) -->
+                        <template v-if="value && Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && 'title' in value[0]">
+                            <v-chip v-for="itemDetail in value" :key="itemDetail.id">
+                                {{ itemDetail.title }}
+                            </v-chip>
+                        </template>
+                        <!-- Array of primitives (days) -->
+                        <template v-else-if="value && Array.isArray(value)">
+                            <v-chip v-for="(itemDetail, index) in value" :key="index">
+                                {{ itemDetail }}
+                            </v-chip>
+                        </template>
+                        <!-- Special case for remarks -->
+                        <template v-else-if="header.key === 'other'">
+                            <v-tooltip location="top" v-if="value && value.length > 0">
+                                <template v-slot:activator="{ props }">
+                                    <v-icon v-bind="props">mdi-information-outline</v-icon>
+                                </template>
+                                <span>{{ value }}</span>
+                            </v-tooltip>
+                            <template v-else>
+                                <v-icon>mdi-information-off-outline</v-icon>
+                            </template>
+                        </template>
+
+                        <!-- Default case for non-array values -->
+                        <template v-else>
+                            {{ value || '-' }}
+                        </template>
+                    </template>
                 </template>
+
                 <template v-slot:expanded-row="{ columns, item }">
                     <tr>
                         <td :colspan="columns.length">
-                            {{ item.remarks }}
+                            {{ item.other }}
                         </td>
                     </tr>
                 </template>
             </v-data-table>
-
 
             <template v-slot:actions>
                 <v-btn
@@ -321,33 +287,41 @@ const availableTypes = ref([]);
 const showFilterDialog = ref(false);
 const showColumnsDialog = ref(false);
 const showColumnsBox = ref(false);
-const fields = ref();
+const fields = ref({form: []});
 const profile = ref();
 
 // Computed property to count active filters
 const activeFiltersCount = computed(() => {
-    return Object.values(filterData.value).reduce((count, filters) => {
-        return count + filters.length;
-    }, 0);
+    let count = 0;
+    Object.values(filterData.value).forEach(filters => {
+        if (Array.isArray(filters)) {
+            count += filters.length;
+        } else if (filters) {
+            count += 1;
+        }
+    });
+    return count;
 });
 
 // Function to clear all filters
 const clearAllFilters = () => {
     Object.keys(filterData.value).forEach(key => {
-        filterData.value[key] = [];
+        if (Array.isArray(filterData.value[key])) {
+            filterData.value[key] = [];
+        } else {
+            filterData.value[key] = '';
+        }
     });
+    typeFilter.value = availableTypes.value.map(type => type.value);
 };
 
 // Function to reset columns to default
 const resetColumns = () => {
     visibleColumns.value = [...allColumns.value];
 };
+
 const openFilterDialog = () => {
-    // profileForm()
-    // if (profileId.value > 0) {
-    //     profileForm()
-    // }
-    showFilterDialog.value = true
+    showFilterDialog.value = true;
 };
 
 // Define the modelValue prop
@@ -361,7 +335,6 @@ const localGuests = ref(props.eventGuests);
 const localEvent = ref(props.event);
 
 const emit = defineEmits(['update:modelValue']);
-const textField = ref('');
 
 // Create an internal computed property for modelValue
 const internalModelValue = computed({
@@ -386,7 +359,6 @@ const allColumnOptions = computed(() => {
 // Default visible columns (you can customize this list)
 const visibleColumns = ref([]);
 
-
 // Initialize visible columns when data is loaded
 watch(allColumns, (newColumns) => {
     if (newColumns.length > 0 && visibleColumns.value.length === 0) {
@@ -403,6 +375,13 @@ const visibleHeaders = computed(() => {
     // Always add the expand column
     headers.push({ title: '', key: 'data-table-expand' });
     return headers;
+});
+
+const slotHeaders = computed(() => {
+    return visibleColumns.value.map(column => ({
+        title: column.charAt(0).toUpperCase() + column.slice(1),
+        key: column
+    }));
 });
 
 // Get unique types from guests and populate availableTypes
@@ -436,13 +415,15 @@ const filteredRecords = computed(() => {
     // Apply filters for each taxonomy
     Object.keys(filterData.value).forEach(key => {
         if(typeof filterData.value[key] === "string") {
-            results = results.filter(record => {
-                return record[key] === filterData.value[key]
-            })
+            if (filterData.value[key]) {  // Only filter if there's a value
+                results = results.filter(record => {
+                    return record[key] === filterData.value[key];
+                });
+            }
         } else {
-            const selectedIds = filterData.value[key].map(item =>
+            const selectedIds = filterData.value[key]?.map(item =>
                 typeof item === 'object' ? item.id : item
-            );
+            ) || [];
 
             if (selectedIds.length > 0) {
                 results = results.filter(record => {
@@ -450,7 +431,7 @@ const filteredRecords = computed(() => {
                     if (!record[key]) return false;
 
                     // Handle array of objects with title property (like games, breakfast, etc.)
-                    if (Array.isArray(record[key]) && record[key].length > 0 && record[key][0].hasOwnProperty('id')) {
+                    if (Array.isArray(record[key]) && record[key].length > 0 && record[key][0]?.hasOwnProperty('id')) {
                         return record[key].some(item => selectedIds.includes(item.id));
                     }
 
@@ -482,9 +463,7 @@ const filteredRecords = computed(() => {
         });
     }
 
-    // Remove the 'type' property from each record for display
-    // return results.map(({ id, type, ...rest }) => rest);
-    return results.map(({ id, ...rest }) => rest);
+    return results;
 });
 
 const getTerms = async (name, taxonomy) => {
@@ -511,29 +490,19 @@ const loadAllTaxonomies = async () => {
 
 //duplicate code...same in profileDialog
 const profileId = computed(() => {
-
-    if (!localEvent.value.extendedProps) return null;
-
-    return localEvent.value.extendedProps.event_profile_id;
+    if (!localEvent.value?.extendedProps) return 0;
+    return localEvent.value.extendedProps.event_profile_id || 0;
 });
 
 const profileForm = async () => {
-
-    await axios.get(`/api/datatable/event-profiles/${profileId.value}`).then((response) => {
-
-        profile.value = response.data
-
-        // fields.value = JSON.parse(profile.value.options)
-        fields.value = profile.value.options
-
-    }).catch((error) => {
-        console.log(error)
-        if (error.response.status === 422) {
-            // this.creating.errors = error.response.data
-            this.editing.errors = error.response.data
-        }
-    })
-}
+    try {
+        const response = await axios.get(`/api/datatable/event-profiles/${profileId.value}`);
+        profile.value = response.data;
+        fields.value = profile.value.options;
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+    }
+};
 
 watch(
     () => props.eventGuests,
@@ -551,19 +520,31 @@ watch(
 watch(
     () => props.event,
     (newEvent) => {
-        // console.log('profilewatch', profileId)
         localEvent.value = newEvent ? JSON.parse(JSON.stringify(newEvent)) : null;
         if (profileId.value > 0) {
-            profileForm()
+            profileForm();
         }
     },
-    {immediate: true} // Trigger immediately to initialize localEvent
+    {immediate: true}
 );
 
+// This is the main function that fixes the expand issue
+const handleExpandClick = (event, { item }) => {
+    if (!item?.id) return;
+
+    // If the item is already in the expanded array, remove it (collapse)
+    if (expanded.value.includes(item.id)) {
+        expanded.value = [];
+    } else {
+        // Otherwise, replace the entire expanded array with just this item's ID
+        expanded.value = [item.id];
+    }
+
+    console.log('Expanded state:', expanded.value);
+};
 
 const eventDays = computed(() => {
-    // console.log('profile',localEvent, props.event)
-    if (!localEvent.value.start || !localEvent.value.end) return [];
+    if (!localEvent.value?.start || !localEvent.value?.end) return [];
 
     const start = new Date(localEvent.value.start);
     const end = new Date(localEvent.value.end);
@@ -578,12 +559,6 @@ const eventDays = computed(() => {
 
     return days;
 });
-
-
-// Watch for changes in filter data to trigger reactivity
-// watch(filterData, () => {
-//     //console.log('Filter data changed:', filterData.value);
-// }, {deep: true});
 
 // Function to format a value for CSV export
 const formatValueForCsv = (value) => {
@@ -602,7 +577,7 @@ const formatValueForCsv = (value) => {
     }
 
     // Handle user objects
-    if (typeof value === 'object' && value !== null && Array.isArray(value) && value.length > 0 && value[0].username) {
+    if (typeof value === 'object' && value !== null && Array.isArray(value) && value.length > 0 && value[0]?.username) {
         return value[0].username;
     }
 
