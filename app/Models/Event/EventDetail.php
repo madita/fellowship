@@ -12,7 +12,7 @@ class EventDetail extends Model
     protected $fillable = [
         'lat',
         'lng',
-        'options'
+        'options',
     ];
 
     public function event()

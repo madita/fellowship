@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use App\Models\Tag\Taxonomy;
 use App\Helpers\TaxonomyHelper;
 use Illuminate\Http\Request;
 use Lecturize\Taxonomies\Models\Term;
@@ -17,12 +16,12 @@ class TermController extends DataTableController
     public function store(Request $request)
     {
 //        dd($request);
-        $parent = $request->get('tag_taxonomy_id')??0;
+        $parent = $request->get('tag_taxonomy_id') ?? 0;
 
         $name = $request->get('name');
         $taxonomy = $request->get('taxonomy');
 
-        if(!$taxonomy || !$name) {
+        if (!$taxonomy || !$name) {
             return response()->json(['message' => 'error']);
         }
 
@@ -45,9 +44,9 @@ class TermController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'name' => 'input',
-            'desc' => 'textarea',
-            'taxonomy' => 'model',
+            'name'            => 'input',
+            'desc'            => 'textarea',
+            'taxonomy'        => 'model',
             'tag_taxonomy_id' => 'model',
         ];
     }

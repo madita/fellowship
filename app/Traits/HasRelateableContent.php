@@ -4,15 +4,15 @@ namespace App\Traits;
 
 use App\Models\Relateable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Collection;
 
 trait HasRelateableContent
 {
     /** @var \Illuminate\Support\Collection|null */
     protected $relatableCache;
 
-    public function relatables() : MorphMany
+    public function relatables(): MorphMany
     {
         return $this->morphMany(Relateable::class, 'source');
     }
@@ -23,7 +23,7 @@ trait HasRelateableContent
      *
      * @return \Illuminate\Support\Collection
      */
-    public function getRelatedAttribute() : Collection
+    public function getRelatedAttribute(): Collection
     {
         if ($this->relatableCache === null) {
             $this->loadRelated();
@@ -32,7 +32,7 @@ trait HasRelateableContent
         return $this->relatableCache;
     }
 
-    public function loadRelated($reloadRelateables = true) : Collection
+    public function loadRelated($reloadRelateables = true): Collection
     {
         if ($reloadRelateables) {
             $this->load('relatables');
@@ -47,9 +47,9 @@ trait HasRelateableContent
             });
     }
 
-    public function hasRelated() : bool
+    public function hasRelated(): bool
     {
-        return ! $this->related->isEmpty();
+        return !$this->related->isEmpty();
     }
 
     /**
@@ -57,11 +57,11 @@ trait HasRelateableContent
      * morph type must be specified as a second parameter.
      *
      * @param \Illuminate\Database\Eloquent\Model|int $item
-     * @param string|null $type
+     * @param string|null                             $type
      *
      * @return \Spatie\Relateable\Relateable
      */
-    public function relate($item, string $type = '') : Relateable
+    public function relate($item, string $type = ''): Relateable
     {
         return Relateable::firstOrCreate(
             $this->getRelateableValues($item, $type)
@@ -73,11 +73,11 @@ trait HasRelateableContent
      * morph type must be specified as a second parameter.
      *
      * @param \Illuminate\Database\Eloquent\Model|int $item
-     * @param string|null $type
+     * @param string|null                             $type
      *
      * @return int
      */
-    public function unrelate($item, string $type = '') : int
+    public function unrelate($item, string $type = ''): int
     {
         return Relateable::where($this->getRelateableValues($item, $type))->delete();
     }
@@ -87,7 +87,7 @@ trait HasRelateableContent
      * with the shape of [['id' => int, 'type' => string], ...].
      *
      * @param \Illuminate\Database\Eloquent\Collection|array $items
-     * @param bool $detaching
+     * @param bool                                           $detaching
      */
     public function syncRelated($items, $detaching = true)
     {
@@ -107,20 +107,20 @@ trait HasRelateableContent
 
         $current
             ->filter(function (array $values) use ($items) {
-                return ! $items->contains($values);
+                return !$items->contains($values);
             })
             ->each(function (array $values) {
                 $this->unrelate($values['id'], $values['type']);
             });
     }
 
-    protected function getSyncRelatedValues($items) : Collection
+    protected function getSyncRelatedValues($items): Collection
     {
         if ($items instanceof Collection) {
-            return $items->map(function (Model $item) : array {
+            return $items->map(function (Model $item): array {
                 return [
                     'type' => $item->getMorphClass(),
-                    'id' => $item->getKey(),
+                    'id'   => $item->getKey(),
                 ];
             });
         }
@@ -130,22 +130,22 @@ trait HasRelateableContent
 
     /**
      * @param \Illuminate\Database\Eloquent\Model|int $item
-     * @param string|null $type
+     * @param string|null                             $type
      *
      * @return array
      */
-    protected function getRelateableValues($item, string $type = '') : array
+    protected function getRelateableValues($item, string $type = ''): array
     {
-        if (! $item instanceof Model && empty($type)) {
+        if (!$item instanceof Model && empty($type)) {
             throw new \InvalidArgumentException(
                 'If an id is specified as an item, the type isn\'t allowed to be empty.'
             );
         }
 
         return [
-            'source_id' => $this->getKey(),
-            'source_type' => $this->getMorphClass(),
-            'related_id' => $item instanceof Model ? $item->getKey() : $item,
+            'source_id'    => $this->getKey(),
+            'source_type'  => $this->getMorphClass(),
+            'related_id'   => $item instanceof Model ? $item->getKey() : $item,
             'related_type' => $item instanceof Model ? $item->getMorphClass() : $type,
         ];
     }

@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use App\Models\Event\Event;
-
 //use App\Models\Tag\Taxonomy;
 use App\Models\Event\EventType;
 use Illuminate\Http\Request;
@@ -21,7 +19,6 @@ class EventTypeController extends DataTableController
     {
 //                dd($request);
         $eventType = EventType::create($request->only($this->getUpdatableColumns()));
-
     }
 
     public function update($id, Request $request)
@@ -53,7 +50,6 @@ class EventTypeController extends DataTableController
 //        if ($request->get('terms')) {
 //            $event->addCategories($request->get('terms'), 'tags');
 //        }
-
     }
 
 //    public function jsonOptions()
@@ -70,19 +66,16 @@ class EventTypeController extends DataTableController
         //simple options
         return [
             'answers' => ['going'=>'Yes', 'notgoing'=>'No'],
-            'max' => ['going'=>'10'],
-//            'profile_details' => ['food'=>'tags','journey'=>'tags'],
-            'guest' => ['approval','rsp','hasMax'],
-            'permissions' => ['edit', 'view'],
-            'profile' => ['going'],
-            'location' => ['custom', 'real', 'virtual'],
-            'showAttributtes' => ['allDay', 'image', 'endDate', 'startTime', 'endTime', 'location', 'hasMedia' ],
+            'max'     => ['going'=>'10'],
+            //            'profile_details' => ['food'=>'tags','journey'=>'tags'],
+            'guest'           => ['approval', 'rsp', 'hasMax'],
+            'permissions'     => ['edit', 'view'],
+            'profile'         => ['going'],
+            'location'        => ['custom', 'real', 'virtual'],
+            'showAttributtes' => ['allDay', 'image', 'endDate', 'startTime', 'endTime', 'location', 'hasMedia'],
 
         ];
     }
-
-
-
 
     public function getUpdatableColumns()
     {
@@ -91,16 +84,16 @@ class EventTypeController extends DataTableController
             'event_profile_id',
             'color',
             'options',
-           ];
+        ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'color'      => 'color',
+            'color'                 => 'color',
             'event_profile_id'      => 'model',
-            'options'      => 'json',
-            ];
+            'options'               => 'json',
+        ];
     }
 
     public function getDisplayableColumns()
@@ -112,8 +105,6 @@ class EventTypeController extends DataTableController
             'color',
             'event_profile_id',
             'created_at',
-            'updated_at',];
+            'updated_at', ];
     }
-
-
 }

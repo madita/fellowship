@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Helpers\TaxonomyHelper;
@@ -20,7 +21,7 @@ class CommonController extends Controller
             return response()->json(['error' => 'Invalid parameters provided'], 400);
         }
 
-        if($foreignKeyField === 'taxonomy') {
+        if ($foreignKeyField === 'taxonomy') {
 //            dd('taxonmoy');
 //            dd(TaxonomyHelper::getTaxonomy());
 
@@ -31,7 +32,6 @@ class CommonController extends Controller
 
         // Extract the related model name from the foreign key (e.g., 'user_id' -> 'User')
         if (str_ends_with($foreignKeyField, '_id')) {
-
             //$relatedModelName = Str::studly(str_replace('_id', '', $foreignKeyField));
             $fieldWithoutId = str_replace('_id', '', $foreignKeyField);
 
@@ -45,7 +45,7 @@ class CommonController extends Controller
                 // Multiple parts (e.g., event_type_id -> App\Models\Event\Type)
                 $namespacePart = ucfirst($fieldParts[0]); // First part, used for namespace
                 $relatedModelName = Str::studly(str_replace('_id', '', $foreignKeyField));
-                if($namespacePart === 'Tag') {
+                if ($namespacePart === 'Tag') {
                     $relatedModelName = Str::replaceFirst($namespacePart, '', $relatedModelName);
                 }
 //                $modelNamePart = Str::studly(implode('_', array_slice($fieldParts, 1))); // Remaining parts combined, used for model name
@@ -72,8 +72,7 @@ class CommonController extends Controller
 
             return response()->json($items);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'An error occurred while fetching the items: ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'An error occurred while fetching the items: '.$e->getMessage()], 500);
         }
     }
 }
-

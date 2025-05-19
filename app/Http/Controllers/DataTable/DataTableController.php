@@ -90,14 +90,14 @@ abstract class DataTableController extends Controller
 
         return collect($this->getDisplayableColumns())->map(function ($column) use ($columnNames) {
             return [
-                'text' => isset($columnNames[$column]) ? $columnNames[$column] : $column,
+                'text'     => isset($columnNames[$column]) ? $columnNames[$column] : $column,
                 'sortable' => false,
-                'value' => $column,
+                'value'    => $column,
             ];
         })->add([
-            'text' => 'Actions',
+            'text'     => 'Actions',
             'sortable' => false,
-            'value' => 'actions',
+            'value'    => 'actions',
         ]);
     }
 
@@ -120,10 +120,10 @@ abstract class DataTableController extends Controller
             //if model has appended attributes and append attributes  not in displayable colimns...forget them
             $forget = array_diff($this->getAppends(), $this->getDisplayableColumns());
 //            dd($request);
-            $pagination = (int)$request->get('itemsPerPage') <= 0 ? (int)$request->get('itemsLength') : (int)$request->get('itemsPerPage');
+            $pagination = (int) $request->get('itemsPerPage') <= 0 ? (int) $request->get('itemsLength') : (int) $request->get('itemsPerPage');
 //            dd((int)$request->get('itemsLength'));
 
-            if($pagination===0) {
+            if ($pagination === 0) {
                 return $builder->orderBy('id', 'asc')->get()->makeHidden($forget);
             }
 
@@ -142,17 +142,17 @@ abstract class DataTableController extends Controller
     {
         return response()->json([
             'data' => [
-                'table' => $this->builder->getModel()->getTable(),
-                'headers' => $this->getHeaders(),
-                'records' => $this->getRecords($request),
-                'updatable' => array_values($this->getUpdatableColumns()),
-                'displayable' => array_values($this->getDisplayableColumns()),
-                'column_map' => $this->getCustomColumnsNames(),
+                'table'         => $this->builder->getModel()->getTable(),
+                'headers'       => $this->getHeaders(),
+                'records'       => $this->getRecords($request),
+                'updatable'     => array_values($this->getUpdatableColumns()),
+                'displayable'   => array_values($this->getDisplayableColumns()),
+                'column_map'    => $this->getCustomColumnsNames(),
                 'column_fields' => $this->getCustomInputFields(),
-                'json_fields' => $this->getCustomJsonFields(),
+                'json_fields'   => $this->getCustomJsonFields(),
                 'filter_fields' => $this->getFilterFields(),
-                'allow' => [
-                    'hasForm' => $this->hasForm,
+                'allow'         => [
+                    'hasForm'  => $this->hasForm,
                     'creation' => $this->allowCreation,
                     'deletion' => $this->allowDeletion,
                 ],
@@ -188,7 +188,7 @@ abstract class DataTableController extends Controller
     /**
      * Update an entity.
      *
-     * @param int $id
+     * @param int     $id
      * @param Request $request
      *
      * @return Response
@@ -201,7 +201,7 @@ abstract class DataTableController extends Controller
     /**
      * Delete an entity.
      *
-     * @param int $id
+     * @param int     $id
      * @param Request $request
      *
      * @return Response|void
@@ -264,35 +264,35 @@ abstract class DataTableController extends Controller
         return Arr::get([
             'equals' => [
                 'operator' => '=',
-                'value' => $value,
+                'value'    => $value,
             ],
             'contains' => [
                 'operator' => 'LIKE',
-                'value' => "%{$value}%",
+                'value'    => "%{$value}%",
             ],
             'starts_with' => [
                 'operator' => 'LIKE',
-                'value' => "{$value}%",
+                'value'    => "{$value}%",
             ],
             'ends_with' => [
                 'operator' => 'LIKE',
-                'value' => "%{$value}",
+                'value'    => "%{$value}",
             ],
             'greater_than' => [
                 'operator' => '>',
-                'value' => $value,
+                'value'    => $value,
             ],
             'less_than' => [
                 'operator' => '<',
-                'value' => $value,
+                'value'    => $value,
             ],
             'greater_than_or_equal_to' => [
                 'operator' => '>=',
-                'value' => $value,
+                'value'    => $value,
             ],
             'less_than_or_equal_to' => [
                 'operator' => '<=',
-                'value' => $value,
+                'value'    => $value,
             ],
         ], $operator);
     }

@@ -1,10 +1,10 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
-use Illuminate\Support\Facades\Route;
-use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,8 +79,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('events/{event}/approve-guest', ['as' => 'event.approve', 'uses' => "\App\Http\Controllers\EventController@approveGuest"]);
 });
 
-
-
 Route::get('/collections', [App\Http\Controllers\CollectionController::class, 'index']); // Fetch all collections
 Route::get('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'show']); // Fetch media for a specific collection
 Route::post('/collections', [App\Http\Controllers\CollectionController::class, 'store']); // Create a new collection
@@ -89,9 +87,8 @@ Route::patch('/media/{media}/caption', [App\Http\Controllers\CollectionControlle
 Route::delete('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'delete']); // Delete collection
 Route::delete('/media/{media}', [App\Http\Controllers\CollectionController::class, 'deleteMedia']); // Delete a media item
 
-
 Route::group(['middleware' => ['auth:sanctum']], function () {
-//Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
+    //Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
     Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');
 //    Route::get('datatable/pages/categories/{taxonomy}', 'App\Http\Controllers\DataTable\PageController@getCategories');
     Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\PostController');

@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class Wiki extends Model
 {
-
     use Sluggable;
 
     protected $table = 'wikiables';

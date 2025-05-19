@@ -16,22 +16,21 @@ class Relateable extends Model
     /** @var bool */
     public $incrementing = false;
 
-
-    public function related() : MorphTo
+    public function related(): MorphTo
     {
         return $this->morphTo('related');
     }
 
-    public function source() : MorphTo
+    public function source(): MorphTo
     {
         return $this->morphTo('source');
     }
 
-    public function getRelateableValues() : array
+    public function getRelateableValues(): array
     {
         return [
             'type' => $this->related_type,
-            'id' => $this->related_id,
+            'id'   => $this->related_id,
         ];
     }
 }

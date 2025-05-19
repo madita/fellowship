@@ -3,15 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\TaxonomyHelper;
-use Lecturize\Taxonomies\Models\Taxonomy;
-use Lecturize\Taxonomies\Models\Term;
 use App\Models\Event\Event;
-use App\Models\Event\EventType;
-use App\Models\Event\EventProfile;
 use App\Models\Event\EventGuest;
+use App\Models\Event\EventProfile;
+use App\Models\Event\EventType;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Lecturize\Taxonomies\Models\Taxonomy;
+use Lecturize\Taxonomies\Models\Term;
 
 class EventController extends Controller
 {
@@ -87,12 +87,12 @@ class EventController extends Controller
                 'end'         => $end,
                 'originDate'  => $originDate,
                 //                'extendedProps'  => $extendedProps,
-                'location'       => '',
-                'type'           => $eventTypes[$event->event_type_id]['name'],
-                'event_type_id'        => $event->event_type_id,
-                'allDay'         => ($event->startTime === null) ? true : false,
-                'colorName'      => $eventTypes[$event->event_type_id]['color'],
-                'color'          => $eventTypes[$event->event_type_id]['color'],
+                'location'                  => '',
+                'type'                      => $eventTypes[$event->event_type_id]['name'],
+                'event_type_id'             => $event->event_type_id,
+                'allDay'                    => ($event->startTime === null) ? true : false,
+                'colorName'                 => $eventTypes[$event->event_type_id]['color'],
+                'color'                     => $eventTypes[$event->event_type_id]['color'],
                 'event_profile_id'          => $eventTypes[$event->event_type_id]['event_profile_id']];
 //                'colorName'       => $eventTypes[$event->type_id]['color']];
         });
@@ -186,21 +186,21 @@ class EventController extends Controller
             /** @var \App\Models\User $user */
             $user = auth()->user();
             $isGoing = DB::table('event_guests')->where('event_id', '=', $event->id)->where('user_id', '=', $user->id)->first();
-            if($isGoing !== null)
+            if ($isGoing !== null) {
                 $isGoing->profile = json_decode($isGoing->profile);
+            }
         }
 
         $eventGuests = EventGuest::where('event_id', '=', $event->id)->get();
         $eventGuests = collect($eventGuests)->map(function (EventGuest $guest) {
-
 //            $data=array_merge($details, json_decode($guest->profile));
-            $data= json_decode($guest->profile, true);
+            $data = json_decode($guest->profile, true);
 //            array_unshift($data, $user);
-////            $data->user = $guest->user()->get([ 'id', 'username']);
+            ////            $data->user = $guest->user()->get([ 'id', 'username']);
             $data['type'] = $guest->type;
             $data['id'] = $guest->id;
 
-            $data=array("user"=>$guest->user()->get([ 'id', 'username'])) + $data;
+            $data = ['user'=>$guest->user()->get(['id', 'username'])] + $data;
             $guest = $data;
 
             return $guest;
@@ -223,9 +223,8 @@ class EventController extends Controller
         }
 
 //        $start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
-///        $end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
+        ///        $end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
 //
-
 
         $event->start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
         $event->end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
@@ -236,7 +235,7 @@ class EventController extends Controller
         $answers = [];
         foreach ($options->answers as $value => $answer) {
 //            dd($answer);
-            $answers[$answer->key] = $event->answer($answer->key)->get([ 'username']);
+            $answers[$answer->key] = $event->answer($answer->key)->get(['username']);
 
 //            $approved[$value] = $event->;
         }
@@ -245,7 +244,7 @@ class EventController extends Controller
             'event'   => $event,
             'isGoing' => $isGoing,
             'answers' => $answers,
-            'guests' => $eventGuests,
+            'guests'  => $eventGuests,
         ];
 
         return response()->json($data);
@@ -375,17 +374,14 @@ class EventController extends Controller
 
         $json = $request->get('data');
 
-
         $eventType = EventType::find($event->event_type_id);
         $eventProfile = EventProfile::find($eventType->event_profile_id);
-        if(isset($eventProfile->options)) {
+        if (isset($eventProfile->options)) {
             $profileOptions = json_decode($eventProfile->options);
-
 
             $form = collect($profileOptions->form);
 
             $taxonomyFields = $form->where('type', 'taxonomy')->values()->all();
-
 
             /**get through the profile of the event and check
              * if new terms where added also call the edge case
@@ -393,24 +389,21 @@ class EventController extends Controller
              */
 
             foreach ($taxonomyFields as  $item) {
-
                 $parentId = null;
                 $parent = Taxonomy::where('taxonomy', $item->options)->first();
-                if($parent !== null) {
+                if ($parent !== null) {
                     $parentId = $parent->id;
                 }
 
-                if(!isset($json[$item->name])) {
+                if (!isset($json[$item->name])) {
                     continue;
                 }
 
                 foreach ($json[$item->name] as $index => $termItem) {
-
                     if (is_string($termItem)) {
-
                         $term = Term::where('title', $termItem)->first();
 
-                        if($term !== null) {
+                        if ($term !== null) {
                             $taxonomy = Taxonomy::where('taxonomy', $item->options)
                             ->where('term_id', $term->id)->get();
                         } else {
@@ -419,10 +412,10 @@ class EventController extends Controller
                         }
 
                         $jsonTerm = [
-                            "id" => $term->id,
-                            "title" => $term->title,
-                            "slug" => $term->slug,
-                            "parent_id" => $parentId
+                            'id'        => $term->id,
+                            'title'     => $term->title,
+                            'slug'      => $term->slug,
+                            'parent_id' => $parentId,
                         ];
 
                         $json[$item->name][$index] = $jsonTerm;
@@ -434,14 +427,14 @@ class EventController extends Controller
         $eventGuest = $user->eventGuest()->where('event_id', $event->id)->first();
 
         $data = [
-            'type' => $answer
+            'type' => $answer,
         ];
-        if($json !== null) {
+        if ($json !== null) {
             $data['profile'] = json_encode($json);
         }
 
         if ($eventGuest) {
-            $event->allUsers()->updateExistingPivot($user->id, $data );
+            $event->allUsers()->updateExistingPivot($user->id, $data);
         } else {
             $event->allUsers()->attach($user->id, $data);
         }
@@ -473,13 +466,11 @@ class EventController extends Controller
     {
         $request->validate([
             'guestId' => 'required|integer',
-            'action' => 'required|string|in:approve,reject',
+            'action'  => 'required|string|in:approve,reject',
         ]);
 
-
-
 //        $guest = EventGuest::findOrFail($request->guestId);
-        $guest = EventGuest::where('user_id',$request->guestId)->where('event_id', $event->id)->first();
+        $guest = EventGuest::where('user_id', $request->guestId)->where('event_id', $event->id)->first();
 
         if ($request->action === 'approve') {
             $guest->approved_at = now();
@@ -491,5 +482,4 @@ class EventController extends Controller
 
         return response()->json(['message' => 'Guest approval updated successfully']);
     }
-
 }

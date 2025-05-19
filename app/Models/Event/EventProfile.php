@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class EventProfile extends Model
 {
-
     use HasTaxonomies;
 
     protected $fillable = [
@@ -23,6 +22,6 @@ class EventProfile extends Model
 
     public function creator()
     {
-        return $this->belongsTo("App\\Models\\User");
+        return $this->belongsTo('App\\Models\\User');
     }
 }

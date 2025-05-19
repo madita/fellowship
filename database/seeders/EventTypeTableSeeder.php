@@ -3,9 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Event\EventType;
-use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
 
 class EventTypeTableSeeder extends Seeder
 {
@@ -18,9 +16,9 @@ class EventTypeTableSeeder extends Seeder
     {
         $eventType = EventType::create([
             'event_profile_id' => 1,
-            'name' => 'Treffen',
-            'color' => '#071CB4',
-            'options' => '{
+            'name'             => 'Treffen',
+            'color'            => '#071CB4',
+            'options'          => '{
           "answers":
           [
         {
@@ -68,8 +66,8 @@ class EventTypeTableSeeder extends Seeder
 
         //make profile for character selection?
         $eventType = EventType::create([
-            'name' => 'Live',
-            'color' => '#37B241',
+            'name'    => 'Live',
+            'color'   => '#37B241',
             'options' => '{
   "answers":
    [
@@ -113,10 +111,9 @@ class EventTypeTableSeeder extends Seeder
 
         ]);
 
-
         $eventType = EventType::create([
-            'name' => 'Multi',
-            'color' => '#972828',
+            'name'    => 'Multi',
+            'color'   => '#972828',
             'options' => '{
   "answers":
    [
@@ -149,6 +146,5 @@ class EventTypeTableSeeder extends Seeder
 }',
 
         ]);
-
     }
 }
