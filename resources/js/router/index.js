@@ -45,30 +45,38 @@ export const routes = [{
         },
         component: () => import(/* webpackChunkName: "blank" */ '@/pages/BlankPage.vue')
     },
-    {
-        path: '/game',
-        name: 'game',
-        component: () => import(/* webpackChunkName: "game" */ '@/pages/GameDemo.vue'),
-        meta: {
-            layout: 'landing'
-        }
-    },
-    {
-        path: '/thud',
-        name: 'thud',
-        component: () => import(/* webpackChunkName: "game" */ '@/pages/ThudDemo.vue'),
-        meta: {
-            layout: 'landing'
-        }
-    },
-    {
-        path: '/sheet',
-        name: 'sheet',
-        component: () => import(/* webpackChunkName: "game" */ '@/pages/CharSheetDemo.vue'),
-        meta: {
-            layout: 'landing'
-        }
-    },
+    // {
+    //     path: '/game',
+    //     name: 'game',
+    //     component: () => import(/* webpackChunkName: "game" */ '@/pages/GameDemo.vue'),
+    //     meta: {
+    //         layout: 'landing'
+    //     }
+    // },
+    // {
+    //     path: '/thud',
+    //     name: 'thud',
+    //     component: () => import(/* webpackChunkName: "game" */ '@/pages/ThudDemo.vue'),
+    //     meta: {
+    //         layout: 'landing'
+    //     }
+    // },
+    // {
+    //     path: '/map-admin',
+    //     name: 'map-admin',
+    //     component: () => import(/* webpackChunkName: "map-admin" */ '@/pages/MapAdminDemo.vue'),
+    //     meta: {
+    //         layout: 'landing'
+    //     }
+    // },
+    // {
+    //     path: '/sheet',
+    //     name: 'sheet',
+    //     component: () => import(/* webpackChunkName: "game" */ '@/pages/CharSheetDemo.vue'),
+    //     meta: {
+    //         layout: 'landing'
+    //     }
+    // },
     {
         path: '/p/:slug',
         name: 'page',
