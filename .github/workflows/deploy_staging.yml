@@ -23,7 +23,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: '18'
 
       - name: Copy .env
         run: php -r "file_exists('.env') || copy('.env.example', '.env');"
@@ -56,7 +56,7 @@ jobs:
       - name: Install & build assets
         run: |
           npm ci
-          npm run production
+          npm run build
 
       - name: Run PHPUnit
         env:
@@ -71,14 +71,13 @@ jobs:
   build:
     needs: run-tests
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+
       - name: Setup Node.js
-        uses: actions/setup-node@v2-beta
+        uses: actions/setup-node@v3
         with:
-          node-version: '12'
+          node-version: '18'
           check-latest: true
       - name: Install NPM dependencies
         run: npm install
