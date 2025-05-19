@@ -35,7 +35,6 @@ class CollectionController extends Controller
     {
         $collection = Collection::where('slug', '=', $slug)->first();
 
-
         $collection->load('media');
 
         // Add custom properties to each media item
@@ -50,13 +49,12 @@ class CollectionController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
+            'name'        => 'required|string|max:255',
             'taxonomy_id' => 'required|integer|exists:taxonomies,id', // Validates that taxonomy exists
         ]);
 
-
         $user = auth()->user();
-        if($user->id) {
+        if ($user->id) {
             $validatedData['user_id'] = $user->id;
         }
 
@@ -68,11 +66,10 @@ class CollectionController extends Controller
     // Upload media to a collection
     public function uploadMedia(Request $request, Collection $collection)
     {
-
         $request->validate([
-            'files' => 'required|array', // Ensure files is an array
-            'files.*' => 'file|mimes:jpg,jpeg,png,gif|max:2048', // Validate each file
-            'captions' => 'nullable|array', // Optional captions
+            'files'      => 'required|array', // Ensure files is an array
+            'files.*'    => 'file|mimes:jpg,jpeg,png,gif|max:2048', // Validate each file
+            'captions'   => 'nullable|array', // Optional captions
             'captions.*' => 'nullable|string|max:255', // Validate each caption
         ]);
 
@@ -82,11 +79,9 @@ class CollectionController extends Controller
             // Add each media item to the collection
 
             $extension = $file->getClientOriginalExtension();
-            $newFilename = Str::uuid() . '.' . $extension;
+            $newFilename = Str::uuid().'.'.$extension;
             /** @var \App\Models\User $user */
             $user = auth()->user();
-
-
 
             $media = $collection->addMedia($file)
                 ->usingFileName($newFilename)
@@ -101,18 +96,17 @@ class CollectionController extends Controller
             }
 
             $uploadedMedia[] = [
-                'id' => $media->id,
-                'url' => $media->getUrl(),
+                'id'      => $media->id,
+                'url'     => $media->getUrl(),
                 'caption' => $media->getCustomProperty('caption', null),
             ];
         }
 
         return response()->json([
-            'message' => 'Media uploaded successfully',
+            'message'        => 'Media uploaded successfully',
             'uploaded_media' => $uploadedMedia,
         ]);
     }
-
 
     public function updateMediaCaption(Request $request, $mediaId)
     {
@@ -149,5 +143,4 @@ class CollectionController extends Controller
 
         return response()->json(['message' => 'Cover image updated successfully.']);
     }
-
 }

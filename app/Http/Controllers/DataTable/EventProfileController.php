@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use App\Models\Event\Event;
-
 //use App\Models\Tag\Taxonomy;
 use App\Models\Event\EventProfile;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +16,6 @@ class EventProfileController extends DataTableController
         return EventProfile::query();
     }
 
-
     public function store(Request $request)
     {
 //                dd($request);
@@ -27,7 +24,6 @@ class EventProfileController extends DataTableController
         $profile = $request->only($this->getUpdatableColumns());
         $profile['user_id'] = $user->id;
         $eventProfile = EventProfile::create($profile);
-
     }
 
     public function show($id, Request $request): JsonResponse
@@ -50,10 +46,7 @@ class EventProfileController extends DataTableController
     {
         $event = EventProfile::find($id);
         $event->update($request->only($this->getUpdatableColumns()));
-
     }
-
-
 
     public function getCustomJsonFields()
     {
@@ -68,15 +61,15 @@ class EventProfileController extends DataTableController
             'name',
             'event_type_id',
             'options',
-           ];
+        ];
     }
 
     public function getCustomInputFields()
     {
         return [
             'event_type_id'      => 'model',
-            'options'      => 'json',
-            ];
+            'options'            => 'json',
+        ];
     }
 
     public function getDisplayableColumns()
@@ -86,8 +79,6 @@ class EventProfileController extends DataTableController
             'name',
             'event_type_id',
             'created_at',
-            'updated_at',];
+            'updated_at', ];
     }
-
-
 }

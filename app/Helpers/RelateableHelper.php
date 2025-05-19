@@ -2,10 +2,9 @@
 
 namespace App\Helpers;
 
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\File;
 use App\Traits\HasRelateableContent;
-use App\Models\Relateable;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class RelateableHelper
 {
@@ -24,7 +23,7 @@ class RelateableHelper
 //            dd($relativePath);
 
             // Convert the relative path to a namespace
-            $namespace = 'App\Models\\' . str_replace('/', '\\', Str::before($file->getRelativePathname(), '.php'));
+            $namespace = 'App\Models\\'.str_replace('/', '\\', Str::before($file->getRelativePathname(), '.php'));
 
 //            dd(in_array(HasRelateableContent::class, class_uses_recursive($namespace)));
 
@@ -44,8 +43,7 @@ class RelateableHelper
         $models = [];
 
         foreach ($modelFiles as $file) {
-
-            $namespace = 'App\Models\\' . str_replace('/', '\\', Str::before($file->getRelativePathname(), '.php'));
+            $namespace = 'App\Models\\'.str_replace('/', '\\', Str::before($file->getRelativePathname(), '.php'));
 
             if (class_exists($namespace)) {
                 $models[] = $namespace;

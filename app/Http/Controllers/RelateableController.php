@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Helpers\RelateableHelper;
 use App\Models\Collection;
 use App\Models\Event\Event;
-use Illuminate\Http\Request;
 use App\Models\Relateable;
+use Illuminate\Http\Request;
 
 class RelateableController extends Controller
 {
@@ -39,10 +39,10 @@ class RelateableController extends Controller
 
         $collection = Collection::find(4);
 
-
         $post->relate($collection);
 
         $model = $request->input('model');
+
         return RelateableHelper::getModelItems($model);
     }
 
@@ -91,16 +91,16 @@ class RelateableController extends Controller
 
             return [
                 'source' => [
-                    'id' => $item->source->id,
-                    'type' => $item->source_type,
+                    'id'    => $item->source->id,
+                    'type'  => $item->source_type,
                     'title' => $this->getModelLabel($item->source),
-                    'slug' => $item->source->slug,
+                    'slug'  => $item->source->slug,
                 ],
                 'related' => [
-                    'id' => $relatedModel->id,
-                    'type' => $item->related_type,
-                    'title' => $this->getModelLabel($relatedModel),
-                    'slug' => $relatedModel->slug,
+                    'id'         => $relatedModel->id,
+                    'type'       => $item->related_type,
+                    'title'      => $this->getModelLabel($relatedModel),
+                    'slug'       => $relatedModel->slug,
                     'coverImage' => $coverImage, // Include the coverImage for related items
                 ],
             ];
@@ -108,7 +108,6 @@ class RelateableController extends Controller
 
         return response()->json(['items' => $items]);
     }
-
 
     protected function getModelLabel($model)
     {

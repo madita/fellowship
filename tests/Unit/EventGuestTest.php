@@ -27,48 +27,48 @@ class EventGuestTest extends TestCase
 
         // Create an event profile first
         $eventProfile = \App\Models\Event\EventProfile::create([
-            'name' => 'Test Event Profile',
+            'name'    => 'Test Event Profile',
             'options' => json_encode([
                 'form' => [
                     ['name' => 'days', 'type' => 'select', 'label' => 'Days'],
-                    ['name' => 'games', 'type' => 'taxonomy', 'label' => 'Games']
-                ]
-            ])
+                    ['name' => 'games', 'type' => 'taxonomy', 'label' => 'Games'],
+                ],
+            ]),
         ]);
 
         // Create an event type with event_profile_id
         $this->eventType = EventType::create([
-            'name' => 'Test Event Type',
-            'color' => '#FF0000',
+            'name'             => 'Test Event Type',
+            'color'            => '#FF0000',
             'event_profile_id' => $eventProfile->id, // Add the event_profile_id
-            'options' => json_encode([
+            'options'          => json_encode([
                 'answers' => [
-                    'going' => 'Yes',
+                    'going'    => 'Yes',
                     'notgoing' => 'No',
-                    'maybe' => 'Maybe'
-                ]
-            ])
+                    'maybe'    => 'Maybe',
+                ],
+            ]),
         ]);
 
         // Create an event
         $this->event = Event::create([
-            'title' => 'Test Event',
-            'slug' => 'test-event',
-            'user_id' => $this->user->id,
+            'title'         => 'Test Event',
+            'slug'          => 'test-event',
+            'user_id'       => $this->user->id,
             'event_type_id' => $this->eventType->id,
-            'startDate' => now()->format('Y-m-d'),
-            'endDate' => now()->addDays(2)->format('Y-m-d'),
+            'startDate'     => now()->format('Y-m-d'),
+            'endDate'       => now()->addDays(2)->format('Y-m-d'),
         ]);
 
         // Create an event guest
         $this->eventGuest = EventGuest::create([
-            'user_id' => $this->user->id,
+            'user_id'  => $this->user->id,
             'event_id' => $this->event->id,
-            'type' => 'going',
-            'profile' => json_encode([
-                'days' => ['Monday', 'Tuesday'],
-                'games' => ['Game 1', 'Game 2']
-            ])
+            'type'     => 'going',
+            'profile'  => json_encode([
+                'days'  => ['Monday', 'Tuesday'],
+                'games' => ['Game 1', 'Game 2'],
+            ]),
         ]);
     }
 
@@ -88,9 +88,9 @@ class EventGuestTest extends TestCase
     public function it_can_store_profile_data_as_json()
     {
         $profileData = [
-            'days' => ['Wednesday', 'Thursday'],
-            'games' => ['Game 3', 'Game 4'],
-            'remarks' => 'Updated remarks'
+            'days'    => ['Wednesday', 'Thursday'],
+            'games'   => ['Game 3', 'Game 4'],
+            'remarks' => 'Updated remarks',
         ];
 
         $this->eventGuest->profile = json_encode($profileData);
@@ -137,7 +137,7 @@ class EventGuestTest extends TestCase
     {
         // Check that the guest exists
         $this->assertDatabaseHas('event_guests', [
-            'id' => $this->eventGuest->id
+            'id' => $this->eventGuest->id,
         ]);
 
         // Soft delete the guest
@@ -145,7 +145,7 @@ class EventGuestTest extends TestCase
 
         // Check that the guest is soft deleted
         $this->assertSoftDeleted('event_guests', [
-            'id' => $this->eventGuest->id
+            'id' => $this->eventGuest->id,
         ]);
     }
 }

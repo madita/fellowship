@@ -9,6 +9,7 @@ use Tests\TestCase;
 class SimpleEventTest extends TestCase
 {
     use RefreshDatabase;
+
     /**
      * A basic test example.
      *
@@ -33,7 +34,7 @@ class SimpleEventTest extends TestCase
         // Accept either 200 (OK) or 302 (redirect) as valid responses
         $this->assertTrue(
             $response->status() == 200 || $response->status() == 302,
-            'Expected status code 200 or 302, got ' . $response->status()
+            'Expected status code 200 or 302, got '.$response->status()
         );
     }
 

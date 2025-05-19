@@ -31,14 +31,14 @@ class DatabaseTest extends TestCase
     {
         // Create a user
         $user = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'username' => 'testuser'
+            'name'     => 'Test User',
+            'email'    => 'test@example.com',
+            'username' => 'testuser',
         ]);
 
         // Verify the user exists in the test database
         $this->assertDatabaseHas('users', [
-            'email' => 'test@example.com'
+            'email' => 'test@example.com',
         ]);
 
         // Get the current connection name
@@ -46,6 +46,6 @@ class DatabaseTest extends TestCase
 
         // Output some debug information
         $this->assertTrue(true, "Using database connection: {$connectionName}");
-        $this->assertTrue(true, "Database path: " . config("database.connections.{$connectionName}.database"));
+        $this->assertTrue(true, 'Database path: '.config("database.connections.{$connectionName}.database"));
     }
 }

@@ -3,9 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Event\EventProfile;
-use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
 
 class EventProfileTableSeeder extends Seeder
 {
@@ -17,7 +15,7 @@ class EventProfileTableSeeder extends Seeder
     public function run()
     {
         $eventProfile = EventProfile::create([
-            'name' => 'Treffen',
+            'name'    => 'Treffen',
             'options' => '{
           "form": [
     {
@@ -79,10 +77,5 @@ class EventProfileTableSeeder extends Seeder
         }',
 
         ]);
-
-
-
-
-
     }
 }

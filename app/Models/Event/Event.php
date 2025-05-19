@@ -2,10 +2,10 @@
 
 namespace App\Models\Event;
 
+use App\Traits\HasRelateableContent;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Traits\HasRelateableContent;
 
 class Event extends Model
 {
@@ -14,7 +14,6 @@ class Event extends Model
     use HasRelateableContent;
 
     protected $table = 'events';
-
 
     public function sluggable(): array
     {
@@ -32,7 +31,7 @@ class Event extends Model
 
     public function type()
     {
-        return $this->hasOne("App\\Models\\Event\EventType", "event_type_id");
+        return $this->hasOne("App\\Models\\Event\EventType", 'event_type_id');
     }
 
     public function user()
@@ -94,7 +93,6 @@ class Event extends Model
     {
         return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', $answer)->withPivot('approved_at');
     }
-
 
 //    public function categories(){
 //        return $this->belongsToMany("App\\Models\\Category");

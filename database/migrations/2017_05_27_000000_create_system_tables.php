@@ -62,8 +62,6 @@ class CreateSystemTables extends Migration
             $table->timestamps();
         });
 
-
-
         Schema::create('collections', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -87,9 +85,7 @@ class CreateSystemTables extends Migration
                 ['source_id', 'source_type', 'related_id', 'related_type'],
                 'relatables_unique'
             );
-
         });
-
     }
 
     /**

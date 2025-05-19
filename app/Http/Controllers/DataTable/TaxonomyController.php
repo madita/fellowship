@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use App\Helpers\TaxonomyHelper;
 use App\Models\Tag\Taxonomy;
 use Illuminate\Http\Request;
 
@@ -15,14 +14,10 @@ class TaxonomyController extends DataTableController
 
     public function store(Request $request)
     {
-
-
         $taxonomy = Taxonomy::create($request->only($this->getUpdatableColumns()));
 
         return response()->json(['message' => 'success', 'taxonomy' => $taxonomy], 200);
     }
-
-
 
     public function update($id, Request $request)
     {
@@ -33,10 +28,7 @@ class TaxonomyController extends DataTableController
         $taxonomy->update($request->only($this->getUpdatableColumns()));
 
         return response()->json(['message' => 'success', 'taxonomy' => $taxonomy], 200);
-
     }
-
-
 
     public function getUpdatableColumns()
     {
@@ -50,16 +42,16 @@ class TaxonomyController extends DataTableController
             'color',
             'properties',
             'sort',
-            ];
+        ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'content'      => 'wysiwyg',
+            'content'        => 'wysiwyg',
             'description'    => 'textarea',
-            'color' => 'color',
-            'parent_id' => 'parent', ];
+            'color'          => 'color',
+            'parent_id'      => 'parent', ];
     }
 
     public function getDisplayableColumns()
@@ -77,8 +69,6 @@ class TaxonomyController extends DataTableController
             'sort',
         ];
     }
-
-
 
 //    public function update($id, TaxonomyRequest $request)
 //    {
