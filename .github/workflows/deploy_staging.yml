@@ -82,7 +82,7 @@ jobs:
       - name: Install NPM dependencies
         run: npm install
       - name: Compile assets for production
-        run: npm run production
+        run: npm run build
 
   deploy:
     needs: build
