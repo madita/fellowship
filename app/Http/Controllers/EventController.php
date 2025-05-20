@@ -364,61 +364,80 @@ class EventController extends Controller
 
     public function joinEvent(Request $request, Event $event)
     {
-//        dd($request);
-
-        /** @var \sApp\Models\User $user */
+        /** @var \App\Models\User $user */
         $user = auth()->user();
 
-        //        dd($request->all());
         $answer = $request->get('answer');
+        $jsonData = $request->get('data');
 
-        $json = $request->get('data');
+        // Check if data is already a JSON string and decode it if needed
+        if (is_string($jsonData)) {
+            $json = json_decode($jsonData, true);
+        } else {
+            $json = $jsonData;
+        }
 
+        // If JSON decoding failed, use the original data
+        if ($json === null && $jsonData !== null) {
+            $json = $jsonData;
+        }
+
+        // Handle case where event_type_id might be null
         $eventType = EventType::find($event->event_type_id);
-        $eventProfile = EventProfile::find($eventType->event_profile_id);
-        if (isset($eventProfile->options)) {
-            $profileOptions = json_decode($eventProfile->options);
+        if ($eventType && isset($eventType->event_profile_id)) {
+            $eventProfile = EventProfile::find($eventType->event_profile_id);
 
-            $form = collect($profileOptions->form);
+            // Make sure eventProfile and options exist
+            if ($eventProfile && isset($eventProfile->options)) {
+                $profileOptions = json_decode($eventProfile->options);
 
-            $taxonomyFields = $form->where('type', 'taxonomy')->values()->all();
+                // Make sure the form property exists
+                if (isset($profileOptions->form)) {
+                    $form = collect($profileOptions->form);
 
-            /**get through the profile of the event and check
-             * if new terms where added also call the edge case
-             * if on the same time another person added the same Term
-             */
+                    $taxonomyFields = $form->where('type', 'taxonomy')->values()->all();
 
-            foreach ($taxonomyFields as  $item) {
-                $parentId = null;
-                $parent = Taxonomy::where('taxonomy', $item->options)->first();
-                if ($parent !== null) {
-                    $parentId = $parent->id;
-                }
+                    // Process taxonomy fields
+                    foreach ($taxonomyFields as $item) {
+                        $parentId = null;
 
-                if (!isset($json[$item->name])) {
-                    continue;
-                }
-
-                foreach ($json[$item->name] as $index => $termItem) {
-                    if (is_string($termItem)) {
-                        $term = Term::where('title', $termItem)->first();
-
-                        if ($term !== null) {
-                            $taxonomy = Taxonomy::where('taxonomy', $item->options)
-                            ->where('term_id', $term->id)->get();
-                        } else {
-                            $taxonomy = TaxonomyHelper::createTaxables($termItem, $item->options, $parentId);
-                            $term = Term::find($taxonomy->term_id);
+                        // Check if item has options property
+                        if (!isset($item->options)) {
+                            continue;
                         }
 
-                        $jsonTerm = [
-                            'id'        => $term->id,
-                            'title'     => $term->title,
-                            'slug'      => $term->slug,
-                            'parent_id' => $parentId,
-                        ];
+                        $parent = Taxonomy::where('taxonomy', $item->options)->first();
+                        if ($parent !== null) {
+                            $parentId = $parent->id;
+                        }
 
-                        $json[$item->name][$index] = $jsonTerm;
+                        // Skip if the field doesn't exist in the submitted data
+                        if (!isset($json[$item->name]) || !is_array($json[$item->name])) {
+                            continue;
+                        }
+
+                        foreach ($json[$item->name] as $index => $termItem) {
+                            if (is_string($termItem)) {
+                                $term = Term::where('title', $termItem)->first();
+
+                                if ($term !== null) {
+                                    $taxonomy = Taxonomy::where('taxonomy', $item->options)
+                                        ->where('term_id', $term->id)->get();
+                                } else {
+                                    $taxonomy = TaxonomyHelper::createTaxables($termItem, $item->options, $parentId);
+                                    $term = Term::find($taxonomy->term_id);
+                                }
+
+                                $jsonTerm = [
+                                    'id'        => $term->id,
+                                    'title'     => $term->title,
+                                    'slug'      => $term->slug,
+                                    'parent_id' => $parentId,
+                                ];
+
+                                $json[$item->name][$index] = $jsonTerm;
+                            }
+                        }
                     }
                 }
             }
@@ -429,6 +448,7 @@ class EventController extends Controller
         $data = [
             'type' => $answer,
         ];
+
         if ($json !== null) {
             $data['profile'] = json_encode($json);
         }
@@ -439,14 +459,10 @@ class EventController extends Controller
             $event->allUsers()->attach($user->id, $data);
         }
 
-        //        return response()->json($user->eventGuest()->find($event->id)->pivot);
-        return response()->json(
-            [
-                'message' => 'joining_'.$answer,
-            ]
-        );
+        return response()->json([
+            'message' => 'joining_' . $answer,
+        ]);
     }
-
     public function getTypes()
     {
         $eventTypes = EventType::all()->keyBy('id');
@@ -464,13 +480,27 @@ class EventController extends Controller
 
     public function approveGuest(Request $request, Event $event)
     {
+        // First, validate the request
         $request->validate([
             'guestId' => 'required|integer',
             'action'  => 'required|string|in:approve,reject',
         ]);
 
-//        $guest = EventGuest::findOrFail($request->guestId);
-        $guest = EventGuest::where('user_id', $request->guestId)->where('event_id', $event->id)->first();
+        // Then check authorization
+        if ($event->user_id !== auth()->id() && !auth()->user()->can('manage-posts')) {
+            return response()->json(['message' => 'Unauthorized. Only event owners can approve guests.'], 403);
+        }
+
+        // Find the guest record by user_id and event_id
+        $guest = EventGuest::where('user_id', $request->guestId)
+            ->where('event_id', $event->id)
+            ->first();
+
+
+        // If no guest is found, return a 404 error
+        if (!$guest) {
+            return response()->json(['message' => 'Guest not found'], 404);
+        }
 
         if ($request->action === 'approve') {
             $guest->approved_at = now();

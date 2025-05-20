@@ -15,6 +15,19 @@ class Event extends Model
 
     protected $table = 'events';
 
+    protected $fillable = [
+        'title',
+        'user_id',
+        'description',
+        'image',
+        'startTime',
+        'endTime',
+        'startDate',
+        'endDate',
+        'event_type_id',
+    ];
+
+
     public function sluggable(): array
     {
         return [

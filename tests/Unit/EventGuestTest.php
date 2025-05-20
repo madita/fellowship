@@ -37,17 +37,67 @@ class EventGuestTest extends TestCase
         ]);
 
         // Create an event type with event_profile_id
-        $this->eventType = EventType::create([
-            'name'             => 'Test Event Type',
-            'color'            => '#FF0000',
-            'event_profile_id' => $eventProfile->id, // Add the event_profile_id
-            'options'          => json_encode([
-                'answers' => [
-                    'going'    => 'Yes',
-                    'notgoing' => 'No',
-                    'maybe'    => 'Maybe',
-                ],
-            ]),
+//        $this->eventType = EventType::create([
+//            'name'             => 'Test Event Type',
+//            'color'            => '#FF0000',
+//            'event_profile_id' => $eventProfile->id, // Add the event_profile_id
+//            'options'          => json_encode([
+//                'answers' => [
+//                    'going'    => 'Yes',
+//                    'notgoing' => 'No',
+//                    'maybe'    => 'Maybe',
+//                ],
+//            ]),
+//        ]);
+
+        $this->eventType =  EventType::create([
+            'event_profile_id' => 1,
+            'name'             => 'Treffen',
+            'color'            => '#071CB4',
+            'options'          => '{
+          "answers":
+          [
+        {
+          "key": "going",
+          "value": "Yes"
+        },
+        {
+          "key": "notgoing",
+          "value": "No"
+        },
+        {
+          "key": "maybe",
+          "value": "Interessted"
+        }
+      ],
+          "max": {
+            "going": "10"
+          },
+          "guest": [
+            "rsp"
+          ],
+          "permissions": [
+            "edit",
+            "view"
+          ],
+          "profile": [
+            "going"
+          ],
+          "location": [
+            "custom",
+            "real",
+            "virtual"
+          ],
+          "showAttributtes": [
+            "allDay",
+            "image",
+            "endDate",
+            "startTime",
+            "endTime",
+            "hasMedia"
+          ]
+        }',
+
         ]);
 
         // Create an event

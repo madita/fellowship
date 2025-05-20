@@ -15,7 +15,7 @@ class CreateEventsTable extends Migration
     {
         Schema::create('events', function (Blueprint $table) {
             $table->id();
-            $table->integer('user_id')->unsigned();
+            $table->integer('user_id')->nullable();
             $table->string('title');
             $table->string('slug')->unique();
             $table->longText('description')->nullable();
@@ -26,7 +26,7 @@ class CreateEventsTable extends Migration
             $table->date('endDate')->nullable();
             $table->tinyInteger('allDay')->nullable();
             $table->tinyInteger('hasMedia')->nullable();
-            $table->integer('event_type_id')->unsigned();
+            $table->integer('event_type_id')->nullable();
 //            $table->string('type')->nullable(); //gathering, meetup, rpg...story
             $table->timestamps();
             $table->softDeletes();
@@ -59,8 +59,8 @@ class CreateEventsTable extends Migration
 
         Schema::create('event_guests', function (Blueprint $table) {
             $table->id();
-            $table->integer('user_id')->unsigned();
-            $table->integer('event_id')->unsigned();
+            $table->integer('user_id')->nullable();
+            $table->integer('event_id')->nullable();
             $table->string('type')->nullable(); //yes no maybe? // master, player, guest
             $table->text('profile')->nullable();
             $table->timestamp('approved_at')->nullable(); //yes no maybe? // master, player, guest

@@ -31,26 +31,64 @@ class EventControllerTest extends TestCase
             'name'    => 'Test Event Profile',
             'options' => json_encode([
                 'form' => [
-                    ['name' => 'days', 'type' => 'select', 'label' => 'Days'],
+                    ['name' => 'remarks', 'type' => 'text', 'label' => 'Remarks'],
                     ['name' => 'games', 'type' => 'taxonomy', 'label' => 'Games'],
                 ],
             ]),
         ]);
 
         // Create an event type with options and event_profile_id
-        $this->eventType = EventType::create([
-            'name'             => 'Test Event Type',
-            'color'            => '#FF0000',
-            'event_profile_id' => $eventProfile->id, // Add the event_profile_id
-            'options'          => json_encode([
-                'answers' => [
-                    'going'    => 'Yes',
-                    'notgoing' => 'No',
-                    'maybe'    => 'Maybe',
-                ],
-                'guest' => ['approval', 'rsp'],
-            ]),
+        $this->eventType =  EventType::create([
+            'event_profile_id' => $eventProfile->id,
+            'name'             => 'Treffen',
+            'color'            => '#071CB4',
+            'options'          => '{
+          "answers":
+          [
+        {
+          "key": "going",
+          "value": "Yes"
+        },
+        {
+          "key": "notgoing",
+          "value": "No"
+        },
+        {
+          "key": "maybe",
+          "value": "Interessted"
+        }
+      ],
+          "max": {
+            "going": "10"
+          },
+          "guest": [
+            "rsp"
+          ],
+          "permissions": [
+            "edit",
+            "view"
+          ],
+          "profile": [
+            "going"
+          ],
+          "location": [
+            "custom",
+            "real",
+            "virtual"
+          ],
+          "showAttributtes": [
+            "allDay",
+            "image",
+            "endDate",
+            "startTime",
+            "endTime",
+            "hasMedia"
+          ]
+        }',
+
         ]);
+
+
 
         // Create an event
         $this->event = Event::create([
@@ -61,7 +99,11 @@ class EventControllerTest extends TestCase
             'startDate'     => now()->format('Y-m-d'),
             'endDate'       => now()->addDays(2)->format('Y-m-d'),
         ]);
+
+//        dd($this->user->id, $this->event);
     }
+
+
 
     /** @test */
     public function user_can_view_event_details()
@@ -130,8 +172,10 @@ class EventControllerTest extends TestCase
 
         $response = $this->postJson("/api/events/{$this->event->id}/answer", [
             'answer' => 'going',
-            'data'   => $profileData,
+            'data'   => json_encode($profileData),
         ]);
+
+//        dd($response);
 
         $response->assertStatus(200)
             ->assertJson([

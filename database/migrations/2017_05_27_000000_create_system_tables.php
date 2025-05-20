@@ -24,7 +24,7 @@ class CreateSystemTables extends Migration
             $table->string('slug')->unique();
             $table->string('type')->default('page'); //page, wiki
             $table->longText('content')->nullable();
-            $table->integer('user_id')->unsigned()->index('user_id');
+            $table->integer('user_id')->unsigned()->index('pages_user_id_index');
             $table->integer('parent_id')->unsigned()->default(0);
             $table->timestamps();
         });
@@ -37,7 +37,7 @@ class CreateSystemTables extends Migration
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('content')->nullable();
-            $table->integer('user_id')->unsigned()->index('user_id');
+            $table->integer('user_id')->unsigned()->index('posts_user_id_index');
             $table->string('status'); //published, draft
             $table->timestamps();
         });
