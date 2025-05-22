@@ -14,28 +14,60 @@ class TaxonomyController extends DataTableController
 
     public function store(Request $request)
     {
-        Taxonomy::create($request->only($this->getUpdatableColumns()));
+        $taxonomy = Taxonomy::create($request->only($this->getUpdatableColumns()));
+
+        return response()->json(['message' => 'success', 'taxonomy' => $taxonomy], 200);
+    }
+
+    public function update($id, Request $request)
+    {
+        //dd($id, $request);
+
+        $taxonomy = Taxonomy::find($id);
+
+        $taxonomy->update($request->only($this->getUpdatableColumns()));
+
+        return response()->json(['message' => 'success', 'taxonomy' => $taxonomy], 200);
     }
 
     public function getUpdatableColumns()
     {
-        return  [
+        return [
             'taxonomy',
-            'desc',
+            'parent_id',
+            'description',
+            'content',
+            'lead',
+            'meta_desc',
+            'color',
+            'properties',
+            'sort',
         ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'body'   => 'textarea',
-            'status' => 'radio',
-        ];
+            'content'        => 'wysiwyg',
+            'description'    => 'textarea',
+            'color'          => 'color',
+            'parent_id'      => 'parent', ];
     }
 
-    public function getCustomColumnsNames()
+    public function getDisplayableColumns()
     {
-        return ['sort'=>'sort'];
+        return [
+            'id',
+            'taxonomy',
+            'description',
+            'content',
+            'lead',
+            'meta_desc',
+            'color',
+            'parent_id',
+            'properties',
+            'sort',
+        ];
     }
 
 //    public function update($id, TaxonomyRequest $request)

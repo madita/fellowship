@@ -32,7 +32,34 @@ export const admin = [{
         ]
     },
     component: () => import(/* webpackChunkName: "admin-posts" */ '@/pages/admin/Post.vue')
-}, {
+},{
+    path: '/admin/events',
+    name: 'admin-events',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-events" */ '@/pages/admin/Event.vue')
+},{
+    path: '/admin/events/types',
+    name: 'admin-events-types',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-events-types" */ '@/pages/admin/EventType.vue')
+},{
+    path: '/admin/events/profiles',
+    name: 'admin-events-profiles',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-events-profiles" */ '@/pages/admin/EventProfile.vue')
+},{
     path: '/admin/users',
     name: 'admin-users',
     meta: {
@@ -41,6 +68,15 @@ export const admin = [{
         ]
     },
     component: () => import(/* webpackChunkName: "admin-users" */ '@/pages/admin/User.vue')
+}, {
+    path: '/admin/gallery',
+    name: 'admin-gallery',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-users" */ '@/pages/admin/Gallery.vue')
 }, {
     path: '/admin/roles',
     name: 'admin-roles',
@@ -68,7 +104,7 @@ export const admin = [{
                 auth, verified
             ]
         },
-        component: () => import(/* webpackChunkName: "admin-permissions" */ '@/pages/admin/Taxonomie.vue')
+        component: () => import(/* webpackChunkName: "admin-taxonomie" */ '@/pages/admin/Taxonomie.vue')
     },
     {
         path: '/admin/tags/terms',

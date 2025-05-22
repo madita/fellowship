@@ -1,5 +1,7 @@
 <?php
+
 //https://github.com/Lecturize/Laravel-Taxonomies/blob/master/src/Traits/HasCategories.php
+
 namespace App\Traits;
 
 //use App\Helpers\TaxonomyHelper;
@@ -37,7 +39,7 @@ trait HasTaxonomies
 //     */
 //    public function syncTerms(string|array $terms, string $taxonomy): void
 //    {
-////        $this->detachCategories();
+    ////        $this->detachCategories();
 //        $tax = Taxonomy::where('taxonomy', $taxonomy)->first();
 //        $this->detachTaxonomy($tax->id);
 //        $this->setCategories($terms, $taxonomy);
@@ -85,7 +87,7 @@ trait HasTaxonomies
 //     */
 //    public function setCategories(string|array $categories, string $taxonomy): void
 //    {
-////        $this->removeAllTerms();
+    ////        $this->removeAllTerms();
 //        $this->addTerms($categories, $taxonomy);
 //    }
 //
@@ -110,10 +112,10 @@ trait HasTaxonomies
 //     *
 //     * @param  string|array  $terms
 //     */
-////    public function addTerm($terms, string $taxonomy, ?Taxonomy $parent = null): self
-////    {
-////        return $this->addTerms($terms, $taxonomy, $parent);
-////    }
+    ////    public function addTerm($terms, string $taxonomy, ?Taxonomy $parent = null): self
+    ////    {
+    ////        return $this->addTerms($terms, $taxonomy, $parent);
+    ////    }
 //
 //    /**
 //     * Add one or multiple terms in a given taxonomy.
@@ -291,12 +293,12 @@ trait HasTaxonomies
 //     */
 //    public function scopeWithTerms($query, $terms, $taxonomy)
 //    {
-////        $terms = TaxonomyHelper::makeTermsArray($terms);
-////        foreach ($terms as $term) {
-////            $this->scopeWithTerm($query, $term, $taxonomy);
-////        }
-////
-////        return $query;
+    ////        $terms = TaxonomyHelper::makeTermsArray($terms);
+    ////        foreach ($terms as $term) {
+    ////            $this->scopeWithTerm($query, $term, $taxonomy);
+    ////        }
+    ////
+    ////        return $query;
 //
 //        if (is_string($terms))
 //            $categories = explode('|', $terms);

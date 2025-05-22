@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -50,7 +52,6 @@ Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
 Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
 Route::get('/tag/{term}/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTermInfo');
 
-
 Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
 Route::get('/pages/{page}/history', '\App\Http\Controllers\PageController@history');
 //Route::get('/pages/tag/{term}', '\App\Http\Controllers\PageController@showWithTerm');
@@ -65,10 +66,29 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::patch('/posts/{page}/edit', '\App\Http\Controllers\PostController@update');
 
     Route::get('/events/{event}/going/{answer}', "\App\Http\Controllers\EventController@isGoing");
-    Route::resource('events', "\App\Http\Controllers\EventController");
+    Route::get('/events/types', "\App\Http\Controllers\EventController@getTypes");
+    Route::post('/events/{event}/answer', "\App\Http\Controllers\EventController@joinEvent");
+//    Route::resource('events', "\App\Http\Controllers\EventController");
+    Route::get('events/create', ['as' => 'event.create', 'uses' => "\App\Http\Controllers\EventController@create"]);
+    Route::get('events', ['as' => 'event.index', 'uses' => "\App\Http\Controllers\EventController@index"]);
+    Route::post('events', ['as' => 'event.store', 'uses' => "\App\Http\Controllers\EventController@store"]);
+    Route::get('events/{event}', ['as' => 'event.show', 'uses' => "\App\Http\Controllers\EventController@show"]);
+    Route::patch('events/{event}', ['as' => 'event.update', 'uses' => "\App\Http\Controllers\EventController@update"]);
+    Route::delete('events/{event}', ['as' => 'event.destroy', 'uses' => "\App\Http\Controllers\EventController@destroy"]);
+    Route::get('events/{event}/edit', ['as' => 'event.edit', 'uses' => "\App\Http\Controllers\EventController@edit"]);
+    Route::post('events/{event}/approve-guest', ['as' => 'event.approve', 'uses' => "\App\Http\Controllers\EventController@approveGuest"]);
 });
 
-Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
+Route::get('/collections', [App\Http\Controllers\CollectionController::class, 'index']); // Fetch all collections
+Route::get('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'show']); // Fetch media for a specific collection
+Route::post('/collections', [App\Http\Controllers\CollectionController::class, 'store']); // Create a new collection
+Route::post('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'uploadMedia']); // Upload media to collection
+Route::patch('/media/{media}/caption', [App\Http\Controllers\CollectionController::class, 'updateMediaCaption']); // Update caption for a media item
+Route::delete('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'delete']); // Delete collection
+Route::delete('/media/{media}', [App\Http\Controllers\CollectionController::class, 'deleteMedia']); // Delete a media item
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    //Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
     Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');
 //    Route::get('datatable/pages/categories/{taxonomy}', 'App\Http\Controllers\DataTable\PageController@getCategories');
     Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\PostController');
@@ -80,27 +100,38 @@ Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function (
     Route::post('datatable/permissions/roles', 'App\Http\Controllers\DataTable\PermissionController@updateRolePermissions');
     Route::get('datatable/permissions/permissions', 'App\Http\Controllers\DataTable\PermissionController@permissions');
     Route::resource('datatable/permissions', 'App\Http\Controllers\DataTable\PermissionController');
+    Route::resource('datatable/events', 'App\Http\Controllers\DataTable\EventController');
+    Route::resource('datatable/event-types', 'App\Http\Controllers\DataTable\EventTypeController');
+    Route::resource('datatable/event-profiles', 'App\Http\Controllers\DataTable\EventProfileController');
 });
+
+Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']);
+Route::get('/source-models', [App\Http\Controllers\RelateableController::class, 'getSourceModels']);
+Route::get('/model-items', [App\Http\Controllers\RelateableController::class, 'getModelItems']);
+Route::post('/relate-models', [App\Http\Controllers\RelateableController::class, 'relateModels']);
+Route::post('/related-items', [App\Http\Controllers\RelateableController::class, 'getRelatedItems']);
+
+Route::get('/common/items', [App\Http\Controllers\CommonController::class, 'getItems']);
 
 Route::post('/login', function (Request $request) {
     $data = $request->validate([
-                                   'email' => 'required|email',
-                                   'password' => 'required'
-                               ]);
+        'email'    => 'required|email',
+        'password' => 'required',
+    ]);
 
     $user = User::where('email', $request->email)->first();
 
     if (!$user || !Hash::check($request->password, $user->password)) {
         return response([
-                            'message' => ['These credentials do not match our records.']
-                        ], 404);
+            'message' => ['These credentials do not match our records.'],
+        ], 404);
     }
 
     $token = $user->createToken('my-app-token')->plainTextToken;
 
     $response = [
-        'user' => $user,
-        'token' => $token
+        'user'  => $user,
+        'token' => $token,
     ];
 
     return response($response, 201);

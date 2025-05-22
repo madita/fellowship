@@ -59,7 +59,7 @@ import { capitalize } from './helpers/filters.js';
 // STYLES
 
 // Main Theme SCSS
-import '../sass/theme.scss'
+// import '../sass/theme.scss'
 
 // Animation library - https://animate.style/
 import 'animate.css/animate.min.css'
@@ -129,6 +129,7 @@ async function checkUserSession() {
             const authStore = useAuthStore();
             if(authStore.isLoggedIn) {
                 authStore.resetStore();
+                //TODO refresh page
                 console.log('automatic logout')
             }
         }

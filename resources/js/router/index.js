@@ -1,4 +1,4 @@
-import * as Vue from 'vue'
+// import * as Vue from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 // import * as store from '../store'
 
@@ -15,6 +15,7 @@ import UsersRoutes from './users.routes'
 import LandingRoutes from './landing.routes'
 import WikiRoutes from './wiki.routes'
 import AdminRoutes from './admin.routes'
+//import permission from "@/router/middleware/permission.js";
 
 //Vue.use(Router)
 
@@ -44,12 +45,55 @@ export const routes = [{
         },
         component: () => import(/* webpackChunkName: "blank" */ '@/pages/BlankPage.vue')
     },
+    // {
+    //     path: '/game',
+    //     name: 'game',
+    //     component: () => import(/* webpackChunkName: "game" */ '@/pages/GameDemo.vue'),
+    //     meta: {
+    //         layout: 'landing'
+    //     }
+    // },
+    // {
+    //     path: '/thud',
+    //     name: 'thud',
+    //     component: () => import(/* webpackChunkName: "game" */ '@/pages/ThudDemo.vue'),
+    //     meta: {
+    //         layout: 'landing'
+    //     }
+    // },
+    // {
+    //     path: '/map-admin',
+    //     name: 'map-admin',
+    //     component: () => import(/* webpackChunkName: "map-admin" */ '@/pages/MapAdminDemo.vue'),
+    //     meta: {
+    //         layout: 'landing'
+    //     }
+    // },
+    // {
+    //     path: '/sheet',
+    //     name: 'sheet',
+    //     component: () => import(/* webpackChunkName: "game" */ '@/pages/CharSheetDemo.vue'),
+    //     meta: {
+    //         layout: 'landing'
+    //     }
+    // },
     {
         path: '/p/:slug',
         name: 'page',
         component: () => import(/* webpackChunkName: "landing-pages" */ '@/pages/landing/Pages.vue'),
         meta: {
-            layout: 'landing'
+            layout: 'landing',
+            middleware: [
+                auth, verified
+            ]
+        }
+    },
+    {
+        path: '/error',
+        name: 'access-denied',
+        component: () => import(/* webpackChunkName: "error" */ '@/pages/error/NotFoundPage.vue'),
+        meta: {
+            layout: 'error'
         }
     },
     {

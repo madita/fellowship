@@ -14,7 +14,6 @@
                         validate-on="blur"
                         :label="$t('login.username')"
                         name="email"
-                        variant="outlined"
                         @keyup.enter="submit"
                     ></v-text-field>
 
@@ -26,7 +25,6 @@
                         :error-messages="[]"
                         :label="$t('login.password')"
                         name="password"
-                        variant="outlined"
                         @keyup.enter="submit"
                         @click:append="showPassword = !showPassword"
                     ></v-text-field>
@@ -256,3 +254,9 @@ const submit = async () => {
 }
 
 </script>
+
+<style>
+.v-messages {
+    text-align: left;
+}
+</style>

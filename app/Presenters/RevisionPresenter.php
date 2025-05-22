@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 
-
 class RevisionPresenter
 {
     /**
@@ -46,9 +45,9 @@ class RevisionPresenter
      * @var array
      */
     protected $actions = [
-        'created' => 'created',
-        'updated' => 'updated',
-        'deleted' => 'deleted',
+        'created'  => 'created',
+        'updated'  => 'updated',
+        'deleted'  => 'deleted',
         'restored' => 'restored',
     ];
 
@@ -77,7 +76,7 @@ class RevisionPresenter
      * Create a new revision presenter.
      *
      * @param Revision $revision
-     * @param Model $revisioned
+     * @param Model    $revisioned
      */
     public function __construct(Revision $revision, Model $revisioned)
     {
@@ -156,7 +155,7 @@ class RevisionPresenter
     /**
      * Get pass through value using dot notation.
      *
-     * @param mixed $target
+     * @param mixed  $target
      * @param string $key
      *
      * @return mixed
@@ -204,7 +203,7 @@ class RevisionPresenter
      * Get pass through value from another revision.
      *
      * @param Revision|RevisionPresenter $revision
-     * @param string $key
+     * @param string                     $key
      *
      * @return mixed
      */
@@ -222,7 +221,7 @@ class RevisionPresenter
      * Get pass through value from the Eloquent model.
      *
      * @param \Illuminate\Database\Eloquent\Model $model
-     * @param string $key
+     * @param string                              $key
      *
      * @return mixed
      */
@@ -238,27 +237,27 @@ class RevisionPresenter
      */
     protected function getVersion($version)
     {
-        if (!$this->{$version . 'Version'}) {
+        if (!$this->{$version.'Version'}) {
             $revisioned = get_class($this->revisioned);
 
             $revision = new $revisioned();
             $revision->setRawAttributes($this->{$version});
 
-            $this->{$version . 'Version'} = $revision;
+            $this->{$version.'Version'} = $revision;
         }
 
-        return $this->{$version . 'Version'};
+        return $this->{$version.'Version'};
     }
 
     /**
      * Decorate revision model or array/collection of models.
      *
-     * @param mixed $revision
+     * @param mixed                               $revision
      * @param \Illuminate\Database\Eloquent\Model $revisioned
      *
-     * @return mixed
-     *
      * @throws \InvalidArgumentException
+     *
+     * @return mixed
      */
     public static function make($revision, $revisioned)
     {
@@ -275,7 +274,7 @@ class RevisionPresenter
         }
 
         throw new \InvalidArgumentException(
-            'Presenter::make accepts array, collection or single resource, ' . gettype($revision) . ' given.'
+            'Presenter::make accepts array, collection or single resource, '.gettype($revision).' given.'
         );
     }
 
@@ -283,7 +282,7 @@ class RevisionPresenter
      * Decorate Eloquent model.
      *
      * @param \Illuminate\Database\Eloquent\Model|null $revision
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param \Illuminate\Database\Eloquent\Model      $revisioned
      *
      * @return static
      */
@@ -295,7 +294,7 @@ class RevisionPresenter
     /**
      * Decorate array of Eloquent models.
      *
-     * @param array $revisions
+     * @param array                               $revisions
      * @param \Illuminate\Database\Eloquent\Model $revisioned
      *
      * @return array
@@ -309,7 +308,7 @@ class RevisionPresenter
      * Decorate collection of models.
      *
      * @param \Illuminate\Database\Eloquent\Collection $revisions
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param \Illuminate\Database\Eloquent\Model      $revisioned
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
@@ -339,7 +338,7 @@ class RevisionPresenter
      * Handle dynamic methods calls.
      *
      * @param string $method
-     * @param array $parameters
+     * @param array  $parameters
      *
      * @return mixed
      */

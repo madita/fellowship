@@ -17,10 +17,10 @@
 
                 <v-container class="fill-height pa-9">
                     <v-row>
-                        <v-col><span>{{
-                                event.startDate | formatDate('DD.MM.YYYY')
-                            }} at {{ event.startTime }} - {{
-                                event.endDate | formatDate('DD.MM.YYYY')
+                        <v-col><span>
+                            {{ $formatDate(event.startDate, 'dd.mm.yyyy') }}
+                             at {{ event.startTime }} - {{
+                            $formatDate(event.endDate, 'dd.mm.yyyy')
                             }} at {{ event.endTime }}</span>
 
                             <h1 class="event-title">{{ event.title }}</h1></v-col>
@@ -32,7 +32,7 @@
             <v-container>
                 <div class="calendar-day">
                     <div class="calendar-day-top"></div>
-                    <div class="calendar-day-bottom">{{ event.startDate | formatDate('D') }}</div>
+                    <div class="calendar-day-bottom">{{ $formatDate(event.startDate, 'd') }}</div>
                 </div>
 
                 <v-row justify="center">
@@ -40,9 +40,33 @@
                         <div v-html="event.description"></div>
                     </v-col>
                     <v-col cols="4" class="align-content-end">
-                        <v-btn :disabled="getIsGoing('yes')" @click="register('yes')">Yes</v-btn>
-                        <v-btn :disabled="getIsGoing('no')" @click="register('no')">No</v-btn>
-                        <v-btn :disabled="getIsGoing('maybe')" @click="register('maybe')">Maybe</v-btn>
+                        <div>Are you coming?</div>
+                        <v-btn
+                            color="primary"
+                            class="me-3"
+                            :disabled="getIsGoing('going')"
+                            @click="register('going')"
+                        >
+                            Yes
+                        </v-btn>
+                        <v-btn
+                            variant="tonal"
+                            color="primary"
+                            class="me-3"
+                            :disabled="getIsGoing('notgoing')"
+                            @click="register('notgoing')"
+                        >
+                            No
+                        </v-btn>
+                        <v-btn
+                            variant="outlined"
+                            color="secondary"
+                            :disabled="getIsGoing('maybe')"
+                            @click="register('maybe')"
+                        >
+                            Maybe
+                        </v-btn>
+
 
                     <v-list-subheader>Is Going ({{ eventData.going.length }})</v-list-subheader>
                     <user-avatar v-for="user in eventData.going" :key="`going-${user.id}`" :user="user"></user-avatar>
@@ -61,8 +85,9 @@
 
 <script>
 
-import EventDatePicker from "./EventDatePicker";
-import UserAvatar from "../common/UserAvatar";
+import EventDatePicker from "./EventDatePicker.vue";
+import UserAvatar from "../common/UserAvatar.vue";
+import {formatDate} from "date-fns";
 
 export default {
     components: {
@@ -80,11 +105,12 @@ export default {
         }
     },
     methods: {
+        formatDate,
         getEvent() {
             this.isLoading = true
             return axios.get(`/api/events/${this.id}`).then((response) => {
-                this.eventData = response.data.data;
-                this.event = response.data.data.event;
+                this.eventData = response.data;
+                this.event = response.data.event;
 
                 this.isLoading = false
             });

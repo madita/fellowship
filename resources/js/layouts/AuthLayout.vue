@@ -8,7 +8,8 @@
         <div class="title my-2">Welcome! Let's build amazing things together.</div>
         <v-btn to="/" class="my-4">Take me back</v-btn>
       </div>
-      <img class="w-full" src="/images/illustrations/signin-illustration.svg" />
+        <v-img src="/images/illustrations/signin-illustration.svg" max-height="400" contain />
+<!--      <img class="w-full" src="/images/illustrations/signin-illustration.svg" />-->
     </v-sheet>
 
     <div class="pa-2 pa-md-4 flex-grow-1 align-center justify-center d-flex flex-column">

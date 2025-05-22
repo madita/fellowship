@@ -62,7 +62,7 @@
 <script>
 
 // import {mapGetters} from "vuex";
-import Tiptap from '../common/tiptap/Tiptap'
+import Tiptap from '../common/tiptap/Tiptap.vue'
 
 export default {
     components: {

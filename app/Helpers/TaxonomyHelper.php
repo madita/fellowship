@@ -18,7 +18,9 @@ class TaxonomyHelper
         $terms = self::makeTermsArray($terms);
 
         self::createTerms($terms);
-        self::createTaxonomies($terms, $taxonomy, $parent, $order);
+        $taxonomy = self::createTaxonomies($terms, $taxonomy, $parent, $order);
+
+        return $taxonomy;
     }
 
     /**
@@ -69,14 +71,18 @@ class TaxonomyHelper
                 $model = new Taxonomy();
                 $model->taxonomy = $taxonomy;
                 $model->term_id = $term_id;
-                if($parent > 0) {
+                if ($parent > 0) {
                     $model->parent_id = $parent;
                 }
 
 //                $model->sort = $order;
                 $model->save();
+
+                return $model;
             }
         }
+
+        return null;
     }
 
     /**
@@ -93,5 +99,24 @@ class TaxonomyHelper
         }
 
         return (array) $terms;
+    }
+
+    /**
+     * @param string|array $terms
+     *
+     * @return array
+     */
+    public static function getTaxonomy()
+    {
+        $taxonomy = collect(Taxonomy::select('taxonomy')
+            ->distinct()
+            ->get())->map(function (Taxonomy $taxonomy) {
+                return [
+                    'name' => $taxonomy->taxonomy,
+                    'id'   => $taxonomy->taxonomy,
+                ];
+            });
+
+        return $taxonomy;
     }
 }

@@ -198,7 +198,8 @@ export default {
     'adminTags': 'Schlagworte',
     'adminTaxonomie': 'Taxonomie',
     'adminTerms': 'Begriffe',
-    'adminAnnouncement': 'Verkündung'
+    'adminAnnouncement': 'Verkündung',
+    'adminEvents': 'Termine'
   },
   '$vuetify': {
     'badge': 'Abzeichen',

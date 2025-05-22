@@ -2,14 +2,11 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 
 class Revision extends Model
 {
-
     /**
      * The database table used by the model.
      *
@@ -163,7 +160,6 @@ class Revision extends Model
             static::$customTable = $table;
         }
     }
-
 
     /**
      * Query scope ordered.

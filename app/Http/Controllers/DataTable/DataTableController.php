@@ -110,7 +110,6 @@ abstract class DataTableController extends Controller
      */
     public function getRecords(Request $request)
     {
-
         $builder = $this->builder;
 
         if ($this->hasSearchQuery($request)) {
@@ -122,10 +121,11 @@ abstract class DataTableController extends Controller
             $forget = array_diff($this->getAppends(), $this->getDisplayableColumns());
 //            dd($request);
             $pagination = (int) $request->get('itemsPerPage') <= 0 ? (int) $request->get('itemsLength') : (int) $request->get('itemsPerPage');
+//            dd((int)$request->get('itemsLength'));
 
-//            if($pagination===0) {
-//                $pagination = 10;
-//            }
+            if ($pagination === 0) {
+                return $builder->orderBy('id', 'asc')->get()->makeHidden($forget);
+            }
 
             return $builder->orderBy('id', 'asc')->get()->makeHidden($forget)->paginate($pagination);
         } catch (QueryException $e) {
@@ -149,6 +149,8 @@ abstract class DataTableController extends Controller
                 'displayable'   => array_values($this->getDisplayableColumns()),
                 'column_map'    => $this->getCustomColumnsNames(),
                 'column_fields' => $this->getCustomInputFields(),
+                'json_fields'   => $this->getCustomJsonFields(),
+                'filter_fields' => $this->getFilterFields(),
                 'allow'         => [
                     'hasForm'  => $this->hasForm,
                     'creation' => $this->allowCreation,
@@ -156,6 +158,15 @@ abstract class DataTableController extends Controller
                 ],
             ],
         ]);
+    }
+
+    public function show($id, Request $request): JsonResponse
+    {
+        $data = $this->builder->find($id);
+
+        return response()->json(
+            $data
+        );
     }
 
     /**
@@ -184,7 +195,7 @@ abstract class DataTableController extends Controller
      */
     public function update($id, Request $request)
     {
-       return $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
+        return $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
     }
 
     /**
@@ -215,6 +226,16 @@ abstract class DataTableController extends Controller
     }
 
     public function getCustomInputFields()
+    {
+        return [];
+    }
+
+    public function getCustomJsonFields()
+    {
+        return [];
+    }
+
+    public function getFilterFields()
     {
         return [];
     }

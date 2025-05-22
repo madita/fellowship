@@ -8,7 +8,6 @@ class CreateWikiablesTable extends Migration
 {
     public function up()
     {
-
         Schema::create('wikiables', function (Blueprint $table) {
             $table->increments('id');
             $table->string('title');
@@ -19,11 +18,11 @@ class CreateWikiablesTable extends Migration
             $table->nullableTimestamps();
 
             $table->unique(
-                ['wikiable_id', 'wikiable_type'], 'wikiables_unique'
+                ['wikiable_id', 'wikiable_type'],
+                'wikiables_unique'
             );
         });
     }
-
 
     /**
      * Reverse the migrations.

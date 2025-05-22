@@ -6,8 +6,6 @@ use Carbon\Carbon;
 
 class RevisionListener
 {
-
-
     /**
      * Handle created event.
      *
@@ -75,19 +73,19 @@ class RevisionListener
 
         $revisioned->revisions()->create([
             'revisionable_type' => $revisioned->getTable(),
-            'action' => $action,
-            'user_id' => $this->getSystemUserId(),
-            'old_value' => json_encode($old),
-            'new_value' => json_encode($new),
-            'ip' => data_get($_SERVER, 'REMOTE_ADDR'),
-            'ip_forwarded' => data_get($_SERVER, 'HTTP_X_FORWARDED_FOR'),
-            'created_at' => Carbon::now(),
+            'action'            => $action,
+            'user_id'           => $this->getSystemUserId(),
+            'old_value'         => json_encode($old),
+            'new_value'         => json_encode($new),
+            'ip'                => data_get($_SERVER, 'REMOTE_ADDR'),
+            'ip_forwarded'      => data_get($_SERVER, 'HTTP_X_FORWARDED_FOR'),
+            'created_at'        => Carbon::now(),
         ]);
     }
 
     /**
      * Attempt to find the user id of the currently logged in user
-     * Supports Cartalyst Sentry/Sentinel based authentication, as well as stock Auth
+     * Supports Cartalyst Sentry/Sentinel based authentication, as well as stock Auth.
      **/
     public function getSystemUserId()
     {

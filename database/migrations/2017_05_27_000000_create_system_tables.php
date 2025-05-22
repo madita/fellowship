@@ -24,7 +24,7 @@ class CreateSystemTables extends Migration
             $table->string('slug')->unique();
             $table->string('type')->default('page'); //page, wiki
             $table->longText('content')->nullable();
-            $table->integer('user_id')->unsigned()->index('user_id');
+            $table->integer('user_id')->unsigned()->index('pages_user_id_index');
             $table->integer('parent_id')->unsigned()->default(0);
             $table->timestamps();
         });
@@ -37,7 +37,7 @@ class CreateSystemTables extends Migration
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('content')->nullable();
-            $table->integer('user_id')->unsigned()->index('user_id');
+            $table->integer('user_id')->unsigned()->index('posts_user_id_index');
             $table->string('status'); //published, draft
             $table->timestamps();
         });
@@ -61,6 +61,31 @@ class CreateSystemTables extends Migration
             //$table->integer('icon_id');
             $table->timestamps();
         });
+
+        Schema::create('collections', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('slug')->unique();
+//            $table->string('type'); // album collectio, page collections (epic)
+//            $table->string('cover_image');
+            $table->integer('taxonomy_id')->nullable();
+            $table->integer('user_id');
+//            $table->foreignId('taxonomy_id')->constrained()->onDelete('cascade');
+            $table->timestamps();
+        });
+
+        Schema::create('relateables', function (Blueprint $table) {
+            $table->string('source_type');
+            $table->unsignedInteger('source_id');
+            $table->string('related_type');
+            $table->unsignedInteger('related_id');
+            $table->timestamps();
+
+            $table->unique(
+                ['source_id', 'source_type', 'related_id', 'related_type'],
+                'relatables_unique'
+            );
+        });
     }
 
     /**
@@ -70,9 +95,11 @@ class CreateSystemTables extends Migration
      */
     public function down()
     {
-        Schema::drop('likeable');
-        Schema::drop('statuses');
-        Schema::drop('pages');
-        Schema::drop('posts');
+        Schema::dropIfExists('likeable');
+        Schema::dropIfExists('statuses');
+        Schema::dropIfExists('pages');
+        Schema::dropIfExists('posts');
+        Schema::dropIfExists('collections');
+        Schema::dropIfExists('relateables');
     }
 }

@@ -41,6 +41,7 @@ class PermissionController extends DataTableController
 //            dd($rolePermissions);
 //            Permission::findById()
         }
+
 //        $roles = Role::with('permissions')->get();
         return response()->json([
             'data' => 'done',
@@ -54,10 +55,6 @@ class PermissionController extends DataTableController
         return response()->json([
             'data' => $permissions,
         ]);
-    }
-
-    public function show()
-    {
     }
 
     public function getCustomColumnsNames()
