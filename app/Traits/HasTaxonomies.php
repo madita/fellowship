@@ -391,7 +391,7 @@ trait HasTaxonomies
     /**
      * Convenience method to sync categories.
      */
-    public function syncCategories(string $terms, string $taxonomy): void
+    public function syncCategories(string|array $terms, string $taxonomy): void
     {
         $this->detachCategories();
         $this->setCategories($terms, $taxonomy);
