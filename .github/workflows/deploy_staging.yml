@@ -167,10 +167,20 @@ jobs:
 
             # Create directory if it doesn't exist
             echo 'Creating/accessing target directory...'
-            mkdir -p '${{ secrets.PATH_STAGING }}' || mkdir -p '${{ secrets.PATH_STAGING }}' || { echo 'Failed to create directory'; exit 1; }
+            mkdir -p '${{ secrets.PATH_STAGING }}' || sudo mkdir -p '${{ secrets.PATH_STAGING }}' || { echo 'Failed to create directory'; exit 1; }
             cd '${{ secrets.PATH_STAGING }}' || { echo 'Failed to change to target directory'; exit 1; }
 
             echo 'Successfully changed to: \$(pwd)'
+
+            # Check if DOT_ENV_STAGING secret exists and has content
+            echo 'Checking DOT_ENV_STAGING secret...'
+            if [ -z "${{ secrets.DOT_ENV_STAGING }}" ]; then
+              echo "ERROR: DOT_ENV_STAGING secret is empty or not set!"
+              echo "Please check GitHub Settings → Secrets and variables → Actions"
+              exit 1
+            fi
+
+            echo "DOT_ENV_STAGING secret found with $(echo '${{ secrets.DOT_ENV_STAGING }}' | wc -l) lines"
 
             # Create .env file
             echo 'Creating .env file...'
@@ -178,7 +188,26 @@ jobs:
           ${{ secrets.DOT_ENV_STAGING }}
           ENVEOF
 
-            echo '.env file created successfully'
+            # Check if .env file was created with content
+            if [ ! -s .env ]; then
+              echo "ERROR: .env file is empty after creation!"
+              echo "This means DOT_ENV_STAGING secret is empty or contains only whitespace"
+              echo "Current .env file size: $(wc -c < .env) bytes"
+              exit 1
+            fi
+
+            # Install Node.js and npm if not present
+            echo 'Checking Node.js and npm installation...'
+            if ! command -v npm &> /dev/null; then
+              echo 'npm not found. Installing Node.js and npm...'
+              curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+              echo "Node.js version: $(node --version)"
+              echo "npm version: $(npm --version)"
+            else
+              echo "npm found: $(npm --version)"
+              echo "Node.js version: $(node --version)"
+            fi
 
             # Run deployment script if it exists
             if [ -f 'server_deploy.sh' ]; then
