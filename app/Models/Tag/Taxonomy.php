@@ -11,13 +11,13 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Faker\Core\Uuid;
 //use Webpatser\Uuid\Uuid;
 
 class Taxonomy extends Model
 {
-    use SoftDeletes;
 
 //    protected $table = 'taxonomies';
     /**
@@ -153,7 +153,11 @@ class Taxonomy extends Model
         $key = "taxonomies.$this->id.breadcrumbs";
         $key.= $exclude_self ? '.self-excluded' : '';
 
-        return maybe_tagged_cache(['taxonomies', 'taxonomies:taxonomy', "taxonomies:taxonomy:$this->id"])->rememberForever($key, function() use($exclude_self) {
+        return Cache::tags([
+                 'taxonomies',
+                 'taxonomies:taxonomy',
+                 "taxonomies:taxonomy:{$this->id}"
+             ])->rememberForever($key, function() use ($exclude_self) {
             $parameters = $this->getParentBreadcrumbs();
 
             if (! $exclude_self)
@@ -161,6 +165,8 @@ class Taxonomy extends Model
 
             return $parameters->reverse()->values();
         });
+
+
     }
 
     /**

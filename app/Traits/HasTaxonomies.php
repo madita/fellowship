@@ -47,7 +47,7 @@ trait HasTaxonomies
      */
     public function attachTaxonomy(int $taxonomy_id): void
     {
-        if (! $this->taxonomies()->where('id', $taxonomy_id)->first())
+        if (!$this->taxonomies()->where('id', $taxonomy_id)->first())
             $this->taxonomies()->attach($taxonomy_id);
     }
 
@@ -167,7 +167,7 @@ trait HasTaxonomies
      */
     public function hasCategory(string $term_title, string $taxonomy = ''): bool
     {
-        return (bool) $this->getCategory($term_title, $taxonomy);
+        return (bool)$this->getCategory($term_title, $taxonomy);
     }
 
     /**
@@ -184,7 +184,7 @@ trait HasTaxonomies
      */
     public function detachCategory(string $term_title, string $taxonomy = ''): ?int
     {
-        if (! $term = $this->getCategory($term_title, $taxonomy))
+        if (!$term = $this->getCategory($term_title, $taxonomy))
             return null;
 
         if ($taxonomy) {
@@ -239,9 +239,13 @@ trait HasTaxonomies
     public function scopeCategorized(Builder $query, string $category, string $taxonomy): Builder
     {
         $term_ids = Taxonomy::where('taxonomy', $taxonomy)->pluck('term_id');
-        $term     = Term::whereIn('id', $term_ids)->where('title', $category)->first();
+        $term = Term::whereIn('id', $term_ids)->where('title', $category)->first();
 
-        return $query->whereHas('taxonomies', function($q) use($term) {
+        if (!$term) {
+            return $query->whereRaw('0 = 1'); // Return empty result set
+        }
+
+        return $query->whereHas('taxonomies', function ($q) use ($term) {
             $q->where('term_id', $term->id);
         });
     }
@@ -272,8 +276,8 @@ trait HasTaxonomies
     /**
      * Scope by given taxonomy.
      *
-     * @param  Builder            $query
-     * @param  Taxonomy|int|null  $taxonomy
+     * @param Builder $query
+     * @param Taxonomy|int|null $taxonomy
      * @return Builder
      */
     public function scopeWithinTaxonomy(Builder $query, Taxonomy|int|null $taxonomy): Builder
@@ -286,18 +290,18 @@ trait HasTaxonomies
             return $query;
         }
 
-        return $query->whereHas('taxonomies', function($q) use($taxonomy_id) {
+        return $query->whereHas('taxonomies', function ($q) use ($taxonomy_id) {
             $q->where('taxonomy_id', $taxonomy_id);
         });
     }
 
     /**
      * Scope by given taxonomy.
+     * @param Builder $query
+     * @param Taxonomy|int|null $taxonomy
+     * @return Builder
      * @deprecated This seemed confusing, use scopeWithinTaxonomy() instead.
      *
-     * @param  Builder            $query
-     * @param  Taxonomy|int|null  $taxonomy
-     * @return Builder
      */
     public function scopeHasCategory(Builder $query, Taxonomy|int|null $taxonomy): Builder
     {
@@ -307,8 +311,8 @@ trait HasTaxonomies
     /**
      * Scope by taxonomies.
      *
-     * @param  Builder                           $query
-     * @param  Collection|Taxonomy[]|array|null  $taxonomies
+     * @param Builder $query
+     * @param Collection|Taxonomy[]|array|null $taxonomies
      * @return Builder
      */
     public function scopeWithinTaxonomies(Builder $query, Collection|array|null $taxonomies): Builder
@@ -321,18 +325,18 @@ trait HasTaxonomies
             return $query;
         }
 
-        return $query->whereHas('taxonomies', function($q) use($taxonomy_ids) {
+        return $query->whereHas('taxonomies', function ($q) use ($taxonomy_ids) {
             $q->whereIn('taxonomy_id', $taxonomy_ids);
         });
     }
 
     /**
      * Scope by taxonomies.
+     * @param Builder $query
+     * @param Collection|Taxonomy[]|array|null $taxonomies
+     * @return Builder
      * @deprecated This seemed confusing, use scopeHasTaxonomies() instead.
      *
-     * @param  Builder                           $query
-     * @param  Collection|Taxonomy[]|array|null  $taxonomies
-     * @return Builder
      */
     public function scopeHasCategories(Builder $query, Collection|array|null $taxonomies): Builder
     {
