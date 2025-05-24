@@ -9,8 +9,10 @@ use App\Models\Tag\Taxable;
 use Illuminate\Http\Request;
 //use App\Models\Tag\Term;
 use Illuminate\Support\Str;
-use Lecturize\Taxonomies\Models\Taxonomy;
-use Lecturize\Taxonomies\Models\Term;
+//use Lecturize\Taxonomies\Models\Taxonomy;
+//use Lecturize\Taxonomies\Models\Term;
+use App\Models\Tag\Taxonomy;
+use App\Models\Tag\Term;
 
 class TaxonomyController extends Controller
 {

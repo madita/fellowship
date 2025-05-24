@@ -10,8 +10,10 @@ use App\Models\Event\EventType;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Lecturize\Taxonomies\Models\Taxonomy;
-use Lecturize\Taxonomies\Models\Term;
+//use Lecturize\Taxonomies\Models\Taxonomy;
+//use Lecturize\Taxonomies\Models\Term;
+use App\Models\Tag\Taxonomy;
+use App\Models\Tag\Term;
 
 class EventController extends Controller
 {

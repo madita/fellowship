@@ -36,22 +36,8 @@ class EventGuestTest extends TestCase
             ]),
         ]);
 
-        // Create an event type with event_profile_id
-//        $this->eventType = EventType::create([
-//            'name'             => 'Test Event Type',
-//            'color'            => '#FF0000',
-//            'event_profile_id' => $eventProfile->id, // Add the event_profile_id
-//            'options'          => json_encode([
-//                'answers' => [
-//                    'going'    => 'Yes',
-//                    'notgoing' => 'No',
-//                    'maybe'    => 'Maybe',
-//                ],
-//            ]),
-//        ]);
-
-        $this->eventType =  EventType::create([
-            'event_profile_id' => 1,
+        $this->eventType = EventType::create([
+            'event_profile_id' => $eventProfile->id,
             'name'             => 'Treffen',
             'color'            => '#071CB4',
             'options'          => '{
@@ -97,7 +83,6 @@ class EventGuestTest extends TestCase
             "hasMedia"
           ]
         }',
-
         ]);
 
         // Create an event
@@ -122,20 +107,17 @@ class EventGuestTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function it_belongs_to_an_event()
+    public function test_it_belongs_to_an_event()
     {
         $this->assertEquals($this->event->id, $this->eventGuest->event->id);
     }
 
-    /** @test */
-    public function it_belongs_to_a_user()
+    public function test_it_belongs_to_a_user()
     {
         $this->assertEquals($this->user->id, $this->eventGuest->user->id);
     }
 
-    /** @test */
-    public function it_can_store_profile_data_as_json()
+    public function test_it_can_store_profile_data_as_json()
     {
         $profileData = [
             'days'    => ['Wednesday', 'Thursday'],
@@ -154,8 +136,7 @@ class EventGuestTest extends TestCase
         $this->assertEquals($profileData['remarks'], $decodedProfile['remarks']);
     }
 
-    /** @test */
-    public function it_can_be_approved()
+    public function test_it_can_be_approved()
     {
         // Initially not approved
         $this->assertNull($this->eventGuest->approved_at);
@@ -168,8 +149,7 @@ class EventGuestTest extends TestCase
         $this->assertNotNull($refreshedGuest->approved_at);
     }
 
-    /** @test */
-    public function it_can_change_response_type()
+    public function test_it_can_change_response_type()
     {
         // Initially 'going'
         $this->assertEquals('going', $this->eventGuest->type);
@@ -182,8 +162,7 @@ class EventGuestTest extends TestCase
         $this->assertEquals('notgoing', $refreshedGuest->type);
     }
 
-    /** @test */
-    public function it_can_be_soft_deleted()
+    public function test_it_can_be_soft_deleted()
     {
         // Check that the guest exists
         $this->assertDatabaseHas('event_guests', [

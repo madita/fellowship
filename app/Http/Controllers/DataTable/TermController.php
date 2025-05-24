@@ -4,7 +4,7 @@ namespace App\Http\Controllers\DataTable;
 
 use App\Helpers\TaxonomyHelper;
 use Illuminate\Http\Request;
-use Lecturize\Taxonomies\Models\Term;
+use App\Models\Tag\Term;
 
 class TermController extends DataTableController
 {

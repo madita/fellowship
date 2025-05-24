@@ -105,8 +105,8 @@ class EventControllerTest extends TestCase
 
 
 
-    /** @test */
-    public function user_can_view_event_details()
+    #[Test]
+    public function test_user_can_view_event_details()
     {
         $this->actingAs($this->user, 'sanctum');
 
@@ -121,8 +121,8 @@ class EventControllerTest extends TestCase
             ]);
     }
 
-    /** @test */
-    public function user_can_join_event()
+    #[Test]
+    public function test_user_can_join_event()
     {
         $this->actingAs($this->user, 'sanctum');
 
@@ -138,8 +138,8 @@ class EventControllerTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function user_can_change_event_response()
+    #[Test]
+    public function test_user_can_change_event_response()
     {
         $this->actingAs($this->user, 'sanctum');
 
@@ -159,8 +159,8 @@ class EventControllerTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function user_can_join_event_with_profile_data()
+    #[Test]
+    public function test_user_can_join_event_with_profile_data()
     {
         $this->actingAs($this->user, 'sanctum');
 
@@ -197,8 +197,8 @@ class EventControllerTest extends TestCase
         }
     }
 
-    /** @test */
-    public function event_owner_can_approve_guest()
+    #[Test]
+    public function test_event_owner_can_approve_guest()
     {
         $this->actingAs($this->user, 'sanctum');
 
@@ -235,8 +235,8 @@ class EventControllerTest extends TestCase
         $this->assertNotNull($updatedGuest->approved_at);
     }
 
-    /** @test */
-    public function event_owner_can_reject_guest()
+    #[Test]
+    public function test_event_owner_can_reject_guest()
     {
         $this->actingAs($this->user, 'sanctum');
 
@@ -267,8 +267,8 @@ class EventControllerTest extends TestCase
         $this->assertNull($updatedGuest->approved_at);
     }
 
-    /** @test */
-    public function non_owner_cannot_approve_guests()
+    #[Test]
+    public function test_non_owner_cannot_approve_guests()
     {
         // Create another user who is not the event owner
         $nonOwner = User::factory()->create();
@@ -295,8 +295,8 @@ class EventControllerTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
-    public function validation_fails_with_invalid_approval_action()
+    #[Test]
+    public function test_validation_fails_with_invalid_approval_action()
     {
         $this->actingAs($this->user, 'sanctum');
 

@@ -3,7 +3,7 @@
 namespace App\Helpers;
 
 use App\Models\Tag\Taxonomy;
-use Lecturize\Taxonomies\Models\Term;
+use App\Models\Tag\Term;
 
 class TaxonomyHelper
 {

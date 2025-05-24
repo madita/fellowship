@@ -38,7 +38,6 @@
         "date-fns": "^3.6.0",
         "echarts": "^5.5.0",
         "flag-icon-css": "^3.4.6",
-        "leaflet": "^1.9.4",
         "lodash": "^4.17.21",
         "mitt": "^3.0.1",
         "perfect-scrollbar": "^1.5.5",
@@ -107,7 +106,7 @@
         "not dead"
     ],
     "resolutions": {
-        "prosemirror-model": "1.9.1"
+        "prosemirror-model": "1.25.0"
     },
     "type": "module"
 }

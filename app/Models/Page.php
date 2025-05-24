@@ -8,11 +8,11 @@ use App\Traits\Wikiable;
 //use Lecturize\Taxonomies\Traits\HasCategories;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
-use Lecturize\Taxonomies\Contracts\CanHaveCategories;
+use App\Contracts\CanHaveTaxonomies;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Page extends Model implements HasMedia, CanHaveCategories
+class Page extends Model implements HasMedia, CanHaveTaxonomies
 {
     use InteractsWithMedia;
     use HasTaxonomies;
