@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
+use App\Models\Tag\Taxonomy;
+use App\Models\Tag\Term;
 use App\Models\Wiki;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
-use Lecturize\Taxonomies\Models\Taxonomy;
-use Lecturize\Taxonomies\Models\Term;
 
 class WikiController extends Controller
 {

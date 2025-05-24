@@ -2,17 +2,17 @@
 
 namespace App\Models;
 
+use App\Contracts\CanHaveTaxonomies;
 use App\Traits\HasTaxonomies;
 use App\Traits\Revisionable;
-use App\Traits\Wikiable;
 //use Lecturize\Taxonomies\Traits\HasCategories;
+use App\Traits\Wikiable;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
-use Lecturize\Taxonomies\Contracts\CanHaveCategories;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Page extends Model implements HasMedia, CanHaveCategories
+class Page extends Model implements HasMedia, CanHaveTaxonomies
 {
     use InteractsWithMedia;
     use HasTaxonomies;

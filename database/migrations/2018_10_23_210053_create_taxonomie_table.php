@@ -25,9 +25,9 @@ class CreateTaxonomieTable extends Migration
      */
     public function __construct()
     {
-        $this->terms = config('lecturize.taxonomies.terms.table', config('lecturize.taxonomies.terms_table', 'terms'));
-        $this->taxonomies = config('lecturize.taxonomies.taxonomies.table', config('lecturize.taxonomies.taxonomies_table', 'taxonomies'));
-        $this->pivot = config('lecturize.taxonomies.pivot.table', config('lecturize.taxonomies.pivot_table', 'taxables'));
+        $this->terms = config('lecturize.taxonomies.terms.table', 'terms');
+        $this->taxonomies = config('lecturize.taxonomies.taxonomies.table', 'taxonomies');
+        $this->pivot = config('lecturize.taxonomies.pivot.table', 'taxables');
     }
 
     /**

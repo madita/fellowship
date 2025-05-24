@@ -27,7 +27,6 @@ class Event extends Model
         'event_type_id',
     ];
 
-
     public function sluggable(): array
     {
         return [
