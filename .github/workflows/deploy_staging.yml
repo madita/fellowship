@@ -132,73 +132,125 @@ jobs:
           name: app-build
           path: deployment/
 
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Test SSH Connection
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "echo 'SSH connection successful'"
+
       - name: Deploy to staging server
-        uses: appleboy/ssh-action@v1.0.3
         env:
           DOT_ENV: ${{ secrets.DOT_ENV_STAGING }}
           BASE_PATH: ${{ secrets.PATH_STAGING }}
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          username: ${{ secrets.SSH_USERNAME }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          envs: DOT_ENV,BASE_PATH
-          script_stop: true
-          request_pty: true  # This enables TTY for sudo
-          script: |
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "
             set -e
+            set -x  # Enable command tracing
 
-            echo "Starting deployment to ${BASE_PATH}"
+            echo 'Starting deployment to ${{ secrets.PATH_STAGING }}'
 
-            # Create backup (without sudo if possible)
-            if [ -d "${BASE_PATH}" ]; then
-              cp -r ${BASE_PATH} ${BASE_PATH}_backup_$(date +%Y%m%d_%H%M%S) 2>/dev/null || echo "Backup creation failed, continuing..."
+            # Show current directory and permissions
+            echo 'Current user: \$(whoami)'
+            echo 'Current directory: \$(pwd)'
+            echo 'Target directory: ${{ secrets.PATH_STAGING }}'
+
+            # Create backup
+            if [ -d '${{ secrets.PATH_STAGING }}' ]; then
+              echo 'Creating backup...'
+              cp -r '${{ secrets.PATH_STAGING }}' '${{ secrets.PATH_STAGING }}_backup_\$(date +%Y%m%d_%H%M%S)' 2>/dev/null || echo 'Backup creation failed, continuing...'
             fi
 
             # Create directory if it doesn't exist
-            mkdir -p ${BASE_PATH} || sudo mkdir -p ${BASE_PATH}
-            cd ${BASE_PATH}
+            echo 'Creating/accessing target directory...'
+            mkdir -p '${{ secrets.PATH_STAGING }}' || sudo mkdir -p '${{ secrets.PATH_STAGING }}' || { echo 'Failed to create directory'; exit 1; }
+            cd '${{ secrets.PATH_STAGING }}' || { echo 'Failed to change to target directory'; exit 1; }
+
+            echo 'Successfully changed to: \$(pwd)'
 
             # Create .env file
-            echo "${DOT_ENV}" > .env || echo "${DOT_ENV}" | sudo tee .env > /dev/null
+            echo 'Creating .env file...'
+            cat > .env << 'ENVEOF' || { echo 'Failed to create .env file'; exit 1; }
+          ${{ secrets.DOT_ENV_STAGING }}
+          ENVEOF
+
+            echo '.env file created successfully'
 
             # Run deployment script if it exists
-            if [ -f "server_deploy.sh" ]; then
+            if [ -f 'server_deploy.sh' ]; then
+              echo 'Found server_deploy.sh, executing...'
               bash server_deploy.sh
             else
-              echo "server_deploy.sh not found, running basic deployment"
+              echo 'server_deploy.sh not found, running basic deployment'
 
               # Check if we can run without sudo first
               if command -v php >/dev/null 2>&1; then
-                # Basic Laravel deployment steps
-                php artisan down --retry=60 || true
+                echo 'PHP found, starting Laravel deployment...'
 
-                # Update composer dependencies
-                composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev || echo "Composer install failed"
+                # Check if this is a Laravel project
+                if [ ! -f 'artisan' ]; then
+                  echo 'Warning: artisan file not found. This may not be a Laravel project.'
+                  echo 'Directory contents:'
+                  ls -la
+                fi
+
+                # Basic Laravel deployment steps
+                echo 'Putting application in maintenance mode...'
+                php artisan down --retry=60 || echo 'Failed to put app in maintenance mode'
+
+                # Update composer dependencies if composer.json exists
+                if [ -f 'composer.json' ]; then
+                  echo 'Installing composer dependencies...'
+                  composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev || echo 'Composer install failed'
+                else
+                  echo 'No composer.json found, skipping composer install'
+                fi
 
                 # Clear and cache Laravel
-                php artisan config:clear || true
-                php artisan cache:clear || true
-                php artisan route:clear || true
-                php artisan view:clear || true
-                php artisan config:cache || true
-                php artisan route:cache || true
-                php artisan view:cache || true
+                echo 'Clearing Laravel caches...'
+                php artisan config:clear || echo 'Config clear failed'
+                php artisan cache:clear || echo 'Cache clear failed'
+                php artisan route:clear || echo 'Route clear failed'
+                php artisan view:clear || echo 'View clear failed'
+
+                echo 'Caching Laravel configurations...'
+                php artisan config:cache || echo 'Config cache failed'
+                php artisan route:cache || echo 'Route cache failed'
+                php artisan view:cache || echo 'View cache failed'
 
                 # Run migrations
-                php artisan migrate --force || echo "Migration failed"
+                echo 'Running database migrations...'
+                php artisan migrate --force || echo 'Migration failed'
 
                 # Set permissions (try without sudo first)
-                chown -R www-data:www-data ${BASE_PATH} 2>/dev/null || sudo chown -R www-data:www-data ${BASE_PATH} 2>/dev/null || echo "Permission change failed"
-                chmod -R 755 ${BASE_PATH} 2>/dev/null || sudo chmod -R 755 ${BASE_PATH} 2>/dev/null || echo "Permission change failed"
-                chmod -R 775 ${BASE_PATH}/storage 2>/dev/null || sudo chmod -R 775 ${BASE_PATH}/storage 2>/dev/null || echo "Permission change failed"
-                chmod -R 775 ${BASE_PATH}/bootstrap/cache 2>/dev/null || sudo chmod -R 775 ${BASE_PATH}/bootstrap/cache 2>/dev/null || echo "Permission change failed"
+                echo 'Setting permissions...'
+                chown -R www-data:www-data '${{ secrets.PATH_STAGING }}' 2>/dev/null || sudo chown -R www-data:www-data '${{ secrets.PATH_STAGING }}' 2>/dev/null || echo 'Permission change failed'
+                chmod -R 755 '${{ secrets.PATH_STAGING }}' 2>/dev/null || sudo chmod -R 755 '${{ secrets.PATH_STAGING }}' 2>/dev/null || echo 'Permission change failed'
+
+                if [ -d '${{ secrets.PATH_STAGING }}/storage' ]; then
+                  chmod -R 775 '${{ secrets.PATH_STAGING }}/storage' 2>/dev/null || sudo chmod -R 775 '${{ secrets.PATH_STAGING }}/storage' 2>/dev/null || echo 'Storage permission change failed'
+                fi
+
+                if [ -d '${{ secrets.PATH_STAGING }}/bootstrap/cache' ]; then
+                  chmod -R 775 '${{ secrets.PATH_STAGING }}/bootstrap/cache' 2>/dev/null || sudo chmod -R 775 '${{ secrets.PATH_STAGING }}/bootstrap/cache' 2>/dev/null || echo 'Bootstrap cache permission change failed'
+                fi
 
                 # Bring application back up
-                php artisan up || true
+                echo 'Bringing application back online...'
+                php artisan up || echo 'Failed to bring app back up'
               else
-                echo "PHP not found in PATH, deployment may require manual intervention"
+                echo 'PHP not found in PATH, deployment may require manual intervention'
+                echo 'PATH: \$PATH'
+                echo 'Available commands:'
+                which python3 || echo 'python3 not found'
+                which node || echo 'node not found'
+                which composer || echo 'composer not found'
               fi
             fi
 
-            echo "Deployment completed"
+            echo 'Deployment completed successfully'
+          "
