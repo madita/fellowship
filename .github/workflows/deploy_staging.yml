@@ -167,7 +167,7 @@ jobs:
 
             # Create directory if it doesn't exist
             echo 'Creating/accessing target directory...'
-            mkdir -p '${{ secrets.PATH_STAGING }}' || sudo mkdir -p '${{ secrets.PATH_STAGING }}' || { echo 'Failed to create directory'; exit 1; }
+            mkdir -p '${{ secrets.PATH_STAGING }}' || mkdir -p '${{ secrets.PATH_STAGING }}' || { echo 'Failed to create directory'; exit 1; }
             cd '${{ secrets.PATH_STAGING }}' || { echo 'Failed to change to target directory'; exit 1; }
 
             echo 'Successfully changed to: \$(pwd)'
