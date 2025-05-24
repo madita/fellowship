@@ -38,7 +38,7 @@ class EventControllerTest extends TestCase
         ]);
 
         // Create an event type with options and event_profile_id
-        $this->eventType =  EventType::create([
+        $this->eventType = EventType::create([
             'event_profile_id' => $eventProfile->id,
             'name'             => 'Treffen',
             'color'            => '#071CB4',
@@ -88,8 +88,6 @@ class EventControllerTest extends TestCase
 
         ]);
 
-
-
         // Create an event
         $this->event = Event::create([
             'title'         => 'Test Event',
@@ -102,8 +100,6 @@ class EventControllerTest extends TestCase
 
 //        dd($this->user->id, $this->event);
     }
-
-
 
     #[Test]
     public function test_user_can_view_event_details()

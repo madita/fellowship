@@ -2,23 +2,22 @@
 
 namespace App\Models\Tag;
 
+use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-use Cviebrock\EloquentSluggable\Sluggable;
-
 /**
- * Class Term
- * @package Lecturize\Taxonomies\Models
- * @property int                    $id
- * @property string                 $title
- * @property string|null            $slug
- * @property string|null            $content
- * @property string|null            $lead
- * @property Collection|Taxonomy[]  $taxonomies
+ * Class Term.
+ *
+ * @property int                   $id
+ * @property string                $title
+ * @property string|null           $slug
+ * @property string|null           $content
+ * @property string|null           $lead
+ * @property Collection|Taxonomy[] $taxonomies
  */
 class Term extends Model
 {
@@ -47,7 +46,8 @@ class Term extends Model
     }
 
     /** @inheritdoc */
-    public function sluggable(): array {
+    public function sluggable(): array
+    {
         return ['slug' => ['source' => 'title']];
     }
 
@@ -64,13 +64,14 @@ class Term extends Model
     /**
      * Get display title.
      *
-     * @param  int  $limit
+     * @param int $limit
+     *
      * @return string
      */
-public function getDisplayTitle(int $limit = 0): string
-{
-    return $limit > 0
-        ? Str::limit($this->title, $limit)
-        : $this->title;
-}
+    public function getDisplayTitle(int $limit = 0): string
+    {
+        return $limit > 0
+            ? Str::limit($this->title, $limit)
+            : $this->title;
+    }
 }

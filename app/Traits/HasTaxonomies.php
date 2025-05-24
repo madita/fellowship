@@ -4,23 +4,19 @@
 
 namespace App\Traits;
 
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
-use Illuminate\Support\Collection;
-
-//use App\Helpers\TaxonomyHelper;
-//use App\Models\Tag\Taxable;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+//use App\Helpers\TaxonomyHelper;
+//use App\Models\Tag\Taxable;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
+use Illuminate\Support\Collection;
 
 //use Lecturize\Taxonomies\Traits\HasCategories;
 
 trait HasTaxonomies
 {
-
-
     /**
      * Return a collection of taxonomies for this model.
      */
@@ -47,8 +43,9 @@ trait HasTaxonomies
      */
     public function attachTaxonomy(int $taxonomy_id): void
     {
-        if (!$this->taxonomies()->where('id', $taxonomy_id)->first())
+        if (!$this->taxonomies()->where('id', $taxonomy_id)->first()) {
             $this->taxonomies()->attach($taxonomy_id);
+        }
     }
 
     /**
@@ -56,8 +53,9 @@ trait HasTaxonomies
      */
     public function detachTaxonomy(int $taxonomy_id): void
     {
-        if ($this->taxonomies()->where('id', $taxonomy_id)->first())
+        if ($this->taxonomies()->where('id', $taxonomy_id)->first()) {
             $this->taxonomies()->detach($taxonomy_id);
+        }
     }
 
     /**
@@ -76,9 +74,11 @@ trait HasTaxonomies
     {
         $taxonomies = Taxonomy::createCategories($categories, $taxonomy, $parent);
 
-        if (count($taxonomies) > 0)
-            foreach ($taxonomies as $tax)
+        if (count($taxonomies) > 0) {
+            foreach ($taxonomies as $tax) {
                 $this->taxonomies()->attach($tax->id);
+            }
+        }
 
         return $this;
     }
@@ -93,6 +93,7 @@ trait HasTaxonomies
 
     /**
      * Add one or multiple terms in a given taxonomy.
+     *
      * @deprecated Use addCategory() or addCategories() instead.
      */
     public function addTerm(string|array $categories, string $taxonomy, ?Taxonomy $parent = null): self
@@ -105,14 +106,16 @@ trait HasTaxonomies
      */
     public function getTermTitles(string $taxonomy = ''): Collection
     {
-        if ($terms = $this->getCategories($taxonomy))
+        if ($terms = $this->getCategories($taxonomy)) {
             return $terms->pluck('title');
+        }
 
         return collect();
     }
 
     /**
      * Pluck terms for a given taxonomy by name.
+     *
      * @deprecated Use getTermTitles() instead.
      */
     public function getTermNames(string $taxonomy = ''): Collection
@@ -146,6 +149,7 @@ trait HasTaxonomies
 
     /**
      * Get the terms (categories) for this item within the given taxonomy.
+     *
      * @deprecated Use getCategories() instead.
      */
     public function getTerms(string $taxonomy = ''): Collection
@@ -155,6 +159,7 @@ trait HasTaxonomies
 
     /**
      * Get a term model by the given name and optionally a taxonomy.
+     *
      * @deprecated Use getCategory() instead.
      */
     public function getTerm(string $term_title, string $taxonomy = ''): ?Term
@@ -167,11 +172,12 @@ trait HasTaxonomies
      */
     public function hasCategory(string $term_title, string $taxonomy = ''): bool
     {
-        return (bool)$this->getCategory($term_title, $taxonomy);
+        return (bool) $this->getCategory($term_title, $taxonomy);
     }
 
     /**
      * Check if this model belongs to a given category.
+     *
      * @deprecated Seemed confusing, use hasCategory() instead.
      */
     public function hasTerm(string $term_title, string $taxonomy = ''): bool
@@ -184,8 +190,9 @@ trait HasTaxonomies
      */
     public function detachCategory(string $term_title, string $taxonomy = ''): ?int
     {
-        if (!$term = $this->getCategory($term_title, $taxonomy))
+        if (!$term = $this->getCategory($term_title, $taxonomy)) {
             return null;
+        }
 
         if ($taxonomy) {
             $taxonomy = $this->taxonomies()->where('taxonomy', $taxonomy)->where('term_id', $term->id)->first();
@@ -198,6 +205,7 @@ trait HasTaxonomies
 
     /**
      * Detach the given category from this model.
+     *
      * @deprecated Seemed confusing, use detachCategory() instead.
      */
     public function removeTerm(string $term_title, string $taxonomy = ''): ?int
@@ -215,6 +223,7 @@ trait HasTaxonomies
 
     /**
      * Detach all terms from this model.
+     *
      * @deprecated Use detachCategories() instead.
      */
     public function removeAllTerms(): int
@@ -224,6 +233,7 @@ trait HasTaxonomies
 
     /**
      * Scope by the given term.
+     *
      * @deprecated This seemed confusing, use scopeCategorized() instead.
      */
     public function scopeWithTerm(Builder $query, string $category, string $taxonomy): Builder
@@ -252,6 +262,7 @@ trait HasTaxonomies
 
     /**
      * Scope by given terms.
+     *
      * @deprecated This seemed confusing, use scopeCategorizedIn() instead.
      */
     public function scopeWithTerms(Builder $query, array $categories, string $taxonomy): Builder
@@ -264,12 +275,13 @@ trait HasTaxonomies
      */
     public function scopeCategorizedIn(Builder $query, string|array $categories, string $taxonomy): Builder
     {
-        if (is_string($categories))
+        if (is_string($categories)) {
             $categories = explode('|', $categories);
+        }
 
-        return $query->where(function($q) use ($categories, $taxonomy) {
+        return $query->where(function ($q) use ($categories, $taxonomy) {
             foreach ($categories as $category) {
-                $q->orWhere(function($subQuery) use ($category, $taxonomy) {
+                $q->orWhere(function ($subQuery) use ($category, $taxonomy) {
                     $this->scopeCategorized($subQuery, $category, $taxonomy);
                 });
             }
@@ -279,8 +291,9 @@ trait HasTaxonomies
     /**
      * Scope by given taxonomy.
      *
-     * @param Builder $query
+     * @param Builder           $query
      * @param Taxonomy|int|null $taxonomy
+     *
      * @return Builder
      */
     public function scopeWithinTaxonomy(Builder $query, Taxonomy|int|null $taxonomy): Builder
@@ -300,11 +313,13 @@ trait HasTaxonomies
 
     /**
      * Scope by given taxonomy.
-     * @param Builder $query
-     * @param Taxonomy|int|null $taxonomy
-     * @return Builder
-     * @deprecated This seemed confusing, use scopeWithinTaxonomy() instead.
      *
+     * @param Builder           $query
+     * @param Taxonomy|int|null $taxonomy
+     *
+     * @return Builder
+     *
+     * @deprecated This seemed confusing, use scopeWithinTaxonomy() instead.
      */
     public function scopeHasCategory(Builder $query, Taxonomy|int|null $taxonomy): Builder
     {
@@ -314,8 +329,9 @@ trait HasTaxonomies
     /**
      * Scope by taxonomies.
      *
-     * @param Builder $query
+     * @param Builder                          $query
      * @param Collection|Taxonomy[]|array|null $taxonomies
+     *
      * @return Builder
      */
     public function scopeWithinTaxonomies(Builder $query, Collection|array|null $taxonomies): Builder
@@ -335,11 +351,13 @@ trait HasTaxonomies
 
     /**
      * Scope by taxonomies.
-     * @param Builder $query
-     * @param Collection|Taxonomy[]|array|null $taxonomies
-     * @return Builder
-     * @deprecated This seemed confusing, use scopeHasTaxonomies() instead.
      *
+     * @param Builder                          $query
+     * @param Collection|Taxonomy[]|array|null $taxonomies
+     *
+     * @return Builder
+     *
+     * @deprecated This seemed confusing, use scopeHasTaxonomies() instead.
      */
     public function scopeHasCategories(Builder $query, Collection|array|null $taxonomies): Builder
     {
