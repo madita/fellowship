@@ -3,22 +3,19 @@
 namespace App\Models\Tag;
 
 use App\Models\Page;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Collection;
-use App\Models\Tag\Term;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
-use Faker\Core\Uuid;
+
 //use Webpatser\Uuid\Uuid;
 
 class Taxonomy extends Model
 {
-
 //    protected $table = 'taxonomies';
     /**
      * @inheritdoc
@@ -74,15 +71,17 @@ class Taxonomy extends Model
         static::creating(function (Taxonomy $model) {
             if ($model->getConnection()
                 ->getSchemaBuilder()
-                ->hasColumn($model->getTable(), 'uuid'))
+                ->hasColumn($model->getTable(), 'uuid')) {
                 $model->uuid = Str::uuid()->toString();
+            }
         });
 
         static::saving(function (Taxonomy $model) {
-            if (isset($model->term) && $model->term->title && ! $model->description)
+            if (isset($model->term) && $model->term->title && !$model->description) {
                 $model->description = $model->term->title;
+            }
 
-            if (! $model->sort) {
+            if (!$model->sort) {
                 $sort = ($siblings = $model->siblings()->get()) ? $siblings->max('sort') : 0;
                 $model->sort = ($sort + 1);
             }
@@ -127,7 +126,8 @@ class Taxonomy extends Model
     public function siblings(): Builder
     {
         $class = Taxonomy::class;
-        return (new $class)->taxonomy($this->taxonomy)
+
+        return (new $class())->taxonomy($this->taxonomy)
             ->where('parent_id', $this->parent_id)
             ->orderBy('sort');
     }
@@ -145,40 +145,42 @@ class Taxonomy extends Model
     /**
      * Get the breadcrumbs for this Taxonomy.
      *
-     * @param  bool  $exclude_self
+     * @param bool $exclude_self
+     *
      * @return Collection
      */
     public function getBreadcrumbs(bool $exclude_self = true): Collection
     {
         $key = "taxonomies.$this->id.breadcrumbs";
-        $key.= $exclude_self ? '.self-excluded' : '';
+        $key .= $exclude_self ? '.self-excluded' : '';
 
         return Cache::tags([
-                 'taxonomies',
-                 'taxonomies:taxonomy',
-                 "taxonomies:taxonomy:{$this->id}"
-             ])->rememberForever($key, function() use ($exclude_self) {
-            $parameters = $this->getParentBreadcrumbs();
+            'taxonomies',
+            'taxonomies:taxonomy',
+            "taxonomies:taxonomy:{$this->id}",
+        ])->rememberForever($key, function () use ($exclude_self) {
+                 $parameters = $this->getParentBreadcrumbs();
 
-            if (! $exclude_self)
-                $parameters->push($this->taxonomy);
+                 if (!$exclude_self) {
+                     $parameters->push($this->taxonomy);
+                 }
 
-            return $parameters->reverse()->values();
-        });
-
-
+                 return $parameters->reverse()->values();
+             });
     }
 
     /**
      * Add parent breadcrumb.
      *
-     * @param  Collection|null  $parameters
+     * @param Collection|null $parameters
+     *
      * @return Collection
      */
-    function getParentBreadcrumbs(?Collection $parameters = null): Collection
+    public function getParentBreadcrumbs(?Collection $parameters = null): Collection
     {
-        if ($parameters === null)
+        if ($parameters === null) {
             $parameters = collect();
+        }
 
         $parameters->push([
             'title'  => $this->term->title,
@@ -186,8 +188,9 @@ class Taxonomy extends Model
             'params' => $this->getRouteParameters(),
         ]);
 
-        if ($parent = $this->parent)
+        if ($parent = $this->parent) {
             return $parent->getParentBreadcrumbs($parameters);
+        }
 
         return $parameters;
     }
@@ -195,19 +198,21 @@ class Taxonomy extends Model
     /**
      * Get route parameters.
      *
-     * @param  bool  $exclude_taxonomy
+     * @param bool $exclude_taxonomy
+     *
      * @return array
      */
     public function getRouteParameters(bool $exclude_taxonomy = true): array
     {
         $key = "taxonomies.$this->id.route-parameters";
-        $key.= $exclude_taxonomy ? '.without-taxonomy' : '';
+        $key .= $exclude_taxonomy ? '.without-taxonomy' : '';
 
-        return maybe_tagged_cache(['taxonomies', 'taxonomies:taxonomy', "taxonomies:taxonomy:$this->id"])->rememberForever($key, function() use($exclude_taxonomy) {
+        return maybe_tagged_cache(['taxonomies', 'taxonomies:taxonomy', "taxonomies:taxonomy:$this->id"])->rememberForever($key, function () use ($exclude_taxonomy) {
             $parameters = $this->getParentSlugs();
 
-            if (! $exclude_taxonomy)
+            if (!$exclude_taxonomy) {
                 $parameters[] = $this->taxonomy;
+            }
 
             return array_reverse($parameters);
         });
@@ -216,15 +221,17 @@ class Taxonomy extends Model
     /**
      * Get slugs of parent terms.
      *
-     * @param  array  $parameters
+     * @param array $parameters
+     *
      * @return array
      */
-    function getParentSlugs(array $parameters = []): array
+    public function getParentSlugs(array $parameters = []): array
     {
         $parameters[] = $this->term->slug;
 
-        if ($parent = $this->parent)
+        if ($parent = $this->parent) {
             return $parent->getParentSlugs($parameters);
+        }
 
         return $parameters;
     }
@@ -232,8 +239,9 @@ class Taxonomy extends Model
     /**
      * Scope by a given taxonomy (e.g. "blog_cat" for blog posts or "shop_cat" for shop products).
      *
-     * @param  Builder  $query
-     * @param  string   $taxonomy
+     * @param Builder $query
+     * @param string  $taxonomy
+     *
      * @return Builder
      */
     public function scopeTaxonomy(Builder $query, string $taxonomy): Builder
@@ -244,8 +252,9 @@ class Taxonomy extends Model
     /**
      * Scope by a given taxonomy prefix (e.g. to retrieve both "shop_cat_a" and "shop_cat_b" you would scope "shop_cat%").
      *
-     * @param  Builder  $query
-     * @param  string   $taxonomy_prefix
+     * @param Builder $query
+     * @param string  $taxonomy_prefix
+     *
      * @return Builder
      */
     public function scopeTaxonomyStartsWith(Builder $query, string $taxonomy_prefix): Builder
@@ -256,8 +265,9 @@ class Taxonomy extends Model
     /**
      * Scope by given taxonomies array, e.g. ['shop_cat_a', 'shop_cat_b'].
      *
-     * @param  Builder  $query
-     * @param  array    $taxonomies
+     * @param Builder $query
+     * @param array   $taxonomies
+     *
      * @return Builder
      */
     public function scopeTaxonomies(Builder $query, array $taxonomies): Builder
@@ -268,16 +278,17 @@ class Taxonomy extends Model
     /**
      * Scope terms (category title) by given taxonomy.
      *
-     * @param  Builder     $query
-     * @param  string|int  $term
-     * @param  string      $term_field
+     * @param Builder    $query
+     * @param string|int $term
+     * @param string     $term_field
+     *
      * @return Builder
      */
     public function scopeByTerm(Builder $query, string|int $term, string $term_field = 'title'): Builder
     {
-        $term_field = ! in_array($term_field, ['id', 'title', 'slug']) ? 'title' : $term_field;
+        $term_field = !in_array($term_field, ['id', 'title', 'slug']) ? 'title' : $term_field;
 
-        return $query->whereHas('term', function(Builder $q) use($term, $term_field) {
+        return $query->whereHas('term', function (Builder $q) use ($term, $term_field) {
             $q->where($term_field, $term);
         });
     }
@@ -285,22 +296,24 @@ class Taxonomy extends Model
     /**
      * A simple search scope.
      *
-     * @param  Builder  $query
-     * @param  string   $term
-     * @param  string   $taxonomy
+     * @param Builder $query
+     * @param string  $term
+     * @param string  $taxonomy
+     *
      * @return Builder
      */
     public function scopeSearch(Builder $query, string $term, string $taxonomy): Builder
     {
-        return $query->whereHas('term', function(Builder $q) use($term, $taxonomy) {
-            $q->where('title', 'like', '%'. $term .'%');
+        return $query->whereHas('term', function (Builder $q) use ($term) {
+            $q->where('title', 'like', '%'.$term.'%');
         });
     }
 
     /**
      * Scope visible taxonomies.
      *
-     * @param  Builder  $query
+     * @param Builder $query
+     *
      * @return Builder
      */
     public function scopeVisible(Builder $query): Builder
@@ -311,7 +324,8 @@ class Taxonomy extends Model
     /**
      * Scope searchable taxonomies.
      *
-     * @param  Builder  $query
+     * @param Builder $query
+     *
      * @return Builder
      */
     public function scopeSearchable(Builder $query): Builder
@@ -472,42 +486,43 @@ class Taxonomy extends Model
      *
      * @return Collection
      */
-    public static function createCategories($categories, string $taxonomy, ? Taxonomy $parent = null, ?int $sort = null): ?Collection
+    public static function createCategories($categories, string $taxonomy, ?Taxonomy $parent = null, ?int $sort = null): ?Collection
     {
-        if (is_string($categories))
+        if (is_string($categories)) {
             $categories = explode('|', $categories);
+        }
 
-        $terms      = collect();
+        $terms = collect();
         $taxonomies = collect();
 
-
-        if (count($categories) > 0)
+        if (count($categories) > 0) {
             foreach ($categories as $category) {
-                if(is_string($category)) {
+                if (is_string($category)) {
                     $term = Term::firstOrCreate(['title' => $category]);
                 } else {
                     $term = Term::firstOrCreate(['title' => $category['title']]);
                     $term->color = $category['color'];
                 }
 
-
                 $term->save();
                 $terms->push($term);
             }
-
+        }
 
         foreach ($terms as $term) {
             $tax = Taxonomy::firstOrNew([
-                                                 'term_id'  => $term->id,
-                                                 'taxonomy' => $taxonomy,
-                                             ]);
+                'term_id'  => $term->id,
+                'taxonomy' => $taxonomy,
+            ]);
 
             if ($tax) {
-                if ($parent instanceof Taxonomy && $tax->parent_id !== $parent->id)
+                if ($parent instanceof Taxonomy && $tax->parent_id !== $parent->id) {
                     $tax->parent_id = $parent->id;
+                }
 
-                if (is_integer($sort) && $tax->sort !== $sort)
+                if (is_integer($sort) && $tax->sort !== $sort) {
                     $tax->sort = $sort;
+                }
 
                 $tax->save();
 

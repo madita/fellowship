@@ -7,13 +7,13 @@ use App\Models\Event\Event;
 use App\Models\Event\EventGuest;
 use App\Models\Event\EventProfile;
 use App\Models\Event\EventType;
-use DateTime;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-//use Lecturize\Taxonomies\Models\Taxonomy;
-//use Lecturize\Taxonomies\Models\Term;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
+use DateTime;
+//use Lecturize\Taxonomies\Models\Taxonomy;
+//use Lecturize\Taxonomies\Models\Term;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class EventController extends Controller
 {
@@ -462,9 +462,10 @@ class EventController extends Controller
         }
 
         return response()->json([
-            'message' => 'joining_' . $answer,
+            'message' => 'joining_'.$answer,
         ]);
     }
+
     public function getTypes()
     {
         $eventTypes = EventType::all()->keyBy('id');
@@ -497,7 +498,6 @@ class EventController extends Controller
         $guest = EventGuest::where('user_id', $request->guestId)
             ->where('event_id', $event->id)
             ->first();
-
 
         // If no guest is found, return a 404 error
         if (!$guest) {

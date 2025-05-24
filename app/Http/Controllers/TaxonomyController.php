@@ -6,13 +6,13 @@ use App\Helpers\TaxonomyHelper;
 use App\Models\Tag\Taxable;
 //use App\Models\Tag\Taxonomy;
 
-use Illuminate\Http\Request;
+use App\Models\Tag\Taxonomy;
 //use App\Models\Tag\Term;
-use Illuminate\Support\Str;
+use App\Models\Tag\Term;
 //use Lecturize\Taxonomies\Models\Taxonomy;
 //use Lecturize\Taxonomies\Models\Term;
-use App\Models\Tag\Taxonomy;
-use App\Models\Tag\Term;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class TaxonomyController extends Controller
 {
