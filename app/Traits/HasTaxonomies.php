@@ -267,10 +267,13 @@ trait HasTaxonomies
         if (is_string($categories))
             $categories = explode('|', $categories);
 
-        foreach ($categories as $term)
-            $this->scopeCategorized($query, $term, $taxonomy);
-
-        return $query;
+        return $query->where(function($q) use ($categories, $taxonomy) {
+            foreach ($categories as $category) {
+                $q->orWhere(function($subQuery) use ($category, $taxonomy) {
+                    $this->scopeCategorized($subQuery, $category, $taxonomy);
+                });
+            }
+        });
     }
 
     /**
