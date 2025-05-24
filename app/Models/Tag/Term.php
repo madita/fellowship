@@ -67,8 +67,10 @@ class Term extends Model
      * @param  int  $limit
      * @return string
      */
-    public function getDisplayTitle(int $limit = 0): string
-    {
-        return $limit > 0 ? Str::slug($this->title, $limit) : $this->title;
-    }
+public function getDisplayTitle(int $limit = 0): string
+{
+    return $limit > 0
+        ? Str::limit($this->title, $limit)
+        : $this->title;
+}
 }
