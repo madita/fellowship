@@ -43,7 +43,7 @@ class Term extends Model
     {
         parent::__construct($attributes);
 
-        $this->table = config('lecturize.taxonomies.terms.table', 'terms');
+        $this->table = 'terms';
     }
 
     /** @inheritdoc */
@@ -58,7 +58,7 @@ class Term extends Model
      */
     public function taxonomies(): HasMany
     {
-        return $this->hasMany(config('lecturize.taxonomies.taxonomies.model', Taxonomy::class));
+        return $this->hasMany(Taxonomy::class);
     }
 
     /**
