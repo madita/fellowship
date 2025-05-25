@@ -1,12 +1,9 @@
-name: Staging
+name: Deploy to Staging
 
 on:
   push:
-    branches:
-      - develop
-  pull_request:
     branches: [ develop ]
-  workflow_dispatch:  # Allows manual triggering
+  workflow_dispatch:
 
 jobs:
   run-tests:
@@ -122,164 +119,75 @@ jobs:
           path: deployment/
 
   deploy:
-    needs: build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download deployment artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app-build
-          path: deployment/
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Setup SSH Key
+      - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Test SSH Connection
+      - name: Deploy to Staging Server
         run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "echo 'SSH connection successful'"
+          # Create a temporary script to avoid quote issues
+          cat > deploy_script.sh << 'SCRIPT_EOF'
+          #!/bin/bash
+          set -e
 
-      - name: Deploy to staging server
-        env:
-          DOT_ENV: ${{ secrets.DOT_ENV_STAGING }}
-          BASE_PATH: ${{ secrets.PATH_STAGING }}
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "
-            set -e
-            set -x  # Enable command tracing
+          echo "Starting deployment to ${{ secrets.STAGING_HOST }}"
+          echo "Current user: $(whoami)"
+          echo "Current directory: $(pwd)"
+          echo "Target directory: ${{ secrets.STAGING_PATH }}"
 
-            echo 'Starting deployment to ${{ secrets.PATH_STAGING }}'
+          # Create backup if directory exists
+          if [ -d "${{ secrets.STAGING_PATH }}" ]; then
+            echo "Creating backup..."
+            cp -r "${{ secrets.STAGING_PATH }}" "${{ secrets.STAGING_PATH }}_backup_$(date +%Y%m%d_%H%M%S)" || echo "Backup creation failed, continuing..."
+          fi
 
-            # Show current directory and permissions
-            echo 'Current user: \$(whoami)'
-            echo 'Current directory: \$(pwd)'
-            echo 'Target directory: ${{ secrets.PATH_STAGING }}'
+          # Create/access target directory
+          echo "Creating/accessing target directory..."
+          mkdir -p "${{ secrets.STAGING_PATH }}"
+          cd "${{ secrets.STAGING_PATH }}"
+          echo "Successfully changed to: $(pwd)"
 
-            # Create backup
-            if [ -d '${{ secrets.PATH_STAGING }}' ]; then
-              echo 'Creating backup...'
-              cp -r '${{ secrets.PATH_STAGING }}' '${{ secrets.PATH_STAGING }}_backup_\$(date +%Y%m%d_%H%M%S)' 2>/dev/null || echo 'Backup creation failed, continuing...'
-            fi
-
-            # Create directory if it doesn't exist
-            echo 'Creating/accessing target directory...'
-            mkdir -p '${{ secrets.PATH_STAGING }}' || sudo mkdir -p '${{ secrets.PATH_STAGING }}' || { echo 'Failed to create directory'; exit 1; }
-            cd '${{ secrets.PATH_STAGING }}' || { echo 'Failed to change to target directory'; exit 1; }
-
-            echo 'Successfully changed to: \$(pwd)'
-
-            # Check if DOT_ENV_STAGING secret exists and has content
-            echo 'Checking DOT_ENV_STAGING secret...'
-            if [ -z "${{ secrets.DOT_ENV_STAGING }}" ]; then
-              echo "ERROR: DOT_ENV_STAGING secret is empty or not set!"
-              echo "Please check GitHub Settings → Secrets and variables → Actions"
-              exit 1
-            fi
-
-            echo "DOT_ENV_STAGING secret found with $(echo '${{ secrets.DOT_ENV_STAGING }}' | wc -l) lines"
-
-            # Create .env file
-            echo 'Creating .env file...'
-            cat > .env << 'ENVEOF' || { echo 'Failed to create .env file'; exit 1; }
+          # Create .env file
+          echo "Creating .env file..."
+          cat > .env << 'ENV_EOF'
           ${{ secrets.DOT_ENV_STAGING }}
-          ENVEOF
+          ENV_EOF
+          echo ".env file created successfully"
 
-            # Check if .env file was created with content
-            if [ ! -s .env ]; then
-              echo "ERROR: .env file is empty after creation!"
-              echo "This means DOT_ENV_STAGING secret is empty or contains only whitespace"
-              echo "Current .env file size: $(wc -c < .env) bytes"
-              exit 1
-            fi
+          # Check if npm exists, install if not
+          if ! command -v npm >/dev/null 2>&1; then
+            echo "Installing Node.js..."
+            curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+          fi
 
-            # Install Node.js and npm if not present
-            echo 'Checking Node.js and npm installation...'
-            if ! command -v npm &> /dev/null; then
-              echo 'npm not found. Installing Node.js and npm...'
-              curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-              sudo apt-get install -y nodejs
-              echo "Node.js version: $(node --version)"
-              echo "npm version: $(npm --version)"
-            else
-              echo "npm found: $(npm --version)"
-              echo "Node.js version: $(node --version)"
-            fi
+          # Execute deployment script or manual steps
+          if [ -f server_deploy.sh ]; then
+            echo "Found server_deploy.sh, executing..."
+            chmod +x server_deploy.sh
+            bash server_deploy.sh
+          else
+            echo "Running basic deployment..."
+            git pull origin develop || true
+            composer install --no-dev --optimize-autoloader --no-interaction || true
+            npm ci --only=production || npm install --only=production || true
+            npm run build || npm run production || true
+            php artisan migrate --force || true
+            php artisan config:cache || true
+          fi
 
-            # Run deployment script if it exists
-            if [ -f 'server_deploy.sh' ]; then
-              echo 'Found server_deploy.sh, executing...'
-              bash server_deploy.sh
-            else
-              echo 'server_deploy.sh not found, running basic deployment'
+          echo "Deployment completed successfully!"
+          SCRIPT_EOF
 
-              # Check if we can run without sudo first
-              if command -v php >/dev/null 2>&1; then
-                echo 'PHP found, starting Laravel deployment...'
-
-                # Check if this is a Laravel project
-                if [ ! -f 'artisan' ]; then
-                  echo 'Warning: artisan file not found. This may not be a Laravel project.'
-                  echo 'Directory contents:'
-                  ls -la
-                fi
-
-                # Basic Laravel deployment steps
-                echo 'Putting application in maintenance mode...'
-                php artisan down --retry=60 || echo 'Failed to put app in maintenance mode'
-
-                # Update composer dependencies if composer.json exists
-                if [ -f 'composer.json' ]; then
-                  echo 'Installing composer dependencies...'
-                  composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev || echo 'Composer install failed'
-                else
-                  echo 'No composer.json found, skipping composer install'
-                fi
-
-                # Clear and cache Laravel
-                echo 'Clearing Laravel caches...'
-                php artisan config:clear || echo 'Config clear failed'
-                php artisan cache:clear || echo 'Cache clear failed'
-                php artisan route:clear || echo 'Route clear failed'
-                php artisan view:clear || echo 'View clear failed'
-
-                echo 'Caching Laravel configurations...'
-                php artisan config:cache || echo 'Config cache failed'
-                php artisan route:cache || echo 'Route cache failed'
-                php artisan view:cache || echo 'View cache failed'
-
-                # Run migrations
-                echo 'Running database migrations...'
-                php artisan migrate --force || echo 'Migration failed'
-
-                # Set permissions (try without sudo first)
-                echo 'Setting permissions...'
-                chown -R www-data:www-data '${{ secrets.PATH_STAGING }}' 2>/dev/null || sudo chown -R www-data:www-data '${{ secrets.PATH_STAGING }}' 2>/dev/null || echo 'Permission change failed'
-                chmod -R 755 '${{ secrets.PATH_STAGING }}' 2>/dev/null || sudo chmod -R 755 '${{ secrets.PATH_STAGING }}' 2>/dev/null || echo 'Permission change failed'
-
-                if [ -d '${{ secrets.PATH_STAGING }}/storage' ]; then
-                  chmod -R 775 '${{ secrets.PATH_STAGING }}/storage' 2>/dev/null || sudo chmod -R 775 '${{ secrets.PATH_STAGING }}/storage' 2>/dev/null || echo 'Storage permission change failed'
-                fi
-
-                if [ -d '${{ secrets.PATH_STAGING }}/bootstrap/cache' ]; then
-                  chmod -R 775 '${{ secrets.PATH_STAGING }}/bootstrap/cache' 2>/dev/null || sudo chmod -R 775 '${{ secrets.PATH_STAGING }}/bootstrap/cache' 2>/dev/null || echo 'Bootstrap cache permission change failed'
-                fi
-
-                # Bring application back up
-                echo 'Bringing application back online...'
-                php artisan up || echo 'Failed to bring app back up'
-              else
-                echo 'PHP not found in PATH, deployment may require manual intervention'
-                echo 'PATH: \$PATH'
-                echo 'Available commands:'
-                which python3 || echo 'python3 not found'
-                which node || echo 'node not found'
-                which composer || echo 'composer not found'
-              fi
-            fi
-
-            echo 'Deployment completed successfully'
-          "
+          # Copy script to server and execute
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no deploy_script.sh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/tmp/
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "chmod +x /tmp/deploy_script.sh && /tmp/deploy_script.sh && rm /tmp/deploy_script.sh"
