@@ -119,7 +119,9 @@ jobs:
         with:
           name: app-build
           path: deployment/
+
   deploy:
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
