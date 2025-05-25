@@ -117,7 +117,6 @@ jobs:
         with:
           name: app-build
           path: deployment/
-
   deploy:
     runs-on: ubuntu-latest
 
@@ -159,14 +158,30 @@ jobs:
           # Create .env file
           echo "Creating .env file..."
           cat > .env << 'ENV_EOF'
-${{ secrets.DOT_ENV_STAGING }}
-ENV_EOF
+          ${{ secrets.DOT_ENV_STAGING }}
+          ENV_EOF
           echo ".env file created successfully"
-          # Check if npm exists, install if not
+
+          # Install npm dependencies and build assets
           if ! command -v npm >/dev/null 2>&1; then
             echo "Installing Node.js..."
             curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
             sudo apt-get install -y nodejs
+          fi
+
+          echo "Installing npm dependencies..."
+          npm ci || npm install || true
+
+          echo "Building frontend assets..."
+          # Try different build commands
+          if npm run | grep -q "build"; then
+            npm run build
+          elif npm run | grep -q "prod"; then
+            npm run prod
+          elif npm run | grep -q "production";then
+            npm run production
+          else
+            echo "No production build script found, skipping"
           fi
 
           # Execute deployment script or manual steps
@@ -178,8 +193,8 @@ ENV_EOF
             echo "Running basic deployment..."
             git pull origin develop || true
             composer install --no-dev --optimize-autoloader --no-interaction || true
-            npm ci --only=production || npm install --only=production || true
-            npm run build || npm run production || true
+            npm ci || npm install || true
+            npm run build || npm run dev || npm run prod || true
             php artisan migrate --force || true
             php artisan config:cache || true
           fi
