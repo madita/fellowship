@@ -66,8 +66,15 @@ php artisan view:cache
 
 # Set proper permissions
 echo "Setting proper permissions..."
-chown -R www-data:www-data storage bootstrap/cache
-chmod -R 775 storage bootstrap/cache
+# Set proper permissions
+echo "Setting proper permissions..."
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || \
+    sudo chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || \
+    echo "⚠️  Failed to change ownership. Please ensure proper permissions manually."
+
+chmod -R 775 storage bootstrap/cache 2>/dev/null || \
+    sudo chmod -R 775 storage bootstrap/cache 2>/dev/null || \
+    echo "⚠️  Failed to change permissions. Please ensure proper permissions manually."
 
 # Bring application back online
 php artisan up
