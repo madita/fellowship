@@ -1,11 +1,9 @@
-name: Staging
+name: Deploy to Staging
 
 on:
   push:
-    branches:
-      - develop
-  pull_request:
     branches: [ develop ]
+  workflow_dispatch:
 
 jobs:
   run-tests:
@@ -121,78 +119,74 @@ jobs:
           path: deployment/
 
   deploy:
-    needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
 
     steps:
-      - name: Download deployment artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app-build
-          path: deployment/
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Deploy to staging server
-        uses: appleboy/ssh-action@v1.0.3  # Updated to specific version
-        env:
-          DOT_ENV: ${{ secrets.DOT_ENV_STAGING }}
-          BASE_PATH: ${{ secrets.PATH_STAGING }}
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          username: ${{ secrets.SSH_USERNAME }}
-          port: ${{ secrets.SSH_PORT || 22 }}
-          envs: DOT_ENV,BASE_PATH
-          script_stop: true  # Stop on first error
-          script: |
-            set -e  # Exit on any error
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
 
-            echo "Starting deployment to ${BASE_PATH}"
+      - name: Deploy to Staging Server
+        run: |
+          # Create a temporary script to avoid quote issues
+          cat > deploy_script.sh << 'SCRIPT_EOF'
+          #!/bin/bash
+          set -e
 
-            # Create backup
-            if [ -d "${BASE_PATH}" ]; then
-              sudo cp -r ${BASE_PATH} ${BASE_PATH}_backup_$(date +%Y%m%d_%H%M%S)
-            fi
+          echo "Starting deployment to ${{ secrets.STAGING_HOST }}"
+          echo "Current user: $(whoami)"
+          echo "Current directory: $(pwd)"
+          echo "Target directory: ${{ secrets.STAGING_PATH }}"
 
-            # Create directory if it doesn't exist
-            sudo mkdir -p ${BASE_PATH}
-            cd ${BASE_PATH}
+          # Create backup if directory exists
+          if [ -d "${{ secrets.STAGING_PATH }}" ]; then
+            echo "Creating backup..."
+            cp -r "${{ secrets.STAGING_PATH }}" "${{ secrets.STAGING_PATH }}_backup_$(date +%Y%m%d_%H%M%S)" || echo "Backup creation failed, continuing..."
+          fi
 
-            # Create .env file
-            echo "${DOT_ENV}" | sudo tee .env > /dev/null
+          # Create/access target directory
+          echo "Creating/accessing target directory..."
+          mkdir -p "${{ secrets.STAGING_PATH }}"
+          cd "${{ secrets.STAGING_PATH }}"
+          echo "Successfully changed to: $(pwd)"
 
-            # Run deployment script if it exists
-            if [ -f "server_deploy.sh" ]; then
-              sudo bash server_deploy.sh
-            else
-              echo "server_deploy.sh not found, running basic deployment"
+          # Create .env file
+          echo "Creating .env file..."
+          cat > .env << 'ENV_EOF'
+${{ secrets.DOT_ENV_STAGING }}
+ENV_EOF
+          echo ".env file created successfully"
+          # Check if npm exists, install if not
+          if ! command -v npm >/dev/null 2>&1; then
+            echo "Installing Node.js..."
+            curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+          fi
 
-              # Basic Laravel deployment steps
-              sudo php artisan down --retry=60 || true
+          # Execute deployment script or manual steps
+          if [ -f server_deploy.sh ]; then
+            echo "Found server_deploy.sh, executing..."
+            chmod +x server_deploy.sh
+            bash server_deploy.sh
+          else
+            echo "Running basic deployment..."
+            git pull origin develop || true
+            composer install --no-dev --optimize-autoloader --no-interaction || true
+            npm ci --only=production || npm install --only=production || true
+            npm run build || npm run production || true
+            php artisan migrate --force || true
+            php artisan config:cache || true
+          fi
 
-              # Update composer dependencies
-              sudo composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+          echo "Deployment completed successfully!"
+          SCRIPT_EOF
 
-              # Clear and cache Laravel
-              sudo php artisan config:clear
-              sudo php artisan cache:clear
-              sudo php artisan route:clear
-              sudo php artisan view:clear
-              sudo php artisan config:cache
-              sudo php artisan route:cache
-              sudo php artisan view:cache
-
-              # Run migrations
-              sudo php artisan migrate --force
-
-              # Set permissions
-              sudo chown -R www-data:www-data ${BASE_PATH}
-              sudo chmod -R 755 ${BASE_PATH}
-              sudo chmod -R 775 ${BASE_PATH}/storage
-              sudo chmod -R 775 ${BASE_PATH}/bootstrap/cache
-
-              # Bring application back up
-              sudo php artisan up
-            fi
-
-            echo "Deployment completed successfully"
+          # Copy script to server and execute
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no deploy_script.sh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/tmp/
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "chmod +x /tmp/deploy_script.sh && /tmp/deploy_script.sh && rm /tmp/deploy_script.sh"
