@@ -159,10 +159,9 @@ jobs:
           # Create .env file
           echo "Creating .env file..."
           cat > .env << 'ENV_EOF'
-          ${{ secrets.DOT_ENV_STAGING }}
-          ENV_EOF
+${{ secrets.DOT_ENV_STAGING }}
+ENV_EOF
           echo ".env file created successfully"
-
           # Check if npm exists, install if not
           if ! command -v npm >/dev/null 2>&1; then
             echo "Installing Node.js..."
