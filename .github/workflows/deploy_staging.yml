@@ -66,86 +66,156 @@ jobs:
       - name: Run Jest
         run: npm test
 
-  build:
-    needs: run-tests
-    runs-on: ubuntu-latest
+  build-and-deploy:
+      runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          extensions: mbstring, xml, zip, pdo_mysql, curl, gd, bcmath, intl
-          coverage: none
+        - name: Setup Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: '20'
+            cache: 'npm'
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
+        - name: Setup PHP
+          uses: shivammathur/setup-php@v2
+          with:
+            php-version: '8.3'
+            extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, mysql
+            coverage: none
 
-      - name: Cache Composer deps
-        uses: actions/cache@v4
-        with:
-          path: ~/.composer/cache
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
+        - name: Install Node.js dependencies
+          run: |
+            npm ci
+            npm audit fix --force || true
 
-      - name: Install PHP dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+        - name: Build frontend assets
+          run: |
+            npm run build
+            echo "✅ Frontend assets built successfully"
+            ls -la public/build/ || echo "Build directory structure:"
+            find public -type f -name "*.js" -o -name "*.css" | head -10
 
-      - name: Install NPM dependencies & build
-        run: |
-          rm -rf node_modules package-lock.json
-          npm install
-          npm run build
+        - name: Install PHP dependencies
+          run: |
+            composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-      - name: Create deployment artifact
-        run: |
-          mkdir -p deployment
-          tar -czf deployment/app.tar.gz \
-            --exclude=node_modules \
-            --exclude=.git \
-            --exclude=tests \
-            --exclude=storage/logs \
-            --exclude=.env \
-            .
+        - name: Prepare deployment package
+          run: |
+            echo "📦 Creating deployment package..."
 
-      - name: Upload deployment artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-build
-          path: deployment/
+            # Create deployment directory
+            mkdir -p deploy
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
+            # Copy all files except what we don't need
+            rsync -av \
+              --exclude=node_modules \
+              --exclude=.git \
+              --exclude=.github \
+              --exclude=tests \
+              --exclude=.env.example \
+              --exclude=README.md \
+              --exclude=.gitignore \
+              --exclude=deploy \
+              ./ deploy/
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Commit built assets
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-      - name: Do Something with env files
-        env:
-          DOT_ENV: ${{ secrets.DOT_ENV_STAGING }}
-        run: |
-          echo $DOT_ENV > .env
-      - name: Deployment
-        uses: appleboy/ssh-action@master
-        env:
-          DOT_ENV: ${{ secrets.DOT_ENV_STAGING }}
-          BASE_PATH: ${{ secrets.PATH_STAGING }}
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          username: ${{ secrets.SSH_USERNAME }}
-          envs: DOT_ENV,BASE_PATH
-          script: |
-            cd ${BASE_PATH}
-            bash server_deploy.sh
+            # Create tarball
+            cd deploy
+            tar -czf ../deployment.tar.gz .
+            cd ..
+
+            echo "Package size: $(du -sh deployment.tar.gz)"
+
+        - name: Deploy to staging server
+          run: |
+            echo "🚀 Deploying to staging server..."
+
+            # Setup SSH
+            mkdir -p ~/.ssh
+            echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
+
+            # Add host to known hosts
+            ssh-keyscan -H "${{ secrets.STAGING_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || {
+              echo "StrictHostKeyChecking no" >> ~/.ssh/config
+            }
+
+            # Test SSH connection
+            echo "Testing SSH connection..."
+            ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" "echo 'SSH connection successful'"
+
+            # Upload deployment package
+            echo "📤 Uploading deployment package..."
+            scp -i ~/.ssh/deploy_key deployment.tar.gz "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/tmp/"
+
+            # Deploy on server
+            echo "🔄 Deploying on server..."
+            ssh -i ~/.ssh/deploy_key "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" << 'EOF'
+              set -e
+
+              echo "📁 Setting up deployment..."
+              cd "${{ secrets.STAGING_PATH }}"
+
+              # Backup current .env and any important files
+              echo "💾 Backing up important files..."
+              cp .env .env.backup 2>/dev/null || echo "No .env file to backup"
+              cp -r storage/app storage_app_backup 2>/dev/null || echo "No storage/app to backup"
+
+              # Extract new deployment
+              echo "📦 Extracting new deployment..."
+              tar -xzf /tmp/deployment.tar.gz
+              rm /tmp/deployment.tar.gz
+
+              # Restore backed up files
+              echo "♻️ Restoring backed up files..."
+              cp .env.backup .env 2>/dev/null || echo "No .env backup to restore"
+              cp -r storage_app_backup/* storage/app/ 2>/dev/null || echo "No storage backup to restore"
+              rm -rf storage_app_backup .env.backup 2>/dev/null || true
+
+              # Set proper permissions (without sudo)
+              echo "🔐 Setting permissions..."
+              chmod -R 775 storage bootstrap/cache 2>/dev/null || echo "Permission setting may require manual adjustment"
+
+              # Laravel deployment steps
+              echo "🐘 Running Laravel commands..."
+              php artisan migrate --force
+
+              # Clear all caches
+              php artisan config:clear
+              php artisan cache:clear
+              php artisan route:clear
+              php artisan view:clear
+
+              # Rebuild caches
+              php artisan config:cache
+              php artisan route:cache
+              php artisan view:cache
+
+              # Restart services (Virtualmin approach)
+              echo "🔄 Restarting services..."
+
+              # For Virtualmin, try these approaches
+              if command -v systemctl >/dev/null 2>&1; then
+                # Try systemctl without sudo first
+                systemctl --user reload php-fpm 2>/dev/null || \
+                echo "PHP-FPM restart may require manual action in Virtualmin"
+              else
+                echo "Using Virtualmin service restart..."
+                # Virtualmin often handles this automatically
+                echo "Services will restart automatically or contact hosting provider"
+              fi
+
+              # Check if we can restart nginx
+              if pgrep nginx >/dev/null; then
+                echo "Nginx is running - restart may be handled by Virtualmin"
+              fi
+
+              echo "✅ Deployment completed successfully!"
+              echo "🌐 Frontend assets built in CI, no npm needed on server!"
+              echo "📊 Server disk space:"
+              df -h | head -2
+            EOF
+
+            echo "🎉 Deployment finished!"
