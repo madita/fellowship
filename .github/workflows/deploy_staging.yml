@@ -67,155 +67,222 @@ jobs:
         run: npm test
 
   build-and-deploy:
-      runs-on: ubuntu-latest
+    runs-on: ubuntu-latest
 
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-        - name: Setup Node.js
-          uses: actions/setup-node@v4
-          with:
-            node-version: '20'
-            cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-        - name: Setup PHP
-          uses: shivammathur/setup-php@v2
-          with:
-            php-version: '8.3'
-            extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, mysql
-            coverage: none
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, mysql
+          coverage: none
 
-        - name: Install Node.js dependencies
-          run: |
-            npm ci
-            npm audit fix --force || true
+      - name: Install Node.js dependencies
+        run: |
+          npm ci
+          npm audit fix --force || true
 
-        - name: Build frontend assets
-          run: |
-            npm run build
-            echo "✅ Frontend assets built successfully"
-            ls -la public/build/ || echo "Build directory structure:"
-            find public -type f -name "*.js" -o -name "*.css" | head -10
+      - name: Build frontend assets
+        run: |
+          npm run build
+          echo "✅ Frontend assets built successfully"
+          ls -la public/build/ || echo "Build directory structure:"
+          find public -type f -name "*.js" -o -name "*.css" | head -10
 
-        - name: Install PHP dependencies
-          run: |
-            composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+      - name: Install PHP dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-        - name: Prepare deployment package
-          run: |
-            echo "📦 Creating deployment package..."
+      - name: Prepare deployment package
+        run: |
+          echo "📦 Creating deployment package..."
 
-            # Create deployment directory
-            mkdir -p deploy
+          # Create deployment directory
+          mkdir -p deploy
 
-            # Copy all files except what we don't need
-            rsync -av \
-              --exclude=node_modules \
-              --exclude=.git \
-              --exclude=.github \
-              --exclude=tests \
-              --exclude=.env.example \
-              --exclude=README.md \
-              --exclude=.gitignore \
-              --exclude=deploy \
-              ./ deploy/
+          # Copy all files except what we don't need
+          rsync -av \
+            --exclude=node_modules \
+            --exclude=.git \
+            --exclude=.github \
+            --exclude=tests \
+            --exclude=.env.example \
+            --exclude=README.md \
+            --exclude=.gitignore \
+            --exclude=deploy \
+            ./ deploy/
 
-            # Create tarball
-            cd deploy
-            tar -czf ../deployment.tar.gz .
-            cd ..
+          # Create tarball
+          cd deploy
+          tar -czf ../deployment.tar.gz .
+          cd ..
 
-            echo "Package size: $(du -sh deployment.tar.gz)"
+          echo "Package size: $(du -sh deployment.tar.gz)"
 
-        - name: Deploy to staging server
-          run: |
-            echo "🚀 Deploying to staging server..."
+      - name: Setup SSH
+        run: |
+          echo "🔑 Setting up SSH connection..."
 
-            # Setup SSH
-            mkdir -p ~/.ssh
-            echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/deploy_key
-            chmod 600 ~/.ssh/deploy_key
+          # Create SSH directory
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
 
-            # Add host to known hosts
-            ssh-keyscan -H "${{ secrets.STAGING_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || {
-              echo "StrictHostKeyChecking no" >> ~/.ssh/config
-            }
+          # Check if required secrets exist
+          if [ -z "${{ secrets.STAGING_SSH_KEY }}" ]; then
+            echo "❌ ERROR: STAGING_SSH_KEY secret is not set"
+            echo "Please add your SSH private key to GitHub Secrets"
+            exit 1
+          fi
 
-            # Test SSH connection
-            echo "Testing SSH connection..."
-            ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" "echo 'SSH connection successful'"
+          if [ -z "${{ secrets.STAGING_HOST }}" ]; then
+            echo "❌ ERROR: STAGING_HOST secret is not set"
+            echo "Please add your server hostname/IP to GitHub Secrets"
+            exit 1
+          fi
 
-            # Upload deployment package
-            echo "📤 Uploading deployment package..."
-            scp -i ~/.ssh/deploy_key deployment.tar.gz "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/tmp/"
+          if [ -z "${{ secrets.STAGING_USER }}" ]; then
+            echo "❌ ERROR: STAGING_USER secret is not set"
+            echo "Please add your SSH username to GitHub Secrets"
+            exit 1
+          fi
 
-            # Deploy on server
-            echo "🔄 Deploying on server..."
-            ssh -i ~/.ssh/deploy_key "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" << 'EOF'
-              set -e
+          if [ -z "${{ secrets.STAGING_PATH }}" ]; then
+            echo "❌ ERROR: STAGING_PATH secret is not set"
+            echo "Please add your deployment path to GitHub Secrets"
+            exit 1
+          fi
 
-              echo "📁 Setting up deployment..."
-              cd "${{ secrets.STAGING_PATH }}"
+          # Setup SSH key
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
 
-              # Backup current .env and any important files
-              echo "💾 Backing up important files..."
-              cp .env .env.backup 2>/dev/null || echo "No .env file to backup"
-              cp -r storage/app storage_app_backup 2>/dev/null || echo "No storage/app to backup"
+          # Add host to known hosts
+          ssh-keyscan -H "${{ secrets.STAGING_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || {
+            echo "Warning: Could not add host to known_hosts, disabling strict checking"
+            echo "StrictHostKeyChecking no" >> ~/.ssh/config
+            echo "UserKnownHostsFile /dev/null" >> ~/.ssh/config
+          }
 
-              # Extract new deployment
-              echo "📦 Extracting new deployment..."
+          echo "✅ SSH setup completed"
+
+      - name: Test SSH connection
+        run: |
+          echo "🧪 Testing SSH connection..."
+
+          # Test basic SSH connection
+          if ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 -o BatchMode=yes "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" "echo 'SSH connection successful'"; then
+            echo "✅ SSH connection test passed"
+          else
+            echo "❌ SSH connection failed"
+            echo "Please check:"
+            echo "1. SSH key is correct and has access"
+            echo "2. Server hostname/IP is correct"
+            echo "3. Username is correct"
+            echo "4. Server allows SSH connections"
+            exit 1
+          fi
+
+      - name: Deploy to staging server
+        run: |
+          echo "🚀 Deploying to staging server..."
+
+          # Upload deployment package
+          echo "📤 Uploading deployment package..."
+          if scp -i ~/.ssh/deploy_key -o ConnectTimeout=30 deployment.tar.gz "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/tmp/"; then
+            echo "✅ Upload successful"
+          else
+            echo "❌ Upload failed"
+            exit 1
+          fi
+
+          # Deploy on server
+          echo "🔄 Deploying on server..."
+          ssh -i ~/.ssh/deploy_key "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" << 'EOF'
+            set -e
+
+            echo "📁 Starting deployment process..."
+
+            # Check if deployment path exists
+            if [ ! -d "${{ secrets.STAGING_PATH }}" ]; then
+              echo "❌ Deployment path does not exist: ${{ secrets.STAGING_PATH }}"
+              echo "Please create the directory or check STAGING_PATH secret"
+              exit 1
+            fi
+
+            cd "${{ secrets.STAGING_PATH }}"
+            echo "📍 Current directory: $(pwd)"
+
+            # Backup current .env and any important files
+            echo "💾 Backing up important files..."
+            cp .env .env.backup 2>/dev/null || echo "No .env file to backup"
+
+            # Extract new deployment
+            echo "📦 Extracting new deployment..."
+            if [ -f /tmp/deployment.tar.gz ]; then
               tar -xzf /tmp/deployment.tar.gz
               rm /tmp/deployment.tar.gz
+              echo "✅ Deployment extracted successfully"
+            else
+              echo "❌ Deployment file not found"
+              exit 1
+            fi
 
-              # Restore backed up files
-              echo "♻️ Restoring backed up files..."
-              cp .env.backup .env 2>/dev/null || echo "No .env backup to restore"
-              cp -r storage_app_backup/* storage/app/ 2>/dev/null || echo "No storage backup to restore"
-              rm -rf storage_app_backup .env.backup 2>/dev/null || true
+            # Restore backed up files
+            echo "♻️ Restoring backed up files..."
+            cp .env.backup .env 2>/dev/null || echo "No .env backup to restore"
+            rm -f .env.backup 2>/dev/null || true
 
-              # Set proper permissions (without sudo)
-              echo "🔐 Setting permissions..."
-              chmod -R 775 storage bootstrap/cache 2>/dev/null || echo "Permission setting may require manual adjustment"
+            # Set proper permissions (without sudo)
+            echo "🔐 Setting permissions..."
+            chmod -R 775 storage bootstrap/cache 2>/dev/null || echo "Permission setting may require manual adjustment"
 
-              # Laravel deployment steps
-              echo "🐘 Running Laravel commands..."
-              php artisan migrate --force
+            # Laravel deployment steps
+            echo "🐘 Running Laravel commands..."
 
-              # Clear all caches
-              php artisan config:clear
-              php artisan cache:clear
-              php artisan route:clear
-              php artisan view:clear
+            # Check if composer exists
+            if ! command -v composer &> /dev/null; then
+              echo "❌ Composer not found. Please install composer on the server."
+              exit 1
+            fi
 
-              # Rebuild caches
-              php artisan config:cache
-              php artisan route:cache
-              php artisan view:cache
+            # Laravel deployment
+            php artisan migrate --force
 
-              # Restart services (Virtualmin approach)
-              echo "🔄 Restarting services..."
+            # Clear all caches
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
 
-              # For Virtualmin, try these approaches
-              if command -v systemctl >/dev/null 2>&1; then
-                # Try systemctl without sudo first
-                systemctl --user reload php-fpm 2>/dev/null || \
-                echo "PHP-FPM restart may require manual action in Virtualmin"
-              else
-                echo "Using Virtualmin service restart..."
-                # Virtualmin often handles this automatically
-                echo "Services will restart automatically or contact hosting provider"
-              fi
+            # Rebuild caches
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
 
-              # Check if we can restart nginx
-              if pgrep nginx >/dev/null; then
-                echo "Nginx is running - restart may be handled by Virtualmin"
-              fi
+            # Check Laravel status
+            echo "🔍 Checking Laravel status..."
+            php artisan --version || echo "Could not get Laravel version"
 
-              echo "✅ Deployment completed successfully!"
-              echo "🌐 Frontend assets built in CI, no npm needed on server!"
-              echo "📊 Server disk space:"
-              df -h | head -2
-            EOF
+            echo "✅ Deployment completed successfully!"
+            echo "🌐 Frontend assets built in CI, no npm needed on server!"
+            echo "📊 Current disk usage:"
+            df -h . | head -2
+          EOF
 
-            echo "🎉 Deployment finished!"
+          echo "🎉 Deployment finished successfully!"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          # Clean up sensitive files
+          rm -f ~/.ssh/deploy_key
+          rm -f deployment.tar.gz
