@@ -125,87 +125,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup SSH key
+      - name: Commit built assets
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy to Staging Server
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+      - name: Do Something with env files
+        env:
+          DOT_ENV: ${{ secrets.DOT_ENV_STAGING }}
         run: |
-          # Create a temporary script to avoid quote issues
-          cat > deploy_script.sh << 'SCRIPT_EOF'
-          #!/bin/bash
-          set -e
-
-          echo "Starting deployment to ${{ secrets.STAGING_HOST }}"
-          echo "Current user: $(whoami)"
-          echo "Current directory: $(pwd)"
-          echo "Target directory: ${{ secrets.STAGING_PATH }}"
-
-          # Create backup if directory exists
-          if [ -d "${{ secrets.STAGING_PATH }}" ]; then
-            echo "Creating backup..."
-            cp -r "${{ secrets.STAGING_PATH }}" "${{ secrets.STAGING_PATH }}_backup_$(date +%Y%m%d_%H%M%S)" || echo "Backup creation failed, continuing..."
-          fi
-
-          # Create/access target directory
-          echo "Creating/accessing target directory..."
-          mkdir -p "${{ secrets.STAGING_PATH }}"
-          cd "${{ secrets.STAGING_PATH }}"
-          echo "Successfully changed to: $(pwd)"
-
-          # Create .env file
-          echo "Creating .env file..."
-          cat > .env << 'ENV_EOF'
-          ${{ secrets.DOT_ENV_STAGING }}
-          ENV_EOF
-          echo ".env file created successfully"
-
-          # Install npm dependencies and build assets
-          if ! command -v npm >/dev/null 2>&1; then
-            echo "Installing Node.js..."
-            curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-          fi
-
-          echo "Installing npm dependencies..."
-          npm ci || npm install || true
-
-          echo "Building frontend assets..."
-          # Try different build commands
-          if npm run | grep -q "build"; then
-            npm run build
-          elif npm run | grep -q "prod"; then
-            npm run prod
-          elif npm run | grep -q "production";then
-            npm run production
-          else
-            echo "No production build script found, skipping"
-          fi
-
-          # Execute deployment script or manual steps
-          if [ -f server_deploy.sh ]; then
-            echo "Found server_deploy.sh, executing..."
-            chmod +x server_deploy.sh
+          echo $DOT_ENV > .env
+      - name: Deployment
+        uses: appleboy/ssh-action@master
+        env:
+          DOT_ENV: ${{ secrets.DOT_ENV_STAGING }}
+          BASE_PATH: ${{ secrets.PATH_STAGING }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          username: ${{ secrets.SSH_USERNAME }}
+          envs: DOT_ENV,BASE_PATH
+          script: |
+            cd ${BASE_PATH}
             bash server_deploy.sh
-          else
-            echo "Running basic deployment..."
-            git pull origin develop || true
-            composer install --no-dev --optimize-autoloader --no-interaction || true
-            npm ci || npm install || true
-            npm run build || npm run dev || npm run prod || true
-            php artisan migrate --force || true
-            php artisan config:cache || true
-          fi
-
-          echo "Deployment completed successfully!"
-          SCRIPT_EOF
-
-          # Copy script to server and execute
-          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no deploy_script.sh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/tmp/
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "chmod +x /tmp/deploy_script.sh && /tmp/deploy_script.sh && rm /tmp/deploy_script.sh"
