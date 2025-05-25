@@ -8,9 +8,13 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.js'],
-    deps: {
-      inline: ['vuetify']
-    },
+      deps: {
+          optimizer: {
+              web: {
+                  include: ['vue', '@vue/test-utils']
+              }
+          }
+      },
     css: false
   },
   resolve: {
