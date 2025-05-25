@@ -137,36 +137,36 @@ jobs:
           chmod 700 ~/.ssh
 
           # Check if required secrets exist
-          if [ -z "${{ secrets.STAGING_SSH_KEY }}" ]; then
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
             echo "❌ ERROR: STAGING_SSH_KEY secret is not set"
             echo "Please add your SSH private key to GitHub Secrets"
             exit 1
           fi
 
-          if [ -z "${{ secrets.STAGING_HOST }}" ]; then
-            echo "❌ ERROR: STAGING_HOST secret is not set"
+          if [ -z "${{ secrets.SSH_HOST }}" ]; then
+            echo "❌ ERROR: SSH_HOST secret is not set"
             echo "Please add your server hostname/IP to GitHub Secrets"
             exit 1
           fi
 
-          if [ -z "${{ secrets.STAGING_USER }}" ]; then
-            echo "❌ ERROR: STAGING_USER secret is not set"
+          if [ -z "${{ secrets.SSH_USERNAME }}" ]; then
+            echo "❌ ERROR: SSH_USERNAME secret is not set"
             echo "Please add your SSH username to GitHub Secrets"
             exit 1
           fi
 
-          if [ -z "${{ secrets.STAGING_PATH }}" ]; then
-            echo "❌ ERROR: STAGING_PATH secret is not set"
+          if [ -z "${{ secrets.PATH_STAGING }}" ]; then
+            echo "❌ ERROR: PATH_STAGING secret is not set"
             echo "Please add your deployment path to GitHub Secrets"
             exit 1
           fi
 
           # Setup SSH key
-          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/deploy_key
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
           # Add host to known hosts
-          ssh-keyscan -H "${{ secrets.STAGING_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || {
+          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || {
             echo "Warning: Could not add host to known_hosts, disabling strict checking"
             echo "StrictHostKeyChecking no" >> ~/.ssh/config
             echo "UserKnownHostsFile /dev/null" >> ~/.ssh/config
@@ -179,7 +179,7 @@ jobs:
           echo "🧪 Testing SSH connection..."
 
           # Test basic SSH connection
-          if ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 -o BatchMode=yes "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" "echo 'SSH connection successful'"; then
+          if ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 -o BatchMode=yes "${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}" "echo 'SSH connection successful'"; then
             echo "✅ SSH connection test passed"
           else
             echo "❌ SSH connection failed"
@@ -197,7 +197,7 @@ jobs:
 
           # Upload deployment package
           echo "📤 Uploading deployment package..."
-          if scp -i ~/.ssh/deploy_key -o ConnectTimeout=30 deployment.tar.gz "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:/tmp/"; then
+          if scp -i ~/.ssh/deploy_key -o ConnectTimeout=30 deployment.tar.gz "${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/tmp/"; then
             echo "✅ Upload successful"
           else
             echo "❌ Upload failed"
@@ -206,19 +206,19 @@ jobs:
 
           # Deploy on server
           echo "🔄 Deploying on server..."
-          ssh -i ~/.ssh/deploy_key "${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}" << 'EOF'
+          ssh -i ~/.ssh/deploy_key "${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}" << 'EOF'
             set -e
 
             echo "📁 Starting deployment process..."
 
             # Check if deployment path exists
-            if [ ! -d "${{ secrets.STAGING_PATH }}" ]; then
-              echo "❌ Deployment path does not exist: ${{ secrets.STAGING_PATH }}"
-              echo "Please create the directory or check STAGING_PATH secret"
+            if [ ! -d "${{ secrets.PATH_STAGING }}" ]; then
+              echo "❌ Deployment path does not exist: ${{ secrets.PATH_STAGING }}"
+              echo "Please create the directory or check PATH_STAGING secret"
               exit 1
             fi
 
-            cd "${{ secrets.STAGING_PATH }}"
+            cd "${{ secrets.PATH_STAGING }}"
             echo "📍 Current directory: $(pwd)"
 
             # Backup current .env and any important files
