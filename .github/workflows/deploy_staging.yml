@@ -150,49 +150,49 @@ jobs:
             echo "Starting deployment to ${BASE_PATH}"
 
             # Create backup
-            if [ -d "${BASE_PATH}" ]; then
-              sudo cp -r ${BASE_PATH} ${BASE_PATH}_backup_$(date +%Y%m%d_%H%M%S)
-            fi
+            # if [ -d "${BASE_PATH}" ]; then
+            #   cp -r ${BASE_PATH} ${BASE_PATH}_backup_$(date +%Y%m%d_%H%M%S)
+            # fi
 
             # Create directory if it doesn't exist
-            sudo mkdir -p ${BASE_PATH}
-            cd ${BASE_PATH}
+            # mkdir -p ${BASE_PATH}
+            # cd ${BASE_PATH}
 
             # Create .env file
-            echo "${DOT_ENV}" | sudo tee .env > /dev/null
+            echo "${DOT_ENV}" | tee .env > /dev/null
 
             # Run deployment script if it exists
             if [ -f "server_deploy.sh" ]; then
-              sudo bash server_deploy.sh
+              bash server_deploy.sh
             else
               echo "server_deploy.sh not found, running basic deployment"
 
               # Basic Laravel deployment steps
-              sudo php artisan down --retry=60 || true
+              php artisan down --retry=60 || true
 
               # Update composer dependencies
-              sudo composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+              composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
 
               # Clear and cache Laravel
-              sudo php artisan config:clear
-              sudo php artisan cache:clear
-              sudo php artisan route:clear
-              sudo php artisan view:clear
-              sudo php artisan config:cache
-              sudo php artisan route:cache
-              sudo php artisan view:cache
+              php artisan config:clear
+              php artisan cache:clear
+              php artisan route:clear
+              php artisan view:clear
+              php artisan config:cache
+              php artisan route:cache
+              php artisan view:cache
 
               # Run migrations
-              sudo php artisan migrate --force
+              php artisan migrate --force
 
               # Set permissions
-              sudo chown -R www-data:www-data ${BASE_PATH}
-              sudo chmod -R 755 ${BASE_PATH}
-              sudo chmod -R 775 ${BASE_PATH}/storage
-              sudo chmod -R 775 ${BASE_PATH}/bootstrap/cache
+              # chown -R www-data:www-data ${BASE_PATH}
+              chmod -R 755 ${BASE_PATH}
+              chmod -R 775 ${BASE_PATH}/storage
+              chmod -R 775 ${BASE_PATH}/bootstrap/cache
 
               # Bring application back up
-              sudo php artisan up
+              php artisan up
             fi
 
             echo "Deployment completed successfully"
