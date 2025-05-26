@@ -66,223 +66,133 @@ jobs:
       - name: Run Jest
         run: npm test
 
-  build-and-deploy:
+  build:
+    needs: run-tests
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
+      - uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, mysql
+          php-version: '8.4'
+          extensions: mbstring, xml, zip, pdo_mysql, curl, gd, bcmath, intl
           coverage: none
 
-      - name: Install Node.js dependencies
-        run: |
-          npm ci
-          npm audit fix --force || true
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
 
-      - name: Build frontend assets
-        run: |
-          npm run build
-          echo "✅ Frontend assets built successfully"
-          ls -la public/build/ || echo "Build directory structure:"
-          find public -type f -name "*.js" -o -name "*.css" | head -10
+      - name: Cache Composer deps
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
 
       - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+      - name: Install NPM dependencies & build
         run: |
-          composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+          rm -rf node_modules package-lock.json
+          npm install
+          npm run build
 
-      - name: Prepare deployment package
+      - name: Create deployment artifact
         run: |
-          echo "📦 Creating deployment package..."
-
-          # Create deployment directory
-          mkdir -p deploy
-
-          # Copy all files except what we don't need
-          rsync -av \
+          mkdir -p deployment
+          tar -czf deployment/app.tar.gz \
             --exclude=node_modules \
             --exclude=.git \
-            --exclude=.github \
             --exclude=tests \
-            --exclude=.env.example \
-            --exclude=README.md \
-            --exclude=.gitignore \
-            --exclude=deploy \
-            ./ deploy/
+            --exclude=storage/logs \
+            --exclude=.env \
+            .
 
-          # Create tarball
-          cd deploy
-          tar -czf ../deployment.tar.gz .
-          cd ..
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build
+          path: deployment/
 
-          echo "Package size: $(du -sh deployment.tar.gz)"
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
 
-      - name: Setup SSH
-        run: |
-          echo "🔑 Setting up SSH connection..."
-
-          # Create SSH directory
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-
-          # Check if required secrets exist
-          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
-            echo "❌ ERROR: STAGING_SSH_KEY secret is not set"
-            echo "Please add your SSH private key to GitHub Secrets"
-            exit 1
-          fi
-
-          if [ -z "${{ secrets.SSH_HOST }}" ]; then
-            echo "❌ ERROR: SSH_HOST secret is not set"
-            echo "Please add your server hostname/IP to GitHub Secrets"
-            exit 1
-          fi
-
-          if [ -z "${{ secrets.SSH_USERNAME }}" ]; then
-            echo "❌ ERROR: SSH_USERNAME secret is not set"
-            echo "Please add your SSH username to GitHub Secrets"
-            exit 1
-          fi
-
-          if [ -z "${{ secrets.PATH_STAGING }}" ]; then
-            echo "❌ ERROR: PATH_STAGING secret is not set"
-            echo "Please add your deployment path to GitHub Secrets"
-            exit 1
-          fi
-
-          # Setup SSH key
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-
-          # Add host to known hosts
-          ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || {
-            echo "Warning: Could not add host to known_hosts, disabling strict checking"
-            echo "StrictHostKeyChecking no" >> ~/.ssh/config
-            echo "UserKnownHostsFile /dev/null" >> ~/.ssh/config
-          }
-
-          echo "✅ SSH setup completed"
-
-      - name: Test SSH connection
-        run: |
-          echo "🧪 Testing SSH connection..."
-
-          # Test basic SSH connection
-          if ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 -o BatchMode=yes "${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}" "echo 'SSH connection successful'"; then
-            echo "✅ SSH connection test passed"
-          else
-            echo "❌ SSH connection failed"
-            echo "Please check:"
-            echo "1. SSH key is correct and has access"
-            echo "2. Server hostname/IP is correct"
-            echo "3. Username is correct"
-            echo "4. Server allows SSH connections"
-            exit 1
-          fi
+    steps:
+      - name: Download deployment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build
+          path: deployment/
 
       - name: Deploy to staging server
-        run: |
-          echo "🚀 Deploying to staging server..."
+        uses: appleboy/ssh-action@v1.0.3  # Updated to specific version
+        env:
+          DOT_ENV: ${{ secrets.DOT_ENV_STAGING }}
+          BASE_PATH: ${{ secrets.PATH_STAGING }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          username: ${{ secrets.SSH_USERNAME }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          envs: DOT_ENV,BASE_PATH
+          script_stop: true  # Stop on first error
+          script: |
+            set -e  # Exit on any error
 
-          # Upload deployment package
-          echo "📤 Uploading deployment package..."
-          if scp -i ~/.ssh/deploy_key -o ConnectTimeout=30 deployment.tar.gz "${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/tmp/"; then
-            echo "✅ Upload successful"
-          else
-            echo "❌ Upload failed"
-            exit 1
-          fi
+            echo "Starting deployment to ${BASE_PATH}"
 
-          # Deploy on server
-          echo "🔄 Deploying on server..."
-          ssh -i ~/.ssh/deploy_key "${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}" << 'EOF'
-            set -e
-
-            echo "📁 Starting deployment process..."
-
-            # Check if deployment path exists
-            if [ ! -d "${{ secrets.PATH_STAGING }}" ]; then
-              echo "❌ Deployment path does not exist: ${{ secrets.PATH_STAGING }}"
-              echo "Please create the directory or check PATH_STAGING secret"
-              exit 1
+            # Create backup
+            if [ -d "${BASE_PATH}" ]; then
+              sudo cp -r ${BASE_PATH} ${BASE_PATH}_backup_$(date +%Y%m%d_%H%M%S)
             fi
 
-            cd "${{ secrets.PATH_STAGING }}"
-            echo "📍 Current directory: $(pwd)"
+            # Create directory if it doesn't exist
+            sudo mkdir -p ${BASE_PATH}
+            cd ${BASE_PATH}
 
-            # Backup current .env and any important files
-            echo "💾 Backing up important files..."
-            cp .env .env.backup 2>/dev/null || echo "No .env file to backup"
+            # Create .env file
+            echo "${DOT_ENV}" | sudo tee .env > /dev/null
 
-            # Extract new deployment
-            echo "📦 Extracting new deployment..."
-            if [ -f /tmp/deployment.tar.gz ]; then
-              tar -xzf /tmp/deployment.tar.gz
-              rm /tmp/deployment.tar.gz
-              echo "✅ Deployment extracted successfully"
+            # Run deployment script if it exists
+            if [ -f "server_deploy.sh" ]; then
+              sudo bash server_deploy.sh
             else
-              echo "❌ Deployment file not found"
-              exit 1
+              echo "server_deploy.sh not found, running basic deployment"
+
+              # Basic Laravel deployment steps
+              sudo php artisan down --retry=60 || true
+
+              # Update composer dependencies
+              sudo composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+              # Clear and cache Laravel
+              sudo php artisan config:clear
+              sudo php artisan cache:clear
+              sudo php artisan route:clear
+              sudo php artisan view:clear
+              sudo php artisan config:cache
+              sudo php artisan route:cache
+              sudo php artisan view:cache
+
+              # Run migrations
+              sudo php artisan migrate --force
+
+              # Set permissions
+              sudo chown -R www-data:www-data ${BASE_PATH}
+              sudo chmod -R 755 ${BASE_PATH}
+              sudo chmod -R 775 ${BASE_PATH}/storage
+              sudo chmod -R 775 ${BASE_PATH}/bootstrap/cache
+
+              # Bring application back up
+              sudo php artisan up
             fi
 
-            # Restore backed up files
-            echo "♻️ Restoring backed up files..."
-            cp .env.backup .env 2>/dev/null || echo "No .env backup to restore"
-            rm -f .env.backup 2>/dev/null || true
-
-            # Set proper permissions (without sudo)
-            echo "🔐 Setting permissions..."
-            chmod -R 775 storage bootstrap/cache 2>/dev/null || echo "Permission setting may require manual adjustment"
-
-            # Laravel deployment steps
-            echo "🐘 Running Laravel commands..."
-
-            # Check if composer exists
-            if ! command -v composer &> /dev/null; then
-              echo "❌ Composer not found. Please install composer on the server."
-              exit 1
-            fi
-
-            # Laravel deployment
-            php artisan migrate --force
-
-            # Clear all caches
-            php artisan config:clear
-            php artisan cache:clear
-            php artisan route:clear
-            php artisan view:clear
-
-            # Rebuild caches
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-
-            # Check Laravel status
-            echo "🔍 Checking Laravel status..."
-            php artisan --version || echo "Could not get Laravel version"
-
-            echo "✅ Deployment completed successfully!"
-            echo "🌐 Frontend assets built in CI, no npm needed on server!"
-            echo "📊 Current disk usage:"
-            df -h . | head -2
-          EOF
-
-          echo "🎉 Deployment finished successfully!"
-
-      - name: Cleanup
-        if: always()
-        run: |
-          # Clean up sensitive files
-          rm -f ~/.ssh/deploy_key
-          rm -f deployment.tar.gz
+            echo "Deployment completed successfully"
