@@ -136,7 +136,7 @@ jobs:
         uses: appleboy/ssh-action@master
         env:
           DOT_ENV: ${{ secrets.DOT_ENV_STAGING }}
-          BASE_PATH: ${{ secrets.PATH }}
+          BASE_PATH: ${{ secrets.PATH_STAGING }}
         with:
           host: ${{ secrets.SSH_HOST }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
