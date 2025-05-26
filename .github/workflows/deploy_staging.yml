@@ -121,78 +121,27 @@ jobs:
           path: deployment/
 
   deploy:
-    needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
 
     steps:
-      - name: Download deployment artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: app-build
-          path: deployment/
-
-      - name: Deploy to staging server
-        uses: appleboy/ssh-action@v1.0.3  # Updated to specific version
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Commit built assets
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+      - name: Deployment
+        uses: appleboy/ssh-action@master
         env:
           DOT_ENV: ${{ secrets.DOT_ENV_STAGING }}
-          BASE_PATH: ${{ secrets.PATH_STAGING }}
+          BASE_PATH: ${{ secrets.PATH }}
         with:
           host: ${{ secrets.SSH_HOST }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           username: ${{ secrets.SSH_USERNAME }}
-          port: ${{ secrets.SSH_PORT || 22 }}
           envs: DOT_ENV,BASE_PATH
-          script_stop: true  # Stop on first error
           script: |
-            set -e  # Exit on any error
+            cd ${BASE_PATH}
+            printf "%s" "$DOT_ENV" > "${BASE_PATH}.env"
+            bash server_deploy.sh
 
-            echo "Starting deployment to ${BASE_PATH}"
-
-            # Create backup
-            # if [ -d "${BASE_PATH}" ]; then
-            #   cp -r ${BASE_PATH} ${BASE_PATH}_backup_$(date +%Y%m%d_%H%M%S)
-            # fi
-
-            # Create directory if it doesn't exist
-            # mkdir -p ${BASE_PATH}
-            # cd ${BASE_PATH}
-
-            # Create .env file
-            echo "${DOT_ENV}" | tee .env > /dev/null
-
-            # Run deployment script if it exists
-            if [ -f "server_deploy.sh" ]; then
-              bash server_deploy.sh
-            else
-              echo "server_deploy.sh not found, running basic deployment"
-
-              # Basic Laravel deployment steps
-              php artisan down --retry=60 || true
-
-              # Update composer dependencies
-              composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-
-              # Clear and cache Laravel
-              php artisan config:clear
-              php artisan cache:clear
-              php artisan route:clear
-              php artisan view:clear
-              php artisan config:cache
-              php artisan route:cache
-              php artisan view:cache
-
-              # Run migrations
-              php artisan migrate --force
-
-              # Set permissions
-              # chown -R www-data:www-data ${BASE_PATH}
-              chmod -R 755 ${BASE_PATH}
-              chmod -R 775 ${BASE_PATH}/storage
-              chmod -R 775 ${BASE_PATH}/bootstrap/cache
-
-              # Bring application back up
-              php artisan up
-            fi
-
-            echo "Deployment completed successfully"
