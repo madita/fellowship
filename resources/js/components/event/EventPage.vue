@@ -394,7 +394,7 @@ import customViewPlugin from './custom-list-view.js';
 import CalendarEventHandler from "./CalendarEventHandler.vue";
 import { useCalendarStore } from '@/store/calendarStore.js';
 import VueDatePicker from "@vuepic/vue-datepicker";
-import { eventBus } from "../common/eventBus.js";
+import eventBus from "../common/eventBus.js";
 
 // Store
 const calendarStore = useCalendarStore();

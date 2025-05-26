@@ -64,8 +64,8 @@ import { capitalize } from './helpers/filters.js';
 // Animation library - https://animate.style/
 import 'animate.css/animate.min.css'
 import VueShortkey from 'vue-shortkey'
-import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
-import PerfectScrollbar from 'vue3-perfect-scrollbar';
+import 'vue3-perfect-scrollbar/style.css'; // Note: different CSS path
+import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 //
 
 // Set this to false to prevent the production tip on Vue startup.
