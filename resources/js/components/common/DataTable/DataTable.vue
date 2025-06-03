@@ -480,7 +480,7 @@ export default {
         }
 
         const editItem = (item) => {
-            console.log('test', item)
+            // console.log('test', item)
 
             state.editedIndex = state.response.records.data.indexOf(item)
             state.editing.id = item.id

@@ -49,12 +49,14 @@ export default {
         const router = useRouter()
 
         const signOut = async () => {
+            await authStore.logout();
             await authStore.resetStore();
+            await userStore.resetStore();
             router.replace({name: 'home'});
         }
 
         onMounted(() => {
-            console.log(userStore.user);
+            //console.log(userStore.user);
         });
 
         return {

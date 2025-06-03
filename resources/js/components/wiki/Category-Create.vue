@@ -107,7 +107,7 @@ export default {
         getWikiCategory(){
             this.loading = true
             return axios.get(`/api/taxables?term=${this.slug}&taxonomy=&model=`).then((response) => {
-                console.log(response)
+                //console.log(response)
                 if(response.data.data !== null) {
 
                     // this.$router.push(`/wiki/category/${this.slug}/edit`)
