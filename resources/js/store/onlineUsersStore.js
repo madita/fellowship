@@ -8,7 +8,7 @@ export const useOnlineUsersStore = defineStore({
     }),
     actions: {
         setUsers(users) {
-            console.log('setusers', users)
+            // console.log('setusers', users)
             this.users = users
         },
         addUser(user) {

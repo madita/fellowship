@@ -65,7 +65,7 @@ import { capitalize } from './helpers/filters.js';
 import 'animate.css/animate.min.css'
 import VueShortkey from 'vue-shortkey'
 import 'vue3-perfect-scrollbar/style.css'; // Note: different CSS path
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
+import { PerfectScrollbarPlugin } from 'vue3-perfect-scrollbar';
 //
 
 // Set this to false to prevent the production tip on Vue startup.
@@ -99,7 +99,7 @@ vueApp.config.globalProperties.$helpers = helpers
 vueApp.use(pinia)
 vueApp.use(i18n)
 vueApp.use(vuetify)
-vueApp.use(PerfectScrollbar);
+vueApp.use(PerfectScrollbarPlugin);
 // vueApp.use(store)
 // vueApp.use(permissions)
 vueApp.use(router)

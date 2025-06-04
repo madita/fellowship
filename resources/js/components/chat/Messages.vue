@@ -34,7 +34,7 @@ export default {
         const messageContainer = ref(null);
 
         const messages = computed(() => {
-            if (chatStore.messages === []) {
+            if (chatStore?.messages === []) {
                 return [];
             }
             return chatStore.messages;
@@ -45,15 +45,15 @@ export default {
         };
 
         const scrollToEnd = () => {
-            console.log('call scroll')
+
 
             // const container = messageContainer.value;
             //
-            console.log('messageContainer.value',messageContainer.value.scrollHeight)
+            // console.log('messageContainer.value',messageContainer.value.scrollHeight)
             // console.log('scrolltop',container.scrollTop)
             // console.log('scrollheight',container.scrollHeight)
             if (messageContainer.value) {
-                console.log('whyyyyy')
+                // console.log('whyyyyy')
                 messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
             }
         }

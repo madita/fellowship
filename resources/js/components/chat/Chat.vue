@@ -2,18 +2,18 @@
     <v-container fluid>
         <v-row>
             <div class="left-part" v-if="1">
-                <!-- <perfect-scrollbar style="height: calc(100vh - 290px)"> -->
+                 <perfect-scrollbar style="height: calc(100vh - 290px)">
 <!--                <slot name="leftpart"></slot>-->
-                <!-- </perfect-scrollbar> -->
+                 </perfect-scrollbar>
 
             </div>
             <div class="right-part">
 
                 <div class="d-flex">
                     <div class="w-100">
-<!--                        <perfect-scrollbar ref="" style="height: calc(100vh - 290px)">-->
+                        <perfect-scrollbar ref="" style="height: calc(100vh - 290px)">
                             <ChatMessages></ChatMessages>
-<!--                        </perfect-scrollbar>-->
+                        </perfect-scrollbar>
 
                     </div>
                     <div class="right-sidebar">
@@ -107,7 +107,7 @@ export default {
 
 
         const handleMessageInput = () => {
-            console.log('addmessage')
+            // console.log('addmessage')
             bodyBackedUp.value = body.value;
 
 
@@ -122,7 +122,7 @@ export default {
             return {
                 id: tempId,
                 body: body.value,
-                created_at: moment().utc(0).format('YYYY-MM-DD HH:mm:ss'),
+                // created_at: moment().utc(0).format('YYYY-MM-DD HH:mm:ss'),
                 selfOwned: true,
                 user: {
                     username: userStore.user.username
@@ -138,7 +138,7 @@ export default {
             axios.post('/api/chat/messages', {
                 body: body.value.trim()
             }).then((response) => {
-                console.log(response)
+                // console.log(response)
 
                 chatStore.addMessage(response.data);
                 }
@@ -151,23 +151,23 @@ export default {
         onMounted(() => {
             Echo.join('chat')
                 .here((users) => {
-                    console.log('usershere', users)
+                    // console.log('usershere', users)
                     //emit('chatUsers.here', users)
                     onlineUsersStore.setUsers(users)
                 })
                 .joining((user) => {
-                    console.log('joining', user)
+                    // console.log('joining', user)
                     //emit('chatUsers.joined', user)
                     onlineUsersStore.addUser(user)
                 })
                 .leaving((user) => {
-                    console.log('leaving', user)
+                    // console.log('leaving', user)
                     onlineUsersStore.removeUser(user)
                     //emit('chatUsers.left', user)
                 })
                 .listen('.message-created', (e) => {
                     //emit('message.added', e.message)
-                    console.log('LISTEnnewmessage', e.message)
+                    // console.log('LISTEnnewmessage', e.message)
                     chatStore.addMessage(e.message);
                 })
         })
