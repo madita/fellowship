@@ -31,8 +31,8 @@ export default {
                     link: '/admin/events',
                     items: [
                         {icon: 'mdi-calendar-star', key: 'menu.adminEventsList', text: 'List', link: '/admin/events'},
-                        {icon: 'mdi-calendar-alert-outline', key: 'menu.adminEventsList', text: 'Types', link: '/admin/events/types'},
-                        {icon: 'mdi-calendar-account-outline', key: 'menu.adminEventsList', text: 'Profiles', link: '/admin/events/profiles'}
+                        {icon: 'mdi-calendar-alert-outline', key: 'menu.adminEventsTypes', text: 'Types', link: '/admin/events/types'},
+                        {icon: 'mdi-calendar-account-outline', key: 'menu.adminEventsProfiles', text: 'Profiles', link: '/admin/events/profiles'}
                     ]
                 },
                 {
