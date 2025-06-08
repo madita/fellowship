@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Arr;
 
 class Revision extends Model
@@ -46,7 +49,7 @@ class Revision extends Model
      *
      * @link https://laravel.com/docs/eloquent-relationships#one-to-one
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function executor()
     {
@@ -58,7 +61,7 @@ class Revision extends Model
      *
      * @link https://laravel.com/docs/eloquent-relationships#polymorphic-relations
      *
-     * @return \Illuminate\Database\Eloquent\Relations\MorphTo
+     * @return MorphTo
      */
     public function revisioned()
     {
@@ -166,9 +169,9 @@ class Revision extends Model
      *
      * @link https://laravel.com/docs/eloquent#local-scopes
      *
-     * @param  \Illuminate\Database\Eloquent\Builder
+     * @param  Builder
      *
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return Builder
      */
     public function scopeOrdered($query)
     {
@@ -180,10 +183,10 @@ class Revision extends Model
      *
      * @link https://laravel.com/docs/eloquent#local-scopes
      *
-     * @param \Illuminate\Database\Eloquent\Builder      $query
-     * @param \Illuminate\Database\Eloquent\Model|string $table
+     * @param Builder      $query
+     * @param Model|string $table
      *
-     * @return \Illuminate\Database\Eloquent\Builder
+     * @return Builder
      */
     public function scopeFor($query, $table)
     {

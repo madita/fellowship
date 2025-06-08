@@ -3,13 +3,14 @@
 namespace App\Listeners;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 
 class RevisionListener
 {
     /**
      * Handle created event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param Model $revisioned
      */
     public function created($revisioned)
     {
@@ -19,7 +20,7 @@ class RevisionListener
     /**
      * Handle updated event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param Model $revisioned
      */
     public function updated($revisioned)
     {
@@ -31,7 +32,7 @@ class RevisionListener
     /**
      * Handle deleted event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param Model $revisioned
      */
     public function deleted($revisioned)
     {
@@ -41,7 +42,7 @@ class RevisionListener
     /**
      * Handle restored event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param Model $revisioned
      */
     public function restored($revisioned)
     {
@@ -52,7 +53,7 @@ class RevisionListener
      * Log the revision.
      *
      * @param string $action
-     * @param  \Illuminate\Database\Eloquent\Model
+     * @param  Model
      */
     protected function log($action, $revisioned)
     {

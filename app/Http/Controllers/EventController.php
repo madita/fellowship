@@ -9,9 +9,11 @@ use App\Models\Event\EventProfile;
 use App\Models\Event\EventType;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
+use App\Models\User;
 use DateTime;
 //use Lecturize\Taxonomies\Models\Taxonomy;
 //use Lecturize\Taxonomies\Models\Term;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -30,7 +32,7 @@ class EventController extends Controller
     /**
      * Show the application dashboard.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function index()
     {
@@ -127,7 +129,7 @@ class EventController extends Controller
                 $event->cover_position = request()->get('cover_position');
             }
         }
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
         $event->user_id = $user->id;
 
@@ -179,13 +181,13 @@ class EventController extends Controller
      *
      * @param int $id
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function show(Event $event, $slug = null)
     {
         $isGoing = null;
         if (auth()->user()) {
-            /** @var \App\Models\User $user */
+            /** @var User $user */
             $user = auth()->user();
             $isGoing = DB::table('event_guests')->where('event_id', '=', $event->id)->where('user_id', '=', $user->id)->first();
             if ($isGoing !== null) {
@@ -277,7 +279,7 @@ class EventController extends Controller
                 $event->cover_position = request()->get('cover_position');
             }
         }
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
         $event->user_id = $user->id;
 
@@ -329,7 +331,7 @@ class EventController extends Controller
      *
      * @param int $id
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function destroy(Event $event)
     {
@@ -343,7 +345,7 @@ class EventController extends Controller
     public function isGoing(Event $event, $answer)
     {
         //ToDo get just the guests???
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $eventGuest = $user->eventGuest()->where('event_id', $event->id)->first();
@@ -366,7 +368,7 @@ class EventController extends Controller
 
     public function joinEvent(Request $request, Event $event)
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = auth()->user();
 
         $answer = $request->get('answer');

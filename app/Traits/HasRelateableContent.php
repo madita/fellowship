@@ -6,10 +6,11 @@ use App\Models\Relateable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 trait HasRelateableContent
 {
-    /** @var \Illuminate\Support\Collection|null */
+    /** @var Collection|null */
     protected $relatableCache;
 
     public function relatables(): MorphMany
@@ -21,7 +22,7 @@ trait HasRelateableContent
      * Returns a Collection of all related models. The results are cached as a property on the
      * model, you reload them using the `loadRelated` method.
      *
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     public function getRelatedAttribute(): Collection
     {
@@ -56,7 +57,7 @@ trait HasRelateableContent
      * The `$item` parameter must be an Eloquent model or an ID. If you provide an ID, the model's
      * morph type must be specified as a second parameter.
      *
-     * @param \Illuminate\Database\Eloquent\Model|int $item
+     * @param Model|int $item
      * @param string|null                             $type
      *
      * @return \Spatie\Relateable\Relateable
@@ -72,7 +73,7 @@ trait HasRelateableContent
      * The `$item` parameter must be an Eloquent model or an ID. If you provide an ID, the model's
      * morph type must be specified as a second parameter.
      *
-     * @param \Illuminate\Database\Eloquent\Model|int $item
+     * @param Model|int $item
      * @param string|null                             $type
      *
      * @return int
@@ -129,7 +130,7 @@ trait HasRelateableContent
     }
 
     /**
-     * @param \Illuminate\Database\Eloquent\Model|int $item
+     * @param Model|int $item
      * @param string|null                             $type
      *
      * @return array
@@ -137,7 +138,7 @@ trait HasRelateableContent
     protected function getRelateableValues($item, string $type = ''): array
     {
         if (!$item instanceof Model && empty($type)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'If an id is specified as an item, the type isn\'t allowed to be empty.'
             );
         }

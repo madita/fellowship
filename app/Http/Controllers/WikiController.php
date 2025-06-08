@@ -39,7 +39,7 @@ class WikiController extends Controller
      *
      * @param $slug
      *
-     * @return JsonResponse|\never
+     * @return JsonResponse|never
      */
     public function index(Request $request)
     {
@@ -130,7 +130,7 @@ class WikiController extends Controller
      *
      * @param $slug
      *
-     * @return JsonResponse|\never
+     * @return JsonResponse|never
      */
     public function view($wikiable, $id)
     {

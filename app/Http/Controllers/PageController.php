@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
+use App\Models\Revision;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,7 +23,7 @@ class PageController extends Controller
      *
      * @param $slug
      *
-     * @return JsonResponse|\never
+     * @return JsonResponse|never
      */
     public function view($slug)
     {
@@ -94,7 +95,7 @@ class PageController extends Controller
             return abort(403);
         }
 
-        $history = collect($page->revisions)->map(function (\App\Models\Revision $revision) {
+        $history = collect($page->revisions)->map(function (Revision $revision) {
             $revision['user'] = $revision->executor()->first();
             $revision['diff'] = $revision->getDiff();
 

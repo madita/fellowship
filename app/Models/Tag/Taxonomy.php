@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -348,7 +349,7 @@ class Taxonomy extends Model
     /**
      * Get the term this taxonomy belongs to.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
 //    public function term()
 //    {
@@ -358,7 +359,7 @@ class Taxonomy extends Model
     /**
      * Get the parent taxonomy.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
 //    public function parent()
 //    {
@@ -412,7 +413,7 @@ class Taxonomy extends Model
     /**
      * An example for a related posts model.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\MorphToMany
+     * @return MorphToMany
      */
     public function posts()
     {
@@ -422,7 +423,7 @@ class Taxonomy extends Model
     /**
      * An example for a related posts model.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\MorphToMany
+     * @return MorphToMany
      */
     public function pages()
     {
@@ -481,7 +482,7 @@ class Taxonomy extends Model
      *
      * @param string|array                  $categories
      * @param string                        $taxonomy
-     * @param \App\Models\Tag\Taxonomy|null $parent
+     * @param Taxonomy|null $parent
      * @param int|null                      $sort
      *
      * @return Collection

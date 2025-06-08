@@ -23,7 +23,7 @@ class PostController extends Controller
      *
      * @param $slug
      *
-     * @return JsonResponse|\never
+     * @return JsonResponse|never
      */
     public function view($slug)
     {
