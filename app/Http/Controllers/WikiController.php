@@ -64,6 +64,7 @@ class WikiController extends Controller
             $data = $model::where('id', $wiki->wikiable_id)->first();
 
             $taxonomies = $data->getCategories('wiki')->unique();
+            $tags = $data->getCategories('tags')->unique();
 
             return [
                 'title'      => $wiki->title,
@@ -72,7 +73,8 @@ class WikiController extends Controller
                 'model'      => $wiki->wikiable_type,
                 //                    'taxable_title' => $data->{$data->getTaxableTitle()},
                 'data'       => $data,
-                'taxonomies' => $taxonomies];
+                'taxonomies' => $taxonomies,
+                'tags' => $tags];
         });
 
         $paginator = new LengthAwarePaginator(
@@ -113,6 +115,14 @@ class WikiController extends Controller
 //        $wiki->to = $wiki->per_page*$wiki->current_page;
 
 //        return response()->json($paginator);
+    }
+
+    public function getPages()
+    {
+
+        $wikidata = Wiki::all();
+
+        return response()->json($wikidata);
     }
 
     /**
@@ -169,10 +179,12 @@ class WikiController extends Controller
         $data->content = $content;
         $taxonomies = $data->getCategories('wiki')->unique();
         $terms = $data->getCategories('tags')->unique();
+        $user = $data->user;
 
         //        $data->content = Str::replace()
 
-        return response()->json(['page' => $data, 'wiki' => $wiki, 'parents' => $data->parents, 'terms' => $taxonomies, 'tags' => $terms]);
+        //parents can be removed???
+        return response()->json(['page' => $data, 'user' => $user,  'wiki' => $wiki, 'parent' => $wiki->parent,'children' => $wiki->children, 'terms' => $taxonomies, 'tags' => $terms]);
     }
 
     public function history($wikiable, $id)
@@ -182,11 +194,18 @@ class WikiController extends Controller
     public function store(Request $request)
     {
         //        dd($request->all());
+        $parent = $request->get('parent_id');
+        $parent_id = $parent['id']??0;
+
         $page = auth()->user()->pages()->create([
             'title'        => $request->get('title'),
             'content'      => $request->get('content'),
             'sign_in_only' => 0,
             'published'    => 1]);
+
+
+
+//        dd($parent_id);
 
         if ($request->get('categories')) {
             //            $taxonomy = $request->get('taxonomy');
@@ -212,7 +231,11 @@ class WikiController extends Controller
                 }
             }
         }
-        $wiki = new Wiki(['title' => $page->title, 'slug' => $request->get('slug')]);
+        $wiki = new Wiki([
+            'title' => $page->title,
+            'slug' => $request->get('slug'),
+            'parent_id' => $parent_id,
+        ]);
 
         $page->wikiable()->save($wiki);
 
@@ -228,8 +251,13 @@ class WikiController extends Controller
         //
         //        $model = $wiki['type'];
         //        $data = $model::where('id', $wiki['id'])->first();
+        $parent = $request->get('parent_id');
+        $parent_id = $parent['id']??0;
 
         $wiki = Wiki::where('slug', '=', $slug)->first();
+
+        $wiki->update(['title' => $request->get('title'), 'parent_id' => $parent_id]);
+
         $model = $wiki->wikiable_type;
 
         $data = $model::where('id', $wiki->wikiable_id)->first();
@@ -237,12 +265,12 @@ class WikiController extends Controller
         $data->update($request->only($this->getUpdatableColumns($request->get('type'))));
 
         //
-        if ($request->get('parent')) {
-            $parent = $request->get('parent');
-
-            $data->parent_id = $parent['id'];
-            $data->update();
-        }
+//        if ($request->get('parent')) {
+//            $parent = $request->get('parent');
+//
+//            $data->parent_id = $parent['id'];
+//            $data->update();
+//        }
 
         $data->detachCategories();
 

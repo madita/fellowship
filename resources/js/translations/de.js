@@ -149,6 +149,7 @@ export default {
     'checkout': 'Auschecken'
   },
   'menu': {
+    'main': 'Hauptmenü',
     'search': 'Suchen (drücken Sie \'Strg + /\', um zu fokussieren)',
     'dashboard': 'Instrumententafel',
     'logout': 'Ausloggen',

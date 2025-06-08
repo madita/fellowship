@@ -1,96 +1,256 @@
 <template>
-    <div class="d-flex flex-grow-1 flex-row mt-2">
-        <v-container class="mb-15">
-            <v-progress-circular v-if="loading"
-                :size="150"
-                color="primary"
-                indeterminate
-            ></v-progress-circular>
-            <template v-if="!loading">
-                <v-alert>{{message}}</v-alert>
-                <v-btn v-if="authenticated" class="text-right mx-1" :to="`/wiki/${slug}/${mode}`">
-                    {{mode}}
-                </v-btn>
-                <h2>{{wikipage.title}}</h2>
-                <span class="mb-1" v-if="redirect.length > 0 && redirect!=='no'">
-                    (Weitergeleitet von <a :href="`/wiki/${redirect}?redirect=no`">{{redirect}}</a>)
-                </span>
+    <div class="wiki-page-container">
+        <!-- Loading State -->
+        <div v-if="loading" class="loading-container">
+            <v-container class="text-center py-16">
+                <v-progress-circular
+                    size="80"
+                    width="4"
+                    color="primary"
+                    indeterminate
+                    class="mb-4"
+                />
+                <h3 class="text-h6 text-medium-emphasis">Loading wiki page...</h3>
+            </v-container>
+        </div>
 
-                <span v-html="wikipage.content"></span>
-                <span v-html="wikipage.description"></span>
+        <!-- Content -->
+        <div v-else class="wiki-content">
+            <v-container class="py-8">
+                <!-- Header Section -->
+                <div class="wiki-header mb-8">
+                    <v-row align="center">
+                        <v-col cols="12" md="8">
+                            <!-- Redirect Notice -->
+                            <div v-if="redirect.length > 0 && redirect !== 'no'" class="redirect-notice mb-4">
+                                <v-alert
+                                    type="info"
+                                    variant="tonal"
+                                    density="compact"
+                                    class="redirect-alert"
+                                >
+                                    <template v-slot:prepend>
+                                        <v-icon>mdi-arrow-right</v-icon>
+                                    </template>
+                                    Redirected from
+                                    <v-btn
+                                        :href="`/wiki/${redirect}?redirect=no`"
+                                        variant="text"
+                                        size="small"
+                                        class="text-decoration-underline ml-1"
+                                    >
+                                        {{ redirect }}
+                                    </v-btn>
+                                </v-alert>
+                            </div>
 
-                <v-chip class="ml-1" :key="`term-${term.id}`"   @click="goTo(term.slug, 'wiki-category')" v-for="term in terms">{{term.title}}</v-chip>
-                <v-chip class="ml-1" :key="`tag-${tag.id}`"  v-for="tag in tags">#{{tag.title}}</v-chip>
+                            <!-- Page Title -->
+                            <div class="page-title-section">
+                                <h1 class="page-title text-h3 font-weight-bold mb-2">
+                                    {{ wikipage.title || 'Untitled Page' }}
+                                </h1>
 
-            </template>
+                                <!-- Status Message -->
+                                <v-alert
+                                    v-if="message"
+                                    :type="mode === 'create' ? 'warning' : 'info'"
+                                    variant="tonal"
+                                    class="mb-4"
+                                >
+                                    <template v-slot:prepend>
+                                        <v-icon>{{ mode === 'create' ? 'mdi-plus-circle' : 'mdi-information' }}</v-icon>
+                                    </template>
+                                    {{ message }}
+                                    <template v-if="mode === 'create'">
+                                        <v-btn
+                                            color="warning"
+                                            variant="elevated"
+                                            size="small"
+                                            class="ml-3"
+                                            :to="`/wiki/${slug}/create`"
+                                        >
+                                            Create Page
+                                        </v-btn>
+                                    </template>
+                                </v-alert>
+                            </div>
+                        </v-col>
 
-        </v-container>
+                        <!-- Action Buttons -->
+                        <v-col cols="12" md="4" class="text-right">
+                            <div class="action-buttons">
+                                <v-btn
+                                    v-if="authenticated && mode"
+                                    color="primary"
+                                    variant="elevated"
+                                    :prepend-icon="mode === 'edit' ? 'mdi-pencil' : 'mdi-plus'"
+                                    :to="`/wiki/${slug}/${mode}`"
+                                    class="action-btn"
+                                >
+                                    {{ mode === 'edit' ? 'Edit Page' : 'Create Page' }}
+                                </v-btn>
 
+<!--                                <v-menu>-->
+<!--                                    <template v-slot:activator="{ props }">-->
+<!--                                        <v-btn-->
+<!--                                            v-bind="props"-->
+<!--                                            icon="mdi-dots-vertical"-->
+<!--                                            variant="text"-->
+<!--                                            class="ml-2"-->
+<!--                                        />-->
+<!--                                    </template>-->
+<!--                                    <v-list density="compact">-->
+<!--                                        <v-list-item prepend-icon="mdi-history" title="Page History" />-->
+<!--                                        <v-list-item prepend-icon="mdi-share" title="Share Page" />-->
+<!--                                        <v-list-item prepend-icon="mdi-star-outline" title="Watch Page" />-->
+<!--                                        <v-list-item prepend-icon="mdi-printer" title="Print Page" />-->
+<!--                                    </v-list>-->
+<!--                                </v-menu>-->
+                            </div>
+                        </v-col>
+                    </v-row>
+                </div>
+
+                <!-- Main Content Area -->
+                <v-row>
+                    <!-- Article Content -->
+                    <v-col cols="12" lg="9">
+                        <v-card class="content-card" elevation="2" rounded="lg">
+                            <v-card-text class="pa-8">
+                                <!-- Main Content -->
+                                <div
+                                    class="wiki-content-body"
+                                    v-html="wikipage.content"
+                                />
+
+                                <!-- Description -->
+                                <div
+                                    v-if="wikipage.description"
+                                    class="wiki-description mt-6 pt-6"
+                                    v-html="wikipage.description"
+                                />
+                            </v-card-text>
+                        </v-card>
+                    </v-col>
+
+                    <!-- Sidebar -->
+                    <v-col cols="12" lg="3">
+                        <div class="sidebar-content">
+                            <!-- Categories Section -->
+                            <v-card v-if="terms && terms.length > 0" class="mb-4" elevation="1" rounded="lg">
+                                <v-card-title class="text-h6 pb-2">
+                                    <v-icon class="mr-2" color="primary">mdi-folder-outline</v-icon>
+                                    Categories
+                                </v-card-title>
+                                <v-card-text class="pt-0">
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <v-chip
+                                            v-for="term in terms"
+                                            :key="`term-${term.id}`"
+                                            variant="tonal"
+                                            color="primary"
+                                            size="small"
+                                            clickable
+                                            @click="goTo(term.slug, 'wiki-category')"
+                                            class="category-chip"
+                                        >
+                                            <v-icon start size="16">mdi-folder</v-icon>
+                                            {{ term.title }}
+                                        </v-chip>
+                                    </div>
+                                </v-card-text>
+                            </v-card>
+
+                            <!-- Tags Section -->
+                            <v-card v-if="tags && tags.length > 0" class="mb-4" elevation="1" rounded="lg">
+                                <v-card-title class="text-h6 pb-2">
+                                    <v-icon class="mr-2" color="secondary">mdi-tag-outline</v-icon>
+                                    Tags
+                                </v-card-title>
+                                <v-card-text class="pt-0">
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <v-chip
+                                            v-for="tag in tags"
+                                            :key="`tag-${tag.id}`"
+                                            variant="tonal"
+                                            color="secondary"
+                                            size="small"
+                                            class="tag-chip"
+                                        >
+                                            <v-icon start size="16">mdi-pound</v-icon>
+                                            {{ tag.title }}
+                                        </v-chip>
+                                    </div>
+                                </v-card-text>
+                            </v-card>
+
+                            <!-- Table of Contents -->
+<!--                            <v-card class="mb-4" elevation="1" rounded="lg">-->
+<!--                                <v-card-title class="text-h6 pb-2">-->
+<!--                                    <v-icon class="mr-2" color="info">mdi-format-list-bulleted</v-icon>-->
+<!--                                    Table of Contents-->
+<!--                                </v-card-title>-->
+<!--                                <v-card-text class="pt-0">-->
+<!--                                    <div class="toc-placeholder text-caption text-medium-emphasis">-->
+<!--                                        Table of contents will be generated automatically based on headings in the content.-->
+<!--                                    </div>-->
+<!--                                </v-card-text>-->
+<!--                            </v-card>-->
+
+                            <!-- Page Info -->
+                            <v-card elevation="1" rounded="lg">
+                                <v-card-title class="text-h6 pb-2">
+                                    <v-icon class="mr-2" color="success">mdi-information-outline</v-icon>
+                                    Page Information
+                                </v-card-title>
+                                <v-card-text class="pt-0">
+                                    <div class="page-info">
+                                        <div class="info-item mb-2">
+                                            <v-icon size="16" class="mr-2">mdi-calendar</v-icon>
+                                            <span class="text-caption">Created: {{ $formatDate(wikipage.created_at, 'dd.mm.yyyy') }}</span>
+                                        </div>
+                                        <div class="info-item mb-2">
+                                            <v-icon size="16" class="mr-2">mdi-calendar</v-icon>
+                                            <span class="text-caption">Last modified: {{ $formatDate(wikipage.updated_at, 'dd.mm.yyyy') }}</span>
+                                        </div>
+                                        <div class="info-item mb-2">
+                                            <v-icon size="16" class="mr-2">mdi-account</v-icon>
+                                            <span class="text-caption">Author: {{ wikiuser?.username || 'Anonymous' }}</span>
+                                        </div>
+<!--                                        <div class="info-item">-->
+<!--                                            <v-icon size="16" class="mr-2">mdi-eye</v-icon>-->
+<!--                                            <span class="text-caption">Views: 1,234</span>-->
+<!--                                        </div>-->
+                                    </div>
+                                </v-card-text>
+                            </v-card>
+                        </div>
+                    </v-col>
+                </v-row>
+            </v-container>
+        </div>
     </div>
 </template>
 
 <script>
-
-// import {mapGetters} from "vuex";
-import {useAuthStore} from "@/store/authStore.js";
+import { useAuthStore } from "@/store/authStore.js";
 
 export default {
-    components: {
-    },
+    name: 'WikiPageView',
     data() {
         return {
-            loading:false,
-            wikipage:{},
-            wiki:{},
-            redirect:"",
-            mode:"",
-            message:"",
-            parents:[],
-            terms:[{title:""}],
-            tags:[{title:""}],
-            slug:""
+            loading: false,
+            wikipage: {},
+            wiki: {},
+            redirect: "",
+            mode: "",
+            message: "",
+            parents: [],
+            terms: [],
+            tags: [],
+            wikiuser: {},
+            slug: ""
         }
-    },
-    methods: {
-        getWikiPage(){
-            return axios.get(`/api/wiki/${this.slug}`).then((response) => {
-                // this.data = response.data
-                this.wikipage = response.data.page
-                this.wiki = response.data.wiki
-
-                console.log('redirect', this.redirect)
-
-                if(this.wiki.status === "redirect" && this.redirect!="no") {
-
-                    const pattern = /href="([^"]+)"/;
-                    const match = this.wikipage.content.match(pattern);
-                    const link = match ? match[1] : '';
-
-                    this.$router.push(`${link}?redirect=${this.slug}`)
-                }
-
-                this.parents = response.data.parents
-                this.terms = response.data.terms
-                this.tags = response.data.tags
-                this.mode = "edit"
-                this.loading = false
-            }).catch((error) => {
-                if (error.response.status === 404) {
-                    //this.$router.push('/error/not-found')
-                    this.wikipage = error.response.data.page
-                    this.loading = false
-                    this.message = "Die Seite existiert nicht..willst du sie erstellen."
-                    this.mode = "create"
-                    this.$router.push(`/wiki/${this.wikipage.slug}/create`)
-                }
-                if (error.response.status === 401) {
-                    this.$router.push('/auth/signin')
-                }
-            });
-        },
-        goTo(slug, type) {
-            this.$router.push({ name: type, params: { slug: slug } })
-        },
     },
     computed: {
         authenticated() {
@@ -102,38 +262,447 @@ export default {
             return authStore.user;
         },
     },
+    methods: {
+        getWikiPage() {
+            return axios.get(`/api/wiki/${this.slug}`).then((response) => {
+                this.wikipage = response.data.page;
+                this.wiki = response.data.wiki;
+
+                // console.log('redirect', this.redirect);
+
+                if (this.wiki.status === "redirect" && this.redirect != "no") {
+                    const pattern = /href="([^"]+)"/;
+                    const match = this.wikipage.content.match(pattern);
+                    const link = match ? match[1] : '';
+                    this.$router.push(`${link}?redirect=${this.slug}`);
+                }
+
+                this.parents = response.data.parents;
+                this.terms = response.data.terms || [];
+                this.tags = response.data.tags || [];
+                this.wikiuser = response.data.user || {};
+                this.mode = "edit";
+                this.loading = false;
+            }).catch((error) => {
+                if (error.response.status === 404) {
+                    this.wikipage = error.response.data.page;
+                    this.loading = false;
+                    this.message = "This page doesn't exist yet. Would you like to create it?";
+                    this.mode = "create";
+                    // Note: Removed automatic redirect to create page to let user decide
+                }
+                if (error.response.status === 401) {
+                    this.$router.push('/auth/signin');
+                }
+            });
+        },
+        goTo(slug, type) {
+            this.$router.push({ name: type, params: { slug: slug } });
+        },
+    },
     mounted() {
-
-        // console.log('lastlink', eventBus.lastLink)
-
-        this.loading = true
-        if(this.$route.params.slug) {
+        this.loading = true;
+        if (this.$route.params.slug) {
             this.slug = this.$route.params.slug;
             this.getWikiPage();
         }
 
-        if(this.$route.query.redirect) {
-           this.redirect = this.$route.query.redirect
+        if (this.$route.query.redirect) {
+            this.redirect = this.$route.query.redirect;
         }
-
-
-
     }
 }
 </script>
 
-<style>
-.new {
-    color: red!important;
+<style scoped>
+.wiki-page-container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
-.card-outter {
-    position: relative;
-    padding-bottom: 50px;
+
+.loading-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
 }
-.card-actions {
-    position: absolute;
-    bottom: 0;
+
+.wiki-header {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 51, 234, 0.05) 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.page-title {
+    background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+}
+
+.redirect-alert {
+    border-radius: 12px !important;
+}
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.action-btn {
+    border-radius: 12px !important;
+    text-transform: none !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2) !important;
+}
+
+.content-card {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.sidebar-content {
+    position: sticky;
+    top: 24px;
+}
+
+.category-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.tag-chip {
+    transition: all 0.2s ease;
+}
+
+.tag-chip:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(147, 51, 234, 0.2);
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    /*color: rgb(var(--v-theme-on-surface-variant));*/
+}
+
+.toc-placeholder {
+    font-style: italic;
+    padding: 16px 0;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+    .wiki-header {
+        padding: 16px;
+        margin-bottom: 24px;
+    }
+
+    .action-buttons {
+        justify-content: center;
+        margin-top: 16px;
+    }
+
+    .action-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.75rem !important;
+    }
+
+    .sidebar-content {
+        position: static;
+        margin-top: 24px;
+    }
 }
 </style>
 
+<style>
+/* Global styles for wiki content rendering */
+.wiki-content-body {
+    line-height: 1.7;
+    color: rgb(var(--v-theme-on-surface));
+}
 
+.wiki-content-body > *:first-child {
+    margin-top: 0 !important;
+}
+
+.wiki-content-body > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Headings */
+.wiki-content-body h1,
+.wiki-content-body h2,
+.wiki-content-body h3,
+.wiki-content-body h4,
+.wiki-content-body h5,
+.wiki-content-body h6 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    line-height: 1.3;
+    color: rgb(var(--v-theme-on-surface));
+}
+
+.wiki-content-body h1 {
+    font-size: 2.25rem;
+    border-bottom: 2px solid rgb(var(--v-border-color));
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.wiki-content-body h2 {
+    font-size: 1.875rem;
+    border-bottom: 1px solid rgb(var(--v-border-color));
+    padding-bottom: 0.25rem;
+}
+
+.wiki-content-body h3 {
+    font-size: 1.5rem;
+}
+
+.wiki-content-body h4 {
+    font-size: 1.25rem;
+}
+
+.wiki-content-body h5 {
+    font-size: 1.125rem;
+}
+
+.wiki-content-body h6 {
+    font-size: 1rem;
+    color: rgb(var(--v-theme-on-surface-variant));
+}
+
+/* Paragraphs */
+.wiki-content-body p {
+    margin: 1rem 0;
+    line-height: 1.7;
+}
+
+/* Lists */
+.wiki-content-body ul,
+.wiki-content-body ol {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+.wiki-content-body li {
+    margin: 0.5rem 0;
+    line-height: 1.6;
+}
+
+.wiki-content-body ul li {
+    list-style-type: disc;
+}
+
+.wiki-content-body ol li {
+    list-style-type: decimal;
+}
+
+/* Links */
+.wiki-content-body a {
+    color: rgb(var(--v-theme-primary));
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.wiki-content-body a:hover {
+    border-bottom-color: rgb(var(--v-theme-primary));
+    background: rgba(var(--v-theme-primary), 0.05);
+    padding: 0 2px;
+    border-radius: 4px;
+}
+
+/* Code */
+.wiki-content-body code {
+    background: rgba(var(--v-theme-surface-variant), 0.8);
+    color: rgb(var(--v-theme-primary));
+    padding: 0.2rem 0.4rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    border: 1px solid rgba(var(--v-border-color), 0.5);
+}
+
+.wiki-content-body pre {
+    background: rgb(var(--v-theme-surface-variant));
+    color: rgb(var(--v-theme-on-surface));
+    padding: 1.5rem;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    border: 1px solid rgb(var(--v-border-color));
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.wiki-content-body pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+}
+
+/* Blockquotes */
+.wiki-content-body blockquote {
+    margin: 1.5rem 0;
+    padding: 1rem 1.5rem;
+    background: rgba(var(--v-theme-primary), 0.05);
+    border-left: 4px solid rgb(var(--v-theme-primary));
+    border-radius: 0 12px 12px 0;
+    font-style: italic;
+    color: rgb(var(--v-theme-on-surface-variant));
+}
+
+.wiki-content-body blockquote p {
+    margin: 0.5rem 0;
+}
+
+.wiki-content-body blockquote p:first-child {
+    margin-top: 0;
+}
+
+.wiki-content-body blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+/* Images */
+.wiki-content-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin: 1.5rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.wiki-content-body img:hover {
+    transform: scale(1.02);
+}
+
+/* Tables - Enhanced Styling */
+.wiki-content-body table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 2rem 0;
+    background: rgb(var(--v-theme-surface));
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgb(var(--v-border-color));
+}
+
+.wiki-content-body table th {
+    min-width: 1em;
+    border: 1px solid rgb(var(--v-border-color));
+    padding: 2px 4px;
+    vertical-align: top;
+    box-sizing: border-box;
+    position: relative;
+    background: rgb(var(--v-theme-surface));
+}
+
+.wiki-content-body table th:first-child {
+    border-top-left-radius: 12px;
+}
+
+.wiki-content-body table th:last-child {
+    border-top-right-radius: 12px;
+}
+
+.wiki-content-body table td {
+    padding: 0.175rem 0.25rem;
+    border-bottom: 1px solid rgba(var(--v-border-color), 0.5);
+    vertical-align: top;
+    transition: background-color 0.2s ease;
+}
+
+.wiki-content-body table tr:hover td {
+    background: rgba(var(--v-theme-primary), 0.03);
+}
+
+.wiki-content-body table tr:last-child td {
+    border-bottom: none;
+}
+
+.wiki-content-body table tr:last-child td:first-child {
+    border-bottom-left-radius: 12px;
+}
+
+.wiki-content-body table tr:last-child td:last-child {
+    border-bottom-right-radius: 12px;
+}
+
+/* Alternating row colors for better readability */
+.wiki-content-body table tr:nth-child(even) td {
+    background: rgba(var(--v-theme-surface-variant), 0.3);
+}
+
+.wiki-content-body table tr:nth-child(even):hover td {
+    background: rgba(var(--v-theme-primary), 0.05);
+}
+
+/* Horizontal Rules */
+.wiki-content-body hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(var(--v-border-color)), transparent);
+    margin: 2rem 0;
+}
+
+/* Wiki Description Styling */
+.wiki-description {
+    border-top: 1px solid rgb(var(--v-border-color));
+    color: rgb(var(--v-theme-on-surface-variant));
+    font-style: italic;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .wiki-content-body table {
+        font-size: 0.875rem;
+    }
+
+    .wiki-content-body table th,
+    .wiki-content-body table td {
+        padding: 0.75rem 1rem;
+    }
+
+    .wiki-content-body table th {
+        font-size: 0.8rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .wiki-content-body table {
+        box-shadow: none;
+        border: 2px solid #000;
+    }
+
+    .wiki-content-body table th {
+        background: #f0f0f0 !important;
+        color: #000 !important;
+    }
+
+    .wiki-content-body table td {
+        border: 1px solid #000;
+    }
+}
+</style>

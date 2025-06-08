@@ -149,6 +149,7 @@ export default {
         checkout: 'Checkout'
     },
     menu: {
+        main: 'Main',
         search: 'Search (press "ctrl + /" to focus)',
         dashboard: 'Dashboard',
         logout: 'Logout',
