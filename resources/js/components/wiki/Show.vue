@@ -80,7 +80,7 @@
                         <v-col cols="12" md="4" class="text-right">
                             <div class="action-buttons">
                                 <v-btn
-                                    v-if="authenticated && mode"
+                                    v-if="authStore.isLoggedIn && mode"
                                     color="primary"
                                     variant="elevated"
                                     :prepend-icon="mode === 'edit' ? 'mdi-pencil' : 'mdi-plus'"
@@ -89,23 +89,6 @@
                                 >
                                     {{ mode === 'edit' ? 'Edit Page' : 'Create Page' }}
                                 </v-btn>
-
-<!--                                <v-menu>-->
-<!--                                    <template v-slot:activator="{ props }">-->
-<!--                                        <v-btn-->
-<!--                                            v-bind="props"-->
-<!--                                            icon="mdi-dots-vertical"-->
-<!--                                            variant="text"-->
-<!--                                            class="ml-2"-->
-<!--                                        />-->
-<!--                                    </template>-->
-<!--                                    <v-list density="compact">-->
-<!--                                        <v-list-item prepend-icon="mdi-history" title="Page History" />-->
-<!--                                        <v-list-item prepend-icon="mdi-share" title="Share Page" />-->
-<!--                                        <v-list-item prepend-icon="mdi-star-outline" title="Watch Page" />-->
-<!--                                        <v-list-item prepend-icon="mdi-printer" title="Print Page" />-->
-<!--                                    </v-list>-->
-<!--                                </v-menu>-->
                             </div>
                         </v-col>
                     </v-row>
@@ -143,7 +126,7 @@
                                     Categories
                                 </v-card-title>
                                 <v-card-text class="pt-0">
-                                    <div class="d-flex flex-wrap gap-2">
+                                    <div class="d-flex flex-wrap ga-2">
                                         <v-chip
                                             v-for="term in terms"
                                             :key="`term-${term.id}`"
@@ -154,7 +137,9 @@
                                             @click="goTo(term.slug, 'wiki-category')"
                                             class="category-chip"
                                         >
-                                            <v-icon start size="16">mdi-folder</v-icon>
+                                            <template v-slot:prepend>
+                                                <v-icon size="16">mdi-folder</v-icon>
+                                            </template>
                                             {{ term.title }}
                                         </v-chip>
                                     </div>
@@ -168,7 +153,7 @@
                                     Tags
                                 </v-card-title>
                                 <v-card-text class="pt-0">
-                                    <div class="d-flex flex-wrap gap-2">
+                                    <div class="d-flex flex-wrap ga-2">
                                         <v-chip
                                             v-for="tag in tags"
                                             :key="`tag-${tag.id}`"
@@ -177,25 +162,14 @@
                                             size="small"
                                             class="tag-chip"
                                         >
-                                            <v-icon start size="16">mdi-pound</v-icon>
+                                            <template v-slot:prepend>
+                                                <v-icon size="16">mdi-pound</v-icon>
+                                            </template>
                                             {{ tag.title }}
                                         </v-chip>
                                     </div>
                                 </v-card-text>
                             </v-card>
-
-                            <!-- Table of Contents -->
-<!--                            <v-card class="mb-4" elevation="1" rounded="lg">-->
-<!--                                <v-card-title class="text-h6 pb-2">-->
-<!--                                    <v-icon class="mr-2" color="info">mdi-format-list-bulleted</v-icon>-->
-<!--                                    Table of Contents-->
-<!--                                </v-card-title>-->
-<!--                                <v-card-text class="pt-0">-->
-<!--                                    <div class="toc-placeholder text-caption text-medium-emphasis">-->
-<!--                                        Table of contents will be generated automatically based on headings in the content.-->
-<!--                                    </div>-->
-<!--                                </v-card-text>-->
-<!--                            </v-card>-->
 
                             <!-- Page Info -->
                             <v-card elevation="1" rounded="lg">
@@ -207,20 +181,16 @@
                                     <div class="page-info">
                                         <div class="info-item mb-2">
                                             <v-icon size="16" class="mr-2">mdi-calendar</v-icon>
-                                            <span class="text-caption">Created: {{ $formatDate(wikipage.created_at, 'dd.mm.yyyy') }}</span>
+                                            <span class="text-caption">Created: {{ formatDate(wikipage.created_at, 'dd.MM.yyyy HH:ii') }}</span>
                                         </div>
                                         <div class="info-item mb-2">
                                             <v-icon size="16" class="mr-2">mdi-calendar</v-icon>
-                                            <span class="text-caption">Last modified: {{ $formatDate(wikipage.updated_at, 'dd.mm.yyyy') }}</span>
+                                            <span class="text-caption">Last modified: {{ formatDate(wikipage.updated_at, 'dd.MM.yyyy HH:ii') }}</span>
                                         </div>
                                         <div class="info-item mb-2">
                                             <v-icon size="16" class="mr-2">mdi-account</v-icon>
                                             <span class="text-caption">Author: {{ wikiuser?.username || 'Anonymous' }}</span>
                                         </div>
-<!--                                        <div class="info-item">-->
-<!--                                            <v-icon size="16" class="mr-2">mdi-eye</v-icon>-->
-<!--                                            <span class="text-caption">Views: 1,234</span>-->
-<!--                                        </div>-->
                                     </div>
                                 </v-card-text>
                             </v-card>
@@ -232,86 +202,94 @@
     </div>
 </template>
 
-<script>
-import { useAuthStore } from "@/store/authStore.js";
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/store/authStore.js'
+import { useDateFormat } from '@/plugins/formatDate.js' // Adjust path as needed
+import axios from 'axios'
 
-export default {
-    name: 'WikiPageView',
-    data() {
-        return {
-            loading: false,
-            wikipage: {},
-            wiki: {},
-            redirect: "",
-            mode: "",
-            message: "",
-            parents: [],
-            terms: [],
-            tags: [],
-            wikiuser: {},
-            slug: ""
-        }
-    },
-    computed: {
-        authenticated() {
-            const authStore = useAuthStore();
-            return authStore.isLoggedIn;
-        },
-        user() {
-            const authStore = useAuthStore();
-            return authStore.user;
-        },
-    },
-    methods: {
-        getWikiPage() {
-            return axios.get(`/api/wiki/${this.slug}`).then((response) => {
-                this.wikipage = response.data.page;
-                this.wiki = response.data.wiki;
+// Props (if any would be passed to this component)
+const props = defineProps({
+    // Add any props if needed
+})
 
-                // console.log('redirect', this.redirect);
+// Composables
+const router = useRouter()
+const route = useRoute()
+const authStore = useAuthStore()
+const { formatDate } = useDateFormat()
 
-                if (this.wiki.status === "redirect" && this.redirect != "no") {
-                    const pattern = /href="([^"]+)"/;
-                    const match = this.wikipage.content.match(pattern);
-                    const link = match ? match[1] : '';
-                    this.$router.push(`${link}?redirect=${this.slug}`);
-                }
+// Reactive state
+const loading = ref(false)
+const wikipage = ref({})
+const wiki = ref({})
+const redirect = ref('')
+const mode = ref('')
+const message = ref('')
+const parents = ref([])
+const terms = ref([])
+const tags = ref([])
+const wikiuser = ref({})
+const slug = ref('')
 
-                this.parents = response.data.parents;
-                this.terms = response.data.terms || [];
-                this.tags = response.data.tags || [];
-                this.wikiuser = response.data.user || {};
-                this.mode = "edit";
-                this.loading = false;
-            }).catch((error) => {
-                if (error.response.status === 404) {
-                    this.wikipage = error.response.data.page;
-                    this.loading = false;
-                    this.message = "This page doesn't exist yet. Would you like to create it?";
-                    this.mode = "create";
-                    // Note: Removed automatic redirect to create page to let user decide
-                }
-                if (error.response.status === 401) {
-                    this.$router.push('/auth/signin');
-                }
-            });
-        },
-        goTo(slug, type) {
-            this.$router.push({ name: type, params: { slug: slug } });
-        },
-    },
-    mounted() {
-        this.loading = true;
-        if (this.$route.params.slug) {
-            this.slug = this.$route.params.slug;
-            this.getWikiPage();
+// Computed properties
+const authenticated = computed(() => authStore.isLoggedIn)
+const user = computed(() => authStore.user)
+
+// Methods
+const getWikiPage = async () => {
+    try {
+        const response = await axios.get(`/api/wiki/${slug.value}`)
+
+        wikipage.value = response.data.page
+        wiki.value = response.data.wiki
+
+        if (wiki.value.status === 'redirect' && redirect.value !== 'no') {
+            const pattern = /href="([^"]+)"/
+            const match = wikipage.value.content.match(pattern)
+            const link = match ? match[1] : ''
+            router.push(`${link}?redirect=${slug.value}`)
+            return
         }
 
-        if (this.$route.query.redirect) {
-            this.redirect = this.$route.query.redirect;
+        parents.value = response.data.parents
+        terms.value = response.data.terms || []
+        tags.value = response.data.tags || []
+        wikiuser.value = response.data.user || {}
+        mode.value = 'edit'
+        loading.value = false
+
+    } catch (error) {
+        if (error.response?.status === 404) {
+            wikipage.value = error.response.data.page
+            loading.value = false
+            message.value = "This page doesn't exist yet. Would you like to create it?"
+            mode.value = 'create'
+        }
+        if (error.response?.status === 401) {
+            router.push('/auth/signin')
         }
     }
 }
+
+const goTo = (slugParam, type) => {
+    router.push({ name: type, params: { slug: slugParam } })
+}
+
+// Lifecycle
+onMounted(() => {
+    loading.value = true
+
+    if (route.params.slug) {
+        slug.value = route.params.slug
+        getWikiPage()
+    }
+
+    if (route.query.redirect) {
+        redirect.value = route.query.redirect
+    }
+})
 </script>
 
 <style scoped>
@@ -390,7 +368,6 @@ export default {
 .info-item {
     display: flex;
     align-items: center;
-    /*color: rgb(var(--v-theme-on-surface-variant));*/
 }
 
 .toc-placeholder {

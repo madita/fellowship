@@ -79,7 +79,7 @@
                                                     label="View all"
                                                     color="primary"
                                                     hide-details
-                                                    class="my-1"
+                                                    density="compact"
                                                 />
                                                 <v-checkbox
                                                     v-for="type in calendarStore.eventTypes"
@@ -89,7 +89,7 @@
                                                     :color="type.color"
                                                     :label="type.name"
                                                     hide-details
-                                                    class="my-1"
+                                                    density="compact"
                                                 />
                                             </div>
                                         </v-fade-transition>
@@ -384,7 +384,7 @@
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue';
 import axios from 'axios';
-import { format, addDays, isAfter, isBefore, formatDistance } from "date-fns";
+import { format, addDays, isEqual, isAfter, isBefore, formatDistance } from "date-fns";
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -455,12 +455,17 @@ const filterEvents = computed(() => {
 // Upcoming events (next 7 days)
 const upcomingEvents = computed(() => {
     const now = new Date();
-    const nextWeek = addDays(now, 7);
+    const nextWeek = addDays(now, 7); //
+    const nextYear = addDays(now, 365); //
 
     return filterEvents.value
         .filter(event => {
             const eventStart = new Date(event.start);
-            return isAfter(eventStart, now) && isBefore(eventStart, nextWeek);
+            const eventEnd = new Date(event.end);
+            // console.log('eventEnd', eventEnd, 'now', now, isAfter(eventEnd, now))
+            // if(equal(evenEnd, now)) return true;
+
+            return isAfter(eventEnd, now) && isBefore(eventStart, nextYear);
         })
         .sort((a, b) => new Date(a.start) - new Date(b.start));
 });

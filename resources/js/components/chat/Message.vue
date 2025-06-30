@@ -23,7 +23,7 @@
     <div v-if="message?.selfOwned" class="justify-end d-flex text-end mb-1">
         <div>
             <small class="text-medium-emphasis text-subtitle-2" v-if="message.created_at">
-                {{ $formatDistanceToNow(message?.created_at) }}
+                {{ formatDistanceToNow(message?.created_at) }}
                 </small
             >
 
@@ -44,7 +44,7 @@
         <div>
             <small class="text-medium-emphasis text-subtitle-2" v-if="message.created_at">
                 {{ message?.user?.username }},
-                {{ $formatDistanceToNow(message?.created_at) }}
+                {{ formatDistanceToNow(message?.created_at) }}
             </small>
 
             <v-sheet class="bg-grey100 rounded-md px-3 py-2 mb-1">

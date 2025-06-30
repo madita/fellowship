@@ -545,8 +545,8 @@
     </div>
 </template>
 
-<script>
-import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue';
+<script setup>
+import { ref, watch, computed, onBeforeUnmount } from 'vue';
 import { BubbleMenu, useEditor, EditorContent } from '@tiptap/vue-3';
 import CharacterCount from '@tiptap/extension-character-count';
 import StarterKit from '@tiptap/starter-kit';
@@ -565,164 +565,151 @@ import suggestion from './mention/suggestion.js'
 import hashtag from './mention/hashtag.js'
 import wiki from './mention/wiki.js'
 
-export default {
-    name: 'TiptapEditor',
-    components: {
-        EditorContent,
-        BubbleMenu,
+const props = defineProps({
+    type: {
+        type: String,
+        default: 'full',
     },
-    props: {
-        type: {
-            type: String,
-            default: 'full',
-        },
-        modelValue: {
-            type: String,
-            default: '',
-        },
-        limit: {
-            type: Number,
-            default: null
-        }
+    modelValue: {
+        type: String,
+        default: '',
     },
-    emits: ['update:modelValue'],
-    setup(props, { emit }) {
-        const showLinkDialog = ref(false);
-        const showImageDialog = ref(false);
-        const linkUrl = ref('');
-        const imageUrl = ref('');
-        const imageAlt = ref('');
-
-        const editor = useEditor({
-            content: props.modelValue,
-            extensions: [
-                StarterKit,
-                Table.configure({
-                    resizable: true,
-                }),
-                TableRow,
-                TableHeader,
-                TableCell,
-                Image.configure({
-                    inline: false,
-                    allowBase64: true
-                }),
-                Link.configure({
-                    openOnClick: false,
-                    HTMLAttributes: {
-                        class: 'editor-link',
-                    },
-                }),
-                CharacterCount.configure({
-                    limit: props.limit,
-                }),
-                // Add your custom mentions here when available
-                CustomMention.extend({
-                  name: "mention",
-                }).configure({
-                  HTMLAttributes: {
-                    class: 'mention',
-                  },
-                  suggestion,
-                }),
-            ],
-            editorProps: {
-                attributes: {
-                    class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
-                },
-            },
-            onUpdate: ({ editor }) => {
-                emit('update:modelValue', editor.getHTML());
-            },
-        });
-
-        const percentage = computed(() => {
-            if (!props.limit || !editor.value) return 0;
-            return Math.round((100 / props.limit) * editor.value.storage.characterCount.characters());
-        });
-
-        const setLink = () => {
-            const previousUrl = editor.value.getAttributes('link').href;
-            linkUrl.value = previousUrl || '';
-            showLinkDialog.value = true;
-        };
-
-        const confirmLink = () => {
-            if (linkUrl.value) {
-                editor.value
-                    .chain()
-                    .focus()
-                    .extendMarkRange('link')
-                    .setLink({ href: linkUrl.value })
-                    .run();
-            } else {
-                editor.value.chain().focus().unsetLink().run();
-            }
-            showLinkDialog.value = false;
-            linkUrl.value = '';
-        };
-
-        const addImage = () => {
-            imageUrl.value = '';
-            imageAlt.value = '';
-            showImageDialog.value = true;
-        };
-
-        const confirmImage = () => {
-            if (imageUrl.value) {
-                editor.value
-                    .chain()
-                    .focus()
-                    .setImage({
-                        src: imageUrl.value,
-                        alt: imageAlt.value || null
-                    })
-                    .run();
-            }
-            showImageDialog.value = false;
-            imageUrl.value = '';
-            imageAlt.value = '';
-        };
-
-        const insertTable = () => {
-            editor.value
-                .chain()
-                .focus()
-                .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
-                .run();
-        };
-
-        watch(() => props.modelValue, (value) => {
-            if (!editor.value) return;
-
-            const isSame = editor.value.getHTML() === value;
-            if (isSame) return;
-
-            editor.value.commands.setContent(value, false);
-        });
-
-        onBeforeUnmount(() => {
-            if (editor.value) {
-                editor.value.destroy();
-            }
-        });
-
-        return {
-            editor,
-            percentage,
-            showLinkDialog,
-            showImageDialog,
-            linkUrl,
-            imageUrl,
-            imageAlt,
-            setLink,
-            confirmLink,
-            addImage,
-            confirmImage,
-            insertTable,
-        };
+    limit: {
+        type: Number,
+        default: null
     }
+});
+
+const emit = defineEmits(['update:modelValue']);
+
+const showLinkDialog = ref(false);
+const showImageDialog = ref(false);
+const linkUrl = ref('');
+const imageUrl = ref('');
+const imageAlt = ref('');
+
+const editor = useEditor({
+    content: props.modelValue,
+    extensions: [
+        StarterKit,
+        Table.configure({
+            resizable: true,
+        }),
+        TableRow,
+        TableHeader,
+        TableCell,
+        Image.configure({
+            inline: false,
+            allowBase64: true
+        }),
+        Link.configure({
+            openOnClick: false,
+            HTMLAttributes: {
+                class: 'editor-link',
+            },
+        }),
+        CharacterCount.configure({
+            limit: props.limit,
+        }),
+        CustomMention.extend({
+            name: "mention",
+        }).configure({
+            HTMLAttributes: {
+                class: 'mention',
+            },
+            suggestion,
+        }),
+    ],
+    editorProps: {
+        attributes: {
+            class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
+        },
+    },
+    onUpdate: ({ editor }) => {
+        emit('update:modelValue', editor.getHTML());
+    },
+});
+
+const percentage = computed(() => {
+    if (!props.limit || !editor.value) return 0;
+    return Math.round((100 / props.limit) * editor.value.storage.characterCount.characters());
+});
+
+const setLink = () => {
+    const previousUrl = editor.value.getAttributes('link').href;
+    linkUrl.value = previousUrl || '';
+    showLinkDialog.value = true;
 };
+
+const confirmLink = () => {
+    if (linkUrl.value) {
+        editor.value
+            .chain()
+            .focus()
+            .extendMarkRange('link')
+            .setLink({ href: linkUrl.value })
+            .run();
+    } else {
+        editor.value.chain().focus().unsetLink().run();
+    }
+    showLinkDialog.value = false;
+    linkUrl.value = '';
+};
+
+const addImage = () => {
+    imageUrl.value = '';
+    imageAlt.value = '';
+    showImageDialog.value = true;
+};
+
+const confirmImage = () => {
+    if (imageUrl.value) {
+        editor.value
+            .chain()
+            .focus()
+            .setImage({
+                src: imageUrl.value,
+                alt: imageAlt.value || null
+            })
+            .run();
+    }
+    showImageDialog.value = false;
+    imageUrl.value = '';
+    imageAlt.value = '';
+};
+
+const insertTable = () => {
+    editor.value
+        .chain()
+        .focus()
+        .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+        .run();
+};
+
+const focusEditor = () => {
+    // editor.commands.focus()
+    editor.value
+        .chain()
+        .focus()
+    // editor.value?.commands.focus()
+}
+
+watch(() => props.modelValue, (value) => {
+    if (!editor.value) return;
+
+    const isSame = editor.value.getHTML() === value;
+    if (isSame) return;
+
+    editor.value.commands.setContent(value, false);
+});
+
+onBeforeUnmount(() => {
+    if (editor.value) {
+        editor.value.destroy();
+    }
+});
+
+defineExpose({ focusEditor });
 </script>
 
 <style scoped>

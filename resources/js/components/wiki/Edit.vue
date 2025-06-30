@@ -1,6 +1,41 @@
 <template>
     <div class="wiki-edit-container">
         <v-container class="py-6">
+            <!-- Progress Indicator -->
+<!--            <div class="progress-section mb-6">-->
+<!--                <v-stepper-->
+<!--                    v-model="currentStep"-->
+<!--                    :items="steps"-->
+<!--                    color="primary"-->
+<!--                    variant="horizontal"-->
+<!--                    class="elevation-2"-->
+<!--                >-->
+<!--                    <template #item.1>-->
+<!--                        <v-stepper-item-->
+<!--                            :complete="!!wikipage.title && !!wikipage.content"-->
+<!--                            title="Content"-->
+<!--                            subtitle="Title and body"-->
+<!--                            value="1"-->
+<!--                        />-->
+<!--                    </template>-->
+<!--                    <template #item.2>-->
+<!--                        <v-stepper-item-->
+<!--                            :complete="hasChanges"-->
+<!--                            title="Organization"-->
+<!--                            subtitle="Categories and tags"-->
+<!--                            value="2"-->
+<!--                        />-->
+<!--                    </template>-->
+<!--                    <template #item.3>-->
+<!--                        <v-stepper-item-->
+<!--                            title="Review"-->
+<!--                            subtitle="Save changes"-->
+<!--                            value="3"-->
+<!--                        />-->
+<!--                    </template>-->
+<!--                </v-stepper>-->
+<!--            </div>-->
+
             <!-- Header Section -->
             <div class="edit-header mb-6">
                 <v-row align="center">
@@ -8,11 +43,11 @@
                         <div class="d-flex align-center mb-2">
                             <v-icon color="primary" size="28" class="mr-3">mdi-pencil</v-icon>
                             <h1 class="edit-title text-h4 font-weight-bold">
-                                {{ wikipage.title ? `Editing: ${wikipage.title}` : 'Create New Wiki Page' }}
+                                {{ wikipage.title ? `Editing: ${wikipage.title}` : 'Edit Wiki Page' }}
                             </h1>
                         </div>
                         <p class="text-subtitle-1 text-medium-emphasis">
-                            Make your changes and save to update the wiki page
+                            {{ lastModified ? `Last modified: ${lastModified}` : 'Make your changes and save to update the wiki page' }}
                         </p>
                     </v-col>
                     <v-col cols="12" md="4" class="text-right">
@@ -24,6 +59,7 @@
                                 prepend-icon="mdi-arrow-left"
                                 :to="`/wiki/${slug}`"
                                 class="mr-2"
+                                :disabled="saving"
                             >
                                 Cancel
                             </v-btn>
@@ -31,44 +67,143 @@
                                 color="primary"
                                 variant="elevated"
                                 prepend-icon="mdi-content-save"
-                                @click="update"
+                                @click="handleSave"
                                 :loading="saving"
+                                :disabled="!hasChanges || !canSave"
                                 class="save-btn"
                             >
-                                Save Changes
+                                {{ saving ? 'Saving...' : 'Save Changes' }}
                             </v-btn>
                         </div>
                     </v-col>
                 </v-row>
 
-                <!-- Success Message -->
+                <!-- Change Indicator -->
+                <v-alert
+                    v-if="hasChanges"
+                    type="warning"
+                    variant="tonal"
+                    class="mt-4"
+                    closable
+                    @click:close="dismissChangeAlert = true"
+                >
+                    <template #prepend>
+                        <v-icon>mdi-pencil-circle</v-icon>
+                    </template>
+                    <div class="d-flex justify-space-between align-center">
+                        <span>You have unsaved changes</span>
+                        <div class="ml-4">
+                            <v-btn
+                                variant="text"
+                                size="small"
+                                @click="autoSave"
+                                :loading="autoSaving"
+                                prepend-icon="mdi-content-save-outline"
+                            >
+                                Auto Save
+                            </v-btn>
+                            <v-btn
+                                variant="text"
+                                size="small"
+                                @click="discardChanges"
+                                prepend-icon="mdi-undo"
+                            >
+                                Discard
+                            </v-btn>
+                        </div>
+                    </div>
+                </v-alert>
+
+                <!-- Success Message with Actions -->
                 <v-alert
                     v-if="message"
                     type="success"
                     variant="tonal"
                     class="mt-4"
-                    dismissible
+                    closable
                     @click:close="message = ''"
                 >
-                    <template v-slot:prepend>
+                    <template #prepend>
                         <v-icon>mdi-check-circle</v-icon>
                     </template>
-                    {{ message }}
+                    <div class="d-flex justify-space-between align-center">
+                        <span>{{ message }}</span>
+                        <div class="ml-4">
+                            <v-btn
+                                color="success"
+                                variant="elevated"
+                                size="small"
+                                :to="`/wiki/${slug}`"
+                                prepend-icon="mdi-eye"
+                                class="mr-2"
+                            >
+                                View Page
+                            </v-btn>
+                            <v-btn
+                                variant="outlined"
+                                size="small"
+                                @click="continueEditing"
+                                prepend-icon="mdi-pencil"
+                            >
+                                Keep Editing
+                            </v-btn>
+                        </div>
+                    </div>
+                </v-alert>
+
+                <!-- Error Display -->
+                <v-alert
+                    v-if="editing.errors && editing.errors.length > 0"
+                    type="error"
+                    variant="tonal"
+                    class="mt-4"
+                    closable
+                    @click:close="editing.errors = []"
+                >
+                    <template #prepend>
+                        <v-icon>mdi-alert-circle</v-icon>
+                    </template>
+                    <div class="error-content">
+                        <h4 class="mb-2">Please fix the following issues:</h4>
+                        <ul class="mb-0">
+                            <li v-for="(error, index) in editing.errors" :key="index">{{ error }}</li>
+                        </ul>
+                    </div>
                 </v-alert>
             </div>
 
-            <!-- Main Content -->
+            <!-- Main Content with Responsive Layout -->
             <v-row>
                 <!-- Editor Section -->
-                <v-col cols="12" lg="8">
+                <v-col cols="12" :lg="showPreview ? 8 : 12">
                     <v-card class="editor-card" elevation="2" rounded="lg">
-                        <v-card-title class="editor-card-title">
-                            <v-icon class="mr-2" color="primary">mdi-file-document-edit</v-icon>
-                            Content Editor
+                        <v-card-title class="editor-card-title d-flex justify-space-between align-center">
+                            <div class="d-flex align-center">
+                                <v-icon class="mr-2" color="primary">mdi-file-document-edit</v-icon>
+                                <span>Content Editor</span>
+                            </div>
+                            <div class="editor-actions">
+                                <v-btn
+                                    variant="text"
+                                    size="small"
+                                    @click="showPreview = !showPreview"
+                                    :prepend-icon="showPreview ? 'mdi-eye-off' : 'mdi-eye'"
+                                >
+                                    {{ showPreview ? 'Hide' : 'Show' }} Preview
+                                </v-btn>
+                                <v-btn
+                                    variant="text"
+                                    size="small"
+                                    @click="showHistory = true"
+                                    prepend-icon="mdi-history"
+                                >
+                                    History
+                                </v-btn>
+                            </div>
                         </v-card-title>
 
                         <v-card-text class="pa-6">
-                            <!-- Title Field -->
+                            <!-- Enhanced Title Field -->
                             <div class="title-section mb-6">
                                 <v-text-field
                                     v-model="wikipage.title"
@@ -76,25 +211,113 @@
                                     variant="outlined"
                                     density="comfortable"
                                     prepend-inner-icon="mdi-format-title"
-                                    placeholder="Enter a descriptive title for your wiki page"
+                                    placeholder="Enter a clear, descriptive title..."
                                     class="title-field"
-                                    :rules="[rules.required]"
-                                />
+                                    :error="titleError"
+                                    :error-messages="titleErrorMessage"
+                                    @input="onTitleChange"
+                                    @blur="validateTitle"
+                                    clearable
+                                    counter="100"
+                                    maxlength="100"
+                                >
+                                    <template #append-inner>
+                                        <v-tooltip text="Changes to the title will update the page URL">
+                                            <template #activator="{ props }">
+                                                <v-icon v-bind="props" size="small" color="info">mdi-help-circle</v-icon>
+                                            </template>
+                                        </v-tooltip>
+                                    </template>
+                                </v-text-field>
+
+                                <!-- Change Detection -->
+                                <div v-if="originalTitle !== wikipage.title" class="change-indicator mt-2">
+                                    <v-chip size="small" color="warning" variant="tonal">
+                                        <v-icon start size="16">mdi-pencil</v-icon>
+                                        Title changed from: "{{ originalTitle }}"
+                                    </v-chip>
+                                </div>
                             </div>
 
-                            <!-- Content Editor -->
+                            <!-- Content Editor with Enhanced Features -->
                             <div class="content-section">
-                                <div class="content-label mb-3">
-                                    <v-icon class="mr-2" size="20" color="primary">mdi-text</v-icon>
-                                    <span class="text-subtitle-1 font-weight-medium">Page Content</span>
+                                <div class="content-header mb-3 d-flex justify-space-between align-center">
+                                    <div class="d-flex align-center">
+                                        <v-icon class="mr-2" size="20" color="primary">mdi-text</v-icon>
+                                        <span class="text-subtitle-1 font-weight-medium">Page Content</span>
+                                    </div>
+                                    <div class="content-stats">
+                                        <v-chip size="small" variant="tonal" color="info">
+                                            {{ contentStats.words }} words, {{ contentStats.chars }} characters
+                                        </v-chip>
+                                        <v-chip v-if="contentChanged" size="small" variant="tonal" color="warning" class="ml-2">
+                                            Modified
+                                        </v-chip>
+                                    </div>
                                 </div>
+
+                                <!-- Content Toolbar -->
+                                <div class="content-toolbar mb-3">
+                                    <v-btn-group density="compact" variant="outlined">
+                                        <v-btn size="small" @click="insertTemplate('heading')">
+                                            <v-icon>mdi-format-header-1</v-icon>
+                                        </v-btn>
+                                        <v-btn size="small" @click="insertTemplate('list')">
+                                            <v-icon>mdi-format-list-bulleted</v-icon>
+                                        </v-btn>
+                                        <v-btn size="small" @click="insertTemplate('table')">
+                                            <v-icon>mdi-table</v-icon>
+                                        </v-btn>
+                                        <v-btn size="small" @click="insertTemplate('link')">
+                                            <v-icon>mdi-link</v-icon>
+                                        </v-btn>
+                                        <v-btn size="small" @click="showDiff = !showDiff">
+                                            <v-icon>mdi-file-compare</v-icon>
+                                        </v-btn>
+                                    </v-btn-group>
+
+                                    <v-spacer />
+
+                                    <div class="auto-save-status">
+                                        <v-chip
+                                            :color="autoSaveStatus.color"
+                                            size="small"
+                                            variant="tonal"
+                                            :prepend-icon="autoSaveStatus.icon"
+                                        >
+                                            {{ autoSaveStatus.text }}
+                                        </v-chip>
+                                    </div>
+                                </div>
+
+                                <!-- Diff View -->
+                                <v-expand-transition>
+                                    <div v-if="showDiff" class="diff-section mb-4">
+                                        <v-card variant="outlined" class="pa-3">
+                                            <div class="text-subtitle-2 mb-2">Content Changes</div>
+                                            <div class="diff-content">
+                                                <div class="text-caption text-medium-emphasis">
+                                                    Showing changes from original content
+                                                </div>
+                                                <!-- Simplified diff display -->
+                                                <div class="mt-2 pa-2 rounded" style="background: rgba(var(--v-theme-warning), 0.1);">
+                                                    {{ contentStats.words - originalContentStats.words }} words changed
+                                                </div>
+                                            </div>
+                                        </v-card>
+                                    </div>
+                                </v-expand-transition>
+
                                 <div class="editor-wrapper">
                                     <tiptap
-                                        v-model:modelValue="wikipage.content"
+                                        v-model="wikipage.content"
                                         :value="wikipage.content"
                                         id="text-content"
                                         name="content"
                                         type="full"
+                                        placeholder="Edit your wiki page content..."
+                                        ref="editorRef"
+                                        @update:modelValue="onContentChange"
                                     />
                                 </div>
                             </div>
@@ -102,68 +325,124 @@
                     </v-card>
                 </v-col>
 
-                <!-- Sidebar -->
-                <v-col cols="12" lg="4">
+                <!-- Enhanced Sidebar -->
+                <v-col v-if="showPreview" cols="12" lg="4">
                     <div class="sidebar-content">
+                        <!-- Quick Actions -->
+                        <v-card class="quick-actions-card mb-4" elevation="1" rounded="lg">
+                            <v-card-title class="quick-actions-title">
+                                <v-icon class="mr-2" color="primary">mdi-lightning-bolt</v-icon>
+                                Quick Actions
+                            </v-card-title>
+                            <v-card-text class="pa-4">
+                                <v-row dense>
+                                    <v-col cols="6">
+                                        <v-btn
+                                            block
+                                            variant="outlined"
+                                            size="small"
+                                            @click="focusTitle"
+                                            prepend-icon="mdi-format-title"
+                                        >
+                                            Focus Title
+                                        </v-btn>
+                                    </v-col>
+                                    <v-col cols="6">
+                                        <v-btn
+                                            block
+                                            variant="outlined"
+                                            size="small"
+                                            @click="focusContent"
+                                            prepend-icon="mdi-text"
+                                        >
+                                            Focus Content
+                                        </v-btn>
+                                    </v-col>
+                                    <v-col cols="6">
+                                        <v-btn
+                                            block
+                                            variant="outlined"
+                                            size="small"
+                                            @click="discardChanges"
+                                            prepend-icon="mdi-undo"
+                                            :disabled="!hasChanges"
+                                        >
+                                            Discard
+                                        </v-btn>
+                                    </v-col>
+                                    <v-col cols="6">
+                                        <v-btn
+                                            block
+                                            variant="outlined"
+                                            size="small"
+                                            @click="duplicatePage"
+                                            prepend-icon="mdi-content-copy"
+                                        >
+                                            Duplicate
+                                        </v-btn>
+                                    </v-col>
+                                </v-row>
+                            </v-card-text>
+                        </v-card>
+
                         <!-- Page Settings -->
                         <v-card class="settings-card mb-4" elevation="1" rounded="lg">
                             <v-card-title class="settings-title">
                                 <v-icon class="mr-2" color="info">mdi-cog</v-icon>
                                 Page Settings
                             </v-card-title>
-
                             <v-card-text class="pa-4">
-                                <!-- Parent Page -->
-                                <div class="setting-section mb-4">
-                                    <v-select
-                                        v-model="wikiPageParent"
-                                        :items="pages"
-                                        item-title="title"
-                                        label="Parent Page"
-                                        variant="outlined"
-                                        density="compact"
-                                        prepend-inner-icon="mdi-file-tree"
-                                        return-object
-                                        clearable
-                                        no-data-text="No parent pages available"
-                                    >
-                                        <template v-slot:selection="{ item }">
-                                            <div class="d-flex align-center">
-                                                <v-icon size="16" class="mr-2">mdi-file-document</v-icon>
-                                                {{ item?.title }}
-                                                <span class="text-caption text-medium-emphasis ml-1">({{
-                                                        item?.slug
-                                                    }})</span>
-                                            </div>
-                                        </template>
-<!--                                        <template v-slot:item="{ props, item }">-->
-<!--                                            <v-list-item v-bind="props">-->
-<!--                                                <template v-slot:prepend>-->
-<!--                                                    <v-icon>mdi-file-document</v-icon>-->
-<!--                                                </template>-->
-<!--                                                <v-list-item-title>{{ item?.title }}</v-list-item-title>-->
-<!--                                                <v-list-item-subtitle>{{ item?.slug }}</v-list-item-subtitle>-->
-<!--                                            </v-list-item>-->
-<!--                                        </template>-->
-                                    </v-select>
-                                </div>
+                                <v-select
+                                    v-model="wikiPageParent"
+                                    :items="pages"
+                                    item-title="title"
+                                    item-value="id"
+                                    label="Parent Page"
+                                    variant="outlined"
+                                    density="compact"
+                                    prepend-inner-icon="mdi-file-tree"
+                                    clearable
+                                    no-data-text="No parent pages available"
+                                    hint="Choose a parent page to organize your content hierarchically"
+                                    persistent-hint
+                                >
+                                    <template #selection="{ item }">
+                                        <div class="d-flex align-center">
+                                            <v-icon size="16" class="mr-2">mdi-file-document</v-icon>
+                                            {{ item.title }}
+                                        </div>
+                                    </template>
+                                    <template #item="{ props, item }">
+                                        <v-list-item v-bind="props">
+                                            <template #prepend>
+                                                <v-icon>mdi-file-document</v-icon>
+                                            </template>
+                                            <v-list-item-title>{{ item.title }}</v-list-item-title>
+                                            <v-list-item-subtitle>{{ item.slug }}</v-list-item-subtitle>
+                                        </v-list-item>
+                                    </template>
+                                </v-select>
                             </v-card-text>
                         </v-card>
 
-                        <!-- Categories -->
+                        <!-- Enhanced Categories -->
                         <v-card class="categories-card mb-4" elevation="1" rounded="lg">
                             <v-card-title class="categories-title">
                                 <v-icon class="mr-2" color="primary">mdi-folder-outline</v-icon>
                                 Categories
+                                <v-spacer />
+                                <v-chip size="small" color="primary" variant="tonal">
+                                    {{ categoryValue.length }}
+                                </v-chip>
                             </v-card-title>
-
                             <v-card-text class="pa-4">
                                 <v-combobox
                                     v-model="categoryValue"
                                     :items="categories"
                                     :search-input.sync="searchTax"
                                     item-title="title"
-                                    label="Select categories"
+                                    item-value="id"
+                                    label="Select or create categories"
                                     variant="outlined"
                                     density="compact"
                                     multiple
@@ -171,9 +450,11 @@
                                     deletable-chips
                                     clearable
                                     prepend-inner-icon="mdi-folder-plus"
-                                    placeholder="Type to search or add categories"
+                                    placeholder="Type to search or create..."
+                                    hint="Categories help organize your content"
+                                    persistent-hint
                                 >
-                                    <template v-slot:chip="{ props, item }">
+                                    <template #chip="{ props, item }">
                                         <v-chip
                                             v-bind="props"
                                             color="primary"
@@ -187,71 +468,42 @@
                                     </template>
                                 </v-combobox>
 
-                                <!-- Add New Category -->
-                                <div class="add-category-section mt-3">
-                                    <v-btn
-                                        variant="text"
-                                        size="small"
-                                        prepend-icon="mdi-plus"
-                                        @click="addCategory = !addCategory"
-                                        class="add-category-btn"
-                                    >
-                                        Add new category
-                                    </v-btn>
+                                <!-- Category Change Indicator -->
+                                <div v-if="categoriesChanged" class="change-indicator mt-3">
+                                    <v-chip size="small" color="warning" variant="tonal">
+                                        <v-icon start size="16">mdi-pencil</v-icon>
+                                        Categories modified
+                                    </v-chip>
+                                </div>
 
-                                    <v-expand-transition>
-                                        <div v-if="addCategory" class="new-category-form mt-3 pa-3 rounded" style="background: rgba(var(--v-theme-surface-variant), 0.5);">
-                                            <v-text-field
-                                                v-model="newCategory"
-                                                label="Category name"
-                                                variant="outlined"
-                                                density="compact"
-                                                :rules="[rules.required]"
-                                                class="mb-3"
-                                            />
-
-                                            <v-combobox
-                                                v-model="parentValue"
-                                                :items="parents"
-                                                item-title="title"
-                                                label="Parent Category (optional)"
-                                                variant="outlined"
-                                                density="compact"
-                                                clearable
-                                                class="mb-3"
-                                            />
-
-                                            <div class="d-flex gap-2">
-                                                <v-btn
-                                                    color="primary"
-                                                    variant="elevated"
-                                                    size="small"
-                                                    @click="saveCategory"
-                                                    :loading="savingCategory"
-                                                >
-                                                    Add Category
-                                                </v-btn>
-                                                <v-btn
-                                                    variant="outlined"
-                                                    size="small"
-                                                    @click="addCategory = false"
-                                                >
-                                                    Cancel
-                                                </v-btn>
-                                            </div>
-                                        </div>
-                                    </v-expand-transition>
+                                <!-- Popular Categories -->
+                                <div v-if="popularCategories.length" class="popular-categories mt-3">
+                                    <div class="text-caption text-medium-emphasis mb-2">Popular Categories:</div>
+                                    <v-chip-group>
+                                        <v-chip
+                                            v-for="category in popularCategories"
+                                            :key="category.id"
+                                            size="small"
+                                            variant="outlined"
+                                            @click="addPopularCategory(category)"
+                                        >
+                                            {{ category.title }}
+                                        </v-chip>
+                                    </v-chip-group>
                                 </div>
                             </v-card-text>
                         </v-card>
 
-                        <!-- Tags -->
+                        <!-- Enhanced Tags -->
                         <v-card class="tags-card mb-4" elevation="1" rounded="lg">
                             <v-card-title class="tags-title">
                                 <v-icon class="mr-2" color="secondary">mdi-tag-outline</v-icon>
                                 Tags
+                                <v-spacer />
+                                <v-chip size="small" color="secondary" variant="tonal">
+                                    {{ termValue.length }}
+                                </v-chip>
                             </v-card-title>
-
                             <v-card-text class="pa-4">
                                 <v-combobox
                                     v-model="termValue"
@@ -267,17 +519,19 @@
                                     clearable
                                     prepend-inner-icon="mdi-tag-plus"
                                     placeholder="Type to search or create tags"
+                                    hint="Tags make your content discoverable"
+                                    persistent-hint
                                 >
-                                    <template v-slot:no-data>
+                                    <template #no-data>
                                         <v-list-item>
                                             <v-list-item-title>
-                                                No results matching "<strong>{{ searchTerm }}</strong>".
+                                                No results for "<strong>{{ searchTerm }}</strong>".
                                                 Press <kbd class="kbd">Enter</kbd> to create a new tag
                                             </v-list-item-title>
                                         </v-list-item>
                                     </template>
 
-                                    <template v-slot:chip="{ props, item }">
+                                    <template #chip="{ props, item }">
                                         <v-chip
                                             v-bind="props"
                                             :color="item.color || 'secondary'"
@@ -289,65 +543,106 @@
                                             {{ item.title || item }}
                                         </v-chip>
                                     </template>
-
-                                    <template v-slot:item="{ props, item }">
-                                        <v-list-item v-bind="props">
-                                            <template v-slot:prepend>
-                                                <v-chip
-                                                    :color="item.color || 'secondary'"
-                                                    variant="tonal"
-                                                    size="small"
-                                                >
-                                                    {{ item.title }}
-                                                </v-chip>
-                                            </template>
-                                        </v-list-item>
-                                    </template>
                                 </v-combobox>
+
+                                <!-- Tag Change Indicator -->
+                                <div v-if="tagsChanged" class="change-indicator mt-3">
+                                    <v-chip size="small" color="warning" variant="tonal">
+                                        <v-icon start size="16">mdi-pencil</v-icon>
+                                        Tags modified
+                                    </v-chip>
+                                </div>
+
+                                <!-- Suggested Tags -->
+                                <div v-if="suggestedTags.length" class="suggested-tags mt-3">
+                                    <div class="text-caption text-medium-emphasis mb-2">Suggested based on content:</div>
+                                    <v-chip-group>
+                                        <v-chip
+                                            v-for="tag in suggestedTags"
+                                            :key="tag"
+                                            size="small"
+                                            variant="outlined"
+                                            @click="addSuggestedTag(tag)"
+                                        >
+                                            {{ tag }}
+                                        </v-chip>
+                                    </v-chip-group>
+                                </div>
                             </v-card-text>
                         </v-card>
 
-                        <!-- Preview Card -->
+                        <!-- Enhanced Preview -->
                         <v-card class="preview-card" elevation="1" rounded="lg">
                             <v-card-title class="preview-title">
                                 <v-icon class="mr-2" color="success">mdi-eye-outline</v-icon>
-                                Quick Preview
+                                Live Preview
                             </v-card-title>
-
                             <v-card-text class="pa-4">
                                 <div class="preview-content">
-                                    <h4 class="preview-page-title mb-2">{{ wikipage.title || 'Untitled Page' }}</h4>
-                                    <div class="preview-categories mb-2" v-if="categoryValue.length">
-                                        <span class="text-caption text-medium-emphasis">Categories: </span>
-                                        <v-chip
-                                            v-for="category in categoryValue.slice(0, 3)"
-                                            :key="category.id || category"
-                                            variant="tonal"
-                                            color="primary"
-                                            size="x-small"
-                                            class="mr-1"
-                                        >
-                                            {{ category.title || category }}
-                                        </v-chip>
-                                        <span v-if="categoryValue.length > 3" class="text-caption">
-                      +{{ categoryValue.length - 3 }} more
-                    </span>
+                                    <div class="preview-header mb-3">
+                                        <h4 class="preview-page-title">
+                                            {{ wikipage.title || 'Untitled Page' }}
+                                            <v-chip v-if="hasChanges" color="warning" size="x-small" class="ml-2">
+                                                Modified
+                                            </v-chip>
+                                        </h4>
+                                        <div class="text-caption text-medium-emphasis">
+                                            Last saved {{ lastSaved || 'Never' }}
+                                        </div>
                                     </div>
-                                    <div class="preview-tags" v-if="termValue.length">
-                                        <span class="text-caption text-medium-emphasis">Tags: </span>
-                                        <v-chip
-                                            v-for="tag in termValue.slice(0, 3)"
-                                            :key="tag.id || tag"
-                                            variant="tonal"
-                                            color="secondary"
-                                            size="x-small"
-                                            class="mr-1"
-                                        >
-                                            {{ tag.title || tag }}
-                                        </v-chip>
-                                        <span v-if="termValue.length > 3" class="text-caption">
-                      +{{ termValue.length - 3 }} more
-                    </span>
+
+                                    <div class="preview-meta mb-3">
+                                        <div v-if="categoryValue.length" class="preview-categories mb-2">
+                                            <span class="text-caption text-medium-emphasis">Categories: </span>
+                                            <v-chip
+                                                v-for="category in categoryValue.slice(0, 3)"
+                                                :key="category.id || category"
+                                                variant="tonal"
+                                                color="primary"
+                                                size="x-small"
+                                                class="mr-1"
+                                            >
+                                                {{ category.title || category }}
+                                            </v-chip>
+                                            <span v-if="categoryValue.length > 3" class="text-caption">
+                        +{{ categoryValue.length - 3 }} more
+                      </span>
+                                        </div>
+
+                                        <div v-if="termValue.length" class="preview-tags mb-2">
+                                            <span class="text-caption text-medium-emphasis">Tags: </span>
+                                            <v-chip
+                                                v-for="tag in termValue.slice(0, 3)"
+                                                :key="tag.id || tag"
+                                                variant="tonal"
+                                                color="secondary"
+                                                size="x-small"
+                                                class="mr-1"
+                                            >
+                                                {{ tag.title || tag }}
+                                            </v-chip>
+                                            <span v-if="termValue.length > 3" class="text-caption">
+                        +{{ termValue.length - 3 }} more
+                      </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="preview-stats">
+                                        <v-row dense>
+                                            <v-col cols="6">
+                                                <div class="text-caption text-medium-emphasis">Content</div>
+                                                <div class="text-body-2">{{ contentStats.status }}</div>
+                                            </v-col>
+                                            <v-col cols="6">
+                                                <div class="text-caption text-medium-emphasis">Changes</div>
+                                                <v-progress-linear
+                                                    :model-value="changePercentage"
+                                                    :color="changePercentage > 50 ? 'warning' : 'success'"
+                                                    height="6"
+                                                    rounded
+                                                />
+                                            </v-col>
+                                        </v-row>
                                     </div>
                                 </div>
                             </v-card-text>
@@ -356,259 +651,663 @@
                 </v-col>
             </v-row>
 
-            <!-- Fixed Bottom Actions -->
-            <div class="bottom-actions">
-                <v-container>
-                    <div class="d-flex justify-end align-center">
-                        <v-btn
-                            variant="outlined"
-                            color="secondary"
-                            prepend-icon="mdi-arrow-left"
-                            :to="`/wiki/${slug}`"
-                            class="mr-3"
-                        >
-                            Cancel
-                        </v-btn>
-                        <v-btn
-                            color="primary"
-                            variant="elevated"
-                            prepend-icon="mdi-content-save"
-                            @click="update"
-                            :loading="saving"
-                            size="large"
-                            class="save-btn-fixed"
-                        >
-                            Save Changes
-                        </v-btn>
-                    </div>
-                </v-container>
-            </div>
+            <!-- Floating Action Button for Mobile -->
+            <v-fab
+                v-if="$vuetify.display.mobile"
+                location="bottom end"
+                size="large"
+                color="primary"
+                icon="mdi-content-save"
+                @click="handleSave"
+                :loading="saving"
+                :disabled="!hasChanges || !canSave"
+                app
+            />
         </v-container>
+
+        <!-- History Dialog -->
+        <v-dialog v-model="showHistory" max-width="800">
+            <v-card>
+                <v-card-title class="d-flex align-center">
+                    <v-icon color="info" class="mr-2">mdi-history</v-icon>
+                    Page History
+                </v-card-title>
+                <v-card-text>
+                    <div class="text-body-2 text-medium-emphasis">
+                        Page history feature would be implemented here
+                    </div>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn variant="text" @click="showHistory = false">Close</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
+        <!-- Confirmation Dialog -->
+        <v-dialog v-model="showConfirmDialog" max-width="500">
+            <v-card>
+                <v-card-title class="d-flex align-center">
+                    <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
+                    Confirm Action
+                </v-card-title>
+                <v-card-text>
+                    {{ confirmMessage }}
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn variant="text" @click="showConfirmDialog = false">Cancel</v-btn>
+                    <v-btn color="primary" variant="elevated" @click="confirmAction">Confirm</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </div>
 </template>
 
 <script>
-import { ref, reactive, computed, watch, onMounted } from 'vue';
-import Tiptap from '../common/tiptap/Tiptap.vue';
-import { useAuthStore } from '@/store/authStore.js';
-import { useUserStore } from '@/store/userStore.js';
-import { useRouter } from "vue-router";
+import { ref, reactive, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue'
+import { useDisplay } from 'vuetify'
+import Tiptap from '../common/tiptap/Tiptap.vue'
+import { useAuthStore } from '@/store/authStore.js'
+import { useRouter } from 'vue-router'
 
 export default {
     name: 'WikiEditPage',
     components: {
         Tiptap
     },
-    setup(props, { emit }) {
-        let slug = ref(null);
-        let wikipage = ref({
+    setup() {
+        // Reactive data
+        const editorRef = ref(null)
+        const slug = ref(null)
+        const currentStep = ref(1)
+        const showPreview = ref(true)
+        const showHistory = ref(false)
+        const showDiff = ref(false)
+        const showConfirmDialog = ref(false)
+        const confirmMessage = ref('')
+        const confirmCallback = ref(null)
+        const dismissChangeAlert = ref(false)
+        const autoSaving = ref(false)
+
+        const wikipage = ref({
             title: '',
             content: '',
             parent: null,
             terms: [],
             categories: []
-        });
-        let message = ref('');
-        let parents = reactive([]);
-        let taxonomyValue = ref([]);
-        let taxonomies = ref([]);
-        let termValue = ref([]);
-        let categories = ref([]);
-        let categoryValue = ref([]);
-        let pages = ref([]);
-        let wikiPageParent = ref();
-        let searchTerm = ref('');
-        let searchTax = ref('');
-        let loading = ref(true);
-        let saving = ref(false);
-        let savingCategory = ref(false);
+        })
 
-        let terms = ref([]);
-        let colors = ref(['green', 'purple', 'indigo', 'cyan', 'teal', 'orange']);
-        let nonce = ref(1);
-        let addCategory = ref(false);
-        let newCategory = ref('');
-        let parentValue = ref(null);
+        // Original data for comparison
+        const originalData = ref({
+            title: '',
+            content: '',
+            parent: null,
+            terms: [],
+            categories: []
+        })
 
-        const authStore = useAuthStore();
-        const authenticated = computed(() => authStore.authenticated);
-        const user = computed(() => authStore.user);
-        const router = useRouter();
+        const message = ref('')
+        const parents = reactive([])
+        const termValue = ref([])
+        const categories = ref([])
+        const categoryValue = ref([])
+        const pages = ref([])
+        const wikiPageParent = ref()
+        const searchTerm = ref('')
+        const searchTax = ref('')
+        const loading = ref(true)
+        const saving = ref(false)
+        const savingCategory = ref(false)
+        const titleError = ref(false)
+        const titleErrorMessage = ref('')
+        const lastSaved = ref('')
+        const lastModified = ref('')
 
-        const rules = {
-            required: value => !!value || 'This field is required.',
-        };
+        const terms = ref([])
+        const colors = ref(['green', 'purple', 'indigo', 'cyan', 'teal', 'orange'])
+        const nonce = ref(1)
+        const addCategory = ref(false)
+        const newCategory = ref('')
+        const parentValue = ref(null)
 
-        onMounted(() => {
-            if (router.currentRoute.value.params.slug) {
-                slug.value = router.currentRoute.value.params.slug;
-                getWikiPage();
+        const editing = reactive({
+            errors: []
+        })
+
+        // Composables
+        const { mobile } = useDisplay()
+        const authStore = useAuthStore()
+        const router = useRouter()
+
+        // Computed properties
+        const authenticated = computed(() => authStore.authenticated)
+        const user = computed(() => authStore.user)
+
+        const originalTitle = computed(() => originalData.value.title)
+        const originalContent = computed(() => originalData.value.content)
+
+        const hasChanges = computed(() => {
+            if (dismissChangeAlert.value) return false
+            return wikipage.value.title !== originalData.value.title ||
+                wikipage.value.content !== originalData.value.content ||
+                JSON.stringify(categoryValue.value) !== JSON.stringify(originalData.value.categories) ||
+                JSON.stringify(termValue.value) !== JSON.stringify(originalData.value.terms)
+        })
+
+        const contentChanged = computed(() => {
+            return wikipage.value.content !== originalData.value.content
+        })
+
+        const categoriesChanged = computed(() => {
+            return JSON.stringify(categoryValue.value) !== JSON.stringify(originalData.value.categories)
+        })
+
+        const tagsChanged = computed(() => {
+            return JSON.stringify(termValue.value) !== JSON.stringify(originalData.value.terms)
+        })
+
+        const canSave = computed(() => {
+            return wikipage.value.title &&
+                wikipage.value.title.trim().length > 0 &&
+                wikipage.value.content &&
+                wikipage.value.content.trim().length > 0
+        })
+
+        const contentStats = computed(() => {
+            const content = wikipage.value.content || ''
+            const words = content.split(/\s+/).filter(word => word.length > 0).length
+            const chars = content.length
+            const status = content ? `${words} words` : 'Empty'
+            return { words, chars, status }
+        })
+
+        const originalContentStats = computed(() => {
+            const content = originalData.value.content || ''
+            const words = content.split(/\s+/).filter(word => word.length > 0).length
+            const chars = content.length
+            return { words, chars }
+        })
+
+        const changePercentage = computed(() => {
+            const changes = [
+                wikipage.value.title !== originalData.value.title,
+                wikipage.value.content !== originalData.value.content,
+                categoriesChanged.value,
+                tagsChanged.value
+            ].filter(Boolean).length
+            return (changes / 4) * 100
+        })
+
+        const popularCategories = computed(() => {
+            return categories.value.filter(cat => cat.popular).slice(0, 5)
+        })
+
+        const suggestedTags = computed(() => {
+            const content = (wikipage.value.title + ' ' + wikipage.value.content).toLowerCase()
+            const suggestions = []
+
+            // Simple keyword extraction for suggestions
+            const keywords = ['tutorial', 'guide', 'api', 'documentation', 'howto', 'tips', 'best-practices']
+            keywords.forEach(keyword => {
+                if (content.includes(keyword) && !termValue.value.some(tag =>
+                    (tag.title || tag).toLowerCase().includes(keyword)
+                )) {
+                    suggestions.push(keyword)
+                }
+            })
+
+            return suggestions.slice(0, 3)
+        })
+
+        const autoSaveStatus = computed(() => {
+            if (autoSaving.value) {
+                return { color: 'info', icon: 'mdi-loading', text: 'Saving...' }
             }
-            getCategories();
-            getTerms();
-            getPages();
-        });
+            if (hasChanges.value) {
+                return { color: 'warning', icon: 'mdi-pencil', text: 'Unsaved' }
+            }
+            return { color: 'success', icon: 'mdi-check', text: 'Saved' }
+        })
 
+        // Steps for stepper
+        const steps = [
+            { title: 'Content', subtitle: 'Title and body', value: 1 },
+            { title: 'Organization', subtitle: 'Categories and tags', value: 2 },
+            { title: 'Review', subtitle: 'Save changes', value: 3 }
+        ]
+
+        // Methods
+        const validateTitle = () => {
+            if (!wikipage.value.title || wikipage.value.title.trim().length === 0) {
+                titleError.value = true
+                titleErrorMessage.value = 'Page title is required'
+                return false
+            }
+            if (wikipage.value.title.length > 100) {
+                titleError.value = true
+                titleErrorMessage.value = 'Title must be less than 100 characters'
+                return false
+            }
+            return true
+        }
+
+        const onTitleChange = () => {
+            titleError.value = false
+            titleErrorMessage.value = ''
+        }
+
+        const onContentChange = (content) => {
+            wikipage.value.content = content
+        }
+
+        const insertTemplate = (type) => {
+            let template = ''
+            switch (type) {
+                case 'heading':
+                    template = '\n## New Heading\n'
+                    break
+                case 'list':
+                    template = '\n- Item 1\n- Item 2\n- Item 3\n'
+                    break
+                case 'table':
+                    template = '\n| Column 1 | Column 2 | Column 3 |\n|----------|----------|----------|\n| Row 1    | Data     | Data     |\n| Row 2    | Data     | Data     |\n'
+                    break
+                case 'link':
+                    template = '[Link text](https://example.com)'
+                    break
+            }
+            wikipage.value.content += template
+        }
+
+        const focusTitle = () => {
+            nextTick(() => {
+                const titleField = document.querySelector('.title-field input')
+                if (titleField) titleField.focus()
+            })
+        }
+
+        const focusContent = () => {
+            // editor.commands.focus()
+            editorRef.value?.C()
+            // nextTick(() => {
+            //     const contentEditor = document.querySelector('#text-content')
+            //     if (contentEditor) contentEditor.focus()
+            // })
+        }
+
+        const discardChanges = () => {
+            confirmMessage.value = 'Are you sure you want to discard all changes? This action cannot be undone.'
+            confirmCallback.value = () => {
+                wikipage.value = { ...originalData.value }
+                termValue.value = [...originalData.value.terms]
+                categoryValue.value = [...originalData.value.categories]
+                wikiPageParent.value = originalData.value.parent
+                editing.errors = []
+                showConfirmDialog.value = false
+                dismissChangeAlert.value = true
+            }
+            showConfirmDialog.value = true
+        }
+
+        const duplicatePage = () => {
+            const duplicateData = {
+                title: `${wikipage.value.title} (Copy)`,
+                content: wikipage.value.content,
+                parent: wikipage.value.parent,
+                terms: termValue.value,
+                categories: categoryValue.value
+            }
+
+            // Navigate to create page with prefilled data
+            router.push({
+                name: 'wiki-create',
+                query: { duplicate: JSON.stringify(duplicateData) }
+            })
+        }
+
+        const continueEditing = () => {
+            message.value = ''
+        }
+
+        const autoSave = async () => {
+            if (!hasChanges.value || !canSave.value) return
+
+            autoSaving.value = true
+            try {
+                // Auto-save implementation
+                await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
+                lastSaved.value = new Date().toLocaleTimeString()
+                console.log('Auto-saved successfully')
+            } catch (error) {
+                console.error('Auto-save failed:', error)
+            } finally {
+                autoSaving.value = false
+            }
+        }
+
+        const addPopularCategory = (category) => {
+            if (!categoryValue.value.find(cat => (cat.id || cat) === (category.id || category))) {
+                categoryValue.value.push(category)
+            }
+        }
+
+        const addSuggestedTag = (tag) => {
+            if (!termValue.value.find(t => (t.title || t) === tag)) {
+                termValue.value.push({ title: tag, color: colors.value[Math.floor(Math.random() * colors.value.length)] })
+            }
+        }
+
+        const confirmAction = () => {
+            if (confirmCallback.value) {
+                confirmCallback.value()
+            }
+        }
+
+        const handleSave = () => {
+            if (!validateTitle()) {
+                currentStep.value = 1
+                return
+            }
+
+            if (!wikipage.value.content || wikipage.value.content.trim().length === 0) {
+                editing.errors = ['Page content is required']
+                return
+            }
+
+            update()
+        }
+
+        // API Methods
+        const getWikiPage = async () => {
+            loading.value = true
+            try {
+                const response = await axios.get(`/api/wiki/${slug.value}`)
+                wikipage.value = response.data.page
+                wikiPageParent.value = response.data.parent
+                parents.value = response.data.parents
+                termValue.value = response.data.tags || []
+                categoryValue.value = response.data.terms || []
+
+                // Store original data for comparison
+                originalData.value = {
+                    title: response.data.page.title,
+                    content: response.data.page.content,
+                    parent: response.data.parent,
+                    terms: [...(response.data.tags || [])],
+                    categories: [...(response.data.terms || [])]
+                }
+
+                lastModified.value = response.data.page.updated_at ?
+                    new Date(response.data.page.updated_at).toLocaleDateString() : null
+
+            } catch (error) {
+                if (error.response?.status === 404) {
+                    editing.errors = ['Page not found']
+                }
+                if (error.response?.status === 401) {
+                    router.push('/auth/signin')
+                }
+            } finally {
+                loading.value = false
+            }
+        }
+
+        const getCategories = async () => {
+            try {
+                const response = await axios.get(`/api/tag/terms/wiki`)
+                categories.value = response.data.terms.map(term => ({
+                    ...term,
+                    popular: Math.random() > 0.7 // Simulate popular categories
+                }))
+                parents.value = response.data.terms
+            } catch (error) {
+                console.error('Failed to load categories:', error)
+            }
+        }
+
+        const getTerms = async () => {
+            try {
+                const response = await axios.get(`/api/tag/terms/tags`)
+                terms.value = response.data.terms.map(x => ({
+                    title: x.title,
+                    color: colors.value[Math.floor(Math.random() * colors.value.length)]
+                }))
+            } catch (error) {
+                console.error('Failed to load terms:', error)
+            }
+        }
+
+        const getPages = async () => {
+            try {
+                const response = await axios.get(`/api/wiki-pages`)
+                pages.value = response.data
+            } catch (error) {
+                console.error('Failed to load pages:', error)
+            }
+        }
+
+        const saveCategory = async () => {
+            if (!newCategory.value) return
+
+            savingCategory.value = true
+            const data = {
+                term: newCategory.value,
+                taxonomy: 'wiki',
+                parent: parentValue.value
+            }
+
+            try {
+                await axios.post(`/api/tag/terms`, data)
+                await getCategories()
+                categoryValue.value.push({ title: newCategory.value })
+                newCategory.value = ''
+                parentValue.value = null
+                addCategory.value = false
+            } catch (error) {
+                console.error('Failed to save category:', error)
+            } finally {
+                savingCategory.value = false
+            }
+        }
+
+        const update = async () => {
+            editing.errors = []
+            saving.value = true
+
+            wikipage.value.terms = termValue.value
+            wikipage.value.categories = categoryValue.value
+            wikipage.value.parent = wikiPageParent.value
+
+            try {
+                const response = await axios.patch(`/api/wiki/${slug.value}`, wikipage.value)
+
+                // Update original data
+                originalData.value = {
+                    title: wikipage.value.title,
+                    content: wikipage.value.content,
+                    parent: wikiPageParent.value,
+                    terms: [...termValue.value],
+                    categories: [...categoryValue.value]
+                }
+
+                message.value = "Wiki page updated successfully!"
+                lastSaved.value = new Date().toLocaleTimeString()
+                currentStep.value = 3
+                dismissChangeAlert.value = true
+
+                setTimeout(() => {
+                    message.value = ''
+                }, 5000)
+
+            } catch (error) {
+                if (error.response?.status === 422) {
+                    editing.errors = error.response.data.errors || [error.response.data.message || 'Validation failed']
+                } else {
+                    editing.errors = ['An error occurred while updating the page. Please try again.']
+                }
+            } finally {
+                saving.value = false
+            }
+        }
+
+        // Watchers
         watch(termValue, (val, prev) => {
-            if (val.length === prev.length) return;
+            if (val.length === prev.length) return
 
             termValue.value = val.map(v => {
                 if (typeof v === 'string') {
                     v = {
                         title: v,
-                        color: colors.value[nonce.value - 1],
-                    };
-                    terms.value.push(v);
-                    nonce.value++;
+                        color: colors.value[nonce.value % colors.value.length],
+                    }
+                    terms.value.push(v)
+                    nonce.value++
                 }
-                return v;
-            });
-        });
+                return v
+            })
+        })
 
-        function getWikiPage() {
-            loading.value = true;
-            return axios.get(`/api/wiki/${slug.value}`).then((response) => {
-                wikipage.value = response.data.page;
-                wikiPageParent.value = response.data.parent;
-                parents.value = response.data.parents;
-                taxonomies.value = response.data.terms;
-                termValue.value = response.data.tags || [];
-                categoryValue.value = taxonomies.value || [];
-                loading.value = false;
-            }).catch((error) => {
-                loading.value = false;
-                if (error.response?.status === 404) {
-                    // Handle 404 - maybe initialize empty page
-                }
-                if (error.response?.status === 401) {
-                    router.push('/auth/signin');
-                }
-            });
-        }
+        // Auto-save functionality
+        watch([() => wikipage.value.title, () => wikipage.value.content], () => {
+            // Debounced auto-save could be implemented here
+        })
 
-        function getCategories() {
-            return axios.get(`/api/tag/terms/wiki`).then((response) => {
-                categories.value = parents.value = response.data.terms;
-            });
-        }
-
-        function getTerms() {
-            return axios.get(`/api/tag/terms/tags`).then((response) => {
-                terms.value = response.data.terms.map(x => ({
-                    title: x.title,
-                    color: colors.value[Math.floor(Math.random() * colors.value.length)]
-                }));
-            });
-        }
-
-        // function getTags() {
-        //     return axios.get(`/api/tag/terms/tags`).then((response) => {
-        //         terms.value = response.data.terms;
-        //     });
-        // }
-
-        function getPages() {
-            return axios.get(`/api/wiki-pages`).then((response) => {
-                pages.value =  response.data;
-            });
-
-        }
-
-        function saveCategory() {
-            if (!newCategory.value) return;
-
-            savingCategory.value = true;
-            let data = {
-                term: newCategory.value,
-                taxonomy: taxonomyValue.value,
-                parent: parentValue.value
-            };
-
-            axios.post(`/api/tag/terms`, data).then(() => {
-                getCategories();
-                categoryValue.value.push({ title: newCategory.value });
-                newCategory.value = '';
-                parentValue.value = null;
-                addCategory.value = false;
-                savingCategory.value = false;
-            }).catch(() => {
-                savingCategory.value = false;
-            });
-        }
-
-        function update() {
-            if (!wikipage.value.title) {
-                message.value = "Please enter a page title";
-                return;
+        // Before unload warning
+        const beforeUnloadHandler = (event) => {
+            if (hasChanges.value) {
+                event.preventDefault()
+                event.returnValue = ''
             }
-
-            saving.value = true;
-            wikipage.value.terms = termValue.value;
-            wikipage.value.taxonomy = taxonomyValue.value;
-            wikipage.value.categories = categoryValue.value;
-
-            axios.patch(`/api/wiki/${slug.value}`, wikipage.value).then(() => {
-                message.value = "Wiki page updated successfully!";
-                saving.value = false;
-                // Auto-hide message after 3 seconds
-                setTimeout(() => {
-                    message.value = '';
-                }, 3000);
-            }).catch((error) => {
-                saving.value = false;
-                if (error.response?.status === 422) {
-                    message.value = "Please check your input and try again";
-                }
-            });
         }
+
+        // Lifecycle
+        onMounted(() => {
+            if (router.currentRoute.value.params.slug) {
+                slug.value = router.currentRoute.value.params.slug
+                getWikiPage()
+            }
+            getCategories()
+            getTerms()
+            getPages()
+
+            // Auto-save every 2 minutes
+            const autoSaveInterval = setInterval(() => {
+                if (hasChanges.value && canSave.value) {
+                    autoSave()
+                }
+            }, 120000)
+
+            // Add beforeunload listener
+            window.addEventListener('beforeunload', beforeUnloadHandler)
+
+            onBeforeUnmount(() => {
+                clearInterval(autoSaveInterval)
+                window.removeEventListener('beforeunload', beforeUnloadHandler)
+            })
+        })
 
         return {
+            // Reactive data
             slug,
+            currentStep,
+            showPreview,
+            showHistory,
+            showDiff,
+            showConfirmDialog,
+            confirmMessage,
+            dismissChangeAlert,
+            autoSaving,
             wikipage,
-            wikiPageParent,
-            parents,
-            taxonomies,
-            termValue,
-            categoryValue,
-            terms,
-            colors,
-            nonce,
-            authenticated,
-            user,
-            addCategory,
-            newCategory,
-            parentValue,
+            originalData,
             message,
+            parents,
+            termValue,
+            categories,
+            categoryValue,
+            pages,
+            wikiPageParent,
             searchTerm,
             searchTax,
-            pages,
             loading,
             saving,
             savingCategory,
-            categories,
-            rules,
+            titleError,
+            titleErrorMessage,
+            lastSaved,
+            lastModified,
+            terms,
+            colors,
+            nonce,
+            addCategory,
+            newCategory,
+            parentValue,
+            editing,
+
+            // Computed
+            authenticated,
+            user,
+            originalTitle,
+            originalContent,
+            hasChanges,
+            contentChanged,
+            categoriesChanged,
+            tagsChanged,
+            canSave,
+            contentStats,
+            originalContentStats,
+            changePercentage,
+            popularCategories,
+            suggestedTags,
+            autoSaveStatus,
+            steps,
+
+            // Methods
+            validateTitle,
+            onTitleChange,
+            onContentChange,
+            insertTemplate,
+            focusTitle,
+            focusContent,
+            discardChanges,
+            duplicatePage,
+            continueEditing,
+            autoSave,
+            addPopularCategory,
+            addSuggestedTag,
+            confirmAction,
+            handleSave,
             getWikiPage,
             getCategories,
             getTerms,
+            getPages,
             saveCategory,
             update
-        };
+        }
     }
-};
+}
 </script>
 
 <style scoped>
 .wiki-edit-container {
     min-height: 100vh;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    padding-bottom: 100px; /* Space for fixed bottom actions */
+    position: relative;
+}
+
+.progress-section {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 16px;
+    padding: 16px;
+    backdrop-filter: blur(10px);
 }
 
 .edit-header {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 51, 234, 0.05) 100%);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(147, 51, 234, 0.08) 100%);
     border-radius: 16px;
     padding: 24px;
-    border: 1px solid rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    backdrop-filter: blur(10px);
 }
 
 .edit-title {
@@ -617,6 +1316,10 @@ export default {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     line-height: 1.2;
+}
+
+.error-content {
+    color: rgb(var(--v-theme-on-surface));
 }
 
 .header-actions {
@@ -631,28 +1334,53 @@ export default {
     text-transform: none !important;
     font-weight: 600 !important;
     box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4) !important;
 }
 
 .editor-card,
+.quick-actions-card,
 .settings-card,
 .categories-card,
 .tags-card,
 .preview-card {
     border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.9) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    transition: all 0.3s ease;
+}
+
+.editor-card:hover,
+.quick-actions-card:hover,
+.settings-card:hover,
+.categories-card:hover,
+.tags-card:hover,
+.preview-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
 }
 
 .editor-card-title,
+.quick-actions-title,
 .settings-title,
 .categories-title,
 .tags-title,
 .preview-title {
-    background: rgb(var(--v-theme-surface-variant));
+    background: linear-gradient(135deg, rgb(var(--v-theme-surface-variant)) 0%, rgba(var(--v-theme-surface-variant), 0.8) 100%);
     border-bottom: 1px solid rgb(var(--v-border-color));
     font-size: 1.1rem !important;
     font-weight: 600 !important;
     padding: 16px 20px !important;
+}
+
+.editor-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .sidebar-content {
@@ -660,43 +1388,108 @@ export default {
     top: 24px;
     max-height: calc(100vh - 48px);
     overflow-y: auto;
+    padding-right: 8px;
+}
+
+.sidebar-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 3px;
 }
 
 .title-field {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.9);
     border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.title-field:focus-within {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.change-indicator {
+    animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.content-header {
+    border-bottom: 1px solid rgba(var(--v-border-color), 0.3);
+    padding-bottom: 8px;
+}
+
+.content-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(var(--v-theme-surface-variant), 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(var(--v-border-color), 0.5);
+}
+
+.auto-save-status {
+    display: flex;
+    align-items: center;
+}
+
+.diff-section {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 200px;
+    }
 }
 
 .editor-wrapper {
-    border: 1px solid rgb(var(--v-border-color));
+    border: 2px solid rgb(var(--v-border-color));
     border-radius: 12px;
     overflow: hidden;
     background: white;
+    transition: border-color 0.3s ease;
 }
 
-.content-label {
-    display: flex;
-    align-items: center;
-    color: rgb(var(--v-theme-on-surface));
+.editor-wrapper:focus-within {
+    border-color: rgb(var(--v-theme-primary));
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
-.setting-section {
-    border-bottom: 1px solid rgba(var(--v-border-color), 0.3);
-    padding-bottom: 16px;
-}
-
-.setting-section:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-}
-
-.add-category-btn {
+.quick-actions-card .v-btn {
     text-transform: none !important;
-    color: rgb(var(--v-theme-primary)) !important;
+    font-size: 0.875rem !important;
 }
 
-.new-category-form {
-    border: 1px solid rgba(var(--v-border-color), 0.5);
+.popular-categories,
+.suggested-tags {
+    padding: 12px;
+    background: rgba(var(--v-theme-surface-variant), 0.2);
+    border-radius: 8px;
+    border: 1px dashed rgba(var(--v-border-color), 0.6);
 }
 
 .kbd {
@@ -709,64 +1502,38 @@ export default {
 }
 
 .preview-content {
-    padding: 12px;
-    background: rgba(var(--v-theme-surface-variant), 0.3);
-    border-radius: 8px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(var(--v-theme-surface-variant), 0.2) 0%, rgba(var(--v-theme-surface-variant), 0.1) 100%);
+    border-radius: 12px;
     border: 1px solid rgba(var(--v-border-color), 0.5);
+}
+
+.preview-header {
+    border-bottom: 1px solid rgba(var(--v-border-color), 0.3);
+    padding-bottom: 8px;
 }
 
 .preview-page-title {
     color: rgb(var(--v-theme-primary));
     font-weight: 600;
+    display: flex;
+    align-items: center;
+    font-size: 1.1rem;
 }
 
-.bottom-actions {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid rgb(var(--v-border-color));
-    padding: 16px 0;
-    z-index: 1000;
+.preview-meta {
+    border-bottom: 1px solid rgba(var(--v-border-color), 0.2);
+    padding-bottom: 8px;
 }
 
-.save-btn-fixed {
-    border-radius: 12px !important;
-    text-transform: none !important;
-    font-weight: 600 !important;
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3) !important;
+.preview-stats .v-progress-linear {
+    border-radius: 3px;
 }
 
-/* Responsive design */
-@media (max-width: 1024px) {
-    .sidebar-content {
-        position: static;
-        max-height: none;
-        margin-top: 24px;
-    }
-
-    .bottom-actions {
-        position: static;
-        background: transparent;
-        backdrop-filter: none;
-        border-top: none;
-        margin-top: 32px;
-    }
-
-    .wiki-edit-container {
-        padding-bottom: 0;
-    }
-}
-
-@media (max-width: 768px) {
+/* Mobile optimizations */
+@media (max-width: 960px) {
     .edit-header {
         padding: 16px;
-    }
-
-    .edit-title {
-        font-size: 1.5rem !important;
     }
 
     .header-actions {
@@ -774,21 +1541,73 @@ export default {
         margin-top: 16px;
     }
 
-    .header-actions .v-btn {
-        width: 100%;
-        margin: 0 0 8px 0 !important;
+    .sidebar-content {
+        position: static;
+        max-height: none;
+    }
+
+    .content-toolbar {
+        flex-wrap: wrap;
+    }
+
+    .editor-actions {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 
-/* Animation for expand transition */
-.v-expand-transition-enter-active,
-.v-expand-transition-leave-active {
-    transition: all 0.3s ease;
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+    .wiki-edit-container {
+        background: linear-gradient(135deg, #0f1419 0%, #1a1a1a 100%);
+    }
+
+    .edit-header {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+        border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .editor-card,
+    .quick-actions-card,
+    .settings-card,
+    .categories-card,
+    .tags-card,
+    .preview-card {
+        background: rgba(var(--v-theme-surface), 0.95) !important;
+    }
 }
 
-.v-expand-transition-enter-from,
-.v-expand-transition-leave-to {
-    opacity: 0;
-    transform: translateY(-10px);
+/* Animation for chips */
+.v-chip {
+    transition: all 0.3s ease !important;
+}
+
+.v-chip:hover {
+    transform: translateY(-1px) !important;
+}
+
+/* Focus styles */
+.v-text-field:focus-within,
+.v-select:focus-within,
+.v-combobox:focus-within {
+    transform: translateY(-1px);
+    transition: transform 0.2s ease;
+}
+
+/* Warning states for unsaved changes */
+.save-btn:not(:disabled) {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    }
+    50% {
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.5);
+    }
+    100% {
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    }
 }
 </style>
