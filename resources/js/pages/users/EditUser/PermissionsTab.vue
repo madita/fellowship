@@ -226,6 +226,8 @@ const refreshAvailableRoles = async () => {
         availableRoles.value = response.data;
     } catch (error) {
         console.error('Failed to refresh roles:', error);
+        // Add user-friendly error notification
+        // e.g., this.$toast.error('Failed to load roles. Please try again.');
     }
     refreshing.value = false;
 };
