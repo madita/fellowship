@@ -43,7 +43,7 @@ window.Echo = new Echo({
                     channel_name: channel.name
                 })
                     .then(response => {
-                        console.log('callback', response)
+                        // console.log('callback', response)
                         callback(false, response.data);
                     })
                     .catch(error => {

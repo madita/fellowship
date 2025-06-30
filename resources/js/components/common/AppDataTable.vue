@@ -134,7 +134,7 @@ export default {
         }
     },
     setup(props, { emit }) {
-        console.log('props',props)
+        // console.log('props',props)
         const currentPage = ref(1);
 
         const getHeaders = computed(() => {
@@ -152,7 +152,7 @@ export default {
 
             // const start = currentPage.value * props.itemsPerPage;
             const start = currentPage.value - 1;
-            console.log('start', start)
+            // console.log('start', start)
             const end = start + props.itemsPerPage;
             return props.items.slice(start, end);
         });

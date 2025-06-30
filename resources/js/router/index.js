@@ -122,7 +122,7 @@ let lastLink = null;
  */
 router.beforeEach((to, from, next) => {
     lastLink = from.fullPath; // Store the last visited link
-    console.log('to middleware',to)
+    //console.log('to middleware',to, from)
     if (!to.meta.middleware) {
         return next()
     }

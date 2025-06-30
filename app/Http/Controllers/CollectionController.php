@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Collection;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -80,7 +81,7 @@ class CollectionController extends Controller
 
             $extension = $file->getClientOriginalExtension();
             $newFilename = Str::uuid().'.'.$extension;
-            /** @var \App\Models\User $user */
+            /** @var User $user */
             $user = auth()->user();
 
             $media = $collection->addMedia($file)

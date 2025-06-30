@@ -6,7 +6,7 @@
 
             <!-- sign up form -->
             <v-card-text>
-                <v-form ref="form" v-model="isFormValid" lazy-validation>
+                <v-form ref="formRef" v-model="isFormValid" lazy-validation>
                     <v-text-field
                         v-model="user.name"
                         validate-on="blur"
@@ -83,24 +83,24 @@
                     >{{ $t('register.button') }}
                     </v-btn>
 
-                    <div class="caption font-weight-bold text-uppercase my-3">{{ $t('register.orsign') }}</div>
+<!--                    <div class="caption font-weight-bold text-uppercase my-3">{{ $t('register.orsign') }}</div>-->
 
-                    <!-- external providers list -->
-                    <v-btn
-                        v-for="provider in providers"
-                        :key="provider.id"
-                        :loading="provider.isLoading"
-                        :disabled="isSignUpDisabled"
-                        class="mb-2 primary lighten-2 text-primary text--darken-3"
-                        block
-                        size="large"
-                        @click="signInProvider(provider)"
-                    >
-                        <v-icon small left>mdi-{{ provider.id }}</v-icon>
-                        {{ provider.label }}
-                    </v-btn>
+<!--                    &lt;!&ndash; external providers list &ndash;&gt;-->
+<!--                    <v-btn-->
+<!--                        v-for="provider in providers"-->
+<!--                        :key="provider.id"-->
+<!--                        :loading="provider.isLoading"-->
+<!--                        :disabled="isSignUpDisabled"-->
+<!--                        class="mb-2 primary lighten-2 text-primary text&#45;&#45;darken-3"-->
+<!--                        block-->
+<!--                        size="large"-->
+<!--                        @click="signInProvider(provider)"-->
+<!--                    >-->
+<!--                        <v-icon small left>mdi-{{ provider.id }}</v-icon>-->
+<!--                        {{ provider.label }}-->
+<!--                    </v-btn>-->
 
-                    <div v-if="errorProvider" class="error--text">{{ errorProviderMessages }}</div>
+<!--                    <div v-if="errorProvider" class="error&#45;&#45;text">{{ errorProviderMessages }}</div>-->
 
                     <div class="mt-5 overline">
                         {{ $t('register.agree') }}
@@ -122,7 +122,7 @@
     </div>
 </template>
 
-<script>
+<script setup>
 /*
 |---------------------------------------------------------------------
 | Sign Up Page Component
@@ -131,134 +131,157 @@
 | Template for user sign up with external providers buttons
 |
 */
-// import {mapActions, mapGetters} from 'vuex'
 
-import {useAuthStore} from "@/store/authStore.js";
+import { ref, reactive, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from "@/store/authStore.js"
+import axios from 'axios'
 
-export default {
-    data() {
-        return {
-            // sign up buttons
-            isLoading: false,
-            isSignUpDisabled: false,
+// Router
+const router = useRouter()
 
-            // form
-            isFormValid: true,
-            email: '',
-            password: '',
-            name: '',
+// Auth store
+const authStore = useAuthStore()
 
-            user: {
-                name: "",
-                email: "",
-                password: "",
-                password_confirmation: ""
-            },
+// Template refs
+const formRef = ref(null)
 
-            // form error
-            errorName: false,
-            errorEmail: false,
-            errorPassword: false,
-            errorNameMessage: '',
-            errorEmailMessage: '',
-            errorPasswordMessage: '',
+// Reactive data
+const isLoading = ref(false)
+const isSignUpDisabled = ref(false)
+const isFormValid = ref(true)
+const showPassword = ref(false)
 
-            errorProvider: false,
-            errorProviderMessages: '',
+// User data
+const user = reactive({
+    name: "",
+    username: "",
+    email: "",
+    password: "",
+    password_confirmation: ""
+})
 
-            // show password field
-            showPassword: false,
+// Error states
+const errorName = ref(false)
+const errorUsername = ref(false)
+const errorEmail = ref(false)
+const errorPassword = ref(false)
+const errorNameMessage = ref('')
+const errorUsernameMessage = ref('')
+const errorEmailMessage = ref('')
+const errorPasswordMessage = ref('')
+const errorProvider = ref(false)
+const errorProviderMessages = ref('')
 
-            // external providers
-            providers: [{
-                id: 'google',
-                label: 'Google',
-                isLoading: false
-            }, {
-                id: 'facebook',
-                label: 'Facebook',
-                isLoading: false
-            }],
-
-            // input rules
-            rules: {
-                required: (value) => (value && Boolean(value)) || 'Required',
-                email: value => {
-                    const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-                    return pattern.test(value) || 'Invalid e-mail.'
-                },
-            }
-        }
+// External providers
+const providers = ref([
+    {
+        id: 'google',
+        label: 'Google',
+        isLoading: false
     },
-    methods: {
-        async signIn(credentials) {
-            const auth = useAuthStore()
-            await auth.signIn(credentials)
-        },
-        async register() {
-            this.processing = true
-            await axios.post('/register', this.user).then(() => {
-                this.signIn().then(() => {
-                    if(this.isVerified) {
-                        this.$router.replace({name: 'dashboard'})
-                    } else {
-                        this.$router.replace({name: 'auth-verify-email'})
-                    }
-                    // this.$router.replace({name: 'dashboard'})
-                }).catch(error => {
-                    console.log("WTF???" , error)
-                });
-            }).catch(({response: {data}}) => {
-                if (data.errors.name !== undefined) {
-                    this.errorName = true
-                    this.errorNameMessage = data.errors.name[0]
-                }
+    {
+        id: 'facebook',
+        label: 'Facebook',
+        isLoading: false
+    }
+])
 
-                if (data.errors.email !== undefined) {
-                    this.errorEmail = true
-                    this.errorEmailMessage = data.errors.email[0]
-                }
-
-                if (data.errors.password !== undefined) {
-                    this.errorPassword = true
-                    this.errorPasswordMessage = data.errors.password[0]
-                }
-            }).finally(() => {
-                this.isLoading = false
-                this.isSignUpDisabled = false
-            })
-        },
-        submit() {
-            // if (this.$refs.form.validate()) {
-            this.isLoading = true
-            this.isSignUpDisabled = true
-            this.register()
-            // this.signUp(this.email, this.password)
-            // }
-        },
-        signInProvider(provider) {
-        },
-        resetErrors() {
-            this.errorName = false
-            this.errorEmail = false
-            this.errorPassword = false
-            this.errorNameMessage = ''
-            this.errorEmailMessage = ''
-            this.errorPasswordMessage = ''
-
-            this.errorProvider = false
-            this.errorProviderMessages = ''
-        }
-    },
-    computed: {
-        authenticated() {
-            const authStore = useAuthStore();
-            return authStore.isLoggedIn;
-        },
-        isVerified() {
-            const authStore = useAuthStore();
-            return authStore.isVerified;
-        },
+// Input validation rules
+const rules = {
+    required: (value) => (value && Boolean(value)) || 'Required',
+    email: value => {
+        const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+        return pattern.test(value) || 'Invalid e-mail.'
     }
 }
+
+// Computed properties
+const authenticated = computed(() => authStore.isLoggedIn)
+const isVerified = computed(() => authStore.isVerified)
+
+// Methods
+const signIn = async (credentials) => {
+    await authStore.signIn(credentials)
+}
+
+const register = async () => {
+    try {
+        await axios.post('/register', user)
+
+        await signIn()
+
+        if (isVerified.value) {
+            router.replace({ name: 'dashboard' })
+        } else {
+            router.replace({ name: 'auth-verify-email' })
+        }
+    } catch (error) {
+        if (error.response?.data?.errors) {
+            const errors = error.response.data.errors
+
+            if (errors.name) {
+                errorName.value = true
+                errorNameMessage.value = errors.name[0]
+            }
+
+            if (errors.username) {
+                errorUsername.value = true
+                errorUsernameMessage.value = errors.username[0]
+            }
+
+            if (errors.email) {
+                errorEmail.value = true
+                errorEmailMessage.value = errors.email[0]
+            }
+
+            if (errors.password) {
+                errorPassword.value = true
+                errorPasswordMessage.value = errors.password[0]
+            }
+        }
+
+        //console.log("Registration error:", error)
+    } finally {
+        isLoading.value = false
+        isSignUpDisabled.value = false
+    }
+}
+
+const submit = () => {
+    // if (formRef.value.validate()) {
+    isLoading.value = true
+    isSignUpDisabled.value = true
+    register()
+    // }
+}
+
+const signInProvider = (provider) => {
+    // Implement provider sign-in logic
+    //console.log('Provider sign-in:', provider)
+}
+
+const resetErrors = () => {
+    errorName.value = false
+    errorUsername.value = false
+    errorEmail.value = false
+    errorPassword.value = false
+    errorNameMessage.value = ''
+    errorUsernameMessage.value = ''
+    errorEmailMessage.value = ''
+    errorPasswordMessage.value = ''
+    errorProvider.value = false
+    errorProviderMessages.value = ''
+}
 </script>
+
+<style scoped>
+.v-card {
+    min-width: 400px;
+}
+
+/* Left-align error messages */
+:deep(.v-messages__message) {
+    text-align: left !important;
+}
+</style>

@@ -18,7 +18,7 @@ class Wiki extends Model
      * @var array
      */
     protected $fillable = [
-        'title', 'slug', 'status',
+        'title', 'slug', 'status', 'parent_id',
     ];
 
     public function sluggable(): array
@@ -28,6 +28,35 @@ class Wiki extends Model
                 'source' => 'title',
             ],
         ];
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(Wiki::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Wiki::class, 'parent_id');
+    }
+
+    public function childrenRecursive()
+    {
+        return $this->children()->with('childrenRecursive');
+    }
+
+    public function getParentsAttribute()
+    {
+        $parents = collect([]);
+
+        $parent = $this->parent;
+
+        while (!is_null($parent)) {
+            $parents->push($parent);
+            $parent = $parent->parent;
+        }
+
+        return $parents;
     }
 //
 //    public function wikiable() {

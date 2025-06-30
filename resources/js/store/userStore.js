@@ -1,65 +1,161 @@
 import { defineStore } from 'pinia'
 import { useApi } from '@/api/useAPI.js'
-// import axios from "axios";
 
 const api = useApi()
 
-export const useUserStore = defineStore({
-    id: 'user',
+export const useUserStore = defineStore('user', {
+    state: () => {
+        // Try to get state from localStorage, fallback to default
+        const savedState = localStorage.getItem('USER_INFO')
+        const defaultState = {
+            user: null,
+            roles: null,
+            permissions: null,
+        }
 
-    state: () => JSON.parse(localStorage.getItem('USER_INFO')) ?? {
-        user:null,
-        roles:null,
-        permissions:null,
+        try {
+            return savedState ? JSON.parse(savedState) : defaultState
+        } catch (error) {
+            console.warn('Failed to parse USER_INFO from localStorage:', error)
+            localStorage.removeItem('USER_INFO')
+            return defaultState
+        }
     },
-    // getters: {
-    //     console.log()
-    //     user: (state) => state.user,
-    //     roles: (state) => state.role,
-    //     permissions: (state) => state.permissions,
-    // },
+
+    getters: {
+        // User information getters
+        currentUser: (state) => state.user,
+        userRoles: (state) => state.roles,
+        userPermissions: (state) => state.permissions,
+
+        // Utility getters
+        isUserLoaded: (state) => state.user !== null,
+        userName: (state) => state.user?.name || null,
+        userEmail: (state) => state.user?.email || null,
+        isEmailVerified: (state) => state.user?.email_verified_at !== null,
+
+        // Permission checking helper
+        hasRole: (state) => (roleName) => {
+            if (!state.roles || !Array.isArray(state.roles)) return false
+            return state.roles.some(role => role.name === roleName)
+        },
+
+        hasPermission: (state) => (permissionName) => {
+            if (!state.permissions || !Array.isArray(state.permissions)) return false
+            return state.permissions.some(permission => permission.name === permissionName)
+        }
+    },
 
     actions: {
+        // Internal method to sync state with localStorage
+        _syncToStorage() {
+            try {
+                const stateToSave = {
+                    user: this.user,
+                    roles: this.roles,
+                    permissions: this.permissions,
+                }
+                localStorage.setItem('USER_INFO', JSON.stringify(stateToSave))
+            } catch (error) {
+                console.error('Failed to save USER_INFO to localStorage:', error)
+            }
+        },
+
+        // Update state and sync to localStorage
         updateState(payload) {
-            console.log('userpayload', payload)
-            console.log('userthis.$state', this.$state)
-            let newUserState = { ...this.$state, ...payload }
-            console.log('nuserewUserState', newUserState)
+            // Update the state properties
+            if (payload.user !== undefined) this.user = payload.user
+            if (payload.roles !== undefined) this.roles = payload.roles
+            if (payload.permissions !== undefined) this.permissions = payload.permissions
+
+            // Sync to localStorage
+            this._syncToStorage()
+        },
+
+        // Clear all user state
+        clearState() {
+            this.user = null
+            this.roles = null
+            this.permissions = null
+
+            // Remove from localStorage
             localStorage.removeItem('USER_INFO')
-            localStorage.setItem('USER_INFO', JSON.stringify(newUserState))
-            this.$reset()
         },
 
+        // Override Pinia's $reset to use our clearState
+        $reset() {
+            this.clearState()
+        },
+
+        // Get CSRF token
         async getToken() {
-            await api.get('/sanctum/csrf-cookie')
+            try {
+                await api.get('/sanctum/csrf-cookie')
+            } catch (error) {
+                console.error('Failed to get CSRF token:', error)
+                throw error
+            }
         },
 
+        // Fetch and store user information
         async storeInfo() {
-            // try {
-            //     const data = await axios.get('api/user')
-            //     this.user = data.user
-            //     // this.roles = data.roles
-            //     // this.permissions = data.permissions
-            //     // console.log('user',this.user)
-            //
-            // }
-            // catch (error) {
-            //     //alert(error)
-            //     console.log('error userstore', error)
-            // }
-            let { data: userInfo } = await api.get('/user')
-            // let { data:  userInfo } = await axios.get('/api/user')
-            console.log('userInfo',userInfo)
-            this.updateState(userInfo)
-            // this.user = userInfo.user;
-            // this.roles = userInfo.roles;
-            localStorage.setItem('USER_INFO', JSON.stringify(userInfo))
-            this.$reset()
+            try {
+                const { data: userInfo } = await api.get('/user')
+
+                // Update state with received user info
+                this.updateState({
+                    user: userInfo.user || userInfo, // Handle different response structures
+                    roles: userInfo.roles || null,
+                    permissions: userInfo.permissions || null
+                })
+
+                console.log('User info stored:', userInfo)
+                return userInfo
+            } catch (error) {
+                console.error('Failed to fetch user info:', error)
+                // Clear state on failure
+                this.clearState()
+                throw error
+            }
         },
 
-        // async resetInfo() {
-        //     localStorage.removeItem('USER_INFO')
-        //     this.$reset()
-        // },
-    },
+        // Refresh user data
+        async refreshUserInfo() {
+            return this.storeInfo()
+        },
+
+        // Update specific user field
+        updateUserField(field, value) {
+            if (this.user) {
+                this.user = { ...this.user, [field]: value }
+                this._syncToStorage()
+            }
+        },
+
+        // Check if user has specific role
+        checkRole(roleName) {
+            return this.hasRole(roleName)
+        },
+
+        // Check if user has specific permission
+        checkPermission(permissionName) {
+            return this.hasPermission(permissionName)
+        },
+
+        // Method to initialize user data (useful for app startup)
+        async initializeUser() {
+            // If we have user data in state, verify it's still valid
+            if (this.user) {
+                try {
+                    await this.refreshUserInfo()
+                    return true
+                } catch (error) {
+                    console.warn('User data validation failed:', error)
+                    this.clearState()
+                    return false
+                }
+            }
+            return false
+        }
+    }
 })

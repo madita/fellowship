@@ -7,6 +7,7 @@ use App\Models\Revision;
 use App\Presenters\RevisionPresenter;
 use Carbon\Carbon;
 use DateTime;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use Psy\VarDumper\Presenter;
 
@@ -23,7 +24,7 @@ trait Revisionable
     /**
      * Get record version at given timestamp.
      *
-     * @param \DateTime|string $timestamp DateTime|Carbon object or parsable date string @see strtotime()
+     * @param DateTime|string $timestamp DateTime|Carbon object or parsable date string @see strtotime()
      *
      * @return Revision|RevisionPresenter|null
      */
@@ -55,7 +56,7 @@ trait Revisionable
     /**
      * Determine if model has history at given timestamp if provided or any at all.
      *
-     * @param \DateTime|string $timestamp DateTime|Carbon object or parsable date string @see strtotime()
+     * @param DateTime|string $timestamp DateTime|Carbon object or parsable date string @see strtotime()
      *
      * @return bool
      */
@@ -159,7 +160,7 @@ trait Revisionable
     /**
      * Model has many Revisions.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function revisions()
     {
@@ -170,7 +171,7 @@ trait Revisionable
     /**
      * Model has one latestRevision.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function latestRevision()
     {

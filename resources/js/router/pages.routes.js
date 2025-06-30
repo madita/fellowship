@@ -7,9 +7,12 @@ export const pages  = [{
     component: () => import(/* webpackChunkName: "auth-signin" */ '@/pages/auth/SigninPage.vue'),
     meta: {
         layout: 'auth',
+        requiresAuth: false,
+        allowUnauthenticated: true,
         middleware: [
             guest
-        ]
+        ],
+
     }
 }, {
     path: '/auth/signup',

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\TaxonomyHelper;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -71,7 +72,7 @@ class CommonController extends Controller
             $items = $relatedModelClass::all();
 
             return response()->json($items);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => 'An error occurred while fetching the items: '.$e->getMessage()], 500);
         }
     }

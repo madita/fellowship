@@ -10,6 +10,7 @@ export default (to, from, next) => {
      * IF THE USER IS NOT LOGGED IN
      */
     if (!auth.isLoggedIn) {
+        //console.log('not logged in', isGoingExceptionalRoutes, to.name)
         if (isGoingExceptionalRoutes) {
             next() // The user is not logged in but it's going to exceptional routes ? fine
             return

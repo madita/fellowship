@@ -10,8 +10,9 @@
                     <v-text-field
                         v-model="credentials.email"
                         :rules="[rules.required]"
-                        :error-messages="[]"
+                        :error-messages="errorMessages.email ? [errorMessages.email] : []"
                         validate-on="blur"
+                        :error="!!errorMessages.email"
                         :label="$t('login.username')"
                         name="email"
                         @keyup.enter="submit"
@@ -22,12 +23,23 @@
                         :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
                         :rules="[rules.required]"
                         :type="showPassword ? 'text' : 'password'"
-                        :error-messages="[]"
+                        :error-messages="errorMessages.password ? [errorMessages.password] : []"
+                        :error="!!errorMessages.password"
                         :label="$t('login.password')"
                         name="password"
                         @keyup.enter="submit"
                         @click:append="showPassword = !showPassword"
                     ></v-text-field>
+
+                    <!-- Display general error message -->
+                    <v-alert
+                        v-if="errorMessages.message && credentials.email && credentials.password"
+                        type="error"
+                        class="mb-3"
+                        density="compact"
+                    >
+                        {{ errorMessages.message }}
+                    </v-alert>
 
                     <v-btn
                         :loading="isLoading"
@@ -41,23 +53,6 @@
 
                     <div class="caption font-weight-bold text-uppercase my-3">{{ $t('login.orsign') }}</div>
 
-                    <!-- external providers list -->
-<!--                    <v-btn-->
-<!--                        v-for="provider in providers"-->
-<!--                        :key="provider.id"-->
-<!--                        :loading="provider.isLoading"-->
-<!--                        :disabled="isSignInDisabled"-->
-<!--                        class="mb-2 primary lighten-2 text-primary text&#45;&#45;darken-3"-->
-<!--                        block-->
-<!--                        size="large"-->
-<!--                        to="/"-->
-<!--                    >-->
-<!--                        <v-icon small left>mdi-{{ provider.id }}</v-icon>-->
-<!--                        {{ provider.label }}-->
-<!--                    </v-btn>-->
-
-<!--                    <div v-if="errorProvider" class="error&#45;&#45;text">{{ errorProviderMessages }}</div>-->
-
                     <div class="mt-5">
                         <router-link to="/auth/forgot-password">
                             {{ $t('login.forgot') }}
@@ -66,154 +61,21 @@
                 </v-form>
             </v-card-text>
         </v-card>
-
-<!--        <div class="text-center mt-6">-->
-<!--            {{ $t('login.noaccount') }}-->
-<!--            <router-link to="/auth/signup" class="font-weight-bold">-->
-<!--                {{ $t('login.create') }}-->
-<!--            </router-link>-->
-<!--        </div>-->
     </div>
 </template>
 
-<!--<script>-->
-<!--/*-->
-<!--|-&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;-->
-<!--| Sign In Page Component-->
-<!--|-&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;-->
-<!--|-->
-<!--| Sign in template for user authentication into the application-->
-<!--|-->
-<!--*/-->
-
-<!--// import {mapActions, mapGetters} from 'vuex'-->
-<!--import {useAuthStore} from "@/store/authStore.js";-->
-
-<!--export default {-->
-<!--    data() {-->
-<!--        return {-->
-<!--            form: {-->
-<!--                email: '',-->
-<!--                password: '',-->
-<!--            },-->
-<!--            // sign in buttons-->
-<!--            isLoading: false,-->
-<!--            isSignInDisabled: false,-->
-
-<!--            // form-->
-<!--            isFormValid: true,-->
-<!--            email: '',-->
-<!--            password: '',-->
-
-<!--            // form error-->
-<!--            error: false,-->
-<!--            errorUsernameMessages:"",-->
-<!--            errorMessages: {-->
-<!--                message: '',-->
-<!--                username:'',-->
-<!--                email:'',-->
-<!--                password:''-->
-<!--            },-->
-
-<!--            errorProvider: false,-->
-<!--            errorProviderMessages: '',-->
-
-<!--            // show password field-->
-<!--            showPassword: false,-->
-
-<!--            providers: [{-->
-<!--                id: 'google',-->
-<!--                label: 'Google',-->
-<!--                isLoading: false-->
-<!--            }, {-->
-<!--                id: 'facebook',-->
-<!--                label: 'Facebook',-->
-<!--                isLoading: false-->
-<!--            }],-->
-
-<!--            // input rules-->
-<!--            rules: {-->
-<!--                required: (value) => (value && Boolean(value)) || 'Required',-->
-<!--                email: value => {-->
-<!--                    const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/-->
-<!--                    return pattern.test(value) || 'Invalid e-mail.'-->
-<!--                },-->
-<!--            }-->
-<!--        }-->
-<!--    },-->
-<!--    methods: {-->
-<!--        async signIn(credentials) {-->
-<!--            const auth = useAuthStore()-->
-<!--            await auth.login(this.form)-->
-<!--        },-->
-<!--        async submit () {-->
-<!--            this.isLoading = true-->
-<!--            this.isSignInDisabled = true-->
-
-
-<!--            await this.signIn(this.form).then(() => {-->
-<!--                console.log('test yes')-->
-<!--                if(this.isVerified) {-->
-<!--                    this.$router.push({name: 'dashboard'})-->
-<!--                } else {-->
-<!--                    this.$router.push({name: 'auth-verify-email'})-->
-<!--                }-->
-<!--            })-->
-<!--                .catch(error => {-->
-<!--                    console.log('test no', error)-->
-<!--                    const data = error.response.data;-->
-
-<!--                    this.error = true-->
-<!--                    this.errorMessages.message = data.message-->
-<!--                    if(data.errors.email !== undefined) {-->
-<!--                        this.errorMessages.email = data.errors.email[0]-->
-<!--                    }-->
-<!--                    if(data.errors.username !== undefined) {-->
-<!--                        this.errorMessages.username = data.errors.username[0]-->
-<!--                    }-->
-<!--                    this.errorUsernameMessages = this.errorMessages.username ?? this.errorMessages.email-->
-<!--                    this.isLoading = false-->
-<!--                    this.isSignInDisabled = false-->
-<!--                });-->
-
-
-<!--        },-->
-<!--        resetErrors() {-->
-<!--            this.error = false-->
-<!--            this.errorMessages = {-->
-<!--                message: '',-->
-<!--                email:'',-->
-<!--                password:''-->
-<!--            }-->
-
-<!--            this.errorProvider = false-->
-<!--            this.errorProviderMessages = ''-->
-<!--        }-->
-<!--    },-->
-<!--    computed: {-->
-<!--        authenticated() {-->
-<!--            const authStore = useAuthStore();-->
-<!--            return authStore.authenticated;-->
-<!--        },-->
-<!--        isVerified() {-->
-<!--            const authStore = useAuthStore();-->
-<!--            return authStore.isVerified;-->
-<!--        },-->
-<!--    }-->
-<!--}-->
-<!--</script>-->
-
-
 <script setup>
-import { reactive, defineAsyncComponent  } from 'vue'
+import { reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/authStore.js'
 
 const router = useRouter()
 const auth = useAuthStore()
-const isLoading = false;
-const isSignInDisabled = false;
-const showPassword = false;
+
+// Reactive state variables
+const isLoading = ref(false)
+const isSignInDisabled = ref(false)
+const showPassword = ref(false)
 
 const credentials = reactive({
     email: null,
@@ -228,35 +90,83 @@ const rules = {
     }
 }
 
-const errorMessages = {
+const errorMessages = reactive({
     message: null,
     email: null,
     username: null,
     password: null,
+})
+
+// Function to reset errors
+const resetErrors = () => {
+    errorMessages.message = null
+    errorMessages.email = null
+    errorMessages.username = null
+    errorMessages.password = null
 }
-
-const error = reactive({})
-const message = reactive({})
-
-// const rules =reactive({required: (value) => (value && Boolean(value)) || 'Required',
-//                email: value => {
-//                    const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-//                    return pattern.test(value) || 'Invalid e-mail.'
-//                }})
 
 const submit = async () => {
+    // Reset errors before attempting login
+    resetErrors()
+
+    isLoading.value = true
+    isSignInDisabled.value = true
+
     try {
         await auth.login(credentials)
-    } catch (error) {
-        console.log(error.message)
-    }
-    await router.push('/')
-}
 
+        // Check if user is verified and redirect accordingly
+        if (auth.isVerified) {
+            await router.push({ name: 'dashboard' })
+        } else {
+            await router.push({ name: 'auth-verify-email' })
+        }
+    } catch (error) {
+        //console.log('Login error:', error)
+
+        // Handle error response
+        if (error.response && error.response.data) {
+            const data = error.response.data
+
+            // Set general error message
+            errorMessages.message = data.message || 'An error occurred during login'
+
+            // Set specific field errors
+            if (data.errors) {
+                if (data.errors.email) {
+                    errorMessages.email = Array.isArray(data.errors.email)
+                        ? data.errors.email[0]
+                        : data.errors.email
+                }
+                if (data.errors.username) {
+                    errorMessages.username = Array.isArray(data.errors.username)
+                        ? data.errors.username[0]
+                        : data.errors.username
+                }
+                if (data.errors.password) {
+                    errorMessages.password = Array.isArray(data.errors.password)
+                        ? data.errors.password[0]
+                        : data.errors.password
+                }
+            }
+        } else {
+            // Handle network or other errors
+            errorMessages.message = 'Network error. Please try again.'
+        }
+    } finally {
+        isLoading.value = false
+        isSignInDisabled.value = false
+    }
+}
 </script>
 
-<style>
-.v-messages {
-    text-align: left;
+<style scoped>
+.v-card {
+    min-width: 400px;
+}
+
+/* Left-align error messages */
+:deep(.v-messages__message) {
+    text-align: left !important;
 }
 </style>

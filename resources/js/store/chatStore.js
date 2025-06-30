@@ -13,7 +13,7 @@ export const useChatStore = defineStore({
         },
         addMessage(message) {
             //this.messages.push(message);
-            console.log('new message added', message)
+            // console.log('new message added', message)
             this.messages = [...this.messages, message];
         }
     }

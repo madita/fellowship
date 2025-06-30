@@ -6,6 +6,7 @@ use App\Helpers\RelateableHelper;
 use App\Models\Collection;
 use App\Models\Event\Event;
 use App\Models\Relateable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class RelateableController extends Controller
@@ -13,7 +14,7 @@ class RelateableController extends Controller
     /**
      * Display a list of models that use the Relateable trait.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function getSourceModels()
     {
@@ -83,7 +84,7 @@ class RelateableController extends Controller
 
             // Determine the coverImage if the related model is a Collection
             $coverImage = null;
-            if ($relatedModel instanceof \App\Models\Collection) {
+            if ($relatedModel instanceof Collection) {
                 $coverMedia = $relatedModel->media->first(fn ($media) => $media->getCustomProperty('is_cover', false))
                     ?? $relatedModel->media->first();
                 $coverImage = $coverMedia ? $coverMedia->getUrl() : null;

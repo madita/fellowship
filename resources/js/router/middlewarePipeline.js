@@ -1,4 +1,5 @@
 export function middlewarePipeline(context, middleware, index) {
+    // console.log('middlewarepipline', context)
     // Get the next middleware from the list using the provided index.
     const nextMiddleware = middleware[index];
 

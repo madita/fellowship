@@ -198,7 +198,7 @@ export default {
 
             let filtered = [];
 
-            console.log('test',this.categories.length)
+            // console.log('test',this.categories.length)
 
             const capitals = this.categories.capital;
             const categories = Object.keys(this.categories.capital);

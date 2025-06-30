@@ -17,13 +17,16 @@
 
                 <v-container class="fill-height pa-9">
                     <v-row>
-                        <v-col><span>
-                            {{ $formatDate(event.startDate, 'dd.mm.yyyy') }}
-                             at {{ event.startTime }} - {{
-                            $formatDate(event.endDate, 'dd.mm.yyyy')
-                            }} at {{ event.endTime }}</span>
+                        <v-col>
+                            <span>
+                                {{ formatDate(event.startDate, 'dd.MM.yyyy') }}
+                                at {{ event.startTime }} - {{
+                                    formatDate(event.endDate, 'dd.MM.yyyy')
+                                }} at {{ event.endTime }}
+                            </span>
 
-                            <h1 class="event-title">{{ event.title }}</h1></v-col>
+                            <h1 class="event-title">{{ event.title }}</h1>
+                        </v-col>
                     </v-row>
                 </v-container>
 
@@ -32,7 +35,7 @@
             <v-container>
                 <div class="calendar-day">
                     <div class="calendar-day-top"></div>
-                    <div class="calendar-day-bottom">{{ $formatDate(event.startDate, 'd') }}</div>
+                    <div class="calendar-day-bottom">{{ formatDate(event.startDate, 'd') }}</div>
                 </div>
 
                 <v-row justify="center">
@@ -67,14 +70,39 @@
                             Maybe
                         </v-btn>
 
+                        <v-list-subheader>Is Going ({{ eventData?.going?.length || 0 }})</v-list-subheader>
+                        <user-avatar
+                            v-for="user in eventData?.going || []"
+                            :key="`going-${user.id}`"
+                            :user="user"
+                        />
 
-                    <v-list-subheader>Is Going ({{ eventData.going.length }})</v-list-subheader>
-                    <user-avatar v-for="user in eventData.going" :key="`going-${user.id}`" :user="user"></user-avatar>
-                    <v-list-subheader>Maybe Going ({{ eventData.maybe.length }})</v-list-subheader>
-                    <user-avatar v-for="user in eventData.maybe" :key="`maybe-${user.id}`" :user="user"></user-avatar>
-                    <v-list-subheader>Not Going ({{ eventData.notgoing.length }})</v-list-subheader>
-                    <user-avatar v-for="user in eventData.notgoing" :key="`notgoing-${user.id}`" :user="user"></user-avatar>
+                        <v-list-subheader>Maybe Going ({{ eventData?.maybe?.length || 0 }})</v-list-subheader>
+                        <user-avatar
+                            v-for="user in eventData?.maybe || []"
+                            :key="`maybe-${user.id}`"
+                            :user="user"
+                        />
 
+                        <v-list-subheader>Not Going ({{ eventData?.notgoing?.length || 0 }})</v-list-subheader>
+                        <user-avatar
+                            v-for="user in eventData?.notgoing || []"
+                            :key="`notgoing-${user.id}`"
+                            :user="user"
+                        />
+
+                        <!-- Success Message -->
+                        <v-alert
+                            v-if="message"
+                            type="success"
+                            variant="tonal"
+                            density="compact"
+                            class="mt-4"
+                            closable
+                            @click:close="message = ''"
+                        >
+                            {{ message }}
+                        </v-alert>
                     </v-col>
                 </v-row>
             </v-container>
@@ -83,72 +111,96 @@
     </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useDateFormat } from '@/plugins/formatDate.js' // Adjust path as needed
+//import EventDatePicker from './EventDatePicker.vue'
+import UserAvatar from '../common/UserAvatar.vue'
+import axios from 'axios'
 
-import EventDatePicker from "./EventDatePicker.vue";
-import UserAvatar from "../common/UserAvatar.vue";
-import {formatDate} from "date-fns";
+// Props (if any would be passed to this component)
+const props = defineProps({
+    // Add any props if needed
+})
 
-export default {
-    components: {
-        EventDatePicker,
-        UserAvatar
-    },
-    data() {
-        return {
-            isLoading: true,
-            eventData: null,
-            event: {title: "", description: ""},
-            endpoint: '/api/events',
-            id: null,
-            message: ""
-        }
-    },
-    methods: {
-        formatDate,
-        getEvent() {
-            this.isLoading = true
-            return axios.get(`/api/events/${this.id}`).then((response) => {
-                this.eventData = response.data;
-                this.event = response.data.event;
+// Composables
+const route = useRoute()
+const { formatDate } = useDateFormat()
 
-                this.isLoading = false
-            });
-        },
-        register(answer) {
-            axios.get(`${this.endpoint}/${this.id}/going/${answer}`).then((response) => {
-                this.eventData.isGoing.type = answer;
-                this.eventData.going = response.data.going
-                this.eventData.notgoing = response.data.notgoing
-                this.eventData.maybe = response.data.maybe
+// Reactive state
+const isLoading = ref(true)
+const eventData = ref(null)
+const event = ref({ title: '', description: '' })
+const endpoint = '/api/events'
+const id = ref(null)
+const message = ref('')
 
-                this.message = "Answer saved"
-            }).catch((error) => {
-                if (error.response.status === 422) {
-                    // this.creating.errors = error.response.data
-                    this.editing.errors = error.response.data
-                }
-            })
-        },
-        getIsGoing(answer) {
-            if (this.eventData === null) {
-                return false;
-            }
-            return this.eventData.isGoing !== undefined && this.eventData.isGoing.type === answer
-        },
-    },
-    created() {
-        if (this.$route.params.id) {
-            this.id = this.$route.params.id;
-            this.getEvent();
-        }
+// Methods
+const getEvent = async () => {
+    isLoading.value = true
+    try {
+        const response = await axios.get(`/api/events/${id.value}`)
+        eventData.value = response.data
+        event.value = response.data.event
+        isLoading.value = false
+    } catch (error) {
+        console.error('Error fetching event:', error)
+        isLoading.value = false
     }
 }
+
+const register = async (answer) => {
+    try {
+        const response = await axios.get(`${endpoint}/${id.value}/going/${answer}`)
+
+        // Update the registration status
+        if (eventData.value.isGoing) {
+            eventData.value.isGoing.type = answer
+        } else {
+            eventData.value.isGoing = { type: answer }
+        }
+
+        // Update the participant lists
+        eventData.value.going = response.data.going
+        eventData.value.notgoing = response.data.notgoing
+        eventData.value.maybe = response.data.maybe
+
+        message.value = 'Answer saved'
+
+        // Clear message after 3 seconds
+        setTimeout(() => {
+            message.value = ''
+        }, 3000)
+
+    } catch (error) {
+        if (error.response?.status === 422) {
+            console.error('Validation errors:', error.response.data)
+            // Handle validation errors as needed
+        }
+        console.error('Error registering:', error)
+    }
+}
+
+const getIsGoing = (answer) => {
+    if (eventData.value === null) {
+        return false
+    }
+    return eventData.value.isGoing !== undefined && eventData.value.isGoing.type === answer
+}
+
+// Lifecycle
+onMounted(() => {
+    if (route.params.id) {
+        id.value = route.params.id
+        getEvent()
+    }
+})
 </script>
 
-<style>
+<style scoped>
 .event-show {
-
+    /* Add any specific styles if needed */
 }
 
 .event-hero {
@@ -189,8 +241,43 @@ export default {
     border-right: 1px solid #a2a2a2;
     border-bottom: 1px solid #a2a2a2;
     text-align: center;
+    display: flex;
+    align-items: center;
     justify-content: center;
     font-size: 3rem;
     font-weight: 600;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .event-hero h1 {
+        font-size: 3rem !important;
+    }
+
+    .calendar-day {
+        width: 60px;
+        height: 60px;
+    }
+
+    .calendar-day-top {
+        width: 60px;
+        height: 15px;
+    }
+
+    .calendar-day-bottom {
+        width: 60px;
+        height: 45px;
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .event-hero {
+        height: 40vh !important;
+    }
+
+    .event-hero h1 {
+        font-size: 2rem !important;
+    }
 }
 </style>

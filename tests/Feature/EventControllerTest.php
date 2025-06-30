@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Event\Event;
 use App\Models\Event\EventGuest;
+use App\Models\Event\EventProfile;
 use App\Models\Event\EventType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +28,7 @@ class EventControllerTest extends TestCase
         $this->user = User::factory()->create();
 
         // Create an event profile first
-        $eventProfile = \App\Models\Event\EventProfile::create([
+        $eventProfile = EventProfile::create([
             'name'    => 'Test Event Profile',
             'options' => json_encode([
                 'form' => [

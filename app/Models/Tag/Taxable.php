@@ -3,6 +3,8 @@
 namespace App\Models\Tag;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Taxable extends Model
 {
@@ -17,7 +19,7 @@ class Taxable extends Model
     ];
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\MorphTo
+     * @return MorphTo
      */
     public function taxable()
     {
@@ -25,7 +27,7 @@ class Taxable extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function taxonomy()
     {
