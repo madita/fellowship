@@ -159,14 +159,14 @@ class Taxonomy extends Model
             'taxonomies:taxonomy',
             "taxonomies:taxonomy:{$this->id}",
         ])->rememberForever($key, function () use ($exclude_self) {
-                 $parameters = $this->getParentBreadcrumbs();
+            $parameters = $this->getParentBreadcrumbs();
 
-                 if (!$exclude_self) {
-                     $parameters->push($this->taxonomy);
-                 }
+            if (!$exclude_self) {
+                $parameters->push($this->taxonomy);
+            }
 
-                 return $parameters->reverse()->values();
-             });
+            return $parameters->reverse()->values();
+        });
     }
 
     /**
