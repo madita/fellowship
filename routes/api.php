@@ -30,6 +30,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return ['user' => $user, 'roles' => $roles, 'permissions' => $permissions];
 });
 
+Route::post('/users/search', "\App\Http\Controllers\UserController@searchUsers");
+
 //
 Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 'account.'], function () {
     Route::get('/notifications', 'App\Http\Controllers\NotificationController@index')->name('notification.index');
@@ -104,6 +106,15 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::resource('datatable/events', 'App\Http\Controllers\DataTable\EventController');
     Route::resource('datatable/event-types', 'App\Http\Controllers\DataTable\EventTypeController');
     Route::resource('datatable/event-profiles', 'App\Http\Controllers\DataTable\EventProfileController');
+});
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    //Route::get('', 'ConversationController@index');
+    //Route::post('', 'ConversationController@store');
+    //Route::get('/{conversation}', 'ConversationController@show');
+    Route::resource('conversations', 'App\Http\Controllers\Conversation\ConversationController');
+    Route::post('/conversations/{conversation}/reply', 'App\Http\Controllers\Conversation\ConversationReplyController@store');
+    Route::post('/conversations/{conversation}/users', 'App\Http\Controllers\Conversation\ConversationUserController@store');
 });
 
 Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']);

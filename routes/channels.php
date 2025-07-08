@@ -28,3 +28,7 @@ Broadcast::channel('chat', function ($user) {
 //    ];
     return $user;
 });
+
+Broadcast::channel('conversation.{conversationId}', function ($user, $conversationId) {
+    return $user->isInConversation(\App\Models\Conversation\Conversation::find($conversationId));
+});

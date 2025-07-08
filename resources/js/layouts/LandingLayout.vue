@@ -28,6 +28,7 @@
 
                     <template v-else>
                         <v-btn><toolbar-notifications/></v-btn>
+                        <!--v-btn><ConversationsNotifications/></v-btn-->
                         <v-btn>   <toolbar-user/></v-btn>
 
 
@@ -124,6 +125,7 @@
                     </div>
                 </v-container>
             </v-footer>
+            <ConversationBox></ConversationBox>
         </v-main>
     </div>
 </template>
@@ -137,13 +139,21 @@ import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
 import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
 import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue'
+import Conversation from "../components/conversation/Conversation.vue";
+import Conversations from "../components/conversation/Conversations.vue";
+import ConversationBox from "../components/conversation/ConversationBox.vue";
+import ConversationsNotifications from "../notification/ConversationsNotification.vue";
+
 
 // import {mapActions, mapGetters} from 'vuex'
 
 export default {
     components: {
+        Conversation,
         ToolbarUser,
-        ToolbarNotifications
+        ToolbarNotifications,
+        ConversationBox,
+        ConversationsNotifications
     },
     data() {
         return {

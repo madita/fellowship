@@ -72,6 +72,16 @@ export const componentsRoutes = [{
                 auth, verified
             ]
         }
+    },
+    {
+        path: '/conversations',
+        name: 'conversations',
+        component: () => import(/* webpackChunkName: "conversations" */ '@/components/conversation/ConversationsDashboard.vue'),
+        meta: {
+            middleware: [
+                auth, verified
+            ]
+        }
     }]
 
 export default componentsRoutes;
