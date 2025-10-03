@@ -151,12 +151,12 @@ export default {
         onMounted(() => {
             Echo.join('chat')
                 .here((users) => {
-                    // console.log('usershere', users)
+                    console.log('usershere', users)
                     //emit('chatUsers.here', users)
                     onlineUsersStore.setUsers(users)
                 })
                 .joining((user) => {
-                    // console.log('joining', user)
+                    console.log('joining', user)
                     //emit('chatUsers.joined', user)
                     onlineUsersStore.addUser(user)
                 })

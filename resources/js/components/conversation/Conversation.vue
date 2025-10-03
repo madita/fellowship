@@ -20,68 +20,79 @@
                     Conversation Details
                 </v-card-title>
 
-                <v-card-text class="pa-4">
-                    <!-- Participants Section -->
-                    <div v-if="conversation.data.data.users?.data?.length" class="mb-4">
-                        <h3 class="text-h6 font-weight-medium mb-3">
-                            <v-icon class="mr-2">mdi-account-group</v-icon>
-                            Participants ({{ conversation.data.data.users.length }})
-                        </h3>
 
-                        <div class="d-flex flex-wrap gap-2">
-                            <v-chip
-                                v-for="user in conversation.data.data.users"
-                                :key="user.id"
-                                color="primary"
-                                variant="outlined"
-                                size="small"
-                                class="ma-1"
-                            >
-                                <v-avatar start>
-                                    <v-img :src="user.avatar" :alt="`${user.username}'s avatar`"></v-img>
-                                </v-avatar>
-                                {{ user.username }}
-                            </v-chip>
-                        </div>
-                    </div>
-
-                    <!-- Add User Form -->
-                    <v-expansion-panels class="mb-4">
-                        <v-expansion-panel>
-                            <v-expansion-panel-title>
-                                <v-icon class="mr-2">mdi-account-plus</v-icon>
-                                Add Participant
-                            </v-expansion-panel-title>
-                            <v-expansion-panel-text>
-                                 <ConversationAddUserForm />
-                            </v-expansion-panel-text>
-                        </v-expansion-panel>
-                    </v-expansion-panels>
-                </v-card-text>
             </v-card>
 
             <!-- Messages/Replies -->
             <v-card elevation="2">
-                <v-card-title class="text-h6 font-weight-medium">
+                <v-card-title class="v-col-6 text-h6 font-weight-medium">
                     <v-icon class="mr-2">mdi-message-text</v-icon>
                     Messages
                     <v-spacer></v-spacer>
                     <v-chip
-                        v-if="conversation.data.data.messages?.length"
+                        v-if="messages?.length"
                         size="small"
                         color="info"
                         variant="outlined"
+                        class="mr-2"
                     >
-                        {{ conversation.data.data.messages.length }} messages
+                        {{ messages.length }} messages
                     </v-chip>
+
+                    <!-- Add User Dropdown in title -->
+                    <v-menu :close-on-content-click="false">
+                        <template v-slot:activator="{ props }">
+                            <v-btn
+                                v-bind="props"
+                                variant="outlined"
+                                size="small"
+                                prepend-icon="mdi-account-plus"
+                            >
+                                Add Participant
+                            </v-btn>
+                        </template>
+                        <v-card min-width="300">
+                            <v-card-text>
+                                <ConversationAddUserForm />
+                            </v-card-text>
+                        </v-card>
+                    </v-menu>
+
                 </v-card-title>
+
+<!--                <v-card-text class="pa-4 v-col-6 d-inline-flex">-->
+<!--                    &lt;!&ndash; Participants Section &ndash;&gt;-->
+<!--                    <div v-if="conversation.users?.length" class="mb-4">-->
+<!--                        <h3 class="text-h6 font-weight-medium mb-3">-->
+<!--                            <v-icon class="mr-2">mdi-account-group</v-icon>-->
+<!--                            Participants ({{ conversation.users.length }})-->
+<!--                        </h3>-->
+
+<!--                        <div class="d-flex flex-wrap gap-2">-->
+<!--                            <v-chip-->
+<!--                                v-for="user in conversation.users"-->
+<!--                                :key="user.id"-->
+<!--                                color="primary"-->
+<!--                                variant="outlined"-->
+<!--                                size="small"-->
+<!--                                class="ma-1"-->
+<!--                            >-->
+<!--                                <v-avatar start>-->
+<!--                                    <v-img :src="user.avatar" :alt="`${user.username}'s avatar`"></v-img>-->
+<!--                                </v-avatar>-->
+<!--                                {{ user.username }}-->
+<!--                            </v-chip>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </v-card-text>-->
 
                 <v-divider></v-divider>
 
                 <v-card-text class="pa-0">
-                    <div v-if="conversation.data.data.messages?.length" class="messages-container">
+
+                    <div v-if="messages?.length" ref="messageContainer" class="messages-container">
                         <div
-                            v-for="reply in conversation.data.data.messages"
+                            v-for="reply in messages"
                             :key="reply.id"
                             class="message-item"
                         >
@@ -159,7 +170,7 @@
 
 <script>
 import { useConversationStore } from "@/store/conversationStore";
-import { computed, watch } from "vue";
+import { computed, ref, watch, onMounted, nextTick  } from "vue";
 import ConversationAddUserForm from "@/components/conversation/forms/ConversationAddUserForm.vue";
 import ConversationReplyForm from "@/components/conversation/forms/ConversationReplyForm.vue";
 import UserAvatar from "@/components/common/UserAvatar.vue";
@@ -180,7 +191,96 @@ export default {
     setup(props) {
         const conversationStore = useConversationStore();
         const conversation = computed(() => conversationStore.currentConversation);
+
         const loading = computed(() => conversationStore.loadingConversation);
+
+        const showAddUserDialog = ref(false)
+
+        const messageContainer = ref(null); // Add this line
+
+
+        let currentChannel = null;
+
+        const messages = computed(() => {
+            if (conversationStore?.messages === []) {
+                return [];
+            }
+            return conversationStore.messages;
+        });
+
+        // Add scrollToBottom method
+        const scrollToBottom = () => {
+            nextTick(() => {
+                if (messageContainer.value) {
+                    messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+                }
+            });
+        };
+
+        const setupEchoListeners = (conversationId) => {
+            // Leave previous channel if exists
+            if (currentChannel) {
+                Echo.leave(currentChannel);
+            }
+
+            // Join new channel
+            const channelName = `conversations.${conversationId}`;
+            currentChannel = channelName;
+            console.log('channelName', channelName)
+
+            // if (window.Echo && window.App?.user?.id) {
+            //     const channel = window.Echo.private(channelName)
+            //
+            //     channel
+            //         .subscribed((e) => {
+            //             console.log('subscribed:', e.data);
+            //
+            //
+            //         })
+            //         .listenToAll(() => {
+            //             console.log('listentoall:', e.data);
+            //             // Update store with new reply
+            //             //conversationStore.appendReplyToConversation(e.data);
+            //         })
+            //         .listen('Conversation.ConversationCreated', (e) => {
+            //             console.log('ConversationCreated', e)
+            //             //store.dispatch('getConversation', e.data.id, true)
+            //             //user.value = e.data.user.data
+            //         })
+            //         .listen('Conversation.ConversationReplyCreated', (e) => {
+            //             console.log('ConversationReplyCreated', e)
+            //             //store.dispatch('getConversation', e.data.parent.data.id, true)
+            //             //.value = e.data.user.data
+            //         })
+            //         .listen('Conversation.ConversationUsersCreated', (e) => {
+            //             console.log('ConversationUsersCreated', e)
+            //         })
+            // }
+
+           Echo.private(channelName)
+                .subscribed((e) => {
+                    console.log('subscribed:', e);
+
+
+                })
+                .listenToAll((e) => {
+                    console.log('listentoall:', e);
+                    // Update store with new reply
+                    //conversationStore.appendReplyToConversation(e.data);
+                })
+                .listen('Conversations\\MessageAdded', (e) => {
+                    console.log('New reply received:', e);
+                    // Update store with new reply
+                    conversationStore.appendReplyToConversation(e.message);
+                    conversationStore.addMessage(e.message);
+                    scrollToBottom();
+                })
+                .listen('UserAdded', (e) => {
+                    console.log('Users updated:', e.data);
+                    // Update store with new users
+                    conversationStore.updateConversationUsers(e.data.users.data);
+                });
+        };
 
         // Watcher for prop changes
         watch(
@@ -194,9 +294,31 @@ export default {
             { immediate: true }
         );
 
+        onMounted(() => {
+            //console.log('props', props);
+            //id is uuid
+            if (props.id) {
+                conversationStore.fetchConversation(props.id);
+                // conversationStore.setMessages(conversation.messages);
+                axios.get('/api/conversations/' + props.id).then((response) => {
+                    console.log('messagesapi', response)
+                    // messages = response.data;
+                    conversationStore.setMessages(response.data.messages.reverse());
+                    //this.messages = chatStore.messages
+                    scrollToBottom();
+                });
+
+                setupEchoListeners(props.id);
+
+            }
+        });
+
         return {
+            showAddUserDialog,
             conversation,
             loading,
+            messages,
+            messageContainer,
         };
     },
 };

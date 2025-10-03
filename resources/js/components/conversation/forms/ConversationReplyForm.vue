@@ -180,12 +180,12 @@ export default defineComponent({
             try {
                 // Using conversation store method
                 console.log('narf', conversation, {
-                    id: conversation.value.data.data.id,
+                    id: conversation.value.id,
                     body: body.value.trim(),
                 })
                 await conversationStore.createConversationReply({
-                    id: conversation.value.data.data.id,
-                    uuid: conversation.value.data.data.uuid,
+                    id: conversation.value.id,
+                    uuid: conversation.value.uuid,
                     body: body.value.trim(),
                 });
 

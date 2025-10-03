@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Broadcast;
+use App\Models\Conversation\Conversation;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +30,10 @@ Broadcast::channel('chat', function ($user) {
     return $user;
 });
 
-Broadcast::channel('conversation.{conversationId}', function ($user, $conversationId) {
-    return $user->isInConversation(\App\Models\Conversation\Conversation::find($conversationId));
+Broadcast::channel('conversations.{conversationId}', function ($user, $conversationId) {
+    //dd($conversationId);
+    $conversation = Conversation::where('uuid', $conversationId)->first();
+
+    //return $user->isInConversation(\App\Models\Conversation\Conversation::find($conversationId));
+    return $user->inConversation($conversation->id);
 });

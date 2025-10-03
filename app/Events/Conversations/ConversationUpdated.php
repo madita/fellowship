@@ -29,7 +29,7 @@ class ConversationUpdated implements ShouldBroadcast
     {
         return [
             'conversation' => [
-                'id' => $this->conversation->id
+                'uuid' => $this->conversation->uuid
             ]
         ];
     }

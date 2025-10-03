@@ -2,7 +2,7 @@
 
 namespace App\Events\Conversations;
 
-use App\Conversation;
+use App\Models\Conversation\Conversation;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -31,7 +31,7 @@ class ConversationCreated implements ShouldBroadcast
     {
         return [
             'conversation' => [
-                'id' => $this->conversation->id
+                'uuid' => $this->conversation->uuid
             ]
         ];
     }
@@ -43,6 +43,7 @@ class ConversationCreated implements ShouldBroadcast
      */
     public function broadcastOn()
     {
+       // dd('test');
         return $this->conversation->others->map(function ($user) {
             return new PrivateChannel('users.' . $user->id);
         })

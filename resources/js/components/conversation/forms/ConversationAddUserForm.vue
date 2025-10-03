@@ -159,9 +159,9 @@ export default {
 
         // Filter out users who are already in the conversation
         const filteredUserList = computed(() => {
-            if (!currentConversation.value?.data?.data?.users) return allUsers.value;
+            if (!currentConversation.value?.users) return allUsers.value;
 
-            const participantIds = currentConversation.value.data.data.users.map(user => user.id);
+            const participantIds = currentConversation.value.users.map(user => user.id);
             return allUsers.value.filter(user => !participantIds.includes(user.id));
         });
 
@@ -243,7 +243,7 @@ export default {
             const { valid } = await formRef.value.validate();
             if (!valid) return;
 
-            if (!currentConversation.value?.data?.data?.uuid) {
+            if (!currentConversation.value?.uuid) {
                 errorMessage.value = 'No conversation selected';
                 return;
             }
@@ -254,7 +254,7 @@ export default {
 
             try {
                 await conversationStore.addUserToConversation(
-                    currentConversation.value.data.data.uuid,
+                    currentConversation.value.uuid,
                     selectedUser.value
                 );
 

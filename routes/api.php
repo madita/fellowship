@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 //Broadcast::routes(['middleware' => ['auth:sanctum']]);
+
 Route::resource('wiki', "\App\Http\Controllers\WikiController");
 Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
 Route::patch('wiki/category/{slug}', "\App\Http\Controllers\WikiController@updateCategory");

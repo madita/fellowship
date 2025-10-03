@@ -2,7 +2,7 @@
 
 namespace App\Events\Conversations;
 
-use App\Message;
+use App\Models\Conversation\ConversationMessage;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -22,19 +22,30 @@ class MessageAdded implements ShouldBroadcast
      *
      * @return void
      */
-    public function __construct(Message $message)
+    public function __construct(ConversationMessage $message)
     {
         $this->message = $message;
     }
 
+//    public function broadcastWith()
+//    {
+//        return [
+//            'message' => [
+//                'id' => $this->message->id
+//            ]
+//        ];
+//    }
     public function broadcastWith()
     {
+        $this->message->load(['user']);
+
         return [
-            'message' => [
-                'id' => $this->message->id
-            ]
+            'message' => array_merge($this->message->toArray(), [
+                'selfOwned' => false,
+            ]),
         ];
     }
+
 
     /**
      * Get the channels the event should broadcast on.
@@ -43,6 +54,11 @@ class MessageAdded implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('conversations.' . $this->message->conversation->id);
+        return new PrivateChannel('conversations.' . $this->message->conversation->uuid);
     }
+
+//    public function broadcastAs()
+//    {
+//        return 'message-added';
+//    }
 }

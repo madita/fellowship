@@ -162,10 +162,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             ->withTimestamps();
     }
 
-    /*public function conversations()
+    public function conversations()
     {
-        return $this->belongsToMany(Conversation::class)->whereNull('parent_id')->orderBy('last_reply', 'desc');
-    }*/
+//        return $this->belongsToMany(Conversation::class)->whereNull('parent_id')->orderBy('last_reply', 'desc');
+        return $this->belongsToMany(Conversation::class)->withPivot('read_at');
+    }
 
     public function inConversation($id)
     {
@@ -175,11 +176,5 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function hasRead(Conversation $conversation)
     {
         return $this->conversations->find($conversation->id)->pivot->read_at;
-    }
-
-    public function conversations()
-    {
-        return $this->belongsToMany(Conversation::class)
-            ->withPivot('read_at');
     }
 }

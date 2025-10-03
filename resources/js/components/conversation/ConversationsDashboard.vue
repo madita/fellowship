@@ -148,6 +148,31 @@ watch(
 // Lifecycle
 onMounted(async () => {
     try {
+
+        // const channelName = `conversation.${conversationId}`;
+        //
+        // Echo.private(channelName)
+        //     .subscribed((e) => {
+        //         console.log('subscribed:', e.data);
+        //
+        //
+        //     })
+        //     .listenToAll(() => {
+        //         console.log('listentoall:', e.data);
+        //         // Update store with new reply
+        //         //conversationStore.appendReplyToConversation(e.data);
+        //     })
+        //     .listen('.message-added', (e) => {
+        //         console.log('New reply received:', e.data);
+        //         // Update store with new reply
+        //         conversationStore.appendReplyToConversation(e.data);
+        //     })
+        //     .listen('UserAdded', (e) => {
+        //         console.log('Users updated:', e.data);
+        //         // Update store with new users
+        //         conversationStore.updateConversationUsers(e.data.users.data);
+        //     });
+
         // Load conversations list
         await conversationsStore.fetchConversations()
 

@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers\Conversation;
 
-use App\Events\ConversationReplyCreated;
+use App\Events\Conversations\MessageAdded;
+use App\Events\Conversations\ConversationUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreConversationReplyRequest;
 use App\Models\Conversation\Conversation;
@@ -53,8 +54,8 @@ class ConversationReplyController extends Controller
                 ]);
             }
 
-            //broadcast(new MessageAdded($message))->toOthers();
-            //broadcast(new ConversationUpdated($message->conversation));
+            broadcast(new MessageAdded($message))->toOthers();
+            broadcast(new ConversationUpdated($message->conversation));
 
 
 
@@ -64,11 +65,12 @@ class ConversationReplyController extends Controller
                 'body' => $message->body,
                 'created_at' => $message->created_at,
                 'created_at_human' => $message->created_at->diffForHumans(),
+                'self_owned' => true,
                 'user' => $message->user
             ];
 
             // Broadcast event
-            // broadcast(new ConversationReplyCreated($reply))->toOthers();
+//            broadcast(new ConversationReplyCreated($reply))->toOthers();
 
             return response()->json($responseData, 201);
 

@@ -2,8 +2,8 @@
 
 namespace App\Events\Conversations;
 
-use App\User;
-use App\Conversation;
+use App\Models\User;
+use App\Models\Conversation\Conversation;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -47,6 +47,6 @@ class UserAdded implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('conversations.' . $this->conversation->id);
+        return new PrivateChannel('conversations.' . $this->conversation->uuid);
     }
 }

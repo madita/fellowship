@@ -89,9 +89,10 @@ export default {
         const user = userStore.user;
 
         const users = computed(() => {
-            if (onlineUsers.users === []) {
-                return [];
-            }
+            // if (onlineUsers.users === []) {
+            //     return [];
+            // }
+            console.log('users', onlineUsers.users)
             return onlineUsers.users;
         });
 
