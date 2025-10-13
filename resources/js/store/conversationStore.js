@@ -139,28 +139,9 @@ export const useConversationStore = defineStore('conversation', {
             }
         },
 
-        // Pure state mutations (called by components after Echo events)
-        appendReplyToConversation(reply) {
-            if (this.conversation && this.conversation.replies) {
-                if (!this.conversation.replies.data) {
-                    this.conversation.replies.data = [];
-                }
-                this.conversation.replies.data.unshift(reply);
-            }
-        },
-
         updateConversationUsers(users) {
-            if (this.conversation && this.conversation.users) {
-                this.conversation.users.data = users;
-            }
-        },
-
-        prependReplyToConversation(reply) {
-            if (this.conversation && this.conversation.replies) {
-                if (!this.conversation.replies.data) {
-                    this.conversation.replies.data = [];
-                }
-                this.conversation.replies.data.unshift(reply);
+            if (this.conversation) {
+                this.conversation.users = Array.isArray(users) ? users : [];
             }
         },
 

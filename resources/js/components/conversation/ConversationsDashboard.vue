@@ -97,21 +97,16 @@ const isLoading = computed(() => conversationStore.isLoading)
 
 // Methods
 const handleConversationSelected = (conversationId) => {
-    console.log('#selected', conversationId)
     selectedConversationId.value = conversationId
+    conversationStore.fetchConversation(conversationId)
 
-    conversationStore.fetchConversation(conversationId);
-
-    // Update URL if needed
-   /* if (route.params.id !== conversationId) {
+    // Optionally update URL if needed
+    /* if (route.params.id !== conversationId) {
         router.push({
             name: route.name,
             params: { ...route.params, id: conversationId }
         })
-    }*/
-
-    // Load conversation details
-    conversationStore.currentConversation
+    } */
 }
 
 const handleConversationCreated = (newConversation) => {

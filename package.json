@@ -10,7 +10,8 @@
         "prod": "vite build",
         "production": "vite build",
         "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage"
+        "test:coverage": "vitest run --coverage",
+        "audit:repo": "node tools/dependency-audit.js"
     },
     "dependencies": {
         "@ably/laravel-echo": "^1.0.6",

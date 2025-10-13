@@ -60,32 +60,6 @@
 
                 </v-card-title>
 
-<!--                <v-card-text class="pa-4 v-col-6 d-inline-flex">-->
-<!--                    &lt;!&ndash; Participants Section &ndash;&gt;-->
-<!--                    <div v-if="conversation.users?.length" class="mb-4">-->
-<!--                        <h3 class="text-h6 font-weight-medium mb-3">-->
-<!--                            <v-icon class="mr-2">mdi-account-group</v-icon>-->
-<!--                            Participants ({{ conversation.users.length }})-->
-<!--                        </h3>-->
-
-<!--                        <div class="d-flex flex-wrap gap-2">-->
-<!--                            <v-chip-->
-<!--                                v-for="user in conversation.users"-->
-<!--                                :key="user.id"-->
-<!--                                color="primary"-->
-<!--                                variant="outlined"-->
-<!--                                size="small"-->
-<!--                                class="ma-1"-->
-<!--                            >-->
-<!--                                <v-avatar start>-->
-<!--                                    <v-img :src="user.avatar" :alt="`${user.username}'s avatar`"></v-img>-->
-<!--                                </v-avatar>-->
-<!--                                {{ user.username }}-->
-<!--                            </v-chip>-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                </v-card-text>-->
-
                 <v-divider></v-divider>
 
                 <v-card-text class="pa-0">
@@ -98,12 +72,6 @@
                         >
                             <div class="d-flex pa-4">
                                 <user-avatar :user="reply.user"></user-avatar>
-                                <!--v-avatar size="48" class="mr-4">
-                                    <v-img
-                                        :src="reply.user.data.avatar"
-                                        :alt="`${reply.user.data.username}'s avatar`"
-                                    ></v-img>
-                                </v-avatar-->
 
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-center mb-2">
@@ -170,7 +138,8 @@
 
 <script>
 import { useConversationStore } from "@/store/conversationStore";
-import { computed, ref, watch, onMounted, nextTick  } from "vue";
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from "vue";
+import axios from "axios";
 import ConversationAddUserForm from "@/components/conversation/forms/ConversationAddUserForm.vue";
 import ConversationReplyForm from "@/components/conversation/forms/ConversationReplyForm.vue";
 import UserAvatar from "@/components/common/UserAvatar.vue";
@@ -194,19 +163,12 @@ export default {
 
         const loading = computed(() => conversationStore.loadingConversation);
 
-        const showAddUserDialog = ref(false)
-
-        const messageContainer = ref(null); // Add this line
-
+        const messageContainer = ref(null);
 
         let currentChannel = null;
+        const DEBUG = false;
 
-        const messages = computed(() => {
-            if (conversationStore?.messages === []) {
-                return [];
-            }
-            return conversationStore.messages;
-        });
+        const messages = computed(() => conversationStore.messages || []);
 
         // Add scrollToBottom method
         const scrollToBottom = () => {
@@ -218,103 +180,63 @@ export default {
         };
 
         const setupEchoListeners = (conversationId) => {
+            if (!window.Echo) return;
+
             // Leave previous channel if exists
             if (currentChannel) {
-                Echo.leave(currentChannel);
+                window.Echo.leave(currentChannel);
             }
 
             // Join new channel
             const channelName = `conversations.${conversationId}`;
             currentChannel = channelName;
-            console.log('channelName', channelName)
+            if (DEBUG) console.log('Echo channel:', channelName);
 
-            // if (window.Echo && window.App?.user?.id) {
-            //     const channel = window.Echo.private(channelName)
-            //
-            //     channel
-            //         .subscribed((e) => {
-            //             console.log('subscribed:', e.data);
-            //
-            //
-            //         })
-            //         .listenToAll(() => {
-            //             console.log('listentoall:', e.data);
-            //             // Update store with new reply
-            //             //conversationStore.appendReplyToConversation(e.data);
-            //         })
-            //         .listen('Conversation.ConversationCreated', (e) => {
-            //             console.log('ConversationCreated', e)
-            //             //store.dispatch('getConversation', e.data.id, true)
-            //             //user.value = e.data.user.data
-            //         })
-            //         .listen('Conversation.ConversationReplyCreated', (e) => {
-            //             console.log('ConversationReplyCreated', e)
-            //             //store.dispatch('getConversation', e.data.parent.data.id, true)
-            //             //.value = e.data.user.data
-            //         })
-            //         .listen('Conversation.ConversationUsersCreated', (e) => {
-            //             console.log('ConversationUsersCreated', e)
-            //         })
-            // }
-
-           Echo.private(channelName)
+            window.Echo.private(channelName)
                 .subscribed((e) => {
-                    console.log('subscribed:', e);
-
-
+                    if (DEBUG) console.log('Echo subscribed:', e);
                 })
                 .listenToAll((e) => {
-                    console.log('listentoall:', e);
-                    // Update store with new reply
-                    //conversationStore.appendReplyToConversation(e.data);
+                    if (DEBUG) console.log('Echo event:', e);
                 })
                 .listen('Conversations\\MessageAdded', (e) => {
-                    console.log('New reply received:', e);
+                    if (DEBUG) console.log('MessageAdded:', e);
                     // Update store with new reply
-                    conversationStore.appendReplyToConversation(e.message);
                     conversationStore.addMessage(e.message);
                     scrollToBottom();
-                })
-                .listen('UserAdded', (e) => {
-                    console.log('Users updated:', e.data);
-                    // Update store with new users
-                    conversationStore.updateConversationUsers(e.data.users.data);
                 });
         };
 
-        // Watcher for prop changes
+        // React to conversation id changes (including initial mount)
         watch(
             () => props.id,
-            (newId, oldId) => {
-                console.log('Conversation ID changed:', { newId, oldId });
-               /* if (newId && newId !== oldId) {
-                    conversationStore.fetchConversation(newId);
-                }*/
+            async (newId, oldId) => {
+                if (!newId || newId === oldId) return;
+                if (DEBUG) console.log('Conversation ID changed:', { newId, oldId });
+                try {
+                    // Set up Echo listeners immediately so tests and UI can receive events without waiting for API
+                    setupEchoListeners(newId);
+
+                    await conversationStore.fetchConversation(newId);
+                    // Fetch messages for the conversation
+                    const response = await axios.get(`/api/conversations/${newId}`);
+                    conversationStore.setMessages((response.data?.messages || []).reverse());
+                    scrollToBottom();
+                } catch (err) {
+                    console.error('Failed to load conversation/messages', err);
+                }
             },
             { immediate: true }
         );
 
-        onMounted(() => {
-            //console.log('props', props);
-            //id is uuid
-            if (props.id) {
-                conversationStore.fetchConversation(props.id);
-                // conversationStore.setMessages(conversation.messages);
-                axios.get('/api/conversations/' + props.id).then((response) => {
-                    console.log('messagesapi', response)
-                    // messages = response.data;
-                    conversationStore.setMessages(response.data.messages.reverse());
-                    //this.messages = chatStore.messages
-                    scrollToBottom();
-                });
-
-                setupEchoListeners(props.id);
-
+        onUnmounted(() => {
+            if (window.Echo && currentChannel) {
+                window.Echo.leave(currentChannel);
+                currentChannel = null;
             }
         });
 
         return {
-            showAddUserDialog,
             conversation,
             loading,
             messages,
