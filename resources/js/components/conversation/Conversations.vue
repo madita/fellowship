@@ -29,7 +29,7 @@
                                 class="conversation-card ma-2 transition-all"
                                 :class="{
                   'hover-effect': isHovering,
-                  'selected-conversation': selectedId && conversation.id === selectedId
+                  'selected-conversation': selectedId && conversation.uuid === selectedId
                 }"
                                 @click="getConversation(conversation.uuid)"
                                 ripple
@@ -80,8 +80,17 @@
                                             </div>
                                         </div>
 
-                                        <!-- Action Arrow -->
-                                        <div class="d-flex align-center">
+                                        <!-- Action / New badge -->
+                                        <div class="d-flex align-center gap-2">
+                                            <v-chip
+                                                v-if="newCounts[conversation.uuid] > 0"
+                                                size="small"
+                                                color="error"
+                                                variant="elevated"
+                                                prepend-icon="mdi-bell-badge-outline"
+                                            >
+                                                {{ newCounts[conversation.uuid] }} new
+                                            </v-chip>
                                             <v-btn
                                                 icon
                                                 variant="text"
@@ -127,7 +136,7 @@
 
 <script>
 import { useConversationsStore } from "@/store/conversationsStore";
-import { onMounted, computed } from "vue";
+import { onMounted, onUnmounted, computed, ref, watch } from "vue";
 import UserAvatar from "@/components/common/UserAvatar.vue";
 
 export default {
@@ -147,22 +156,69 @@ export default {
         const conversations = computed(() => conversationsStore.allConversations);
         const loading = computed(() => conversationsStore.isLoading);
 
-        const getConversation = (uuid) => {
-            // Emit to parent component
-            emit('conversation-selected', uuid);
+        const newCounts = ref({});
+        const joined = new Set();
 
-            // Also call store method if needed
-           // conversationStore.fetchConversation(uuid);
+        const increment = (uuid) => {
+            if (!uuid) return;
+            newCounts.value[uuid] = (newCounts.value[uuid] || 0) + 1;
+        };
+        const clearCount = (uuid) => {
+            if (!uuid) return;
+            newCounts.value[uuid] = 0;
+        };
+
+        const subscribeTo = (uuid) => {
+            if (!window.Echo || !uuid || joined.has(uuid)) return;
+            const channelName = `conversations.${uuid}`;
+            window.Echo.private(channelName)
+                .listen('Conversations\\\\MessageAdded', (e) => {
+                    // If this conversation is currently opened, don't count
+                    if (props.selectedId && props.selectedId === uuid) return;
+                    increment(uuid);
+                });
+            joined.add(uuid);
+        };
+
+        const ensureSubscriptions = () => {
+            (conversations.value || []).forEach(c => subscribeTo(c.uuid));
+        };
+
+        const getConversation = (uuid) => {
+            // reset new counter then emit selection
+            clearCount(uuid);
+            emit('conversation-selected', uuid);
         };
 
         onMounted(() => {
-            conversationsStore.fetchConversations();
+            conversationsStore.fetchConversations().then(() => ensureSubscriptions());
+        });
+
+        watch(conversations, () => {
+            ensureSubscriptions();
+        }, { deep: true });
+
+        watch(() => props.selectedId, (val) => {
+            if (val) clearCount(val);
+        });
+
+        onUnmounted(() => {
+            if (window.Echo) {
+                (conversations.value || []).forEach(c => {
+                    const name = `conversations.${c.uuid}`;
+                    if (joined.has(c.uuid)) {
+                        window.Echo.leave(name);
+                        joined.delete(c.uuid);
+                    }
+                });
+            }
         });
 
         return {
             conversations,
             loading,
-            getConversation
+            getConversation,
+            newCounts,
         };
     },
 };

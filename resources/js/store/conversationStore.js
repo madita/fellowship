@@ -21,20 +21,52 @@ export const useConversationStore = defineStore('conversation', {
 
     actions: {
         setMessages(messages) {
-            this.messages = messages
+            const arr = Array.isArray(messages) ? messages : [];
+            const seen = new Set();
+            this.messages = arr.filter(m => {
+                const id = m?.id;
+                if (id == null || seen.has(id)) return false;
+                seen.add(id);
+                return true;
+            });
         },
         addMessage(message) {
-            //this.messages.push(message);
-            // console.log('new message added', message)
-            this.messages = [...this.messages, message];
+            const id = message?.id;
+            if (id == null) {
+                // If no id, append as-is (cannot dedupe reliably)
+                this.messages = [...this.messages, message];
+                return;
+            }
+            const exists = this.messages.some(m => m?.id === id);
+            if (exists) {
+                // Merge to keep latest server payload while avoiding duplicate keys
+                this.messages = this.messages.map(m => (m?.id === id ? { ...m, ...message } : m));
+            } else {
+                this.messages = [...this.messages, message];
+            }
         },
         async fetchConversation(id) {
+            // console.log('[conversationStore] fetchConversation called with id:', id);
             this.loading = true;
             try {
                 const response = await getConversation(id);
-                // console.log('fetchConversation', response);
+                console.log('[conversationStore] API response:', response);
+                console.log('[conversationStore] Response data:', response.data);
+
                 this.conversation = response.data;
-                // console.log('store', this.conversation);
+                console.log('[conversationStore] Set conversation:', this.conversation);
+
+                // Set messages from the conversation response
+                if (response.data.messages && Array.isArray(response.data.messages)) {
+                    // console.log('[conversationStore] Messages received:', response.data.messages.length, 'messages');
+                    // Messages come in reverse order (newest first), reverse them for display
+                    const reversedMessages = [...response.data.messages].reverse();
+                    // console.log('[conversationStore] Reversed messages:', reversedMessages);
+                    this.setMessages(reversedMessages);
+                    // console.log('[conversationStore] Messages after setMessages:', this.messages);
+                } else {
+                    console.warn('[conversationStore] No messages in response or not an array:', response.data.messages);
+                }
 
                 if (window.Echo && window.App?.user?.id) {
                     const channel = window.Echo.private(`user.${window.App.user.id}`)
@@ -55,11 +87,9 @@ export const useConversationStore = defineStore('conversation', {
                         })
                 }
 
-                //this.setMessages(response.data.messages);
-
                 return response.data;
             } catch (error) {
-                console.error('Failed to fetch conversation:', error);
+                console.error('[conversationStore] Failed to fetch conversation:', error);
                 throw error;
             } finally {
                 this.loading = false;
@@ -108,7 +138,7 @@ export const useConversationStore = defineStore('conversation', {
             if (!this.conversation) return;
 
             try {
-                const reply = await storeConversationReply(this.conversation.id, body);
+                const reply = await storeConversationReply(this.conversation.uuid, { body });
                 return reply;
             } catch (error) {
                 console.error('Failed to add reply:', error);

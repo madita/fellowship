@@ -93,27 +93,24 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useConversationStore } from '@/store/conversationStore.js'
-import axios from "axios";
-//import { useNotificationStore } from '@/store/notificationStore.js'
+import { useUserSearch } from '@/composables/conversation/useUserSearch'
+import { VALIDATION_RULES, MESSAGE_LIMITS } from '../constants'
+import axios from "axios"
 
 // Emits
 const emit = defineEmits(['conversation-created', 'cancel'])
 
 // Composables
 const conversationStore = useConversationStore()
-//const notificationStore = useNotificationStore()
+const { userList, userSearch, loadingUsers, handleUserSearch } = useUserSearch()
 
 // Reactive state
 const formRef = ref(null)
 const recipients = ref([])
 const body = ref('')
-const userList = ref([])
-const userSearch = ref('')
-const loadingUsers = ref(false)
 const isSubmitting = ref(false)
-const debounceTimer = ref(null)
 
 // Computed properties
 const currentConversation = computed(() => conversationStore.currentConversation)
@@ -125,32 +122,16 @@ const isFormValid = computed(() => {
 })
 
 // Form validation rules
-const recipientRules = [
-    (value) => {
-        if (!value || value.length === 0) {
-            return 'At least one recipient is required'
-        }
-        return true
-    }
-]
-
+const recipientRules = [VALIDATION_RULES.recipientRequired]
 const bodyRules = [
-    (value) => {
-        if (!value || value.trim().length === 0) {
-            return 'Message body is required'
-        }
-        if (value.length > 1000) {
-            return 'Message body must be less than 1000 characters'
-        }
-        return true
-    }
+    VALIDATION_RULES.required,
+    VALIDATION_RULES.maxLength(MESSAGE_LIMITS.MAX_BODY_LENGTH)
 ]
 
 // Methods
 const handleSubmit = async () => {
     if (!formRef.value) return
 
-    // Validate form
     const { valid } = await formRef.value.validate()
     if (!valid) return
 
@@ -163,28 +144,11 @@ const handleSubmit = async () => {
             created_at: new Date().toISOString()
         }
 
-        console.log('conversationData', conversationData)
-
-        // Create conversation through store
-       // const newConversation = await conversationStore.createConversation(conversationData)
         const newConversation = await createConversation(conversationData)
-
-        // Show success notification
-        //notificationStore.showSuccess('Conversation created successfully!')
-
-        // Reset form
         resetForm()
-
-        // Emit event to parent
         emit('conversation-created', newConversation)
-
     } catch (error) {
         console.error('Error creating conversation:', error)
-
-        // Show error notification
-        /*notificationStore.showError(
-            error.message || 'Failed to create conversation. Please try again.'
-        )*/
     } finally {
         isSubmitting.value = false
     }
@@ -200,7 +164,6 @@ const resetForm = () => {
     body.value = ''
     userSearch.value = ''
 
-    // Reset form validation
     if (formRef.value) {
         formRef.value.resetValidation()
     }
@@ -209,101 +172,16 @@ const resetForm = () => {
 const createConversation = async (data) => {
     return new Promise((resolve, reject) => {
         axios.post('/api/conversations', data).then((response) => {
-            resolve(response);
-        }).catch(reject);
-    });
-}
-
-const handleUserSearch = (query) => {
-    userSearch.value = query
-
-    if (!query || query.length < 2) {
-        userList.value = []
-        return
-    }
-
-    // Clear existing timer
-    if (debounceTimer.value) {
-        clearTimeout(debounceTimer.value)
-    }
-
-    // Set new timer for debounced search
-    debounceTimer.value = setTimeout(async () => {
-        await searchUsers(query)
-    }, 500)
-}
-
-const searchUsers = async (query) => {
-    loadingUsers.value = true
-
-    try {
-        //const users = await conversationStore.searchUsers(query)
-
-        /*axios.post('/api/users/search', {
-            query: query
-        }).then((response) => {
-            resolve(response);
-        }).catch(reject);*/
-
-
-
-        try {
-            const response = await axios.post('/api/users/search', {
-                query: query,
-            });
-            console.log('response', response)
-            userList.value = response.data;
-            //userList.value = users;
-        } catch (error) {
-            console.warn(error);
-        }
-
-
-       // userList.value = users;
-        //console.log(users);
-
-        // Filter out current user and already selected users
-      /*  userList.value = users.filter(user =>
-            !recipients.value.includes(user.id) &&
-            user.id !== getCurrentUserId()
-        )*/
-
-    } catch (error) {
-        console.error('Error searching users:', error)
-        //notificationStore.showError('Failed to search users')
-    } finally {
-        loadingUsers.value = false
-    }
-}
-
-const getCurrentUserId = () => {
-    // Get current user ID from your auth system
-    return window.App?.user?.id || null
+            resolve(response)
+        }).catch(reject)
+    })
 }
 
 // Watchers
 watch(recipients, (newRecipients) => {
-    // Remove selected users from search results
     userList.value = userList.value.filter(user =>
         !newRecipients.includes(user.id)
     )
-})
-
-// Lifecycle
-onMounted(async () => {
-    try {
-        // Load initial user list if needed
-       // await conversationStore.loadRecentContacts()
-    } catch (error) {
-        console.error('Error loading recent contacts:', error)
-    }
-})
-
-// Cleanup
-onUnmounted(() => {
-    if (debounceTimer.value) {
-        clearTimeout(debounceTimer.value)
-    }
 })
 </script>
 

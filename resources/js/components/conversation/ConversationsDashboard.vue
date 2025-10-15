@@ -99,14 +99,6 @@ const isLoading = computed(() => conversationStore.isLoading)
 const handleConversationSelected = (conversationId) => {
     selectedConversationId.value = conversationId
     conversationStore.fetchConversation(conversationId)
-
-    // Optionally update URL if needed
-    /* if (route.params.id !== conversationId) {
-        router.push({
-            name: route.name,
-            params: { ...route.params, id: conversationId }
-        })
-    } */
 }
 
 const handleConversationCreated = (newConversation) => {
@@ -143,35 +135,8 @@ watch(
 // Lifecycle
 onMounted(async () => {
     try {
-
-        // const channelName = `conversation.${conversationId}`;
-        //
-        // Echo.private(channelName)
-        //     .subscribed((e) => {
-        //         console.log('subscribed:', e.data);
-        //
-        //
-        //     })
-        //     .listenToAll(() => {
-        //         console.log('listentoall:', e.data);
-        //         // Update store with new reply
-        //         //conversationStore.appendReplyToConversation(e.data);
-        //     })
-        //     .listen('.message-added', (e) => {
-        //         console.log('New reply received:', e.data);
-        //         // Update store with new reply
-        //         conversationStore.appendReplyToConversation(e.data);
-        //     })
-        //     .listen('UserAdded', (e) => {
-        //         console.log('Users updated:', e.data);
-        //         // Update store with new users
-        //         conversationStore.updateConversationUsers(e.data.users.data);
-        //     });
-
-        // Load conversations list
         await conversationsStore.fetchConversations()
 
-        // If we have an ID, load that conversation
         if (selectedConversationId.value) {
             await conversationStore.setCurrentConversation(selectedConversationId.value)
         }

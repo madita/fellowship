@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('conversations', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid');
+            $table->uuid('uuid');$table->foreignId('creator_id')->nullable()->after('uuid')->constrained('users')->onDelete('set null');
             $table->timestamps();
             $table->timestamp('last_message_at');
         });

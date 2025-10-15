@@ -31,21 +31,34 @@ class UserController extends Controller
     }
 
     public function searchUsers(Request $request) {
-       // dd($request->all());
-       /* $query = request()->query('query');
-        $users = User::where('username', 'like', "%{$query}%")
-            ->orWhere('email', 'like', "%{$query}%")
-            ->get(['id', 'username']);
+        $q = $request->get('query', '');
 
-        return response()->json($users);*/
-
-        if (!$q = $request->get('query', '')) {
-            //return response()->json([]);
-            return User::all()
-                ->get(['id', 'username']);
+        if (empty($q)) {
+            // Return all users with avatar
+            return User::where('id', '!=', auth()->id())
+                ->get(['id', 'username', 'email'])
+                ->map(function ($user) {
+                    return [
+                        'id' => $user->id,
+                        'username' => $user->username,
+                        'email' => $user->email,
+                        'avatar' => $user->avatar,
+                        'initials' => $user->initials,
+                    ];
+                });
         }
 
-        return User::where(DB::raw('LOWER(username)'), 'LIKE', '%' . Str::lower($q) . '%')
-            ->get(['id', 'username']);
+        return User::where('id', '!=', auth()->id())
+            ->where(DB::raw('LOWER(username)'), 'LIKE', '%' . Str::lower($q) . '%')
+            ->get(['id', 'username', 'email'])
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'avatar' => $user->avatar,
+                    'initials' => $user->initials,
+                ];
+            });
     }
 }

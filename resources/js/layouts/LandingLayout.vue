@@ -142,7 +142,7 @@ import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue
 import Conversation from "../components/conversation/Conversation.vue";
 import Conversations from "../components/conversation/Conversations.vue";
 import ConversationBox from "../components/conversation/ConversationBox.vue";
-import ConversationsNotifications from "../notification/ConversationsNotification.vue";
+import ConversationsNotifications from "../components/conversation/ConversationsNotification.vue";
 
 
 // import {mapActions, mapGetters} from 'vuex'

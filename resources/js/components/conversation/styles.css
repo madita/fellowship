@@ -1,0 +1,73 @@
+/* Shared conversation component styles */
+
+.bg-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.conversation-container {
+    min-height: 400px;
+}
+
+/* Scrollbar Styles */
+.messages-container {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.messages-container::-webkit-scrollbar,
+.conversation-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.messages-container::-webkit-scrollbar-track,
+.conversation-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb,
+.conversation-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover,
+.conversation-list::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Message Styles */
+.message-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.message-bubble {
+    max-width: 80%;
+    word-wrap: break-word;
+    border-radius: 16px !important;
+}
+
+/* Utility Classes */
+.gap-2 {
+    gap: 8px;
+}
+
+.gap-3 {
+    gap: 12px;
+}
+
+/* Transitions */
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .d-flex.flex-wrap {
+        flex-direction: column;
+    }
+
+    .message-bubble {
+        max-width: 100%;
+    }
+}

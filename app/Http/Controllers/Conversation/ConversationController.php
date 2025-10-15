@@ -43,7 +43,24 @@ class ConversationController extends Controller
             $message->created_at_human = $message->created_at->diffForHumans();
         });
 
+        // Mark conversation as read for current user
+        auth()->user()->conversations()->updateExistingPivot($conversation->id, [
+            'read_at' => now()
+        ]);
+
         return response()->json($this->transformConversation($conversation, true));
+    }
+
+    /**
+     * Mark conversation as read for the authenticated user
+     */
+    public function markAsRead(Conversation $conversation): JsonResponse
+    {
+        auth()->user()->conversations()->updateExistingPivot($conversation->id, [
+            'read_at' => now()
+        ]);
+
+        return response()->json(['success' => true]);
     }
 
     public function store(StoreConversationRequest $request): JsonResponse
@@ -55,6 +72,7 @@ class ConversationController extends Controller
         $conversation = new Conversation([
             'uuid' => Str::uuid(),
             'last_message_at' => now(),
+            'creator_id' => auth()->id(),
         ]);
 
         $conversation->save();
@@ -86,15 +104,41 @@ class ConversationController extends Controller
     {
         $firstMessage = $conversation->messages->first();
 
+        // Get user's read_at timestamp from pivot table
+        $userConversation = auth()->user()->conversations()->where('conversation_id', $conversation->id)->first();
+        $readAt = $userConversation?->pivot?->read_at;
+
+        // Calculate unread count using loaded messages collection
+        $unreadCount = 0;
+        if ($conversation->relationLoaded('messages')) {
+            if ($readAt) {
+                // Count messages created after read_at timestamp
+                $unreadCount = $conversation->messages->filter(function ($message) use ($readAt) {
+                    return $message->user_id !== auth()->id() && $message->created_at > $readAt;
+                })->count();
+            } else {
+                // If never read, all messages (except own) are unread
+                $unreadCount = $conversation->messages->filter(function ($message) {
+                    return $message->user_id !== auth()->id();
+                })->count();
+            }
+        }
+
         $data = [
             'id' => $conversation->id,
             'uuid' => $conversation->uuid,
             'body' => $firstMessage?->body,
             'messages_count' => $conversation->messages->count(),
+            'unread_count' => $unreadCount,
+            'is_unread' => $unreadCount > 0,
+            'read_at' => $readAt ? ($readAt instanceof \Carbon\Carbon ? $readAt->toISOString() : $readAt) : null,
+            'created_at' => $conversation->created_at->toISOString(),
             'created_at_human' => $conversation->created_at->diffForHumans(),
-//            'last_message_at_human' => $conversation->last_message_at
-//                ? $conversation->last_message_at->diffForHumans()
-//                : $conversation->created_at->diffForHumans(),
+            'last_message_at' => $conversation->last_message_at
+                ? ($conversation->last_message_at instanceof \Carbon\Carbon
+                    ? $conversation->last_message_at->toISOString()
+                    : $conversation->last_message_at)
+                : null,
             'users' => $conversation->users->map(fn($user) => $this->transformUser($user)),
             'participant_count' => $conversation->users->count() - 1,
         ];
@@ -108,7 +152,6 @@ class ConversationController extends Controller
                     'user_id' => $message->user_id,
                     'user' => $this->transformUser($message->user),
                     'self_owned' => $message->self_owned ?? ($message->user_id === auth()->id()),
-                    //'created_at' => $message->created_at->toISOString(),
                     'created_at_human' => $message->created_at_human ?? $message->created_at->diffForHumans(),
                 ];
             });
@@ -128,10 +171,10 @@ class ConversationController extends Controller
 
         return [
             'id' => $user->id,
-            //'name' => $user->name,
             'email' => $user->email,
             'username' => $user->username,
             'initials' => $user->initials,
+            'avatar' => $user->avatar ?? null,
             'created_at' => $user->created_at?->toISOString(),
             'updated_at' => $user->updated_at?->toISOString(),
         ];

@@ -10,16 +10,24 @@ class Conversation extends Model
 {
     protected $fillable = [
         'last_message_at',
-        'uuid'
+        'uuid',
+        'creator_id'
     ];
 
-    protected $dates = [
-        'last_message_at'
+    protected $casts = [
+        'last_message_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function getRouteKeyName()
     {
         return 'uuid';
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'creator_id');
     }
 
     public function users()

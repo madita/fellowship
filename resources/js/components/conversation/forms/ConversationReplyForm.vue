@@ -141,13 +141,14 @@
 <script>
 import { ref, computed, defineComponent } from 'vue';
 import { useConversationStore } from "@/store/conversationStore";
-import { useUserStore } from "@/store/userStore"; // Assuming you have a user store
+import { useUserStore } from "@/store/userStore";
+import { VALIDATION_RULES } from '../constants';
 
 export default defineComponent({
     name: "ConversationReplyForm",
     setup() {
         const conversationStore = useConversationStore();
-        const userStore = useUserStore(); // For current user info
+        const userStore = useUserStore();
 
         const body = ref('');
         const isSubmitting = ref(false);
@@ -158,19 +159,16 @@ export default defineComponent({
 
         const conversation = computed(() => conversationStore.currentConversation);
         const currentUser = computed(() => userStore.currentUser);
-
         const characterCount = computed(() => body.value?.length || 0);
 
-        // Validation rules
         const rules = {
-            required: (value) => !!value?.trim() || 'Reply cannot be empty',
-            minLength: (value) => (value?.trim()?.length || 0) >= 1 || 'Reply must be at least 1 character'
+            required: VALIDATION_RULES.required,
+            minLength: VALIDATION_RULES.minLength(1)
         };
 
         const reply = async () => {
             if (!body.value?.trim() || isSubmitting.value) return;
 
-            // Validate form
             const { valid } = await formRef.value.validate();
             if (!valid) return;
 
@@ -178,24 +176,15 @@ export default defineComponent({
             showError.value = false;
 
             try {
-                // Using conversation store method
-                console.log('narf', conversation, {
-                    id: conversation.value.id,
-                    body: body.value.trim(),
-                })
                 await conversationStore.createConversationReply({
                     id: conversation.value.id,
                     uuid: conversation.value.uuid,
                     body: body.value.trim(),
                 });
 
-                // Success handling
                 body.value = '';
                 showSuccess.value = true;
-
-                // Reset form validation
                 formRef.value.reset();
-
             } catch (error) {
                 console.error('Error sending reply:', error);
                 errorMessage.value = error.message || 'Failed to send reply. Please try again.';
@@ -211,16 +200,13 @@ export default defineComponent({
         };
 
         const insertEmoji = () => {
-            // Simple emoji insertion - you can expand this
             const emojis = ['😊', '👍', '❤️', '😂', '🔥', '💯', '🎉', '👏'];
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
             body.value += randomEmoji;
         };
 
         const attachFile = () => {
-            // Placeholder for file attachment functionality
             console.log('File attachment clicked');
-            // You can implement file upload logic here
         };
 
         return {

@@ -3,13 +3,33 @@
         <!-- Chat Header -->
         <v-card-title class="chat-header bg-gradient-to-r from-blue-500 to-teal-500 text-white pa-4">
             <div class="d-flex align-center justify-space-between w-100">
-                <div class="d-flex align-center">
-                    <v-avatar size="40" class="mr-3">
-                        <v-img :src="user.avatar" :alt="`${user.username} avatar`" />
-                    </v-avatar>
+                <div v-if="user" class="d-flex align-center">
+                    <v-badge
+                        :color="isUserOnline(user.id).value ? 'success' : 'grey'"
+                        dot
+                        location="bottom right"
+                        offset-x="4"
+                        offset-y="4"
+                    >
+                        <!--v-avatar size="40">
+                          <v-img v-if="u.avatar" :src="u.avatar" :alt="`${u.username} avatar`" />
+                          <span v-else class="text-subtitle-2">{{ u.initials || '?' }}</span>
+                        </v-avatar -->
+                        <user-avatar :user="user"></user-avatar>
+                    </v-badge>
                     <div>
-                        <div class="font-weight-bold">{{ user.username }}</div>
-                        <div class="text-caption opacity-70">Online</div>
+                        <div class="d-flex align-center">
+                            <span class="font-weight-bold mr-2">{{ user.username }}</span>
+                            <v-icon
+                                :color="isUserOnline(user.id).value ? 'success' : 'grey'"
+                                size="12"
+                            >
+                                mdi-circle
+                            </v-icon>
+                        </div>
+                        <div class="text-caption opacity-70">
+                            {{ isUserOnline(user.id).value ? 'Online' : 'Offline' }}
+                        </div>
                     </div>
                 </div>
 
@@ -34,49 +54,12 @@
         </v-card-title>
 
         <!-- Messages Area -->
-        <v-card-text class="chat-messages pa-0" style="height: 400px; overflow-y: auto;">
+        <v-card-text ref="messageContainer" class="chat-messages pa-0" style="height: 400px; overflow-y: auto;">
             <div v-if="conversation" class="pa-4">
-                <Conversation
+                <conversation-messages
                     :is-pinned="isPinned"
-                    :id="conversation.id"
-                    :messages="messages"
+                    :id="conversation.uuid"
                 />
-
-                <!-- Message bubbles -->
-                <div v-for="message in messages" :key="message.id" class="message-wrapper mb-4">
-                    <div
-                        class="d-flex align-start"
-                        :class="{ 'flex-row-reverse': message.self_owned }"
-                    >
-                        <v-avatar size="32" class="mx-2">
-                            <v-img
-                                :src="message.user.avatar"
-                                :alt="`${message.user.username} avatar`"
-                            />
-                        </v-avatar>
-
-                        <div class="message-content" :class="{ 'text-right': message.self_owned }">
-                            <div class="text-caption text-medium-emphasis mb-1">
-                                {{ message.user.username }}
-                            </div>
-
-                            <v-sheet
-                                :color="message.self_owned ? 'primary' : 'surface-variant'"
-                                :class="[
-                  'message-bubble pa-3 rounded-lg d-inline-block',
-                  message.self_owned ? 'text-white' : 'text-on-surface'
-                ]"
-                                elevation="1"
-                            >
-                                {{ message.body }}
-                            </v-sheet>
-
-                            <div class="text-caption text-medium-emphasis mt-1">
-                                {{ formatTime(message.created_at) }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Empty state -->
@@ -94,7 +77,7 @@
             <div class="d-flex align-center w-100">
                 <!-- Recipients selector (for new conversations) -->
                 <v-combobox
-                    v-if="!conversation && recipients.length === 0"
+                    v-if="recipients.length === 0"
                     v-model="recipients"
                     :items="autocompleteItems"
                     item-title="username"
@@ -145,33 +128,49 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useStore } from 'vuex'
 import eventBus from "../common/eventBus.js";
+import { useConversationStore } from "@/store/conversationStore.js";
+import { useConversationsStore } from "@/store/conversationsStore.js";
+import { storeConversation } from "@/api/all.js";
+import ConversationMessages from "@/components/conversation/ConversationMessages.vue";
+import { useUserSearch } from "@/composables/conversation/useUserSearch";
+import { useOnlineUsers } from "@/composables/conversation/useOnlineUsers";
+import { useScrollToBottom } from "@/composables/conversation/useScrollToBottom";
+import UserAvatar from "@/components/common/UserAvatar.vue";
+import {useUserStore} from "@/store/userStore.js";
+
 
 // Props
 const props = defineProps({
     initialUser: {
         type: Object,
         default: null
+    },
+    initialConversationUuid: {
+        type: String,
+        default: null
     }
 })
 
-// Composables
-const store = useStore()
-
-
 // Reactive state
 const user = ref(props.initialUser)
+const conversationUuid = ref(props.initialConversationUuid)
 const body = ref('')
 const recipients = ref([])
-const autocompleteItems = ref([])
 const isPinned = ref(false)
-const debounceTimer = ref(null)
+const messageContainer = ref(null)
 
-// Computed properties
-const conversation = computed(() => store.getters.currentConversation)
-const loading = computed(() => store.getters.loadingConversation)
-const messages = computed(() => conversation.value?.messages || [])
+const conversationStore = useConversationStore();
+const conversation = computed(() => conversationStore.currentConversation);
+const loading = computed(() => conversationStore.loadingConversation);
+const messages = computed(() => conversationStore.messages || []);
+
+// Use composables
+const { userList: autocompleteItems, handleUserSearch } = useUserSearch(600);
+const { isUserOnline, setupListeners: setupOnlineListeners } = useOnlineUsers();
+const { scrollToBottom } = useScrollToBottom(messageContainer);
+
+const userStore = useUserStore();
 
 // Methods
 const handleSend = async () => {
@@ -189,53 +188,45 @@ const handleSend = async () => {
 }
 
 const createConversation = async () => {
-    await store.dispatch('createConversationBox', {
+    const payload = {
         recipientIds: recipients.value.map(r => r.id),
-        body: body.value
-    })
-
-    recipients.value = []
-    body.value = ''
+        body: body.value,
+    };
+    try {
+        const response = await storeConversation(payload);
+        const data = response?.data ?? response;
+        const conv = data?.data ?? data?.conversation ?? data;
+        if (conv) {
+            conversationStore.conversation = conv;
+        }
+        if (Array.isArray(conv?.messages)) {
+            conversationStore.setMessages(conv.messages);
+        }
+        recipients.value = [];
+        body.value = '';
+    } catch (e) {
+        console.error('Failed to create conversation:', e);
+        throw e;
+    }
 }
 
 const createReply = async () => {
     if (!conversation.value) return
-
-    await store.dispatch('createConversationReply', {
-        id: conversation.value.id,
-        body: body.value
-    })
-
-    body.value = ''
-}
-
-const handleUserSearch = (query) => {
-    if (!query || query.length < 2) {
-        autocompleteItems.value = []
-        return
+    try {
+        // await conversationStore.addReply(body.value)
+        // await conversationStore.addMessage(body.value)
+        await conversationStore.createConversationReply({
+            id: conversation.value.id,
+            uuid: conversation.value.uuid,
+            body: body.value.trim(),
+        });
+        body.value = ''
+        // Scroll to bottom after sending message
+        scrollToBottom()
+    } catch (e) {
+        console.error('Failed to send reply:', e)
+        throw e
     }
-
-    // Clear existing timer
-    if (debounceTimer.value) {
-        clearTimeout(debounceTimer.value)
-    }
-
-    // Set new timer
-    debounceTimer.value = setTimeout(async () => {
-        try {
-            const response = await fetch(`/api/search/users?q=${encodeURIComponent(query)}`)
-            const data = await response.json()
-
-            autocompleteItems.value = data.data.map(user => ({
-                text: user.username,
-                username: user.username,
-                id: user.id,
-                avatar: user.avatar
-            }))
-        } catch (error) {
-            console.error('Error searching users:', error)
-        }
-    }, 600)
 }
 
 const togglePin = () => {
@@ -253,54 +244,150 @@ const formatTime = (timestamp) => {
     })
 }
 
+// Find existing conversation with a user (returns the most recent one)
+const findConversationWithUser = async (userId) => {
+    try {
+        // Use conversationsStore which already has loaded conversations
+        const conversationsStore = useConversationsStore()
+
+        // Ensure conversations are loaded
+        if (!conversationsStore.allConversations || conversationsStore.allConversations.length === 0) {
+            console.log('[ConversationBox] No conversations in store, fetching...')
+            await conversationsStore.fetchConversations()
+        }
+
+        const conversations = conversationsStore.allConversations || []
+
+        // Find all conversations that include this user
+        const userConversations = conversations.filter(conv => {
+            return conv.users?.some(u => u.id === userId)
+        })
+
+        if (userConversations.length > 0) {
+            // Sort by most recent (using last_message_at, updated_at, or created_at)
+            userConversations.sort((a, b) => {
+                const dateA = new Date(a.last_message_at || a.updated_at || a.created_at || 0)
+                const dateB = new Date(b.last_message_at || b.updated_at || b.created_at || 0)
+                return dateB - dateA // Most recent first
+            })
+
+            // Load the most recent conversation
+            const mostRecentConv = userConversations[0]
+            console.log('[ConversationBox] Found', userConversations.length, 'conversation(s) with user', userId, '- loading most recent:', mostRecentConv.uuid)
+            await conversationStore.fetchConversation(mostRecentConv.uuid)
+            return true
+        }
+
+        console.log('[ConversationBox] No existing conversation found with user', userId)
+        return false
+    } catch (error) {
+        console.error('[ConversationBox] Error finding conversation:', error)
+        return false
+    }
+}
+
 // Event listeners
+let cleanupOnlineListeners = null
+
 onMounted(() => {
-    // Listen for new conversation events
-    eventBus.on('conversation.new', (newUser) => {
+    // Setup online users tracking
+    cleanupOnlineListeners = setupOnlineListeners()
+
+    eventBus.on('conversation.new', async (newUser) => {
+        console.log('[ConversationBox] Received conversation.new event:', newUser);
         user.value = newUser
-        recipients.value.push(newUser)
+
+        // Try to find existing conversation with this user
+        const hasExisting = await findConversationWithUser(newUser.id)
+
+        if (!hasExisting) {
+            // No existing conversation, prepare to create new one
+            recipients.value = [newUser]
+        }
     })
 
-    // Setup Echo listeners if available
-    if (window.Echo && window.App?.user?.id) {
-        const channel = window.Echo.private(`user.${window.App.user.id}`)
+    // Listen for chat box open events for this user
+    eventBus.on('chat.open', async (data) => {
+        console.log('[ConversationBox] Received chat.open event:', data);
+        if (data.user) {
+            console.log('testaaaa')
+            user.value = data.user
 
-        channel
-            .listen('Conversation.ConversationCreated', (e) => {
-                console.log('ConversationCreated', e)
-                store.dispatch('getConversation', e.data.id, true)
-                user.value = e.data.user.data
-            })
-            .listen('Conversation.ConversationReplyCreated', (e) => {
-                console.log('ConversationReplyCreated', e)
-                store.dispatch('getConversation', e.data.parent.data.id, true)
-                user.value = e.data.user.data
-            })
-            .listen('Conversation.ConversationUsersCreated', (e) => {
-                console.log('ConversationUsersCreated', e)
-            })
-    }
+            if (data.conversationUuid) {
+                // console.log('[ConversationBox] Fetching conversation:', data.conversationUuid);
+                // Clear recipients since we're loading an existing conversation
+                recipients.value = []
+                // fetchConversation now handles setting messages automatically
+                await conversationStore.fetchConversation(data.conversationUuid)
+                // console.log('[ConversationBox] Conversation fetched. Current conversation:', conversationStore.currentConversation);
+                // console.log('[ConversationBox] Messages in store:', conversationStore.messages);
+            } else {
+                // Clear any existing conversation and messages
+                conversationStore.clearCurrentConversation()
+                conversationStore.setMessages([])
+
+                const hasExisting = await findConversationWithUser(data.user.id)
+                // If no existing conversation, set the user as recipient for new conversation
+                if (!hasExisting) {
+                    recipients.value = [data.user]
+                    // console.log('[ConversationBox] No existing conversation, set user as recipient:', data.user)
+                } else {
+                    // Found existing conversation, clear recipients
+                    recipients.value = []
+                }
+            }
+        }
+    })
 })
 
 onUnmounted(() => {
-    // Clean up event listeners
     eventBus.off('conversation.new')
+    eventBus.off('chat.open')
 
-    if (debounceTimer.value) {
-        clearTimeout(debounceTimer.value)
+    // Cleanup online listeners
+    if (cleanupOnlineListeners) {
+        cleanupOnlineListeners()
     }
 })
 
-// Watch for changes
-watch(() => props.initialUser, (newUser) => {
-    user.value = newUser
+watch(() => props.initialConversationUuid, (newConversationUuid) => {
+        if (newConversationUuid) {
+            conversationUuid.value = newConversationUuid
+            //recipients.value = [newUser]
+            conversationStore.fetchConversation(newConversationUuid).then(() => {
+                // Scroll to bottom after conversation loads
+                scrollToBottom()
+            })
+        }
 }, { immediate: true })
+
+watch(() => props.initialUser, (newUser) => {
+    if (newUser) {
+        user.value = newUser
+        recipients.value = [newUser]
+        if(props.initialConversationUuid === null) {
+            findConversationWithUser(newUser.id).then(() => {
+                // Scroll to bottom after finding conversation
+                scrollToBottom()
+            })
+        }
+    }
+}, { immediate: true })
+
+// Watch messages and scroll to bottom when they change
+watch(messages, () => {
+    scrollToBottom()
+})
 </script>
 
 <style scoped>
 .chat-component {
-    max-width: 500px;
-    margin: 0 auto;
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    width: 360px;
+    max-width: calc(100vw - 32px);
+    z-index: 2000; /* above footer and most UI */
 }
 
 .chat-header {

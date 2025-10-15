@@ -38,17 +38,17 @@ export const useConversationsStore = defineStore('conversations', {
 
                     channel
                         .listen('Conversation.ConversationCreated', (e) => {
-                            console.log('ConversationCreated conversationsStore.js', e)
+                            // console.log('ConversationCreated conversationsStore.js', e)
                             // store.dispatch('getConversation', e.data.id, true)
                             // user.value = e.data.user.data
                         })
                         .listen('Conversation.MessageAdded', (e) => {
-                            console.log('ConversationReplyCreated', e)
+                            // console.log('ConversationReplyCreated', e)
                             // store.dispatch('getConversation', e.data.parent.data.id, true)
                             // user.value = e.data.user.data
                         })
                         .listen('Conversation.ConversationUsersCreated', (e) => {
-                            console.log('ConversationUsersCreated', e)
+                            // console.log('ConversationUsersCreated', e)
                         })
                 }
 

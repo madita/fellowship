@@ -95,7 +95,12 @@
                             <div :class="[$vuetify.rtl ? 'ml-1' : 'mr-1']">
                                 <toolbar-notifications/>
                             </div>
-
+                            <div :class="[$vuetify.rtl ? 'ml-1' : 'mr-1']">
+                                <conversations-notification/>
+                            </div>
+                            <v-btn icon variant="text" class="mx-1" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
+                                <v-icon>mdi-account-group</v-icon>
+                            </v-btn>
                             <toolbar-user/>
                         </template>
                         <template v-else>
@@ -122,12 +127,26 @@
                     @fellowship
                 </div>
             </v-footer>
+
+            <v-navigation-drawer
+                v-model="showUsersDrawer"
+                location="right"
+                temporary
+                width="320"
+                class="elevation-2"
+            >
+                <SidebarUsers/>
+            </v-navigation-drawer>
+
+<!--            <ConversationBox v-if="showChatBox" />-->
+            <conversation-box-manager />
+
         </v-main>
     </div>
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from "@/store/authStore.js";
 import { useUserStore } from "@/store/userStore.js";
 // import { useAppStore } from '@/api/useApi.js'
@@ -141,6 +160,12 @@ import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
 import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
 import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue'
+import ConversationsNotification from '../components/conversation/ConversationsNotification.vue'
+import ConversationBox from '../components/conversation/ConversationBox.vue'
+import ConversationBoxManager from '../components/conversation/ConversationBoxManager.vue'
+import SidebarUsers from '../components/conversation/SidebarUsers.vue'
+import eventBus from '../components/common/eventBus.js'
+import { useConversationStore } from '@/store/conversationStore.js'
 
 export default {
     components: {
@@ -148,16 +173,23 @@ export default {
         ToolbarUser,
         ToolbarApps,
         ToolbarLanguage,
-        ToolbarNotifications
+        ToolbarNotifications,
+        ConversationBox,
+        ConversationBoxManager,
+        SidebarUsers,
+        ConversationsNotification
     },
     setup() {
         const drawer = ref(null)
         const showSearch = ref(false)
         const navigation = ref(config.navigation)
+        const showChatBox = ref(false)
+        const showUsersDrawer = ref(false)
 
         const appStore = useAppStore()
         const authStore = useAuthStore()
         const userStore = useUserStore()
+        const conversationStore = useConversationStore()
 
         const product = computed(() => appStore.product)
         const isContentBoxed = computed(() => appStore.isContentBoxed)
@@ -177,16 +209,109 @@ export default {
             await authStore.signOut()
         }
 
+        let onChatClose = null
+        let onConversationNew = null
+        let presenceChannel = null
+        let userPrivateChannelName = null
         onMounted(() => {
             whenever(keys['Ctrl+/'], () => {
                 console.log('Shift+Space have been pressed')
             })
+            // Hide chat box when child component emits close via event bus
+            onChatClose = () => { showChatBox.value = false }
+            eventBus.on('chat.close', onChatClose)
+
+            // Open chat box when a conversation is initiated from SidebarUsers or elsewhere
+            onConversationNew = () => { showChatBox.value = true }
+            eventBus.on('conversation.new', onConversationNew)
+
+            // Initialize presence for SidebarUsers if Echo is available
+            try {
+                if (window.Echo) {
+                    presenceChannel = window.Echo.join('chat')
+                        .here((users) => {
+                            eventBus.emit('users.here', Array.isArray(users) ? users : [])
+                        })
+                        .joining((user) => {
+                            eventBus.emit('users.joined', user)
+                            try {
+                                const currentUserId = window?.App?.user?.id
+                                if (!currentUserId || user?.id === currentUserId) return
+                                // Open chat box and seed the conversation with the newly online user
+                                showChatBox.value = true
+                                eventBus.emit('conversation.new', user)
+                            } catch (e) { /* no-op */ }
+                        })
+                        .leaving((user) => {
+                            eventBus.emit('users.left', user)
+                        })
+                }
+            } catch (e) {
+                console.warn('Failed to init presence channel for users sidebar:', e)
+            }
+
+            // Listen on private user channel to open chat in real time when a conversation is created for this user
+            try {
+                if (window.Echo && window.App?.user?.id) {
+                    const uid = window.App.user.id
+                    userPrivateChannelName = `user.${uid}`
+                    window.Echo
+                        .private(userPrivateChannelName)
+                        .listen('Conversations\\ConversationCreated', (e) => {
+                            try {
+                                const uuid = e?.data?.uuid
+                                    ?? e?.conversation?.uuid
+                                    ?? e?.conversation_uuid
+                                    ?? e?.data?.conversation?.uuid
+                                const sender = e?.data?.user?.data
+                                    ?? e?.user
+                                    ?? e?.sender
+                                    ?? null
+                                // Open the floating chatbox
+                                showChatBox.value = true
+                                // Seed the conversation recipient so the header shows correctly
+                                if (sender) {
+                                    eventBus.emit('conversation.new', sender)
+                                }
+                                // Proactively load the conversation so messages appear immediately
+                                if (uuid) {
+                                    conversationStore.fetchConversation(uuid)
+                                }
+                            } catch (err) {
+                                console.warn('Failed to process ConversationCreated event:', err)
+                            }
+                        })
+                }
+            } catch (e) {
+                console.warn('Failed to subscribe to private user channel:', e)
+            }
+        })
+        onUnmounted(() => {
+            if (onChatClose) {
+                eventBus.off('chat.close', onChatClose)
+            }
+            if (onConversationNew) {
+                eventBus.off('conversation.new', onConversationNew)
+            }
+            try {
+                if (presenceChannel && window.Echo) {
+                    // Leave presence channel
+                    window.Echo.leave('chat')
+                }
+                if (userPrivateChannelName && window.Echo) {
+                    window.Echo.leave(userPrivateChannelName)
+                }
+            } catch (e) {
+                // no-op
+            }
         })
 
         return {
             drawer,
             showSearch,
             navigation,
+            showChatBox,
+            showUsersDrawer,
             product,
             isContentBoxed,
             menuTheme,

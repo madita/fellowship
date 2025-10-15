@@ -116,6 +116,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::resource('conversations', 'App\Http\Controllers\Conversation\ConversationController');
     Route::post('/conversations/{conversation}/reply', 'App\Http\Controllers\Conversation\ConversationReplyController@store');
     Route::post('/conversations/{conversation}/users', 'App\Http\Controllers\Conversation\ConversationUserController@store');
+    Route::post('/conversations/{conversation}/mark-as-read', 'App\Http\Controllers\Conversation\ConversationController@markAsRead');
 });
 
 Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']);

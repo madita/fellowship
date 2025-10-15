@@ -41,5 +41,14 @@ class UsersTableSeeder extends Seeder
         $user->assignRole('user');
 
 //           $user->roles()->attach(2);
+
+        $user = User::create([
+            'username'          => 'test',
+            'email'             => 'madita.tack@gmail.com',
+            'password'          => bcrypt('test1234'),
+            'email_verified_at' => Carbon::now(),
+        ]);
+
+        $user->assignRole('user');
     }
 }

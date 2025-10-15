@@ -29,9 +29,37 @@ class ConversationCreated implements ShouldBroadcast
 
     public function broadcastWith()
     {
+        // Load relationships if not already loaded
+        if (!$this->conversation->relationLoaded('users')) {
+            $this->conversation->load('users');
+        }
+
+        // Load creator relationship - may be null for old conversations
+        if (!$this->conversation->relationLoaded('creator')) {
+            $this->conversation->load('creator');
+        }
+
+        // If no creator is set, use the first message's user or authenticated user
+        $creator = $this->conversation->creator;
+        if (!$creator && auth()->check()) {
+            $creator = auth()->user();
+        }
+
         return [
             'conversation' => [
-                'uuid' => $this->conversation->uuid
+                'uuid' => $this->conversation->uuid,
+                'creator' => $creator ? [
+                    'id' => $creator->id,
+                    'username' => $creator->username ?? $creator->email,
+                    'avatar' => $creator->avatar ?? null,
+                ] : null,
+                'users' => $this->conversation->users->map(function ($user) {
+                    return [
+                        'id' => $user->id,
+                        'username' => $user->username ?? $user->email,
+                        'avatar' => $user->avatar ?? null,
+                    ];
+                })->toArray(),
             ]
         ];
     }

@@ -66,6 +66,14 @@ window.Ably = Ably;
 window.Echo = new Echo({
     broadcaster: 'ably',
     key: import.meta.env.VITE_ABLY_PUBLIC_KEY,
+    authEndpoint: '/broadcasting/auth',
+    auth: {
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    }
 });
 
 // Register a callback for listing to connection state change
