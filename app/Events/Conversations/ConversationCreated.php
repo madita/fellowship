@@ -69,12 +69,29 @@ class ConversationCreated implements ShouldBroadcast
      *
      * @return \Illuminate\Broadcasting\Channel|array
      */
+//    public function broadcastOn()
+//    {
+//       // dd('test');
+//        return $this->conversation->others->map(function ($user) {
+//            return new PrivateChannel('users.' . $user->id);
+//        })
+//            ->toArray();
+//    }
+
     public function broadcastOn()
     {
-       // dd('test');
-        return $this->conversation->others->map(function ($user) {
-            return new PrivateChannel('users.' . $user->id);
-        })
-            ->toArray();
+        $channels = [
+            new PrivateChannel('conversations.' . $this->conversation->uuid)
+        ];
+
+        // Also broadcast to individual user channels for those not actively viewing the conversation
+        $this->conversation->load('users');
+        foreach ($this->conversation->users as $user) {
+            if ($user->id !== $this->conversation->user_id) {
+                $channels[] = new PrivateChannel('user.' . $user->id);
+            }
+        }
+
+        return $channels;
     }
 }

@@ -5,7 +5,7 @@
 
                 <v-card-text class="pa-0">
 
-                    <div v-if="messages?.length" ref="messageContainer" class="messages-container">
+                    <div v-if="messages?.length" class="messages-container">
                         <div
                             v-for="reply in messages"
                             :key="reply.id"
@@ -56,9 +56,8 @@
 
 <script>
 import { useConversationStore } from "@/store/conversationStore";
-import { computed, ref, watch } from "vue";
+import { computed } from "vue";
 import UserAvatar from "@/components/common/UserAvatar.vue";
-import { useScrollToBottom } from "@/composables/conversation/useScrollToBottom";
 
 export default {
     name: "ConversationMessages",
@@ -79,21 +78,12 @@ export default {
             return msgs;
         });
         const loading = computed(() => conversationStore.loadingConversation);
-        const messageContainer = ref(null);
 
-        const { scrollToBottom } = useScrollToBottom(messageContainer);
-
-        // Auto-scroll when messages change
-        watch(messages, (newMessages) => {
-            // console.log('[ConversationMessages] Messages changed:', newMessages.length, 'messages');
-            scrollToBottom();
-        }, { immediate: true });
+        // Note: Scrolling is now handled by parent ConversationBox component
 
         return {
             messages,
             loading,
-            messageContainer,
-            scrollToBottom,
         };
     },
 };

@@ -134,12 +134,30 @@ export function useConversationRealtime(options = {}) {
 
             // Auto-open chat box if message is from someone else
             if (autoOpen && !isOwnMessage) {
-                log('Auto-opening chat box for new message from:', sender.username)
+                log('Auto-opening chat box for new message from:', sender?.username)
+                console.log('[useConversationRealtime] EventBus instance:', eventBus)
+                console.log('[useConversationRealtime] ConversationBoxManager mounted?', window.__conversationBoxManagerMounted)
+                console.log('[useConversationRealtime] EventBus instances match?', eventBus === window.__conversationBoxManagerEventBus)
+                console.log('[useConversationRealtime] Emitting chat.open event with data:', {
+                    user: sender,
+                    conversationUuid: conversation?.uuid
+                })
 
                 // Emit event to open chat box with the sender's info and conversation
                 eventBus.emit('chat.open', {
                     user: sender,
                     conversationUuid: conversation?.uuid
+                })
+
+                console.log('[useConversationRealtime] Event emitted successfully')
+
+                // Check if there are any listeners
+                console.log('[useConversationRealtime] Active listeners on chat.open:', eventBus.all.get('chat.open'))
+            } else {
+                console.log('[useConversationRealtime] NOT auto-opening because:', {
+                    autoOpen,
+                    isOwnMessage,
+                    sender: sender?.username
                 })
             }
         } catch (error) {

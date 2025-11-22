@@ -54,7 +54,7 @@
         </v-card-title>
 
         <!-- Messages Area -->
-        <v-card-text ref="messageContainer" class="chat-messages pa-0" style="height: 400px; overflow-y: auto;">
+        <v-card-text ref="messageContainer" class="chat-messages pa-0">
             <div v-if="conversation" class="pa-4">
                 <conversation-messages
                     :is-pinned="isPinned"
@@ -63,7 +63,7 @@
             </div>
 
             <!-- Empty state -->
-            <div v-else class="d-flex align-center justify-center h-100">
+            <div v-else class="d-flex align-center justify-center" style="height: 400px;">
                 <div class="text-center">
                     <v-icon size="64" color="medium-emphasis">mdi-chat-outline</v-icon>
                     <div class="text-h6 mt-2">No conversation yet</div>
@@ -310,7 +310,6 @@ onMounted(() => {
     eventBus.on('chat.open', async (data) => {
         console.log('[ConversationBox] Received chat.open event:', data);
         if (data.user) {
-            console.log('testaaaa')
             user.value = data.user
 
             if (data.conversationUuid) {
@@ -341,8 +340,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+    // Note: Don't remove 'chat.open' listener here because ConversationBoxManager owns it
+    // This component gets destroyed/recreated when chat closes/opens, but the manager stays mounted
     eventBus.off('conversation.new')
-    eventBus.off('chat.open')
 
     // Cleanup online listeners
     if (cleanupOnlineListeners) {
@@ -387,7 +387,24 @@ watch(messages, () => {
     bottom: 16px;
     width: 360px;
     max-width: calc(100vw - 32px);
+    max-height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
     z-index: 2000; /* above footer and most UI */
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .chat-component {
+        width: calc(100vw - 32px);
+        right: 16px;
+        bottom: 16px;
+    }
+
+    .chat-messages {
+        height: 300px;
+        max-height: 300px;
+    }
 }
 
 .chat-header {
@@ -396,6 +413,29 @@ watch(messages, () => {
 
 .chat-messages {
     background-color: rgb(var(--v-theme-surface));
+    height: 400px;
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Custom scrollbar for chat messages */
+.chat-messages::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
 
 .message-wrapper {

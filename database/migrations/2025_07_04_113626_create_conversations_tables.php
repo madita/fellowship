@@ -15,9 +15,10 @@ return new class extends Migration
     {
         Schema::create('conversations', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid');$table->foreignId('creator_id')->nullable()->after('uuid')->constrained('users')->onDelete('set null');
-            $table->timestamps();
+            $table->uuid('uuid');
+            $table->foreignId('creator_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('last_message_at');
+            $table->timestamps();
         });
 
         /*Schema::create('conversations', function (Blueprint $table) {

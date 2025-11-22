@@ -11,7 +11,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import ConversationBox from './ConversationBox.vue'
-import eventBus from '../common/eventBus.js'
+import eventBus from '@/components/common/eventBus.js'
 import { useConversationRealtime } from '@/composables/conversation/useConversationRealtime'
 
 const isVisible = ref(false)
@@ -25,11 +25,18 @@ const { setupListeners, cleanup } = useConversationRealtime({
 })
 
 onMounted(() => {
+    console.log('[ConversationBoxManager] Component mounted, setting up listeners')
+
+    // Debug: Set a global flag
+    window.__conversationBoxManagerMounted = true
+    window.__conversationBoxManagerEventBus = eventBus
+
     // Setup Echo listeners for real-time updates and auto-opening
     setupListeners()
 
     // Show chat box when conversation.new or chat.show is emitted
     eventBus.on('conversation.new', (user) => {
+        console.log('[ConversationBoxManager] conversation.new event received:', user)
         currentUser.value = user
         isVisible.value = true
     })
@@ -62,6 +69,10 @@ onMounted(() => {
         currentUser.value = null
         currentConversationUuid.value = null
     })
+
+    // Test eventBus is working
+    console.log('[ConversationBoxManager] EventBus instance:', eventBus)
+    console.log('[ConversationBoxManager] All listeners set up successfully')
 })
 
 onUnmounted(() => {

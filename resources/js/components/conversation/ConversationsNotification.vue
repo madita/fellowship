@@ -204,7 +204,7 @@ export default {
             // Fetch conversations on mount
             conversationsStore.fetchConversations();
 
-            // Note: Echo listeners are now centralized in useConversationRealtime composable (ConversationBoxManager)
+            // Note: Echo listeners are centralized in useConversationRealtime (ConversationBoxManager)
             // This prevents channel subscription conflicts and handles both:
             // - Auto-opening chat box when messages arrive
             // - Refreshing conversations list to update notification badge

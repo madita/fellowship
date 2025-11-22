@@ -9,29 +9,22 @@
 }
 
 /* Scrollbar Styles */
-.messages-container {
-    max-height: 60vh;
-    overflow-y: auto;
-}
-
-.messages-container::-webkit-scrollbar,
+/* Note: Scrolling for ConversationBox is handled in the component's scoped styles */
+/* Conversation list scrollbar (for full-page conversation view) */
 .conversation-list::-webkit-scrollbar {
     width: 8px;
 }
 
-.messages-container::-webkit-scrollbar-track,
 .conversation-list::-webkit-scrollbar-track {
     background: #f1f1f1;
     border-radius: 4px;
 }
 
-.messages-container::-webkit-scrollbar-thumb,
 .conversation-list::-webkit-scrollbar-thumb {
     background: #c1c1c1;
     border-radius: 4px;
 }
 
-.messages-container::-webkit-scrollbar-thumb:hover,
 .conversation-list::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
