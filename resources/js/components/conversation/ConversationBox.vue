@@ -3,32 +3,28 @@
         <!-- Chat Header -->
         <v-card-title class="chat-header bg-gradient-to-r from-blue-500 to-teal-500 text-white pa-4">
             <div class="d-flex align-center justify-space-between w-100">
-                <div v-if="user" class="d-flex align-center">
+                <div class="d-flex align-center">
                     <v-badge
-                        :color="isUserOnline(user.id).value ? 'success' : 'grey'"
+                        :color="isUserOnline(user.id) ? 'success' : 'grey'"
                         dot
                         location="bottom right"
                         offset-x="4"
                         offset-y="4"
                     >
-                        <!--v-avatar size="40">
-                          <v-img v-if="u.avatar" :src="u.avatar" :alt="`${u.username} avatar`" />
-                          <span v-else class="text-subtitle-2">{{ u.initials || '?' }}</span>
-                        </v-avatar -->
                         <user-avatar :user="user"></user-avatar>
                     </v-badge>
                     <div>
                         <div class="d-flex align-center">
                             <span class="font-weight-bold mr-2">{{ user.username }}</span>
                             <v-icon
-                                :color="isUserOnline(user.id).value ? 'success' : 'grey'"
+                                :color="isUserOnline(user.id) ? 'success' : 'grey'"
                                 size="12"
                             >
                                 mdi-circle
                             </v-icon>
                         </div>
                         <div class="text-caption opacity-70">
-                            {{ isUserOnline(user.id).value ? 'Online' : 'Offline' }}
+                            {{ isUserOnline(user.id) ? 'Online' : 'Offline' }}
                         </div>
                     </div>
                 </div>
@@ -196,14 +192,17 @@ const createConversation = async () => {
         const response = await storeConversation(payload);
         const data = response?.data ?? response;
         const conv = data?.data ?? data?.conversation ?? data;
-        if (conv) {
-            conversationStore.conversation = conv;
+
+        if (conv?.uuid) {
+            conversationUuid.value = conv.uuid
+            await conversationStore.fetchConversation(conv.uuid)
+
+            recipients.value = [];
+            body.value = '';
+            scrollToBottom()
+        } else {
+            console.error('[ConversationBox] No conversation UUID in response')
         }
-        if (Array.isArray(conv?.messages)) {
-            conversationStore.setMessages(conv.messages);
-        }
-        recipients.value = [];
-        body.value = '';
     } catch (e) {
         console.error('Failed to create conversation:', e);
         throw e;
@@ -213,15 +212,12 @@ const createConversation = async () => {
 const createReply = async () => {
     if (!conversation.value) return
     try {
-        // await conversationStore.addReply(body.value)
-        // await conversationStore.addMessage(body.value)
         await conversationStore.createConversationReply({
             id: conversation.value.id,
             uuid: conversation.value.uuid,
             body: body.value.trim(),
         });
         body.value = ''
-        // Scroll to bottom after sending message
         scrollToBottom()
     } catch (e) {
         console.error('Failed to send reply:', e)
@@ -237,48 +233,32 @@ const closeChat = () => {
     eventBus.emit('chat.close')
 }
 
-const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit'
-    })
-}
-
 // Find existing conversation with a user (returns the most recent one)
 const findConversationWithUser = async (userId) => {
     try {
-        // Use conversationsStore which already has loaded conversations
         const conversationsStore = useConversationsStore()
 
-        // Ensure conversations are loaded
         if (!conversationsStore.allConversations || conversationsStore.allConversations.length === 0) {
-            console.log('[ConversationBox] No conversations in store, fetching...')
             await conversationsStore.fetchConversations()
         }
 
         const conversations = conversationsStore.allConversations || []
-
-        // Find all conversations that include this user
         const userConversations = conversations.filter(conv => {
             return conv.users?.some(u => u.id === userId)
         })
 
         if (userConversations.length > 0) {
-            // Sort by most recent (using last_message_at, updated_at, or created_at)
             userConversations.sort((a, b) => {
                 const dateA = new Date(a.last_message_at || a.updated_at || a.created_at || 0)
                 const dateB = new Date(b.last_message_at || b.updated_at || b.created_at || 0)
-                return dateB - dateA // Most recent first
+                return dateB - dateA
             })
 
-            // Load the most recent conversation
             const mostRecentConv = userConversations[0]
-            console.log('[ConversationBox] Found', userConversations.length, 'conversation(s) with user', userId, '- loading most recent:', mostRecentConv.uuid)
             await conversationStore.fetchConversation(mostRecentConv.uuid)
             return true
         }
 
-        console.log('[ConversationBox] No existing conversation found with user', userId)
         return false
     } catch (error) {
         console.error('[ConversationBox] Error finding conversation:', error)
@@ -290,48 +270,32 @@ const findConversationWithUser = async (userId) => {
 let cleanupOnlineListeners = null
 
 onMounted(() => {
-    // Setup online users tracking
     cleanupOnlineListeners = setupOnlineListeners()
 
     eventBus.on('conversation.new', async (newUser) => {
-        console.log('[ConversationBox] Received conversation.new event:', newUser);
         user.value = newUser
-
-        // Try to find existing conversation with this user
         const hasExisting = await findConversationWithUser(newUser.id)
 
         if (!hasExisting) {
-            // No existing conversation, prepare to create new one
             recipients.value = [newUser]
         }
     })
 
-    // Listen for chat box open events for this user
     eventBus.on('chat.open', async (data) => {
-        console.log('[ConversationBox] Received chat.open event:', data);
         if (data.user) {
             user.value = data.user
 
             if (data.conversationUuid) {
-                // console.log('[ConversationBox] Fetching conversation:', data.conversationUuid);
-                // Clear recipients since we're loading an existing conversation
                 recipients.value = []
-                // fetchConversation now handles setting messages automatically
                 await conversationStore.fetchConversation(data.conversationUuid)
-                // console.log('[ConversationBox] Conversation fetched. Current conversation:', conversationStore.currentConversation);
-                // console.log('[ConversationBox] Messages in store:', conversationStore.messages);
             } else {
-                // Clear any existing conversation and messages
                 conversationStore.clearCurrentConversation()
                 conversationStore.setMessages([])
 
                 const hasExisting = await findConversationWithUser(data.user.id)
-                // If no existing conversation, set the user as recipient for new conversation
                 if (!hasExisting) {
                     recipients.value = [data.user]
-                    // console.log('[ConversationBox] No existing conversation, set user as recipient:', data.user)
                 } else {
-                    // Found existing conversation, clear recipients
                     recipients.value = []
                 }
             }
@@ -351,30 +315,26 @@ onUnmounted(() => {
 })
 
 watch(() => props.initialConversationUuid, (newConversationUuid) => {
-        if (newConversationUuid) {
-            conversationUuid.value = newConversationUuid
-            //recipients.value = [newUser]
-            conversationStore.fetchConversation(newConversationUuid).then(() => {
-                // Scroll to bottom after conversation loads
-                scrollToBottom()
-            })
-        }
+    if (newConversationUuid) {
+        conversationUuid.value = newConversationUuid
+        conversationStore.fetchConversation(newConversationUuid).then(() => {
+            scrollToBottom()
+        })
+    }
 }, { immediate: true })
 
 watch(() => props.initialUser, (newUser) => {
     if (newUser) {
         user.value = newUser
         recipients.value = [newUser]
-        if(props.initialConversationUuid === null) {
+        if (props.initialConversationUuid === null) {
             findConversationWithUser(newUser.id).then(() => {
-                // Scroll to bottom after finding conversation
                 scrollToBottom()
             })
         }
     }
 }, { immediate: true })
 
-// Watch messages and scroll to bottom when they change
 watch(messages, () => {
     scrollToBottom()
 })

@@ -6,9 +6,9 @@
                 <span
                     v-else
                     :style="styleObject"
-                    :class="user.initials.length === 1 ? 'text-h4' : 'text-h5'"
+                    :class="initials.length === 1 ? 'text-h4' : 'text-h5'"
                 >
-          {{ user.initials }}
+          {{ initials }}
         </span>
             </v-avatar>
         </template>
@@ -25,6 +25,22 @@ export default {
         }
     },
     computed: {
+        // Generate initials if not provided
+        initials() {
+            if (this.user?.initials) {
+                return this.user.initials;
+            }
+            // Generate initials from username
+            if (this.user?.username) {
+                const parts = this.user.username.split(' ');
+                if (parts.length > 1) {
+                    return (parts[0][0] + parts[1][0]).toUpperCase();
+                }
+                return this.user.username.substring(0, 2).toUpperCase();
+            }
+            return '?';
+        },
+
         // Background color with a fallback
         background() {
             return this.user?.colour || this.$helpers.randomBackgroundColor(this.user?.username?.length || 0, null);
@@ -41,9 +57,6 @@ export default {
                 color: this.fontColour
             };
         }
-    },
-    mounted() {
-        // console.log('Component mounted, background colors:', this.$helpers.backgroundColors);
     }
 };
 </script>
