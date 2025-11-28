@@ -275,7 +275,7 @@ const closeChat = () => {
     eventBus.emit('chat.close')
 }
 
-// Find existing conversation with a user (returns the most recent one)
+// Find existing 1-on-1 conversation with a user (returns the most recent one)
 const findConversationWithUser = async (userId) => {
     try {
         const conversationsStore = useConversationsStore()
@@ -285,8 +285,9 @@ const findConversationWithUser = async (userId) => {
         }
 
         const conversations = conversationsStore.allConversations || []
+        // Filter for 1-on-1 conversations only (exactly 2 users: current user + specified user)
         const userConversations = conversations.filter(conv => {
-            return conv.users?.some(u => u.id === userId)
+            return conv.users?.length === 2 && conv.users?.some(u => u.id === userId)
         })
 
         if (userConversations.length > 0) {
