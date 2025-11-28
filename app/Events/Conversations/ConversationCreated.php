@@ -87,7 +87,8 @@ class ConversationCreated implements ShouldBroadcast
         // Also broadcast to individual user channels for those not actively viewing the conversation
         $this->conversation->load('users');
         foreach ($this->conversation->users as $user) {
-            if ($user->id !== $this->conversation->user_id) {
+            // Don't send to the creator of the conversation
+            if ($user->id !== $this->conversation->creator_id) {
                 $channels[] = new PrivateChannel('user.' . $user->id);
             }
         }

@@ -1,10 +1,16 @@
 <template>
-    <v-card v-if="user" class="chat-component" elevation="2">
+    <v-card v-if="user || conversation" class="chat-component" elevation="2">
         <!-- Chat Header -->
         <v-card-title class="chat-header bg-gradient-to-r from-blue-500 to-teal-500 text-white pa-4">
             <div class="d-flex align-center justify-space-between w-100">
                 <div class="d-flex align-center">
+                    <!-- Group chat icon -->
+                    <v-avatar v-if="isGroupChat" color="white" size="45" class="mr-3">
+                        <v-icon color="primary" size="28">mdi-account-group</v-icon>
+                    </v-avatar>
+                    <!-- Single user avatar with online status -->
                     <v-badge
+                        v-else-if="user"
                         :color="isUserOnline(user.id) ? 'success' : 'grey'"
                         dot
                         location="bottom right"
@@ -13,18 +19,30 @@
                     >
                         <user-avatar :user="user"></user-avatar>
                     </v-badge>
-                    <div>
+                    <div class="flex-grow-1 overflow-hidden">
                         <div class="d-flex align-center">
-                            <span class="font-weight-bold mr-2">{{ user.username }}</span>
+                            <v-tooltip v-if="isGroupChat" location="bottom">
+                                <template #activator="{ props: tooltipProps }">
+                                    <span v-bind="tooltipProps" class="font-weight-bold mr-2 text-truncate d-inline-block" style="max-width: 200px;">
+                                        {{ displayName }}
+                                    </span>
+                                </template>
+                                <span>{{ displayName }}</span>
+                            </v-tooltip>
+                            <span v-else class="font-weight-bold mr-2">{{ displayName }}</span>
                             <v-icon
+                                v-if="!isGroupChat && user"
                                 :color="isUserOnline(user.id) ? 'success' : 'grey'"
                                 size="12"
                             >
                                 mdi-circle
                             </v-icon>
                         </div>
-                        <div class="text-caption opacity-70">
+                        <div v-if="!isGroupChat && user" class="text-caption opacity-70">
                             {{ isUserOnline(user.id) ? 'Online' : 'Offline' }}
+                        </div>
+                        <div v-else-if="isGroupChat" class="text-caption opacity-70">
+                            {{ conversationUsers.length }} participants
                         </div>
                     </div>
                 </div>
@@ -70,10 +88,10 @@
 
         <!-- Chat Input -->
         <v-card-actions class="chat-input pa-4 border-t">
-            <div class="d-flex align-center w-100">
+            <div class="w-100">
                 <!-- Recipients selector (for new conversations) -->
                 <v-combobox
-                    v-if="recipients.length === 0"
+                    v-if="!conversation"
                     v-model="recipients"
                     :items="autocompleteItems"
                     item-title="username"
@@ -82,7 +100,7 @@
                     multiple
                     clearable
                     placeholder="Type username to add recipients..."
-                    class="mr-2"
+                    class="mb-2"
                     variant="outlined"
                     density="compact"
                     hide-details
@@ -98,25 +116,29 @@
                     </template>
                 </v-combobox>
 
-                <!-- Message input -->
-                <v-text-field
-                    v-model="body"
-                    placeholder="Type your message..."
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    class="flex-grow-1"
-                    @keyup.enter="handleSend"
-                    :loading="loading"
-                />
+                <!-- Message input row -->
+                <div class="d-flex align-center">
+                    <v-text-field
+                        v-model="body"
+                        placeholder="Type your message..."
+                        variant="outlined"
+                        density="compact"
+                        hide-details
+                        class="flex-grow-1"
+                        @keyup.enter="handleSend"
+                        :loading="isSending"
+                        :disabled="isSending"
+                    />
 
-                <v-btn
-                    icon="mdi-send"
-                    color="primary"
-                    class="ml-2"
-                    @click="handleSend"
-                    :disabled="!body?.trim()"
-                />
+                    <v-btn
+                        icon="mdi-send"
+                        color="primary"
+                        class="ml-2"
+                        @click="handleSend"
+                        :disabled="!body?.trim() || (!conversation && recipients.length === 0) || isSending"
+                        :loading="isSending"
+                    />
+                </div>
             </div>
         </v-card-actions>
     </v-card>
@@ -155,6 +177,7 @@ const body = ref('')
 const recipients = ref([])
 const isPinned = ref(false)
 const messageContainer = ref(null)
+const isSending = ref(false)
 
 const conversationStore = useConversationStore();
 const conversation = computed(() => conversationStore.currentConversation);
@@ -168,10 +191,27 @@ const { scrollToBottom } = useScrollToBottom(messageContainer);
 
 const userStore = useUserStore();
 
+// Computed properties for group chat support
+const conversationUsers = computed(() => {
+    if (!conversation.value?.users) return [];
+    // Exclude current user from the list
+    return conversation.value.users.filter(u => u.id !== userStore.user?.id);
+});
+
+const isGroupChat = computed(() => conversationUsers.value.length > 1);
+
+const displayName = computed(() => {
+    if (isGroupChat.value) {
+        return conversationUsers.value.map(u => u.username).join(', ');
+    }
+    return user.value?.username || '';
+});
+
 // Methods
 const handleSend = async () => {
-    if (!body.value?.trim()) return
+    if (!body.value?.trim() || isSending.value) return
 
+    isSending.value = true
     try {
         if (!conversation.value) {
             await createConversation()
@@ -180,6 +220,8 @@ const handleSend = async () => {
         }
     } catch (error) {
         console.error('Error sending message:', error)
+    } finally {
+        isSending.value = false
     }
 }
 
