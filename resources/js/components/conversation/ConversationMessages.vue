@@ -55,7 +55,6 @@
 </template>
 
 <script>
-import { useConversationStore } from "@/store/conversationStore";
 import { computed } from "vue";
 import UserAvatar from "@/components/common/UserAvatar.vue";
 
@@ -65,25 +64,25 @@ export default {
         id: {
             type: [String, Number],
             default: null
+        },
+        messages: {
+            type: Array,
+            default: () => []
+        },
+        loading: {
+            type: Boolean,
+            default: false
         }
     },
     components: {
         UserAvatar
     },
-    setup() {
-        const conversationStore = useConversationStore();
-        const messages = computed(() => {
-            const msgs = conversationStore.messages || [];
-            // console.log('[ConversationMessages] Computed messages:', msgs.length, 'messages');
-            return msgs;
-        });
-        const loading = computed(() => conversationStore.loadingConversation);
-
-        // Note: Scrolling is now handled by parent ConversationBox component
+    setup(props) {
+        console.log('[ConversationMessages] Received messages prop:', props.messages?.length, 'messages')
 
         return {
-            messages,
-            loading,
+            messages: computed(() => props.messages || []),
+            loading: computed(() => props.loading),
         };
     },
 };

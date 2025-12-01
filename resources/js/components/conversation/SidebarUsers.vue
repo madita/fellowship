@@ -274,10 +274,15 @@ function getGroupChatName(conversation) {
 function openConversation(conversation) {
   const otherUsers = conversation.users.filter(u => u.id !== userStore.user?.id)
   const primaryUser = otherUsers[0] // For group chats, this will be one of the participants
+  const isGroup = conversation.participant_count > 1
+  const groupName = isGroup ? getGroupChatName(conversation) : null
 
   eventBus.emit('chat.open', {
     user: primaryUser,
-    conversationUuid: conversation.uuid
+    conversationUuid: conversation.uuid,
+    isGroup,
+    groupName,
+    conversation
   })
 }
 

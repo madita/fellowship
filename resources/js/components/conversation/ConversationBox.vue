@@ -49,11 +49,11 @@
 
                 <div class="d-flex align-center">
                     <v-btn
-                        icon="mdi-pin"
+                        icon="mdi-minus"
                         variant="text"
                         color="white"
                         size="small"
-                        @click="togglePin"
+                        @click="minimizeChat"
                         class="mr-2"
                     />
                     <v-btn
@@ -71,8 +71,9 @@
         <v-card-text ref="messageContainer" class="chat-messages pa-0">
             <div v-if="conversation" class="pa-4">
                 <conversation-messages
-                    :is-pinned="isPinned"
                     :id="conversation.uuid"
+                    :messages="messages"
+                    :loading="loading"
                 />
             </div>
 
@@ -146,6 +147,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import axios from 'axios'
 import eventBus from "../common/eventBus.js";
 import { useConversationStore } from "@/store/conversationStore.js";
 import { useConversationsStore } from "@/store/conversationsStore.js";
@@ -170,19 +172,28 @@ const props = defineProps({
     }
 })
 
+// Emits
+const emit = defineEmits(['close', 'minimize'])
+
 // Reactive state
-const user = ref(props.initialUser)
-const conversationUuid = ref(props.initialConversationUuid)
+const user = ref(null)
+const conversationUuid = ref(null)
 const body = ref('')
 const recipients = ref([])
-const isPinned = ref(false)
 const messageContainer = ref(null)
 const isSending = ref(false)
 
+// Local state for this conversation box (not shared with other boxes)
+const conversation = ref(null)
+const messages = ref([])
+const loading = ref(false)
+
+console.log('[ConversationBox] Created with props:', {
+    initialUser: props.initialUser?.username,
+    initialConversationUuid: props.initialConversationUuid
+})
+
 const conversationStore = useConversationStore();
-const conversation = computed(() => conversationStore.currentConversation);
-const loading = computed(() => conversationStore.loadingConversation);
-const messages = computed(() => conversationStore.messages || []);
 
 // Use composables
 const { userList: autocompleteItems, handleUserSearch } = useUserSearch(600);
@@ -237,7 +248,7 @@ const createConversation = async () => {
 
         if (conv?.uuid) {
             conversationUuid.value = conv.uuid
-            await conversationStore.fetchConversation(conv.uuid)
+            await fetchConversation(conv.uuid)
 
             recipients.value = [];
             body.value = '';
@@ -254,11 +265,13 @@ const createConversation = async () => {
 const createReply = async () => {
     if (!conversation.value) return
     try {
-        await conversationStore.createConversationReply({
-            id: conversation.value.id,
-            uuid: conversation.value.uuid,
-            body: body.value.trim(),
-        });
+        const response = await axios.post(`/api/conversations/${conversation.value.uuid}/reply`, {
+            body: body.value.trim()
+        })
+
+        // Add the new message to local messages
+        addLocalMessage(response.data)
+
         body.value = ''
         scrollToBottom()
     } catch (e) {
@@ -267,12 +280,55 @@ const createReply = async () => {
     }
 }
 
-const togglePin = () => {
-    isPinned.value = !isPinned.value
+const minimizeChat = () => {
+    emit('minimize')
 }
 
 const closeChat = () => {
-    eventBus.emit('chat.close')
+    emit('close')
+}
+
+// Fetch conversation data locally for this box
+const fetchConversation = async (uuid) => {
+    if (!uuid) return
+
+    console.log('[ConversationBox] Fetching conversation:', uuid, 'for user:', user.value?.username)
+    loading.value = true
+    try {
+        const response = await axios.get(`/api/conversations/${uuid}`)
+        conversation.value = response.data
+        console.log('[ConversationBox] Loaded conversation:', conversation.value?.uuid, 'messages:', response.data.messages?.length)
+
+        // Set messages from the conversation response
+        if (response.data.messages && Array.isArray(response.data.messages)) {
+            const reversedMessages = [...response.data.messages].reverse()
+            messages.value = reversedMessages
+        } else {
+            messages.value = []
+        }
+
+        return response.data
+    } catch (error) {
+        console.error('[ConversationBox] Failed to fetch conversation:', error)
+        throw error
+    } finally {
+        loading.value = false
+    }
+}
+
+// Add message to local messages array
+const addLocalMessage = (message) => {
+    const id = message?.id
+    if (id == null) {
+        messages.value = [...messages.value, message]
+        return
+    }
+    const exists = messages.value.some(m => m?.id === id)
+    if (exists) {
+        messages.value = messages.value.map(m => (m?.id === id ? { ...m, ...message } : m))
+    } else {
+        messages.value = [...messages.value, message]
+    }
 }
 
 // Find existing 1-on-1 conversation with a user (returns the most recent one)
@@ -298,7 +354,8 @@ const findConversationWithUser = async (userId) => {
             })
 
             const mostRecentConv = userConversations[0]
-            await conversationStore.fetchConversation(mostRecentConv.uuid)
+            conversationUuid.value = mostRecentConv.uuid
+            await fetchConversation(mostRecentConv.uuid)
             return true
         }
 
@@ -311,89 +368,121 @@ const findConversationWithUser = async (userId) => {
 
 // Event listeners
 let cleanupOnlineListeners = null
+let echoChannel = null
+
+// Setup Echo listeners for this specific conversation
+const setupConversationListeners = () => {
+    if (!window.Echo || !conversation.value?.uuid) return
+
+    const channelName = `conversations.${conversation.value.uuid}`
+    echoChannel = window.Echo.private(channelName)
+
+    echoChannel.listen('Conversations\\MessageAdded', (event) => {
+        const message = event.message || event.data
+        const isOwnMessage = message?.user?.id === userStore.user?.id
+
+        // Only add message if it's not from the current user
+        if (!isOwnMessage) {
+            addLocalMessage(message)
+            scrollToBottom()
+        }
+    })
+}
+
+// Cleanup Echo listeners
+const cleanupConversationListeners = () => {
+    if (echoChannel && window.Echo && conversation.value?.uuid) {
+        window.Echo.leave(`conversations.${conversation.value.uuid}`)
+        echoChannel = null
+    }
+}
 
 onMounted(() => {
     cleanupOnlineListeners = setupOnlineListeners()
-
-    eventBus.on('conversation.new', async (newUser) => {
-        user.value = newUser
-        const hasExisting = await findConversationWithUser(newUser.id)
-
-        if (!hasExisting) {
-            recipients.value = [newUser]
-        }
-    })
-
-    eventBus.on('chat.open', async (data) => {
-        if (data.user) {
-            user.value = data.user
-
-            if (data.conversationUuid) {
-                recipients.value = []
-                await conversationStore.fetchConversation(data.conversationUuid)
-            } else {
-                conversationStore.clearCurrentConversation()
-                conversationStore.setMessages([])
-
-                const hasExisting = await findConversationWithUser(data.user.id)
-                if (!hasExisting) {
-                    recipients.value = [data.user]
-                } else {
-                    recipients.value = []
-                }
-            }
-        }
-    })
 })
 
 onUnmounted(() => {
-    // Note: Don't remove 'chat.open' listener here because ConversationBoxManager owns it
-    // This component gets destroyed/recreated when chat closes/opens, but the manager stays mounted
-    eventBus.off('conversation.new')
-
     // Cleanup online listeners
     if (cleanupOnlineListeners) {
         cleanupOnlineListeners()
     }
+
+    // Cleanup conversation Echo listeners
+    cleanupConversationListeners()
 })
 
-watch(() => props.initialConversationUuid, (newConversationUuid) => {
-    if (newConversationUuid) {
+watch(() => props.initialConversationUuid, (newConversationUuid, oldConversationUuid) => {
+    console.log('[ConversationBox] initialConversationUuid watcher:', {
+        new: newConversationUuid,
+        old: oldConversationUuid,
+        current: conversationUuid.value
+    })
+
+    // Fetch if we have a UUID and it's different from what we currently have
+    if (newConversationUuid && newConversationUuid !== conversationUuid.value) {
+        console.log('[ConversationBox] UUID changed, fetching:', newConversationUuid)
         conversationUuid.value = newConversationUuid
-        conversationStore.fetchConversation(newConversationUuid).then(() => {
+        fetchConversation(newConversationUuid).then(() => {
             scrollToBottom()
         })
     }
 }, { immediate: true })
 
-watch(() => props.initialUser, (newUser) => {
+watch(() => props.initialUser, async (newUser, oldUser) => {
+    console.log('[ConversationBox] initialUser watcher:', {
+        newUser: newUser?.username,
+        oldUser: oldUser?.username,
+        hasConversationUuid: !!props.initialConversationUuid
+    })
+
+    // Always update the user reference
     if (newUser) {
         user.value = newUser
+    }
+
+    // Only process user change logic if user actually changed and we don't have a conversationUuid
+    if (newUser && newUser?.id !== oldUser?.id && !props.initialConversationUuid) {
+        console.log('[ConversationBox] User changed, finding conversation for:', newUser.username)
         recipients.value = [newUser]
-        if (props.initialConversationUuid === null) {
-            findConversationWithUser(newUser.id).then(() => {
-                scrollToBottom()
-            })
+        const hasExisting = await findConversationWithUser(newUser.id)
+        if (!hasExisting) {
+            // Keep recipients set for new conversation
+            recipients.value = [newUser]
+        } else {
+            // Clear recipients since we loaded an existing conversation
+            recipients.value = []
         }
+        scrollToBottom()
     }
 }, { immediate: true })
 
 watch(messages, () => {
     scrollToBottom()
 })
+
+// Watch conversation to setup Echo listeners when it loads
+watch(conversation, (newConv, oldConv) => {
+    // Cleanup old conversation listeners
+    if (oldConv?.uuid !== newConv?.uuid) {
+        cleanupConversationListeners()
+    }
+
+    // Setup new conversation listeners
+    if (newConv?.uuid) {
+        setupConversationListeners()
+    }
+})
 </script>
 
 <style scoped>
 .chat-component {
     position: fixed;
-    right: 16px;
-    bottom: 16px;
     width: 360px;
     max-width: calc(100vw - 32px);
     max-height: calc(100vh - 100px);
     display: flex;
     flex-direction: column;
-    z-index: 2000; /* above footer and most UI */
+    z-index: 2000;
 }
 
 /* Responsive adjustments */

@@ -1,32 +1,214 @@
 <template>
-    <div v-if="isVisible" class="conversation-box-wrapper">
-        <conversation-box
-            :key="currentUser?.id || 'no-user'"
-            :initial-user="currentUser"
-            :initial-conversationUuid="currentConversationUuid"
-        />
+    <div class="conversation-manager">
+        <!-- Minimized conversation avatars -->
+        <div class="minimized-conversations" :style="getMinimizedPosition()">
+            <v-tooltip
+                v-for="conv in minimizedConversations"
+                :key="conv.key"
+                location="top"
+            >
+                <template #activator="{ props: tooltipProps }">
+                    <div
+                        v-bind="tooltipProps"
+                        class="minimized-avatar"
+                        @click="maximizeConversation(conv.key)"
+                    >
+                        <v-badge
+                            v-if="conv.isGroup"
+                            :content="conv.unreadCount"
+                            :model-value="conv.unreadCount > 0"
+                            color="error"
+                            overlap
+                        >
+                            <v-avatar color="primary" size="48">
+                                <v-icon color="white">mdi-account-group</v-icon>
+                            </v-avatar>
+                        </v-badge>
+                        <v-badge
+                            v-else
+                            :content="conv.unreadCount"
+                            :model-value="conv.unreadCount > 0"
+                            color="error"
+                            overlap
+                        >
+                            <user-avatar :user="conv.user" />
+                        </v-badge>
+                    </div>
+                </template>
+                <span>{{ conv.displayName }}</span>
+            </v-tooltip>
+        </div>
+
+        <!-- Open conversation boxes -->
+        <div class="conversation-boxes">
+            <conversation-box
+                v-for="(conv, index) in maximizedConversations"
+                :key="conv.key"
+                :initial-user="conv.user"
+                :initial-conversation-uuid="conv.conversationUuid"
+                :style="getBoxPosition(index)"
+                @close="closeConversation(conv.key)"
+                @minimize="minimizeConversation(conv.key)"
+            />
+        </div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import ConversationBox from './ConversationBox.vue'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 import eventBus from '@/components/common/eventBus.js'
 import { useConversationRealtime } from '@/composables/conversation/useConversationRealtime'
 
-const isVisible = ref(false)
-const currentUser = ref(null)
-const currentConversationUuid = ref(null)
+const BOX_WIDTH = 360
+const BOX_SPACING = 16
+const MINIMIZED_SIZE = 64
+
+// Track all open conversations
+const openConversations = ref([])
+const windowWidth = ref(window.innerWidth)
 
 // Setup real-time conversation handling with auto-open enabled
 const { setupListeners, cleanup } = useConversationRealtime({
     autoOpen: true,
-    debug: true // Set to false in production
+    debug: false
 })
 
-onMounted(() => {
-    console.log('[ConversationBoxManager] Component mounted, setting up listeners')
+// Calculate max visible conversations based on window width
+const maxVisibleConversations = computed(() => {
+    return Math.max(1, Math.floor((windowWidth.value - 32) / (BOX_WIDTH + BOX_SPACING)))
+})
 
+// Split conversations into minimized and maximized
+const minimizedConversations = computed(() => {
+    return openConversations.value.filter(conv => conv.isMinimized)
+})
+
+const maximizedConversations = computed(() => {
+    const allMaximized = openConversations.value.filter(conv => !conv.isMinimized)
+    // Limit to max visible based on screen width
+    return allMaximized.slice(0, maxVisibleConversations.value)
+})
+
+// Generate unique key for conversation
+function getConversationKey(data) {
+    return data.conversationUuid || `user-${data.user?.id}`
+}
+
+// Get display name for conversation
+function getDisplayName(conv) {
+    if (conv.isGroup) {
+        return conv.groupName || 'Group Chat'
+    }
+    return conv.user?.username || 'User'
+}
+
+// Calculate position for each conversation box
+function getBoxPosition(index) {
+    const offset = index * (BOX_WIDTH + BOX_SPACING)
+
+    return {
+        right: `${16 + offset}px`,
+        bottom: '16px'
+    }
+}
+
+// Calculate position for minimized conversations
+function getMinimizedPosition() {
+    const numMaximized = maximizedConversations.value.length
+    const offset = numMaximized * (BOX_WIDTH + BOX_SPACING)
+
+    return {
+        right: `${16 + offset}px`
+    }
+}
+
+// Open or focus a conversation
+function openConversation(data) {
+    const key = getConversationKey(data)
+    console.log('[Manager] openConversation called with key:', key, 'uuid:', data.conversationUuid, 'user:', data.user?.username)
+    const existingIndex = openConversations.value.findIndex(conv => conv.key === key)
+
+    if (existingIndex !== -1) {
+        console.log('[Manager] Conversation already exists at index:', existingIndex, 'updating...')
+        // Conversation already open - update it and maximize if minimized
+        const existing = openConversations.value[existingIndex]
+
+        // Update conversation data if provided
+        if (data.conversationUuid) {
+            existing.conversationUuid = data.conversationUuid
+        }
+        if (data.user) {
+            existing.user = data.user
+        }
+        if (data.isGroup !== undefined) {
+            existing.isGroup = data.isGroup
+        }
+        if (data.groupName) {
+            existing.groupName = data.groupName
+            existing.displayName = data.groupName
+        }
+
+        // Maximize if minimized
+        if (existing.isMinimized) {
+            existing.isMinimized = false
+        }
+    } else {
+        // Determine if this is a group chat
+        const isGroup = data.isGroup || (data.conversation?.participant_count > 1) || false
+        const groupName = data.groupName || data.conversation?.groupName || null
+        const displayName = isGroup
+            ? (groupName || 'Group Chat')
+            : (data.user?.username || 'User')
+
+        // Add new conversation
+        const newConv = {
+            key,
+            user: data.user,
+            conversationUuid: data.conversationUuid,
+            isMinimized: false,
+            isGroup,
+            groupName,
+            displayName,
+            unreadCount: 0
+        }
+        console.log('[Manager] Creating new conversation:', newConv)
+        openConversations.value.push(newConv)
+        console.log('[Manager] Total open conversations:', openConversations.value.length)
+    }
+}
+
+// Close a conversation
+function closeConversation(key) {
+    const index = openConversations.value.findIndex(conv => conv.key === key)
+    if (index !== -1) {
+        openConversations.value.splice(index, 1)
+    }
+}
+
+// Minimize a conversation
+function minimizeConversation(key) {
+    const conv = openConversations.value.find(c => c.key === key)
+    if (conv) {
+        conv.isMinimized = true
+    }
+}
+
+// Maximize a conversation
+function maximizeConversation(key) {
+    const conv = openConversations.value.find(c => c.key === key)
+    if (conv) {
+        conv.isMinimized = false
+    }
+}
+
+// Handle window resize
+function handleResize() {
+    windowWidth.value = window.innerWidth
+}
+
+onMounted(() => {
     // Debug: Set a global flag
     window.__conversationBoxManagerMounted = true
     window.__conversationBoxManagerEventBus = eventBus
@@ -34,50 +216,40 @@ onMounted(() => {
     // Setup Echo listeners for real-time updates and auto-opening
     setupListeners()
 
-    // Show chat box when conversation.new or chat.show is emitted
+    // Setup window resize listener
+    window.addEventListener('resize', handleResize)
+
+    // Handle conversation open events
     eventBus.on('conversation.new', (user) => {
-        console.log('[ConversationBoxManager] conversation.new event received:', user)
-        currentUser.value = user
-        isVisible.value = true
+        openConversation({ user })
     })
 
     eventBus.on('chat.show', (data) => {
-        console.log('chat.show', data)
-        if (data.user) {
-            currentUser.value = data.user
-            isVisible.value = true
-        }
+        openConversation(data)
     })
 
     eventBus.on('chat.open', (data) => {
-        console.log('[ConversationBoxManager] chat.open event received:', data)
-        if(data.conversationUuid) {
-            currentConversationUuid.value = data.conversationUuid
-            isVisible.value = true
-        }
-        if (data.user) {
-            currentUser.value = data.user
-            isVisible.value = true
-            //console.log('[ConversationBoxManager] Set isVisible to true, currentUser:', currentUser.value)
-        }
+        openConversation(data)
     })
 
-    eventBus.on('chat.close', () => {
-        console.log('[ConversationBoxManager] chat.close event received')
-        isVisible.value = false
-        // Clear currentUser immediately to force a fresh component when reopened
-        currentUser.value = null
-        currentConversationUuid.value = null
+    // Legacy support - not typically used anymore since ConversationBox emits directly
+    eventBus.on('chat.close', (data) => {
+        if (data?.key) {
+            closeConversation(data.key)
+        } else if (openConversations.value.length > 0) {
+            // If no key provided, close the most recent
+            const lastConv = openConversations.value[openConversations.value.length - 1]
+            closeConversation(lastConv.key)
+        }
     })
-
-    // Test eventBus is working
-    console.log('[ConversationBoxManager] EventBus instance:', eventBus)
-    console.log('[ConversationBoxManager] All listeners set up successfully')
 })
 
 onUnmounted(() => {
     // Cleanup Echo listeners
     cleanup()
+
+    // Cleanup window resize listener
+    window.removeEventListener('resize', handleResize)
 
     // Cleanup event bus listeners
     eventBus.off('conversation.new')
@@ -88,10 +260,39 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.conversation-box-wrapper {
+.conversation-manager {
     position: fixed;
-    right: 16px;
-    bottom: 16px;
+    bottom: 0;
+    right: 0;
     z-index: 2000;
+    pointer-events: none;
+}
+
+.conversation-manager > * {
+    pointer-events: auto;
+}
+
+.minimized-conversations {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 8px;
+    z-index: 1999;
+    transition: right 0.3s ease;
+}
+
+.minimized-avatar {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.minimized-avatar:hover {
+    transform: scale(1.1);
+}
+
+.conversation-boxes {
+    position: relative;
 }
 </style>
