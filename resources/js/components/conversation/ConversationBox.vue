@@ -68,7 +68,7 @@
         </v-card-title>
 
         <!-- Messages Area -->
-        <v-card-text ref="messageContainer" class="chat-messages pa-0">
+        <div ref="messageContainer" class="chat-messages pa-0">
             <div v-if="conversation" class="pa-4">
                 <conversation-messages
                     :id="conversation.uuid"
@@ -85,7 +85,7 @@
                     <div class="text-body-2 text-medium-emphasis">Start typing to begin chatting</div>
                 </div>
             </div>
-        </v-card-text>
+        </div>
 
         <!-- Chat Input -->
         <v-card-actions class="chat-input pa-4 border-t">
@@ -200,6 +200,11 @@ const { userList: autocompleteItems, handleUserSearch } = useUserSearch(600);
 const { isUserOnline, setupListeners: setupOnlineListeners } = useOnlineUsers();
 const { scrollToBottom } = useScrollToBottom(messageContainer);
 
+// Debug: Check if ref is set
+watch(messageContainer, (val) => {
+    console.log('[ConversationBox] messageContainer ref changed:', val ? val.tagName : 'null')
+})
+
 const userStore = useUserStore();
 
 // Computed properties for group chat support
@@ -252,7 +257,7 @@ const createConversation = async () => {
 
             recipients.value = [];
             body.value = '';
-            scrollToBottom()
+            // scrollToBottom will be triggered by conversation watcher
         } else {
             console.error('[ConversationBox] No conversation UUID in response')
         }
@@ -273,7 +278,7 @@ const createReply = async () => {
         addLocalMessage(response.data)
 
         body.value = ''
-        scrollToBottom()
+        // scrollToBottom will be triggered by messages watcher
     } catch (e) {
         console.error('Failed to send reply:', e)
         throw e
@@ -383,8 +388,9 @@ const setupConversationListeners = () => {
 
         // Only add message if it's not from the current user
         if (!isOwnMessage) {
+            console.log('[ConversationBox] Received real-time message for conversation:', conversation.value.uuid)
             addLocalMessage(message)
-            scrollToBottom()
+            // scrollToBottom will be triggered by messages watcher
         }
     })
 }
@@ -422,9 +428,8 @@ watch(() => props.initialConversationUuid, (newConversationUuid, oldConversation
     if (newConversationUuid && newConversationUuid !== conversationUuid.value) {
         console.log('[ConversationBox] UUID changed, fetching:', newConversationUuid)
         conversationUuid.value = newConversationUuid
-        fetchConversation(newConversationUuid).then(() => {
-            scrollToBottom()
-        })
+        fetchConversation(newConversationUuid)
+        // scrollToBottom will be triggered by conversation watcher
     }
 }, { immediate: true })
 
@@ -452,16 +457,19 @@ watch(() => props.initialUser, async (newUser, oldUser) => {
             // Clear recipients since we loaded an existing conversation
             recipients.value = []
         }
-        scrollToBottom()
+        // scrollToBottom will be triggered by conversation watcher
     }
 }, { immediate: true })
 
-watch(messages, () => {
+watch(messages, (newMessages) => {
+    console.log('[ConversationBox] Messages changed, count:', newMessages?.length)
+    // Scroll to bottom when messages change
     scrollToBottom()
-})
+}, { deep: true })
 
 // Watch conversation to setup Echo listeners when it loads
 watch(conversation, (newConv, oldConv) => {
+    console.log('[ConversationBox] Conversation changed:', newConv?.uuid)
     // Cleanup old conversation listeners
     if (oldConv?.uuid !== newConv?.uuid) {
         cleanupConversationListeners()
@@ -470,6 +478,8 @@ watch(conversation, (newConv, oldConv) => {
     // Setup new conversation listeners
     if (newConv?.uuid) {
         setupConversationListeners()
+        // Scroll to bottom when conversation loads
+        scrollToBottom()
     }
 })
 </script>
