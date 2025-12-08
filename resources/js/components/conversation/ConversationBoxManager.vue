@@ -81,14 +81,22 @@ const maxVisibleConversations = computed(() => {
 })
 
 // Split conversations into minimized and maximized
-const minimizedConversations = computed(() => {
-    return openConversations.value.filter(conv => conv.isMinimized)
-})
-
 const maximizedConversations = computed(() => {
     const allMaximized = openConversations.value.filter(conv => !conv.isMinimized)
     // Limit to max visible based on screen width
     return allMaximized.slice(0, maxVisibleConversations.value)
+})
+
+const minimizedConversations = computed(() => {
+    // Include manually minimized conversations
+    const manuallyMinimized = openConversations.value.filter(conv => conv.isMinimized)
+
+    // Include overflow conversations (non-minimized but can't fit on screen)
+    const allMaximized = openConversations.value.filter(conv => !conv.isMinimized)
+    const overflowConversations = allMaximized.slice(maxVisibleConversations.value)
+
+    // Combine both groups
+    return [...manuallyMinimized, ...overflowConversations]
 })
 
 // Generate unique key for conversation
@@ -132,7 +140,7 @@ function openConversation(data) {
 
     if (existingIndex !== -1) {
         console.log('[Manager] Conversation already exists at index:', existingIndex, 'updating...')
-        // Conversation already open - update it and maximize if minimized
+        // Conversation already open - update it and bring to front
         const existing = openConversations.value[existingIndex]
 
         // Update conversation data if provided
@@ -153,6 +161,15 @@ function openConversation(data) {
         // Maximize if minimized
         if (existing.isMinimized) {
             existing.isMinimized = false
+        }
+
+        // Move to front of non-minimized conversations to ensure visibility
+        openConversations.value.splice(existingIndex, 1)
+        const firstMaximizedIndex = openConversations.value.findIndex(c => !c.isMinimized)
+        if (firstMaximizedIndex === -1) {
+            openConversations.value.push(existing)
+        } else {
+            openConversations.value.splice(firstMaximizedIndex, 0, existing)
         }
     } else {
         // Determine if this is a group chat
@@ -197,9 +214,28 @@ function minimizeConversation(key) {
 
 // Maximize a conversation
 function maximizeConversation(key) {
-    const conv = openConversations.value.find(c => c.key === key)
-    if (conv) {
-        conv.isMinimized = false
+    const index = openConversations.value.findIndex(c => c.key === key)
+    if (index !== -1) {
+        const conv = openConversations.value[index]
+
+        // If manually minimized, just unminimize it
+        if (conv.isMinimized) {
+            conv.isMinimized = false
+        }
+
+        // Move this conversation to the front of the non-minimized list
+        // This ensures it becomes visible even if it was in overflow
+        openConversations.value.splice(index, 1)
+
+        // Find the position to insert (after all manually minimized, at the start of maximized)
+        const firstMaximizedIndex = openConversations.value.findIndex(c => !c.isMinimized)
+        if (firstMaximizedIndex === -1) {
+            // No maximized conversations, add to end
+            openConversations.value.push(conv)
+        } else {
+            // Insert at the start of maximized conversations
+            openConversations.value.splice(firstMaximizedIndex, 0, conv)
+        }
     }
 }
 
