@@ -61,7 +61,7 @@
 
                 <v-divider></v-divider>
 
-            <conversation-messages :id="id" />
+            <conversation-messages :id="id" :messages="messages" :loading="loading" />
 
                 </v-card>
 
