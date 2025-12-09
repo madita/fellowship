@@ -222,8 +222,8 @@ class RevisionPresenter
     /**
      * Get pass through value from the Eloquent model.
      *
-     * @param Model $model
-     * @param string                              $key
+     * @param Model  $model
+     * @param string $key
      *
      * @return mixed
      */
@@ -254,12 +254,12 @@ class RevisionPresenter
     /**
      * Decorate revision model or array/collection of models.
      *
-     * @param mixed                               $revision
+     * @param mixed $revision
      * @param Model $revisioned
      *
-     * @return mixed
-     *@throws InvalidArgumentException
+     * @throws InvalidArgumentException
      *
+     * @return mixed
      */
     public static function make($revision, $revisioned)
     {
@@ -284,7 +284,7 @@ class RevisionPresenter
      * Decorate Eloquent model.
      *
      * @param Model|null $revision
-     * @param Model $revisioned
+     * @param Model      $revisioned
      *
      * @return static
      */
@@ -296,7 +296,7 @@ class RevisionPresenter
     /**
      * Decorate array of Eloquent models.
      *
-     * @param array                               $revisions
+     * @param array $revisions
      * @param Model $revisioned
      *
      * @return array
@@ -310,7 +310,7 @@ class RevisionPresenter
      * Decorate collection of models.
      *
      * @param Collection $revisions
-     * @param Model $revisioned
+     * @param Model      $revisioned
      *
      * @return Collection
      */

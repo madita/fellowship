@@ -11,7 +11,9 @@ use Illuminate\Queue\SerializesModels;
 
 class ConversationUpdated implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
     public $conversation;
 
@@ -29,8 +31,8 @@ class ConversationUpdated implements ShouldBroadcast
     {
         return [
             'conversation' => [
-                'uuid' => $this->conversation->uuid
-            ]
+                'uuid' => $this->conversation->uuid,
+            ],
         ];
     }
 
@@ -42,7 +44,7 @@ class ConversationUpdated implements ShouldBroadcast
     public function broadcastOn()
     {
         return $this->conversation->users->map(function ($user) {
-            return new PrivateChannel('users.' . $user->id);
+            return new PrivateChannel('users.'.$user->id);
         })
             ->toArray();
     }

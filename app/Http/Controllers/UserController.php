@@ -1,10 +1,11 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use App\Models\User;
 
 class UserController extends Controller
 {
@@ -30,7 +31,8 @@ class UserController extends Controller
         return response([], 204);
     }
 
-    public function searchUsers(Request $request) {
+    public function searchUsers(Request $request)
+    {
         $q = $request->get('query', '');
 
         if (empty($q)) {
@@ -39,24 +41,24 @@ class UserController extends Controller
                 ->get(['id', 'username', 'email'])
                 ->map(function ($user) {
                     return [
-                        'id' => $user->id,
+                        'id'       => $user->id,
                         'username' => $user->username,
-                        'email' => $user->email,
-                        'avatar' => $user->avatar,
+                        'email'    => $user->email,
+                        'avatar'   => $user->avatar,
                         'initials' => $user->initials,
                     ];
                 });
         }
 
         return User::where('id', '!=', auth()->id())
-            ->where(DB::raw('LOWER(username)'), 'LIKE', '%' . Str::lower($q) . '%')
+            ->where(DB::raw('LOWER(username)'), 'LIKE', '%'.Str::lower($q).'%')
             ->get(['id', 'username', 'email'])
             ->map(function ($user) {
                 return [
-                    'id' => $user->id,
+                    'id'       => $user->id,
                     'username' => $user->username,
-                    'email' => $user->email,
-                    'avatar' => $user->avatar,
+                    'email'    => $user->email,
+                    'avatar'   => $user->avatar,
                     'initials' => $user->initials,
                 ];
             });

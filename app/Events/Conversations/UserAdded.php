@@ -2,19 +2,19 @@
 
 namespace App\Events\Conversations;
 
-use App\Models\User;
 use App\Models\Conversation\Conversation;
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Foundation\Events\Dispatchable;
+use App\Models\User;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
 
 class UserAdded implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
     protected $conversation;
 
@@ -35,8 +35,8 @@ class UserAdded implements ShouldBroadcast
     {
         return [
             'user' => [
-                'id' => $this->user->id
-            ]
+                'id' => $this->user->id,
+            ],
         ];
     }
 
@@ -47,6 +47,6 @@ class UserAdded implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('conversations.' . $this->conversation->uuid);
+        return new PrivateChannel('conversations.'.$this->conversation->uuid);
     }
 }

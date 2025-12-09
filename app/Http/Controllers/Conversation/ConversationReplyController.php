@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Conversation;
 
-use App\Events\Conversations\MessageAdded;
 use App\Events\Conversations\ConversationUpdated;
+use App\Events\Conversations\MessageAdded;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreConversationReplyRequest;
 use App\Models\Conversation\Conversation;
@@ -25,32 +25,32 @@ class ConversationReplyController extends Controller
 
         try {
             // Create the reply
-           /* $reply = new Conversation();
-            $reply->body = $request->validated()['body'];
-            $reply->user()->associate($request->user());
+            /* $reply = new Conversation();
+             $reply->body = $request->validated()['body'];
+             $reply->user()->associate($request->user());
 
-            $conversation->replies()->save($reply);
-            $conversation->touchLastReply();
+             $conversation->replies()->save($reply);
+             $conversation->touchLastReply();
 
-            // Load relationships
-            $reply->load(['user']);*/
+             // Load relationships
+             $reply->load(['user']);*/
 
-           /* $this->validate([
-                'body' => 'required'
-            ]);*/
+            /* $this->validate([
+                 'body' => 'required'
+             ]);*/
 
             $message = $conversation->messages()->create([
                 'user_id' => auth()->id(),
-                'body' => $request->get('body')
+                'body'    => $request->get('body'),
             ]);
 
             $conversation->update([
-                'last_message_at' => now()
+                'last_message_at' => now(),
             ]);
 
             // Update sender's read_at to mark they've read their own message
             auth()->user()->conversations()->updateExistingPivot($conversation->id, [
-                'read_at' => now()
+                'read_at' => now(),
             ]);
 
             // Don't reset read_at for other users - new messages will naturally appear as unread
@@ -59,33 +59,30 @@ class ConversationReplyController extends Controller
             broadcast(new MessageAdded($message))->toOthers();
             broadcast(new ConversationUpdated($message->conversation));
 
-
-
             // Simple array response (matching your frontend expectations)
             $responseData = [
-                'id' => $message->id,
-                'body' => $message->body,
-                'created_at' => $message->created_at,
+                'id'               => $message->id,
+                'body'             => $message->body,
+                'created_at'       => $message->created_at,
                 'created_at_human' => $message->created_at->diffForHumans(),
-                'self_owned' => true,
-                'user' => $message->user
+                'self_owned'       => true,
+                'user'             => $message->user,
             ];
 
             // Broadcast event
 //            broadcast(new ConversationReplyCreated($reply))->toOthers();
 
             return response()->json($responseData, 201);
-
         } catch (\Exception $e) {
             \Log::error('Failed to create conversation reply', [
                 'conversation_id' => $conversation->id,
-                'user_id' => $request->user()->id,
-                'error' => $e->getMessage()
+                'user_id'         => $request->user()->id,
+                'error'           => $e->getMessage(),
             ]);
 
             return response()->json([
                 'message' => 'Failed to create reply',
-                'errors' => ['body' => ['Unable to save reply. Please try again.']]
+                'errors'  => ['body' => ['Unable to save reply. Please try again.']],
             ], 422);
         }
     }
@@ -93,6 +90,7 @@ class ConversationReplyController extends Controller
     private function generateDefaultAvatar($user): string
     {
         $name = $user->name ?? $user->username;
-        return "https://ui-avatars.com/api/?name=" . urlencode($name) . "&background=667eea&color=fff&size=128";
+
+        return 'https://ui-avatars.com/api/?name='.urlencode($name).'&background=667eea&color=fff&size=128';
     }
 }
