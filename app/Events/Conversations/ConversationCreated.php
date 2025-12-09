@@ -3,17 +3,17 @@
 namespace App\Events\Conversations;
 
 use App\Models\Conversation\Conversation;
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
 
 class ConversationCreated implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable;
+    use InteractsWithSockets;
+    use SerializesModels;
 
     public $conversation;
 
@@ -47,20 +47,20 @@ class ConversationCreated implements ShouldBroadcast
 
         return [
             'conversation' => [
-                'uuid' => $this->conversation->uuid,
+                'uuid'    => $this->conversation->uuid,
                 'creator' => $creator ? [
-                    'id' => $creator->id,
+                    'id'       => $creator->id,
                     'username' => $creator->username ?? $creator->email,
-                    'avatar' => $creator->avatar ?? null,
+                    'avatar'   => $creator->avatar ?? null,
                 ] : null,
                 'users' => $this->conversation->users->map(function ($user) {
                     return [
-                        'id' => $user->id,
+                        'id'       => $user->id,
                         'username' => $user->username ?? $user->email,
-                        'avatar' => $user->avatar ?? null,
+                        'avatar'   => $user->avatar ?? null,
                     ];
                 })->toArray(),
-            ]
+            ],
         ];
     }
 
@@ -81,7 +81,7 @@ class ConversationCreated implements ShouldBroadcast
     public function broadcastOn()
     {
         $channels = [
-            new PrivateChannel('conversations.' . $this->conversation->uuid)
+            new PrivateChannel('conversations.'.$this->conversation->uuid),
         ];
 
         // Also broadcast to individual user channels for those not actively viewing the conversation
@@ -89,7 +89,7 @@ class ConversationCreated implements ShouldBroadcast
         foreach ($this->conversation->users as $user) {
             // Don't send to the creator of the conversation
             if ($user->id !== $this->conversation->creator_id) {
-                $channels[] = new PrivateChannel('user.' . $user->id);
+                $channels[] = new PrivateChannel('user.'.$user->id);
             }
         }
 

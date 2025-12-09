@@ -53,7 +53,7 @@ class RevisionListener
      * Log the revision.
      *
      * @param string $action
-     * @param  Model $revisioned The model being revisioned
+     * @param Model  $revisioned The model being revisioned
      */
     protected function log($action, $revisioned)
     {

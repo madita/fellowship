@@ -3,7 +3,6 @@
 namespace App\Models\Conversation;
 
 use App\Models\User;
-use App\Models\Conversation\ConversationMessage;
 use Illuminate\Database\Eloquent\Model;
 
 class Conversation extends Model
@@ -11,13 +10,13 @@ class Conversation extends Model
     protected $fillable = [
         'last_message_at',
         'uuid',
-        'creator_id'
+        'creator_id',
     ];
 
     protected $casts = [
         'last_message_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'created_at'      => 'datetime',
+        'updated_at'      => 'datetime',
     ];
 
     public function getRouteKeyName()
@@ -51,20 +50,19 @@ class Conversation extends Model
             ->offset(0)->limit(20)->latest();
     }
 
-
     /*public function touchLastMessageAt()
     {
         $this->last_message_at = \Carbon\Carbon::now();
         $this->save();
     }*/
 
-   /* public function isReply()
-    {
-        return $this->parent_id !== null;
-    }*/
+    /* public function isReply()
+     {
+         return $this->parent_id !== null;
+     }*/
 
-   /* public function scopeLatestFirst($query)
-    {
-        return $query->orderBy('created_at', 'desc');
-    }*/
+    /* public function scopeLatestFirst($query)
+     {
+         return $query->orderBy('created_at', 'desc');
+     }*/
 }

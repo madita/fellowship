@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Broadcast;
 use App\Models\Conversation\Conversation;
+use Illuminate\Support\Facades\Broadcast;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,9 +31,9 @@ Broadcast::channel('app', function ($user) {
 Broadcast::channel('chat', function ($user) {
     // Return a plain array to ensure presence member data is serialized correctly
     return [
-        'id' => $user->id,
+        'id'       => $user->id,
         'username' => $user->username ?? ($user->name ?? ''),
-        'avatar' => method_exists($user, 'getAttribute') ? $user->getAttribute('avatar') : ($user->avatar ?? null),
+        'avatar'   => method_exists($user, 'getAttribute') ? $user->getAttribute('avatar') : ($user->avatar ?? null),
     ];
 });
 

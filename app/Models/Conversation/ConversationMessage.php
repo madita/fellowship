@@ -3,14 +3,13 @@
 namespace App\Models\Conversation;
 
 use App\Models\User;
-use App\Models\Conversation\Conversation;
 use Illuminate\Database\Eloquent\Model;
 
 class ConversationMessage extends Model
 {
     protected $fillable = [
         'user_id',
-        'body'
+        'body',
     ];
 
     public function isOwn()

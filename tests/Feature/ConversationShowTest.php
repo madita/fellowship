@@ -27,7 +27,7 @@ class ConversationShowTest extends TestCase
         $other = User::factory()->create();
 
         $conversation = Conversation::create([
-            'uuid' => (string) Str::uuid(),
+            'uuid'            => (string) Str::uuid(),
             'last_message_at' => now(),
         ]);
         $conversation->users()->sync([$user->id, $other->id]);
@@ -35,22 +35,22 @@ class ConversationShowTest extends TestCase
         // Older message first chronologically, but model returns latest() limited
         $msgOld = ConversationMessage::create([
             'conversation_id' => $conversation->id,
-            'user_id' => $other->id,
-            'body' => 'Hello from other',
-            'created_at' => now()->subMinutes(5),
-            'updated_at' => now()->subMinutes(5),
+            'user_id'         => $other->id,
+            'body'            => 'Hello from other',
+            'created_at'      => now()->subMinutes(5),
+            'updated_at'      => now()->subMinutes(5),
         ]);
         $msgNew = ConversationMessage::create([
             'conversation_id' => $conversation->id,
-            'user_id' => $user->id,
-            'body' => 'Reply from user',
-            'created_at' => now()->subMinutes(1),
-            'updated_at' => now()->subMinutes(1),
+            'user_id'         => $user->id,
+            'body'            => 'Reply from user',
+            'created_at'      => now()->subMinutes(1),
+            'updated_at'      => now()->subMinutes(1),
         ]);
 
         Sanctum::actingAs($user);
 
-        $res = $this->getJson('/api/conversations/' . $conversation->uuid);
+        $res = $this->getJson('/api/conversations/'.$conversation->uuid);
 
         $res->assertOk();
         $data = $res->json();

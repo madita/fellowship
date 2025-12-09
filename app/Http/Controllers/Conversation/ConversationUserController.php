@@ -19,16 +19,16 @@ class ConversationUserController extends Controller
 
         $conversation->load(['users']);
 
-       // broadcast(new ConversationUsersCreated($conversation))->toOthers();
+        // broadcast(new ConversationUsersCreated($conversation))->toOthers();
 
-       /* return fractal()
-            ->item($conversation)
-            ->parseIncludes(['user', 'users'])
-            ->transformWith(new ConversationTransformer)
-            ->toArray();*/
+        /* return fractal()
+             ->item($conversation)
+             ->parseIncludes(['user', 'users'])
+             ->transformWith(new ConversationTransformer)
+             ->toArray();*/
         return response()->json([
             //'data' => $this->transformConversation($conversation, [ 'users', 'replies', 'replies.user'])
-            'data' => $conversation
+            'data' => $conversation,
         ], 201);
     }
 }
