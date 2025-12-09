@@ -1,10 +1,10 @@
 <template>
     <div>
-        <v-app-bar class="d-flex" flat height="80">
+        <v-app-bar app flat height="80">
             <a class="skip-nav-link" href="#main-content">
                 skip navigation
             </a>
-            <v-container class="py-0 px-0 px-sm-2 fill-height">
+            <v-container class="py-0 px-0 px-sm-2 fill-height d-flex align-center">
                 <router-link to="/dashboard" class="d-flex align-center text-decoration-none mr-2">
                     <img :src="logoimg" alt="Logo of FellowShip" height="70"/>
                 </router-link>
@@ -12,7 +12,8 @@
                 <v-spacer></v-spacer>
 
 
-                <div class="d-none d-md-block">
+<!--                <div class="d-none d-md-block">-->
+                <div class="d-flex align-center">
                     <v-btn class="mx-1" @click="$helpers.scrollTo('#feature1');">
                         Feature 1
                     </v-btn>
@@ -27,19 +28,17 @@
                     </template>
 
                     <template v-else>
-                        <v-btn><toolbar-notifications/></v-btn>
-                        <!--v-btn><ConversationsNotifications/></v-btn-->
-                        <v-btn>   <toolbar-user/></v-btn>
 
-
-
-
-
-
-<!--                        <v-btn class="mx-1" @click.prevent="signOut">-->
-<!--                            Sign Out-->
-<!--                        </v-btn>-->
-
+                            <div :class="[$vuetify.rtl ? 'ml-1' : 'mr-1']">
+                                <toolbar-notifications/>
+                            </div>
+                            <div :class="[$vuetify.rtl ? 'ml-1' : 'mr-1']">
+                                <conversations-notification/>
+                            </div>
+                            <v-btn icon variant="text" class="mx-1" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
+                                <v-icon>mdi-account-group</v-icon>
+                            </v-btn>
+                            <toolbar-user/>
 
                     </template>
 
@@ -125,7 +124,18 @@
                     </div>
                 </v-container>
             </v-footer>
-            <ConversationBox></ConversationBox>
+
+            <v-navigation-drawer
+                v-model="showUsersDrawer"
+                location="right"
+                temporary
+                width="320"
+                class="elevation-2"
+            >
+                <SidebarUsers/>
+            </v-navigation-drawer>
+
+            <conversation-box-manager />
         </v-main>
     </div>
 </template>
@@ -139,26 +149,26 @@ import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
 import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
 import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue'
-import Conversation from "../components/conversation/Conversation.vue";
-import Conversations from "../components/conversation/Conversations.vue";
-import ConversationBox from "../components/conversation/ConversationBox.vue";
-import ConversationsNotifications from "../components/conversation/ConversationsNotification.vue";
+import ConversationsNotification from '../components/conversation/ConversationsNotification.vue'
+import ConversationBoxManager from '../components/conversation/ConversationBoxManager.vue'
+import SidebarUsers from '../components/conversation/SidebarUsers.vue'
 
 
 // import {mapActions, mapGetters} from 'vuex'
 
 export default {
     components: {
-        Conversation,
         ToolbarUser,
         ToolbarNotifications,
-        ConversationBox,
-        ConversationsNotifications
+        ConversationsNotification,
+        ConversationBoxManager,
+        SidebarUsers
     },
     data() {
         return {
             logoimg,
             config,
+            showUsersDrawer: false,
             links: [{
                 label: 'Overview',
                 to: '#'

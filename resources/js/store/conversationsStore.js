@@ -14,11 +14,10 @@ export const useConversationsStore = defineStore('conversations', {
     },
 
     actions: {
-        async fetchConversations() {
+        async fetchConversations(page = 1) {
             this.loading = true;
             try {
-                const response = await getConversations();
-                console.log('response', response)
+                const response = await getConversations(page);
 
                 // Echo.private('user.' + 2)
                 //     .listen('ConversationCreated', (e) => {
@@ -52,9 +51,18 @@ export const useConversationsStore = defineStore('conversations', {
                         })
                 }
 
-                this.conversations = response.data;
+                // Check if response is paginated (Laravel pagination has data.data structure)
+                if (response.data && response.data.data && Array.isArray(response.data.data)) {
+                    this.conversations = response.data.data;
+                } else if (Array.isArray(response.data)) {
+                    this.conversations = response.data;
+                } else {
+                    console.warn('Unexpected conversation response structure:', response.data)
+                    this.conversations = [];
+                }
             } catch (error) {
                 console.error('Failed to fetch conversations:', error);
+                this.conversations = [];
             } finally {
                 this.loading = false;
             }

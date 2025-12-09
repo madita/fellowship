@@ -389,6 +389,8 @@ const WeatherWidget = {
     `
 };
 
+import ConversationsWidget from '@/components/dashboard/ConversationsWidget.vue';
+
 export default {
     name: 'DynamicDashboard',
     components: {
@@ -397,7 +399,8 @@ export default {
         NotificationsWidget,
         StatsWidget,
         TasksWidget,
-        WeatherWidget
+        WeatherWidget,
+        ConversationsWidget
     },
     data() {
         return {
@@ -473,6 +476,19 @@ export default {
                             { id: 3, type: 'success', message: 'Event published successfully', time: '3h ago', read: true }
                         ]
                     }
+                },
+                {
+                    id: 'conversations-1',
+                    type: 'conversations',
+                    title: 'Messages',
+                    subtitle: 'Recent conversations',
+                    icon: 'mdi-message-text',
+                    color: 'teal',
+                    size: 'medium',
+                    position: { x: 0, y: 1 },
+                    actions: [{ text: 'View All Conversations', color: 'teal', icon: 'mdi-message-text-outline', to: '/conversations' }],
+                    data: {},
+                    config: { maxItems: 5 }
                 }
             ],
 
@@ -549,6 +565,14 @@ export default {
                     icon: 'mdi-calendar-month',
                     color: 'indigo',
                     category: 'utility'
+                },
+                {
+                    type: 'conversations',
+                    title: 'Conversations',
+                    description: 'Recent messages and chats',
+                    icon: 'mdi-message-text',
+                    color: 'teal',
+                    category: 'social'
                 }
             ]
         }
@@ -567,7 +591,8 @@ export default {
                 notifications: 'NotificationsWidget',
                 stats: 'StatsWidget',
                 tasks: 'TasksWidget',
-                weather: 'WeatherWidget'
+                weather: 'WeatherWidget',
+                conversations: 'ConversationsWidget'
             };
             return components[type] || 'div';
         },
@@ -737,6 +762,8 @@ export default {
                 newWidget.actions = [{ text: 'View All Events', color: 'primary', icon: 'mdi-calendar-multiple', to: '/events' }];
             } else if (widgetTemplate.type === 'wiki') {
                 newWidget.actions = [{ text: 'View Wiki', color: 'warning', icon: 'mdi-book-open-variant', to: '/wiki' }];
+            } else if (widgetTemplate.type === 'conversations') {
+                newWidget.actions = [{ text: 'View All Conversations', color: 'teal', icon: 'mdi-message-text-outline', to: '/conversations' }];
             }
 
             this.activeWidgets.push(newWidget);
@@ -834,6 +861,9 @@ export default {
                     condition: 'Sunny',
                     location: 'Your Location',
                     icon: 'mdi-weather-sunny'
+                },
+                conversations: {
+                    // This will be populated by the widget component from the store
                 }
             };
 
@@ -893,18 +923,18 @@ export default {
 .dashboard-container {
     padding: 24px;
     min-height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ea 100%);
 }
 
 .dashboard-header {
-    background: linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(156, 39, 176, 0.1) 100%);
+    background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.08) 0%, rgba(var(--v-theme-surface), 0.1) 100%);
     border-radius: 16px;
     padding: 24px;
     backdrop-filter: blur(10px);
 }
 
 .dashboard-title {
-    background: linear-gradient(135deg, #1976d2 0%, #9c27b0 100%);
+    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -956,8 +986,8 @@ export default {
 }
 
 .widget-card.drag-target {
-    border: 2px dashed #1976d2 !important;
-    background: rgba(25, 118, 210, 0.1) !important;
+    border: 2px dashed rgb(var(--v-theme-primary)) !important;
+    background: rgba(var(--v-theme-primary), 0.1) !important;
     transform: scale(0.95) !important;
     opacity: 0.7 !important;
 }
