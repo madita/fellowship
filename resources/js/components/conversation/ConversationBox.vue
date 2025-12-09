@@ -69,7 +69,16 @@
 
         <!-- Messages Area -->
         <div ref="messageContainer" class="chat-messages pa-0">
-            <div v-if="conversation" class="pa-4">
+            <!-- Loading state -->
+            <div v-if="loading && !conversation" class="d-flex align-center justify-center" style="height: 400px;">
+                <div class="text-center">
+                    <v-progress-circular indeterminate size="64" color="primary" class="mb-4" />
+                    <div class="text-body-1 text-medium-emphasis">Loading conversation...</div>
+                </div>
+            </div>
+
+            <!-- Conversation messages -->
+            <div v-else-if="conversation" class="pa-4">
                 <conversation-messages
                     :id="conversation.uuid"
                     :messages="messages"
@@ -105,6 +114,7 @@
                     variant="outlined"
                     density="compact"
                     hide-details
+                    :disabled="loading"
                     @update:search="handleUserSearch"
                 >
                     <template #chip="{ props, item }">
@@ -128,7 +138,7 @@
                         class="flex-grow-1"
                         @keyup.enter="handleSend"
                         :loading="isSending"
-                        :disabled="isSending"
+                        :disabled="isSending || (loading && !conversation)"
                     />
 
                     <v-btn
@@ -136,7 +146,7 @@
                         color="primary"
                         class="ml-2"
                         @click="handleSend"
-                        :disabled="!body?.trim() || (!conversation && recipients.length === 0) || isSending"
+                        :disabled="!body?.trim() || (!conversation && recipients.length === 0) || isSending || (loading && !conversation)"
                         :loading="isSending"
                     />
                 </div>

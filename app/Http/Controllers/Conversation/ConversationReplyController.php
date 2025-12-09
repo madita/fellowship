@@ -48,11 +48,13 @@ class ConversationReplyController extends Controller
                 'last_message_at' => now()
             ]);
 
-            foreach ($conversation->others as $user) {
-                $user->conversations()->updateExistingPivot($conversation, [
-                    'read_at' => null
-                ]);
-            }
+            // Update sender's read_at to mark they've read their own message
+            auth()->user()->conversations()->updateExistingPivot($conversation->id, [
+                'read_at' => now()
+            ]);
+
+            // Don't reset read_at for other users - new messages will naturally appear as unread
+            // since their created_at is after the existing read_at timestamp
 
             broadcast(new MessageAdded($message))->toOthers();
             broadcast(new ConversationUpdated($message->conversation));

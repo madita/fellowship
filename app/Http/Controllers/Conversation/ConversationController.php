@@ -83,8 +83,14 @@ class ConversationController extends Controller
             'body' => $request->get('body'),
         ]);
 
-        // Sync users to conversation
-        $conversation->users()->sync($recipientsIds);
+        // Sync users to conversation with read_at timestamp for creator
+        $syncData = [];
+        foreach ($recipientsIds as $userId) {
+            $syncData[$userId] = [
+                'read_at' => $userId === auth()->id() ? now() : null
+            ];
+        }
+        $conversation->users()->sync($syncData);
 
         // Load relationships for response
         $conversation->load(['users', 'messages']);
