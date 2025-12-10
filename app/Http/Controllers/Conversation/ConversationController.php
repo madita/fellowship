@@ -54,14 +54,18 @@ class ConversationController extends Controller
     /**
      * Mark conversation as read for the authenticated user.
      */
-    public function markAsRead(Conversation $conversation): JsonResponse
-    {
-        auth()->user()->conversations()->updateExistingPivot($conversation->id, [
-            'read_at' => now(),
-        ]);
-
-        return response()->json(['success' => true]);
+public function markAsRead(Conversation $conversation): JsonResponse
+{
+    if (!$conversation->users()->where('user_id', auth()->id())->exists()) {
+        abort(403);
     }
+
+    auth()->user()->conversations()->updateExistingPivot($conversation->id, [
+        'read_at' => now(),
+    ]);
+
+    return response()->json(['success' => true]);
+}
 
     public function store(StoreConversationRequest $request): JsonResponse
     {
