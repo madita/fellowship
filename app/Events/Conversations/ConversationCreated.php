@@ -39,11 +39,7 @@ class ConversationCreated implements ShouldBroadcast
             $this->conversation->load('creator');
         }
 
-        // If no creator is set, use the first message's user or authenticated user
         $creator = $this->conversation->creator;
-        if (!$creator && auth()->check()) {
-            $creator = auth()->user();
-        }
 
         return [
             'conversation' => [
