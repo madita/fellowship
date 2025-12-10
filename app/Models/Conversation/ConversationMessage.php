@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class ConversationMessage extends Model
 {
     protected $fillable = [
+        'conversation_id',
         'user_id',
         'body',
+        'created_at',
+        'updated_at',
     ];
 
     public function isOwn()

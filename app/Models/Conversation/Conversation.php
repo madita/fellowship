@@ -44,10 +44,9 @@ class Conversation extends Model
 
     public function messages()
     {
-//        return $this->hasMany(ConversationMessage::class)
-//            ->latest();
         return $this->hasMany(ConversationMessage::class)
-            ->offset(0)->limit(20)->latest();
+            ->latest()
+            ->limit(20);
     }
 
     /*public function touchLastMessageAt()
