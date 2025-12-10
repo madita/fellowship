@@ -41,7 +41,7 @@ class MessageAdded implements ShouldBroadcast
 
         return [
             'message' => array_merge($this->message->toArray(), [
-                'selfOwned'        => false,
+                'self_owned'       => false,
                 'created_at_human' => $this->message->created_at->diffForHumans(),
                 'conversation'     => [
                     'uuid' => $this->message->conversation->uuid,
