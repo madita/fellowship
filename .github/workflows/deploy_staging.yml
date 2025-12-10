@@ -112,6 +112,7 @@ jobs:
             --exclude=tests \
             --exclude=storage/logs \
             --exclude=.env \
+            --exclude=deployment \
             .
 
       - name: Upload deployment artifact
