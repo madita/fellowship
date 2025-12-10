@@ -49,7 +49,7 @@
                 type="submit"
                 color="primary"
                 :loading="isSubmitting"
-                :disabled="!selectedUser || isSubmitting"
+                :disabled="!selectedUser || selectedUser.length === 0 || isSubmitting"
                 icon
                 size="large"
             >
