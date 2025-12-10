@@ -5,10 +5,10 @@ import { createApp } from 'vue';
 // import { Vuetify } from 'vuetify'; // Modify based on the correct path in Vuetify 3
 import "vuetify/styles";
 import { createVuetify } from 'vuetify';
-import { VCalendar } from 'vuetify/labs/VCalendar'
 import '@mdi/font/css/materialdesignicons.css'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import 'vuetify/dist/vuetify.min.css';
+import * as labs from 'vuetify/labs/components';
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import i18n from './vue-i18n';
@@ -52,7 +52,10 @@ const dark = {
 
 // Create your Vuetify instance
 const vuetify = createVuetify({
-    components,
+    components: {
+        ...components,
+        ...labs,
+    },
     directives,
     rtl: config.theme.isRTL,
     icons: {
@@ -71,9 +74,9 @@ const vuetify = createVuetify({
     },
     lang: {
         current: config.locales.locale,
-        // Adjust the translation function based on your i18n setup
         t: (key, ...params) => i18n.t(key, params),
     },
 });
+
 
 export default vuetify;

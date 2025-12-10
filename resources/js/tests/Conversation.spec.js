@@ -20,7 +20,16 @@ vi.mock('@/store/conversationStore', () => ({
     currentConversation: { id: 123, uuid: 'uuid-123' },
     loadingConversation: false,
     messages: [],
-    fetchConversation: vi.fn(async () => ({ id: 123, uuid: 'uuid-123' })),
+    fetchConversation: vi.fn(async (id) => {
+      // Simulate what the real fetchConversation does - it reverses and calls setMessages
+      const mockMessages = [
+        { id: 2, body: 'Second', user_id: 10, user: { id: 10, username: 'u2' }, self_owned: false, created_at_human: '1m ago' },
+        { id: 1, body: 'First', user_id: 9, user: { id: 9, username: 'u1' }, self_owned: true, created_at_human: '2m ago' },
+      ]
+      const reversedMessages = [...mockMessages].reverse()
+      setMessagesMock(reversedMessages)
+      return { id: 123, uuid: 'uuid-123', messages: mockMessages }
+    }),
     addMessage: addMessageMock,
     setMessages: setMessagesMock,
     updateConversationUsers: vi.fn(),
@@ -62,9 +71,12 @@ describe('Conversation.vue', () => {
 
     await nextTick()
 
-    // setMessages should be called with reversed messages (oldest->newest)
-    expect(setMessagesMock).toHaveBeenCalledTimes(1)
-    const passed = setMessagesMock.mock.calls[0][0]
+    // setMessages should be called twice: first with [] to clear, then with reversed messages
+    expect(setMessagesMock).toHaveBeenCalledTimes(2)
+    // First call clears the messages
+    expect(setMessagesMock.mock.calls[0][0]).toEqual([])
+    // Second call sets the reversed messages (oldest->newest)
+    const passed = setMessagesMock.mock.calls[1][0]
     expect(passed.map(m => m.id)).toEqual([1, 2])
 
     // Renders empty state or container without throwing
