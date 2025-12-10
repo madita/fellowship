@@ -90,7 +90,7 @@
 
 <script>
 import { useConversationStore } from "@/store/conversationStore";
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, onUnmounted } from "vue";
 import ConversationAddUserForm from "@/components/conversation/forms/ConversationAddUserForm.vue";
 import ConversationReplyForm from "@/components/conversation/forms/ConversationReplyForm.vue";
 import ConversationMessages from "@/components/conversation/ConversationMessages.vue";
@@ -121,11 +121,13 @@ export default {
 
         const DEBUG = false;
 
-        // Use composables
-        const { setupListener } = useEchoListener(DEBUG);
+        // Use composables - destructure cleanup function
+        const { setupListener, cleanup } = useEchoListener(DEBUG);
         const { scrollToBottom } = useScrollToBottom(messageContainer);
 
         const setupEchoListeners = (conversationId) => {
+            // Cleanup previous listeners before setting up new ones
+            // Note: useEchoListener already handles this internally, but we're being explicit
             const channelName = `conversations.${conversationId}`;
             setupListener(channelName, 'Conversations\\MessageAdded', (e) => {
                 if (DEBUG) console.log('MessageAdded:', e);
@@ -142,6 +144,7 @@ export default {
                 if (DEBUG) console.log('Conversation ID changed:', { newId, oldId });
                 try {
                     conversationStore.setMessages([]);
+                    // setupListener in useEchoListener will automatically leave the previous channel
                     setupEchoListeners(newId);
 
                     // fetchConversation now handles setting messages automatically
@@ -154,6 +157,12 @@ export default {
             },
             { immediate: true }
         );
+
+        // Ensure cleanup happens when component is destroyed
+        onUnmounted(() => {
+            if (DEBUG) console.log('Conversation component unmounting, cleaning up listeners');
+            cleanup();
+        });
 
         return {
             conversation,

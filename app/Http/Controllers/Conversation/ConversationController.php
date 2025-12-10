@@ -25,7 +25,7 @@ class ConversationController extends Controller
             ->get();
 
         return response()->json(
-            $conversations->map(fn ($conversation) => $this->transformConversation($conversation))
+            $conversations->map(fn($conversation) => $this->transformConversation($conversation))
         );
     }
 
@@ -52,20 +52,16 @@ class ConversationController extends Controller
     }
 
     /**
-     * Mark conversation as read for the authenticated user.
+     * Mark conversation as read for the authenticated user
      */
-public function markAsRead(Conversation $conversation): JsonResponse
-{
-    if (!$conversation->users()->where('user_id', auth()->id())->exists()) {
-        abort(403);
+    public function markAsRead(Conversation $conversation): JsonResponse
+    {
+        auth()->user()->conversations()->updateExistingPivot($conversation->id, [
+            'read_at' => now()
+        ]);
+
+        return response()->json(['success' => true]);
     }
-
-    auth()->user()->conversations()->updateExistingPivot($conversation->id, [
-        'read_at' => now(),
-    ]);
-
-    return response()->json(['success' => true]);
-}
 
     public function store(StoreConversationRequest $request): JsonResponse
     {
@@ -74,9 +70,9 @@ public function markAsRead(Conversation $conversation): JsonResponse
             ->unique();
 
         $conversation = new Conversation([
-            'uuid'            => Str::uuid(),
+            'uuid' => Str::uuid(),
             'last_message_at' => now(),
-            'creator_id'      => auth()->id(),
+            'creator_id' => auth()->id(),
         ]);
 
         $conversation->save();
@@ -84,7 +80,7 @@ public function markAsRead(Conversation $conversation): JsonResponse
         // Create the initial message
         $conversation->messages()->create([
             'user_id' => $request->user()->id,
-            'body'    => $request->get('body'),
+            'body' => $request->get('body'),
         ]);
 
         // Sync users to conversation with read_at timestamp for creator
@@ -135,21 +131,21 @@ public function markAsRead(Conversation $conversation): JsonResponse
         }
 
         $data = [
-            'id'               => $conversation->id,
-            'uuid'             => $conversation->uuid,
-            'body'             => $firstMessage?->body,
-            'messages_count'   => $conversation->messages->count(),
-            'unread_count'     => $unreadCount,
-            'is_unread'        => $unreadCount > 0,
-            'read_at'          => $readAt ? ($readAt instanceof \Carbon\Carbon ? $readAt->toISOString() : $readAt) : null,
-            'created_at'       => $conversation->created_at->toISOString(),
+            'id' => $conversation->id,
+            'uuid' => $conversation->uuid,
+            'body' => $firstMessage?->body,
+            'messages_count' => $conversation->messages->count(),
+            'unread_count' => $unreadCount,
+            'is_unread' => $unreadCount > 0,
+            'read_at' => $readAt ? ($readAt instanceof \Carbon\Carbon ? $readAt->toISOString() : $readAt) : null,
+            'created_at' => $conversation->created_at->toISOString(),
             'created_at_human' => $conversation->created_at->diffForHumans(),
-            'last_message_at'  => $conversation->last_message_at
+            'last_message_at' => $conversation->last_message_at
                 ? ($conversation->last_message_at instanceof \Carbon\Carbon
                     ? $conversation->last_message_at->toISOString()
                     : $conversation->last_message_at)
                 : null,
-            'users'             => $conversation->users->map(fn ($user) => $this->transformUser($user)),
+            'users' => $conversation->users->map(fn($user) => $this->transformUser($user)),
             'participant_count' => $conversation->users->count() - 1,
         ];
 
@@ -157,11 +153,11 @@ public function markAsRead(Conversation $conversation): JsonResponse
         if ($includeMessages && $conversation->relationLoaded('messages')) {
             $data['messages'] = $conversation->messages->map(function ($message) {
                 return [
-                    'id'               => $message->id,
-                    'body'             => $message->body,
-                    'user_id'          => $message->user_id,
-                    'user'             => $this->transformUser($message->user),
-                    'self_owned'       => $message->self_owned ?? ($message->user_id === auth()->id()),
+                    'id' => $message->id,
+                    'body' => $message->body,
+                    'user_id' => $message->user_id,
+                    'user' => $this->transformUser($message->user),
+                    'self_owned' => $message->self_owned ?? ($message->user_id === auth()->id()),
                     'created_at_human' => $message->created_at_human ?? $message->created_at->diffForHumans(),
                 ];
             });
@@ -180,11 +176,11 @@ public function markAsRead(Conversation $conversation): JsonResponse
         }
 
         return [
-            'id'         => $user->id,
-            'email'      => $user->email,
-            'username'   => $user->username,
-            'initials'   => $user->initials,
-            'avatar'     => $user->avatar ?? null,
+            'id' => $user->id,
+            'email' => $user->email,
+            'username' => $user->username,
+            'initials' => $user->initials,
+            'avatar' => $user->avatar ?? null,
             'created_at' => $user->created_at?->toISOString(),
             'updated_at' => $user->updated_at?->toISOString(),
         ];

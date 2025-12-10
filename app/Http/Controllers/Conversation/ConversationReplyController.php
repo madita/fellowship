@@ -18,30 +18,10 @@ class ConversationReplyController extends Controller
 
     public function store(StoreConversationReplyRequest $request, Conversation $conversation): JsonResponse
     {
-        // Authorization check
-        // $this->authorize('reply', $conversation);
-
-        //dd($request);
-
         try {
-            // Create the reply
-            /* $reply = new Conversation();
-             $reply->body = $request->validated()['body'];
-             $reply->user()->associate($request->user());
-
-             $conversation->replies()->save($reply);
-             $conversation->touchLastReply();
-
-             // Load relationships
-             $reply->load(['user']);*/
-
-            /* $this->validate([
-                 'body' => 'required'
-             ]);*/
-
             $message = $conversation->messages()->create([
                 'user_id' => auth()->id(),
-                'body'    => $request->get('body'),
+                'body' => $request->get('body'),
             ]);
 
             $conversation->update([
@@ -61,16 +41,13 @@ class ConversationReplyController extends Controller
 
             // Simple array response (matching your frontend expectations)
             $responseData = [
-                'id'               => $message->id,
-                'body'             => $message->body,
-                'created_at'       => $message->created_at,
+                'id' => $message->id,
+                'body' => $message->body,
+                'created_at' => $message->created_at,
                 'created_at_human' => $message->created_at->diffForHumans(),
-                'self_owned'       => true,
-                'user'             => $message->user,
+                'self_owned' => true,
+                'user' => $message->user,
             ];
-
-            // Broadcast event
-//            broadcast(new ConversationReplyCreated($reply))->toOthers();
 
             return response()->json($responseData, 201);
         } catch (\Exception $e) {
@@ -87,10 +64,4 @@ class ConversationReplyController extends Controller
         }
     }
 
-    private function generateDefaultAvatar($user): string
-    {
-        $name = $user->name ?? $user->username;
-
-        return 'https://ui-avatars.com/api/?name='.urlencode($name).'&background=667eea&color=fff&size=128';
-    }
 }

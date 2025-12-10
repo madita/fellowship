@@ -12,6 +12,9 @@ const ECHO_LAST_ACTIVE = 'user_echo_last_active';
 // Singleton instance
 let echoInstance = null;
 
+// Guard to prevent duplicate visibilitychange listeners
+let visibilityListenerAttached = false;
+
 const echo = () => {
     const token = localStorage.getItem('token');
     const lastActive = localStorage.getItem(ECHO_LAST_ACTIVE);
@@ -107,15 +110,20 @@ const echo = () => {
     };
 
     // Handle visibility changes to reconnect when tab becomes active
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            const pusher = echoInstance?.connector?.pusher;
-            if (pusher && pusher.connection.state !== 'connected') {
-                console.log('Page visible, reconnecting...');
-                pusher.connect();
+    // Only attach the listener once to prevent duplicates
+    if (!visibilityListenerAttached) {
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                // Read from the current echoInstance when the event fires
+                const pusher = echoInstance?.connector?.pusher;
+                if (pusher && pusher.connection.state !== 'connected') {
+                    console.log('Page visible, reconnecting...');
+                    pusher.connect();
+                }
             }
-        }
-    });
+        });
+        visibilityListenerAttached = true;
+    }
 
     return echoInstance;
 };
@@ -154,6 +162,10 @@ echo.clearEchoState = () => {
         }
         echoInstance = null;
     }
+
+    // Note: We intentionally do NOT reset visibilityListenerAttached here
+    // because the event listener should persist across logins/logouts
+    // and will use the current echoInstance when it fires
 };
 
 // For debugging

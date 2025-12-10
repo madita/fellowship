@@ -27,14 +27,6 @@ class MessageAdded implements ShouldBroadcast
         $this->message = $message;
     }
 
-//    public function broadcastWith()
-//    {
-//        return [
-//            'message' => [
-//                'id' => $this->message->id
-//            ]
-//        ];
-//    }
     public function broadcastWith()
     {
         $this->message->load(['user', 'conversation']);
@@ -71,9 +63,4 @@ class MessageAdded implements ShouldBroadcast
 
         return $channels;
     }
-
-//    public function broadcastAs()
-//    {
-//        return 'message-added';
-//    }
 }

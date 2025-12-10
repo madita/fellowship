@@ -42,5 +42,6 @@ Broadcast::channel('conversations.{conversationId}', function ($user, $conversat
     $conversation = Conversation::where('uuid', $conversationId)->first();
 
     //return $user->isInConversation(\App\Models\Conversation\Conversation::find($conversationId));
-    return $user->inConversation($conversation->id);
+    //return $user->inConversation($conversation->id);
+    return $conversation && $user->inConversation($conversation->id);
 });

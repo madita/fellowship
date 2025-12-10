@@ -15,7 +15,7 @@ export const useUsersStore = defineStore('users', {
         async fetchUsers() {
             this.isLoading = true;
             try {
-                const response = await axios.get('/api/users/search');
+                const response = await axios.post('/api/users/search');
                 this.allUsers = response.data;
                 return response.data;
             } catch (error) {
@@ -35,7 +35,7 @@ export const useUsersStore = defineStore('users', {
 
             this.searchLoading = true;
             try {
-                const response = await axios.get(`/api/users/search?q=${encodeURIComponent(query)}`);
+                const response = await axios.post(`/api/users/search?q=${encodeURIComponent(query)}`);
                 this.searchResults = response.data;
                 return response.data;
             } catch (error) {
