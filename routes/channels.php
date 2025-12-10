@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Conversation\Conversation;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -13,6 +14,12 @@ use Illuminate\Support\Facades\Broadcast;
 |
 */
 
+// User private channel (singular - used by frontend)
+Broadcast::channel('user.{id}', function ($user, $id) {
+    return (int) $user->id === (int) $id;
+});
+
+// User private channel (plural - legacy support)
 Broadcast::channel('users.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
@@ -22,9 +29,19 @@ Broadcast::channel('app', function ($user) {
 });
 
 Broadcast::channel('chat', function ($user) {
-//    return [
-//        'id' => $user->id,
-//        'username' => $user->username
-//    ];
-    return $user;
+    // Return a plain array to ensure presence member data is serialized correctly
+    return [
+        'id'       => $user->id,
+        'username' => $user->username ?? ($user->name ?? ''),
+        'avatar'   => method_exists($user, 'getAttribute') ? $user->getAttribute('avatar') : ($user->avatar ?? null),
+    ];
+});
+
+Broadcast::channel('conversations.{conversationId}', function ($user, $conversationId) {
+    //dd($conversationId);
+    $conversation = Conversation::where('uuid', $conversationId)->first();
+
+    //return $user->isInConversation(\App\Models\Conversation\Conversation::find($conversationId));
+    //return $user->inConversation($conversation->id);
+    return $conversation && $user->inConversation($conversation->id);
 });

@@ -6,8 +6,6 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 /**
  * Interface CanHaveTaxonomies.
- *
- * @package App\Contracts
  */
 interface CanHaveTaxonomies
 {

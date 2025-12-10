@@ -480,10 +480,10 @@ class Taxonomy extends Model
     /**
      * Creates terms and taxonomies.
      *
-     * @param string|array                  $categories
-     * @param string                        $taxonomy
+     * @param string|array  $categories
+     * @param string        $taxonomy
      * @param Taxonomy|null $parent
-     * @param int|null                      $sort
+     * @param int|null      $sort
      *
      * @return Collection
      */

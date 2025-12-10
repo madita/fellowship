@@ -1,7 +1,8 @@
 import { default as axios } from 'axios'
 import { default as _ } from 'lodash'
-import Echo from 'laravel-echo'
-import Pusher from 'pusher-js'
+// import Echo from 'laravel-echo'
+// import Pusher from 'pusher-js'
+
 
 /**
  * We'll load the axios HTTP library which allows us to easily issue requests
@@ -12,6 +13,14 @@ import Pusher from 'pusher-js'
 window._ = _
 window.axios = axios
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
+
+// Set CSRF token for axios requests
+const token = document.head.querySelector('meta[name="csrf-token"]');
+if (token) {
+    window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
+} else {
+    console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
+}
 
 // axios.defaults.withCredentials = true;
 
@@ -25,32 +34,60 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
 
 // Pusher.logToConsole = true;
 
-window.Pusher = Pusher;
+// window.Pusher = Pusher;
+//
+//
+//
+// window.Echo = new Echo({
+//     broadcaster: "pusher",
+//     cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
+//     encrypted: true,
+//     key: import.meta.env.VITE_PUSHER_APP_KEY,
+//     forceTLS: true,
+//     authorizer: (channel) => {
+//         return {
+//             authorize: (socketId, callback) => {
+//                 axios.post('/broadcasting/auth', {
+//                     socket_id: socketId,
+//                     channel_name: channel.name
+//                 })
+//                     .then(response => {
+//                         // console.log('callback', response)
+//                         callback(false, response.data);
+//                     })
+//                     .catch(error => {
+//                         console.log('error', error)
+//                         callback(true, error);
+//                     });
+//             }
+//         };
+//     },
+// })
 
+import Echo from '@ably/laravel-echo';
+import * as Ably from 'ably';
 
+// window.Ably = require('ably');
+window.Ably = Ably;
 
+// Create new echo client instance using ably-js client driver.
 window.Echo = new Echo({
-    broadcaster: "pusher",
-    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
-    encrypted: true,
-    key: import.meta.env.VITE_PUSHER_APP_KEY,
-    forceTLS: true,
-    authorizer: (channel) => {
-        return {
-            authorize: (socketId, callback) => {
-                axios.post('/broadcasting/auth', {
-                    socket_id: socketId,
-                    channel_name: channel.name
-                })
-                    .then(response => {
-                        // console.log('callback', response)
-                        callback(false, response.data);
-                    })
-                    .catch(error => {
-                        console.log('error', error)
-                        callback(true, error);
-                    });
-            }
-        };
-    },
-})
+    broadcaster: 'ably',
+    key: import.meta.env.VITE_ABLY_PUBLIC_KEY,
+    authEndpoint: '/broadcasting/auth',
+    auth: {
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    }
+});
+
+// Register a callback for listing to connection state change
+window.Echo.connector.ably.connection.on((stateChange) => {
+    console.log("LOGGER:: Connection event :: ", stateChange);
+    if (stateChange.current === 'disconnected' && stateChange.reason?.code === 40142) { // key/token status expired
+        console.log("LOGGER:: Connection token expired https://help.ably.io/error/40142");
+    }
+});

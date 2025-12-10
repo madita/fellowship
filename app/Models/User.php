@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Chat\Message;
+use App\Models\Conversation\Conversation;
 use App\Models\Event\Event;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -159,5 +160,21 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->belongsToMany(Event::class, 'event_guests')
             ->withPivot('type')
             ->withTimestamps();
+    }
+
+    public function conversations()
+    {
+//        return $this->belongsToMany(Conversation::class)->whereNull('parent_id')->orderBy('last_reply', 'desc');
+        return $this->belongsToMany(Conversation::class)->withPivot('read_at');
+    }
+
+    public function inConversation($id)
+    {
+        return $this->conversations->contains('id', $id);
+    }
+
+    public function hasRead(Conversation $conversation)
+    {
+        return $this->conversations->find($conversation->id)->pivot->read_at;
     }
 }

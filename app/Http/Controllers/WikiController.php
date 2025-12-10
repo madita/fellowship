@@ -74,7 +74,7 @@ class WikiController extends Controller
                 //                    'taxable_title' => $data->{$data->getTaxableTitle()},
                 'data'       => $data,
                 'taxonomies' => $taxonomies,
-                'tags' => $tags];
+                'tags'       => $tags];
         });
 
         $paginator = new LengthAwarePaginator(
@@ -119,7 +119,6 @@ class WikiController extends Controller
 
     public function getPages()
     {
-
         $wikidata = Wiki::all();
 
         return response()->json($wikidata);
@@ -184,7 +183,7 @@ class WikiController extends Controller
         //        $data->content = Str::replace()
 
         //parents can be removed???
-        return response()->json(['page' => $data, 'user' => $user,  'wiki' => $wiki, 'parent' => $wiki->parent,'children' => $wiki->children, 'terms' => $taxonomies, 'tags' => $terms]);
+        return response()->json(['page' => $data, 'user' => $user,  'wiki' => $wiki, 'parent' => $wiki->parent, 'children' => $wiki->children, 'terms' => $taxonomies, 'tags' => $terms]);
     }
 
     public function history($wikiable, $id)
@@ -195,15 +194,13 @@ class WikiController extends Controller
     {
         //        dd($request->all());
         $parent = $request->get('parent_id');
-        $parent_id = $parent['id']??0;
+        $parent_id = $parent['id'] ?? 0;
 
         $page = auth()->user()->pages()->create([
             'title'        => $request->get('title'),
             'content'      => $request->get('content'),
             'sign_in_only' => 0,
             'published'    => 1]);
-
-
 
 //        dd($parent_id);
 
@@ -232,8 +229,8 @@ class WikiController extends Controller
             }
         }
         $wiki = new Wiki([
-            'title' => $page->title,
-            'slug' => $request->get('slug'),
+            'title'     => $page->title,
+            'slug'      => $request->get('slug'),
             'parent_id' => $parent_id,
         ]);
 
@@ -252,7 +249,7 @@ class WikiController extends Controller
         //        $model = $wiki['type'];
         //        $data = $model::where('id', $wiki['id'])->first();
         $parent = $request->get('parent_id');
-        $parent_id = $parent['id']??0;
+        $parent_id = $parent['id'] ?? 0;
 
         $wiki = Wiki::where('slug', '=', $slug)->first();
 

@@ -89,15 +89,19 @@ class CreateTaxonomieTable extends Migration
         });
 
         Schema::create($this->pivot, function (Blueprint $table) {
+            // Make taxonomy_id NOT NULL since it's part of the primary key
             $table->integer('taxonomy_id')
-                ->nullable()
                 ->unsigned()
                 ->references('id')
                 ->on($this->taxonomies);
 
-            $table->primary(['taxonomy_id', 'taxable_type', 'taxable_id']);
+            $table->timestamps();
 
-            $table->nullableMorphs('taxable');
+            // Use morphs() instead of nullableMorphs() to make the columns NOT NULL
+            $table->morphs('taxable');
+
+            // Now we can safely create the composite primary key
+            $table->primary(['taxonomy_id', 'taxable_type', 'taxable_id']);
         });
     }
 

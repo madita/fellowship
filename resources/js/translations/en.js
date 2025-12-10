@@ -204,6 +204,14 @@ export default {
         adminEvents: 'Event'
 
     },
+    pluralize: {
+        zero: 'No users',
+        one: '1 user',
+        two: '2 users',
+        few: '{n} users',
+        many: '{n} users',
+        other: 'no one | {n} other | {n} others'
+    },
     // Vuetify components translations
     $vuetify: {
         badge: 'Badge',

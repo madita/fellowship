@@ -57,8 +57,8 @@ trait HasRelateableContent
      * The `$item` parameter must be an Eloquent model or an ID. If you provide an ID, the model's
      * morph type must be specified as a second parameter.
      *
-     * @param Model|int $item
-     * @param string|null                             $type
+     * @param Model|int   $item
+     * @param string|null $type
      *
      * @return \Spatie\Relateable\Relateable
      */
@@ -73,8 +73,8 @@ trait HasRelateableContent
      * The `$item` parameter must be an Eloquent model or an ID. If you provide an ID, the model's
      * morph type must be specified as a second parameter.
      *
-     * @param Model|int $item
-     * @param string|null                             $type
+     * @param Model|int   $item
+     * @param string|null $type
      *
      * @return int
      */
@@ -130,8 +130,8 @@ trait HasRelateableContent
     }
 
     /**
-     * @param Model|int $item
-     * @param string|null                             $type
+     * @param Model|int   $item
+     * @param string|null $type
      *
      * @return array
      */

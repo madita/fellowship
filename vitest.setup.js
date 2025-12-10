@@ -42,11 +42,3 @@ vi.mock('@/api/useAPI.js', () => {
 global.URL.createObjectURL = vi.fn();
 global.Blob = vi.fn(() => ({}));
 
-// Mock document methods
-document.body.appendChild = vi.fn();
-document.body.removeChild = vi.fn();
-document.createElement = vi.fn(() => ({
-  setAttribute: vi.fn(),
-  style: {},
-  click: vi.fn()
-}));
