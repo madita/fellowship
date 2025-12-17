@@ -86,8 +86,7 @@
                         <v-btn class="d-block d-sm-none" icon @click="showSearch = true">
                             <v-icon>mdi-magnify</v-icon>
                         </v-btn>
-
-                                                <toolbar-language/>
+                                                <toolbar-language v-if="languageChangeEnabled"/>
 
 <!--                                                <toolbar-apps/>-->
 
@@ -149,6 +148,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from "@/store/authStore.js";
 import { useUserStore } from "@/store/userStore.js";
+import { useSettingsStore } from "@/store/settingStore.js";
 // import { useAppStore } from '@/api/useApi.js'
 import {useAppStore} from "@/store/app/index.js"
 import { useMagicKeys, whenever } from '@vueuse/core'
@@ -190,14 +190,19 @@ export default {
         const authStore = useAuthStore()
         const userStore = useUserStore()
         const conversationStore = useConversationStore()
+        const settingsStore = useSettingsStore()
 
-        const product = computed(() => appStore.product)
+        const product = computed(() => ({
+            name: settingsStore.appName || appStore.product.name,
+            version: appStore.product.version
+        }))
         const isContentBoxed = computed(() => appStore.isContentBoxed)
         const menuTheme = computed(() => appStore.menuTheme)
         const toolbarTheme = computed(() => appStore.toolbarTheme)
         const isToolbarDetached = computed(() => appStore.isToolbarDetached)
         const authenticated = computed(() => authStore.isLoggedIn)
         const user = computed(() => userStore.user)
+        const languageChangeEnabled = computed(() => settingsStore.languageChangeEnabled)
 
         const keys = useMagicKeys()
 
@@ -213,7 +218,12 @@ export default {
         let onConversationNew = null
         let presenceChannel = null
         let userPrivateChannelName = null
-        onMounted(() => {
+        onMounted(async () => {
+            // Fetch app settings if not already loaded
+            if (!settingsStore.settingsLoaded) {
+                await settingsStore.fetchAppSettings();
+            }
+
             whenever(keys['Ctrl+/'], () => {
                 console.log('Shift+Space have been pressed')
             })
@@ -319,6 +329,7 @@ export default {
             isToolbarDetached,
             authenticated,
             user,
+            languageChangeEnabled,
             signOut,
             routeHome
         }

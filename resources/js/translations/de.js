@@ -200,6 +200,7 @@ export default {
     'adminTaxonomie': 'Taxonomie',
     'adminTerms': 'Begriffe',
     'adminAnnouncement': 'Verkündung',
+    'adminSettings': 'Einstellungen',
     'adminEvents': 'Termine'
   },
   '$vuetify': {

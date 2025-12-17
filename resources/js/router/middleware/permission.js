@@ -10,6 +10,7 @@ export default function permission({ to, next }) {
         "admin-pages-form": "manage-page",
         "admin-posts": "manage-post",
         "admin-events": "manage-post",
+        "admin-settings": "manage-post",
         "admin-events-types": "manage-post",
         "admin-events-profiles": "manage-post",
         "admin-gallery": "manage-post",

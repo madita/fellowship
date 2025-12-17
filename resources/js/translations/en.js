@@ -201,6 +201,7 @@ export default {
         adminTaxonomie: 'Taxonomie',
         adminTerms: 'Terms',
         adminAnnouncement: 'Announcement',
+        adminSettings: 'Settings',
         adminEvents: 'Event'
 
     },

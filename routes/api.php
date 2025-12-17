@@ -127,6 +127,17 @@ Route::post('/related-items', [App\Http\Controllers\RelateableController::class,
 
 Route::get('/common/items', [App\Http\Controllers\CommonController::class, 'getItems']);
 
+// Public Settings Route (for unauthenticated access to public settings like app name and logo)
+Route::get('/settings/public', 'App\Http\Controllers\Admin\SettingsController@public');
+
+// Admin Settings Routes
+Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('/settings', 'App\Http\Controllers\Admin\SettingsController@index');
+    Route::post('/settings', 'App\Http\Controllers\Admin\SettingsController@update');
+    Route::post('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@uploadLogo');
+    Route::delete('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@deleteLogo');
+});
+
 Route::post('/login', function (Request $request) {
     $data = $request->validate([
         'email'    => 'required|email',

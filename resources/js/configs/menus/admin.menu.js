@@ -1,8 +1,9 @@
 export default
     {
+        //Not in use???
         // role: 'admin', icon: 'mdi-file-lock-outline', key: 'menu.admin', text: 'Admin Pages', regex: /^\/admin/,
         items: [
-            {permission: 'manage-role', icon: 'mdi-file-outline', key: 'mRenu.adminoles', text: 'Roles', link: '/admin/roles'},
+            {permission: 'manage-role', icon: 'mdi-file-outline', key: 'menu.adminoles', text: 'Roles', link: '/admin/roles'},
             {permission: 'manage-role', icon: 'mdi-file-outline', key: 'menu.adminPermission', text: 'Permissions', link: '/admin/permissions'},
             {icon: 'mdi-file-outline', key: 'menu.adminUsers', text: 'Users', link: '/admin/users'},
             {icon: 'mdi-file-outline', key: 'menu.adminPages', text: 'Pages', link: '/admin/pages'},

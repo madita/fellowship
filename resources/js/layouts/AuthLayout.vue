@@ -25,13 +25,24 @@
 // import { mapState } from 'vuex'
 
 import {useAppStore} from "../store/app/index.js";
+import {useSettingsStore} from "../store/settingStore.js";
 
 export default {
   computed: {
-      product: state => {
+      product() {
           const app = useAppStore()
-          return app.product
+          const settings = useSettingsStore()
+          return {
+              name: settings.appName || app.product.name,
+              version: app.product.version
+          }
       },
+  },
+  async mounted() {
+      const settingsStore = useSettingsStore();
+      if (!settingsStore.settingsLoaded) {
+          await settingsStore.fetchAppSettings();
+      }
   }
 }
 </script>
