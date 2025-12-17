@@ -63,4 +63,27 @@ class UserController extends Controller
                 ];
             });
     }
+
+    /**
+     * Update user preferences (timezone and date format)
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updatePreferences(Request $request)
+    {
+        $validated = $request->validate([
+            'timezone' => 'nullable|string|timezone',
+            'date_format' => 'nullable|string|in:Y-m-d,d/m/Y,m/d/Y,d.m.Y',
+            'time_format' => 'nullable|string|in:H:i:s,h:i:s A,H:i,h:i A',
+        ]);
+
+        $user = auth()->user();
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Preferences updated successfully',
+            'user' => $user,
+        ]);
+    }
 }

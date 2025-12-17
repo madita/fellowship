@@ -46,6 +46,9 @@ export const useSettingsStore = defineStore({
             }
             return value !== false;
         },
+        defaultTimezone: (state) => state.appSettings.default_timezone || 'UTC',
+        defaultDateFormat: (state) => state.appSettings.date_format || 'Y-m-d',
+        defaultTimeFormat: (state) => state.appSettings.time_format || 'H:i:s',
     },
 
     actions: {

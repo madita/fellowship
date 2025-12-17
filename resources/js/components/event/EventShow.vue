@@ -19,10 +19,10 @@
                     <v-row>
                         <v-col>
                             <span>
-                                {{ formatDate(event.startDate, 'dd.MM.yyyy') }}
-                                at {{ event.startTime }} - {{
-                                    formatDate(event.endDate, 'dd.MM.yyyy')
-                                }} at {{ event.endTime }}
+                                {{ formatDate(event.startDate) }}
+                                at {{ formatDate(event.startDate, userTimeFormat) }} - {{
+                                    formatDate(event.endDate)
+                                }} at {{ formatDate(event.endDate, userTimeFormat) }}
                             </span>
 
                             <h1 class="event-title">{{ event.title }}</h1>
@@ -112,9 +112,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useDateFormat } from '@/plugins/formatDate.js' // Adjust path as needed
+import { useUserStore } from '@/store/userStore.js'
+import { useSettingsStore } from '@/store/settingStore.js'
 //import EventDatePicker from './EventDatePicker.vue'
 import UserAvatar from '../common/UserAvatar.vue'
 import axios from 'axios'
@@ -127,6 +129,17 @@ const props = defineProps({
 // Composables
 const route = useRoute()
 const { formatDate } = useDateFormat()
+const userStore = useUserStore()
+const settingsStore = useSettingsStore()
+
+// Get user's time format preference (without seconds for display)
+const userTimeFormat = computed(() => {
+    const timeFormat = userStore.user?.time_format ||
+                      settingsStore.appSettings?.time_format ||
+                      'H:i:s';
+    // Remove seconds for cleaner display
+    return timeFormat.replace(':s', '').replace(' s', '');
+})
 
 // Reactive state
 const isLoading = ref(true)

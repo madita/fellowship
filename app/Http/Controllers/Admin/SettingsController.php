@@ -33,7 +33,10 @@ class SettingsController extends Controller
             'social_twitter',
             'social_facebook',
             'social_instagram',
-            'language_change_enabled'
+            'language_change_enabled',
+            'default_timezone',
+            'date_format',
+            'time_format',
         ];
         $settings = [];
 

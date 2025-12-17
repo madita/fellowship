@@ -42,6 +42,7 @@ Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 
     Route::get('/notification/markasread/{id}', 'App\Http\Controllers\NotificationController@notificationsingleread');
 
     Route::post('/avatar', 'App\Http\Controllers\UserController@uploadAvatar');
+    Route::patch('/preferences', 'App\Http\Controllers\UserController@updatePreferences');
 });
 
 Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function () {

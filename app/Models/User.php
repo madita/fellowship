@@ -37,6 +37,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'password',
         'last_login_at',
         'last_login_ip',
+        'timezone',
+        'date_format',
+        'time_format',
     ];
 
     /**
@@ -48,6 +51,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'avatar',
         'isAdmin',
         'initials',
+        'timezone',
+        'date_format',
+        'time_format',
     ];
 
     /**
@@ -121,6 +127,75 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function getAvatarAttribute()
     {
         return $this->getAvatar();
+    }
+
+    /**
+     * Get the user's timezone preference with fallback to global setting
+     *
+     * @return string
+     */
+    public function getTimezoneAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('timezone');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to UTC
+        try {
+            return Setting::get('default_timezone', 'UTC');
+        } catch (\Exception $e) {
+            return 'UTC';
+        }
+    }
+
+    /**
+     * Get the user's date format preference with fallback to global setting
+     *
+     * @return string
+     */
+    public function getDateFormatAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('date_format');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to Y-m-d
+        try {
+            return Setting::get('date_format', 'Y-m-d');
+        } catch (\Exception $e) {
+            return 'Y-m-d';
+        }
+    }
+
+    /**
+     * Get the user's time format preference with fallback to global setting
+     *
+     * @return string
+     */
+    public function getTimeFormatAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('time_format');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to H:i:s
+        try {
+            return Setting::get('time_format', 'H:i:s');
+        } catch (\Exception $e) {
+            return 'H:i:s';
+        }
     }
 
     public function registerMediaConversions(?Media $media = null): void

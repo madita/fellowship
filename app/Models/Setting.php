@@ -66,10 +66,36 @@ class Setting extends Model
     {
         Cache::forget('settings.all');
 
-        // Clear individual setting caches
-        $keys = static::pluck('key');
-        foreach ($keys as $key) {
+        // Clear individual setting caches for all possible keys
+        $commonKeys = [
+            'app_name',
+            'app_logo',
+            'app_copyright',
+            'contact_address',
+            'contact_phone',
+            'contact_email',
+            'social_twitter',
+            'social_facebook',
+            'social_instagram',
+            'default_language',
+            'default_timezone',
+            'date_format',
+            'time_format',
+            'language_change_enabled',
+        ];
+
+        foreach ($commonKeys as $key) {
             Cache::forget("setting.{$key}");
+        }
+
+        // Also clear any keys that exist in database
+        try {
+            $dbKeys = static::pluck('key');
+            foreach ($dbKeys as $key) {
+                Cache::forget("setting.{$key}");
+            }
+        } catch (\Exception $e) {
+            // Table might not exist yet during migrations
         }
     }
 

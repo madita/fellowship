@@ -43,7 +43,12 @@ export const useUserStore = defineStore('user', {
         hasPermission: (state) => (permissionName) => {
             if (!state.permissions || !Array.isArray(state.permissions)) return false
             return state.permissions.some(permission => permission.name === permissionName)
-        }
+        },
+
+        // User preference getters
+        userTimezone: (state) => state.user?.timezone || null,
+        userDateFormat: (state) => state.user?.date_format || null,
+        userTimeFormat: (state) => state.user?.time_format || null,
     },
 
     actions: {
@@ -140,6 +145,22 @@ export const useUserStore = defineStore('user', {
         // Check if user has specific permission
         checkPermission(permissionName) {
             return this.hasPermission(permissionName)
+        },
+
+        // Update user preferences (timezone, date_format, time_format)
+        async updatePreferences(preferences) {
+            try {
+                const { data } = await api.patch('/account/preferences', preferences)
+
+                // Refresh the full user data from the server to get updated values
+                // This ensures we have the complete user object with all computed attributes
+                await this.refreshUserInfo()
+
+                return data
+            } catch (error) {
+                console.error('Failed to update preferences:', error)
+                throw error
+            }
         },
 
         // Method to initialize user data (useful for app startup)

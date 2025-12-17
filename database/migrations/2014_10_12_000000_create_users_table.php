@@ -23,6 +23,9 @@ class CreateUsersTable extends Migration
             $table->rememberToken();
             $table->datetime('last_login_at')->nullable();
             $table->string('last_login_ip')->nullable();
+            $table->string('timezone', 64)->nullable();
+            $table->string('date_format', 32)->nullable();
+            $table->string('time_format', 32)->nullable();
             $table->timestamps();
         });
     }

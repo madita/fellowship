@@ -7,6 +7,7 @@ import mitt from 'mitt'
 
 import { useAuthStore } from '@/store/authStore.js'
 import { useUserStore } from '@/store/userStore.js'
+import { useSettingsStore } from '@/store/settingStore.js'
 // import { createPinia } from '@pinia/store'
 
 // VUEX - https://vuex.vuejs.org/
@@ -118,25 +119,38 @@ vueApp.config.globalProperties.$filters = {
     }
 }
 
-// Check user session on app initialization
-async function checkUserSession() {
+// Check user session and load settings on app initialization
+async function initializeApp() {
+    const authStore = useAuthStore();
+    const userStore = useUserStore();
+    const settingsStore = useSettingsStore();
+
     try {
-        const response = await axios.get('/api/user');
-        const userStore = useUserStore();
-        userStore.updateState(response.data);  // Assuming you have a setUser method in your store
-    } catch (error) {
-        if (error.response && error.response.status === 401) {
-            const authStore = useAuthStore();
-            if(authStore.isLoggedIn) {
-                authStore.resetStore();
-                //TODO refresh page
-                console.log('automatic logout')
+        // Load public settings first (needed for fallback values)
+        await settingsStore.fetchAppSettings();
+
+        // Only load user data if user is logged in
+        if (authStore.isLoggedIn) {
+            try {
+                // Then load user data using the store's method (handles localStorage sync)
+                await userStore.storeInfo();
+            } catch (error) {
+                if (error.response && error.response.status === 401) {
+                    // Session expired, logout user
+                    authStore.resetStore();
+                    userStore.clearState();
+                    console.log('Session expired, automatic logout');
+                } else {
+                    console.error('Failed to load user info:', error);
+                }
             }
         }
+    } catch (error) {
+        console.error('Failed to initialize app:', error);
     }
 }
 
-checkUserSession();
+initializeApp();
 // store.dispatch('auth/me').then(() => {
 //     new Vue({
 //         i18n,
