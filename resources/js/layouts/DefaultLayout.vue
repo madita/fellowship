@@ -100,6 +100,9 @@
                             <v-btn icon variant="text" class="mx-1" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
                                 <v-icon>mdi-account-group</v-icon>
                             </v-btn>
+                            <v-btn icon variant="text" class="mx-1" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t ? $t('toolbar.settings') : 'Settings'">
+                                <v-icon>mdi-cog</v-icon>
+                            </v-btn>
                             <toolbar-user/>
                         </template>
                         <template v-else>
@@ -114,8 +117,8 @@
         </v-app-bar>
 
         <v-main id="main-content">
-            <v-container class="fill-height pa-0" :fluid="!isContentBoxed">
-                <v-layout style="height: 100vh;">
+            <v-container class="pa-0" :fluid="!isContentBoxed">
+                <v-layout>
                     <slot></slot>
                 </v-layout>
             </v-container>
@@ -135,6 +138,16 @@
                 class="elevation-2"
             >
                 <SidebarUsers/>
+            </v-navigation-drawer>
+
+            <v-navigation-drawer
+                v-model="showSettingsDrawer"
+                location="right"
+                temporary
+                width="360"
+                class="elevation-2"
+            >
+                <UserSettingsSidebar/>
             </v-navigation-drawer>
 
 <!--            <ConversationBox v-if="showChatBox" />-->
@@ -164,6 +177,7 @@ import ConversationsNotification from '../components/conversation/ConversationsN
 import ConversationBox from '../components/conversation/ConversationBox.vue'
 import ConversationBoxManager from '../components/conversation/ConversationBoxManager.vue'
 import SidebarUsers from '../components/conversation/SidebarUsers.vue'
+import UserSettingsSidebar from '../components/settings/UserSettingsSidebar.vue'
 import eventBus from '../components/common/eventBus.js'
 import { useConversationStore } from '@/store/conversationStore.js'
 
@@ -177,6 +191,7 @@ export default {
         ConversationBox,
         ConversationBoxManager,
         SidebarUsers,
+        UserSettingsSidebar,
         ConversationsNotification
     },
     setup() {
@@ -185,6 +200,7 @@ export default {
         const navigation = ref(config.navigation)
         const showChatBox = ref(false)
         const showUsersDrawer = ref(false)
+        const showSettingsDrawer = ref(false)
 
         const appStore = useAppStore()
         const authStore = useAuthStore()
@@ -223,6 +239,9 @@ export default {
             if (!settingsStore.settingsLoaded) {
                 await settingsStore.fetchAppSettings();
             }
+
+            // Apply theme settings after settings are loaded
+            applyThemeSettings()
 
             whenever(keys['Ctrl+/'], () => {
                 console.log('Shift+Space have been pressed')
@@ -316,12 +335,27 @@ export default {
             }
         })
 
+        const applyThemeSettings = () => {
+            const themeMode = settingsStore.themeMode
+
+            if (themeMode === 'light') {
+                appStore.setDarkMode(false)
+            } else if (themeMode === 'dark') {
+                appStore.setDarkMode(true)
+            } else if (themeMode === 'system') {
+                // Detect system preference
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                appStore.setDarkMode(prefersDark)
+            }
+        }
+
         return {
             drawer,
             showSearch,
             navigation,
             showChatBox,
             showUsersDrawer,
+            showSettingsDrawer,
             product,
             isContentBoxed,
             menuTheme,
@@ -331,7 +365,8 @@ export default {
             user,
             languageChangeEnabled,
             signOut,
-            routeHome
+            routeHome,
+            applyThemeSettings
         }
     }
 }

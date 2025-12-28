@@ -1,6 +1,6 @@
 <template>
     <div>
-        <v-card class="text-center pa-1">
+        <v-card class="text-center pa-1" elevation="4">
             <v-card-title class="justify-center display-1 mb-2">Welcome</v-card-title>
             <v-card-subtitle>Sign in to your account</v-card-subtitle>
 

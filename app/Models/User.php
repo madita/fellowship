@@ -40,6 +40,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'timezone',
         'date_format',
         'time_format',
+        'theme_mode',
+        'language',
     ];
 
     /**
@@ -54,6 +56,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'timezone',
         'date_format',
         'time_format',
+        'theme_mode',
+        'language',
     ];
 
     /**
@@ -195,6 +199,52 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             return Setting::get('time_format', 'H:i:s');
         } catch (\Exception $e) {
             return 'H:i:s';
+        }
+    }
+
+    /**
+     * Get the user's theme mode preference with fallback to global setting
+     *
+     * @return string
+     */
+    public function getThemeModeAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('theme_mode');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to 'system'
+        try {
+            return Setting::get('theme_mode', 'system');
+        } catch (\Exception $e) {
+            return 'system';
+        }
+    }
+
+    /**
+     * Get the user's language preference with fallback to global setting
+     *
+     * @return string
+     */
+    public function getLanguageAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('language');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to 'en'
+        try {
+            return Setting::get('default_language', 'en');
+        } catch (\Exception $e) {
+            return 'en';
         }
     }
 

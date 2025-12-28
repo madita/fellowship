@@ -1,5 +1,5 @@
 <template>
-    <v-card class="pa-2">
+    <v-card class="pa-2" elevation="4">
         <v-alert
             v-for="(message,index) in errorMessages"
             :key="`error-${index}`"

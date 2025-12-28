@@ -24,6 +24,11 @@ export const useSettingsStore = defineStore({
             date_format: 'Y-m-d',
             time_format: 'H:i:s',
             language_change_enabled: true,
+            logo_light: null,
+            logo_dark: null,
+            theme_mode: 'system',
+            custom_footer_enabled: false,
+            custom_footer_html: '',
         },
         settingsLoaded: false,
     }),
@@ -31,6 +36,8 @@ export const useSettingsStore = defineStore({
     getters: {
         appName: (state) => state.appSettings.app_name || 'Fellowship',
         appLogo: (state) => state.appSettings.app_logo ? `/storage/${state.appSettings.app_logo}` : null,
+        logoLight: (state) => state.appSettings.logo_light || null,
+        logoDark: (state) => state.appSettings.logo_dark || null,
         appCopyright: (state) => state.appSettings.app_copyright || '© Fellowship 2021',
         contactAddress: (state) => state.appSettings.contact_address || '',
         contactPhone: (state) => state.appSettings.contact_phone || '',
@@ -49,6 +56,15 @@ export const useSettingsStore = defineStore({
         defaultTimezone: (state) => state.appSettings.default_timezone || 'UTC',
         defaultDateFormat: (state) => state.appSettings.date_format || 'Y-m-d',
         defaultTimeFormat: (state) => state.appSettings.time_format || 'H:i:s',
+        customFooterEnabled: (state) => {
+            const value = state.appSettings.custom_footer_enabled;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value === true;
+        },
+        customFooterHtml: (state) => state.appSettings.custom_footer_html || '',
+        themeMode: (state) => state.appSettings.theme_mode || 'system',
     },
 
     actions: {

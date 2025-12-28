@@ -137,6 +137,9 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::post('/settings', 'App\Http\Controllers\Admin\SettingsController@update');
     Route::post('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@uploadLogo');
     Route::delete('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@deleteLogo');
+    Route::post('/settings/image', 'App\Http\Controllers\Admin\SettingsController@uploadImage');
+    Route::delete('/settings/image', 'App\Http\Controllers\Admin\SettingsController@deleteImage');
+    Route::post('/settings/test-email', 'App\Http\Controllers\Admin\SettingsController@testEmail');
 });
 
 Route::post('/login', function (Request $request) {

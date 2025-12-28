@@ -797,8 +797,8 @@ onMounted(async () => {
 }
 
 .calendar-sidebar {
-    background-color: #fafafa;
-    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    background-color: rgb(var(--v-theme-surface));
+    border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 }
 
 .calendar-datepicker {
@@ -809,7 +809,7 @@ onMounted(async () => {
 }
 
 .calendar-main {
-    background-color: #fff;
+    background-color: rgb(var(--v-theme-background));
     min-height: 700px;
 
     .fc {
@@ -839,6 +839,44 @@ onMounted(async () => {
 
         .fc-day-today {
             background-color: rgba(var(--v-theme-primary), 0.05) !important;
+        }
+
+        // Dark mode specific styles
+        .fc-scrollgrid {
+            border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+        }
+
+        .fc-col-header-cell {
+            background-color: rgb(var(--v-theme-surface));
+            border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+        }
+
+        .fc-daygrid-day {
+            background-color: rgb(var(--v-theme-background));
+            border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+        }
+
+        .fc-timegrid-slot {
+            border-color: rgba(var(--v-theme-on-surface), 0.08) !important;
+        }
+
+        .fc-button {
+            background-color: rgb(var(--v-theme-primary)) !important;
+            border-color: rgb(var(--v-theme-primary)) !important;
+
+            &:not(:disabled):hover {
+                background-color: rgba(var(--v-theme-primary), 0.8) !important;
+            }
+
+            &.fc-button-active {
+                background-color: rgba(var(--v-theme-primary), 0.9) !important;
+            }
+        }
+
+        .fc-daygrid-day-number,
+        .fc-col-header-cell-cushion,
+        .fc-timegrid-slot-label {
+            color: rgb(var(--v-theme-on-surface));
         }
     }
 }

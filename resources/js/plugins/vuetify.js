@@ -33,13 +33,13 @@ const light = {
 }
 
 const dark = {
+    dark: true,
     colors: {
-        background: '#ffffff',
-        surface: '#f2f5f8',
-        // primary: '#0096c7',
-        primary: '#115571',
-        secondary: '#a0b9c8',
-        accent: '#048ba8',
+        background: '#121212',
+        surface: '#1e1e1e',
+        primary: '#4da6c7',
+        secondary: '#7ca9ba',
+        accent: '#26c4da',
         error: '#ef476f',
         info: '#2196F3',
         success: '#06d6a0',
@@ -49,6 +49,17 @@ const dark = {
 
 // const componentsTemp = {...components, VCalendar}
 
+// Determine initial theme from localStorage
+function getInitialTheme() {
+    const savedTheme = localStorage.getItem('theme_mode') || 'system'
+
+    if (savedTheme === 'system') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        return prefersDark ? 'dark' : 'light'
+    }
+
+    return savedTheme
+}
 
 // Create your Vuetify instance
 const vuetify = createVuetify({
@@ -66,7 +77,7 @@ const vuetify = createVuetify({
         },
     },
     theme: {
-        defaultTheme: 'light',
+        defaultTheme: getInitialTheme(),
         themes: {
             light,
             dark,

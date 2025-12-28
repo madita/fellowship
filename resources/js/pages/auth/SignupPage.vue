@@ -1,6 +1,6 @@
 <template>
     <div>
-        <v-card class="text-center pa-1">
+        <v-card class="text-center pa-1" elevation="4">
             <v-card-title class="justify-center display-1 mb-2">{{ $t('register.title') }}</v-card-title>
             <v-card-subtitle>Let's build amazing products</v-card-subtitle>
 

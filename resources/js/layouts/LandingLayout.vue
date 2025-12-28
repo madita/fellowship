@@ -18,6 +18,15 @@
                         Feature 1
                     </v-btn>
                     <toolbar-language v-if="languageChangeEnabled" class="mx-1"/>
+                    <v-btn
+                        icon
+                        variant="text"
+                        class="mx-1"
+                        @click="toggleTheme"
+                        :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+                    >
+                        <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+                    </v-btn>
                     <template v-if="!authenticated">
                         <v-btn class="mx-1" to="/auth/signin">
                             Sign In
@@ -39,6 +48,9 @@
                             <v-btn icon variant="text" class="mx-1" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
                                 <v-icon>mdi-account-group</v-icon>
                             </v-btn>
+                            <v-btn icon variant="text" class="mx-1" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t ? $t('toolbar.settings') : 'Settings'">
+                                <v-icon>mdi-cog</v-icon>
+                            </v-btn>
                             <toolbar-user/>
 
                     </template>
@@ -53,7 +65,11 @@
         <v-main id="main-content">
             <router-view :key="$route.fullPath"></router-view>
             <v-container></v-container>
-            <v-footer color="transparent">
+            <!-- Custom Footer (if enabled) -->
+            <div v-if="customFooterEnabled && customFooterHtml" v-html="processedFooterHtml"></div>
+
+            <!-- Default Footer -->
+            <v-footer v-else color="transparent">
                 <v-container class="py-5">
                     <v-row>
                         <v-col cols="12" md="4">
@@ -136,6 +152,16 @@
                 <SidebarUsers/>
             </v-navigation-drawer>
 
+            <v-navigation-drawer
+                v-model="showSettingsDrawer"
+                location="right"
+                temporary
+                width="360"
+                class="elevation-2"
+            >
+                <UserSettingsSidebar/>
+            </v-navigation-drawer>
+
             <conversation-box-manager />
         </v-main>
     </div>
@@ -154,6 +180,7 @@ import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue
 import ConversationsNotification from '../components/conversation/ConversationsNotification.vue'
 import ConversationBoxManager from '../components/conversation/ConversationBoxManager.vue'
 import SidebarUsers from '../components/conversation/SidebarUsers.vue'
+import UserSettingsSidebar from '../components/settings/UserSettingsSidebar.vue'
 
 
 // import {mapActions, mapGetters} from 'vuex'
@@ -165,13 +192,15 @@ export default {
         ToolbarNotifications,
         ConversationsNotification,
         ConversationBoxManager,
-        SidebarUsers
+        SidebarUsers,
+        UserSettingsSidebar
     },
     data() {
         return {
             logoimg,
             config,
             showUsersDrawer: false,
+            showSettingsDrawer: false,
             links: [{
                 label: 'Overview',
                 to: '#'
@@ -218,7 +247,19 @@ export default {
         },
         appLogo() {
             const settingsStore = useSettingsStore();
-            return settingsStore.appLogo || this.logoimg;
+            // Use logo_light from branding settings
+            // In the future, you can add theme detection to switch between logo_light and logo_dark
+            const logoLight = settingsStore.logoLight;
+            const logoDark = settingsStore.logoDark;
+
+            // For now, prefer logo_light, fallback to logo_dark, then default logo
+            if (logoLight) {
+                return `/storage/${logoLight}`;
+            } else if (logoDark) {
+                return `/storage/${logoDark}`;
+            }
+
+            return this.logoimg;
         },
         appName() {
             const settingsStore = useSettingsStore();
@@ -256,14 +297,189 @@ export default {
             const settingsStore = useSettingsStore();
             return settingsStore.socialInstagram;
         },
+        customFooterEnabled() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.customFooterEnabled;
+        },
+        customFooterHtml() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.customFooterHtml;
+        },
+        processedFooterHtml() {
+            if (!this.customFooterHtml) return '';
+
+            // Replace template variables with actual values
+            let html = this.customFooterHtml;
+
+            const replacements = {
+                '{{appName}}': this.appName || '',
+                '{{appCopyright}}': this.appCopyright || '',
+                '{{contactEmail}}': this.contactEmail || '',
+                '{{contactPhone}}': this.contactPhone || '',
+                '{{contactAddress}}': this.contactAddress || '',
+                '{{socialTwitter}}': this.socialTwitter || '',
+                '{{socialFacebook}}': this.socialFacebook || '',
+                '{{socialInstagram}}': this.socialInstagram || '',
+            };
+
+            // Replace all variables in the HTML
+            Object.keys(replacements).forEach(key => {
+                const regex = new RegExp(key.replace(/[{}]/g, '\\$&'), 'g');
+                html = html.replace(regex, replacements[key]);
+            });
+
+            // Handle v-if conditions by removing elements with empty values
+            // This is a simple implementation - more complex logic may be needed
+            html = html.replace(/v-if="([^"]*?)"/g, (match, condition) => {
+                // Check if the condition references an empty value
+                const isEmpty = Object.keys(replacements).some(key => {
+                    return condition.includes(key) && !replacements[key];
+                });
+                return isEmpty ? 'style="display: none;"' : '';
+            });
+
+            return html;
+        },
     },
 
+    computed: {
+        authenticated() {
+            const authStore = useAuthStore();
+            // console.log('landingauthstore',authStore)
+            return authStore.isLoggedIn ;
+        },
+        user() {
+            const userStore = useUserStore();
+            return userStore.user;
+        },
+        appLogo() {
+            const settingsStore = useSettingsStore();
+            // Use logo_light from branding settings
+            // In the future, you can add theme detection to switch between logo_light and logo_dark
+            const logoLight = settingsStore.logoLight;
+            const logoDark = settingsStore.logoDark;
+
+            // For now, prefer logo_light, fallback to logo_dark, then default logo
+            if (logoLight) {
+                return `/storage/${logoLight}`;
+            } else if (logoDark) {
+                return `/storage/${logoDark}`;
+            }
+
+            return this.logoimg;
+        },
+        appName() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.appName;
+        },
+        appCopyright() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.appCopyright;
+        },
+        languageChangeEnabled() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.languageChangeEnabled;
+        },
+        contactAddress() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.contactAddress;
+        },
+        contactPhone() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.contactPhone;
+        },
+        contactEmail() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.contactEmail;
+        },
+        socialTwitter() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.socialTwitter;
+        },
+        socialFacebook() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.socialFacebook;
+        },
+        socialInstagram() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.socialInstagram;
+        },
+        customFooterEnabled() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.customFooterEnabled;
+        },
+        customFooterHtml() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.customFooterHtml;
+        },
+        isDark() {
+            return this.$vuetify.theme.global.current.value.dark;
+        },
+        processedFooterHtml() {
+            if (!this.customFooterHtml) return '';
+
+            // Replace template variables with actual values
+            let html = this.customFooterHtml;
+
+            const replacements = {
+                '{{appName}}': this.appName || '',
+                '{{appCopyright}}': this.appCopyright || '',
+                '{{contactEmail}}': this.contactEmail || '',
+                '{{contactPhone}}': this.contactPhone || '',
+                '{{contactAddress}}': this.contactAddress || '',
+                '{{socialTwitter}}': this.socialTwitter || '',
+                '{{socialFacebook}}': this.socialFacebook || '',
+                '{{socialInstagram}}': this.socialInstagram || '',
+            };
+
+            // Replace all variables in the HTML
+            Object.keys(replacements).forEach(key => {
+                const regex = new RegExp(key.replace(/[{}]/g, '\\$&'), 'g');
+                html = html.replace(regex, replacements[key]);
+            });
+
+            // Handle v-if conditions by removing elements with empty values
+            // This is a simple implementation - more complex logic may be needed
+            html = html.replace(/v-if="([^"]*?)"/g, (match, condition) => {
+                // Check if the condition references an empty value
+                const isEmpty = Object.keys(replacements).some(key => {
+                    return condition.includes(key) && !replacements[key];
+                });
+                return isEmpty ? 'style="display: none;"' : '';
+            });
+
+            return html;
+        },
+    },
+
+    methods: {
+        applyThemeSettings() {
+            const settingsStore = useSettingsStore()
+            const themeMode = settingsStore.themeMode
+
+            if (themeMode === 'light') {
+                this.$vuetify.theme.global.name = 'light'
+            } else if (themeMode === 'dark') {
+                this.$vuetify.theme.global.name = 'dark'
+            } else if (themeMode === 'system') {
+                // Detect system preference
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                this.$vuetify.theme.global.name = prefersDark ? 'dark' : 'light'
+            }
+        },
+        toggleTheme() {
+            this.$vuetify.theme.global.name = this.$vuetify.theme.global.current.value.dark ? 'light' : 'dark';
+        }
+    },
     async mounted() {
         // console.log('test',this.authenticated)
         const settingsStore = useSettingsStore();
         if (!settingsStore.settingsLoaded) {
             await settingsStore.fetchAppSettings();
         }
+
+        // Apply theme settings after settings are loaded
+        this.applyThemeSettings()
     }
 }
 </script>

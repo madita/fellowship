@@ -8,6 +8,11 @@ import mitt from 'mitt'
 import { useAuthStore } from '@/store/authStore.js'
 import { useUserStore } from '@/store/userStore.js'
 import { useSettingsStore } from '@/store/settingStore.js'
+
+// Initialize theme before app mounts
+import { initializeTheme, setupThemeListener } from './utils/themeInit.js'
+initializeTheme()
+setupThemeListener()
 // import { createPinia } from '@pinia/store'
 
 // VUEX - https://vuex.vuejs.org/
