@@ -117,6 +117,35 @@
         </v-app-bar>
 
         <v-main id="main-content">
+            <!-- Maintenance Mode Banner for Admins -->
+            <v-alert
+                v-if="maintenanceMode"
+                type="warning"
+                variant="tonal"
+                class="ma-0 rounded-0"
+                density="comfortable"
+            >
+                <div class="d-flex align-center justify-space-between flex-wrap">
+                    <div class="d-flex align-center">
+                        <v-icon class="mr-2">mdi-wrench</v-icon>
+                        <div>
+                            <strong>Maintenance Mode Active</strong>
+                            <div class="text-caption">Non-admin users cannot access the site.</div>
+                        </div>
+                    </div>
+                    <v-btn
+                        size="small"
+                        color="warning"
+                        variant="elevated"
+                        :to="{ name: 'admin-settings' }"
+                        class="mt-2 mt-sm-0"
+                    >
+                        <v-icon class="mr-1" size="small">mdi-cog</v-icon>
+                        Manage Settings
+                    </v-btn>
+                </div>
+            </v-alert>
+
             <v-container class="pa-0" :fluid="!isContentBoxed">
                 <v-layout>
                     <slot></slot>
@@ -219,6 +248,7 @@ export default {
         const authenticated = computed(() => authStore.isLoggedIn)
         const user = computed(() => userStore.user)
         const languageChangeEnabled = computed(() => settingsStore.languageChangeEnabled)
+        const maintenanceMode = computed(() => settingsStore.maintenanceMode)
 
         const keys = useMagicKeys()
 
@@ -364,6 +394,7 @@ export default {
             authenticated,
             user,
             languageChangeEnabled,
+            maintenanceMode,
             signOut,
             routeHome,
             applyThemeSettings

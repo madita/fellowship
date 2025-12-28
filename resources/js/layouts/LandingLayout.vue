@@ -63,6 +63,35 @@
         </v-app-bar>
 
         <v-main id="main-content">
+            <!-- Maintenance Mode Banner for Admins -->
+            <v-alert
+                v-if="maintenanceMode && authenticated && isAdmin"
+                type="warning"
+                variant="tonal"
+                class="ma-0 rounded-0"
+                density="comfortable"
+            >
+                <div class="d-flex align-center justify-space-between flex-wrap">
+                    <div class="d-flex align-center">
+                        <v-icon class="mr-2">mdi-wrench</v-icon>
+                        <div>
+                            <strong>Maintenance Mode Active</strong>
+                            <div class="text-caption">Non-admin users cannot access the site.</div>
+                        </div>
+                    </div>
+                    <v-btn
+                        size="small"
+                        color="warning"
+                        variant="elevated"
+                        :to="{ name: 'admin-settings' }"
+                        class="mt-2 mt-sm-0"
+                    >
+                        <v-icon class="mr-1" size="small">mdi-cog</v-icon>
+                        Manage Settings
+                    </v-btn>
+                </div>
+            </v-alert>
+
             <router-view :key="$route.fullPath"></router-view>
             <v-container></v-container>
             <!-- Custom Footer (if enabled) -->
@@ -414,6 +443,15 @@ export default {
         },
         isDark() {
             return this.$vuetify.theme.global.current.value.dark;
+        },
+        maintenanceMode() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.maintenanceMode;
+        },
+        isAdmin() {
+            const userStore = useUserStore();
+            const user = userStore.user;
+            return user && (user.role === 'admin' || user.is_admin || user.roles?.includes('admin'));
         },
         processedFooterHtml() {
             if (!this.customFooterHtml) return '';

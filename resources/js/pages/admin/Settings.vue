@@ -9,8 +9,17 @@
 
                 <v-divider></v-divider>
 
-                <v-alert v-if="message" :type="alertType" class="mx-6 mt-4 mb-0">
+                <v-alert v-if="message" :type="alertType" class="mx-6 mt-4 mb-0" closable>
                     {{ message }}
+                </v-alert>
+
+                <v-alert
+                    v-if="settings.maintenance_mode"
+                    type="warning"
+                    variant="tonal"
+                    class="mx-6 mt-4 mb-0"
+                >
+                    <strong>Maintenance Mode is Currently Active!</strong>
                 </v-alert>
 
                 <v-tabs v-model="currentTab" bg-color="transparent" color="primary" show-arrows>

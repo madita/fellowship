@@ -29,6 +29,8 @@ export const useSettingsStore = defineStore({
             theme_mode: 'system',
             custom_footer_enabled: false,
             custom_footer_html: '',
+            maintenance_mode: false,
+            maintenance_message: '',
         },
         settingsLoaded: false,
     }),
@@ -65,6 +67,14 @@ export const useSettingsStore = defineStore({
         },
         customFooterHtml: (state) => state.appSettings.custom_footer_html || '',
         themeMode: (state) => state.appSettings.theme_mode || 'system',
+        maintenanceMode: (state) => {
+            const value = state.appSettings.maintenance_mode;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value === true;
+        },
+        maintenanceMessage: (state) => state.appSettings.maintenance_message || 'We are currently performing scheduled maintenance. Please check back soon.',
     },
 
     actions: {

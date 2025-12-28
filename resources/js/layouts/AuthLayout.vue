@@ -1,5 +1,20 @@
 <template>
   <div class="d-flex text-center flex-column flex-md-row flex-grow-1 auth-layout">
+    <!-- Maintenance Mode Warning for Auth Pages -->
+    <v-alert
+      v-if="maintenanceMode"
+      type="warning"
+      variant="tonal"
+      class="maintenance-banner"
+      density="compact"
+    >
+      <div class="d-flex align-center">
+        <v-icon class="mr-2" size="small">mdi-wrench</v-icon>
+        <strong>Maintenance Mode Active</strong>
+        <span class="ml-1 d-none d-sm-inline">- Only admins can access the site</span>
+      </div>
+    </v-alert>
+
     <!-- Theme Toggle Button -->
     <v-btn
       icon
@@ -60,6 +75,10 @@ export default {
         version: app.product.version
       }
     },
+    maintenanceMode() {
+      const settings = useSettingsStore()
+      return settings.maintenanceMode
+    }
   },
   methods: {
     applyThemeSettings() {
@@ -93,6 +112,16 @@ export default {
 .auth-layout {
   position: relative;
   min-height: 100vh;
+}
+
+.maintenance-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9;
+  margin: 0;
+  border-radius: 0;
 }
 
 .theme-toggle-btn {

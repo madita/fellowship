@@ -176,6 +176,12 @@ export function useSettings() {
                 });
 
             await axios.post('/api/admin/settings', { settings: settingsArray });
+
+            // Update the settings store after saving
+            const { useSettingsStore } = await import('@/store/settingStore.js');
+            const settingsStore = useSettingsStore();
+            await settingsStore.fetchAppSettings();
+
             showMessage('Settings saved successfully', 'success');
         } catch (error) {
             console.error('Failed to save settings:', error);
