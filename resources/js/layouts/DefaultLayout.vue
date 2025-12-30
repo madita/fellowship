@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="d-flex flex-column" style="min-height: 100vh;">
         <!-- Navigation -->
         <v-navigation-drawer
             v-model="drawer"
@@ -116,7 +116,7 @@
             </v-card>
         </v-app-bar>
 
-        <v-main id="main-content">
+        <v-main id="main-content" class="flex-grow-1">
             <!-- Maintenance Mode Banner for Admins -->
             <v-alert
                 v-if="maintenanceMode"
@@ -147,17 +147,10 @@
             </v-alert>
 
             <v-container class="pa-0" :fluid="!isContentBoxed">
-                <v-layout>
+                <v-layout style="min-height: 100vh;">
                     <slot></slot>
                 </v-layout>
             </v-container>
-
-            <v-footer inset>
-                <v-spacer></v-spacer>
-                <div class="overline">
-                    @fellowship
-                </div>
-            </v-footer>
 
             <v-navigation-drawer
                 v-model="showUsersDrawer"
@@ -183,6 +176,13 @@
             <conversation-box-manager />
 
         </v-main>
+
+        <v-footer app class="flex-shrink-0">
+            <v-spacer></v-spacer>
+            <div class="overline">
+                @fellowship
+            </div>
+        </v-footer>
     </div>
 </template>
 

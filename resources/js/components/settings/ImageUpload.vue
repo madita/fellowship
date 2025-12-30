@@ -85,7 +85,7 @@ const props = defineProps({
     },
     placeholderSize: {
         type: String,
-        default: 'normal', // 'normal' or 'small'
+        default: 'normal', // 'small', 'normal', or 'large'
     },
     density: {
         type: String,
@@ -117,9 +117,11 @@ const uploading = ref(false);
 
 const placeholderClass = props.placeholderSize === 'small'
     ? 'image-placeholder-small'
+    : props.placeholderSize === 'large'
+    ? 'image-placeholder-large'
     : 'image-placeholder';
 
-const placeholderIconSize = props.placeholderSize === 'small' ? 32 : 48;
+const placeholderIconSize = props.placeholderSize === 'small' ? 32 : props.placeholderSize === 'large' ? 64 : 48;
 
 // Initialize preview from current image
 watch(() => props.currentImage, (newVal) => {
@@ -200,6 +202,16 @@ async function handleDelete() {
 .image-placeholder-small {
     width: 64px;
     height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+}
+
+.image-placeholder-large {
+    width: 400px;
+    height: 200px;
     display: flex;
     align-items: center;
     justify-content: center;

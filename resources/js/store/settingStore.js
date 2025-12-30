@@ -31,6 +31,8 @@ export const useSettingsStore = defineStore({
             custom_footer_html: '',
             maintenance_mode: false,
             maintenance_message: '',
+            primary_color: '#115571',
+            secondary_color: '#a0b9c8',
         },
         settingsLoaded: false,
     }),
@@ -75,6 +77,10 @@ export const useSettingsStore = defineStore({
             return value === true;
         },
         maintenanceMessage: (state) => state.appSettings.maintenance_message || 'We are currently performing scheduled maintenance. Please check back soon.',
+        primaryColor: (state) => state.appSettings.primary_color || '#115571',
+        secondaryColor: (state) => state.appSettings.secondary_color || '#a0b9c8',
+        favicon: (state) => state.appSettings.favicon || null,
+        appIcon: (state) => state.appSettings.app_icon || null,
     },
 
     actions: {
@@ -97,6 +103,42 @@ export const useSettingsStore = defineStore({
 
                 // Settings are returned as a key-value object
                 this.appSettings = { ...this.appSettings, ...settings };
+
+                // Cache settings to localStorage for faster initial load
+                try {
+                    localStorage.setItem('app_settings', JSON.stringify(this.appSettings));
+                } catch (e) {
+                    console.warn('Failed to cache settings to localStorage:', e);
+                }
+
+                // Apply theme colors dynamically
+                try {
+                    const { updateThemeColors } = await import('@/plugins/vuetify.js');
+                    updateThemeColors(this.primaryColor, this.secondaryColor);
+                } catch (e) {
+                    console.warn('Failed to update theme colors:', e);
+                }
+
+                // Update favicon and app icons dynamically
+                try {
+                    if (this.favicon) {
+                        const faviconLink = document.getElementById('favicon');
+                        if (faviconLink) {
+                            faviconLink.href = `/storage/${this.favicon}`;
+                        }
+                    }
+
+                    if (this.appIcon) {
+                        const appIcon192 = document.getElementById('app-icon-192');
+                        const appIcon512 = document.getElementById('app-icon-512');
+                        const iconUrl = `/storage/${this.appIcon}`;
+
+                        if (appIcon192) appIcon192.href = iconUrl;
+                        if (appIcon512) appIcon512.href = iconUrl;
+                    }
+                } catch (e) {
+                    console.warn('Failed to update favicon/app icons:', e);
+                }
 
                 this.settingsLoaded = true;
             } catch (error) {

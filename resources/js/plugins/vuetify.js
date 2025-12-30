@@ -14,21 +14,43 @@ import * as directives from "vuetify/directives";
 import i18n from './vue-i18n';
 import config from '../configs';
 
-// import {lightTheme}, {darkTheme} from '../configs/theme.js'
+// Get colors from localStorage if available (settings may have been cached)
+function getThemeColors() {
+    const defaultColors = {
+        primary: '#115571',
+        secondary: '#a0b9c8',
+    }
+
+    try {
+        const cachedSettings = localStorage.getItem('app_settings')
+        if (cachedSettings) {
+            const settings = JSON.parse(cachedSettings)
+            return {
+                primary: settings.primary_color || defaultColors.primary,
+                secondary: settings.secondary_color || defaultColors.secondary,
+            }
+        }
+    } catch (e) {
+        console.warn('Failed to load colors from localStorage:', e)
+    }
+
+    return defaultColors
+}
+
+const themeColors = getThemeColors()
 
 const light = {
     dark: false,
-        colors: {
+    colors: {
         background: '#ffffff',
-            surface: '#f2f5f8',
-            // primary: '#0096c7',
-            primary: '#115571',
-            secondary: '#a0b9c8',
-            accent: '#048ba8',
-            error: '#ef476f',
-            info: '#2196F3',
-            success: '#06d6a0',
-            warning: '#ffd166'
+        surface: '#f2f5f8',
+        primary: themeColors.primary,
+        secondary: themeColors.secondary,
+        accent: '#048ba8',
+        error: '#ef476f',
+        info: '#2196F3',
+        success: '#06d6a0',
+        warning: '#ffd166'
     },
 }
 
@@ -37,8 +59,8 @@ const dark = {
     colors: {
         background: '#121212',
         surface: '#1e1e1e',
-        primary: '#4da6c7',
-        secondary: '#7ca9ba',
+        primary: themeColors.primary,
+        secondary: themeColors.secondary,
         accent: '#26c4da',
         error: '#ef476f',
         info: '#2196F3',
@@ -89,5 +111,15 @@ const vuetify = createVuetify({
     },
 });
 
+// Method to update theme colors dynamically
+export function updateThemeColors(primaryColor, secondaryColor) {
+    if (vuetify && vuetify.theme) {
+        // Update both light and dark themes
+        vuetify.theme.themes.value.light.colors.primary = primaryColor
+        vuetify.theme.themes.value.light.colors.secondary = secondaryColor
+        vuetify.theme.themes.value.dark.colors.primary = primaryColor
+        vuetify.theme.themes.value.dark.colors.secondary = secondaryColor
+    }
+}
 
 export default vuetify;

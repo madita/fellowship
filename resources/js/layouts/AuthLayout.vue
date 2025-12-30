@@ -56,10 +56,10 @@ export default {
     const theme = useTheme()
 
     const toggleTheme = () => {
-      theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
+      theme.global.name.value = theme.global.name.value === 'dark' ? 'light' : 'dark'
     }
 
-    const isDark = computed(() => theme.global.current.value.dark)
+    const isDark = computed(() => theme.global.name.value === 'dark')
 
     return {
       toggleTheme,
@@ -86,13 +86,13 @@ export default {
       const themeMode = settingsStore.themeMode
 
       if (themeMode === 'light') {
-        this.$vuetify.theme.global.name = 'light'
+        this.$vuetify.theme.global.name.value = 'light'
       } else if (themeMode === 'dark') {
-        this.$vuetify.theme.global.name = 'dark'
+        this.$vuetify.theme.global.name.value = 'dark'
       } else if (themeMode === 'system') {
         // Detect system preference
         const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-        this.$vuetify.theme.global.name = prefersDark ? 'dark' : 'light'
+        this.$vuetify.theme.global.name.value = prefersDark ? 'dark' : 'light'
       }
     }
   },
