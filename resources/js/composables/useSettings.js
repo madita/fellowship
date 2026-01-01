@@ -35,11 +35,6 @@ export function useSettings() {
         language_change_enabled: true,
         locale_auto_detect: false,
         translation_fallback_language: 'en',
-        currency: 'USD',
-        currency_symbol: '$',
-        currency_symbol_position: 'before',
-        number_format_locale: 'en_US',
-        rtl_support: false,
 
         // Branding & Appearance
         logo_light: null,

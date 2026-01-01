@@ -191,6 +191,7 @@ async function handleDelete() {
 <style scoped>
 .image-placeholder {
     width: 150px;
+    max-width: 100%;
     height: 100px;
     display: flex;
     align-items: center;
@@ -210,8 +211,10 @@ async function handleDelete() {
 }
 
 .image-placeholder-large {
-    width: 400px;
+    width: 100%;
+    max-width: 400px;
     height: 200px;
+    min-height: 150px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -221,5 +224,12 @@ async function handleDelete() {
 
 .gap-2 {
     gap: 8px;
+}
+
+@media (max-width: 600px) {
+    .image-placeholder-large {
+        height: 150px;
+        min-height: 120px;
+    }
 }
 </style>

@@ -90,7 +90,6 @@ const vuetify = createVuetify({
         ...labs,
     },
     directives,
-    rtl: config.theme.isRTL,
     icons: {
         defaultSet: 'mdi',
         aliases,

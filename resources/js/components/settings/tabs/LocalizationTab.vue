@@ -78,68 +78,6 @@
             ></v-select>
         </settings-card>
 
-        <!-- Currency Settings -->
-        <settings-card icon="mdi-currency-usd" title="Currency & Formatting">
-            <v-select
-                v-model="settings.currency"
-                label="Currency"
-                :items="currencies"
-                item-title="label"
-                item-value="value"
-                prepend-inner-icon="mdi-cash"
-                variant="outlined"
-                class="mb-4"
-                :error-messages="errors.currency"
-            ></v-select>
-
-            <v-text-field
-                v-model="settings.currency_symbol"
-                label="Currency Symbol"
-                prepend-inner-icon="mdi-currency-usd"
-                variant="outlined"
-                class="mb-4"
-                :error-messages="errors.currency_symbol"
-                hint="Symbol to display (e.g., $, €, £)"
-                persistent-hint
-            ></v-text-field>
-
-            <v-select
-                v-model="settings.currency_symbol_position"
-                label="Currency Symbol Position"
-                :items="currencyPositions"
-                item-title="label"
-                item-value="value"
-                prepend-inner-icon="mdi-format-align-left"
-                variant="outlined"
-                class="mb-4"
-                :error-messages="errors.currency_symbol_position"
-            ></v-select>
-
-            <v-select
-                v-model="settings.number_format_locale"
-                label="Number Format Locale"
-                :items="numberLocales"
-                item-title="label"
-                item-value="value"
-                prepend-inner-icon="mdi-numeric"
-                variant="outlined"
-                :error-messages="errors.number_format_locale"
-                hint="Format for displaying numbers (e.g., 1,234.56 vs 1.234,56)"
-                persistent-hint
-            ></v-select>
-        </settings-card>
-
-        <!-- Advanced Options -->
-        <settings-card icon="mdi-cog-outline" title="Advanced Options">
-            <v-switch
-                v-model="settings.rtl_support"
-                label="Enable RTL (Right-to-Left) Support"
-                color="primary"
-                :hint="settings.rtl_support ? 'Interface supports RTL languages (Arabic, Hebrew)' : 'RTL support disabled'"
-                persistent-hint
-            ></v-switch>
-        </settings-card>
-
         <v-btn
             :loading="isSaving"
             block
@@ -159,10 +97,7 @@ import {
     languages,
     timezones,
     dateFormats,
-    timeFormats,
-    currencies,
-    currencyPositions,
-    numberLocales
+    timeFormats
 } from '../../../composables/settingsConstants';
 
 defineProps({

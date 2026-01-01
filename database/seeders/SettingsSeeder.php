@@ -63,10 +63,10 @@ class SettingsSeeder extends Seeder
             // ===== 2. Localization / Internationalization =====
             'available_languages' => json_encode(['en' => true, 'de' => true]),
             'locale_auto_detect' => false,
-            'currency' => 'USD',
-            'currency_symbol' => '$',
-            'currency_symbol_position' => 'before', // before or after
-            'rtl_support' => false,
+//            'currency' => 'USD',
+//            'currency_symbol' => '$',
+//            'currency_symbol_position' => 'before', // before or after
+//            'rtl_support' => false,
             'translation_fallback_language' => 'en',
             'number_format_locale' => 'en_US',
 

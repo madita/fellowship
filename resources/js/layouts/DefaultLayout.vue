@@ -3,9 +3,9 @@
         <!-- Navigation -->
         <v-navigation-drawer
             v-model="drawer"
-            floating
+            :temporary="$vuetify.display.mobile"
+            :permanent="!$vuetify.display.mobile"
             class="elevation-1"
-            :right="$vuetify.rtl"
             :light="menuTheme === 'light'"
             :dark="menuTheme === 'dark'"
         >
@@ -47,7 +47,8 @@
             :light="toolbarTheme === 'light'"
             :dark="toolbarTheme === 'dark'"
         >
-            <v-card class="flex-grow-1 d-flex" :class="[isToolbarDetached ? 'pa-1 mt-3 mx-1' : 'pa-0 ma-0']"
+            <v-card class="flex-grow-1 d-flex"
+                    :class="[isToolbarDetached ? 'pa-1 mt-3 mx-1' : 'pa-0 ma-0']"
                     :flat="!isToolbarDetached">
                 <div class="d-flex flex-grow-1 align-center">
 
@@ -72,7 +73,7 @@
                         <!-- search input desktop -->
                         <v-text-field
                             ref="search"
-                            class="mx-1 hidden-xs-only"
+                            class="mx-1 d-none d-md-block"
                             :placeholder="$t('menu.search')"
                             prepend-inner-icon="mdi-magnify"
                             hide-details
@@ -83,31 +84,34 @@
 
                         <v-spacer class="d-block d-sm-none"></v-spacer>
 
-                        <v-btn class="d-block d-sm-none" icon @click="showSearch = true">
+                        <v-btn class="d-flex d-md-none" icon @click="showSearch = true">
                             <v-icon>mdi-magnify</v-icon>
                         </v-btn>
-                                                <toolbar-language v-if="languageChangeEnabled"/>
+                        <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-block"/>
 
 <!--                                                <toolbar-apps/>-->
 
                         <template v-if="authenticated">
-                            <div :class="[$vuetify.rtl ? 'ml-1' : 'mr-1']">
+                            <div class="mr-1">
                                 <toolbar-notifications/>
                             </div>
-                            <div :class="[$vuetify.rtl ? 'ml-1' : 'mr-1']">
+                            <div class="mr-1">
                                 <conversations-notification/>
                             </div>
-                            <v-btn icon variant="text" class="mx-1" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
+                            <v-btn icon variant="text" class="mx-1 d-none d-md-flex" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
                                 <v-icon>mdi-account-group</v-icon>
                             </v-btn>
-                            <v-btn icon variant="text" class="mx-1" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t ? $t('toolbar.settings') : 'Settings'">
+                            <v-btn icon variant="text" class="mx-1 d-none d-md-flex" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t ? $t('toolbar.settings') : 'Settings'">
                                 <v-icon>mdi-cog</v-icon>
                             </v-btn>
                             <toolbar-user/>
                         </template>
                         <template v-else>
-                            <v-btn class="mx-1" to="/auth/signin">
+                            <v-btn class="mx-1 d-none d-sm-flex" to="/auth/signin">
                                 Sign In
+                            </v-btn>
+                            <v-btn icon class="mx-1 d-flex d-sm-none" to="/auth/signin" :title="$t ? $t('auth.signin') : 'Sign In'">
+                                <v-icon>mdi-login</v-icon>
                             </v-btn>
                         </template>
 
@@ -147,29 +151,31 @@
             </v-alert>
 
             <v-container class="pa-0" :fluid="!isContentBoxed">
-                <v-layout style="min-height: 100vh;">
+                <v-layout style="min-height: 100vh;" :class="{'px-2 px-sm-4': !isContentBoxed}">
                     <slot></slot>
                 </v-layout>
             </v-container>
 
             <v-navigation-drawer
+                v-if="showUsersDrawer"
                 v-model="showUsersDrawer"
                 location="right"
                 temporary
-                width="320"
+                :width="$vuetify.display.mobile ? '100%' : '320'"
                 class="elevation-2"
             >
-                <SidebarUsers/>
+                <SidebarUsers @close="showUsersDrawer = false"/>
             </v-navigation-drawer>
 
             <v-navigation-drawer
+                v-if="showSettingsDrawer"
                 v-model="showSettingsDrawer"
                 location="right"
                 temporary
-                width="360"
+                :width="$vuetify.display.mobile ? '100%' : '360'"
                 class="elevation-2"
             >
-                <UserSettingsSidebar/>
+                <UserSettingsSidebar @close="showSettingsDrawer = false"/>
             </v-navigation-drawer>
 
 <!--            <ConversationBox v-if="showChatBox" />-->
@@ -188,6 +194,7 @@
 
 <script>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useTheme } from 'vuetify'
 import { useAuthStore } from "@/store/authStore.js";
 import { useUserStore } from "@/store/userStore.js";
 import { useSettingsStore } from "@/store/settingStore.js";
@@ -224,13 +231,14 @@ export default {
         ConversationsNotification
     },
     setup() {
-        const drawer = ref(null)
+        const drawer = ref(true)
         const showSearch = ref(false)
         const navigation = ref(config.navigation)
         const showChatBox = ref(false)
         const showUsersDrawer = ref(false)
         const showSettingsDrawer = ref(false)
 
+        const theme = useTheme()
         const appStore = useAppStore()
         const authStore = useAuthStore()
         const userStore = useUserStore()
@@ -262,6 +270,7 @@ export default {
 
         let onChatClose = null
         let onConversationNew = null
+        let onSettingsOpen = null
         let presenceChannel = null
         let userPrivateChannelName = null
         onMounted(async () => {
@@ -283,6 +292,10 @@ export default {
             // Open chat box when a conversation is initiated from SidebarUsers or elsewhere
             onConversationNew = () => { showChatBox.value = true }
             eventBus.on('conversation.new', onConversationNew)
+
+            // Open settings drawer when clicked from toolbar user menu
+            onSettingsOpen = () => { showSettingsDrawer.value = true }
+            eventBus.on('toolbar.settings.open', onSettingsOpen)
 
             // Initialize presence for SidebarUsers if Echo is available
             try {
@@ -352,6 +365,9 @@ export default {
             if (onConversationNew) {
                 eventBus.off('conversation.new', onConversationNew)
             }
+            if (onSettingsOpen) {
+                eventBus.off('toolbar.settings.open', onSettingsOpen)
+            }
             try {
                 if (presenceChannel && window.Echo) {
                     // Leave presence channel
@@ -369,13 +385,13 @@ export default {
             const themeMode = settingsStore.themeMode
 
             if (themeMode === 'light') {
-                appStore.setDarkMode(false)
+                theme.global.name.value = 'light'
             } else if (themeMode === 'dark') {
-                appStore.setDarkMode(true)
+                theme.global.name.value = 'dark'
             } else if (themeMode === 'system') {
                 // Detect system preference
                 const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-                appStore.setDarkMode(prefersDark)
+                theme.global.name.value = prefersDark ? 'dark' : 'light'
             }
         }
 

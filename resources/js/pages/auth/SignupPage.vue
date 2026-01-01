@@ -102,12 +102,12 @@
 
 <!--                    <div v-if="errorProvider" class="error&#45;&#45;text">{{ errorProviderMessages }}</div>-->
 
-                    <div class="mt-5 overline">
+                    <div v-if="termsUrl || policyUrl" class="mt-5 overline">
                         {{ $t('register.agree') }}
                         <br/>
-                        <router-link to="">{{ $t('common.tos') }}</router-link>
-                        &
-                        <router-link to="">{{ $t('common.policy') }}</router-link>
+                        <a v-if="termsUrl" :href="termsUrl" target="_blank" rel="noopener noreferrer">{{ $t('common.tos') }}</a>
+                        <template v-if="termsUrl && policyUrl">&</template>
+                        <a v-if="policyUrl" :href="policyUrl" target="_blank" rel="noopener noreferrer">{{ $t('common.policy') }}</a>
                     </div>
                 </v-form>
             </v-card-text>
@@ -135,6 +135,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from "@/store/authStore.js"
+import { useSettingsStore } from "@/store/settingStore.js"
 import axios from 'axios'
 
 // Router
@@ -142,6 +143,9 @@ const router = useRouter()
 
 // Auth store
 const authStore = useAuthStore()
+
+// Settings store
+const settingsStore = useSettingsStore()
 
 // Template refs
 const formRef = ref(null)
@@ -199,6 +203,8 @@ const rules = {
 // Computed properties
 const authenticated = computed(() => authStore.isLoggedIn)
 const isVerified = computed(() => authStore.isVerified)
+const termsUrl = computed(() => settingsStore.termsConditionsUrl)
+const policyUrl = computed(() => settingsStore.privacyPolicyUrl)
 
 // Methods
 const signIn = async (credentials) => {

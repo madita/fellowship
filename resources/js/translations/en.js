@@ -148,12 +148,21 @@ export default {
         continue: 'Continue Shopping',
         checkout: 'Checkout'
     },
+    toolbar: {
+        users: 'Users',
+        settings: 'Settings'
+    },
+    auth: {
+        signin: 'Sign In',
+        signup: 'Sign Up'
+    },
     menu: {
         main: 'Main',
         search: 'Search (press "ctrl + /" to focus)',
         dashboard: 'Dashboard',
         logout: 'Logout',
         profile: 'Profile',
+        settings: 'Settings',
         wiki: 'Wiki',
         blank: 'Blank Page',
         pages: 'Pages',

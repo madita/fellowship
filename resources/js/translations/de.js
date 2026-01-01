@@ -148,12 +148,21 @@ export default {
     'continue': 'Mit dem Einkaufen fortfahren',
     'checkout': 'Auschecken'
   },
+  'toolbar': {
+    'users': 'Benutzer',
+    'settings': 'Einstellungen'
+  },
+  'auth': {
+    'signin': 'Anmelden',
+    'signup': 'Registrieren'
+  },
   'menu': {
     'main': 'Hauptmenü',
     'search': 'Suchen (drücken Sie \'Strg + /\', um zu fokussieren)',
     'dashboard': 'Instrumententafel',
     'logout': 'Ausloggen',
     'profile': 'Profil',
+    'settings': 'Einstellungen',
      'wiki': 'Wiki',
     'blank': 'Leere Seite',
     'pages': 'Seiten',

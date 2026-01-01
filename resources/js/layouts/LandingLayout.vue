@@ -1,58 +1,56 @@
 <template>
     <div>
-        <v-app-bar app flat height="80">
+        <v-app-bar app flat :height="$vuetify.display.mobile ? 56 : 80">
             <a class="skip-nav-link" href="#main-content">
                 skip navigation
             </a>
-            <v-container class="py-0 px-0 px-sm-2 fill-height d-flex align-center">
-                <router-link to="/dashboard" class="d-flex align-center text-decoration-none mr-2">
-                    <img :src="appLogo" :alt="`Logo of ${appName}`" height="70"/>
+            <v-container class="py-0 px-2 px-sm-3 fill-height d-flex align-center">
+                <router-link to="/dashboard" class="d-flex align-center text-decoration-none logo-container">
+                    <img :src="appLogo" :alt="`Logo of ${appName}`" class="logo-responsive"/>
                 </router-link>
 
                 <v-spacer></v-spacer>
 
-
-<!--                <div class="d-none d-md-block">-->
-                <div class="d-flex align-center">
-                    <v-btn class="mx-1" @click="$helpers.scrollTo('#feature1');">
+                <div class="toolbar-actions d-flex align-center">
+                    <v-btn class="d-none d-md-flex" size="small" @click="$helpers.scrollTo('#feature1');">
                         Feature 1
                     </v-btn>
-                    <toolbar-language v-if="languageChangeEnabled" class="mx-1"/>
+                    <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-flex"/>
                     <v-btn
                         icon
                         variant="text"
-                        class="mx-1"
+                        size="small"
                         @click="toggleTheme"
                         :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
                     >
                         <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
                     </v-btn>
                     <template v-if="!authenticated">
-                        <v-btn class="mx-1" to="/auth/signin">
+                        <v-btn class="d-none d-sm-flex" size="small" to="/auth/signin">
                             Sign In
                         </v-btn>
+                        <v-btn icon size="small" class="d-flex d-sm-none" to="/auth/signin" :title="$t ? $t('auth.signin') : 'Sign In'">
+                            <v-icon>mdi-login</v-icon>
+                        </v-btn>
 
-                        <v-btn variant="outlined" size="large" to="/auth/signup">
+                        <v-btn variant="outlined" class="d-none d-sm-flex" to="/auth/signup">
                             Sign Up
+                        </v-btn>
+                        <v-btn icon size="small" variant="outlined" class="d-flex d-sm-none" to="/auth/signup" :title="$t ? $t('auth.signup') : 'Sign Up'">
+                            <v-icon>mdi-account-plus</v-icon>
                         </v-btn>
                     </template>
 
                     <template v-else>
-
-                            <div :class="[$vuetify.rtl ? 'ml-1' : 'mr-1']">
-                                <toolbar-notifications/>
-                            </div>
-                            <div :class="[$vuetify.rtl ? 'ml-1' : 'mr-1']">
-                                <conversations-notification/>
-                            </div>
-                            <v-btn icon variant="text" class="mx-1" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
+                            <toolbar-notifications/>
+                            <conversations-notification/>
+                            <v-btn icon variant="text" size="small" class="d-none d-md-flex" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
                                 <v-icon>mdi-account-group</v-icon>
                             </v-btn>
-                            <v-btn icon variant="text" class="mx-1" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t ? $t('toolbar.settings') : 'Settings'">
+                            <v-btn icon variant="text" size="small" class="d-none d-md-flex" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t ? $t('toolbar.settings') : 'Settings'">
                                 <v-icon>mdi-cog</v-icon>
                             </v-btn>
                             <toolbar-user/>
-
                     </template>
 
                 </div>
@@ -68,15 +66,15 @@
                 v-if="maintenanceMode && authenticated && isAdmin"
                 type="warning"
                 variant="tonal"
-                class="ma-0 rounded-0"
+                class="ma-0 rounded-0 px-3 px-sm-4"
                 density="comfortable"
             >
-                <div class="d-flex align-center justify-space-between flex-wrap">
+                <div class="d-flex align-center justify-space-between flex-wrap gap-2">
                     <div class="d-flex align-center">
-                        <v-icon class="mr-2">mdi-wrench</v-icon>
+                        <v-icon class="mr-2" size="small">mdi-wrench</v-icon>
                         <div>
-                            <strong>Maintenance Mode Active</strong>
-                            <div class="text-caption">Non-admin users cannot access the site.</div>
+                            <strong class="text-body-2 text-sm-body-1">Maintenance Mode Active</strong>
+                            <div class="text-caption d-none d-sm-block">Non-admin users cannot access the site.</div>
                         </div>
                     </div>
                     <v-btn
@@ -84,10 +82,10 @@
                         color="warning"
                         variant="elevated"
                         :to="{ name: 'admin-settings' }"
-                        class="mt-2 mt-sm-0"
+                        class="flex-shrink-0"
                     >
                         <v-icon class="mr-1" size="small">mdi-cog</v-icon>
-                        Manage Settings
+                        <span class="d-none d-sm-inline">Manage </span>Settings
                     </v-btn>
                 </div>
             </v-alert>
@@ -99,13 +97,13 @@
 
             <!-- Default Footer -->
             <v-footer v-else color="transparent">
-                <v-container class="py-5">
+                <v-container class="py-3 py-sm-5 px-3 px-sm-4">
                     <v-row>
-                        <v-col cols="12" md="4">
-                            <div class="text-h6 text-lg-h5 font-weight-bold">Navigation</div>
-                            <div style="width: 80px; height: 2px" class="mb-5 mt-1 bg-primary"/>
+                        <v-col cols="12" md="4" class="mb-4 mb-md-0">
+                            <div class="text-subtitle-1 text-sm-h6 text-lg-h5 font-weight-bold">Navigation</div>
+                            <div style="width: 80px; height: 2px" class="mb-3 mb-sm-5 mt-1 bg-primary"/>
                             <div class="d-flex flex-wrap">
-                                <div v-for="(link, i) in links" :key="i" class="w-half body-1 mb-1">
+                                <div v-for="(link, i) in links" :key="i" class="w-half body-2 body-sm-1 mb-1">
                                     <router-link
                                         v-if="link.to"
                                         class="text-decoration-none text-primary"
@@ -121,74 +119,75 @@
                                 </div>
                             </div>
                         </v-col>
-                        <v-col cols="12" md="4">
-                            <div class="text-h6 text-lg-h5 font-weight-bold">Contact Information</div>
-                            <div style="width: 80px; height: 2px" class="mb-5 mt-1 bg-primary"/>
-                            <div v-if="contactAddress" class="d-flex mb-2 font-weight-bold">
-                                <v-icon color="primary lighten-1" class="mr-2">mdi-map-marker-outline</v-icon>
-                                {{ contactAddress }}
+                        <v-col cols="12" md="4" class="mb-4 mb-md-0">
+                            <div class="text-subtitle-1 text-sm-h6 text-lg-h5 font-weight-bold">Contact Information</div>
+                            <div style="width: 80px; height: 2px" class="mb-3 mb-sm-5 mt-1 bg-primary"/>
+                            <div v-if="contactAddress" class="d-flex align-start mb-2 font-weight-bold text-body-2 text-sm-body-1">
+                                <v-icon color="primary lighten-1" class="mr-2 flex-shrink-0" size="small">mdi-map-marker-outline</v-icon>
+                                <span>{{ contactAddress }}</span>
                             </div>
-                            <div v-if="contactPhone" class="d-flex mb-2">
-                                <v-icon color="primary lighten-1" class="mr-2">mdi-phone-outline</v-icon>
+                            <div v-if="contactPhone" class="d-flex align-center mb-2 text-body-2 text-sm-body-1">
+                                <v-icon color="primary lighten-1" class="mr-2 flex-shrink-0" size="small">mdi-phone-outline</v-icon>
                                 <a :href="`tel:${contactPhone}`" class="text-decoration-none text-primary">{{ contactPhone }}</a>
                             </div>
-                            <div v-if="contactEmail" class="d-flex mb-2">
-                                <v-icon color="primary lighten-1" class="mr-2">mdi-email-outline</v-icon>
-                                <a :href="`mailto:${contactEmail}`" class="text-decoration-none text-primary">{{ contactEmail }}</a>
+                            <div v-if="contactEmail" class="d-flex align-center mb-2 text-body-2 text-sm-body-1">
+                                <v-icon color="primary lighten-1" class="mr-2 flex-shrink-0" size="small">mdi-email-outline</v-icon>
+                                <a :href="`mailto:${contactEmail}`" class="text-decoration-none text-primary text-truncate">{{ contactEmail }}</a>
                             </div>
                         </v-col>
-                        <v-col cols="12" md="4">
-                            <div class="text-h6 text-lg-h5 font-weight-bold">Newsletter</div>
-                            <div style="width: 80px; height: 2px" class="mb-5 mt-1 bg-primary"/>
-                            <div class="d-flex flex-column flex-lg-row w-full">
+                        <v-col cols="12" md="4" class="mb-4 mb-md-0">
+                            <div class="text-subtitle-1 text-sm-h6 text-lg-h5 font-weight-bold">Newsletter</div>
+                            <div style="width: 80px; height: 2px" class="mb-3 mb-sm-5 mt-1 bg-primary"/>
+                            <div class="d-flex flex-column flex-sm-row w-full">
                                 <v-text-field
                                     variant="outlined"
                                     label="Your email"
-                                    dense
-                                    height="44"
-                                    class="mr-lg-2"
+                                    density="compact"
+                                    class="mr-sm-2 mb-2 mb-sm-0"
                                 ></v-text-field>
-                                <v-btn size="large" color="primary">Subscribe</v-btn>
+                                <v-btn color="primary" class="flex-shrink-0">Subscribe</v-btn>
                             </div>
-                            <div v-if="socialTwitter || socialFacebook || socialInstagram" class="text-center text-md-right mt-4 mt-lg-2">
-                                Connect
-                                <v-btn v-if="socialTwitter" :href="socialTwitter" target="_blank" fab small color="primary" class="ml-2">
-                                    <v-icon>mdi-twitter</v-icon>
+                            <div v-if="socialTwitter || socialFacebook || socialInstagram" class="text-center text-md-right mt-4 mt-lg-2 text-body-2">
+                                <span class="mr-2">Connect</span>
+                                <v-btn v-if="socialTwitter" :href="socialTwitter" target="_blank" icon size="small" color="primary" class="ml-1">
+                                    <v-icon size="small">mdi-twitter</v-icon>
                                 </v-btn>
-                                <v-btn v-if="socialFacebook" :href="socialFacebook" target="_blank" fab small color="primary" class="ml-2">
-                                    <v-icon>mdi-facebook</v-icon>
+                                <v-btn v-if="socialFacebook" :href="socialFacebook" target="_blank" icon size="small" color="primary" class="ml-1">
+                                    <v-icon size="small">mdi-facebook</v-icon>
                                 </v-btn>
-                                <v-btn v-if="socialInstagram" :href="socialInstagram" target="_blank" fab small color="primary" class="ml-2">
-                                    <v-icon>mdi-instagram</v-icon>
+                                <v-btn v-if="socialInstagram" :href="socialInstagram" target="_blank" icon size="small" color="primary" class="ml-1">
+                                    <v-icon size="small">mdi-instagram</v-icon>
                                 </v-btn>
                             </div>
                         </v-col>
                     </v-row>
-                    <v-divider class="my-3"></v-divider>
-                    <div class="text-center caption">
+                    <v-divider class="my-2 my-sm-3"></v-divider>
+                    <div class="text-center text-caption text-sm-body-2">
                         {{ appCopyright }}
                     </div>
                 </v-container>
             </v-footer>
 
             <v-navigation-drawer
+                v-if="showUsersDrawer"
                 v-model="showUsersDrawer"
                 location="right"
                 temporary
-                width="320"
+                :width="$vuetify.display.mobile ? '100%' : '320'"
                 class="elevation-2"
             >
-                <SidebarUsers/>
+                <SidebarUsers @close="showUsersDrawer = false"/>
             </v-navigation-drawer>
 
             <v-navigation-drawer
+                v-if="showSettingsDrawer"
                 v-model="showSettingsDrawer"
                 location="right"
                 temporary
-                width="360"
+                :width="$vuetify.display.mobile ? '100%' : '360'"
                 class="elevation-2"
             >
-                <UserSettingsSidebar/>
+                <UserSettingsSidebar @close="showSettingsDrawer = false"/>
             </v-navigation-drawer>
 
             <conversation-box-manager />
@@ -211,6 +210,7 @@ import ConversationsNotification from '../components/conversation/ConversationsN
 import ConversationBoxManager from '../components/conversation/ConversationBoxManager.vue'
 import SidebarUsers from '../components/conversation/SidebarUsers.vue'
 import UserSettingsSidebar from '../components/settings/UserSettingsSidebar.vue'
+import eventBus from '../components/common/eventBus.js'
 
 
 // import {mapActions, mapGetters} from 'vuex'
@@ -262,12 +262,6 @@ export default {
                 label: 'Press',
                 to: '#'
             }]
-        }
-    },
-    methods: {
-        async signOut() {
-            const auth = useAuthStore()
-            await auth.logout()
         }
     },
 
@@ -403,6 +397,10 @@ export default {
     },
 
     methods: {
+        async signOut() {
+            const auth = useAuthStore()
+            await auth.logout()
+        },
         applyThemeSettings() {
             const settingsStore = useSettingsStore()
             const themeMode = settingsStore.themeMode
@@ -419,6 +417,9 @@ export default {
         },
         toggleTheme() {
             this.theme.global.name.value = this.theme.global.name.value === 'dark' ? 'light' : 'dark';
+        },
+        openSettingsDrawer() {
+            this.showSettingsDrawer = true
         }
     },
     async mounted() {
@@ -430,6 +431,12 @@ export default {
 
         // Apply theme settings after settings are loaded
         this.applyThemeSettings()
+
+        // Listen for settings drawer open event from toolbar user menu
+        eventBus.on('toolbar.settings.open', this.openSettingsDrawer)
+    },
+    beforeUnmount() {
+        eventBus.off('toolbar.settings.open', this.openSettingsDrawer)
     }
 }
 </script>
@@ -448,5 +455,86 @@ export default {
 /* Ensure main content area has minimum viewport height */
 :deep(.v-main) {
     min-height: 100vh;
+}
+
+/* Logo container and responsive logo */
+.logo-container {
+    flex-shrink: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.logo-responsive {
+    height: 70px;
+    max-height: 100%;
+    width: auto;
+    max-width: 180px;
+    object-fit: contain;
+}
+
+/* Toolbar actions */
+.toolbar-actions {
+    flex-wrap: nowrap;
+    gap: 2px;
+}
+
+/* Mobile specific styles */
+@media (max-width: 600px) {
+    .logo-responsive {
+        height: 48px;
+        max-width: 100px;
+    }
+
+    :deep(.v-app-bar) {
+        overflow-x: hidden;
+    }
+
+    :deep(.v-toolbar__content) {
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+    }
+
+    .toolbar-actions {
+        gap: 0;
+    }
+
+    .toolbar-actions :deep(.v-btn) {
+        min-width: 36px !important;
+        padding: 0 4px !important;
+    }
+
+    .toolbar-actions :deep(.v-btn:not(.v-btn--icon)) {
+        padding: 0 8px !important;
+    }
+}
+
+/* Tablet specific styles */
+@media (min-width: 600px) and (max-width: 960px) {
+    .logo-responsive {
+        height: 60px;
+        max-width: 150px;
+    }
+
+    .toolbar-actions {
+        gap: 4px;
+    }
+}
+
+/* Responsive footer text */
+@media (max-width: 960px) {
+    .w-half {
+        width: 100% !important;
+    }
+}
+
+/* Additional mobile footer styles */
+@media (max-width: 600px) {
+    :deep(.v-footer) .text-truncate {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 }
 </style>

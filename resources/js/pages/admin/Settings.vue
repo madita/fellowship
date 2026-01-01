@@ -1,15 +1,15 @@
 <template>
     <div class="flex-grow-1">
-        <v-container>
+        <v-container fluid class="pa-2 pa-sm-4">
             <v-card elevation="2">
-                <v-card-title class="text-h5 font-weight-bold pa-6 bg-gradient">
-                    <v-icon class="mr-3" size="28">mdi-cog</v-icon>
-                    Application Settings
+                <v-card-title class="text-h6 text-sm-h5 font-weight-bold pa-3 pa-sm-6 bg-gradient">
+                    <v-icon class="mr-2 mr-sm-3" :size="$vuetify.display.mobile ? 24 : 28">mdi-cog</v-icon>
+                    <span class="d-none d-sm-inline">Application </span>Settings
                 </v-card-title>
 
                 <v-divider></v-divider>
 
-                <v-alert v-if="message" :type="alertType" class="mx-6 mt-4 mb-0" closable>
+                <v-alert v-if="message" :type="alertType" class="mx-2 mx-sm-6 mt-4 mb-0" closable>
                     {{ message }}
                 </v-alert>
 
@@ -17,37 +17,37 @@
                     v-if="settings.maintenance_mode"
                     type="warning"
                     variant="tonal"
-                    class="mx-6 mt-4 mb-0"
+                    class="mx-2 mx-sm-6 mt-4 mb-0"
                 >
                     <strong>Maintenance Mode is Currently Active!</strong>
                 </v-alert>
 
                 <v-tabs v-model="currentTab" bg-color="transparent" color="primary" show-arrows>
                     <v-tab value="general">
-                        <v-icon class="mr-2">mdi-cog-outline</v-icon>
-                        General
+                        <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-cog-outline</v-icon>
+                        <span class="d-none d-sm-inline">General</span>
                     </v-tab>
                     <v-tab value="localization">
-                        <v-icon class="mr-2">mdi-earth</v-icon>
-                        Localization
+                        <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-earth</v-icon>
+                        <span class="d-none d-sm-inline">Localization</span>
                     </v-tab>
                     <v-tab value="branding">
-                        <v-icon class="mr-2">mdi-palette</v-icon>
-                        Branding
+                        <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-palette</v-icon>
+                        <span class="d-none d-sm-inline">Branding</span>
                     </v-tab>
                     <v-tab value="seo">
-                        <v-icon class="mr-2">mdi-search-web</v-icon>
-                        SEO
+                        <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-search-web</v-icon>
+                        <span class="d-none d-sm-inline">SEO</span>
                     </v-tab>
                     <v-tab value="advanced">
-                        <v-icon class="mr-2">mdi-cog-sync</v-icon>
-                        Advanced
+                        <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-cog-sync</v-icon>
+                        <span class="d-none d-sm-inline">Advanced</span>
                     </v-tab>
                 </v-tabs>
 
                 <v-divider></v-divider>
 
-                <v-card-text class="pa-6">
+                <v-card-text class="pa-2 pa-sm-4 pa-md-6">
                     <v-window v-model="currentTab">
                         <v-window-item value="general">
                             <general-tab

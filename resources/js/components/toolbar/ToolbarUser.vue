@@ -13,17 +13,24 @@
             <v-list-item
                 v-for="(item, index) in menu"
                 :key="index"
-                :to="item.link"
+                :to="item.link || undefined"
                 :exact="item.exact"
                 :disabled="item.disabled"
-                link
+                @click="item.action ? handleAction(item.action) : null"
+                :link="!!item.link || !!item.action"
             >
+                <template v-slot:prepend v-if="item.icon">
+                    <v-icon>{{ item.icon }}</v-icon>
+                </template>
                 <v-list-item-title>{{ item.key ? $t(item.key) : item.text }}</v-list-item-title>
             </v-list-item>
 
             <v-divider class="my-1"></v-divider>
 
             <v-list-item @click.prevent="signOut">
+                <template v-slot:prepend>
+                    <v-icon>mdi-logout</v-icon>
+                </template>
                 <v-list-item-title>{{ $t('menu.logout') }}</v-list-item-title>
             </v-list-item>
         </v-list>
@@ -37,6 +44,7 @@ import UserAvatar from "../common/UserAvatar.vue";
 import { useAuthStore } from '@/store/authStore.js'
 import { useUserStore } from '@/store/userStore.js'
 import {useRouter} from "vue-router";
+import eventBus from '../common/eventBus.js'
 
 export default {
     components: {
@@ -55,6 +63,12 @@ export default {
             router.replace({name: 'home'});
         }
 
+        const handleAction = (action) => {
+            if (action === 'settings') {
+                eventBus.emit('toolbar.settings.open')
+            }
+        }
+
         onMounted(() => {
             //console.log(userStore.user);
         });
@@ -62,6 +76,7 @@ export default {
         return {
             menu,
             signOut,
+            handleAction,
             user: userStore.user,
             authenticated: authStore.isLoggedIn
         };

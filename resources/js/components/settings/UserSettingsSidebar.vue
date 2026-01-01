@@ -7,9 +7,14 @@
           User Settings
         </span>
       </div>
-      <v-btn icon variant="text" size="small" @click="collapsed = !collapsed">
-        <v-icon>{{ collapsed ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
-      </v-btn>
+      <div class="d-flex align-center">
+        <v-btn icon variant="text" size="small" @click="collapsed = !collapsed">
+          <v-icon>{{ collapsed ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
+        </v-btn>
+        <v-btn icon variant="text" size="small" @click="$emit('close')">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </div>
     </v-card-title>
 
     <v-expand-transition>
@@ -151,6 +156,8 @@ import { useI18n } from 'vue-i18n'
 import { format } from 'date-fns'
 import { toZonedTime } from 'date-fns-tz'
 import axios from 'axios'
+
+const emit = defineEmits(['close'])
 
 const theme = useTheme()
 const userStore = useUserStore()
