@@ -39,6 +39,10 @@
                         <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-search-web</v-icon>
                         <span class="d-none d-sm-inline">SEO</span>
                     </v-tab>
+                    <v-tab value="homepage">
+                        <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-home-edit</v-icon>
+                        <span class="d-none d-sm-inline">Homepage</span>
+                    </v-tab>
                     <v-tab value="advanced">
                         <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-cog-sync</v-icon>
                         <span class="d-none d-sm-inline">Advanced</span>
@@ -88,6 +92,10 @@
                             />
                         </v-window-item>
 
+                        <v-window-item value="homepage">
+                            <homepage-tab />
+                        </v-window-item>
+
                         <v-window-item value="advanced">
                             <advanced-tab
                                 :settings="settings"
@@ -110,6 +118,7 @@ import GeneralTab from '../../components/settings/tabs/GeneralTab.vue';
 import LocalizationTab from '../../components/settings/tabs/LocalizationTab.vue';
 import BrandingTab from '../../components/settings/tabs/BrandingTab.vue';
 import SeoTab from '../../components/settings/tabs/SeoTab.vue';
+import HomepageTab from '../../components/settings/tabs/HomepageTab.vue';
 import AdvancedTab from '../../components/settings/tabs/AdvancedTab.vue';
 
 const currentTab = ref('general');

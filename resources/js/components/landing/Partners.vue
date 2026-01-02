@@ -7,8 +7,18 @@
 </template>
 
 <script setup>
-// Currently, there are no reactive properties or methods.
-// If any are added, the setup function can be utilized here.
+const props = defineProps({
+  content: {
+    type: Object,
+    default: () => ({
+      showDecorations: true
+    })
+  },
+  config: {
+    type: Object,
+    default: () => ({})
+  }
+});
 </script>
 
 <style scoped>

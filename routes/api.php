@@ -131,8 +131,13 @@ Route::get('/common/items', [App\Http\Controllers\CommonController::class, 'getI
 // Public Settings Route (for unauthenticated access to public settings like app name and logo)
 Route::get('/settings/public', 'App\Http\Controllers\Admin\SettingsController@public');
 
+// Public Homepage Routes (for homepage rendering)
+Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@getActiveWidgets');
+Route::get('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@getActiveMenu');
+
 // Admin Settings Routes
 Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
+    // Settings
     Route::get('/settings', 'App\Http\Controllers\Admin\SettingsController@index');
     Route::post('/settings', 'App\Http\Controllers\Admin\SettingsController@update');
     Route::post('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@uploadLogo');
@@ -140,6 +145,22 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::post('/settings/image', 'App\Http\Controllers\Admin\SettingsController@uploadImage');
     Route::delete('/settings/image', 'App\Http\Controllers\Admin\SettingsController@deleteImage');
     Route::post('/settings/test-email', 'App\Http\Controllers\Admin\SettingsController@testEmail');
+
+    // Homepage Widgets
+    Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@index');
+    Route::post('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@store');
+    Route::patch('/homepage/widgets/{id}', 'App\Http\Controllers\Admin\HomepageWidgetController@update');
+    Route::delete('/homepage/widgets/{id}', 'App\Http\Controllers\Admin\HomepageWidgetController@destroy');
+    Route::post('/homepage/widgets/reorder', 'App\Http\Controllers\Admin\HomepageWidgetController@updateOrder');
+    Route::post('/homepage/widgets/{id}/toggle', 'App\Http\Controllers\Admin\HomepageWidgetController@toggle');
+    Route::post('/homepage/widgets/{id}/duplicate', 'App\Http\Controllers\Admin\HomepageWidgetController@duplicate');
+
+    // Homepage Menu
+    Route::get('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@index');
+    Route::post('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@store');
+    Route::patch('/homepage/menu/{id}', 'App\Http\Controllers\Admin\HomepageMenuController@update');
+    Route::delete('/homepage/menu/{id}', 'App\Http\Controllers\Admin\HomepageMenuController@destroy');
+    Route::post('/homepage/menu/reorder', 'App\Http\Controllers\Admin\HomepageMenuController@updateOrder');
 });
 
 Route::post('/login', function (Request $request) {

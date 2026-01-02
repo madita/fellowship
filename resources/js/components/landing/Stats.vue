@@ -20,24 +20,36 @@
   </v-container>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
+<script setup>
+const props = defineProps({
+  content: {
+    type: Object,
+    required: false,
+    default: () => ({
       stats: [{
         title: 'Projects',
-        value: '4,253'
+        value: '4,253',
+        description: 'Lorem ipsum dolor sit amet'
       }, {
         title: 'API Requests',
-        value: '1,283,787'
+        value: '1,283,787',
+        description: 'Lorem ipsum dolor sit amet'
       }, {
         title: 'Subscribers',
-        value: '1,348'
+        value: '1,348',
+        description: 'Lorem ipsum dolor sit amet'
       }, {
         title: 'Businesses',
-        value: '331,234'
+        value: '331,234',
+        description: 'Lorem ipsum dolor sit amet'
       }]
-    }
+    })
+  },
+  config: {
+    type: Object,
+    default: () => ({})
   }
-}
+});
+
+const stats = props.content.stats || [];
 </script>

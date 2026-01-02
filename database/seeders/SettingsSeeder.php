@@ -124,6 +124,8 @@ class SettingsSeeder extends Seeder
 
             // ===== 7. Content Settings =====
             'homepage_type' => 'default', // default, custom, wiki, etc.
+            'homepage_builder_enabled' => true,
+            'homepage_menu_enabled' => true,
             'blog_enabled' => false,
             'posts_per_page' => 10,
             'default_author_id' => null,

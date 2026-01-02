@@ -83,6 +83,8 @@ export function useSettings() {
 
         // Content Settings
         homepage_type: 'default',
+        homepage_builder_enabled: true,
+        homepage_menu_enabled: true,
         blog_enabled: false,
         posts_per_page: 10,
         comments_enabled: false,

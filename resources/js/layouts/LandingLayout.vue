@@ -12,9 +12,24 @@
                 <v-spacer></v-spacer>
 
                 <div class="toolbar-actions d-flex align-center">
-                    <v-btn class="d-none d-md-flex" size="small" @click="$helpers.scrollTo('#feature1');">
-                        Feature 1
-                    </v-btn>
+                    <!-- Dynamic homepage menu -->
+                    <template v-if="menuItems && menuItems.length > 0">
+                        <v-btn
+                            v-for="item in menuItems"
+                            :key="item.id"
+                            class="d-none d-md-flex"
+                            size="small"
+                            @click="scrollToSection(item.anchor_target)"
+                        >
+                            {{ item.label }}
+                        </v-btn>
+                    </template>
+                    <!-- Fallback menu -->
+                    <template v-else>
+                        <v-btn class="d-none d-md-flex" size="small" @click="scrollToSection('#feature1')">
+                            Feature 1
+                        </v-btn>
+                    </template>
                     <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-flex"/>
                     <v-btn
                         icon
@@ -202,6 +217,7 @@ import logoimg from '@/assets/images/logo.png';
 import {useAuthStore} from "@/store/authStore.js";
 import {useUserStore} from "@/store/userStore.js";
 import {useSettingsStore} from "@/store/settingStore.js";
+import {useHomepageStore} from "@/store/homepageStore.js";
 import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
 import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
@@ -394,12 +410,29 @@ export default {
 
             return html;
         },
+        menuItems() {
+            const homepageStore = useHomepageStore();
+            return homepageStore.activeMenuItems;
+        },
     },
 
     methods: {
         async signOut() {
             const auth = useAuthStore()
             await auth.logout()
+        },
+        scrollToSection(anchorId) {
+            // Ensure anchor ID has # prefix
+            const targetId = anchorId.startsWith('#') ? anchorId : `#${anchorId}`;
+            const element = document.querySelector(targetId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                // Fallback to using the helper if available
+                if (this.$helpers && this.$helpers.scrollTo) {
+                    this.$helpers.scrollTo(targetId);
+                }
+            }
         },
         applyThemeSettings() {
             const settingsStore = useSettingsStore()
@@ -431,6 +464,14 @@ export default {
 
         // Apply theme settings after settings are loaded
         this.applyThemeSettings()
+
+        // Fetch homepage menu items
+        const homepageStore = useHomepageStore();
+        try {
+            await homepageStore.fetchPublicMenu();
+        } catch (error) {
+            console.error('Failed to load homepage menu:', error);
+        }
 
         // Listen for settings drawer open event from toolbar user menu
         eventBus.on('toolbar.settings.open', this.openSettingsDrawer)

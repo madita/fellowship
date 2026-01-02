@@ -18,37 +18,41 @@
     </v-container>
 </template>
 
-<script>
-import { ref } from 'vue';
-
-export default {
-    setup() {
-        const features = ref([
-            {
-                icon: 'mdi-account-check-outline',
-                title: 'Account Verification',
-                description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit quam aliquam. Autem assumenda'
-            },
-            {
-                icon: 'mdi-lifebuoy',
-                title: 'Dedicated Support',
-                description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit quam aliquam. Autem assumenda'
-            },
-            {
-                icon: 'mdi-email-open-multiple-outline',
-                title: 'Email Integration',
-                description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit quam aliquam. Autem assumenda'
-            },
-            {
-                icon: 'mdi-clock-outline',
-                title: 'Save Time',
-                description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit quam aliquam. Autem assumenda'
-            }
-        ]);
-
-        return {
-            features
+<script setup>
+const props = defineProps({
+  content: {
+    type: Object,
+    required: false,
+    default: () => ({
+      features: [
+        {
+          icon: 'mdi-account-check-outline',
+          title: 'Account Verification',
+          description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit quam aliquam. Autem assumenda'
+        },
+        {
+          icon: 'mdi-lifebuoy',
+          title: 'Dedicated Support',
+          description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit quam aliquam. Autem assumenda'
+        },
+        {
+          icon: 'mdi-email-open-multiple-outline',
+          title: 'Email Integration',
+          description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit quam aliquam. Autem assumenda'
+        },
+        {
+          icon: 'mdi-clock-outline',
+          title: 'Save Time',
+          description: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit quam aliquam. Autem assumenda'
         }
-    }
-}
+      ]
+    })
+  },
+  config: {
+    type: Object,
+    default: () => ({})
+  }
+});
+
+const features = props.content.features || [];
 </script>
