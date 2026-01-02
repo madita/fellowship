@@ -122,6 +122,14 @@ onErrorCaptured((err) => {
   return false;
 });
 
+// Watch for content changes to clear preview errors
+watch(() => editedWidget.value?.content, () => {
+  // Clear error when content changes (user is fixing it)
+  if (previewError.value) {
+    previewError.value = null;
+  }
+}, { deep: true });
+
 const widgetDefinition = computed(() => {
   return props.widget ? getWidgetDefinition(props.widget.type) : null;
 });
@@ -129,8 +137,23 @@ const widgetDefinition = computed(() => {
 const widgetIcon = computed(() => widgetDefinition.value?.icon || 'mdi-widgets');
 
 const widgetComponent = computed(() => {
-  return props.widget ? getWidgetComponent(props.widget.type) : null;
+  if (!props.widget) return null;
+  const component = getWidgetComponent(props.widget.type);
+  if (!component) {
+    console.warn(`No component found for widget type: ${props.widget.type}`);
+  }
+  return component;
 });
+
+// Debug preview content updates
+const previewContent = computed(() => {
+  if (!editedWidget.value?.content) return {};
+  return editedWidget.value.content;
+});
+
+watch(previewContent, (newContent) => {
+  console.log('Preview content updated:', props.widget?.type, newContent);
+}, { deep: true });
 
 watch(() => props.widget, (newWidget) => {
   if (newWidget) {

@@ -24,12 +24,10 @@
                             {{ item.label }}
                         </v-btn>
                     </template>
-                    <!-- Fallback menu -->
-                    <template v-else>
-                        <v-btn class="d-none d-md-flex" size="small" @click="scrollToSection('#feature1')">
-                            Feature 1
-                        </v-btn>
-                    </template>
+<!--                    <v-btn icon size="small" class="d-flex d-md-none" @click="showMobileMenu = true">-->
+<!--                        <v-icon>mdi-menu</v-icon>-->
+<!--                    </v-btn>-->
+                    <!-- Language Switcher -->
                     <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-flex"/>
                     <v-btn
                         icon

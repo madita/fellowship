@@ -3,7 +3,38 @@
         <!-- Loading state -->
         <v-skeleton-loader v-if="isLoading" type="article, article, article" />
 
-        <!-- Dynamic widgets rendering -->
+        <!-- Dynamic sections rendering -->
+        <template v-else-if="sections.length > 0">
+            <v-sheet
+                v-for="section in sections"
+                :key="section.id"
+                :class="section.config?.background || ''"
+                class="homepage-section"
+            >
+                <v-container :class="section.config?.containerClass || ''">
+                    <v-row>
+                        <v-col
+                            v-for="(colWidth, colIndex) in getColumnWidths(section.layout)"
+                            :key="colIndex"
+                            :cols="12"
+                            :md="colWidth"
+                        >
+                            <template v-for="widget in getWidgetsForColumn(section, colIndex + 1)" :key="widget.id">
+                                <component
+                                    :is="getWidgetComponent(widget.type)"
+                                    :content="widget.content"
+                                    :config="widget.config"
+                                    :id="widget.anchor_id"
+                                    class="homepage-widget"
+                                />
+                            </template>
+                        </v-col>
+                    </v-row>
+                </v-container>
+            </v-sheet>
+        </template>
+
+        <!-- Fallback for old widget-only rendering (no sections) -->
         <template v-else-if="widgets.length > 0">
             <component
                 v-for="widget in widgets"
@@ -58,13 +89,52 @@ import Feature2 from '@/components/landing/Feature2.vue';
 const homepageStore = useHomepageStore();
 const isLoading = ref(true);
 
-const widgets = computed(() => homepageStore.activeWidgets);
+const sections = computed(() => homepageStore.activeSections || []);
+const widgets = computed(() => homepageStore.activeWidgets || []);
+
+/**
+ * Get column widths for a given layout
+ */
+function getColumnWidths(layout) {
+    const layoutMap = {
+        '1-col': [12],
+        '2-col': [6, 6],
+        '3-col': [4, 4, 4],
+        '4-col': [3, 3, 3, 3],
+        '2-1-col': [8, 4], // 66% / 33%
+        '1-2-col': [4, 8], // 33% / 66%
+    };
+    return layoutMap[layout] || [12];
+}
+
+/**
+ * Get widgets for a specific column in a section
+ */
+function getWidgetsForColumn(section, columnNumber) {
+    if (!section.widgets) return [];
+    return section.widgets
+        .filter(w => w.column === columnNumber && w.enabled)
+        .sort((a, b) => a.order - b.order);
+}
 
 onMounted(async () => {
     try {
-        await homepageStore.fetchPublicWidgets();
+        // Try to fetch sections first (new approach)
+        await homepageStore.fetchPublicSections();
+
+        // If no sections but widgets exist, fallback to widget-only mode
+        if (sections.value.length === 0) {
+            await homepageStore.fetchPublicWidgets();
+        }
     } catch (error) {
-        console.error('Failed to load homepage widgets:', error);
+        console.error('Failed to load homepage:', error);
+
+        // Try fallback to widgets if sections fail
+        try {
+            await homepageStore.fetchPublicWidgets();
+        } catch (widgetError) {
+            console.error('Failed to load widgets as fallback:', widgetError);
+        }
     } finally {
         isLoading.value = false;
     }

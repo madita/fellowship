@@ -134,6 +134,7 @@ Route::get('/settings/public', 'App\Http\Controllers\Admin\SettingsController@pu
 // Public Homepage Routes (for homepage rendering)
 Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@getActiveWidgets');
 Route::get('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@getActiveMenu');
+Route::get('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@getActiveSections');
 
 // Admin Settings Routes
 Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
@@ -161,6 +162,14 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::patch('/homepage/menu/{id}', 'App\Http\Controllers\Admin\HomepageMenuController@update');
     Route::delete('/homepage/menu/{id}', 'App\Http\Controllers\Admin\HomepageMenuController@destroy');
     Route::post('/homepage/menu/reorder', 'App\Http\Controllers\Admin\HomepageMenuController@updateOrder');
+
+    // Homepage Sections
+    Route::get('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@index');
+    Route::post('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@store');
+    Route::patch('/homepage/sections/{id}', 'App\Http\Controllers\Admin\HomepageSectionController@update');
+    Route::delete('/homepage/sections/{id}', 'App\Http\Controllers\Admin\HomepageSectionController@destroy');
+    Route::post('/homepage/sections/reorder', 'App\Http\Controllers\Admin\HomepageSectionController@updateOrder');
+    Route::post('/homepage/sections/{id}/toggle', 'App\Http\Controllers\Admin\HomepageSectionController@toggle');
 });
 
 Route::post('/login', function (Request $request) {

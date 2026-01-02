@@ -2,14 +2,18 @@
   <div>
     <v-alert type="info" variant="tonal" class="mb-4">
       <div class="text-h6 mb-2">Homepage Builder</div>
-      <div>Drag and drop widgets to reorder them, edit content, and customize your landing page.</div>
+      <div>Create sections with column layouts, drag widgets into columns, and customize your landing page.</div>
     </v-alert>
 
-    <!-- Tabs for Widgets and Menu -->
+    <!-- Tabs for Sections, Widgets and Menu -->
     <v-tabs v-model="tab" bg-color="transparent" color="primary">
+      <v-tab value="sections">
+        <v-icon class="mr-2">mdi-view-grid-outline</v-icon>
+        Sections & Grid
+      </v-tab>
       <v-tab value="widgets">
         <v-icon class="mr-2">mdi-widgets</v-icon>
-        Widgets
+        All Widgets
       </v-tab>
       <v-tab value="menu">
         <v-icon class="mr-2">mdi-menu</v-icon>
@@ -20,7 +24,15 @@
     <v-divider class="mb-4"></v-divider>
 
     <v-window v-model="tab">
-      <!-- Widgets Tab -->
+      <!-- Sections Tab -->
+      <v-window-item value="sections">
+        <section-builder
+          @edit-widget="editWidget"
+          @add-widget="handleAddWidgetToSection"
+        />
+      </v-window-item>
+
+      <!-- Widgets Tab (Legacy - all widgets list) -->
       <v-window-item value="widgets">
         <!-- Action Buttons -->
         <div class="d-flex justify-space-between align-center mb-4">
@@ -39,7 +51,15 @@
 
         <!-- Quick Stats -->
         <v-row class="mb-4">
-          <v-col cols="6" sm="3">
+          <v-col cols="6" md="3">
+            <v-card>
+              <v-card-text class="text-center">
+                <div class="text-h4 text-primary">{{ sections.length }}</div>
+                <div class="text-caption text-grey">Sections</div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="6" md="3">
             <v-card>
               <v-card-text class="text-center">
                 <div class="text-h4">{{ widgets.length }}</div>
@@ -47,7 +67,7 @@
               </v-card-text>
             </v-card>
           </v-col>
-          <v-col cols="6" sm="3">
+          <v-col cols="6" md="3">
             <v-card>
               <v-card-text class="text-center">
                 <div class="text-h4 text-success">{{ enabledCount }}</div>
@@ -55,15 +75,7 @@
               </v-card-text>
             </v-card>
           </v-col>
-          <v-col cols="6" sm="3">
-            <v-card>
-              <v-card-text class="text-center">
-                <div class="text-h4 text-grey">{{ disabledCount }}</div>
-                <div class="text-caption text-grey">Disabled</div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-          <v-col cols="6" sm="3">
+          <v-col cols="6" md="3">
             <v-card>
               <v-card-text class="text-center">
                 <div class="text-h4">{{ menuItems.length }}</div>
@@ -218,11 +230,14 @@ import draggable from 'vuedraggable';
 import WidgetEditor from '../homepage/WidgetEditor.vue';
 import WidgetLibrary from '../homepage/WidgetLibrary.vue';
 import MenuBuilder from '../homepage/MenuBuilder.vue';
+import SectionBuilder from '../homepage/SectionBuilder.vue';
 
 const homepageStore = useHomepageStore();
-const tab = ref('widgets');
+const tab = ref('sections'); // Default to sections tab
 const isLoading = ref(true);
 const hasChanges = ref(false);
+
+const sections = computed(() => homepageStore.orderedSections || []);
 
 const widgets = computed({
   get: () => homepageStore.orderedWidgets,
@@ -246,6 +261,9 @@ const showDeleteDialog = ref(false);
 const selectedWidget = ref(null);
 const widgetToDelete = ref(null);
 
+// Section widget adding
+const widgetSectionContext = ref(null); // { sectionId, column }
+
 // Snackbar
 const snackbar = ref(false);
 const snackbarMessage = ref('');
@@ -259,11 +277,12 @@ function getWidgetIcon(type) {
 async function loadWidgets() {
   isLoading.value = true;
   try {
-    await homepageStore.fetchWidgets();
+    await homepageStore.fetchSections(); // Load sections with widgets
+    await homepageStore.fetchWidgets(); // Also load all widgets for legacy tab
     await homepageStore.fetchMenuItems();
     hasChanges.value = false;
   } catch (error) {
-    showSnackbar('Failed to load widgets', 'error');
+    showSnackbar('Failed to load data', 'error');
   } finally {
     isLoading.value = false;
   }
@@ -312,12 +331,30 @@ async function addWidget(widgetType) {
       anchor_id: widgetType.replace('_', '-')
     };
 
+    // If adding to a section, include section_id and column
+    if (widgetSectionContext.value) {
+      newWidget.section_id = widgetSectionContext.value.sectionId;
+      newWidget.column = widgetSectionContext.value.column;
+      newWidget.order = 1; // First in the column
+    }
+
     await homepageStore.createWidget(newWidget);
     showSnackbar('Widget added successfully', 'success');
     showWidgetLibrary.value = false;
+    widgetSectionContext.value = null;
+
+    // Refresh sections to show new widget
+    if (newWidget.section_id) {
+      await homepageStore.fetchSections();
+    }
   } catch (error) {
     showSnackbar('Failed to add widget', 'error');
   }
+}
+
+function handleAddWidgetToSection({ sectionId, column }) {
+  widgetSectionContext.value = { sectionId, column };
+  showWidgetLibrary.value = true;
 }
 
 async function toggleWidget(widget) {

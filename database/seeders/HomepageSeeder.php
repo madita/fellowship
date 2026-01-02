@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\HomepageSection;
 use App\Models\HomepageWidget;
 use Illuminate\Database\Seeder;
 
@@ -12,8 +13,53 @@ class HomepageSeeder extends Seeder
      */
     public function run(): void
     {
+        // Create sections first
+        $section1 = HomepageSection::create([
+            'title' => 'Hero Section',
+            'layout' => '1-col',
+            'enabled' => true,
+            'order' => 1,
+            'config' => [],
+        ]);
+
+        $section2 = HomepageSection::create([
+            'title' => 'Partners',
+            'layout' => '1-col',
+            'enabled' => true,
+            'order' => 2,
+            'config' => ['background' => 'grey-lighten-4'],
+        ]);
+
+        $section3 = HomepageSection::create([
+            'title' => 'Stats & Showcase',
+            'layout' => '2-col',
+            'enabled' => true,
+            'order' => 3,
+            'config' => [],
+        ]);
+
+        $section4 = HomepageSection::create([
+            'title' => 'Features',
+            'layout' => '1-col',
+            'enabled' => true,
+            'order' => 4,
+            'config' => ['background' => 'grey-lighten-5'],
+        ]);
+
+        $section5 = HomepageSection::create([
+            'title' => 'Call to Action',
+            'layout' => '1-col',
+            'enabled' => true,
+            'order' => 5,
+            'config' => ['background' => 'primary'],
+        ]);
+
+        // Now create widgets assigned to sections
         $widgets = [
+            // Section 1: Hero
             [
+                'section_id' => $section1->id,
+                'column' => 1,
                 'type' => 'hero',
                 'title' => 'Hero Section',
                 'enabled' => true,
@@ -36,22 +82,28 @@ class HomepageSeeder extends Seeder
                     'alignment' => 'center',
                 ],
             ],
+            // Section 2: Partners
             [
+                'section_id' => $section2->id,
+                'column' => 1,
                 'type' => 'partners',
                 'title' => 'Partners',
                 'enabled' => true,
-                'order' => 2,
+                'order' => 1,
                 'anchor_id' => 'partners',
                 'content' => [
                     'showDecorations' => true,
                 ],
                 'config' => [],
             ],
+            // Section 3, Column 1: Stats
             [
+                'section_id' => $section3->id,
+                'column' => 1,
                 'type' => 'stats',
                 'title' => 'Statistics',
                 'enabled' => true,
-                'order' => 3,
+                'order' => 1,
                 'anchor_id' => 'stats',
                 'content' => [
                     'stats' => [
@@ -81,11 +133,14 @@ class HomepageSeeder extends Seeder
                     'columns' => 4,
                 ],
             ],
+            // Section 3, Column 2: Feature Showcase
             [
+                'section_id' => $section3->id,
+                'column' => 2,
                 'type' => 'feature_showcase',
                 'title' => 'Feature Showcase',
                 'enabled' => true,
-                'order' => 4,
+                'order' => 1,
                 'anchor_id' => 'feature-showcase',
                 'content' => [
                     'title' => 'Get your startup ready for business',
@@ -97,11 +152,14 @@ class HomepageSeeder extends Seeder
                     'layout' => 'image-right',
                 ],
             ],
+            // Section 4: Feature Grid
             [
+                'section_id' => $section4->id,
+                'column' => 1,
                 'type' => 'feature_grid',
                 'title' => 'Features Grid',
                 'enabled' => true,
-                'order' => 5,
+                'order' => 1,
                 'anchor_id' => 'features',
                 'content' => [
                     'features' => [
@@ -131,11 +189,14 @@ class HomepageSeeder extends Seeder
                     'columns' => 4,
                 ],
             ],
+            // Section 5: Call to Action
             [
+                'section_id' => $section5->id,
+                'column' => 1,
                 'type' => 'cta',
                 'title' => 'Call to Action',
                 'enabled' => true,
-                'order' => 6,
+                'order' => 1,
                 'anchor_id' => 'contact',
                 'content' => [
                     'title' => 'Ready to talk? Our team is here to help',
@@ -154,6 +215,7 @@ class HomepageSeeder extends Seeder
         }
 
         // Clear cache after seeding
+        HomepageSection::clearCache();
         HomepageWidget::clearCache();
     }
 }

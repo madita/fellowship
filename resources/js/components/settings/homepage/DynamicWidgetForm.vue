@@ -19,8 +19,9 @@
         :label="field.label"
         :required="field.required"
         :hint="field.hint"
-        rows="3"
+        :rows="field.rows || 3"
         persistent-hint
+        auto-grow
       ></v-textarea>
 
       <!-- Number -->
@@ -169,7 +170,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { getWidgetDefinition } from '@/configs/widgetTypes';
 import draggable from 'vuedraggable';
 
@@ -182,11 +183,12 @@ const emit = defineEmits(['update:modelValue']);
 
 const localValue = ref({});
 const isUpdatingFromProp = ref(false);
+const updateTimeout = ref(null);
 
 const widgetDefinition = computed(() => getWidgetDefinition(props.widgetType));
 const schema = computed(() => widgetDefinition.value?.schema || {});
 
-// Initialize local value
+// Initialize local value from props
 watch(() => props.modelValue, (newValue) => {
   if (newValue && !isUpdatingFromProp.value) {
     const serialized = JSON.stringify(newValue);
@@ -199,14 +201,22 @@ watch(() => props.modelValue, (newValue) => {
   }
 }, { immediate: true, deep: true });
 
-// Emit changes
+// Emit changes with debouncing for smooth preview updates
 watch(localValue, (newValue) => {
-  isUpdatingFromProp.value = true;
-  emit('update:modelValue', newValue);
-  // Reset flag on next tick
-  nextTick(() => {
-    isUpdatingFromProp.value = false;
-  });
+  // Clear existing timeout
+  if (updateTimeout.value) {
+    clearTimeout(updateTimeout.value);
+  }
+
+  // Debounce the update to prevent too many rapid changes
+  updateTimeout.value = setTimeout(() => {
+    isUpdatingFromProp.value = true;
+    emit('update:modelValue', JSON.parse(JSON.stringify(newValue)));
+
+    nextTick(() => {
+      isUpdatingFromProp.value = false;
+    });
+  }, 150); // 150ms debounce
 }, { deep: true });
 
 function addArrayItem(key, field) {
@@ -235,6 +245,13 @@ function addArrayItem(key, field) {
 function removeArrayItem(key, index) {
   localValue.value[key].splice(index, 1);
 }
+
+// Cleanup timeout on unmount
+onBeforeUnmount(() => {
+  if (updateTimeout.value) {
+    clearTimeout(updateTimeout.value);
+  }
+});
 </script>
 
 <style scoped>
