@@ -1,9 +1,11 @@
 <template>
-    <v-sheet class="d-flex flex-column">
-        <svg class="logos-bg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1442 163">
-            <path d="m-3.90909,6l48.30303,16c48.30303,16 144.90908,48 241.51514,48c96.60606,0 193.21211,-32 289.81817,-32c96.60606,0 193.21211,32 289.81817,53.3c96.60606,21.7 193.21211,31.7 289.81817,16c96.60606,-16.3 193.21211,-58.3 241.51514,-80l48.30303,-21.3l0,160l-48.30303,0c-48.30303,0 -144.90908,0 -241.51514,0c-96.60606,0 -193.21211,0 -289.81817,0c-96.60606,0 -193.21211,0 -289.81817,0c-96.60606,0 -193.21211,0 -289.81817,0c-96.60606,0 -193.21211,0 -241.51514,0l-48.30303,0l0,-160z"/>
-        </svg>
-    </v-sheet>
+    <div class="partners-widget">
+        <!-- Partners content can be added here in the future -->
+        <!-- The SVG decoration is now handled at the section level -->
+        <div v-if="content?.showContent" class="pa-8 text-center">
+            <p class="text-body-1">{{ content?.message || 'Partner section' }}</p>
+        </div>
+    </div>
 </template>
 
 <script setup>
@@ -11,7 +13,8 @@ const props = defineProps({
   content: {
     type: Object,
     default: () => ({
-      showDecorations: true
+      showContent: false,
+      message: ''
     })
   },
   config: {
@@ -22,7 +25,7 @@ const props = defineProps({
 </script>
 
 <style scoped>
-.logos-bg {
-    fill: #f2f5f8;
+.partners-widget {
+    min-height: 100px;
 }
 </style>

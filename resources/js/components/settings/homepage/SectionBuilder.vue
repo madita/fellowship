@@ -150,6 +150,16 @@
             class="mb-4"
           ></v-text-field>
 
+          <v-text-field
+            v-model="sectionFormData.anchor_id"
+            label="Anchor ID"
+            hint="For navigation menu (e.g., 'about', 'features'). Only lowercase letters, numbers, and dashes."
+            persistent-hint
+            prefix="#"
+            :rules="[v => !v || /^[a-z0-9-]+$/.test(v) || 'Only lowercase letters, numbers, and dashes allowed']"
+            class="mb-4"
+          ></v-text-field>
+
           <v-select
             v-model="sectionFormData.layout"
             label="Layout"
@@ -167,6 +177,9 @@
             </template>
           </v-select>
 
+          <v-divider class="my-4"></v-divider>
+          <div class="text-subtitle-2 mb-3">Section Styling</div>
+
           <v-text-field
             v-model="sectionFormData.background"
             label="Background Class"
@@ -174,6 +187,132 @@
             persistent-hint
             class="mb-4"
           ></v-text-field>
+
+          <v-text-field
+            v-model="sectionFormData.backgroundColor"
+            label="Background Color"
+            hint="Custom color (e.g., '#f5f5f5', 'rgb(245, 245, 245)')"
+            persistent-hint
+            type="color"
+            class="mb-4"
+          >
+            <template #append-inner>
+              <v-btn
+                v-if="sectionFormData.backgroundColor"
+                icon="mdi-close"
+                size="x-small"
+                variant="text"
+                @click="sectionFormData.backgroundColor = ''"
+              ></v-btn>
+            </template>
+          </v-text-field>
+
+          <v-switch
+            v-model="sectionFormData.fullWidth"
+            label="Full Width Section"
+            hint="Remove container padding for edge-to-edge content"
+            persistent-hint
+            color="primary"
+            class="mb-2"
+          ></v-switch>
+
+          <v-switch
+            v-model="sectionFormData.showDecoration"
+            label="Show SVG Decoration"
+            hint="Add decorative SVG divider above this section"
+            persistent-hint
+            color="primary"
+            class="mb-2"
+          ></v-switch>
+
+          <template v-if="sectionFormData.showDecoration">
+            <v-select
+              v-model="sectionFormData.decorationStyle"
+              label="Decoration Style"
+              :items="decorationStyles"
+              hint="Choose the SVG decoration pattern"
+              persistent-hint
+              class="mb-4"
+            >
+              <template #item="{ props, item }">
+                <v-list-item v-bind="props">
+                  <template #prepend>
+                    <v-icon>{{ item.raw.icon }}</v-icon>
+                  </template>
+                </v-list-item>
+              </template>
+            </v-select>
+
+            <v-text-field
+              v-model="sectionFormData.decorationColor"
+              label="Decoration Fill Color"
+              hint="SVG fill color - usually matches the section below"
+              persistent-hint
+              type="color"
+              class="mb-4"
+            >
+              <template #append-inner>
+                <v-btn
+                  v-if="sectionFormData.decorationColor"
+                  icon="mdi-close"
+                  size="x-small"
+                  variant="text"
+                  @click="sectionFormData.decorationColor = '#f2f5f8'"
+                ></v-btn>
+              </template>
+            </v-text-field>
+
+            <v-radio-group
+              v-model="sectionFormData.decorationBackgroundType"
+              label="Background Type"
+              hint="Choose how the decoration background adapts"
+              persistent-hint
+              inline
+              class="mb-2"
+            >
+              <v-radio label="Custom Color" value="custom"></v-radio>
+              <v-radio label="Theme Color" value="theme"></v-radio>
+              <v-radio label="Transparent" value="transparent"></v-radio>
+            </v-radio-group>
+
+            <v-text-field
+              v-if="sectionFormData.decorationBackgroundType === 'custom'"
+              v-model="sectionFormData.decorationBackgroundColor"
+              label="Decoration Background Color"
+              hint="Background behind SVG - usually matches the section above"
+              persistent-hint
+              type="color"
+              class="mb-4"
+            >
+              <template #append-inner>
+                <v-btn
+                  v-if="sectionFormData.decorationBackgroundColor"
+                  icon="mdi-close"
+                  size="x-small"
+                  variant="text"
+                  @click="sectionFormData.decorationBackgroundColor = ''"
+                ></v-btn>
+              </template>
+            </v-text-field>
+
+            <v-select
+              v-if="sectionFormData.decorationBackgroundType === 'theme'"
+              v-model="sectionFormData.decorationBackgroundTheme"
+              label="Theme Background"
+              :items="themeBackgrounds"
+              hint="Adapts to light/dark theme automatically"
+              persistent-hint
+              class="mb-4"
+            >
+              <template #item="{ props, item }">
+                <v-list-item v-bind="props">
+                  <template #prepend>
+                    <v-icon>{{ item.raw.icon }}</v-icon>
+                  </template>
+                </v-list-item>
+              </template>
+            </v-select>
+          </template>
         </v-card-text>
 
         <v-card-actions>
@@ -236,6 +375,24 @@ const layoutOptions = [
   { value: '1-2-col', title: '2 Columns (33% / 66%)', icon: 'mdi-view-split-vertical' },
 ];
 
+const decorationStyles = [
+  { value: 'wave1', title: 'Wave 1 - Smooth Flow', icon: 'mdi-wave' },
+  { value: 'wave2', title: 'Wave 2 - Gentle Curves', icon: 'mdi-wave' },
+  { value: 'wave3', title: 'Wave 3 - Subtle Wave', icon: 'mdi-wave' },
+  { value: 'curve1', title: 'Curve 1 - Diagonal Up', icon: 'mdi-chart-line-variant' },
+  { value: 'curve2', title: 'Curve 2 - Diagonal Down', icon: 'mdi-chart-line-variant' },
+  { value: 'angle1', title: 'Angle 1 - Peak Center', icon: 'mdi-triangle' },
+  { value: 'angle2', title: 'Angle 2 - Slanted', icon: 'mdi-triangle-outline' },
+];
+
+const themeBackgrounds = [
+  { value: 'background', title: 'Background (Main)', icon: 'mdi-palette' },
+  { value: 'surface', title: 'Surface', icon: 'mdi-palette-outline' },
+  { value: 'surface-variant', title: 'Surface Variant', icon: 'mdi-palette-swatch' },
+  { value: 'surface-bright', title: 'Surface Bright', icon: 'mdi-brightness-7' },
+  { value: 'surface-dim', title: 'Surface Dim', icon: 'mdi-brightness-5' },
+];
+
 const showAddSectionDialog = ref(false);
 const showDeleteSectionDialog = ref(false);
 const editingSection = ref(null);
@@ -243,8 +400,17 @@ const sectionToDelete = ref(null);
 
 const sectionFormData = ref({
   title: '',
+  anchor_id: '',
   layout: '1-col',
-  background: ''
+  background: '',
+  backgroundColor: '',
+  fullWidth: false,
+  showDecoration: false,
+  decorationStyle: 'wave1',
+  decorationColor: '#f2f5f8',
+  decorationBackgroundType: 'theme',
+  decorationBackgroundColor: '',
+  decorationBackgroundTheme: 'background'
 });
 
 const snackbar = ref(false);
@@ -313,8 +479,17 @@ function editSection(section) {
   editingSection.value = section;
   sectionFormData.value = {
     title: section.title || '',
+    anchor_id: section.anchor_id || '',
     layout: section.layout,
-    background: section.config?.background || ''
+    background: section.config?.background || '',
+    backgroundColor: section.config?.backgroundColor || '',
+    fullWidth: section.config?.fullWidth || false,
+    showDecoration: section.config?.showDecoration || false,
+    decorationStyle: section.config?.decorationStyle || 'wave1',
+    decorationColor: section.config?.decorationColor || '#f2f5f8',
+    decorationBackgroundType: section.config?.decorationBackgroundType || 'theme',
+    decorationBackgroundColor: section.config?.decorationBackgroundColor || '',
+    decorationBackgroundTheme: section.config?.decorationBackgroundTheme || 'background'
   };
   showAddSectionDialog.value = true;
 }
@@ -328,11 +503,20 @@ async function saveSection() {
   try {
     const sectionData = {
       title: sectionFormData.value.title,
+      anchor_id: sectionFormData.value.anchor_id || null,
       layout: sectionFormData.value.layout,
       enabled: true,
       order: editingSection.value ? editingSection.value.order : sections.value.length + 1,
       config: {
-        background: sectionFormData.value.background
+        background: sectionFormData.value.background,
+        backgroundColor: sectionFormData.value.backgroundColor,
+        fullWidth: sectionFormData.value.fullWidth,
+        showDecoration: sectionFormData.value.showDecoration,
+        decorationStyle: sectionFormData.value.decorationStyle,
+        decorationColor: sectionFormData.value.decorationColor,
+        decorationBackgroundType: sectionFormData.value.decorationBackgroundType,
+        decorationBackgroundColor: sectionFormData.value.decorationBackgroundColor,
+        decorationBackgroundTheme: sectionFormData.value.decorationBackgroundTheme
       }
     };
 
@@ -354,7 +538,20 @@ async function saveSection() {
 function cancelSectionEdit() {
   showAddSectionDialog.value = false;
   editingSection.value = null;
-  sectionFormData.value = { title: '', layout: '1-col', background: '' };
+  sectionFormData.value = {
+    title: '',
+    anchor_id: '',
+    layout: '1-col',
+    background: '',
+    backgroundColor: '',
+    fullWidth: false,
+    showDecoration: false,
+    decorationStyle: 'wave1',
+    decorationColor: '#f2f5f8',
+    decorationBackgroundType: 'theme',
+    decorationBackgroundColor: '',
+    decorationBackgroundTheme: 'background'
+  };
 }
 
 async function toggleSection(section) {

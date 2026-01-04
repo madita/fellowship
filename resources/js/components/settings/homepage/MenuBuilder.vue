@@ -115,7 +115,7 @@
             v-model="formData.anchor_target"
             label="Link Target"
             :items="anchorOptions"
-            hint="Select a widget section or enter a custom anchor"
+            hint="Select a homepage section or enter a custom anchor"
             persistent-hint
             class="mb-4"
           >
@@ -181,12 +181,12 @@ const menuItems = computed({
   }
 });
 
-// Get available anchors from widgets
+// Get available anchors from sections
 const anchorOptions = computed(() => {
-  const widgets = homepageStore.widgets.filter(w => w.anchor_id);
-  const options = widgets.map(w => ({
-    value: w.anchor_id,
-    title: `${w.title || w.type} (#${w.anchor_id})`
+  const sections = homepageStore.sections.filter(s => s.anchor_id);
+  const options = sections.map(s => ({
+    value: s.anchor_id,
+    title: `${s.title || 'Section'} (#${s.anchor_id})`
   }));
   options.push({ value: 'custom', title: 'Custom Anchor...' });
   return options;
@@ -213,7 +213,7 @@ const snackbarColor = ref('success');
 async function loadMenuItems() {
   isLoading.value = true;
   try {
-    await homepageStore.fetchWidgets();
+    await homepageStore.fetchSections();
     await homepageStore.fetchMenuItems();
   } catch (error) {
     showSnackbar('Failed to load menu items', 'error');

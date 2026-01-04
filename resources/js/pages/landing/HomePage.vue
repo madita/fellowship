@@ -5,13 +5,47 @@
 
         <!-- Dynamic sections rendering -->
         <template v-else-if="sections.length > 0">
-            <v-sheet
-                v-for="section in sections"
-                :key="section.id"
-                :class="section.config?.background || ''"
-                class="homepage-section"
-            >
-                <v-container :class="section.config?.containerClass || ''">
+            <template v-for="section in sections" :key="section.id">
+                <!-- SVG Decoration above section (optional) -->
+                <svg-decoration
+                    v-if="section.config?.showDecoration"
+                    :style-type="section.config?.decorationStyle || 'wave1'"
+                    :color="section.config?.decorationColor || '#f2f5f8'"
+                    :background-type="section.config?.decorationBackgroundType || 'transparent'"
+                    :background-color="section.config?.decorationBackgroundColor || 'transparent'"
+                    :background-theme="section.config?.decorationBackgroundTheme || 'background'"
+                    position="top"
+                />
+
+                <v-sheet
+                    :id="section.anchor_id"
+                    :class="section.config?.background || ''"
+                    :style="section.config?.backgroundColor ? { backgroundColor: section.config.backgroundColor } : {}"
+                    class="homepage-section"
+                >
+                    <!-- Full-width sections (no container) -->
+                <template v-if="section.config?.fullWidth">
+                    <v-row no-gutters>
+                        <v-col
+                            v-for="(colWidth, colIndex) in getColumnWidths(section.layout)"
+                            :key="colIndex"
+                            :cols="12"
+                            :md="colWidth"
+                        >
+                            <template v-for="widget in getWidgetsForColumn(section, colIndex + 1)" :key="widget.id">
+                                <component
+                                    :is="getWidgetComponent(widget.type)"
+                                    :content="widget.content"
+                                    :config="widget.config"
+                                    class="homepage-widget"
+                                />
+                            </template>
+                        </v-col>
+                    </v-row>
+                </template>
+
+                <!-- Contained sections (with container) -->
+                <v-container v-else :class="section.config?.containerClass || ''">
                     <v-row>
                         <v-col
                             v-for="(colWidth, colIndex) in getColumnWidths(section.layout)"
@@ -24,14 +58,14 @@
                                     :is="getWidgetComponent(widget.type)"
                                     :content="widget.content"
                                     :config="widget.config"
-                                    :id="widget.anchor_id"
                                     class="homepage-widget"
                                 />
                             </template>
                         </v-col>
                     </v-row>
                 </v-container>
-            </v-sheet>
+                </v-sheet>
+            </template>
         </template>
 
         <!-- Fallback for old widget-only rendering (no sections) -->
@@ -78,6 +112,9 @@
 import { ref, computed, onMounted } from 'vue';
 import { useHomepageStore } from '@/store/homepageStore';
 import { getWidgetComponent } from '@/components/landing/widgets';
+
+// Section components
+import SvgDecoration from '@/components/landing/SvgDecoration.vue';
 
 // Fallback components
 import Partners from '@/components/landing/Partners.vue';

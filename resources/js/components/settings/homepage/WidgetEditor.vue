@@ -22,15 +22,6 @@
               class="mb-4"
             ></v-text-field>
 
-            <v-text-field
-              v-model="editedWidget.anchor_id"
-              label="Anchor ID"
-              hint="Used for navigation menu links (e.g., 'features')"
-              persistent-hint
-              prefix="#"
-              class="mb-4"
-            ></v-text-field>
-
             <v-divider class="my-4"></v-divider>
 
             <div class="text-h6 mb-4">Widget Content</div>

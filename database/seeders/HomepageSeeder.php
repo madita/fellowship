@@ -13,12 +13,13 @@ class HomepageSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create sections first
+        // Create sections first with unique anchors
         $section1 = HomepageSection::create([
             'title' => 'Hero Section',
             'layout' => '1-col',
             'enabled' => true,
             'order' => 1,
+            'anchor_id' => 'hero',
             'config' => [],
         ]);
 
@@ -27,7 +28,18 @@ class HomepageSeeder extends Seeder
             'layout' => '1-col',
             'enabled' => true,
             'order' => 2,
-            'config' => ['background' => 'grey-lighten-4'],
+            'anchor_id' => 'partners',
+            'config' => [
+                'background' => 'grey-lighten-4',
+                'backgroundColor' => '',
+                'fullWidth' => true,
+                'showDecoration' => true,
+                'decorationStyle' => 'wave1',
+                'decorationColor' => '#f2f5f8',
+                'decorationBackgroundType' => 'theme',
+                'decorationBackgroundColor' => '',
+                'decorationBackgroundTheme' => 'background',
+            ],
         ]);
 
         $section3 = HomepageSection::create([
@@ -35,6 +47,7 @@ class HomepageSeeder extends Seeder
             'layout' => '2-col',
             'enabled' => true,
             'order' => 3,
+            'anchor_id' => 'about',
             'config' => [],
         ]);
 
@@ -43,6 +56,7 @@ class HomepageSeeder extends Seeder
             'layout' => '1-col',
             'enabled' => true,
             'order' => 4,
+            'anchor_id' => 'features',
             'config' => ['background' => 'grey-lighten-5'],
         ]);
 
@@ -51,6 +65,7 @@ class HomepageSeeder extends Seeder
             'layout' => '1-col',
             'enabled' => true,
             'order' => 5,
+            'anchor_id' => 'contact',
             'config' => ['background' => 'primary'],
         ]);
 
@@ -64,7 +79,6 @@ class HomepageSeeder extends Seeder
                 'title' => 'Hero Section',
                 'enabled' => true,
                 'order' => 1,
-                'anchor_id' => 'hero',
                 'content' => [
                     'title' => 'Your awesome community',
                     'subtitle' => 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Commodi ex facilis ad atque natus tenetur debitis qui quisquam iure amet.',
@@ -82,20 +96,7 @@ class HomepageSeeder extends Seeder
                     'alignment' => 'center',
                 ],
             ],
-            // Section 2: Partners
-            [
-                'section_id' => $section2->id,
-                'column' => 1,
-                'type' => 'partners',
-                'title' => 'Partners',
-                'enabled' => true,
-                'order' => 1,
-                'anchor_id' => 'partners',
-                'content' => [
-                    'showDecorations' => true,
-                ],
-                'config' => [],
-            ],
+            // Section 2: Partners (decoration is at section level, no widget needed)
             // Section 3, Column 1: Stats
             [
                 'section_id' => $section3->id,
@@ -104,7 +105,6 @@ class HomepageSeeder extends Seeder
                 'title' => 'Statistics',
                 'enabled' => true,
                 'order' => 1,
-                'anchor_id' => 'stats',
                 'content' => [
                     'stats' => [
                         [
@@ -141,7 +141,6 @@ class HomepageSeeder extends Seeder
                 'title' => 'Feature Showcase',
                 'enabled' => true,
                 'order' => 1,
-                'anchor_id' => 'feature-showcase',
                 'content' => [
                     'title' => 'Get your startup ready for business',
                     'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
@@ -160,7 +159,6 @@ class HomepageSeeder extends Seeder
                 'title' => 'Features Grid',
                 'enabled' => true,
                 'order' => 1,
-                'anchor_id' => 'features',
                 'content' => [
                     'features' => [
                         [
@@ -197,7 +195,6 @@ class HomepageSeeder extends Seeder
                 'title' => 'Call to Action',
                 'enabled' => true,
                 'order' => 1,
-                'anchor_id' => 'contact',
                 'content' => [
                     'title' => 'Ready to talk? Our team is here to help',
                     'description' => 'Get in touch with us today.',

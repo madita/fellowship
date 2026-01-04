@@ -49,6 +49,7 @@ return new class extends Migration
         Schema::create('homepage_sections', function (Blueprint $table) {
             $table->id();
             $table->string('title')->nullable();
+            $table->string('anchor_id')->nullable();
             $table->string('layout')->default('1-col'); // 1-col, 2-col, 3-col, 2-1-col (66/33), 1-2-col (33/66)
             $table->boolean('enabled')->default(true);
             $table->integer('order')->default(0);
