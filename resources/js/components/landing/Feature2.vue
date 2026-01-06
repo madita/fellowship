@@ -19,6 +19,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
+
 const props = defineProps({
   content: {
     type: Object,
@@ -54,5 +56,5 @@ const props = defineProps({
   }
 });
 
-const features = props.content.features || [];
+const features = computed(() => props.content?.features || []);
 </script>

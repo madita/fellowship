@@ -170,6 +170,10 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::delete('/homepage/sections/{id}', 'App\Http\Controllers\Admin\HomepageSectionController@destroy');
     Route::post('/homepage/sections/reorder', 'App\Http\Controllers\Admin\HomepageSectionController@updateOrder');
     Route::post('/homepage/sections/{id}/toggle', 'App\Http\Controllers\Admin\HomepageSectionController@toggle');
+
+    // Homepage Image Upload
+    Route::post('/homepage/upload-image', 'App\Http\Controllers\Admin\HomepageImageController@upload');
+    Route::delete('/homepage/delete-image', 'App\Http\Controllers\Admin\HomepageImageController@delete');
 });
 
 Route::post('/login', function (Request $request) {

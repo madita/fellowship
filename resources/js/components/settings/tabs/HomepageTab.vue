@@ -310,10 +310,12 @@ function editWidget(widget) {
 
 async function saveWidget(updatedWidget) {
   try {
+    console.log('Saving widget with data:', JSON.stringify(updatedWidget, null, 2));
     await homepageStore.updateWidget(updatedWidget.id, updatedWidget);
     showSnackbar('Widget updated successfully', 'success');
     showEditor.value = false;
   } catch (error) {
+    console.error('Failed to save widget:', error);
     showSnackbar('Failed to update widget', 'error');
   }
 }

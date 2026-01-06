@@ -2,9 +2,17 @@
   <div>
     <!-- Render fields based on schema -->
     <div v-for="(field, key) in schema" :key="key" class="mb-4">
+      <!-- Image Upload -->
+      <homepage-image-upload
+        v-if="field.type === 'image'"
+        v-model="localValue[key]"
+        :label="field.label"
+        :hint="field.hint"
+      />
+
       <!-- Text Field -->
       <v-text-field
-        v-if="field.type === 'text'"
+        v-else-if="field.type === 'text'"
         v-model="localValue[key]"
         :label="field.label"
         :required="field.required"
@@ -65,14 +73,50 @@
 
       <!-- Object (nested fields) -->
       <v-card v-else-if="field.type === 'object'" variant="outlined" class="pa-4">
-        <div class="text-subtitle-2 mb-3">{{ field.label }}</div>
-        <div v-for="(subField, subKey) in field.fields" :key="subKey" class="mb-3">
-          <v-text-field
-            v-if="subField.type === 'text'"
-            v-model="localValue[key][subKey]"
-            :label="subField.label"
-            density="comfortable"
-          ></v-text-field>
+        <div class="d-flex justify-space-between align-center mb-3">
+          <div class="text-subtitle-2">{{ field.label }}</div>
+          <v-chip
+            v-if="localValue[key] === null"
+            size="small"
+            color="grey"
+            variant="outlined"
+          >
+            Disabled
+          </v-chip>
+        </div>
+
+        <div v-if="localValue[key] === null" class="text-center py-4">
+          <v-icon size="48" color="grey-lighten-1">mdi-cancel</v-icon>
+          <p class="text-caption text-grey mt-2">This element is disabled</p>
+          <v-btn
+            size="small"
+            variant="outlined"
+            color="primary"
+            @click="enableObjectField(key, field)"
+          >
+            Enable {{ field.label }}
+          </v-btn>
+        </div>
+
+        <div v-else>
+          <div v-for="(subField, subKey) in field.fields" :key="subKey" class="mb-3">
+            <v-text-field
+              v-if="subField.type === 'text'"
+              v-model="localValue[key][subKey]"
+              :label="subField.label"
+              density="comfortable"
+            ></v-text-field>
+          </div>
+
+          <v-btn
+            size="small"
+            variant="text"
+            color="error"
+            prepend-icon="mdi-close"
+            @click="disableObjectField(key)"
+          >
+            Disable {{ field.label }}
+          </v-btn>
         </div>
       </v-card>
 
@@ -173,6 +217,7 @@
 import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue';
 import { getWidgetDefinition } from '@/configs/widgetTypes';
 import draggable from 'vuedraggable';
+import HomepageImageUpload from './HomepageImageUpload.vue';
 
 const props = defineProps({
   modelValue: Object,
@@ -196,7 +241,28 @@ watch(() => props.modelValue, (newValue) => {
 
     // Only update if actually different to prevent infinite loop
     if (serialized !== currentSerialized) {
-      localValue.value = JSON.parse(serialized);
+      const parsed = JSON.parse(serialized);
+
+      // Ensure all object-type fields are initialized BEFORE setting localValue
+      Object.keys(schema.value || {}).forEach(key => {
+        const field = schema.value[key];
+        if (field.type === 'object') {
+          // Only initialize if undefined, respect null as "intentionally empty"
+          if (parsed[key] === undefined) {
+            parsed[key] = {};
+          }
+          // If it exists and is an object, ensure nested fields exist
+          if (parsed[key] && typeof parsed[key] === 'object' && field.fields) {
+            Object.keys(field.fields).forEach(subKey => {
+              if (parsed[key][subKey] === undefined) {
+                parsed[key][subKey] = '';
+              }
+            });
+          }
+        }
+      });
+
+      localValue.value = parsed;
     }
   }
 }, { immediate: true, deep: true });
@@ -211,13 +277,60 @@ watch(localValue, (newValue) => {
   // Debounce the update to prevent too many rapid changes
   updateTimeout.value = setTimeout(() => {
     isUpdatingFromProp.value = true;
-    emit('update:modelValue', JSON.parse(JSON.stringify(newValue)));
+
+    // Clean up the value before emitting (convert empty strings to null for image fields)
+    const cleanedValue = cleanupImageFields(JSON.parse(JSON.stringify(newValue)));
+
+    emit('update:modelValue', cleanedValue);
 
     nextTick(() => {
       isUpdatingFromProp.value = false;
     });
   }, 150); // 150ms debounce
 }, { deep: true });
+
+/**
+ * Convert empty string image fields to null to prevent backend errors
+ * Also clean up object fields with all empty values
+ */
+function cleanupImageFields(value) {
+  const cleaned = { ...value };
+
+  // Get the schema to identify image fields
+  Object.keys(schema.value || {}).forEach(key => {
+    const field = schema.value[key];
+
+    // If it's an image field and the value is empty string, set to null
+    if (field.type === 'image' && cleaned[key] === '') {
+      cleaned[key] = null;
+    }
+
+    // Handle object fields - convert empty nested values to null
+    if (field.type === 'object' && cleaned[key] && typeof cleaned[key] === 'object') {
+      // Check if all nested fields are empty
+      const allEmpty = Object.values(cleaned[key]).every(val => !val || val === '');
+      if (allEmpty) {
+        // Set to null if all fields are empty
+        cleaned[key] = null;
+      }
+    }
+
+    // Handle arrays with image fields
+    if (field.type === 'array' && Array.isArray(cleaned[key]) && field.itemSchema) {
+      cleaned[key] = cleaned[key].map(item => {
+        const cleanedItem = { ...item };
+        Object.keys(field.itemSchema).forEach(itemKey => {
+          if (field.itemSchema[itemKey].type === 'image' && cleanedItem[itemKey] === '') {
+            cleanedItem[itemKey] = null;
+          }
+        });
+        return cleanedItem;
+      });
+    }
+  });
+
+  return cleaned;
+}
 
 function addArrayItem(key, field) {
   if (!localValue.value[key]) {
@@ -244,6 +357,22 @@ function addArrayItem(key, field) {
 
 function removeArrayItem(key, index) {
   localValue.value[key].splice(index, 1);
+}
+
+function enableObjectField(key, field) {
+  // Initialize with empty values for all subfields
+  const obj = {};
+  if (field.fields) {
+    Object.keys(field.fields).forEach(subKey => {
+      obj[subKey] = '';
+    });
+  }
+  localValue.value[key] = obj;
+}
+
+function disableObjectField(key) {
+  // Set to null to disable
+  localValue.value[key] = null;
 }
 
 // Cleanup timeout on unmount

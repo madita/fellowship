@@ -174,15 +174,21 @@ function mergeContent(defaults, actual) {
   const merged = { ...defaults };
 
   for (const key in actual) {
-    if (actual[key] !== null && actual[key] !== undefined) {
+    if (actual.hasOwnProperty(key)) {
+      // If actual value is explicitly null, use null (don't merge with defaults)
+      if (actual[key] === null) {
+        merged[key] = null;
+      }
+      // If actual value is undefined, keep the default
+      else if (actual[key] === undefined) {
+        // Keep merged[key] as is (from defaults)
+      }
       // If both are objects (but not arrays), merge recursively
-      if (
+      else if (
         typeof actual[key] === 'object' &&
         typeof defaults[key] === 'object' &&
         !Array.isArray(actual[key]) &&
-        !Array.isArray(defaults[key]) &&
-        actual[key] !== null &&
-        defaults[key] !== null
+        !Array.isArray(defaults[key])
       ) {
         merged[key] = mergeContent(defaults[key], actual[key]);
       } else {

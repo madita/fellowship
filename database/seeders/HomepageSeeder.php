@@ -142,6 +142,7 @@ class HomepageSeeder extends Seeder
                 'enabled' => true,
                 'order' => 1,
                 'content' => [
+                    'subtitle' => 'Work with us',
                     'title' => 'Get your startup ready for business',
                     'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
                     'image' => null,

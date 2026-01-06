@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-const props = defineProps({
+defineProps({
   content: {
     type: Object,
     required: false,
@@ -38,6 +38,4 @@ const props = defineProps({
     default: () => ({})
   }
 });
-
-const { content } = props;
 </script>
