@@ -13,9 +13,8 @@ class SettingsController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth'])->except(['public']);
-        // TODO: Add admin middleware when ready
-        // $this->middleware(['auth', 'admin']);
+        $this->middleware(['auth:sanctum'])->except(['public']);
+        $this->middleware(['admin'])->except(['public']);
     }
 
     /**
@@ -99,6 +98,9 @@ class SettingsController extends Controller
             }
         }
 
+        // Ensure proper types for JSON response
+        $settings = $this->ensureProperTypes($settings);
+
         return response()->json([
             'settings' => $settings,
         ]);
@@ -111,9 +113,43 @@ class SettingsController extends Controller
     {
         $settings = Setting::getAllSettings();
 
+        // Ensure all values are properly typed for JSON response
+        $settings = $this->ensureProperTypes($settings);
+
         return response()->json([
             'settings' => $settings,
         ]);
+    }
+
+    /**
+     * Ensure settings have proper PHP types for JSON encoding
+     */
+    private function ensureProperTypes(array $settings): array
+    {
+        // Known boolean settings
+        $booleanKeys = [
+            'maintenance_mode', 'language_change_enabled', 'locale_auto_detect',
+            'login_branding_enabled', 'indexing_enabled', 'sitemap_enabled',
+            'cookie_consent_enabled', 'anonymize_ip', 'tracking_production_only',
+            'third_party_embeds_enabled', 'homepage_builder_enabled', 'homepage_menu_enabled',
+            'blog_enabled', 'comments_enabled', 'comments_moderation_required',
+            'user_registration_enabled', 'email_verification_required',
+            'password_require_special_char', 'password_require_number',
+            'password_require_uppercase', 'two_factor_enabled',
+            'admin_notifications_enabled', 'cache_enabled', 'cdn_enabled',
+            'image_optimization_enabled', 'lazy_loading_enabled', 'debug_mode',
+            'right_to_be_forgotten_enabled', 'age_confirmation_required',
+            'api_keys_enabled', 'background_jobs_enabled', 'custom_footer_enabled',
+        ];
+
+        foreach ($booleanKeys as $key) {
+            if (isset($settings[$key])) {
+                // Convert to actual boolean
+                $settings[$key] = (bool) filter_var($settings[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            }
+        }
+
+        return $settings;
     }
 
     /**
@@ -135,14 +171,78 @@ class SettingsController extends Controller
             ], 422);
         }
 
+        // Additional validation for specific setting values
+        $settings = $request->input('settings', []);
+        $valueErrors = [];
+
+        foreach ($settings as $index => $setting) {
+            $key = $setting['key'];
+            $value = $setting['value'];
+
+            // Skip null/empty values
+            if ($value === null || $value === '') {
+                continue;
+            }
+
+            // Email validation
+            if (in_array($key, ['contact_email', 'admin_email', 'support_email', 'email_sender_address'])) {
+                if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                    $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid email address."];
+                }
+            }
+
+            // URL validation
+            if (in_array($key, [
+                'site_url', 'privacy_policy_url', 'terms_conditions_url', 'cookie_policy_url',
+                'canonical_url', 'cdn_url'
+            ])) {
+                if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                    $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid URL."];
+                }
+            }
+
+            // Color validation (hex format)
+            if (in_array($key, ['primary_color', 'secondary_color'])) {
+                if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $value)) {
+                    $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid hex color (e.g., #1976D2)."];
+                }
+            }
+
+            // Positive integer validation
+            if (in_array($key, [
+                'posts_per_page', 'media_max_upload_size', 'password_min_length',
+                'session_timeout_minutes', 'login_rate_limit_attempts', 'login_rate_limit_minutes',
+                'cache_lifetime_minutes', 'api_rate_limit_per_minute', 'smtp_port', 'age_minimum'
+            ])) {
+                if (!is_numeric($value) || $value < 0) {
+                    $valueErrors["settings.{$index}.value"] = ["The {$key} must be a positive number."];
+                }
+            }
+        }
+
+        if (!empty($valueErrors)) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $valueErrors,
+            ], 422);
+        }
+
         foreach ($request->input('settings', []) as $setting) {
             $type = $setting['type'] ?? 'string';
             $value = $setting['value'];
 
-            // Handle array/json values
-            if (is_array($value)) {
+            // Handle different value types
+            if ($type === 'boolean') {
+                // Convert boolean to string "1" or "0" for consistent storage
+                $value = $value ? '1' : '0';
+            } elseif (is_array($value)) {
+                // Handle array/json values
                 $value = json_encode($value);
                 $type = 'json';
+            } elseif ($type === 'integer') {
+                $value = (string) (int) $value;
+            } elseif ($type === 'float') {
+                $value = (string) (float) $value;
             }
 
             Setting::set($setting['key'], $value, $type);
@@ -350,14 +450,21 @@ class SettingsController extends Controller
         }
 
         try {
-            // TODO: Implement email test
-            // Mail::raw('This is a test email from Fellowship.', function ($message) use ($request) {
-            //     $message->to($request->input('recipient'))
-            //         ->subject('Test Email');
-            // });
+            $recipient = $request->input('recipient');
+            $appName = Setting::get('app_name', config('app.name'));
+
+            \Illuminate\Support\Facades\Mail::raw(
+                "This is a test email from {$appName}.\n\n" .
+                "If you received this email, your email configuration is working correctly.\n\n" .
+                "Sent at: " . now()->format('Y-m-d H:i:s'),
+                function ($message) use ($recipient, $appName) {
+                    $message->to($recipient)
+                        ->subject("Test Email from {$appName}");
+                }
+            );
 
             return response()->json([
-                'message' => 'Test email sent successfully',
+                'message' => 'Test email sent successfully to ' . $recipient,
             ]);
         } catch (\Exception $e) {
             return response()->json([

@@ -82,6 +82,8 @@ class Setting extends Model
             'date_format',
             'time_format',
             'language_change_enabled',
+            'maintenance_mode',
+            'maintenance_message',
         ];
 
         foreach ($commonKeys as $key) {
@@ -105,7 +107,7 @@ class Setting extends Model
     protected static function castValue($value, string $type)
     {
         return match ($type) {
-            'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
+            'boolean' => in_array($value, ['1', 1, true, 'true', 'yes', 'on'], true),
             'integer' => (int) $value,
             'float' => (float) $value,
             'array', 'json' => json_decode($value, true),

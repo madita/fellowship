@@ -4,9 +4,22 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- PWA Meta Tags -->
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <meta name="apple-mobile-web-app-title" content="Fellowship">
+        <meta name="theme-color" content="#1976D2">
+
+        <!-- Icons -->
         <link id="favicon" rel="icon" href="/favicon.ico">
         <link id="app-icon-192" rel="apple-touch-icon" sizes="192x192" href="/images/app-icon-192.png">
         <link id="app-icon-512" rel="apple-touch-icon" sizes="512x512" href="/images/app-icon-512.png">
+
+        <!-- PWA Manifest -->
+        <link rel="manifest" href="/manifest.json">
+
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>Fellowship Community</title>
 

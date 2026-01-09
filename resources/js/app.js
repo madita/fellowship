@@ -156,6 +156,41 @@ async function initializeApp() {
 }
 
 initializeApp();
+
+// Register PWA Service Worker (works on localhost and production)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+            .then(registration => {
+                console.log('PWA: Service Worker registered successfully:', registration.scope);
+
+                // Check for updates periodically (only in production)
+                if (import.meta.env.PROD) {
+                    setInterval(() => {
+                        registration.update();
+                    }, 60 * 60 * 1000); // Check every hour
+                }
+
+                // In development, log PWA status after a short delay
+                if (import.meta.env.DEV) {
+                    setTimeout(async () => {
+                        const { logPWAStatus } = await import('./utils/pwaCheck.js');
+                        await logPWAStatus();
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                console.error('PWA: Service Worker registration failed:', error);
+            });
+    });
+
+    // Add global function to check PWA status manually
+    window.checkPWA = async () => {
+        const { logPWAStatus } = await import('./utils/pwaCheck.js');
+        return await logPWAStatus();
+    };
+}
+
 // store.dispatch('auth/me').then(() => {
 //     new Vue({
 //         i18n,

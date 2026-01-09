@@ -5,8 +5,11 @@ import { createApp } from 'vue';
 // import { Vuetify } from 'vuetify'; // Modify based on the correct path in Vuetify 3
 import "vuetify/styles";
 import { createVuetify } from 'vuetify';
+// Import MDI font CSS
 import '@mdi/font/css/materialdesignicons.css'
+// Import mdi-svg as fallback
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
+import { mdi as mdiSvg } from 'vuetify/iconsets/mdi-svg'
 import 'vuetify/dist/vuetify.min.css';
 import * as labs from 'vuetify/labs/components';
 import * as components from "vuetify/components";
@@ -95,6 +98,8 @@ const vuetify = createVuetify({
         aliases,
         sets: {
             mdi,
+            // Uncomment below if font icons don't load:
+            // 'mdi-svg': mdiSvg,
         },
     },
     theme: {

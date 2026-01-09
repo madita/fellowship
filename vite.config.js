@@ -9,8 +9,16 @@ import path from 'path'
 
 
 export default defineConfig({
+    // Don't set base when using Laravel Vite plugin - it handles this automatically
     plugins: [
-        vue(),
+        vue({
+            template: {
+                transformAssetUrls: {
+                    base: null,
+                    includeAbsolute: false,
+                },
+            },
+        }),
         vuetify({
             autoImport: true,
         }),
@@ -27,6 +35,9 @@ export default defineConfig({
             '~bootstrap': path.resolve(__dirname, 'node_modules/bootstrap'),
             '@': path.resolve(__dirname, 'resources/js'),
         },
+    },
+    build: {
+        assetsInlineLimit: 0,
     },
     server: {
         host: '127.0.0.1',

@@ -39,4 +39,10 @@ Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms')
 Route::get('migration/wiki', "\App\Http\Controllers\Admin\MigrationController@wiki");
 Route::get('migration/event', "\App\Http\Controllers\Admin\MigrationController@event");
 
-Route::get('/{any}', 'App\Http\Controllers\SpaController@index')->where('any', '.*');
+// PWA Manifest
+Route::get('/manifest.json', 'App\Http\Controllers\ManifestController@generate')->name('manifest');
+
+// SPA Catch-all - MUST BE LAST and exclude actual files
+Route::get('/{any}', 'App\Http\Controllers\SpaController@index')
+    ->where('any', '^(?!.*(\.js|\.css|\.json|\.woff|\.woff2|\.ttf|\.eot|\.svg|\.png|\.jpg|\.jpeg|\.gif|\.ico|\.webp)$).*')
+    ->name('spa');
