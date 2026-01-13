@@ -56,7 +56,18 @@ export default defineConfig({
         strictPort: true,
     },
     optimizeDeps: {
-        exclude: ['pinia']
+        // Prevent EPERM errors on Windows by pre-bundling common dependencies
+        // This avoids runtime dependency discovery which can cause file lock issues
+        include: [
+            'vue',
+            'vue-router',
+            'axios',
+            'vuetify',
+        ],
+    },
+    // Reduce file watching aggressiveness on Windows
+    watch: {
+        ignored: ['**/node_modules/**', '**/.git/**'],
     },
     define: {
         // Vue-i18n feature flags

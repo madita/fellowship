@@ -1,15 +1,21 @@
 <template>
     <div>
         <div :class="previewClass" class="d-flex flex-column align-center mb-4">
-            <v-img
+            <!-- Preview container with fixed dimensions -->
+            <div
                 v-if="preview"
-                :src="preview"
-                :max-height="maxHeight"
-                :max-width="maxWidth"
-                :class="['mb-2', imageClass]"
-                contain
-            ></v-img>
-            <div v-else :class="placeholderClass" class="mb-2">
+                :class="['image-preview-container', placeholderClass, 'mb-2', imageClass]"
+            >
+                <v-img
+                    :src="preview"
+                    :max-height="maxHeight"
+                    :max-width="maxWidth"
+                    height="100%"
+                    width="100%"
+                    contain
+                ></v-img>
+            </div>
+            <div v-else :class="['image-preview-container', placeholderClass, 'mb-2']">
                 <v-icon :size="placeholderIconSize" color="grey-lighten-2">mdi-image-off</v-icon>
             </div>
 
@@ -189,37 +195,35 @@ async function handleDelete() {
 </script>
 
 <style scoped>
-.image-placeholder {
-    width: 150px;
-    max-width: 100%;
-    height: 100px;
+.image-preview-container {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px dashed #ccc;
+    border: 2px solid #e0e0e0;
     border-radius: 8px;
+    overflow: hidden;
+    background-color: #fafafa;
+}
+
+.image-placeholder {
+    width: 100%;
+    max-width: 300px;
+    height: 200px;
+    border-style: dashed;
 }
 
 .image-placeholder-small {
-    width: 64px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px dashed #ccc;
-    border-radius: 8px;
+    width: 120px;
+    height: 120px;
+    border-style: dashed;
 }
 
 .image-placeholder-large {
     width: 100%;
-    max-width: 400px;
-    height: 200px;
-    min-height: 150px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px dashed #ccc;
-    border-radius: 8px;
+    max-width: 600px;
+    height: 300px;
+    min-height: 250px;
+    border-style: dashed;
 }
 
 .gap-2 {
@@ -228,8 +232,12 @@ async function handleDelete() {
 
 @media (max-width: 600px) {
     .image-placeholder-large {
+        height: 200px;
+        min-height: 180px;
+    }
+
+    .image-placeholder {
         height: 150px;
-        min-height: 120px;
     }
 }
 </style>
