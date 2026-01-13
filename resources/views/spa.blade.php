@@ -14,8 +14,12 @@
 
         <!-- Icons -->
         <link id="favicon" rel="icon" href="/favicon.ico">
+        @if(file_exists(public_path('images/app-icon-192.png')))
         <link id="app-icon-192" rel="apple-touch-icon" sizes="192x192" href="/images/app-icon-192.png">
+        @endif
+        @if(file_exists(public_path('images/app-icon-512.png')))
         <link id="app-icon-512" rel="apple-touch-icon" sizes="512x512" href="/images/app-icon-512.png">
+        @endif
 
         <!-- PWA Manifest -->
         <link rel="manifest" href="/manifest.json">

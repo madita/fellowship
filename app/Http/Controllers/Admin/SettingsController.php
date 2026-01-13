@@ -344,7 +344,7 @@ class SettingsController extends Controller
     public function uploadImage(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,ico|max:2048',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,ico,webp|max:2048',
             'key' => 'required|string|in:logo_light,logo_dark,favicon,app_icon,og_image',
         ]);
 
@@ -363,6 +363,66 @@ class SettingsController extends Controller
                 return response()->json([
                     'message' => 'Invalid file upload',
                 ], 422);
+            }
+
+            // Special validation for PWA app icon
+            if ($key === 'app_icon') {
+                $mimeType = $file->getMimeType();
+                $validMimes = ['image/png', 'image/webp', 'image/svg+xml'];
+
+                if (!in_array($mimeType, $validMimes)) {
+                    return response()->json([
+                        'message' => 'Validation failed',
+                        'errors' => [
+                            'image' => ['PWA app icon must be PNG, WebP, or SVG format. JPEG is not supported.']
+                        ],
+                    ], 422);
+                }
+
+                // Get image dimensions (skip for SVG)
+                if ($mimeType !== 'image/svg+xml') {
+                    $imagePath = $file->getRealPath() ?: $file->getPathname();
+                    $imageInfo = @getimagesize($imagePath);
+
+                    if (!$imageInfo) {
+                        return response()->json([
+                            'message' => 'Validation failed',
+                            'errors' => [
+                                'image' => ['Unable to read image dimensions.']
+                            ],
+                        ], 422);
+                    }
+
+                    $width = $imageInfo[0];
+                    $height = $imageInfo[1];
+
+                    // Check minimum dimensions
+                    if ($width < 144 || $height < 144) {
+                        return response()->json([
+                            'message' => 'Validation failed',
+                            'errors' => [
+                                'image' => ["PWA app icon must be at least 144×144 pixels. Your image is {$width}×{$height}."]
+                            ],
+                        ], 422);
+                    }
+
+                    // Check if square (or nearly square - within 10% tolerance)
+                    $aspectRatio = max($width, $height) / min($width, $height);
+                    if ($aspectRatio > 1.1) {
+                        return response()->json([
+                            'message' => 'Validation failed',
+                            'errors' => [
+                                'image' => ["PWA app icon should be square. Your image is {$width}×{$height}. Please upload a square image."]
+                            ],
+                        ], 422);
+                    }
+
+                    // Recommend larger size if below optimal
+                    if ($width < 192 || $height < 192) {
+                        // This is a warning, not an error - we'll still accept it
+                        // You could add a warning field to the response if desired
+                    }
+                }
             }
 
             // Delete old file if exists

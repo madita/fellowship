@@ -130,9 +130,17 @@
 
             <v-alert type="warning" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <v-icon size="small" class="mr-1">mdi-lightbulb</v-icon>
-                    <strong>Tip:</strong> Update the App Icon and Favicon in the <strong>Branding</strong> tab to customize your PWA appearance.
-                    The manifest uses your app name, description, and colors from the settings.
+                    <v-icon size="small" class="mr-1">mdi-alert</v-icon>
+                    <strong>Important:</strong> For PWA installation to work, you must upload an App Icon that meets these requirements:
+                    <ul class="mt-1 ml-4">
+                        <li><strong>Format:</strong> PNG, WebP, or SVG (NOT JPEG)</li>
+                        <li><strong>Size:</strong> At least 192×192 pixels (512×512 recommended)</li>
+                        <li><strong>Shape:</strong> Square (equal width and height)</li>
+                        <li><strong>Purpose:</strong> Used for home screen icon and app icon</li>
+                    </ul>
+                    <div class="mt-2">
+                        Go to <strong>Branding</strong> tab → <strong>App Icon (PWA)</strong> to upload a suitable icon.
+                    </div>
                 </div>
             </v-alert>
 
