@@ -118,8 +118,8 @@
                         <v-col cols="12" md="4" class="mb-4 mb-md-0">
                             <div class="text-subtitle-1 text-sm-h6 text-lg-h5 font-weight-bold">Navigation</div>
                             <div style="width: 80px; height: 2px" class="mb-3 mb-sm-5 mt-1 bg-primary"/>
-                            <div class="d-flex flex-wrap">
-                                <div v-for="(link, i) in links" :key="i" class="w-half body-2 body-sm-1 mb-1">
+                            <div class="d-flex flex-column">
+                                <div v-for="(link, i) in links" :key="i" class="text-body-2 text-sm-body-1 mb-2">
                                     <router-link
                                         v-if="link.to"
                                         class="text-decoration-none text-primary"
@@ -130,7 +130,7 @@
                                         v-else
                                         class="text-decoration-none text-primary"
                                         :href="link.href"
-                                        :target="link.target || 'blank'"
+                                        :target="link.target || '_blank'"
                                     >{{ link.label }}</a>
                                 </div>
                             </div>
@@ -253,32 +253,7 @@ export default {
             logoimg,
             config,
             showUsersDrawer: false,
-            showSettingsDrawer: false,
-            links: [{
-                label: 'Overview',
-                to: '#'
-            }, {
-                label: 'Features',
-                to: '#'
-            }, {
-                label: 'Documentation',
-                to: '#'
-            }, {
-                label: 'News',
-                to: '#'
-            }, {
-                label: 'FAQ',
-                to: '#'
-            }, {
-                label: 'About us',
-                to: '#'
-            }, {
-                label: 'Carrers',
-                to: '#'
-            }, {
-                label: 'Press',
-                to: '#'
-            }]
+            showSettingsDrawer: false
         }
     },
 
@@ -387,29 +362,26 @@ export default {
             let html = this.customFooterHtml;
 
             const replacements = {
-                '{{appName}}': this.appName || '',
-                '{{appCopyright}}': this.appCopyright || '',
-                '{{contactEmail}}': this.contactEmail || '',
-                '{{contactPhone}}': this.contactPhone || '',
-                '{{contactAddress}}': this.contactAddress || '',
-                '{{socialTwitter}}': this.socialTwitter || '',
-                '{{socialFacebook}}': this.socialFacebook || '',
-                '{{socialInstagram}}': this.socialInstagram || '',
+                'appName': this.appName || '',
+                'appCopyright': this.appCopyright || '',
+                'contactEmail': this.contactEmail || '',
+                'contactPhone': this.contactPhone || '',
+                'contactAddress': this.contactAddress || '',
+                'socialTwitter': this.socialTwitter || '',
+                'socialFacebook': this.socialFacebook || '',
+                'socialInstagram': this.socialInstagram || '',
             };
 
-            // Replace all variables in the HTML
+            // Replace all {{variable}} patterns
             Object.keys(replacements).forEach(key => {
-                const regex = new RegExp(key.replace(/[{}]/g, '\\$&'), 'g');
+                const pattern = `{{${key}}}`;
+                const regex = new RegExp(pattern.replace(/[{}]/g, '\\$&'), 'g');
                 html = html.replace(regex, replacements[key]);
             });
 
-            // Handle v-if conditions by removing elements with empty values
-            // This is a simple implementation - more complex logic may be needed
-            html = html.replace(/v-if="([^"]*?)"/g, (match, condition) => {
-                // Check if the condition references an empty value
-                const isEmpty = Object.keys(replacements).some(key => {
-                    return condition.includes(key) && !replacements[key];
-                });
+            // Handle data-if attributes - hide elements if the referenced value is empty
+            html = html.replace(/data-if="([^"]+)"/g, (match, varName) => {
+                const isEmpty = !replacements[varName] || replacements[varName].trim() === '';
                 return isEmpty ? 'style="display: none;"' : '';
             });
 
@@ -418,6 +390,32 @@ export default {
         menuItems() {
             const homepageStore = useHomepageStore();
             return homepageStore.activeMenuItems;
+        },
+        links() {
+            const settingsStore = useSettingsStore();
+            const quicklinks = settingsStore.appSettings.footer_quicklinks;
+
+            try {
+                if (quicklinks) {
+                    const parsed = typeof quicklinks === 'string' ? JSON.parse(quicklinks) : quicklinks;
+                    return Array.isArray(parsed) ? parsed.map(link => ({
+                        label: link.label,
+                        to: link.external ? undefined : link.url,
+                        href: link.external ? link.url : undefined,
+                        target: link.external ? '_blank' : undefined
+                    })) : [];
+                }
+            } catch (e) {
+                console.error('Failed to parse footer quicklinks:', e);
+            }
+
+            // Return default links if no custom quicklinks are set
+            return [
+                { label: 'Home', to: '/' },
+                { label: 'Features', to: '/features' },
+                { label: 'About', to: '/about' },
+                { label: 'Contact', to: '/contact' }
+            ];
         },
     },
 

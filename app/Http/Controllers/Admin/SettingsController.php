@@ -87,6 +87,7 @@ class SettingsController extends Controller
             // Footer
             'custom_footer_enabled',
             'custom_footer_html',
+            'footer_quicklinks',
         ];
 
         $settings = [];

@@ -142,6 +142,7 @@ export function useSettings() {
         // Footer Settings
         custom_footer_enabled: false,
         custom_footer_html: '',
+        footer_quicklinks: '[]',
     });
 
     async function fetchSettings() {
