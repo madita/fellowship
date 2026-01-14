@@ -115,7 +115,7 @@
             <v-footer v-else color="transparent">
                 <v-container class="py-3 py-sm-5 px-3 px-sm-4">
                     <v-row>
-                        <v-col cols="12" md="4" class="mb-4 mb-md-0">
+                        <v-col v-if="showNavigationSection" cols="12" md="4" class="mb-4 mb-md-0">
                             <div class="text-subtitle-1 text-sm-h6 text-lg-h5 font-weight-bold">Navigation</div>
                             <div style="width: 80px; height: 2px" class="mb-3 mb-sm-5 mt-1 bg-primary"/>
                             <div class="d-flex flex-column">
@@ -398,12 +398,24 @@ export default {
             try {
                 if (quicklinks) {
                     const parsed = typeof quicklinks === 'string' ? JSON.parse(quicklinks) : quicklinks;
-                    return Array.isArray(parsed) ? parsed.map(link => ({
-                        label: link.label,
-                        to: link.external ? undefined : link.url,
-                        href: link.external ? link.url : undefined,
-                        target: link.external ? '_blank' : undefined
-                    })) : [];
+                    if (Array.isArray(parsed)) {
+                        // Filter links based on authentication status and authOnly property
+                        const filteredLinks = parsed.filter(link => {
+                            // If link requires auth and user is not authenticated, hide it
+                            if (link.authOnly && !this.authenticated) {
+                                return false;
+                            }
+                            return true;
+                        });
+
+                        return filteredLinks.map(link => ({
+                            label: link.label,
+                            to: link.external ? undefined : link.url,
+                            href: link.external ? link.url : undefined,
+                            target: link.external ? '_blank' : undefined
+                        }));
+                    }
+                    return [];
                 }
             } catch (e) {
                 console.error('Failed to parse footer quicklinks:', e);
@@ -416,6 +428,10 @@ export default {
                 { label: 'About', to: '/about' },
                 { label: 'Contact', to: '/contact' }
             ];
+        },
+        showNavigationSection() {
+            // Show navigation section if there are links to display
+            return this.links && this.links.length > 0;
         },
     },
 
