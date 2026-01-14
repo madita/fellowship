@@ -27,8 +27,8 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>Fellowship Community</title>
 
-        <!-- Quicksand Font -->
-        <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <!-- Google Fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Open+Sans:wght@300;400;600;700&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;600;700&family=Raleway:wght@300;400;600;700&family=Poppins:wght@300;400;600;700&family=Inter:wght@300;400;600;700&family=Source+Sans+Pro:wght@300;400;600;700&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 {{--        <link href="{{ mix('dist/css/app.css') }}" rel="stylesheet">--}}
         @vite(['resources/sass/app.scss', 'resources/js/app.js'])

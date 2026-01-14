@@ -13,6 +13,7 @@ export const useSettingsStore = defineStore({
             app_name: 'Fellowship',
             app_logo: '',
             app_copyright: '© Fellowship 2021',
+            site_tagline: '',
             contact_address: '',
             contact_phone: '',
             contact_email: '',
@@ -27,6 +28,7 @@ export const useSettingsStore = defineStore({
             logo_light: null,
             logo_dark: null,
             theme_mode: 'system',
+            font_family: 'Roboto, sans-serif',
             custom_footer_enabled: false,
             custom_footer_html: '',
             maintenance_mode: false,
@@ -43,6 +45,7 @@ export const useSettingsStore = defineStore({
         logoLight: (state) => state.appSettings.logo_light || null,
         logoDark: (state) => state.appSettings.logo_dark || null,
         appCopyright: (state) => state.appSettings.app_copyright || '© Fellowship 2021',
+        siteTagline: (state) => state.appSettings.site_tagline || '',
         contactAddress: (state) => state.appSettings.contact_address || '',
         contactPhone: (state) => state.appSettings.contact_phone || '',
         contactEmail: (state) => state.appSettings.contact_email || '',
@@ -69,6 +72,7 @@ export const useSettingsStore = defineStore({
         },
         customFooterHtml: (state) => state.appSettings.custom_footer_html || '',
         themeMode: (state) => state.appSettings.theme_mode || 'system',
+        fontFamily: (state) => state.appSettings.font_family || 'Roboto, sans-serif',
         maintenanceMode: (state) => {
             const value = state.appSettings.maintenance_mode;
             if (typeof value === 'string') {
@@ -101,8 +105,12 @@ export const useSettingsStore = defineStore({
                 const response = await axios.get('/api/settings/public');
                 const settings = response.data.settings;
 
+                console.log('Fetched settings from API:', { font_family: settings.font_family });
+
                 // Settings are returned as a key-value object
                 this.appSettings = { ...this.appSettings, ...settings };
+
+                console.log('Current font_family in store:', this.fontFamily);
 
                 // Cache settings to localStorage for faster initial load
                 try {
@@ -117,6 +125,19 @@ export const useSettingsStore = defineStore({
                     updateThemeColors(this.primaryColor, this.secondaryColor);
                 } catch (e) {
                     console.warn('Failed to update theme colors:', e);
+                }
+
+                // Apply font family dynamically
+                try {
+                    const fontFamily = this.fontFamily;
+                    console.log('Applying font family:', fontFamily);
+                    if (fontFamily) {
+                        const { updateFontFamily } = await import('@/plugins/vuetify.js');
+                        updateFontFamily(fontFamily);
+                    }
+                } catch (e) {
+                    console.warn('Failed to apply font family:', e);
+                    console.error(e);
                 }
 
                 // Update favicon and app icons dynamically

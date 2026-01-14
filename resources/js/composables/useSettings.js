@@ -162,6 +162,7 @@ export function useSettings() {
         try {
             const settingsArray = Object.entries(settings)
                 .filter(([key]) => key !== 'app_logo')
+                .filter(([key, value]) => value !== null && value !== undefined) // Filter out null/undefined only
                 .map(([key, value]) => {
                     let type = 'string';
                     if (typeof value === 'boolean') {
@@ -172,9 +173,11 @@ export function useSettings() {
                     return { key, value, type };
                 });
 
+            console.log('Saving settings:', settingsArray.find(s => s.key === 'font_family'));
+
             await axios.post('/api/admin/settings', { settings: settingsArray });
 
-            // Update the settings store after saving
+            // Update the settings store after saving (this will update localStorage)
             const { useSettingsStore } = await import('@/store/settingStore.js');
             const settingsStore = useSettingsStore();
             await settingsStore.fetchAppSettings();
@@ -183,7 +186,16 @@ export function useSettings() {
         } catch (error) {
             console.error('Failed to save settings:', error);
             handleErrors(error);
-            showMessage('Failed to save settings', 'error');
+
+            // Build detailed error message
+            let errorMessage = 'Failed to save settings';
+            if (error.response?.data?.errors) {
+                const errorDetails = Object.values(error.response.data.errors)
+                    .flat()
+                    .join('\n• ');
+                errorMessage += ':\n• ' + errorDetails;
+            }
+            showMessage(errorMessage, 'error');
         } finally {
             isSaving.value = false;
         }
@@ -192,9 +204,13 @@ export function useSettings() {
     function showMessage(msg, type = 'success') {
         message.value = msg;
         alertType.value = type;
+
+        // Scroll to top to show the message
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
         setTimeout(() => {
             message.value = '';
-        }, 5000);
+        }, 10000); // Increased to 10 seconds for error messages
     }
 
     function resetErrors() {

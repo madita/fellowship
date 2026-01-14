@@ -5,8 +5,11 @@
                 skip navigation
             </a>
             <v-container class="py-0 px-2 px-sm-3 fill-height d-flex align-center">
-                <router-link to="/dashboard" class="d-flex align-center text-decoration-none logo-container">
-                    <img :src="appLogo" :alt="`Logo of ${appName}`" class="logo-responsive"/>
+                <router-link to="/dashboard" class="text-decoration-none logo-container">
+                    <div class="d-flex flex-column align-center">
+                        <img :src="appLogo" :alt="`Logo of ${appName}`" class="logo-responsive"/>
+                        <div v-if="siteTagline" class="tagline-text">{{ siteTagline }}</div>
+                    </div>
                 </router-link>
 
                 <v-spacer></v-spacer>
@@ -322,6 +325,10 @@ export default {
             const settingsStore = useSettingsStore();
             return settingsStore.appCopyright;
         },
+        siteTagline() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.siteTagline;
+        },
         languageChangeEnabled() {
             const settingsStore = useSettingsStore();
             return settingsStore.languageChangeEnabled;
@@ -512,6 +519,18 @@ export default {
     object-fit: contain;
 }
 
+.tagline-text {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(var(--v-theme-on-surface), 0.7);
+    margin-top: 2px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
 /* Toolbar actions */
 .toolbar-actions {
     flex-wrap: nowrap;
@@ -523,6 +542,12 @@ export default {
     .logo-responsive {
         height: 48px;
         max-width: 100px;
+    }
+
+    .tagline-text {
+        font-size: 0.625rem;
+        max-width: 100px;
+        margin-top: 1px;
     }
 
     :deep(.v-app-bar) {
@@ -552,6 +577,11 @@ export default {
 @media (min-width: 600px) and (max-width: 960px) {
     .logo-responsive {
         height: 60px;
+        max-width: 150px;
+    }
+
+    .tagline-text {
+        font-size: 0.7rem;
         max-width: 150px;
     }
 

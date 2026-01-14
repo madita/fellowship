@@ -289,8 +289,9 @@
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.privacy_policy_url"
-                hint="Link to your privacy policy page"
+                hint="Relative path (/privacy-policy) or full URL (https://example.com/privacy)"
                 persistent-hint
+                placeholder="/privacy-policy"
             ></v-text-field>
 
             <v-text-field
@@ -300,8 +301,9 @@
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.terms_conditions_url"
-                hint="Link to your terms and conditions page"
+                hint="Relative path (/terms) or full URL (https://example.com/terms)"
                 persistent-hint
+                placeholder="/terms"
             ></v-text-field>
 
             <v-text-field
@@ -311,8 +313,9 @@
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.cookie_policy_url"
-                hint="Link to your cookie policy page"
+                hint="Relative path (/cookies) or full URL (https://example.com/cookies)"
                 persistent-hint
+                placeholder="/cookies"
             ></v-text-field>
 
             <v-switch

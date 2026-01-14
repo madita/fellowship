@@ -149,6 +149,26 @@
 
         <!-- Typography & Custom Styles -->
         <settings-card icon="mdi-format-font" title="Typography & Custom Styles">
+            <!-- Font Preview -->
+            <v-card
+                v-if="settings.font_family"
+                :key="settings.font_family"
+                variant="outlined"
+                class="pa-4 mb-4 font-preview-card"
+                :style="previewStyle"
+            >
+                <div class="text-subtitle-2 font-weight-bold mb-3 preview-label">Font Preview</div>
+                <div class="text-h5 mb-3 preview-text">The quick brown fox jumps over the lazy dog</div>
+                <div class="text-h6 mb-3 preview-text">The quick brown fox jumps over the lazy dog</div>
+                <div class="text-body-1 mb-2 preview-text">
+                    AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz
+                </div>
+                <div class="text-body-2 mb-2 preview-text">0123456789 !@#$%^&*()</div>
+                <div class="text-caption text-medium-emphasis preview-label">
+                    Current selection: {{ fontFamilies.find(f => f.value === settings.font_family)?.label || settings.font_family }}
+                </div>
+            </v-card>
+
             <v-select
                 v-model="settings.font_family"
                 label="Font Family"
@@ -159,7 +179,16 @@
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.font_family"
-            ></v-select>
+            >
+                <template v-slot:item="{ props, item }">
+                    <v-list-item
+                        v-bind="props"
+                        :style="{ fontFamily: item.value }"
+                    >
+                        <v-list-item-title>{{ item.raw.label }}</v-list-item-title>
+                    </v-list-item>
+                </template>
+            </v-select>
 
             <v-textarea
                 v-model="settings.custom_css"
@@ -199,6 +228,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import SettingsCard from '../SettingsCard.vue';
 import ImageUpload from '../ImageUpload.vue';
 import { themeModes, fontFamilies } from '../../../composables/settingsConstants';
@@ -210,6 +240,15 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['save', 'message']);
+
+// Computed property for font preview style
+const previewStyle = computed(() => {
+    return {
+        fontFamily: props.settings.font_family || 'Roboto, sans-serif',
+        // Force browser to use the font
+        fontDisplay: 'swap',
+    };
+});
 
 function handleImageUploaded({ key, path }) {
     props.settings[key] = path;
@@ -225,3 +264,24 @@ function handleImageError(message) {
     emit('message', { text: message, type: 'error' });
 }
 </script>
+
+<style scoped>
+.font-preview-card {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* Preview text uses the selected font */
+.font-preview-card .preview-text {
+    font-family: inherit !important;
+}
+
+/* Labels use default Roboto font */
+.font-preview-card .preview-label {
+    font-family: Roboto, sans-serif !important;
+}
+
+/* Force all child elements of preview text to inherit font */
+.font-preview-card .preview-text * {
+    font-family: inherit !important;
+}
+</style>

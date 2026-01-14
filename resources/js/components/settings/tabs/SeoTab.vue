@@ -113,8 +113,9 @@
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.canonical_url"
-                hint="Preferred domain for search engines"
+                hint="Preferred full URL for search engines (e.g., https://example.com)"
                 persistent-hint
+                placeholder="https://example.com"
             ></v-text-field>
 
             <v-switch

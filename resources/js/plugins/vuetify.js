@@ -17,7 +17,7 @@ import * as directives from "vuetify/directives";
 import i18n from './vue-i18n';
 import config from '../configs';
 
-// Get colors from localStorage if available (settings may have been cached)
+// Get colors and font from localStorage if available (settings may have been cached)
 function getThemeColors() {
     const defaultColors = {
         primary: '#115571',
@@ -40,7 +40,34 @@ function getThemeColors() {
     return defaultColors
 }
 
+function getFontFamily() {
+    try {
+        const cachedSettings = localStorage.getItem('app_settings')
+        if (cachedSettings) {
+            const settings = JSON.parse(cachedSettings)
+            return settings.font_family || 'Roboto, sans-serif'
+        }
+    } catch (e) {
+        console.warn('Failed to load font family from localStorage:', e)
+    }
+    return 'Roboto, sans-serif'
+}
+
 const themeColors = getThemeColors()
+const appFontFamily = getFontFamily()
+
+// Apply font family to document on initial load
+if (appFontFamily) {
+    document.documentElement.style.setProperty('--app-font-family', appFontFamily)
+    if (document.body) {
+        document.body.style.fontFamily = appFontFamily
+    } else {
+        // If body isn't ready yet, wait for it
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.style.fontFamily = appFontFamily
+        })
+    }
+}
 
 const light = {
     dark: false,
@@ -109,6 +136,14 @@ const vuetify = createVuetify({
             dark,
         },
     },
+    defaults: {
+        global: {
+            // Apply custom font family to all Vuetify components
+            style: {
+                fontFamily: appFontFamily,
+            },
+        },
+    },
     lang: {
         current: config.locales.locale,
         t: (key, ...params) => i18n.t(key, params),
@@ -123,6 +158,46 @@ export function updateThemeColors(primaryColor, secondaryColor) {
         vuetify.theme.themes.value.light.colors.secondary = secondaryColor
         vuetify.theme.themes.value.dark.colors.primary = primaryColor
         vuetify.theme.themes.value.dark.colors.secondary = secondaryColor
+    }
+}
+
+// Method to update font family dynamically
+export function updateFontFamily(fontFamily) {
+    console.log('updateFontFamily called with:', fontFamily);
+    if (fontFamily) {
+        // Set CSS variable
+        document.documentElement.style.setProperty('--app-font-family', fontFamily)
+
+        // Apply to body
+        document.body.style.fontFamily = fontFamily
+
+        // Add or update global style rule for font family
+        let styleEl = document.getElementById('dynamic-font-style');
+        if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = 'dynamic-font-style';
+            document.head.appendChild(styleEl);
+        }
+        styleEl.textContent = `
+            body, .v-application {
+                font-family: ${fontFamily};
+            }
+        `;
+
+        console.log('Applied font to body:', document.body.style.fontFamily);
+
+        // Update Vuetify defaults for future components
+        if (vuetify && vuetify.defaults) {
+            vuetify.defaults.global.style = {
+                ...vuetify.defaults.global.style,
+                fontFamily: fontFamily,
+            }
+            console.log('Updated Vuetify defaults with font:', fontFamily);
+        } else {
+            console.warn('Vuetify instance not available for font update');
+        }
+    } else {
+        console.warn('updateFontFamily called with empty/null fontFamily');
     }
 }
 

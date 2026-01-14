@@ -179,25 +179,35 @@ class SettingsController extends Controller
             $key = $setting['key'];
             $value = $setting['value'];
 
-            // Skip null/empty values
-            if ($value === null || $value === '') {
+            // Skip null/empty values - no validation needed for empty fields
+            if ($value === null || $value === '' || (is_string($value) && trim($value) === '')) {
                 continue;
             }
 
-            // Email validation
+            // Email validation (only if not empty)
             if (in_array($key, ['contact_email', 'admin_email', 'support_email', 'email_sender_address'])) {
                 if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid email address."];
                 }
             }
 
-            // URL validation
-            if (in_array($key, [
-                'site_url', 'privacy_policy_url', 'terms_conditions_url', 'cookie_policy_url',
-                'canonical_url', 'cdn_url'
-            ])) {
+            // URL validation for external URLs that must be full URLs
+            $requiresFullUrl = ['site_url', 'cdn_url', 'canonical_url'];
+            if (in_array($key, $requiresFullUrl)) {
                 if (!filter_var($value, FILTER_VALIDATE_URL)) {
-                    $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid URL."];
+                    $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid URL (e.g., https://example.com)."];
+                }
+            }
+
+            // Flexible URL/Path validation for internal pages (accepts /path or full URLs)
+            $allowsRelativePath = ['privacy_policy_url', 'terms_conditions_url', 'cookie_policy_url'];
+            if (in_array($key, $allowsRelativePath)) {
+                // Accept relative paths starting with / or full URLs
+                $isRelativePath = str_starts_with($value, '/');
+                $isFullUrl = filter_var($value, FILTER_VALIDATE_URL);
+
+                if (!$isRelativePath && !$isFullUrl) {
+                    $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid URL (https://example.com/privacy) or path (/privacy-policy)."];
                 }
             }
 

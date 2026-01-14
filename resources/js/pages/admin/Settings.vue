@@ -9,9 +9,11 @@
 
                 <v-divider></v-divider>
 
-                <v-alert v-if="message" :type="alertType" class="mx-2 mx-sm-6 mt-4 mb-0" closable>
-                    {{ message }}
-                </v-alert>
+                <div v-if="message" class="alert-container">
+                    <v-alert :type="alertType" class="mx-2 mx-sm-6 mt-4 mb-0 message-alert" closable @click:close="message = ''">
+                        <div class="text-body-2">{{ message }}</div>
+                    </v-alert>
+                </div>
 
                 <v-alert
                     v-if="settings.maintenance_mode"
@@ -137,5 +139,17 @@ function handleMessage({ text, type }) {
 .bg-gradient {
     background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
     color: white;
+}
+
+.alert-container {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: transparent;
+}
+
+.message-alert {
+    word-break: break-word;
+    white-space: pre-wrap;
 }
 </style>
