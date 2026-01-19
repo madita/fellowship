@@ -19,20 +19,21 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('homepage_widgets', function (Blueprint $table) {
+        Schema::create('widgets', function (Blueprint $table) {
             $table->id();
+            $table->string('location')->default('home'); // home, footer, page, etc.
             $table->foreignId('section_id')->nullable();
-            $table->string('type'); // hero, stats, partners, feature_grid, feature_showcase, cta, testimonials, pricing, faq, gallery
+            $table->string('type'); // hero, stats, partners, feature_grid, feature_showcase, cta, testimonials, pricing, faq, gallery, quicklinks, contact, newsletter, social, text
             $table->string('title')->nullable();
             $table->boolean('enabled')->default(true);
             $table->integer('order')->default(0);
             $table->integer('column')->default(1);
-            $table->json('content'); // Widget-specific content
+            $table->json('content')->nullable(); // Widget-specific content
             $table->json('config')->nullable(); // Widget-specific configuration
             $table->string('anchor_id')->nullable(); // For navigation
             $table->timestamps();
 
-            $table->index(['enabled', 'order']);
+            $table->index(['location', 'enabled', 'order']);
         });
 
         Schema::create('homepage_menu_items', function (Blueprint $table) {
@@ -46,17 +47,18 @@ return new class extends Migration
             $table->index(['enabled', 'order']);
         });
 
-        Schema::create('homepage_sections', function (Blueprint $table) {
+        Schema::create('sections', function (Blueprint $table) {
             $table->id();
+            $table->string('location')->default('home'); // home, footer, page, etc.
             $table->string('title')->nullable();
             $table->string('anchor_id')->nullable();
-            $table->string('layout')->default('1-col'); // 1-col, 2-col, 3-col, 2-1-col (66/33), 1-2-col (33/66)
+            $table->string('layout')->default('1-col'); // 1-col, 2-col, 3-col, 4-col, 2-1-col (66/33), 1-2-col (33/66)
             $table->boolean('enabled')->default(true);
             $table->integer('order')->default(0);
             $table->json('config')->nullable(); // Background color, padding, etc.
             $table->timestamps();
 
-            $table->index(['enabled', 'order']);
+            $table->index(['location', 'enabled', 'order']);
         });
     }
 
@@ -66,8 +68,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('settings');
-        Schema::dropIfExists('homepage_widgets');
+        Schema::dropIfExists('widgets');
         Schema::dropIfExists('homepage_menu_items');
-        Schema::dropIfExists('homepage_sections');
+        Schema::dropIfExists('sections');
     }
 };

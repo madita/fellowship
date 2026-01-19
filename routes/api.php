@@ -136,6 +136,13 @@ Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetContro
 Route::get('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@getActiveMenu');
 Route::get('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@getActiveSections');
 
+// Public Footer Routes (for footer rendering)
+Route::get('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@getActiveWidgets');
+Route::get('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@getActiveSections');
+
+// Newsletter Subscription
+Route::post('/newsletter/subscribe', 'App\Http\Controllers\NewsletterController@subscribe');
+
 // Admin Settings Routes
 Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
     // Settings
@@ -174,6 +181,22 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     // Homepage Image Upload
     Route::post('/homepage/upload-image', 'App\Http\Controllers\Admin\HomepageImageController@upload');
     Route::delete('/homepage/delete-image', 'App\Http\Controllers\Admin\HomepageImageController@delete');
+
+    // Footer Widgets
+    Route::get('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@index');
+    Route::post('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@store');
+    Route::patch('/footer/widgets/{id}', 'App\Http\Controllers\Admin\FooterWidgetController@update');
+    Route::delete('/footer/widgets/{id}', 'App\Http\Controllers\Admin\FooterWidgetController@destroy');
+    Route::post('/footer/widgets/reorder', 'App\Http\Controllers\Admin\FooterWidgetController@updateOrder');
+    Route::post('/footer/widgets/{id}/toggle', 'App\Http\Controllers\Admin\FooterWidgetController@toggle');
+
+    // Footer Sections
+    Route::get('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@index');
+    Route::post('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@store');
+    Route::patch('/footer/sections/{id}', 'App\Http\Controllers\Admin\FooterSectionController@update');
+    Route::delete('/footer/sections/{id}', 'App\Http\Controllers\Admin\FooterSectionController@destroy');
+    Route::post('/footer/sections/reorder', 'App\Http\Controllers\Admin\FooterSectionController@updateOrder');
+    Route::post('/footer/sections/{id}/toggle', 'App\Http\Controllers\Admin\FooterSectionController@toggle');
 });
 
 Route::post('/login', function (Request $request) {

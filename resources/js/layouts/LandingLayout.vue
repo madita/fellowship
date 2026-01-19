@@ -111,72 +111,44 @@
             <!-- Custom Footer (if enabled) -->
             <div v-if="customFooterEnabled && customFooterHtml" v-html="processedFooterHtml"></div>
 
-            <!-- Default Footer -->
+            <!-- Default Footer with Widgets -->
             <v-footer v-else color="transparent">
                 <v-container class="py-3 py-sm-5 px-3 px-sm-4">
-                    <v-row>
-                        <v-col v-if="showNavigationSection" cols="12" md="4" class="mb-4 mb-md-0">
-                            <div class="text-subtitle-1 text-sm-h6 text-lg-h5 font-weight-bold">Navigation</div>
-                            <div style="width: 80px; height: 2px" class="mb-3 mb-sm-5 mt-1 bg-primary"/>
-                            <div class="d-flex flex-column">
-                                <div v-for="(link, i) in links" :key="i" class="text-body-2 text-sm-body-1 mb-2">
-                                    <router-link
-                                        v-if="link.to"
-                                        class="text-decoration-none text-primary"
-                                        :to="link.to"
-                                    >{{ link.label }}
-                                    </router-link>
-                                    <a
-                                        v-else
-                                        class="text-decoration-none text-primary"
-                                        :href="link.href"
-                                        :target="link.target || '_blank'"
-                                    >{{ link.label }}</a>
-                                </div>
-                            </div>
-                        </v-col>
-                        <v-col cols="12" md="4" class="mb-4 mb-md-0">
-                            <div class="text-subtitle-1 text-sm-h6 text-lg-h5 font-weight-bold">Contact Information</div>
-                            <div style="width: 80px; height: 2px" class="mb-3 mb-sm-5 mt-1 bg-primary"/>
-                            <div v-if="contactAddress" class="d-flex align-start mb-2 font-weight-bold text-body-2 text-sm-body-1">
-                                <v-icon color="primary lighten-1" class="mr-2 flex-shrink-0" size="small">mdi-map-marker-outline</v-icon>
-                                <span>{{ contactAddress }}</span>
-                            </div>
-                            <div v-if="contactPhone" class="d-flex align-center mb-2 text-body-2 text-sm-body-1">
-                                <v-icon color="primary lighten-1" class="mr-2 flex-shrink-0" size="small">mdi-phone-outline</v-icon>
-                                <a :href="`tel:${contactPhone}`" class="text-decoration-none text-primary">{{ contactPhone }}</a>
-                            </div>
-                            <div v-if="contactEmail" class="d-flex align-center mb-2 text-body-2 text-sm-body-1">
-                                <v-icon color="primary lighten-1" class="mr-2 flex-shrink-0" size="small">mdi-email-outline</v-icon>
-                                <a :href="`mailto:${contactEmail}`" class="text-decoration-none text-primary text-truncate">{{ contactEmail }}</a>
-                            </div>
-                        </v-col>
-                        <v-col cols="12" md="4" class="mb-4 mb-md-0">
-                            <div class="text-subtitle-1 text-sm-h6 text-lg-h5 font-weight-bold">Newsletter</div>
-                            <div style="width: 80px; height: 2px" class="mb-3 mb-sm-5 mt-1 bg-primary"/>
-                            <div class="d-flex flex-column flex-sm-row w-full">
-                                <v-text-field
-                                    variant="outlined"
-                                    label="Your email"
-                                    density="compact"
-                                    class="mr-sm-2 mb-2 mb-sm-0"
-                                ></v-text-field>
-                                <v-btn color="primary" class="flex-shrink-0">Subscribe</v-btn>
-                            </div>
-                            <div v-if="socialTwitter || socialFacebook || socialInstagram" class="text-center text-md-right mt-4 mt-lg-2 text-body-2">
-                                <span class="mr-2">Connect</span>
-                                <v-btn v-if="socialTwitter" :href="socialTwitter" target="_blank" icon size="small" color="primary" class="ml-1">
-                                    <v-icon size="small">mdi-twitter</v-icon>
-                                </v-btn>
-                                <v-btn v-if="socialFacebook" :href="socialFacebook" target="_blank" icon size="small" color="primary" class="ml-1">
-                                    <v-icon size="small">mdi-facebook</v-icon>
-                                </v-btn>
-                                <v-btn v-if="socialInstagram" :href="socialInstagram" target="_blank" icon size="small" color="primary" class="ml-1">
-                                    <v-icon size="small">mdi-instagram</v-icon>
-                                </v-btn>
-                            </div>
+                    <!-- Section-based footer -->
+                    <div v-if="footerSections.length > 0">
+                        <v-row v-for="section in footerSections" :key="section.id" class="mb-4">
+                            <v-col
+                                v-for="(widget, index) in section.widgets"
+                                :key="widget.id"
+                                cols="12"
+                                :md="getSectionColumnWidth(section.layout, section.widgets.length, index)"
+                                class="mb-4 mb-md-0"
+                            >
+                                <footer-widget-renderer :widget="widget" />
+                            </v-col>
+                        </v-row>
+                    </div>
+
+                    <!-- Flat widgets (no sections) -->
+                    <v-row v-else-if="footerWidgets.length > 0">
+                        <v-col
+                            v-for="widget in footerWidgets"
+                            :key="widget.id"
+                            cols="12"
+                            :md="getColumnSize(footerWidgets.length)"
+                            class="mb-4 mb-md-0"
+                        >
+                            <footer-widget-renderer :widget="widget" />
                         </v-col>
                     </v-row>
+
+                    <!-- No widgets -->
+                    <v-row v-else>
+                        <v-col cols="12" class="text-center text-caption text-medium-emphasis">
+                            No footer widgets configured. Go to Settings → Footer to add widgets.
+                        </v-col>
+                    </v-row>
+
                     <v-divider class="my-2 my-sm-3"></v-divider>
                     <div class="text-center text-caption text-sm-body-2">
                         {{ appCopyright }}
@@ -219,6 +191,7 @@ import {useAuthStore} from "@/store/authStore.js";
 import {useUserStore} from "@/store/userStore.js";
 import {useSettingsStore} from "@/store/settingStore.js";
 import {useHomepageStore} from "@/store/homepageStore.js";
+import {useFooterStore} from "@/store/footerStore.js";
 import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
 import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
@@ -227,6 +200,7 @@ import ConversationsNotification from '../components/conversation/ConversationsN
 import ConversationBoxManager from '../components/conversation/ConversationBoxManager.vue'
 import SidebarUsers from '../components/conversation/SidebarUsers.vue'
 import UserSettingsSidebar from '../components/settings/UserSettingsSidebar.vue'
+import FooterWidgetRenderer from '../components/footer/FooterWidgetRenderer.vue'
 import eventBus from '../components/common/eventBus.js'
 
 
@@ -240,7 +214,8 @@ export default {
         ConversationsNotification,
         ConversationBoxManager,
         SidebarUsers,
-        UserSettingsSidebar
+        UserSettingsSidebar,
+        FooterWidgetRenderer
     },
     setup() {
         const theme = useTheme()
@@ -385,11 +360,39 @@ export default {
                 return isEmpty ? 'style="display: none;"' : '';
             });
 
+            // Handle data-if-auth - show only to authenticated users
+            html = html.replace(/data-if-auth/g, () => {
+                return this.authenticated ? '' : 'style="display: none;"';
+            });
+
+            // Handle data-if-guest - show only to non-authenticated users
+            html = html.replace(/data-if-guest/g, () => {
+                return !this.authenticated ? '' : 'style="display: none;"';
+            });
+
             return html;
         },
         menuItems() {
             const homepageStore = useHomepageStore();
             return homepageStore.activeMenuItems;
+        },
+        footerWidgets() {
+            try {
+                const footerStore = useFooterStore();
+                return footerStore.activeWidgets || [];
+            } catch (error) {
+                console.error('Error getting footer widgets:', error);
+                return [];
+            }
+        },
+        footerSections() {
+            try {
+                const footerStore = useFooterStore();
+                return footerStore.activeSections || [];
+            } catch (error) {
+                console.error('Error getting footer sections:', error);
+                return [];
+            }
         },
         links() {
             const settingsStore = useSettingsStore();
@@ -436,6 +439,32 @@ export default {
     },
 
     methods: {
+        getColumnSize(count) {
+            // Calculate responsive column size based on widget count
+            if (count === 1) return 12;
+            if (count === 2) return 6;
+            if (count === 3) return 4;
+            if (count >= 4) return 3;
+            return 4; // default
+        },
+        getSectionColumnWidth(layout, widgetCount, widgetIndex) {
+            // Get column width based on section layout
+            const layoutMap = {
+                '1-col': [12],
+                '2-col': [6, 6],
+                '3-col': [4, 4, 4],
+                '4-col': [3, 3, 3, 3],
+            };
+
+            const widths = layoutMap[layout] || [12];
+
+            // If more widgets than columns, distribute evenly
+            if (widgetIndex >= widths.length) {
+                return Math.floor(12 / widgetCount);
+            }
+
+            return widths[widgetIndex];
+        },
         async signOut() {
             const auth = useAuthStore()
             await auth.logout()
@@ -490,6 +519,23 @@ export default {
             await homepageStore.fetchPublicMenu();
         } catch (error) {
             console.error('Failed to load homepage menu:', error);
+        }
+
+        // Fetch footer widgets and sections
+        const footerStore = useFooterStore();
+        if (!footerStore.widgetsLoaded) {
+            try {
+                await footerStore.fetchWidgets();
+            } catch (error) {
+                console.error('Failed to load footer widgets:', error);
+            }
+        }
+        if (!footerStore.sectionsLoaded) {
+            try {
+                await footerStore.fetchSections();
+            } catch (error) {
+                console.error('Failed to load footer sections:', error);
+            }
         }
 
         // Listen for settings drawer open event from toolbar user menu
