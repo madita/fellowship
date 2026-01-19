@@ -23,6 +23,8 @@ class FooterWidget extends Model
         'config' => 'array',
         'enabled' => 'boolean',
         'order' => 'integer',
+        'column' => 'integer',
+        'section_id' => 'integer',
     ];
 
     protected $attributes = [

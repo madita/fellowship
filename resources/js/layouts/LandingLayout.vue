@@ -118,13 +118,19 @@
                     <div v-if="footerSections.length > 0">
                         <v-row v-for="section in footerSections" :key="section.id" class="mb-4">
                             <v-col
-                                v-for="(widget, index) in section.widgets"
-                                :key="widget.id"
+                                v-for="columnNumber in getColumnCount(section.layout)"
+                                :key="columnNumber"
                                 cols="12"
-                                :md="getSectionColumnWidth(section.layout, section.widgets.length, index)"
+                                :md="getColumnWidth(section.layout, columnNumber)"
                                 class="mb-4 mb-md-0"
                             >
-                                <footer-widget-renderer :widget="widget" />
+                                <div
+                                    v-for="widget in getWidgetsInColumn(section, columnNumber)"
+                                    :key="widget.id"
+                                    class="mb-3"
+                                >
+                                    <footer-widget-renderer :widget="widget" />
+                                </div>
                             </v-col>
                         </v-row>
                     </div>
@@ -447,7 +453,43 @@ export default {
             if (count >= 4) return 3;
             return 4; // default
         },
+        getColumnCount(layout) {
+            // Return number of columns for this layout
+            const columnMap = {
+                '1-col': 1,
+                '2-col': 2,
+                '3-col': 3,
+                '4-col': 4,
+            };
+            return columnMap[layout] || 1;
+        },
+        getColumnWidth(layout, columnNumber) {
+            // Get column width based on section layout
+            const layoutMap = {
+                '1-col': [12],
+                '2-col': [6, 6],
+                '3-col': [4, 4, 4],
+                '4-col': [3, 3, 3, 3],
+            };
+
+            const widths = layoutMap[layout] || [12];
+            return widths[columnNumber - 1] || 12;
+        },
+        getWidgetsInColumn(section, columnNumber) {
+            // Get all widgets that belong to this column, sorted by order
+            if (!section.widgets || !Array.isArray(section.widgets)) {
+                return [];
+            }
+
+            return section.widgets
+                .filter(widget => {
+                    // Convert both to numbers for comparison
+                    return Number(widget.column) === Number(columnNumber);
+                })
+                .sort((a, b) => (a.order || 0) - (b.order || 0));
+        },
         getSectionColumnWidth(layout, widgetCount, widgetIndex) {
+            // Legacy function - kept for compatibility
             // Get column width based on section layout
             const layoutMap = {
                 '1-col': [12],

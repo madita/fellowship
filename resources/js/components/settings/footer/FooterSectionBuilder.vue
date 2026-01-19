@@ -256,8 +256,14 @@ function getColumnWidths(layout) {
 
 function getWidgetsForColumn(section, columnNumber) {
   if (!section.widgets) return [];
+
+  // Debug logging
+  console.log('Getting widgets for column:', columnNumber, 'Section:', section.id);
+  console.log('All widgets:', section.widgets.map(w => ({ id: w.id, type: w.type, column: w.column, columnType: typeof w.column })));
+
+  // Convert both to numbers for comparison to handle string/number mismatch
   return section.widgets
-    .filter(w => w.column === columnNumber)
+    .filter(w => Number(w.column) === Number(columnNumber))
     .sort((a, b) => a.order - b.order);
 }
 
@@ -402,24 +408,31 @@ function updateColumnWidgets(section, columnNumber, newWidgets) {
 async function onWidgetDragEnd() {
   // After drag-drop, save all widget positions
   try {
-    // Collect all widgets from all sections/columns with their new positions
+    // Collect all widget updates
+    const updates = [];
     sections.value.forEach(section => {
       const layoutWidths = getColumnWidths(section.layout);
       layoutWidths.forEach((_, colIndex) => {
         const columnWidgets = getWidgetsForColumn(section, colIndex + 1);
         columnWidgets.forEach((widget, widgetIndex) => {
-          footerStore.updateWidget(widget.id, {
-            section_id: section.id,
-            column: colIndex + 1,
-            order: widgetIndex + 1
-          });
+          updates.push(
+            footerStore.updateWidget(widget.id, {
+              section_id: section.id,
+              column: colIndex + 1,
+              order: widgetIndex + 1
+            })
+          );
         });
       });
     });
 
+    // Wait for all updates to complete
+    await Promise.all(updates);
+
     showSnackbar('Widget positions updated', 'success');
     await loadSections();
   } catch (error) {
+    console.error('Failed to update widget positions:', error);
     showSnackbar('Failed to update widget positions', 'error');
     await loadSections();
   }

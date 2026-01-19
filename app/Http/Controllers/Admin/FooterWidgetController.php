@@ -49,6 +49,8 @@ class FooterWidgetController extends Controller
             'config' => 'required|array',
             'order' => 'integer',
             'enabled' => 'boolean',
+            'section_id' => 'nullable|exists:sections,id',
+            'column' => 'nullable|integer|min:1|max:4',
         ]);
 
         if ($validator->fails()) {
@@ -59,12 +61,27 @@ class FooterWidgetController extends Controller
         }
 
         // Set default order if not provided
-        $data = $request->all();
+        $data = $validator->validated();
         if (!isset($data['order'])) {
             $data['order'] = FooterWidget::max('order') + 1;
         }
 
+        // Log what we're creating
+        \Log::info('Creating footer widget', [
+            'data' => $data,
+            'section_id' => $data['section_id'] ?? 'null',
+            'column' => $data['column'] ?? 'null',
+        ]);
+
         $widget = FooterWidget::create($data);
+
+        // Log what was actually created
+        \Log::info('Footer widget created', [
+            'id' => $widget->id,
+            'section_id' => $widget->section_id,
+            'column' => $widget->column,
+            'column_type' => gettype($widget->column),
+        ]);
 
         return response()->json([
             'message' => 'Widget created successfully',
@@ -84,6 +101,8 @@ class FooterWidgetController extends Controller
             'config' => 'array',
             'order' => 'integer',
             'enabled' => 'boolean',
+            'section_id' => 'nullable|exists:sections,id',
+            'column' => 'nullable|integer|min:1|max:4',
         ]);
 
         if ($validator->fails()) {
@@ -93,7 +112,7 @@ class FooterWidgetController extends Controller
             ], 422);
         }
 
-        $widget->update($request->all());
+        $widget->update($validator->validated());
 
         return response()->json([
             'message' => 'Widget updated successfully',
