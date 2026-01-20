@@ -1,7 +1,7 @@
 <template>
     <v-sheet>
         <v-container class="py-4 py-lg-8">
-            <v-row>
+            <v-row :class="{ 'flex-row-reverse': imagePosition === 'left' }">
                 <v-col cols="12" lg="6">
                     <div v-if="content.subtitle" class="text-uppercase font-weight-bold body-2 text-primary mb-2 mt-0 mt-xl-10">
                         {{ content.subtitle }}
@@ -38,6 +38,12 @@ const props = defineProps({
     type: Object,
     default: () => ({})
   }
+});
+
+const imagePosition = computed(() => {
+  // Get image position from content, default to 'right'
+  // Support both config and content for backwards compatibility
+  return props.content?.imagePosition || props.config?.imagePosition || 'right';
 });
 
 const feature1 = computed(() => {

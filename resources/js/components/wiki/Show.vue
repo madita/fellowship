@@ -295,7 +295,7 @@ onMounted(() => {
 <style scoped>
 .wiki-page-container {
     min-height: 100vh;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
 }
 
 .loading-container {
@@ -341,9 +341,9 @@ onMounted(() => {
 }
 
 .content-card {
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(var(--v-border-color), 0.2);
     backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.9) !important;
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
 }
 
 .sidebar-content {
@@ -499,7 +499,7 @@ onMounted(() => {
 
 .wiki-content-body a:hover {
     border-bottom-color: rgb(var(--v-theme-primary));
-    background: rgba(var(--v-theme-primary), 0.05);
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
     padding: 0 2px;
     border-radius: 4px;
 }

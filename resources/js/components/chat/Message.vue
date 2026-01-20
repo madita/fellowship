@@ -80,7 +80,7 @@ export default {
         border-bottom: 1px solid #eee;
 
         &--own {
-            background-color: #f0f0f0;
+            background: rgba(var(--v-theme-primary), 0.1) !important;
         }
 
         &-user {

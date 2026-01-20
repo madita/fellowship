@@ -61,6 +61,37 @@ class SettingsController extends Controller
             'custom_css',
             'theme_mode',
             'login_branding_enabled',
+            'background_light',
+            'background_dark',
+            'background_style',
+
+            // Light Theme Colors
+            'primary_color_light',
+            'secondary_color_light',
+            'accent_color_light',
+            'background_color_light',
+            'surface_color_light',
+            'error_color_light',
+            'warning_color_light',
+            'info_color_light',
+            'success_color_light',
+
+            // Dark Theme Colors
+            'primary_color_dark',
+            'secondary_color_dark',
+            'accent_color_dark',
+            'background_color_dark',
+            'surface_color_dark',
+            'error_color_dark',
+            'warning_color_dark',
+            'info_color_dark',
+            'success_color_dark',
+
+            // Opacity Settings
+            'background_opacity_light',
+            'background_opacity_dark',
+            'surface_opacity_light',
+            'surface_opacity_dark',
 
             // SEO
             'meta_title',
@@ -213,7 +244,16 @@ class SettingsController extends Controller
             }
 
             // Color validation (hex format)
-            if (in_array($key, ['primary_color', 'secondary_color'])) {
+            $colorFields = [
+                'primary_color', 'secondary_color',
+                'primary_color_light', 'secondary_color_light', 'accent_color_light',
+                'background_color_light', 'surface_color_light', 'error_color_light',
+                'warning_color_light', 'info_color_light', 'success_color_light',
+                'primary_color_dark', 'secondary_color_dark', 'accent_color_dark',
+                'background_color_dark', 'surface_color_dark', 'error_color_dark',
+                'warning_color_dark', 'info_color_dark', 'success_color_dark',
+            ];
+            if (in_array($key, $colorFields)) {
                 if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $value)) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid hex color (e.g., #1976D2)."];
                 }
@@ -356,7 +396,7 @@ class SettingsController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,ico,webp|max:2048',
-            'key' => 'required|string|in:logo_light,logo_dark,favicon,app_icon,og_image',
+            'key' => 'required|string|in:logo_light,logo_dark,favicon,app_icon,og_image,background_light,background_dark',
         ]);
 
         if ($validator->fails()) {
@@ -472,7 +512,7 @@ class SettingsController extends Controller
     public function deleteImage(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'key' => 'required|string|in:logo_light,logo_dark,favicon,app_icon,og_image',
+            'key' => 'required|string|in:logo_light,logo_dark,favicon,app_icon,og_image,background_light,background_dark',
         ]);
 
         if ($validator->fails()) {

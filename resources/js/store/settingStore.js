@@ -35,6 +35,34 @@ export const useSettingsStore = defineStore({
             maintenance_message: '',
             primary_color: '#115571',
             secondary_color: '#a0b9c8',
+            background_light: null,
+            background_dark: null,
+            background_style: 'cover',
+            // Light theme colors
+            primary_color_light: '#115571',
+            secondary_color_light: '#a0b9c8',
+            accent_color_light: '#048ba8',
+            background_color_light: '#ffffff',
+            surface_color_light: '#f2f5f8',
+            error_color_light: '#ef476f',
+            warning_color_light: '#ffd166',
+            info_color_light: '#2196F3',
+            success_color_light: '#06d6a0',
+            // Dark theme colors
+            primary_color_dark: '#115571',
+            secondary_color_dark: '#a0b9c8',
+            accent_color_dark: '#26c4da',
+            background_color_dark: '#121212',
+            surface_color_dark: '#1e1e1e',
+            error_color_dark: '#ef476f',
+            warning_color_dark: '#ffd166',
+            info_color_dark: '#2196F3',
+            success_color_dark: '#06d6a0',
+            // Opacity settings
+            background_opacity_light: 95,
+            background_opacity_dark: 95,
+            surface_opacity_light: 100,
+            surface_opacity_dark: 100,
         },
         settingsLoaded: false,
     }),
@@ -100,6 +128,112 @@ export const useSettingsStore = defineStore({
         setBatchUpload(enabled) {
             this.batchUpload = enabled;
         },
+        applyBackgroundImages() {
+            try {
+                // Dynamically import vuetify to check current theme
+                import('@/plugins/vuetify.js').then(({ default: vuetify }) => {
+                    const isDark = vuetify.theme.global.current.value.dark;
+                    const backgroundImage = isDark
+                        ? this.appSettings.background_dark
+                        : this.appSettings.background_light;
+                    const backgroundStyle = this.appSettings.background_style || 'cover';
+
+                    // Get or create the background element
+                    let bgElement = document.getElementById('app-background');
+                    if (!bgElement) {
+                        bgElement = document.createElement('div');
+                        bgElement.id = 'app-background';
+                        bgElement.style.position = 'fixed';
+                        bgElement.style.top = '0';
+                        bgElement.style.left = '0';
+                        bgElement.style.width = '100%';
+                        bgElement.style.height = '100%';
+                        bgElement.style.zIndex = '-1';
+                        bgElement.style.pointerEvents = 'none';
+                        document.body.prepend(bgElement);
+                    }
+
+                    // Apply background image or remove it
+                    if (backgroundImage && backgroundImage.trim() !== '') {
+                        const imageUrl = `/storage/${backgroundImage}`;
+                        bgElement.style.backgroundImage = `url('${imageUrl}')`;
+                        bgElement.style.backgroundPosition = 'center';
+                        bgElement.style.backgroundAttachment = 'fixed';
+
+                        if (backgroundStyle === 'repeat') {
+                            bgElement.style.backgroundSize = 'auto';
+                            bgElement.style.backgroundRepeat = 'repeat';
+                        } else {
+                            bgElement.style.backgroundSize = 'cover';
+                            bgElement.style.backgroundRepeat = 'no-repeat';
+                        }
+                    } else {
+                        // Remove background image if none is set
+                        bgElement.style.backgroundImage = '';
+                    }
+
+                    // Make sure body background is transparent to show the background element
+                    document.body.style.background = 'transparent';
+                }).catch(e => {
+                    console.warn('Failed to apply background images:', e);
+                });
+            } catch (e) {
+                console.warn('Failed to apply background images:', e);
+            }
+        },
+        applyOpacitySettings() {
+            try {
+                import('@/plugins/vuetify.js').then(({ default: vuetify }) => {
+                    const isDark = vuetify.theme.global.current.value.dark;
+
+                    // Get opacity values (0-100) and convert to decimal (0-1)
+                    const backgroundOpacity = isDark
+                        ? (this.appSettings.background_opacity_dark || 95) / 100
+                        : (this.appSettings.background_opacity_light || 95) / 100;
+
+                    const surfaceOpacity = isDark
+                        ? (this.appSettings.surface_opacity_dark || 100) / 100
+                        : (this.appSettings.surface_opacity_light || 100) / 100;
+
+                    // Get or create the opacity style element
+                    let styleEl = document.getElementById('dynamic-opacity-style');
+                    if (!styleEl) {
+                        styleEl = document.createElement('style');
+                        styleEl.id = 'dynamic-opacity-style';
+                        document.head.appendChild(styleEl);
+                    }
+
+                    // Apply opacity via CSS custom properties
+                    styleEl.textContent = `
+                        :root {
+                            --app-background-opacity: ${backgroundOpacity};
+                            --app-surface-opacity: ${surfaceOpacity};
+                        }
+
+                        .v-main {
+                            background: rgba(var(--v-theme-background), var(--app-background-opacity)) !important;
+                        }
+
+                        .v-card,
+                        .v-sheet,
+                        .v-toolbar,
+                        .v-app-bar {
+                            background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
+                        }
+
+                        .v-navigation-drawer,
+                        .v-dialog .v-overlay__content,
+                        .v-menu .v-overlay__content {
+                            background: rgb(var(--v-theme-surface)) !important;
+                        }
+                    `;
+                }).catch(e => {
+                    console.warn('Failed to apply opacity settings:', e);
+                });
+            } catch (e) {
+                console.warn('Failed to apply opacity settings:', e);
+            }
+        },
         async fetchAppSettings() {
             try {
                 const response = await axios.get('/api/settings/public');
@@ -122,7 +256,29 @@ export const useSettingsStore = defineStore({
                 // Apply theme colors dynamically
                 try {
                     const { updateThemeColors } = await import('@/plugins/vuetify.js');
-                    updateThemeColors(this.primaryColor, this.secondaryColor);
+                    const lightColors = {
+                        primary: this.appSettings.primary_color_light || this.appSettings.primary_color || '#115571',
+                        secondary: this.appSettings.secondary_color_light || this.appSettings.secondary_color || '#a0b9c8',
+                        accent: this.appSettings.accent_color_light || '#048ba8',
+                        background: this.appSettings.background_color_light || '#ffffff',
+                        surface: this.appSettings.surface_color_light || '#f2f5f8',
+                        error: this.appSettings.error_color_light || '#ef476f',
+                        info: this.appSettings.info_color_light || '#2196F3',
+                        success: this.appSettings.success_color_light || '#06d6a0',
+                        warning: this.appSettings.warning_color_light || '#ffd166',
+                    };
+                    const darkColors = {
+                        primary: this.appSettings.primary_color_dark || this.appSettings.primary_color || '#115571',
+                        secondary: this.appSettings.secondary_color_dark || this.appSettings.secondary_color || '#a0b9c8',
+                        accent: this.appSettings.accent_color_dark || '#26c4da',
+                        background: this.appSettings.background_color_dark || '#121212',
+                        surface: this.appSettings.surface_color_dark || '#1e1e1e',
+                        error: this.appSettings.error_color_dark || '#ef476f',
+                        info: this.appSettings.info_color_dark || '#2196F3',
+                        success: this.appSettings.success_color_dark || '#06d6a0',
+                        warning: this.appSettings.warning_color_dark || '#ffd166',
+                    };
+                    updateThemeColors(lightColors, darkColors);
                 } catch (e) {
                     console.warn('Failed to update theme colors:', e);
                 }
@@ -160,6 +316,12 @@ export const useSettingsStore = defineStore({
                 } catch (e) {
                     console.warn('Failed to update favicon/app icons:', e);
                 }
+
+                // Apply background images based on current theme
+                this.applyBackgroundImages();
+
+                // Apply opacity settings
+                this.applyOpacitySettings();
 
                 this.settingsLoaded = true;
             } catch (error) {

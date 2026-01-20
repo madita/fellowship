@@ -1156,3 +1156,22 @@ Answer to the third question.`
 }
 
 </script>
+
+<style scoped>
+.wiki-create-container {
+    min-height: 100vh;
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
+}
+
+.editor-card,
+.quick-actions-card,
+.settings-card,
+.categories-card,
+.tags-card,
+.preview-card {
+    border: 1px solid rgba(var(--v-border-color), 0.2);
+    backdrop-filter: blur(10px);
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
+    transition: all 0.3s ease;
+}
+</style>

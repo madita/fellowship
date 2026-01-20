@@ -1291,12 +1291,12 @@ export default {
 <style scoped>
 .wiki-edit-container {
     min-height: 100vh;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
     position: relative;
 }
 
 .progress-section {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity));
     border-radius: 16px;
     padding: 16px;
     backdrop-filter: blur(10px);
@@ -1348,9 +1348,9 @@ export default {
 .categories-card,
 .tags-card,
 .preview-card {
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(var(--v-border-color), 0.2);
     backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.95) !important;
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
     transition: all 0.3s ease;
 }
 
@@ -1406,7 +1406,7 @@ export default {
 }
 
 .title-field {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity));
     border-radius: 12px;
     transition: all 0.3s ease;
 }
@@ -1470,7 +1470,7 @@ export default {
     border: 2px solid rgb(var(--v-border-color));
     border-radius: 12px;
     overflow: hidden;
-    background: white;
+    background: rgb(var(--v-theme-surface));
     transition: border-color 0.3s ease;
 }
 
@@ -1573,7 +1573,7 @@ export default {
     .categories-card,
     .tags-card,
     .preview-card {
-        background: rgba(var(--v-theme-surface), 0.95) !important;
+        background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
     }
 }
 

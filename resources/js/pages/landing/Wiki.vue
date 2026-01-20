@@ -483,17 +483,7 @@ export default {
 <style scoped>
 .wiki-container {
     min-height: 100vh;
-    background-color: rgb(var(--v-theme-background));
-}
-
-/* Light mode background gradient */
-.v-theme--light .wiki-container {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-}
-
-/* Dark mode background */
-.v-theme--dark .wiki-container {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
 }
 
 .wiki-header {

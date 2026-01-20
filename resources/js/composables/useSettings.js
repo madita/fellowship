@@ -47,6 +47,37 @@ export function useSettings() {
         custom_css: '',
         theme_mode: 'system',
         login_branding_enabled: true,
+        background_light: null,
+        background_dark: null,
+        background_style: 'cover',
+
+        // Light Theme Colors
+        primary_color_light: '#115571',
+        secondary_color_light: '#a0b9c8',
+        accent_color_light: '#048ba8',
+        background_color_light: '#ffffff',
+        surface_color_light: '#f2f5f8',
+        error_color_light: '#ef476f',
+        warning_color_light: '#ffd166',
+        info_color_light: '#2196F3',
+        success_color_light: '#06d6a0',
+
+        // Dark Theme Colors
+        primary_color_dark: '#115571',
+        secondary_color_dark: '#a0b9c8',
+        accent_color_dark: '#26c4da',
+        background_color_dark: '#121212',
+        surface_color_dark: '#1e1e1e',
+        error_color_dark: '#ef476f',
+        warning_color_dark: '#ffd166',
+        info_color_dark: '#2196F3',
+        success_color_dark: '#06d6a0',
+
+        // Opacity Settings
+        background_opacity_light: 95,
+        background_opacity_dark: 95,
+        surface_opacity_light: 100,
+        surface_opacity_dark: 100,
 
         // SEO & Metadata
         meta_title: '',

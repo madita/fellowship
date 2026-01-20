@@ -19,9 +19,28 @@ import config from '../configs';
 
 // Get colors and font from localStorage if available (settings may have been cached)
 function getThemeColors() {
-    const defaultColors = {
+    const defaultLightColors = {
         primary: '#115571',
         secondary: '#a0b9c8',
+        accent: '#048ba8',
+        background: '#ffffff',
+        surface: '#f2f5f8',
+        error: '#ef476f',
+        info: '#2196F3',
+        success: '#06d6a0',
+        warning: '#ffd166',
+    }
+
+    const defaultDarkColors = {
+        primary: '#115571',
+        secondary: '#a0b9c8',
+        accent: '#26c4da',
+        background: '#121212',
+        surface: '#1e1e1e',
+        error: '#ef476f',
+        info: '#2196F3',
+        success: '#06d6a0',
+        warning: '#ffd166',
     }
 
     try {
@@ -29,15 +48,38 @@ function getThemeColors() {
         if (cachedSettings) {
             const settings = JSON.parse(cachedSettings)
             return {
-                primary: settings.primary_color || defaultColors.primary,
-                secondary: settings.secondary_color || defaultColors.secondary,
+                light: {
+                    primary: settings.primary_color_light || settings.primary_color || defaultLightColors.primary,
+                    secondary: settings.secondary_color_light || settings.secondary_color || defaultLightColors.secondary,
+                    accent: settings.accent_color_light || defaultLightColors.accent,
+                    background: settings.background_color_light || defaultLightColors.background,
+                    surface: settings.surface_color_light || defaultLightColors.surface,
+                    error: settings.error_color_light || defaultLightColors.error,
+                    info: settings.info_color_light || defaultLightColors.info,
+                    success: settings.success_color_light || defaultLightColors.success,
+                    warning: settings.warning_color_light || defaultLightColors.warning,
+                },
+                dark: {
+                    primary: settings.primary_color_dark || settings.primary_color || defaultDarkColors.primary,
+                    secondary: settings.secondary_color_dark || settings.secondary_color || defaultDarkColors.secondary,
+                    accent: settings.accent_color_dark || defaultDarkColors.accent,
+                    background: settings.background_color_dark || defaultDarkColors.background,
+                    surface: settings.surface_color_dark || defaultDarkColors.surface,
+                    error: settings.error_color_dark || defaultDarkColors.error,
+                    info: settings.info_color_dark || defaultDarkColors.info,
+                    success: settings.success_color_dark || defaultDarkColors.success,
+                    warning: settings.warning_color_dark || defaultDarkColors.warning,
+                },
             }
         }
     } catch (e) {
         console.warn('Failed to load colors from localStorage:', e)
     }
 
-    return defaultColors
+    return {
+        light: defaultLightColors,
+        dark: defaultDarkColors,
+    }
 }
 
 function getFontFamily() {
@@ -71,32 +113,12 @@ if (appFontFamily) {
 
 const light = {
     dark: false,
-    colors: {
-        background: '#ffffff',
-        surface: '#f2f5f8',
-        primary: themeColors.primary,
-        secondary: themeColors.secondary,
-        accent: '#048ba8',
-        error: '#ef476f',
-        info: '#2196F3',
-        success: '#06d6a0',
-        warning: '#ffd166'
-    },
+    colors: themeColors.light,
 }
 
 const dark = {
     dark: true,
-    colors: {
-        background: '#121212',
-        surface: '#1e1e1e',
-        primary: themeColors.primary,
-        secondary: themeColors.secondary,
-        accent: '#26c4da',
-        error: '#ef476f',
-        info: '#2196F3',
-        success: '#06d6a0',
-        warning: '#ffd166'
-    },
+    colors: themeColors.dark,
 }
 
 // const componentsTemp = {...components, VCalendar}
@@ -151,13 +173,25 @@ const vuetify = createVuetify({
 });
 
 // Method to update theme colors dynamically
-export function updateThemeColors(primaryColor, secondaryColor) {
+export function updateThemeColors(lightColors, darkColors) {
     if (vuetify && vuetify.theme) {
-        // Update both light and dark themes
-        vuetify.theme.themes.value.light.colors.primary = primaryColor
-        vuetify.theme.themes.value.light.colors.secondary = secondaryColor
-        vuetify.theme.themes.value.dark.colors.primary = primaryColor
-        vuetify.theme.themes.value.dark.colors.secondary = secondaryColor
+        // Update light theme colors
+        if (lightColors) {
+            Object.keys(lightColors).forEach(colorKey => {
+                if (lightColors[colorKey]) {
+                    vuetify.theme.themes.value.light.colors[colorKey] = lightColors[colorKey]
+                }
+            })
+        }
+
+        // Update dark theme colors
+        if (darkColors) {
+            Object.keys(darkColors).forEach(colorKey => {
+                if (darkColors[colorKey]) {
+                    vuetify.theme.themes.value.dark.colors[colorKey] = darkColors[colorKey]
+                }
+            })
+        }
     }
 }
 

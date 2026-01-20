@@ -923,17 +923,7 @@ export default {
 .dashboard-container {
     padding: 24px;
     min-height: 100vh;
-    background-color: rgb(var(--v-theme-background));
-}
-
-/* Light mode background gradient */
-.v-theme--light .dashboard-container {
-    background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ea 100%);
-}
-
-/* Dark mode background */
-.v-theme--dark .dashboard-container {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
 }
 
 .dashboard-header {
