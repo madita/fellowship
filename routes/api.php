@@ -2,7 +2,6 @@
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +21,9 @@ Route::resource('wiki', "\App\Http\Controllers\WikiController");
 Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
 Route::patch('wiki/category/{slug}', "\App\Http\Controllers\WikiController@updateCategory");
 Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
+
+// Public OAuth Providers endpoint (for login page)
+Route::get('/settings/oauth-providers', 'App\Http\Controllers\Admin\SettingsController@getEnabledOAuthProviders');
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     $user = $request->user();
@@ -43,6 +45,14 @@ Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 
 
     Route::post('/avatar', 'App\Http\Controllers\UserController@uploadAvatar');
     Route::patch('/preferences', 'App\Http\Controllers\UserController@updatePreferences');
+
+    // Social Account Management
+    Route::get('/social-accounts', [\App\Http\Controllers\SocialAccountController::class, 'index'])
+        ->name('social-accounts.index');
+    Route::delete('/social-accounts/{provider}', [\App\Http\Controllers\SocialAccountController::class, 'disconnect'])
+        ->name('social-accounts.disconnect');
+    Route::get('/social-accounts/{provider}/link', [\App\Http\Controllers\SocialAccountController::class, 'link'])
+        ->name('social-accounts.link');
 });
 
 Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function () {

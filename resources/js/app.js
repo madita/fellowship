@@ -135,6 +135,37 @@ async function initializeApp() {
         // Load public settings first (needed for fallback values)
         await settingsStore.fetchAppSettings();
 
+        // Check for OAuth callback token in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const oauthToken = urlParams.get('token');
+
+        if (oauthToken) {
+            // OAuth callback - user is logged in via session, need to sync frontend state
+            try {
+                await userStore.storeInfo();
+
+                // User info loaded successfully, update auth state
+                const isVerified = userStore.user?.email_verified_at !== null;
+                authStore.updateState({
+                    email: userStore.user?.email,
+                    isLoggedIn: true,
+                    isVerified
+                });
+
+                // Clean up URL (remove token parameter)
+                const cleanUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
+
+                // Redirect to dashboard
+                window.location.href = '/dashboard';
+                return;
+            } catch (error) {
+                console.error('OAuth login failed:', error);
+                // Clean up URL and continue to show page
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
         // Only load user data if user is logged in
         if (authStore.isLoggedIn) {
             try {

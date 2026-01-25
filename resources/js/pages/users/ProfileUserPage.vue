@@ -313,6 +313,14 @@
                     </v-tab>
 
                     <v-tab
+                        value="social"
+                        prepend-icon="mdi-link-variant"
+                        class="tab-button"
+                    >
+                        Social Accounts
+                    </v-tab>
+
+                    <v-tab
                         value="activity"
                         prepend-icon="mdi-chart-timeline"
                         class="tab-button"
@@ -370,6 +378,17 @@
                                 @change="onInfoChange"
                                 @save="onInfoSave"
                             />
+                        </v-window-item>
+
+                        <!-- Social Accounts Tab -->
+                        <v-window-item value="social">
+                            <div class="tab-header mb-4">
+                                <h3 class="text-h6 font-weight-bold">Connected Social Accounts</h3>
+                                <p class="text-body-2 text-medium-emphasis">
+                                    Link your social media accounts for easier sign-in
+                                </p>
+                            </div>
+                            <social-accounts-tab :user="user" />
                         </v-window-item>
 
                         <!-- Activity Tab -->
@@ -532,6 +551,7 @@ import { useUserStore } from '@/store/userStore.js'
 import CopyLabel from '../../components/common/CopyLabel.vue'
 import AccountTab from './EditUser/AccountTab.vue'
 import InformationTab from './EditUser/InformationTab.vue'
+import SocialAccountsTab from './EditUser/SocialAccountsTab.vue'
 import ActivityTab from './EditUser/ActivityTab.vue'
 import PermissionsTab from './EditUser/PermissionsTab.vue'
 
@@ -541,6 +561,7 @@ export default {
         CopyLabel,
         AccountTab,
         InformationTab,
+        SocialAccountsTab,
         ActivityTab,
         PermissionsTab,
     },

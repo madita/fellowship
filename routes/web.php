@@ -19,6 +19,15 @@ use Illuminate\Support\Facades\Route;
 //Auth::routes(['verify' => true]);
 Auth::routes(['verify' => true]);
 
+// OAuth Social Login Routes
+Route::get('/auth/{provider}', [App\Http\Controllers\Auth\SocialLoginController::class, 'redirect'])
+    ->name('social.redirect')
+    ->where('provider', 'google|discord|github|facebook');
+
+Route::get('/auth/{provider}/callback', [App\Http\Controllers\Auth\SocialLoginController::class, 'callback'])
+    ->name('social.callback')
+    ->where('provider', 'google|discord|github|facebook');
+
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
 Route::get('/tag/terms/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTerms');
 Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');

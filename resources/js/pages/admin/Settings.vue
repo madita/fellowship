@@ -41,6 +41,10 @@
                         <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-theme-light-dark</v-icon>
                         <span class="d-none d-sm-inline">Theme</span>
                     </v-tab>
+                    <v-tab value="oauth">
+                        <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-login-variant</v-icon>
+                        <span class="d-none d-sm-inline">Social Login</span>
+                    </v-tab>
                     <v-tab value="seo">
                         <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-search-web</v-icon>
                         <span class="d-none d-sm-inline">SEO</span>
@@ -102,6 +106,15 @@
                             />
                         </v-window-item>
 
+                        <v-window-item value="oauth">
+                            <o-auth-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                            />
+                        </v-window-item>
+
                         <v-window-item value="seo">
                             <seo-tab
                                 :settings="settings"
@@ -148,6 +161,7 @@ import GeneralTab from '../../components/settings/tabs/GeneralTab.vue';
 import LocalizationTab from '../../components/settings/tabs/LocalizationTab.vue';
 import BrandingTab from '../../components/settings/tabs/BrandingTab.vue';
 import ThemeTab from '../../components/settings/tabs/ThemeTab.vue';
+import OAuthTab from '../../components/settings/tabs/OAuthTab.vue';
 import SeoTab from '../../components/settings/tabs/SeoTab.vue';
 import HomepageTab from '../../components/settings/tabs/HomepageTab.vue';
 import FooterTab from '../../components/settings/tabs/FooterTab.vue';

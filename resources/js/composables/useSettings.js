@@ -136,6 +136,22 @@ export function useSettings() {
         login_rate_limit_minutes: 15,
         two_factor_enabled: false,
 
+        // OAuth / Social Login Settings
+        oauth_google_enabled: false,
+        oauth_google_client_id: '',
+        oauth_google_client_secret: '',
+        oauth_discord_enabled: false,
+        oauth_discord_client_id: '',
+        oauth_discord_client_secret: '',
+        oauth_github_enabled: false,
+        oauth_github_client_id: '',
+        oauth_github_client_secret: '',
+        oauth_facebook_enabled: false,
+        oauth_facebook_client_id: '',
+        oauth_facebook_client_secret: '',
+        oauth_allow_registration: true,
+        oauth_auto_verify_email: true,
+
         // Email & Notifications
         email_sender_name: '',
         email_sender_address: '',

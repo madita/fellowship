@@ -13,8 +13,35 @@ class SettingsController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth:sanctum'])->except(['public']);
-        $this->middleware(['admin'])->except(['public']);
+        $this->middleware(['auth:sanctum'])->except(['public', 'getEnabledOAuthProviders']);
+        $this->middleware(['admin'])->except(['public', 'getEnabledOAuthProviders']);
+    }
+
+    /**
+     * Get enabled OAuth providers (public, no authentication required)
+     */
+    public function getEnabledOAuthProviders(): JsonResponse
+    {
+        $providers = [];
+        $providerList = ['google', 'discord', 'github', 'facebook'];
+
+        foreach ($providerList as $provider) {
+            $enabled = Setting::get("oauth_{$provider}_enabled", false);
+            if ($enabled) {
+                // Only include if credentials are configured
+                $clientId = Setting::get("oauth_{$provider}_client_id");
+                $clientSecret = Setting::get("oauth_{$provider}_client_secret");
+
+                if ($clientId && $clientSecret) {
+                    $providers[] = $provider;
+                }
+            }
+        }
+
+        return response()->json([
+            'providers' => $providers,
+            'allow_registration' => Setting::get('oauth_allow_registration', true),
+        ]);
     }
 
     /**
@@ -37,6 +64,14 @@ class SettingsController extends Controller
             'social_instagram',
             'maintenance_mode',
             'maintenance_message',
+
+            // OAuth/Social Login (only enabled status is public, not credentials)
+            'oauth_google_enabled',
+            'oauth_discord_enabled',
+            'oauth_github_enabled',
+            'oauth_facebook_enabled',
+            'oauth_allow_registration',
+            'oauth_auto_verify_email',
 
             // Localization
             'default_language',
@@ -172,6 +207,8 @@ class SettingsController extends Controller
             'image_optimization_enabled', 'lazy_loading_enabled', 'debug_mode',
             'right_to_be_forgotten_enabled', 'age_confirmation_required',
             'api_keys_enabled', 'background_jobs_enabled', 'custom_footer_enabled',
+            'oauth_google_enabled', 'oauth_discord_enabled', 'oauth_github_enabled',
+            'oauth_facebook_enabled', 'oauth_allow_registration', 'oauth_auto_verify_email',
         ];
 
         foreach ($booleanKeys as $key) {

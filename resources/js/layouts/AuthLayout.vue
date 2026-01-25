@@ -61,9 +61,25 @@ export default {
 
     const isDark = computed(() => theme.global.name.value === 'dark')
 
+    const applyThemeSettings = () => {
+      const settingsStore = useSettingsStore()
+      const themeMode = settingsStore.themeMode
+
+      if (themeMode === 'light') {
+        theme.global.name.value = 'light'
+      } else if (themeMode === 'dark') {
+        theme.global.name.value = 'dark'
+      } else if (themeMode === 'system') {
+        // Detect system preference
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        theme.global.name.value = prefersDark ? 'dark' : 'light'
+      }
+    }
+
     return {
       toggleTheme,
-      isDark
+      isDark,
+      applyThemeSettings
     }
   },
   computed: {
@@ -78,22 +94,6 @@ export default {
     maintenanceMode() {
       const settings = useSettingsStore()
       return settings.maintenanceMode
-    }
-  },
-  methods: {
-    applyThemeSettings() {
-      const settingsStore = useSettingsStore()
-      const themeMode = settingsStore.themeMode
-
-      if (themeMode === 'light') {
-        this.$vuetify.theme.global.name.value = 'light'
-      } else if (themeMode === 'dark') {
-        this.$vuetify.theme.global.name.value = 'dark'
-      } else if (themeMode === 'system') {
-        // Detect system preference
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-        this.$vuetify.theme.global.name.value = prefersDark ? 'dark' : 'light'
-      }
     }
   },
   async mounted() {

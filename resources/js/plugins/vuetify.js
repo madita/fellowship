@@ -222,6 +222,14 @@ export function updateFontFamily(fontFamily) {
 
         // Update Vuetify defaults for future components
         if (vuetify && vuetify.defaults) {
+            // Ensure global exists
+            if (!vuetify.defaults.global) {
+                vuetify.defaults.global = {};
+            }
+            // Ensure style exists
+            if (!vuetify.defaults.global.style) {
+                vuetify.defaults.global.style = {};
+            }
             vuetify.defaults.global.style = {
                 ...vuetify.defaults.global.style,
                 fontFamily: fontFamily,

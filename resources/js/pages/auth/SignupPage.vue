@@ -83,24 +83,55 @@
                     >{{ $t('register.button') }}
                     </v-btn>
 
-<!--                    <div class="caption font-weight-bold text-uppercase my-3">{{ $t('register.orsign') }}</div>-->
+                    <div v-if="enabledProviders.length > 0" class="caption font-weight-bold text-uppercase my-3">{{ $t('register.orsign') }}</div>
 
-<!--                    &lt;!&ndash; external providers list &ndash;&gt;-->
-<!--                    <v-btn-->
-<!--                        v-for="provider in providers"-->
-<!--                        :key="provider.id"-->
-<!--                        :loading="provider.isLoading"-->
-<!--                        :disabled="isSignUpDisabled"-->
-<!--                        class="mb-2 primary lighten-2 text-primary text&#45;&#45;darken-3"-->
-<!--                        block-->
-<!--                        size="large"-->
-<!--                        @click="signInProvider(provider)"-->
-<!--                    >-->
-<!--                        <v-icon small left>mdi-{{ provider.id }}</v-icon>-->
-<!--                        {{ provider.label }}-->
-<!--                    </v-btn>-->
-
-<!--                    <div v-if="errorProvider" class="error&#45;&#45;text">{{ errorProviderMessages }}</div>-->
+                    <!-- Social Login Buttons -->
+                    <v-row v-if="enabledProviders.length > 0" dense class="mb-3">
+                        <v-col v-if="enabledProviders.includes('google')" cols="6">
+                            <v-btn
+                                block
+                                variant="outlined"
+                                color="red"
+                                :href="`/auth/google`"
+                                prepend-icon="mdi-google"
+                            >
+                                Google
+                            </v-btn>
+                        </v-col>
+                        <v-col v-if="enabledProviders.includes('discord')" cols="6">
+                            <v-btn
+                                block
+                                variant="outlined"
+                                color="indigo"
+                                :href="`/auth/discord`"
+                                prepend-icon="mdi-discord"
+                            >
+                                Discord
+                            </v-btn>
+                        </v-col>
+                        <v-col v-if="enabledProviders.includes('github')" cols="6">
+                            <v-btn
+                                block
+                                variant="outlined"
+                                color="grey-darken-3"
+                                :href="`/auth/github`"
+                                prepend-icon="mdi-github"
+                            >
+                                GitHub
+                            </v-btn>
+                        </v-col>
+                        <v-col v-if="enabledProviders.includes('facebook')" cols="6">
+                            <v-btn
+                                block
+                                variant="outlined"
+                                color="blue"
+                                :href="`/auth/facebook`"
+                                prepend-icon="mdi-facebook"
+                            >
+                                Facebook
+                            </v-btn>
+                        </v-col>
+                    </v-row>
 
                     <div v-if="termsUrl || policyUrl" class="mt-5 overline">
                         {{ $t('register.agree') }}
@@ -132,7 +163,7 @@
 |
 */
 
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from "@/store/authStore.js"
 import { useSettingsStore } from "@/store/settingStore.js"
@@ -155,6 +186,7 @@ const isLoading = ref(false)
 const isSignUpDisabled = ref(false)
 const isFormValid = ref(true)
 const showPassword = ref(false)
+const enabledProviders = ref([])
 
 // User data
 const user = reactive({
@@ -279,6 +311,16 @@ const resetErrors = () => {
     errorProvider.value = false
     errorProviderMessages.value = ''
 }
+
+// Fetch enabled OAuth providers on mount
+onMounted(async () => {
+    try {
+        const response = await axios.get('/api/settings/oauth-providers')
+        enabledProviders.value = response.data.providers || []
+    } catch (error) {
+        console.error('Failed to fetch OAuth providers:', error)
+    }
+})
 </script>
 
 <style scoped>

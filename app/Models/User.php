@@ -302,4 +302,23 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         return $this->conversations->find($conversation->id)->pivot->read_at;
     }
+
+    /**
+     * Get the social accounts for the user.
+     */
+    public function socialAccounts()
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
+    /**
+     * Check if user has a specific social provider linked.
+     *
+     * @param string $provider
+     * @return bool
+     */
+    public function hasSocialProvider($provider)
+    {
+        return $this->socialAccounts()->where('provider', $provider)->exists();
+    }
 }
