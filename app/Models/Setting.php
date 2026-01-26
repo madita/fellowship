@@ -84,6 +84,19 @@ class Setting extends Model
             'language_change_enabled',
             'maintenance_mode',
             'maintenance_message',
+            // SEO settings
+            'meta_title',
+            'meta_description',
+            'meta_keywords',
+            'og_title',
+            'og_description',
+            'og_image',
+            'twitter_card_type',
+            'twitter_site',
+            'canonical_url',
+            'indexing_enabled',
+            'sitemap_enabled',
+            'robots_txt_custom',
         ];
 
         foreach ($commonKeys as $key) {
