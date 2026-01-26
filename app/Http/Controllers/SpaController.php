@@ -47,6 +47,9 @@ class SpaController extends Controller
             'indexing_enabled' => Setting::get('indexing_enabled', true),
             'app_logo' => Setting::get('app_logo'),
             'content_type' => 'website',
+            // Custom scripts
+            'custom_head_scripts' => Setting::get('custom_head_scripts', ''),
+            'custom_body_scripts' => Setting::get('custom_body_scripts', ''),
         ];
     }
 

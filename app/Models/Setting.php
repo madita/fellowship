@@ -97,6 +97,9 @@ class Setting extends Model
             'indexing_enabled',
             'sitemap_enabled',
             'robots_txt_custom',
+            // Custom scripts
+            'custom_head_scripts',
+            'custom_body_scripts',
         ];
 
         foreach ($commonKeys as $key) {

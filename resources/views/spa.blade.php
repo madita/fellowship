@@ -96,6 +96,11 @@
 
 {{--        <link href="{{ mix('dist/css/app.css') }}" rel="stylesheet">--}}
         @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+
+        <!-- Custom Head Scripts -->
+        @if(!empty($seo['custom_head_scripts']))
+        {!! $seo['custom_head_scripts'] !!}
+        @endif
     </head>
     <body>
         <noscript>
@@ -110,5 +115,10 @@
             ]) !!};
         </script>
 {{--        <script src="{{ mix('dist/js/app.js') }}"></script>--}}
+
+        <!-- Custom Body Scripts -->
+        @if(!empty($seo['custom_body_scripts']))
+        {!! $seo['custom_body_scripts'] !!}
+        @endif
     </body>
 </html>
