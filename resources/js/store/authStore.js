@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { useUserStore } from '@/store/userStore.js'
 import { useApi } from '@/api/useAPI.js'
-import axios from "axios"
 
 const web = useApi('web')
 
@@ -142,7 +141,7 @@ export const useAuthStore = defineStore('auth', {
 
             try {
                 // Call logout endpoint first
-                await axios.post('/logout')
+                await web.post('/logout')
                 // user.clearState()
             } catch (error) {
                 console.error('Logout endpoint error:', error.message)

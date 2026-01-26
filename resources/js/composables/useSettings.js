@@ -1,5 +1,7 @@
 import { ref, reactive } from 'vue';
-import axios from 'axios';
+import { useApi } from '@/api/useAPI.js';
+
+const api = useApi('api');
 
 export function useSettings() {
     const isSaving = ref(false);
@@ -194,7 +196,7 @@ export function useSettings() {
 
     async function fetchSettings() {
         try {
-            const response = await axios.get('/api/admin/settings');
+            const response = await api.get('/admin/settings');
             const fetchedSettings = response.data.settings;
             Object.assign(settings, fetchedSettings);
         } catch (error) {
@@ -223,7 +225,7 @@ export function useSettings() {
 
             console.log('Saving settings:', settingsArray.find(s => s.key === 'font_family'));
 
-            await axios.post('/api/admin/settings', { settings: settingsArray });
+            await api.post('/admin/settings', { settings: settingsArray });
 
             // Update the settings store after saving (this will update localStorage)
             const { useSettingsStore } = await import('@/store/settingStore.js');

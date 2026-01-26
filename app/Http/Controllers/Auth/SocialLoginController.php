@@ -32,7 +32,7 @@ class SocialLoginController extends Controller
             return redirect('/auth/signin')->with('error', 'Invalid OAuth provider');
         }
 
-        // Check if provider is enabled
+        // Check if the provider is enabled
         $enabled = Setting::get("oauth_{$provider}_enabled", false);
         if (!$enabled) {
             return redirect('/auth/signin')->with('error', ucfirst($provider) . ' login is currently disabled');
@@ -75,7 +75,7 @@ class SocialLoginController extends Controller
             return redirect('/auth/signin')->with('error', 'OAuth error: ' . request()->get('error_description', request()->get('error')));
         }
 
-        // Check if provider is enabled
+        // Check if the provider is enabled
         $enabled = Setting::get("oauth_{$provider}_enabled", false);
         if (!$enabled) {
             return redirect('/auth/signin')->with('error', ucfirst($provider) . ' login is currently disabled');
@@ -92,16 +92,7 @@ class SocialLoginController extends Controller
                 $driver->scopes(['user:email']);
             }
 
-            // Debug: Check what credentials are configured
-            /*dd([
-                'client_id' => config('services.discord.client_id'),
-                'client_secret' => substr(config('services.discord.client_secret') ?? '', 0, 5) . '...',
-                'redirect' => config('services.discord.redirect'),
-            ]);*/
-
             $oauthUser = $driver->user();
-
-
 
             // Validate that we have an email (required for account creation)
             if (!$oauthUser->getEmail()) {
@@ -128,7 +119,7 @@ class SocialLoginController extends Controller
             return redirect('/?token=' . $token);
 
         } catch (\Exception $e) {
-            //dd('EEE',$e);
+
             \Log::error('OAuth callback error for ' . $provider . ': ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
@@ -174,7 +165,7 @@ class SocialLoginController extends Controller
             // Check if email auto-verification is enabled
             $autoVerifyEmail = Setting::get('oauth_auto_verify_email', true);
 
-            // Create new user
+            // Create the new user
             $user = User::create([
                 'name' => $oauthUser->getName() ?? $oauthUser->getNickname(),
                 'username' => $this->generateUniqueUsername($oauthUser),
@@ -184,7 +175,7 @@ class SocialLoginController extends Controller
             ]);
         }
 
-        // Create social account link
+        // Create the social account link
         $user->socialAccounts()->create([
             'provider' => $provider,
             'provider_id' => $oauthUser->getId(),
@@ -204,7 +195,7 @@ class SocialLoginController extends Controller
      */
     private function generateUniqueUsername($oauthUser)
     {
-        // Try nickname first
+        // Try the nickname first
         $username = $oauthUser->getNickname();
 
         // If no nickname, generate from name or email

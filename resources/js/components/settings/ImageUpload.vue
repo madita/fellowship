@@ -58,7 +58,9 @@
 
 <script setup>
 import { ref, watch } from 'vue';
-import axios from 'axios';
+import { useApi } from '@/api/useAPI.js';
+
+const api = useApi('api');
 
 const props = defineProps({
     imageKey: {
@@ -163,7 +165,7 @@ async function handleUpload() {
         formData.append('image', selectedFile);
         formData.append('key', props.imageKey);
 
-        const response = await axios.post('/api/admin/settings/image', formData);
+        const response = await api.post('/admin/settings/image', formData);
 
         preview.value = response.data.url;
         file.value = null;
@@ -182,7 +184,7 @@ async function handleDelete() {
     }
 
     try {
-        await axios.delete('/api/admin/settings/image', {
+        await api.delete('/admin/settings/image', {
             data: { key: props.imageKey }
         });
         preview.value = null;
