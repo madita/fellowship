@@ -42,6 +42,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'time_format',
         'theme_mode',
         'language',
+        'email_verified_at',
     ];
 
     /**

@@ -51,6 +51,14 @@ Route::get('migration/event', "\App\Http\Controllers\Admin\MigrationController@e
 // PWA Manifest
 Route::get('/manifest.json', 'App\Http\Controllers\ManifestController@generate')->name('manifest');
 
+// SEO Routes - Sitemap and Robots.txt
+Route::get('/sitemap_index.xml', 'App\Http\Controllers\SitemapController@sitemapIndex')->name('sitemap.index');
+Route::get('/sitemap.xml', 'App\Http\Controllers\SitemapController@index')->name('sitemap');
+Route::get('/sitemap-wiki.xml', 'App\Http\Controllers\SitemapController@wikiSitemap')->name('sitemap.wiki');
+Route::get('/sitemap-pages.xml', 'App\Http\Controllers\SitemapController@pagesSitemap')->name('sitemap.pages');
+Route::get('/sitemap-posts.xml', 'App\Http\Controllers\SitemapController@postsSitemap')->name('sitemap.posts');
+Route::get('/robots.txt', 'App\Http\Controllers\SitemapController@robots')->name('robots');
+
 // SPA Catch-all - MUST BE LAST and exclude actual files
 Route::get('/{any}', 'App\Http\Controllers\SpaController@index')
     ->where('any', '^(?!.*(\.js|\.css|\.json|\.woff|\.woff2|\.ttf|\.eot|\.svg|\.png|\.jpg|\.jpeg|\.gif|\.ico|\.webp)$).*')

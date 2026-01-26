@@ -27,8 +27,8 @@
         @endif
 
         <!-- Open Graph Meta Tags -->
-        <meta property="og:type" content="website">
-        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:type" content="{{ $seo['content_type'] ?? 'website' }}">
+        <meta property="og:url" content="{{ $seo['canonical_url'] ?? url()->current() }}">
         <meta property="og:title" content="{{ $seo['og_title'] ?? $seo['meta_title'] ?? $seo['app_name'] ?? 'Fellowship Community' }}">
         @if(!empty($seo['og_description']) || !empty($seo['meta_description']))
         <meta property="og:description" content="{{ $seo['og_description'] ?? $seo['meta_description'] }}">
@@ -39,6 +39,14 @@
         <meta property="og:image" content="{{ str_starts_with($seo['app_logo'], 'http') ? $seo['app_logo'] : asset('storage/' . $seo['app_logo']) }}">
         @endif
         <meta property="og:site_name" content="{{ $seo['app_name'] ?? 'Fellowship Community' }}">
+        @if(($seo['content_type'] ?? 'website') === 'article')
+        @if(!empty($seo['published_time']))
+        <meta property="article:published_time" content="{{ $seo['published_time'] }}">
+        @endif
+        @if(!empty($seo['modified_time']))
+        <meta property="article:modified_time" content="{{ $seo['modified_time'] }}">
+        @endif
+        @endif
 
         <!-- Twitter Card Meta Tags -->
         <meta name="twitter:card" content="{{ $seo['twitter_card_type'] ?? 'summary_large_image' }}">
@@ -75,6 +83,13 @@
         <link rel="manifest" href="/manifest.json">
 
         <meta name="csrf-token" content="{{ csrf_token() }}">
+
+        <!-- Structured Data (JSON-LD) -->
+        @if(!empty($structuredData))
+        <script type="application/ld+json">
+            {!! json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+        </script>
+        @endif
 
         <!-- Google Fonts -->
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Open+Sans:wght@300;400;600;700&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;600;700&family=Raleway:wght@300;400;600;700&family=Poppins:wght@300;400;600;700&family=Inter:wght@300;400;600;700&family=Source+Sans+Pro:wght@300;400;600;700&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
