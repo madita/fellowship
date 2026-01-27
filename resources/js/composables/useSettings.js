@@ -101,9 +101,17 @@ export function useSettings() {
         analytics_script_header: '',
         analytics_script_body: '',
         analytics_script_footer: '',
-        cookie_consent_enabled: true,
         anonymize_ip: true,
         tracking_production_only: true,
+
+        // Cookie Consent / GDPR
+        cookie_consent_enabled: true,
+        cookie_banner_title: '',
+        cookie_banner_text: '',
+        cookie_preferences_text: '',
+        cookie_analytics_default: false,
+        cookie_marketing_default: false,
+        cookie_functional_default: false,
 
         // Scripts & Integrations
         custom_head_scripts: '',

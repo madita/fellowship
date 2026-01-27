@@ -3,6 +3,7 @@
 namespace App\Http;
 
 use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\ConditionalStartSession;
 use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
@@ -59,7 +60,7 @@ class Kernel extends HttpKernel
         'web' => [
             EncryptCookies::class,
             AddQueuedCookiesToResponse::class,
-            StartSession::class,
+            ConditionalStartSession::class,
             // \Illuminate\Session\Middleware\AuthenticateSession::class,
             ShareErrorsFromSession::class,
             VerifyCsrfToken::class,

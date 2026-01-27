@@ -141,7 +141,15 @@ class SettingsController extends Controller
             // Analytics
             'google_analytics_id',
             'google_tag_manager_id',
+
+            // Cookie Consent / GDPR
             'cookie_consent_enabled',
+            'cookie_banner_title',
+            'cookie_banner_text',
+            'cookie_preferences_text',
+            'cookie_analytics_default',
+            'cookie_marketing_default',
+            'cookie_functional_default',
             'cookie_categories',
 
             // Legal
@@ -197,7 +205,8 @@ class SettingsController extends Controller
         $booleanKeys = [
             'maintenance_mode', 'language_change_enabled', 'locale_auto_detect',
             'login_branding_enabled', 'indexing_enabled', 'sitemap_enabled',
-            'cookie_consent_enabled', 'anonymize_ip', 'tracking_production_only',
+            'cookie_consent_enabled', 'cookie_analytics_default', 'cookie_marketing_default',
+            'cookie_functional_default', 'anonymize_ip', 'tracking_production_only',
             'third_party_embeds_enabled', 'homepage_builder_enabled', 'homepage_menu_enabled',
             'blog_enabled', 'comments_enabled', 'comments_moderation_required',
             'user_registration_enabled', 'email_verification_required',
