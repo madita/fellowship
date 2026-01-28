@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use App\Traits\HasCache;
 
 /**
  * Class Term.
@@ -23,6 +24,7 @@ class Term extends Model
 {
     use Sluggable;
     use SoftDeletes;
+    use HasCache;
 
     /** @inheritdoc */
     protected $fillable = [

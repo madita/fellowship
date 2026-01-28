@@ -17,10 +17,16 @@ use Illuminate\Support\Facades\Route;
 */
 //Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
-Route::resource('wiki', "\App\Http\Controllers\WikiController");
+// Public cacheable routes
+Route::middleware(['cache.control'])->group(function () {
+    Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['index', 'show']);
+    Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
+});
+
+// Wiki write operations (not cached)
+Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['store', 'update', 'destroy']);
 Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
 Route::patch('wiki/category/{slug}', "\App\Http\Controllers\WikiController@updateCategory");
-Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
 
 // Public OAuth Providers endpoint (for login page)
 Route::get('/settings/oauth-providers', 'App\Http\Controllers\Admin\SettingsController@getEnabledOAuthProviders');
@@ -138,17 +144,29 @@ Route::post('/related-items', [App\Http\Controllers\RelateableController::class,
 
 Route::get('/common/items', [App\Http\Controllers\CommonController::class, 'getItems']);
 
-// Public Settings Route (for unauthenticated access to public settings like app name and logo)
-Route::get('/settings/public', 'App\Http\Controllers\Admin\SettingsController@public');
+// Cache test route
+Route::get('/cache-test', function () {
+    return response()->json([
+        'cache_enabled' => \App\Models\Setting::isCacheEnabled(),
+        'cache_lifetime' => \App\Models\Setting::getCacheLifetime(),
+        'time' => now()->toDateTimeString(),
+    ]);
+})->middleware('cache.control');
 
-// Public Homepage Routes (for homepage rendering)
-Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@getActiveWidgets');
-Route::get('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@getActiveMenu');
-Route::get('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@getActiveSections');
+// Public cacheable routes (settings, homepage, footer)
+Route::middleware(['cache.control'])->group(function () {
+    // Public Settings
+    Route::get('/settings/public', 'App\Http\Controllers\Admin\SettingsController@public');
 
-// Public Footer Routes (for footer rendering)
-Route::get('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@getActiveWidgets');
-Route::get('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@getActiveSections');
+    // Homepage
+    Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@getActiveWidgets');
+    Route::get('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@getActiveMenu');
+    Route::get('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@getActiveSections');
+
+    // Footer
+    Route::get('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@getActiveWidgets');
+    Route::get('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@getActiveSections');
+});
 
 // Newsletter Subscription
 Route::post('/newsletter/subscribe', 'App\Http\Controllers\NewsletterController@subscribe');
@@ -163,6 +181,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::post('/settings/image', 'App\Http\Controllers\Admin\SettingsController@uploadImage');
     Route::delete('/settings/image', 'App\Http\Controllers\Admin\SettingsController@deleteImage');
     Route::post('/settings/test-email', 'App\Http\Controllers\Admin\SettingsController@testEmail');
+    Route::get('/settings/cache-status', 'App\Http\Controllers\Admin\SettingsController@cacheStatus');
+    Route::post('/settings/clear-cache', 'App\Http\Controllers\Admin\SettingsController@clearCache');
 
     // Homepage Widgets
     Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@index');

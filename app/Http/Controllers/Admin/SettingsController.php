@@ -630,4 +630,153 @@ class SettingsController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get cache status and statistics
+     */
+    public function cacheStatus(): JsonResponse
+    {
+        $cacheEnabled = Setting::isCacheEnabled();
+        $cacheLifetime = Setting::getCacheLifetime();
+
+        // Get cache driver info
+        $cacheDriver = config('cache.default');
+        $cacheStore = config("cache.stores.{$cacheDriver}.driver", $cacheDriver);
+
+        // Check if cache driver supports tags
+        $supportsTags = false;
+        try {
+            $supportsTags = \Illuminate\Support\Facades\Cache::supportsTags();
+        } catch (\Exception $e) {
+            // Driver doesn't support tags
+        }
+
+        return response()->json([
+            'enabled' => $cacheEnabled,
+            'lifetime_seconds' => $cacheLifetime,
+            'lifetime_minutes' => $cacheLifetime / 60,
+            'driver' => $cacheStore,
+            'supports_tags' => $supportsTags,
+            'cached_types' => [
+                'settings' => 'Application settings',
+                'pages' => 'Static pages',
+                'wiki' => 'Wiki articles',
+                'posts' => 'Blog posts',
+                'widgets' => 'Homepage & footer widgets',
+                'http' => 'API responses',
+            ],
+        ]);
+    }
+
+    /**
+     * Clear all application cache
+     */
+    public function clearCache(Request $request): JsonResponse
+    {
+        $type = $request->input('type', 'all');
+
+        try {
+            $cleared = [];
+            $cacheService = new \App\Services\CacheService();
+
+            switch ($type) {
+                case 'settings':
+                    Setting::clearCache();
+                    Setting::resetCacheConfig();
+                    $cacheService::flushTag('settings');
+                    $cleared[] = 'settings';
+                    break;
+
+                case 'views':
+                    \Artisan::call('view:clear');
+                    $cleared[] = 'views';
+                    break;
+
+                case 'routes':
+                    \Artisan::call('route:clear');
+                    $cleared[] = 'routes';
+                    break;
+
+                case 'config':
+                    \Artisan::call('config:clear');
+                    $cleared[] = 'config';
+                    break;
+
+                case 'application':
+                    \Illuminate\Support\Facades\Cache::flush();
+                    $cleared[] = 'application cache';
+                    break;
+
+                case 'pages':
+                    $cacheService::flushTag('pages');
+                    $cleared[] = 'pages';
+                    break;
+
+                case 'wiki':
+                    $cacheService::flushTag('wiki');
+                    $cleared[] = 'wiki';
+                    break;
+
+                case 'posts':
+                    $cacheService::flushTag('posts');
+                    $cleared[] = 'posts';
+                    break;
+
+                case 'widgets':
+                    $cacheService::flushTag('widgets');
+                    $cleared[] = 'widgets';
+                    break;
+
+                case 'http':
+                    // Clear HTTP response cache
+                    $this->clearHttpCache();
+                    $cleared[] = 'http responses';
+                    break;
+
+                case 'all':
+                default:
+                    Setting::clearCache();
+                    Setting::resetCacheConfig();
+                    \Artisan::call('view:clear');
+                    \Artisan::call('route:clear');
+                    \Artisan::call('config:clear');
+                    \Illuminate\Support\Facades\Cache::flush();
+                    $cleared = ['settings', 'views', 'routes', 'config', 'application cache', 'http responses'];
+                    break;
+            }
+
+            return response()->json([
+                'message' => 'Cache cleared successfully',
+                'cleared' => $cleared,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to clear cache',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Clear HTTP response cache
+     */
+    protected function clearHttpCache(): void
+    {
+        // Clear all http_cache keys
+        $cache = \Illuminate\Support\Facades\Cache::getStore();
+
+        // If using Redis or similar, we can use pattern matching
+        if (method_exists($cache, 'connection')) {
+            try {
+                $redis = $cache->connection();
+                $prefix = config('cache.prefix', 'laravel_cache');
+                $keys = $redis->keys("{$prefix}:http_cache:*");
+                foreach ($keys as $key) {
+                    $redis->del($key);
+                }
+            } catch (\Exception $e) {
+                // Fallback: the full cache flush will handle it
+            }
+        }
+    }
 }

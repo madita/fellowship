@@ -60,6 +60,186 @@
                 hint="Lazy load images and components"
                 persistent-hint
             ></v-switch>
+
+            <v-divider class="my-6"></v-divider>
+
+            <!-- Cache Management -->
+            <div class="d-flex align-center justify-space-between mb-4">
+                <div>
+                    <div class="text-subtitle-1 font-weight-medium">Cache Management</div>
+                    <div class="text-caption text-medium-emphasis">
+                        Clear application cache to refresh data. Cached content types: settings, pages, wiki, posts, widgets, and HTTP responses.
+                    </div>
+                </div>
+                <div class="d-flex align-center ga-2">
+                    <v-chip
+                        v-if="cacheStatus"
+                        :color="cacheStatus.enabled ? 'success' : 'warning'"
+                        size="small"
+                        variant="tonal"
+                    >
+                        {{ cacheStatus.enabled ? 'Cache Enabled' : 'Cache Disabled' }}
+                    </v-chip>
+                    <v-chip
+                        v-if="cacheStatus"
+                        size="small"
+                        variant="outlined"
+                    >
+                        {{ cacheStatus.lifetime_minutes }} min TTL
+                    </v-chip>
+                    <v-chip
+                        v-if="cacheStatus"
+                        size="small"
+                        variant="outlined"
+                        color="info"
+                    >
+                        {{ cacheStatus.driver }}
+                    </v-chip>
+                </div>
+            </div>
+
+            <!-- System Cache -->
+            <div class="text-caption text-medium-emphasis mb-2 mt-4">System Cache</div>
+            <v-row dense>
+                <v-col cols="6" sm="4" md="2">
+                    <v-btn
+                        block
+                        size="small"
+                        variant="outlined"
+                        :loading="clearingCache === 'settings'"
+                        @click="clearCache('settings')"
+                    >
+                        <v-icon start size="small">mdi-cog</v-icon>
+                        Settings
+                    </v-btn>
+                </v-col>
+                <v-col cols="6" sm="4" md="2">
+                    <v-btn
+                        block
+                        size="small"
+                        variant="outlined"
+                        :loading="clearingCache === 'views'"
+                        @click="clearCache('views')"
+                    >
+                        <v-icon start size="small">mdi-file-document</v-icon>
+                        Views
+                    </v-btn>
+                </v-col>
+                <v-col cols="6" sm="4" md="2">
+                    <v-btn
+                        block
+                        size="small"
+                        variant="outlined"
+                        :loading="clearingCache === 'routes'"
+                        @click="clearCache('routes')"
+                    >
+                        <v-icon start size="small">mdi-routes</v-icon>
+                        Routes
+                    </v-btn>
+                </v-col>
+                <v-col cols="6" sm="4" md="2">
+                    <v-btn
+                        block
+                        size="small"
+                        variant="outlined"
+                        :loading="clearingCache === 'config'"
+                        @click="clearCache('config')"
+                    >
+                        <v-icon start size="small">mdi-wrench</v-icon>
+                        Config
+                    </v-btn>
+                </v-col>
+                <v-col cols="6" sm="4" md="2">
+                    <v-btn
+                        block
+                        size="small"
+                        variant="outlined"
+                        :loading="clearingCache === 'application'"
+                        @click="clearCache('application')"
+                    >
+                        <v-icon start size="small">mdi-database</v-icon>
+                        App
+                    </v-btn>
+                </v-col>
+                <v-col cols="6" sm="4" md="2">
+                    <v-btn
+                        block
+                        size="small"
+                        variant="outlined"
+                        :loading="clearingCache === 'http'"
+                        @click="clearCache('http')"
+                    >
+                        <v-icon start size="small">mdi-web</v-icon>
+                        HTTP
+                    </v-btn>
+                </v-col>
+            </v-row>
+
+            <!-- Content Cache -->
+            <div class="text-caption text-medium-emphasis mb-2 mt-4">Content Cache</div>
+            <v-row dense>
+                <v-col cols="6" sm="4" md="2">
+                    <v-btn
+                        block
+                        size="small"
+                        variant="outlined"
+                        :loading="clearingCache === 'pages'"
+                        @click="clearCache('pages')"
+                    >
+                        <v-icon start size="small">mdi-file-multiple</v-icon>
+                        Pages
+                    </v-btn>
+                </v-col>
+                <v-col cols="6" sm="4" md="2">
+                    <v-btn
+                        block
+                        size="small"
+                        variant="outlined"
+                        :loading="clearingCache === 'wiki'"
+                        @click="clearCache('wiki')"
+                    >
+                        <v-icon start size="small">mdi-book-open-page-variant</v-icon>
+                        Wiki
+                    </v-btn>
+                </v-col>
+                <v-col cols="6" sm="4" md="2">
+                    <v-btn
+                        block
+                        size="small"
+                        variant="outlined"
+                        :loading="clearingCache === 'posts'"
+                        @click="clearCache('posts')"
+                    >
+                        <v-icon start size="small">mdi-post</v-icon>
+                        Posts
+                    </v-btn>
+                </v-col>
+                <v-col cols="6" sm="4" md="2">
+                    <v-btn
+                        block
+                        size="small"
+                        variant="outlined"
+                        :loading="clearingCache === 'widgets'"
+                        @click="clearCache('widgets')"
+                    >
+                        <v-icon start size="small">mdi-widgets</v-icon>
+                        Widgets
+                    </v-btn>
+                </v-col>
+                <v-col cols="6" sm="4" md="4">
+                    <v-btn
+                        block
+                        size="small"
+                        color="error"
+                        variant="tonal"
+                        :loading="clearingCache === 'all'"
+                        @click="clearCache('all')"
+                    >
+                        <v-icon start size="small">mdi-delete-sweep</v-icon>
+                        Clear All Caches
+                    </v-btn>
+                </v-col>
+            </v-row>
         </settings-card>
 
         <!-- PWA Settings -->
@@ -583,7 +763,11 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
+import { useApi } from '@/api/useAPI.js';
 import SettingsCard from '../SettingsCard.vue';
+
+const api = useApi('api');
 
 const props = defineProps({
     settings: Object,
@@ -592,6 +776,44 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['save', 'message']);
+
+// Cache management
+const cacheStatus = ref(null);
+const clearingCache = ref(null);
+
+async function fetchCacheStatus() {
+    try {
+        const response = await api.get('/admin/settings/cache-status');
+        cacheStatus.value = response.data;
+    } catch (error) {
+        console.error('Failed to fetch cache status:', error);
+    }
+}
+
+async function clearCache(type) {
+    clearingCache.value = type;
+    try {
+        const response = await api.post('/admin/settings/clear-cache', { type });
+        emit('message', {
+            text: `Cache cleared successfully: ${response.data.cleared.join(', ')}`,
+            type: 'success'
+        });
+        // Refresh cache status
+        await fetchCacheStatus();
+    } catch (error) {
+        console.error('Failed to clear cache:', error);
+        emit('message', {
+            text: 'Failed to clear cache: ' + (error.response?.data?.message || error.message),
+            type: 'error'
+        });
+    } finally {
+        clearingCache.value = null;
+    }
+}
+
+onMounted(() => {
+    fetchCacheStatus();
+});
 
 const environments = [
     'development',

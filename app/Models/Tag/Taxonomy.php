@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use App\Traits\HasCache;
 
 //use Webpatser\Uuid\Uuid;
 
@@ -22,6 +23,7 @@ class Taxonomy extends Model
      * @inheritdoc
      */
     use SoftDeletes;
+    use HasCache;
 
     /** @inheritdoc */
     protected $fillable = [

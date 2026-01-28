@@ -49,6 +49,7 @@ class Kernel extends HttpKernel
         ValidatePostSize::class,
         TrimStrings::class,
         ConvertEmptyStringsToNull::class,
+        \App\Http\Middleware\CacheControl::class, // Must be last to override session's no-cache headers
     ];
 
     /**
@@ -95,5 +96,6 @@ class Kernel extends HttpKernel
         'permission'         => PermissionMiddleware::class,
         'role_or_permission' => RoleOrPermissionMiddleware::class,
         'admin'              => EnsureUserIsAdmin::class,
+        'cache.control'      => \App\Http\Middleware\CacheControl::class,
     ];
 }

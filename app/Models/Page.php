@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\CanHaveTaxonomies;
+use App\Traits\HasCache;
 use App\Traits\HasTaxonomies;
 use App\Traits\Revisionable;
 //use Lecturize\Taxonomies\Traits\HasCategories;
@@ -19,6 +20,7 @@ class Page extends Model implements HasMedia, CanHaveTaxonomies
     use Revisionable;
     use Wikiable;
     use Sluggable;
+    use HasCache;
 
     protected $fillable = [
         'published',
