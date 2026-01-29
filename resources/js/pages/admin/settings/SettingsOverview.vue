@@ -158,6 +158,7 @@
                                     :settings="settings"
                                     :errors="errors"
                                     :is-saving="isSaving"
+                                    @save="saveSettings"
                                 />
                             </v-window-item>
                             <v-window-item value="localization">
@@ -165,6 +166,7 @@
                                     :settings="settings"
                                     :errors="errors"
                                     :is-saving="isSaving"
+                                    @save="saveSettings"
                                 />
                             </v-window-item>
                             <v-window-item value="branding">
@@ -172,6 +174,7 @@
                                     :settings="settings"
                                     :errors="errors"
                                     :is-saving="isSaving"
+                                    @save="saveSettings"
                                 />
                             </v-window-item>
                             <v-window-item value="theme">
@@ -179,6 +182,7 @@
                                     :settings="settings"
                                     :errors="errors"
                                     :is-saving="isSaving"
+                                    @save="saveSettings"
                                 />
                             </v-window-item>
                             <v-window-item value="oauth">
@@ -186,6 +190,7 @@
                                     :settings="settings"
                                     :errors="errors"
                                     :is-saving="isSaving"
+                                    @save="saveSettings"
                                 />
                             </v-window-item>
                             <v-window-item value="seo">
@@ -193,6 +198,7 @@
                                     :settings="settings"
                                     :errors="errors"
                                     :is-saving="isSaving"
+                                    @save="saveSettings"
                                 />
                             </v-window-item>
                             <v-window-item value="homepage">
@@ -200,6 +206,7 @@
                                     :settings="settings"
                                     :errors="errors"
                                     :is-saving="isSaving"
+                                    @save="saveSettings"
                                 />
                             </v-window-item>
                             <v-window-item value="footer">
@@ -207,6 +214,7 @@
                                     :settings="settings"
                                     :errors="errors"
                                     :is-saving="isSaving"
+                                    @save="saveSettings"
                                 />
                             </v-window-item>
                             <v-window-item value="advanced">
@@ -214,6 +222,7 @@
                                     :settings="settings"
                                     :errors="errors"
                                     :is-saving="isSaving"
+                                    @save="saveSettings"
                                 />
                             </v-window-item>
                         </v-window>
