@@ -27,13 +27,23 @@
 
     <v-sheet class="layout-side mx-auto mx-md-1 d-none d-md-flex flex-md-column justify-space-between px-2" color="surface">
       <div class="mt-3 mt-md-10 pa-2">
+        <!-- Logo when branding is enabled -->
+        <div v-if="loginBrandingEnabled && currentLogo" class="mb-4">
+          <v-img
+            :src="currentLogo"
+            max-height="80"
+            max-width="280"
+            contain
+            class="mx-auto"
+          />
+        </div>
         <div class="display-2 font-weight-bold text-primary">
           {{ product.name }}
         </div>
-        <div class="title my-2">Welcome! Let's build amazing things together.</div>
+        <div class="title my-2">{{ product.tagline || 'Welcome! Let\'s build amazing things together.' }}</div>
         <v-btn to="/" class="my-4">Take me back</v-btn>
       </div>
-      <v-img src="/images/illustrations/signin-illustration.svg" max-height="400" contain />
+      <v-img v-if="!loginBrandingEnabled || !currentLogo" src="/images/illustrations/signin-illustration.svg" max-height="400" contain />
     </v-sheet>
 
     <div class="pa-2 pa-md-4 flex-grow-1 align-center justify-center d-flex flex-column">
@@ -88,12 +98,28 @@ export default {
       const settings = useSettingsStore()
       return {
         name: settings.appName || app.product.name,
-        version: app.product.version
+        version: app.product.version,
+        tagline: settings.siteTagline || ''
       }
     },
     maintenanceMode() {
       const settings = useSettingsStore()
       return settings.maintenanceMode
+    },
+    loginBrandingEnabled() {
+      const settings = useSettingsStore()
+      return settings.loginBrandingEnabled
+    },
+    currentLogo() {
+      const settings = useSettingsStore()
+      // Use theme-appropriate logo
+      const logo = this.isDark ? settings.logoDark : settings.logoLight
+      // Fallback to light logo if dark logo is not set
+      const finalLogo = logo || settings.logoLight
+      if (finalLogo) {
+        return `/storage/${finalLogo}`
+      }
+      return null
     }
   },
   async mounted() {

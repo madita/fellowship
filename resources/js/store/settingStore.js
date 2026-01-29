@@ -72,6 +72,8 @@ export const useSettingsStore = defineStore({
             cookie_marketing_default: false,
             cookie_functional_default: false,
             cookie_policy_url: '',
+            // Login branding
+            login_branding_enabled: false,
         },
         settingsLoaded: false,
     }),
@@ -122,6 +124,13 @@ export const useSettingsStore = defineStore({
         secondaryColor: (state) => state.appSettings.secondary_color || '#a0b9c8',
         favicon: (state) => state.appSettings.favicon || null,
         appIcon: (state) => state.appSettings.app_icon || null,
+        loginBrandingEnabled: (state) => {
+            const value = state.appSettings.login_branding_enabled;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value === true;
+        },
     },
 
     actions: {
