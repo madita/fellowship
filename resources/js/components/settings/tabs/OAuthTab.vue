@@ -55,7 +55,6 @@
                 label="Enable Discord Login"
                 color="primary"
                 density="compact"
-                @update:model-value="markChanged"
                 class="mb-3"
             ></v-switch>
 
@@ -75,7 +74,6 @@
                 density="compact"
                 prepend-inner-icon="mdi-key"
                 :error-messages="getError('oauth_discord_client_id')"
-                @input="markChanged"
                 class="mb-3"
             ></v-text-field>
 
@@ -88,7 +86,6 @@
                 type="password"
                 prepend-inner-icon="mdi-lock"
                 :error-messages="getError('oauth_discord_client_secret')"
-                @input="markChanged"
             ></v-text-field>
         </settings-card>
 
@@ -99,7 +96,6 @@
                 label="Enable GitHub Login"
                 color="primary"
                 density="compact"
-                @update:model-value="markChanged"
                 class="mb-3"
             ></v-switch>
 
@@ -119,7 +115,6 @@
                 density="compact"
                 prepend-inner-icon="mdi-key"
                 :error-messages="getError('oauth_github_client_id')"
-                @input="markChanged"
                 class="mb-3"
             ></v-text-field>
 
@@ -132,7 +127,6 @@
                 type="password"
                 prepend-inner-icon="mdi-lock"
                 :error-messages="getError('oauth_github_client_secret')"
-                @input="markChanged"
             ></v-text-field>
         </settings-card>
 
@@ -143,7 +137,6 @@
                 label="Enable Facebook Login"
                 color="primary"
                 density="compact"
-                @update:model-value="markChanged"
                 class="mb-3"
             ></v-switch>
 
@@ -163,7 +156,6 @@
                 density="compact"
                 prepend-inner-icon="mdi-key"
                 :error-messages="getError('oauth_facebook_client_id')"
-                @input="markChanged"
                 class="mb-3"
             ></v-text-field>
 
@@ -176,7 +168,6 @@
                 type="password"
                 prepend-inner-icon="mdi-lock"
                 :error-messages="getError('oauth_facebook_client_secret')"
-                @input="markChanged"
             ></v-text-field>
         </settings-card>
 
@@ -188,7 +179,6 @@
                 hint="When disabled, only existing users can link OAuth accounts"
                 persistent-hint
                 density="compact"
-                @update:model-value="markChanged"
                 class="mb-3"
             ></v-checkbox>
 
@@ -198,7 +188,6 @@
                 hint="Trust OAuth providers' email verification status"
                 persistent-hint
                 density="compact"
-                @update:model-value="markChanged"
             ></v-checkbox>
         </settings-card>
 

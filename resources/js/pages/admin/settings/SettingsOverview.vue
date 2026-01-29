@@ -3,14 +3,61 @@
         <v-container fluid class="pa-2 pa-sm-4">
             <v-card elevation="2">
                 <v-card-title class="text-h6 text-sm-h5 font-weight-bold pa-3 pa-sm-6 bg-gradient">
-                    <v-icon class="mr-2 mr-sm-3" :size="$vuetify.display.mobile ? 24 : 28">mdi-cog</v-icon>
-                    <span class="d-none d-sm-inline">Application </span>Settings
+                    <div class="d-flex align-center justify-space-between w-100">
+                        <div class="d-flex align-center">
+                            <v-icon class="mr-2 mr-sm-3" :size="$vuetify.display.mobile ? 24 : 28">mdi-cog</v-icon>
+                            <span class="d-none d-sm-inline">Application </span>Settings
+                        </div>
+                        <div class="d-flex align-center gap-2">
+                            <!-- Save Button (Tab view only) -->
+                            <v-btn
+                                v-if="viewMode === 'tabs'"
+                                :loading="isSaving"
+                                color="white"
+                                variant="elevated"
+                                @click="saveSettings"
+                                prepend-icon="mdi-content-save"
+                                class="d-none d-sm-flex"
+                            >
+                                Save
+                            </v-btn>
+                            <!-- View Toggle -->
+                            <v-btn-toggle
+                                v-model="viewMode"
+                                mandatory
+                                density="compact"
+                                variant="outlined"
+                                color="white"
+                                class="view-toggle"
+                            >
+                                <v-btn value="overview" size="small">
+                                    <v-icon size="18" :class="{ 'mr-1': !$vuetify.display.mobile }">mdi-view-grid-outline</v-icon>
+                                    <span class="d-none d-sm-inline">Overview</span>
+                                </v-btn>
+                                <v-btn value="tabs" size="small">
+                                    <v-icon size="18" :class="{ 'mr-1': !$vuetify.display.mobile }">mdi-tab</v-icon>
+                                    <span class="d-none d-sm-inline">Tabs</span>
+                                </v-btn>
+                            </v-btn-toggle>
+                        </div>
+                    </div>
                 </v-card-title>
 
                 <v-divider></v-divider>
 
-                <!-- Search Bar -->
-                <div class="pa-4">
+                <!-- Alert Message (Tab view) -->
+                <v-alert
+                    v-if="viewMode === 'tabs' && message"
+                    :type="alertType"
+                    class="mx-4 mx-sm-6 mt-4 mb-0"
+                    closable
+                    @click:close="message = ''"
+                >
+                    {{ message }}
+                </v-alert>
+
+                <!-- Search Bar (Overview mode only) -->
+                <div v-if="viewMode === 'overview'" class="pa-4">
                     <v-text-field
                         v-model="searchQuery"
                         prepend-inner-icon="mdi-magnify"
@@ -23,8 +70,8 @@
                     ></v-text-field>
                 </div>
 
-                <!-- Quick Stats -->
-                <div class="px-4 pb-2">
+                <!-- Quick Stats (Overview mode only) -->
+                <div v-if="viewMode === 'overview'" class="px-4 pb-2">
                     <v-row dense>
                         <v-col cols="6" sm="4" md="2">
                             <v-card variant="tonal" color="primary">
@@ -53,9 +100,141 @@
                     </v-row>
                 </div>
 
-                <v-divider class="mt-2"></v-divider>
+                <v-divider v-if="viewMode === 'overview'" class="mt-2"></v-divider>
 
-                <v-card-text class="pa-4 pa-md-6">
+                <!-- Tab View -->
+                <template v-if="viewMode === 'tabs'">
+                    <v-tabs
+                        v-model="currentTab"
+                        bg-color="transparent"
+                        color="primary"
+                        show-arrows
+                        center-active
+                    >
+                        <v-tab value="general">
+                            <v-icon class="mr-2" size="20">mdi-cog-outline</v-icon>
+                            <span class="d-none d-sm-inline">General</span>
+                        </v-tab>
+                        <v-tab value="localization">
+                            <v-icon class="mr-2" size="20">mdi-earth</v-icon>
+                            <span class="d-none d-sm-inline">Localization</span>
+                        </v-tab>
+                        <v-tab value="branding">
+                            <v-icon class="mr-2" size="20">mdi-palette-outline</v-icon>
+                            <span class="d-none d-sm-inline">Branding</span>
+                        </v-tab>
+                        <v-tab value="theme">
+                            <v-icon class="mr-2" size="20">mdi-theme-light-dark</v-icon>
+                            <span class="d-none d-sm-inline">Theme</span>
+                        </v-tab>
+                        <v-tab value="oauth">
+                            <v-icon class="mr-2" size="20">mdi-login-variant</v-icon>
+                            <span class="d-none d-sm-inline">OAuth</span>
+                        </v-tab>
+                        <v-tab value="seo">
+                            <v-icon class="mr-2" size="20">mdi-search-web</v-icon>
+                            <span class="d-none d-sm-inline">SEO</span>
+                        </v-tab>
+                        <v-tab value="homepage">
+                            <v-icon class="mr-2" size="20">mdi-home-edit-outline</v-icon>
+                            <span class="d-none d-sm-inline">Homepage</span>
+                        </v-tab>
+                        <v-tab value="footer">
+                            <v-icon class="mr-2" size="20">mdi-page-layout-footer</v-icon>
+                            <span class="d-none d-sm-inline">Footer</span>
+                        </v-tab>
+                        <v-tab value="advanced">
+                            <v-icon class="mr-2" size="20">mdi-cog-sync-outline</v-icon>
+                            <span class="d-none d-sm-inline">Advanced</span>
+                        </v-tab>
+                    </v-tabs>
+
+                    <v-divider></v-divider>
+
+                    <v-card-text class="pa-4 pa-sm-6">
+                        <v-window v-model="currentTab">
+                            <v-window-item value="general">
+                                <general-tab
+                                    :settings="settings"
+                                    :errors="errors"
+                                    :is-saving="isSaving"
+                                />
+                            </v-window-item>
+                            <v-window-item value="localization">
+                                <localization-tab
+                                    :settings="settings"
+                                    :errors="errors"
+                                    :is-saving="isSaving"
+                                />
+                            </v-window-item>
+                            <v-window-item value="branding">
+                                <branding-tab
+                                    :settings="settings"
+                                    :errors="errors"
+                                    :is-saving="isSaving"
+                                />
+                            </v-window-item>
+                            <v-window-item value="theme">
+                                <theme-tab
+                                    :settings="settings"
+                                    :errors="errors"
+                                    :is-saving="isSaving"
+                                />
+                            </v-window-item>
+                            <v-window-item value="oauth">
+                                <o-auth-tab
+                                    :settings="settings"
+                                    :errors="errors"
+                                    :is-saving="isSaving"
+                                />
+                            </v-window-item>
+                            <v-window-item value="seo">
+                                <seo-tab
+                                    :settings="settings"
+                                    :errors="errors"
+                                    :is-saving="isSaving"
+                                />
+                            </v-window-item>
+                            <v-window-item value="homepage">
+                                <homepage-tab
+                                    :settings="settings"
+                                    :errors="errors"
+                                    :is-saving="isSaving"
+                                />
+                            </v-window-item>
+                            <v-window-item value="footer">
+                                <footer-tab
+                                    :settings="settings"
+                                    :errors="errors"
+                                    :is-saving="isSaving"
+                                />
+                            </v-window-item>
+                            <v-window-item value="advanced">
+                                <advanced-tab
+                                    :settings="settings"
+                                    :errors="errors"
+                                    :is-saving="isSaving"
+                                />
+                            </v-window-item>
+                        </v-window>
+
+                        <!-- Mobile Save Button -->
+                        <v-btn
+                            :loading="isSaving"
+                            block
+                            size="large"
+                            color="primary"
+                            @click="saveSettings"
+                            prepend-icon="mdi-content-save"
+                            class="d-sm-none mt-4"
+                        >
+                            Save Settings
+                        </v-btn>
+                    </v-card-text>
+                </template>
+
+                <!-- Overview View -->
+                <v-card-text v-else class="pa-4 pa-md-6">
                     <!-- No Results -->
                     <v-alert
                         v-if="searchQuery && filteredSettingsCount === 0"
@@ -111,13 +290,71 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { settingsCategories, getTotalSettingsCount } from '@/configs/settingsConfig';
+import { useSettings } from '@/composables/useSettings';
 import SettingsItemCard from '@/components/settings/SettingsItemCard.vue';
+
+// Tab Components
+import GeneralTab from '@/components/settings/tabs/GeneralTab.vue';
+import LocalizationTab from '@/components/settings/tabs/LocalizationTab.vue';
+import BrandingTab from '@/components/settings/tabs/BrandingTab.vue';
+import ThemeTab from '@/components/settings/tabs/ThemeTab.vue';
+import OAuthTab from '@/components/settings/tabs/OAuthTab.vue';
+import SeoTab from '@/components/settings/tabs/SeoTab.vue';
+import HomepageTab from '@/components/settings/tabs/HomepageTab.vue';
+import FooterTab from '@/components/settings/tabs/FooterTab.vue';
+import AdvancedTab from '@/components/settings/tabs/AdvancedTab.vue';
 
 const router = useRouter();
 const searchQuery = ref('');
+
+// Settings composable for tab view
+const {
+    settings,
+    isSaving,
+    errors,
+    fetchSettings,
+    saveSettings: saveSettingsApi,
+    showMessage
+} = useSettings();
+
+const message = ref('');
+const alertType = ref('success');
+
+// View mode with localStorage persistence
+const STORAGE_KEY = 'settings_view_mode';
+const savedViewMode = localStorage.getItem(STORAGE_KEY);
+const viewMode = ref(savedViewMode || 'overview');
+const currentTab = ref('general');
+
+// Persist view mode changes
+watch(viewMode, (newMode) => {
+    localStorage.setItem(STORAGE_KEY, newMode);
+    // Fetch settings when switching to tab view
+    if (newMode === 'tabs') {
+        fetchSettings();
+    }
+});
+
+// Fetch settings on mount if tab view is selected
+onMounted(() => {
+    if (viewMode.value === 'tabs') {
+        fetchSettings();
+    }
+});
+
+async function saveSettings() {
+    try {
+        await saveSettingsApi();
+        message.value = 'Settings saved successfully!';
+        alertType.value = 'success';
+    } catch (error) {
+        message.value = error.message || 'Failed to save settings';
+        alertType.value = 'error';
+    }
+}
 
 const categoriesCount = computed(() => settingsCategories.length);
 const totalSettings = computed(() => getTotalSettingsCount());
@@ -189,5 +426,28 @@ function navigateToSetting(categoryId, settingId) {
 .bg-gradient {
     background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
     color: white;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.view-toggle {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+.view-toggle .v-btn {
+    color: rgba(255, 255, 255, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.view-toggle .v-btn--active {
+    color: white !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.gap-2 {
+    gap: 8px;
 }
 </style>
