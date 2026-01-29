@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\HomepageSection;
+use App\Models\Section;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -14,7 +14,7 @@ class HomepageSectionController extends Controller
      */
     public function index()
     {
-        $sections = HomepageSection::ordered()
+        $sections = Section::ordered()
             ->with(['widgets' => function ($query) {
                 $query->orderBy('column')->orderBy('order');
             }])
@@ -41,7 +41,7 @@ class HomepageSectionController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $section = HomepageSection::create($validator->validated());
+        $section = Section::create($validator->validated());
 
         return response()->json($section, 201);
     }
@@ -51,7 +51,7 @@ class HomepageSectionController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $section = HomepageSection::findOrFail($id);
+        $section = Section::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
             'title' => 'nullable|string|max:255',
@@ -76,7 +76,7 @@ class HomepageSectionController extends Controller
      */
     public function destroy($id)
     {
-        $section = HomepageSection::findOrFail($id);
+        $section = Section::findOrFail($id);
         $section->delete();
 
         return response()->json(['message' => 'Section deleted successfully']);
@@ -87,7 +87,7 @@ class HomepageSectionController extends Controller
      */
     public function toggle($id)
     {
-        $section = HomepageSection::findOrFail($id);
+        $section = Section::findOrFail($id);
         $section->enabled = !$section->enabled;
         $section->save();
 
@@ -110,11 +110,11 @@ class HomepageSectionController extends Controller
         }
 
         foreach ($request->sections as $sectionData) {
-            HomepageSection::where('id', $sectionData['id'])
+            Section::where('id', $sectionData['id'])
                 ->update(['order' => $sectionData['order']]);
         }
 
-        HomepageSection::clearCache();
+        Section::clearCache();
 
         return response()->json(['message' => 'Sections reordered successfully']);
     }
@@ -124,7 +124,7 @@ class HomepageSectionController extends Controller
      */
     public function getActiveSections()
     {
-        $sections = HomepageSection::getActiveSections();
+        $sections = Section::getActiveSections();
         return response()->json($sections);
     }
 }

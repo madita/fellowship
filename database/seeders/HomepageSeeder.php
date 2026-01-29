@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\HomepageSection;
-use App\Models\HomepageWidget;
+use App\Models\Section;
+use App\Models\Widget;
 use Illuminate\Database\Seeder;
 
 class HomepageSeeder extends Seeder
@@ -14,7 +14,7 @@ class HomepageSeeder extends Seeder
     public function run(): void
     {
         // Create sections first with unique anchors
-        $section1 = HomepageSection::create([
+        $section1 = Section::create([
             'title' => 'Hero Section',
             'layout' => '1-col',
             'enabled' => true,
@@ -23,7 +23,7 @@ class HomepageSeeder extends Seeder
             'config' => [],
         ]);
 
-        $section2 = HomepageSection::create([
+        $section2 = Section::create([
             'title' => 'Partners',
             'layout' => '1-col',
             'enabled' => true,
@@ -42,7 +42,7 @@ class HomepageSeeder extends Seeder
             ],
         ]);
 
-        $section3 = HomepageSection::create([
+        $section3 = Section::create([
             'title' => 'Stats & Showcase',
             'layout' => '2-col',
             'enabled' => true,
@@ -51,7 +51,7 @@ class HomepageSeeder extends Seeder
             'config' => [],
         ]);
 
-        $section4 = HomepageSection::create([
+        $section4 = Section::create([
             'title' => 'Features',
             'layout' => '1-col',
             'enabled' => true,
@@ -60,7 +60,7 @@ class HomepageSeeder extends Seeder
             'config' => ['background' => 'grey-lighten-5'],
         ]);
 
-        $section5 = HomepageSection::create([
+        $section5 = Section::create([
             'title' => 'Call to Action',
             'layout' => '1-col',
             'enabled' => true,
@@ -209,11 +209,11 @@ class HomepageSeeder extends Seeder
         ];
 
         foreach ($widgets as $widget) {
-            HomepageWidget::create($widget);
+            Widget::create($widget);
         }
 
         // Clear cache after seeding
-        HomepageSection::clearCache();
-        HomepageWidget::clearCache();
+        Section::clearCache();
+        Widget::clearCache();
     }
 }

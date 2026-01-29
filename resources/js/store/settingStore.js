@@ -74,6 +74,8 @@ export const useSettingsStore = defineStore({
             cookie_policy_url: '',
             // Login branding
             login_branding_enabled: false,
+            // Custom CSS
+            custom_css: '',
         },
         settingsLoaded: false,
     }),
@@ -131,6 +133,7 @@ export const useSettingsStore = defineStore({
             }
             return value === true;
         },
+        customCss: (state) => state.appSettings.custom_css || '',
     },
 
     actions: {
@@ -197,6 +200,24 @@ export const useSettingsStore = defineStore({
                 });
             } catch (e) {
                 console.warn('Failed to apply background images:', e);
+            }
+        },
+        applyCustomCss() {
+            try {
+                const customCss = this.appSettings.custom_css || '';
+
+                // Get or create the custom CSS style element
+                let styleEl = document.getElementById('custom-css-style');
+                if (!styleEl) {
+                    styleEl = document.createElement('style');
+                    styleEl.id = 'custom-css-style';
+                    document.head.appendChild(styleEl);
+                }
+
+                // Apply custom CSS
+                styleEl.textContent = customCss;
+            } catch (e) {
+                console.warn('Failed to apply custom CSS:', e);
             }
         },
         applyOpacitySettings() {
@@ -340,6 +361,9 @@ export const useSettingsStore = defineStore({
 
                 // Apply opacity settings
                 this.applyOpacitySettings();
+
+                // Apply custom CSS
+                this.applyCustomCss();
 
                 this.settingsLoaded = true;
             } catch (error) {

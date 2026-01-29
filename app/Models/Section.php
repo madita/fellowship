@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
-class HomepageSection extends Model
+class Section extends Model
 {
     use HasFactory;
 
@@ -37,7 +37,7 @@ class HomepageSection extends Model
      */
     public function widgets()
     {
-        return $this->hasMany(HomepageWidget::class, 'section_id')
+        return $this->hasMany(Widget::class, 'section_id')
             ->orderBy('column')
             ->orderBy('order');
     }
@@ -81,7 +81,7 @@ class HomepageSection extends Model
     public static function clearCache()
     {
         Cache::forget('homepage_sections_active');
-        HomepageWidget::clearCache(); // Also clear widgets cache
+        Widget::clearCache(); // Also clear widgets cache
     }
 
     /**

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use \App\Traits\HasCache;
 
-class HomepageWidget extends Model
+class Widget extends Model
 {
     protected $table = 'widgets';
 
@@ -40,7 +40,7 @@ class HomepageWidget extends Model
      */
     public function section()
     {
-        return $this->belongsTo(HomepageSection::class, 'section_id');
+        return $this->belongsTo(Section::class, 'section_id');
     }
 
     /**

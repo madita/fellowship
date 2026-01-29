@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\HomepageSection;
-use App\Models\HomepageWidget;
+use App\Models\Section;
+use App\Models\Widget;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -27,7 +27,7 @@ class HomepageSectionControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         // Create sections
-        $section1 = HomepageSection::create([
+        $section1 = Section::create([
             'title' => 'Hero Section',
             'layout' => '1-col',
             'enabled' => true,
@@ -35,7 +35,7 @@ class HomepageSectionControllerTest extends TestCase
             'config' => [],
         ]);
 
-        $section2 = HomepageSection::create([
+        $section2 = Section::create([
             'title' => 'Features Section',
             'layout' => '3-col',
             'enabled' => true,
@@ -44,7 +44,7 @@ class HomepageSectionControllerTest extends TestCase
         ]);
 
         // Add widgets to sections
-        HomepageWidget::create([
+        Widget::create([
             'section_id' => $section1->id,
             'type' => 'hero',
             'enabled' => true,
@@ -54,7 +54,7 @@ class HomepageSectionControllerTest extends TestCase
             'config' => [],
         ]);
 
-        HomepageWidget::create([
+        Widget::create([
             'section_id' => $section2->id,
             'type' => 'feature_grid',
             'enabled' => true,
@@ -160,7 +160,7 @@ class HomepageSectionControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         // Create first section
-        HomepageSection::create([
+        Section::create([
             'title' => 'First Section',
             'layout' => '1-col',
             'enabled' => true,
@@ -185,7 +185,7 @@ class HomepageSectionControllerTest extends TestCase
     {
         $this->actingAs($this->user, 'sanctum');
 
-        $section = HomepageSection::create([
+        $section = Section::create([
             'title' => 'Original Title',
             'layout' => '1-col',
             'enabled' => true,
@@ -224,7 +224,7 @@ class HomepageSectionControllerTest extends TestCase
     {
         $this->actingAs($this->user, 'sanctum');
 
-        $section = HomepageSection::create([
+        $section = Section::create([
             'title' => 'Test Section',
             'layout' => '1-col',
             'enabled' => true,
@@ -245,7 +245,7 @@ class HomepageSectionControllerTest extends TestCase
     {
         $this->actingAs($this->user, 'sanctum');
 
-        $section = HomepageSection::create([
+        $section = Section::create([
             'title' => 'Section to Delete',
             'layout' => '1-col',
             'enabled' => true,
@@ -269,7 +269,7 @@ class HomepageSectionControllerTest extends TestCase
     {
         $this->actingAs($this->user, 'sanctum');
 
-        $section = HomepageSection::create([
+        $section = Section::create([
             'title' => 'Section with Widgets',
             'layout' => '2-col',
             'enabled' => true,
@@ -277,7 +277,7 @@ class HomepageSectionControllerTest extends TestCase
             'config' => [],
         ]);
 
-        $widget = HomepageWidget::create([
+        $widget = Widget::create([
             'section_id' => $section->id,
             'type' => 'hero',
             'enabled' => true,
@@ -299,7 +299,7 @@ class HomepageSectionControllerTest extends TestCase
     {
         $this->actingAs($this->user, 'sanctum');
 
-        $section = HomepageSection::create([
+        $section = Section::create([
             'title' => 'Toggle Section',
             'layout' => '1-col',
             'enabled' => true,
@@ -333,7 +333,7 @@ class HomepageSectionControllerTest extends TestCase
     {
         $this->actingAs($this->user, 'sanctum');
 
-        $section1 = HomepageSection::create([
+        $section1 = Section::create([
             'title' => 'Section 1',
             'layout' => '1-col',
             'enabled' => true,
@@ -341,7 +341,7 @@ class HomepageSectionControllerTest extends TestCase
             'config' => [],
         ]);
 
-        $section2 = HomepageSection::create([
+        $section2 = Section::create([
             'title' => 'Section 2',
             'layout' => '2-col',
             'enabled' => true,
@@ -349,7 +349,7 @@ class HomepageSectionControllerTest extends TestCase
             'config' => [],
         ]);
 
-        $section3 = HomepageSection::create([
+        $section3 = Section::create([
             'title' => 'Section 3',
             'layout' => '3-col',
             'enabled' => true,
@@ -403,7 +403,7 @@ class HomepageSectionControllerTest extends TestCase
     public function test_can_get_active_sections_without_authentication()
     {
         // Create enabled and disabled sections
-        $enabledSection = HomepageSection::create([
+        $enabledSection = Section::create([
             'title' => 'Enabled Section',
             'layout' => '2-col',
             'enabled' => true,
@@ -411,7 +411,7 @@ class HomepageSectionControllerTest extends TestCase
             'config' => [],
         ]);
 
-        $disabledSection = HomepageSection::create([
+        $disabledSection = Section::create([
             'title' => 'Disabled Section',
             'layout' => '1-col',
             'enabled' => false,
@@ -420,7 +420,7 @@ class HomepageSectionControllerTest extends TestCase
         ]);
 
         // Add widgets
-        HomepageWidget::create([
+        Widget::create([
             'section_id' => $enabledSection->id,
             'type' => 'hero',
             'enabled' => true,
@@ -430,7 +430,7 @@ class HomepageSectionControllerTest extends TestCase
             'config' => [],
         ]);
 
-        HomepageWidget::create([
+        Widget::create([
             'section_id' => $disabledSection->id,
             'type' => 'stats',
             'enabled' => true,
@@ -478,6 +478,6 @@ class HomepageSectionControllerTest extends TestCase
             $response->assertStatus(201);
         }
 
-        $this->assertEquals(count($validLayouts), HomepageSection::count());
+        $this->assertEquals(count($validLayouts), Section::count());
     }
 }

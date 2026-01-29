@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\HomepageWidget;
+use App\Models\Widget;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -20,7 +20,7 @@ class HomepageWidgetController extends Controller
      */
     public function index(): JsonResponse
     {
-        $widgets = HomepageWidget::ordered()->get();
+        $widgets = Widget::ordered()->get();
 
         return response()->json([
             'widgets' => $widgets,
@@ -32,7 +32,7 @@ class HomepageWidgetController extends Controller
      */
     public function getActiveWidgets(): JsonResponse
     {
-        $widgets = HomepageWidget::getActiveWidgets();
+        $widgets = Widget::getActiveWidgets();
 
         return response()->json([
             'widgets' => $widgets,
@@ -63,7 +63,7 @@ class HomepageWidgetController extends Controller
             ], 422);
         }
 
-        $widget = HomepageWidget::create($request->all());
+        $widget = Widget::create($request->all());
 
         return response()->json([
             'message' => 'Widget created successfully',
@@ -76,7 +76,7 @@ class HomepageWidgetController extends Controller
      */
     public function update($id, Request $request): JsonResponse
     {
-        $widget = HomepageWidget::findOrFail($id);
+        $widget = Widget::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
             'section_id' => 'nullable|exists:homepage_sections,id',
@@ -121,7 +121,7 @@ class HomepageWidgetController extends Controller
      */
     public function destroy($id): JsonResponse
     {
-        $widget = HomepageWidget::findOrFail($id);
+        $widget = Widget::findOrFail($id);
         $widget->delete();
 
         return response()->json([
@@ -134,7 +134,7 @@ class HomepageWidgetController extends Controller
      */
     public function toggle($id): JsonResponse
     {
-        $widget = HomepageWidget::findOrFail($id);
+        $widget = Widget::findOrFail($id);
         $widget->enabled = !$widget->enabled;
         $widget->save();
 
@@ -149,11 +149,11 @@ class HomepageWidgetController extends Controller
      */
     public function duplicate($id): JsonResponse
     {
-        $widget = HomepageWidget::findOrFail($id);
+        $widget = Widget::findOrFail($id);
 
         $newWidget = $widget->replicate();
         $newWidget->title = ($widget->title ?? $widget->type) . ' (Copy)';
-        $newWidget->order = HomepageWidget::max('order') + 1;
+        $newWidget->order = Widget::max('order') + 1;
         $newWidget->enabled = false;
         $newWidget->save();
 
@@ -182,11 +182,11 @@ class HomepageWidgetController extends Controller
         }
 
         foreach ($request->widgets as $widgetData) {
-            HomepageWidget::where('id', $widgetData['id'])
+            Widget::where('id', $widgetData['id'])
                 ->update(['order' => $widgetData['order']]);
         }
 
-        HomepageWidget::clearCache();
+        Widget::clearCache();
 
         return response()->json([
             'message' => 'Widget order updated successfully',

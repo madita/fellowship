@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\HomepageSection;
-use App\Models\HomepageWidget;
+use App\Models\Section;
+use App\Models\Widget;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -13,7 +13,7 @@ class HomepageWidgetControllerTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
-    protected HomepageSection $section;
+    protected Section $section;
 
     protected function setUp(): void
     {
@@ -23,7 +23,7 @@ class HomepageWidgetControllerTest extends TestCase
         $this->user = User::factory()->create();
 
         // Create a test section
-        $this->section = HomepageSection::create([
+        $this->section = Section::create([
             'title' => 'Test Section',
             'layout' => '2-col',
             'enabled' => true,
@@ -37,7 +37,7 @@ class HomepageWidgetControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         // Create some test widgets
-        HomepageWidget::create([
+        Widget::create([
             'section_id' => $this->section->id,
             'type' => 'hero',
             'title' => 'Hero Widget',
@@ -48,7 +48,7 @@ class HomepageWidgetControllerTest extends TestCase
             'config' => [],
         ]);
 
-        HomepageWidget::create([
+        Widget::create([
             'section_id' => $this->section->id,
             'type' => 'stats',
             'title' => 'Stats Widget',
@@ -90,7 +90,7 @@ class HomepageWidgetControllerTest extends TestCase
     public function test_can_get_active_widgets_without_authentication()
     {
         // Create enabled and disabled widgets
-        HomepageWidget::create([
+        Widget::create([
             'section_id' => $this->section->id,
             'type' => 'hero',
             'enabled' => true,
@@ -100,7 +100,7 @@ class HomepageWidgetControllerTest extends TestCase
             'config' => [],
         ]);
 
-        HomepageWidget::create([
+        Widget::create([
             'section_id' => $this->section->id,
             'type' => 'stats',
             'enabled' => false,
@@ -191,7 +191,7 @@ class HomepageWidgetControllerTest extends TestCase
     {
         $this->actingAs($this->user, 'sanctum');
 
-        $widget = HomepageWidget::create([
+        $widget = Widget::create([
             'section_id' => $this->section->id,
             'type' => 'hero',
             'title' => 'Original Title',
@@ -235,7 +235,7 @@ class HomepageWidgetControllerTest extends TestCase
     {
         $this->actingAs($this->user, 'sanctum');
 
-        $widget = HomepageWidget::create([
+        $widget = Widget::create([
             'section_id' => $this->section->id,
             'type' => 'hero',
             'enabled' => true,
@@ -269,7 +269,7 @@ class HomepageWidgetControllerTest extends TestCase
     {
         $this->actingAs($this->user, 'sanctum');
 
-        $widget = HomepageWidget::create([
+        $widget = Widget::create([
             'section_id' => $this->section->id,
             'type' => 'hero',
             'enabled' => true,
@@ -295,7 +295,7 @@ class HomepageWidgetControllerTest extends TestCase
     {
         $this->actingAs($this->user, 'sanctum');
 
-        $widget = HomepageWidget::create([
+        $widget = Widget::create([
             'section_id' => $this->section->id,
             'type' => 'hero',
             'enabled' => true,
@@ -331,7 +331,7 @@ class HomepageWidgetControllerTest extends TestCase
     {
         $this->actingAs($this->user, 'sanctum');
 
-        $widget = HomepageWidget::create([
+        $widget = Widget::create([
             'section_id' => $this->section->id,
             'type' => 'hero',
             'title' => 'Original Widget',
@@ -357,14 +357,14 @@ class HomepageWidgetControllerTest extends TestCase
             'enabled' => false,
         ]);
 
-        $this->assertEquals(2, HomepageWidget::count());
+        $this->assertEquals(2, Widget::count());
     }
 
     public function test_authenticated_user_can_reorder_widgets()
     {
         $this->actingAs($this->user, 'sanctum');
 
-        $widget1 = HomepageWidget::create([
+        $widget1 = Widget::create([
             'section_id' => $this->section->id,
             'type' => 'hero',
             'enabled' => true,
@@ -374,7 +374,7 @@ class HomepageWidgetControllerTest extends TestCase
             'config' => [],
         ]);
 
-        $widget2 = HomepageWidget::create([
+        $widget2 = Widget::create([
             'section_id' => $this->section->id,
             'type' => 'stats',
             'enabled' => true,
