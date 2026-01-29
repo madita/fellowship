@@ -124,7 +124,9 @@ export const admin = [{
             ]
         },
         component: () => import(/* webpackChunkName: "admin-announcements" */ '@/pages/admin/Announcement.vue')
-    }, {
+    },
+    // Settings routes - hierarchical structure
+    {
         path: '/admin/settings',
         name: 'admin-settings',
         meta: {
@@ -132,7 +134,27 @@ export const admin = [{
                 auth, permission, verified
             ]
         },
-        component: () => import(/* webpackChunkName: "admin-settings" */ '@/pages/admin/Settings.vue')
+        component: () => import(/* webpackChunkName: "admin-settings-overview" */ '@/pages/admin/settings/SettingsOverview.vue')
+    },
+    {
+        path: '/admin/settings/:category',
+        name: 'admin-settings-category',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-settings-category" */ '@/pages/admin/settings/SettingsCategory.vue')
+    },
+    {
+        path: '/admin/settings/:category/:setting',
+        name: 'admin-settings-page',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/pages/admin/settings/SettingsPage.vue')
     }]
 
 export default admin
