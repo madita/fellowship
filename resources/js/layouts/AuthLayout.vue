@@ -1,5 +1,5 @@
 <template>
-  <div class="d-flex text-center flex-column flex-md-row flex-grow-1 auth-layout">
+  <v-sheet class="d-flex text-center flex-column flex-md-row flex-grow-1 auth-layout" color="background">
     <!-- Maintenance Mode Warning for Auth Pages -->
     <v-alert
       v-if="maintenanceMode"
@@ -38,9 +38,9 @@
           />
         </div>
         <div class="display-2 font-weight-bold text-primary">
-          {{ product.name }}
+          {{ appName }}
         </div>
-        <div class="title my-2">{{ product.tagline || 'Welcome! Let\'s build amazing things together.' }}</div>
+        <div class="title my-2">{{ siteTagline || 'Welcome! Let\'s build amazing things together.' }}</div>
         <v-btn to="/" class="my-4">Take me back</v-btn>
       </div>
       <v-img v-if="!loginBrandingEnabled || !currentLogo" src="/images/illustrations/signin-illustration.svg" max-height="400" contain />
@@ -50,88 +50,69 @@
       <div class="layout-content ma-auto w-full">
         <slot></slot>
       </div>
-      <div class="overline mt-4">{{ product.name }} - {{ product.version }}</div>
+      <div class="overline mt-4">{{ appName }} - {{ appVersion }}</div>
     </div>
-  </div>
+  </v-sheet>
 </template>
 
-<script>
+<script setup>
+import { computed, onMounted } from 'vue'
 import { useTheme } from 'vuetify'
-import { computed } from 'vue'
 import { useAppStore } from "../store/app/index.js"
 import { useSettingsStore } from "../store/settingStore.js"
 
-export default {
-  setup() {
-    const theme = useTheme()
+const theme = useTheme()
+const appStore = useAppStore()
+const settingsStore = useSettingsStore()
 
-    const toggleTheme = () => {
-      theme.global.name.value = theme.global.name.value === 'dark' ? 'light' : 'dark'
-    }
+// Theme state
+const isDark = computed(() => theme.global.name.value === 'dark')
 
-    const isDark = computed(() => theme.global.name.value === 'dark')
+const toggleTheme = () => {
+  theme.global.name.value = isDark.value ? 'light' : 'dark'
+}
 
-    const applyThemeSettings = () => {
-      const settingsStore = useSettingsStore()
-      const themeMode = settingsStore.themeMode
+// Settings
+const appName = computed(() => settingsStore.appName || appStore.product.name)
+const appVersion = computed(() => appStore.product.version)
+const siteTagline = computed(() => settingsStore.siteTagline)
+const maintenanceMode = computed(() => settingsStore.maintenanceMode)
+const loginBrandingEnabled = computed(() => settingsStore.loginBrandingEnabled)
 
-      if (themeMode === 'light') {
-        theme.global.name.value = 'light'
-      } else if (themeMode === 'dark') {
-        theme.global.name.value = 'dark'
-      } else if (themeMode === 'system') {
-        // Detect system preference
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-        theme.global.name.value = prefersDark ? 'dark' : 'light'
-      }
-    }
+// Logo - theme-aware
+const currentLogo = computed(() => {
+  const logo = isDark.value ? settingsStore.logoDark : settingsStore.logoLight
+  // Fallback to light logo if dark logo is not set
+  const finalLogo = logo || settingsStore.logoLight
+  if (finalLogo) {
+    return `/storage/${finalLogo}`
+  }
+  return null
+})
 
-    return {
-      toggleTheme,
-      isDark,
-      applyThemeSettings
-    }
-  },
-  computed: {
-    product() {
-      const app = useAppStore()
-      const settings = useSettingsStore()
-      return {
-        name: settings.appName || app.product.name,
-        version: app.product.version,
-        tagline: settings.siteTagline || ''
-      }
-    },
-    maintenanceMode() {
-      const settings = useSettingsStore()
-      return settings.maintenanceMode
-    },
-    loginBrandingEnabled() {
-      const settings = useSettingsStore()
-      return settings.loginBrandingEnabled
-    },
-    currentLogo() {
-      const settings = useSettingsStore()
-      // Use theme-appropriate logo
-      const logo = this.isDark ? settings.logoDark : settings.logoLight
-      // Fallback to light logo if dark logo is not set
-      const finalLogo = logo || settings.logoLight
-      if (finalLogo) {
-        return `/storage/${finalLogo}`
-      }
-      return null
-    }
-  },
-  async mounted() {
-    const settingsStore = useSettingsStore()
-    if (!settingsStore.settingsLoaded) {
-      await settingsStore.fetchAppSettings()
-    }
+// Apply theme settings based on saved preference
+const applyThemeSettings = () => {
+  const themeMode = settingsStore.themeMode
 
-    // Apply theme settings after settings are loaded
-    this.applyThemeSettings()
+  if (themeMode === 'light') {
+    theme.global.name.value = 'light'
+  } else if (themeMode === 'dark') {
+    theme.global.name.value = 'dark'
+  } else if (themeMode === 'system') {
+    // Detect system preference
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+    theme.global.name.value = prefersDark ? 'dark' : 'light'
   }
 }
+
+onMounted(async () => {
+  if (!settingsStore.settingsLoaded) {
+    await settingsStore.fetchAppSettings()
+  }
+
+  // Apply theme settings after settings are loaded
+  applyThemeSettings()
+})
 </script>
 
 <style scoped>
