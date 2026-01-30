@@ -73,6 +73,23 @@
                         @keyup.enter="submit"
                     ></v-text-field>
 
+                    <!-- Age Confirmation -->
+                    <v-checkbox
+                        v-if="ageConfirmationRequired"
+                        v-model="ageConfirmed"
+                        :error="errorAgeConfirmation"
+                        :error-messages="errorAgeConfirmationMessage"
+                        density="compact"
+                        class="mt-2"
+                        @change="resetErrors"
+                    >
+                        <template v-slot:label>
+                            <span class="text-body-2">
+                                {{ $t('register.ageConfirmation', { age: ageMinimum }) || `I confirm that I am at least ${ageMinimum} years old` }}
+                            </span>
+                        </template>
+                    </v-checkbox>
+
                     <v-btn
                         :loading="isLoading"
                         :disabled="isSignUpDisabled"
@@ -194,8 +211,12 @@ const user = reactive({
     username: "",
     email: "",
     password: "",
-    password_confirmation: ""
+    password_confirmation: "",
+    age_confirmed: false
 })
+
+// Age confirmation
+const ageConfirmed = ref(false)
 
 // Error states
 const errorName = ref(false)
@@ -208,6 +229,8 @@ const errorEmailMessage = ref('')
 const errorPasswordMessage = ref('')
 const errorProvider = ref(false)
 const errorProviderMessages = ref('')
+const errorAgeConfirmation = ref(false)
+const errorAgeConfirmationMessage = ref('')
 
 // External providers
 const providers = ref([
@@ -237,6 +260,8 @@ const authenticated = computed(() => authStore.isLoggedIn)
 const isVerified = computed(() => authStore.isVerified)
 const termsUrl = computed(() => settingsStore.termsConditionsUrl)
 const policyUrl = computed(() => settingsStore.privacyPolicyUrl)
+const ageConfirmationRequired = computed(() => settingsStore.ageConfirmationRequired)
+const ageMinimum = computed(() => settingsStore.ageMinimum)
 
 // Methods
 const signIn = async (credentials) => {
@@ -277,6 +302,11 @@ const register = async () => {
                 errorPassword.value = true
                 errorPasswordMessage.value = errors.password[0]
             }
+
+            if (errors.age_confirmed) {
+                errorAgeConfirmation.value = true
+                errorAgeConfirmationMessage.value = errors.age_confirmed[0]
+            }
         }
 
         //console.log("Registration error:", error)
@@ -287,11 +317,19 @@ const register = async () => {
 }
 
 const submit = () => {
-    // if (formRef.value.validate()) {
+    // Validate age confirmation if required
+    if (ageConfirmationRequired.value && !ageConfirmed.value) {
+        errorAgeConfirmation.value = true
+        errorAgeConfirmationMessage.value = 'You must confirm your age to register'
+        return
+    }
+
+    // Set age_confirmed in user data
+    user.age_confirmed = ageConfirmed.value
+
     isLoading.value = true
     isSignUpDisabled.value = true
     register()
-    // }
 }
 
 const signInProvider = (provider) => {
@@ -310,10 +348,17 @@ const resetErrors = () => {
     errorPasswordMessage.value = ''
     errorProvider.value = false
     errorProviderMessages.value = ''
+    errorAgeConfirmation.value = false
+    errorAgeConfirmationMessage.value = ''
 }
 
-// Fetch enabled OAuth providers on mount
+// Fetch enabled OAuth providers and settings on mount
 onMounted(async () => {
+    // Fetch settings if not already loaded
+    if (!settingsStore.settingsLoaded) {
+        await settingsStore.fetchAppSettings()
+    }
+
     try {
         const response = await axios.get('/api/settings/oauth-providers')
         enabledProviders.value = response.data.providers || []

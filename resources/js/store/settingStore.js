@@ -76,6 +76,9 @@ export const useSettingsStore = defineStore({
             login_branding_enabled: false,
             // Custom CSS
             custom_css: '',
+            // Age confirmation
+            age_confirmation_required: false,
+            age_minimum: 18,
         },
         settingsLoaded: false,
     }),
@@ -134,6 +137,17 @@ export const useSettingsStore = defineStore({
             return value === true;
         },
         customCss: (state) => state.appSettings.custom_css || '',
+        ageConfirmationRequired: (state) => {
+            const value = state.appSettings.age_confirmation_required;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value === true;
+        },
+        ageMinimum: (state) => {
+            const value = state.appSettings.age_minimum;
+            return parseInt(value) || 18;
+        },
     },
 
     actions: {

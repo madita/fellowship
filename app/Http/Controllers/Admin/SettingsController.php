@@ -157,6 +157,8 @@ class SettingsController extends Controller
             'terms_conditions_url',
             'cookie_policy_url',
             'gdpr_consent_text',
+            'age_confirmation_required',
+            'age_minimum',
 
             // Footer
             'custom_footer_enabled',

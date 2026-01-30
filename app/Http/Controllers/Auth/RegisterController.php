@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\RegistersUsers;
@@ -50,10 +51,22 @@ class RegisterController extends Controller
      */
     protected function validator(array $data)
     {
-        return Validator::make($data, [
+        $rules = [
             'username'     => ['required', 'string', 'max:255'],
             'email'        => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password'     => ['required', 'string', 'min:8', 'confirmed'],
+        ];
+
+        // Check if age confirmation is required
+        $ageConfirmationRequired = Setting::get('age_confirmation_required', false);
+        if ($ageConfirmationRequired === 'true' || $ageConfirmationRequired === true || $ageConfirmationRequired === '1') {
+            $ageMinimum = Setting::get('age_minimum', 18);
+            $rules['age_confirmed'] = ['required', 'accepted'];
+        }
+
+        return Validator::make($data, $rules, [
+            'age_confirmed.required' => 'You must confirm your age to register.',
+            'age_confirmed.accepted' => "You must confirm that you are at least {$ageMinimum} years old.",
         ]);
     }
 

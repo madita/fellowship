@@ -110,7 +110,8 @@ export default {
     'orsign': 'Oder melden Sie sich an mit',
     'agree': 'Mit Ihrer Anmeldung stimmen Sie dem zu',
     'account': 'Sie haben bereits ein Konto?',
-    'signin': 'Anmelden'
+    'signin': 'Anmelden',
+    'ageConfirmation': 'Ich bestätige, dass ich mindestens {age} Jahre alt bin'
   },
   'utility': {
     'maintenance': 'In Wartung'

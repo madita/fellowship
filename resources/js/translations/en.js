@@ -110,7 +110,8 @@ export default {
         orsign: 'Or sign up with',
         agree: 'By signing up, you agree to the',
         account: 'Already have an account?',
-        signin: 'Sign In'
+        signin: 'Sign In',
+        ageConfirmation: 'I confirm that I am at least {age} years old'
     },
     utility: {
         maintenance: 'In Maintenance'
