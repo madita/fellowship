@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             EventTypeTableSeeder::class,
             SettingsSeeder::class,
             HomepageSeeder::class,
+            FooterSeeder::class,
         ]);
     }
 }
