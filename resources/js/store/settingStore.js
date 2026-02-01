@@ -20,6 +20,9 @@ export const useSettingsStore = defineStore({
             social_twitter: '',
             social_facebook: '',
             social_instagram: '',
+            social_linkedin: '',
+            social_youtube: '',
+            social_discord: '',
             default_language: 'en',
             default_timezone: 'UTC',
             date_format: 'Y-m-d',
@@ -96,6 +99,9 @@ export const useSettingsStore = defineStore({
         socialTwitter: (state) => state.appSettings.social_twitter || '',
         socialFacebook: (state) => state.appSettings.social_facebook || '',
         socialInstagram: (state) => state.appSettings.social_instagram || '',
+        socialLinkedin: (state) => state.appSettings.social_linkedin || '',
+        socialYoutube: (state) => state.appSettings.social_youtube || '',
+        socialDiscord: (state) => state.appSettings.social_discord || '',
         languageChangeEnabled: (state) => {
             // Convert string 'true'/'false' to boolean if needed
             const value = state.appSettings.language_change_enabled;

@@ -563,18 +563,11 @@ export default {
             console.error('Failed to load homepage menu:', error);
         }
 
-        // Fetch footer widgets and sections
+        // Fetch footer widgets and sections (public API)
         const footerStore = useFooterStore();
-        if (!footerStore.widgetsLoaded) {
-            try {
-                await footerStore.fetchWidgets();
-            } catch (error) {
-                console.error('Failed to load footer widgets:', error);
-            }
-        }
         if (!footerStore.sectionsLoaded) {
             try {
-                await footerStore.fetchSections();
+                await footerStore.fetchPublicSections();
             } catch (error) {
                 console.error('Failed to load footer sections:', error);
             }

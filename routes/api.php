@@ -171,6 +171,34 @@ Route::middleware(['cache.control'])->group(function () {
 // Newsletter Subscription
 Route::post('/newsletter/subscribe', 'App\Http\Controllers\NewsletterController@subscribe');
 
+// API Keys Management (for users to manage their own API keys)
+Route::group(['prefix' => 'api-keys', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('/status', 'App\Http\Controllers\Api\ApiKeyController@status');
+    Route::get('/', 'App\Http\Controllers\Api\ApiKeyController@index');
+    Route::post('/', 'App\Http\Controllers\Api\ApiKeyController@store');
+    Route::get('/{id}', 'App\Http\Controllers\Api\ApiKeyController@show');
+    Route::patch('/{id}', 'App\Http\Controllers\Api\ApiKeyController@update');
+    Route::delete('/{id}', 'App\Http\Controllers\Api\ApiKeyController@destroy');
+    Route::post('/{id}/regenerate', 'App\Http\Controllers\Api\ApiKeyController@regenerate');
+});
+
+// External API Routes (authenticated via API key with dynamic rate limiting)
+Route::group(['prefix' => 'v1', 'middleware' => ['api.key', 'api.rate']], function () {
+    // Example: Get current user info via API key
+    Route::get('/me', function (Request $request) {
+        return response()->json([
+            'user' => $request->user()->only(['id', 'name', 'username', 'email']),
+            'api_key' => [
+                'id' => $request->attributes->get('api_key')->id,
+                'name' => $request->attributes->get('api_key')->name,
+            ],
+        ]);
+    });
+
+    // Add more external API endpoints here as needed
+    // These endpoints are accessible via API key authentication
+});
+
 // Admin Settings Routes
 Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
     // Settings

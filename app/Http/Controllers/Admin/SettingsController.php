@@ -62,6 +62,9 @@ class SettingsController extends Controller
             'social_twitter',
             'social_facebook',
             'social_instagram',
+            'social_linkedin',
+            'social_youtube',
+            'social_discord',
             'maintenance_mode',
             'maintenance_message',
 

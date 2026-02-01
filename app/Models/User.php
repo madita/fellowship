@@ -322,4 +322,12 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         return $this->socialAccounts()->where('provider', $provider)->exists();
     }
+
+    /**
+     * Get the API keys for the user.
+     */
+    public function apiKeys()
+    {
+        return $this->hasMany(ApiKey::class);
+    }
 }

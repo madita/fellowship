@@ -97,5 +97,7 @@ class Kernel extends HttpKernel
         'role_or_permission' => RoleOrPermissionMiddleware::class,
         'admin'              => EnsureUserIsAdmin::class,
         'cache.control'      => \App\Http\Middleware\CacheControl::class,
+        'api.key'            => \App\Http\Middleware\AuthenticateApiKey::class,
+        'api.rate'           => \App\Http\Middleware\DynamicRateLimit::class,
     ];
 }

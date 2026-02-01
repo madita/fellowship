@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Section;
-use App\Models\Widget;
+use App\Models\FooterSection;
+use App\Models\FooterWidget;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Cache;
 
 class FooterSeeder extends Seeder
 {
@@ -15,13 +14,11 @@ class FooterSeeder extends Seeder
     public function run(): void
     {
         // Create footer section with 3 columns
-        $footerSection = Section::withoutGlobalScope('location')->create([
-            'location' => 'footer',
+        $footerSection = FooterSection::create([
             'title' => 'Main Footer',
             'layout' => '3-col',
             'enabled' => true,
             'order' => 1,
-            'anchor_id' => 'footer-main',
             'config' => [
                 'background' => 'surface-variant',
                 'padding' => 'py-8',
@@ -32,14 +29,11 @@ class FooterSeeder extends Seeder
         $widgets = [
             // Column 1: Quick Links
             [
-                'location' => 'footer',
                 'section_id' => $footerSection->id,
                 'column' => 1,
                 'type' => 'quicklinks',
-                'title' => 'Quick Links',
                 'enabled' => true,
                 'order' => 1,
-                'content' => [],
                 'config' => [
                     'title' => 'Quick Links',
                     'links' => [
@@ -54,37 +48,28 @@ class FooterSeeder extends Seeder
                 ],
             ],
 
-            // Column 2: Contact Information
+            // Column 2: Contact Information (values come from settingsStore)
             [
-                'location' => 'footer',
                 'section_id' => $footerSection->id,
                 'column' => 2,
                 'type' => 'contact',
-                'title' => 'Contact Us',
                 'enabled' => true,
                 'order' => 1,
-                'content' => [],
                 'config' => [
                     'title' => 'Contact Us',
                     'showAddress' => true,
                     'showPhone' => true,
                     'showEmail' => true,
-                    'address' => '123 Main Street, City, Country',
-                    'phone' => '+1 (555) 123-4567',
-                    'email' => 'contact@example.com',
                 ],
             ],
 
             // Column 3: Newsletter Signup
             [
-                'location' => 'footer',
                 'section_id' => $footerSection->id,
                 'column' => 3,
                 'type' => 'newsletter',
-                'title' => 'Newsletter',
                 'enabled' => true,
                 'order' => 1,
-                'content' => [],
                 'config' => [
                     'title' => 'Stay Updated',
                     'description' => 'Subscribe to our newsletter for the latest news and updates.',
@@ -93,16 +78,13 @@ class FooterSeeder extends Seeder
                 ],
             ],
 
-            // Column 3: Social Media Links (below newsletter)
+            // Column 3: Social Media Links (values come from settingsStore)
             [
-                'location' => 'footer',
                 'section_id' => $footerSection->id,
                 'column' => 3,
                 'type' => 'social',
-                'title' => 'Follow Us',
                 'enabled' => true,
                 'order' => 2,
-                'content' => [],
                 'config' => [
                     'title' => 'Follow Us',
                     'showTwitter' => true,
@@ -111,17 +93,15 @@ class FooterSeeder extends Seeder
                     'showLinkedin' => true,
                     'showYoutube' => true,
                     'showDiscord' => true,
-                    'style' => 'icons-only', // icons-only, icons-text, buttons
                 ],
             ],
         ];
 
         foreach ($widgets as $widget) {
-            Widget::withoutGlobalScope('location')->create($widget);
+            FooterWidget::create($widget);
         }
 
         // Clear footer cache
-        Cache::forget('footer_sections_active');
-        Cache::forget('footer.widgets');
+        FooterSection::clearCache();
     }
 }

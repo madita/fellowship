@@ -34,6 +34,7 @@ class FooterSection extends Model
     public function widgets()
     {
         return $this->hasMany(FooterWidget::class, 'section_id')
+            ->orderBy('column')
             ->orderBy('order');
     }
 
@@ -63,6 +64,7 @@ class FooterSection extends Model
                 ->ordered()
                 ->with(['widgets' => function ($query) {
                     $query->where('enabled', true)
+                        ->orderBy('column')
                         ->orderBy('order');
                 }])
                 ->get();
