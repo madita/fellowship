@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Services\LazyLoadingService;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Blade;

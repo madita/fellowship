@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
-use \App\Traits\HasCache;
 
 class Widget extends Model
 {
@@ -25,10 +24,10 @@ class Widget extends Model
 
     protected $casts = [
         'enabled' => 'boolean',
-        'order' => 'integer',
-        'column' => 'integer',
+        'order'   => 'integer',
+        'column'  => 'integer',
         'content' => 'array',
-        'config' => 'array',
+        'config'  => 'array',
     ];
 
     protected $attributes = [
@@ -36,7 +35,7 @@ class Widget extends Model
     ];
 
     /**
-     * Get the section this widget belongs to
+     * Get the section this widget belongs to.
      */
     public function section()
     {
@@ -44,7 +43,7 @@ class Widget extends Model
     }
 
     /**
-     * Scope query to only enabled widgets
+     * Scope query to only enabled widgets.
      */
     public function scopeEnabled($query)
     {
@@ -52,7 +51,7 @@ class Widget extends Model
     }
 
     /**
-     * Scope query to order widgets
+     * Scope query to order widgets.
      */
     public function scopeOrdered($query)
     {
@@ -60,7 +59,7 @@ class Widget extends Model
     }
 
     /**
-     * Get all active widgets (cached)
+     * Get all active widgets (cached).
      */
     public static function getActiveWidgets()
     {
@@ -70,7 +69,7 @@ class Widget extends Model
     }
 
     /**
-     * Clear the homepage widgets cache
+     * Clear the homepage widgets cache.
      */
     public static function clearCache(): void
     {
@@ -78,7 +77,7 @@ class Widget extends Model
     }
 
     /**
-     * Boot the model and add event listeners
+     * Boot the model and add event listeners.
      */
     protected static function booted(): void
     {

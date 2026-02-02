@@ -27,24 +27,24 @@ class HomepageMenuControllerTest extends TestCase
 
         // Create test menu items
         HomepageMenuItem::create([
-            'label' => 'Home',
+            'label'         => 'Home',
             'anchor_target' => '#home',
-            'order' => 1,
-            'enabled' => true,
+            'order'         => 1,
+            'enabled'       => true,
         ]);
 
         HomepageMenuItem::create([
-            'label' => 'About',
+            'label'         => 'About',
             'anchor_target' => '#about',
-            'order' => 2,
-            'enabled' => true,
+            'order'         => 2,
+            'enabled'       => true,
         ]);
 
         HomepageMenuItem::create([
-            'label' => 'Contact',
+            'label'         => 'Contact',
             'anchor_target' => '#contact',
-            'order' => 3,
-            'enabled' => false,
+            'order'         => 3,
+            'enabled'       => false,
         ]);
 
         $response = $this->getJson('/api/admin/homepage/menu');
@@ -75,24 +75,24 @@ class HomepageMenuControllerTest extends TestCase
     {
         // Create enabled and disabled menu items
         HomepageMenuItem::create([
-            'label' => 'Home',
+            'label'         => 'Home',
             'anchor_target' => '#home',
-            'order' => 1,
-            'enabled' => true,
+            'order'         => 1,
+            'enabled'       => true,
         ]);
 
         HomepageMenuItem::create([
-            'label' => 'About',
+            'label'         => 'About',
             'anchor_target' => '#about',
-            'order' => 2,
-            'enabled' => false, // Disabled
+            'order'         => 2,
+            'enabled'       => false, // Disabled
         ]);
 
         HomepageMenuItem::create([
-            'label' => 'Services',
+            'label'         => 'Services',
             'anchor_target' => '#services',
-            'order' => 3,
-            'enabled' => true,
+            'order'         => 3,
+            'enabled'       => true,
         ]);
 
         $response = $this->getJson('/api/homepage/menu');
@@ -117,10 +117,10 @@ class HomepageMenuControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $menuItemData = [
-            'label' => 'Features',
+            'label'         => 'Features',
             'anchor_target' => '#features',
-            'order' => 1,
-            'enabled' => true,
+            'order'         => 1,
+            'enabled'       => true,
         ];
 
         $response = $this->postJson('/api/admin/homepage/menu', $menuItemData);
@@ -138,7 +138,7 @@ class HomepageMenuControllerTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('homepage_menu_items', [
-            'label' => 'Features',
+            'label'         => 'Features',
             'anchor_target' => '#features',
         ]);
     }
@@ -161,16 +161,16 @@ class HomepageMenuControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $menuItem = HomepageMenuItem::create([
-            'label' => 'Original Label',
+            'label'         => 'Original Label',
             'anchor_target' => '#original',
-            'order' => 1,
-            'enabled' => true,
+            'order'         => 1,
+            'enabled'       => true,
         ]);
 
         $updateData = [
-            'label' => 'Updated Label',
+            'label'         => 'Updated Label',
             'anchor_target' => '#updated',
-            'enabled' => false,
+            'enabled'       => false,
         ];
 
         $response = $this->patchJson("/api/admin/homepage/menu/{$menuItem->id}", $updateData);
@@ -182,10 +182,10 @@ class HomepageMenuControllerTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('homepage_menu_items', [
-            'id' => $menuItem->id,
-            'label' => 'Updated Label',
+            'id'            => $menuItem->id,
+            'label'         => 'Updated Label',
             'anchor_target' => '#updated',
-            'enabled' => false,
+            'enabled'       => false,
         ]);
     }
 
@@ -194,10 +194,10 @@ class HomepageMenuControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $menuItem = HomepageMenuItem::create([
-            'label' => 'Delete Me',
+            'label'         => 'Delete Me',
             'anchor_target' => '#delete',
-            'order' => 1,
-            'enabled' => true,
+            'order'         => 1,
+            'enabled'       => true,
         ]);
 
         $response = $this->deleteJson("/api/admin/homepage/menu/{$menuItem->id}");
@@ -217,24 +217,24 @@ class HomepageMenuControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $item1 = HomepageMenuItem::create([
-            'label' => 'Home',
+            'label'         => 'Home',
             'anchor_target' => '#home',
-            'order' => 1,
-            'enabled' => true,
+            'order'         => 1,
+            'enabled'       => true,
         ]);
 
         $item2 = HomepageMenuItem::create([
-            'label' => 'About',
+            'label'         => 'About',
             'anchor_target' => '#about',
-            'order' => 2,
-            'enabled' => true,
+            'order'         => 2,
+            'enabled'       => true,
         ]);
 
         $item3 = HomepageMenuItem::create([
-            'label' => 'Contact',
+            'label'         => 'Contact',
             'anchor_target' => '#contact',
-            'order' => 3,
-            'enabled' => true,
+            'order'         => 3,
+            'enabled'       => true,
         ]);
 
         // Reorder: item3 -> item1 -> item2
@@ -252,17 +252,17 @@ class HomepageMenuControllerTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('homepage_menu_items', [
-            'id' => $item3->id,
+            'id'    => $item3->id,
             'order' => 1,
         ]);
 
         $this->assertDatabaseHas('homepage_menu_items', [
-            'id' => $item1->id,
+            'id'    => $item1->id,
             'order' => 2,
         ]);
 
         $this->assertDatabaseHas('homepage_menu_items', [
-            'id' => $item2->id,
+            'id'    => $item2->id,
             'order' => 3,
         ]);
     }
@@ -298,10 +298,10 @@ class HomepageMenuControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $item = HomepageMenuItem::create([
-            'label' => 'Test',
+            'label'         => 'Test',
             'anchor_target' => '#test',
-            'order' => 1,
-            'enabled' => true,
+            'order'         => 1,
+            'enabled'       => true,
         ]);
 
         $response = $this->postJson('/api/admin/homepage/menu/reorder', [
@@ -331,24 +331,24 @@ class HomepageMenuControllerTest extends TestCase
 
         // Create items in non-sequential order
         HomepageMenuItem::create([
-            'label' => 'Third',
+            'label'         => 'Third',
             'anchor_target' => '#third',
-            'order' => 3,
-            'enabled' => true,
+            'order'         => 3,
+            'enabled'       => true,
         ]);
 
         HomepageMenuItem::create([
-            'label' => 'First',
+            'label'         => 'First',
             'anchor_target' => '#first',
-            'order' => 1,
-            'enabled' => true,
+            'order'         => 1,
+            'enabled'       => true,
         ]);
 
         HomepageMenuItem::create([
-            'label' => 'Second',
+            'label'         => 'Second',
             'anchor_target' => '#second',
-            'order' => 2,
-            'enabled' => true,
+            'order'         => 2,
+            'enabled'       => true,
         ]);
 
         $response = $this->getJson('/api/admin/homepage/menu');
@@ -365,24 +365,24 @@ class HomepageMenuControllerTest extends TestCase
     {
         // Create mix of enabled and disabled items
         HomepageMenuItem::create([
-            'label' => 'Home',
+            'label'         => 'Home',
             'anchor_target' => '#home',
-            'order' => 1,
-            'enabled' => true,
+            'order'         => 1,
+            'enabled'       => true,
         ]);
 
         HomepageMenuItem::create([
-            'label' => 'Disabled Item',
+            'label'         => 'Disabled Item',
             'anchor_target' => '#disabled',
-            'order' => 2,
-            'enabled' => false,
+            'order'         => 2,
+            'enabled'       => false,
         ]);
 
         HomepageMenuItem::create([
-            'label' => 'About',
+            'label'         => 'About',
             'anchor_target' => '#about',
-            'order' => 3,
-            'enabled' => true,
+            'order'         => 3,
+            'enabled'       => true,
         ]);
 
         $response = $this->getJson('/api/homepage/menu');
@@ -402,10 +402,10 @@ class HomepageMenuControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $menuItemData = [
-            'label' => 'External Link',
+            'label'         => 'External Link',
             'anchor_target' => 'https://example.com',
-            'order' => 1,
-            'enabled' => true,
+            'order'         => 1,
+            'enabled'       => true,
         ];
 
         $response = $this->postJson('/api/admin/homepage/menu', $menuItemData);
@@ -413,7 +413,7 @@ class HomepageMenuControllerTest extends TestCase
         $response->assertStatus(201);
 
         $this->assertDatabaseHas('homepage_menu_items', [
-            'label' => 'External Link',
+            'label'         => 'External Link',
             'anchor_target' => 'https://example.com',
         ]);
     }
@@ -423,10 +423,10 @@ class HomepageMenuControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $menuItem = HomepageMenuItem::create([
-            'label' => 'Original',
+            'label'         => 'Original',
             'anchor_target' => '#original',
-            'order' => 1,
-            'enabled' => true,
+            'order'         => 1,
+            'enabled'       => true,
         ]);
 
         // Update only the label

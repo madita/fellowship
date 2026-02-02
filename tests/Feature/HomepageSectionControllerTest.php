@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Section;
-use App\Models\Widget;
 use App\Models\User;
+use App\Models\Widget;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -28,40 +28,40 @@ class HomepageSectionControllerTest extends TestCase
 
         // Create sections
         $section1 = Section::create([
-            'title' => 'Hero Section',
-            'layout' => '1-col',
+            'title'   => 'Hero Section',
+            'layout'  => '1-col',
             'enabled' => true,
-            'order' => 1,
-            'config' => [],
+            'order'   => 1,
+            'config'  => [],
         ]);
 
         $section2 = Section::create([
-            'title' => 'Features Section',
-            'layout' => '3-col',
+            'title'   => 'Features Section',
+            'layout'  => '3-col',
             'enabled' => true,
-            'order' => 2,
-            'config' => [],
+            'order'   => 2,
+            'config'  => [],
         ]);
 
         // Add widgets to sections
         Widget::create([
             'section_id' => $section1->id,
-            'type' => 'hero',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => ['title' => 'Welcome'],
-            'config' => [],
+            'type'       => 'hero',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => ['title' => 'Welcome'],
+            'config'     => [],
         ]);
 
         Widget::create([
             'section_id' => $section2->id,
-            'type' => 'feature_grid',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => ['features' => []],
-            'config' => [],
+            'type'       => 'feature_grid',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => ['features' => []],
+            'config'     => [],
         ]);
 
         $response = $this->getJson('/api/admin/homepage/sections');
@@ -93,13 +93,13 @@ class HomepageSectionControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $sectionData = [
-            'title' => 'New Section',
-            'layout' => '2-col',
+            'title'   => 'New Section',
+            'layout'  => '2-col',
             'enabled' => true,
-            'order' => 1,
-            'config' => [
+            'order'   => 1,
+            'config'  => [
                 'backgroundColor' => '#ffffff',
-                'padding' => 'large',
+                'padding'         => 'large',
             ],
             'anchor_id' => 'new-section',
         ];
@@ -118,8 +118,8 @@ class HomepageSectionControllerTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('homepage_sections', [
-            'title' => 'New Section',
-            'layout' => '2-col',
+            'title'     => 'New Section',
+            'layout'    => '2-col',
             'anchor_id' => 'new-section',
         ]);
     }
@@ -129,10 +129,10 @@ class HomepageSectionControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $response = $this->postJson('/api/admin/homepage/sections', [
-            'title' => 'Test Section',
-            'layout' => 'invalid-layout', // Invalid layout
+            'title'   => 'Test Section',
+            'layout'  => 'invalid-layout', // Invalid layout
             'enabled' => true,
-            'order' => 1,
+            'order'   => 1,
         ]);
 
         $response->assertStatus(422)
@@ -144,10 +144,10 @@ class HomepageSectionControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $response = $this->postJson('/api/admin/homepage/sections', [
-            'title' => 'Test Section',
-            'layout' => '2-col',
-            'enabled' => true,
-            'order' => 1,
+            'title'     => 'Test Section',
+            'layout'    => '2-col',
+            'enabled'   => true,
+            'order'     => 1,
             'anchor_id' => 'Invalid Anchor!', // Contains uppercase and special chars
         ]);
 
@@ -161,19 +161,19 @@ class HomepageSectionControllerTest extends TestCase
 
         // Create first section
         Section::create([
-            'title' => 'First Section',
-            'layout' => '1-col',
-            'enabled' => true,
-            'order' => 1,
+            'title'     => 'First Section',
+            'layout'    => '1-col',
+            'enabled'   => true,
+            'order'     => 1,
             'anchor_id' => 'my-section',
         ]);
 
         // Try to create second section with same anchor_id
         $response = $this->postJson('/api/admin/homepage/sections', [
-            'title' => 'Second Section',
-            'layout' => '2-col',
-            'enabled' => true,
-            'order' => 2,
+            'title'     => 'Second Section',
+            'layout'    => '2-col',
+            'enabled'   => true,
+            'order'     => 2,
             'anchor_id' => 'my-section', // Duplicate
         ]);
 
@@ -186,18 +186,18 @@ class HomepageSectionControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $section = Section::create([
-            'title' => 'Original Title',
-            'layout' => '1-col',
+            'title'   => 'Original Title',
+            'layout'  => '1-col',
             'enabled' => true,
-            'order' => 1,
-            'config' => [],
+            'order'   => 1,
+            'config'  => [],
         ]);
 
         $updateData = [
-            'title' => 'Updated Title',
-            'layout' => '3-col',
+            'title'   => 'Updated Title',
+            'layout'  => '3-col',
             'enabled' => false,
-            'config' => [
+            'config'  => [
                 'backgroundColor' => '#f0f0f0',
             ],
         ];
@@ -206,16 +206,16 @@ class HomepageSectionControllerTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'id' => $section->id,
-                'title' => 'Updated Title',
-                'layout' => '3-col',
+                'id'      => $section->id,
+                'title'   => 'Updated Title',
+                'layout'  => '3-col',
                 'enabled' => false,
             ]);
 
         $this->assertDatabaseHas('homepage_sections', [
-            'id' => $section->id,
-            'title' => 'Updated Title',
-            'layout' => '3-col',
+            'id'      => $section->id,
+            'title'   => 'Updated Title',
+            'layout'  => '3-col',
             'enabled' => false,
         ]);
     }
@@ -225,16 +225,16 @@ class HomepageSectionControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $section = Section::create([
-            'title' => 'Test Section',
-            'layout' => '1-col',
-            'enabled' => true,
-            'order' => 1,
+            'title'     => 'Test Section',
+            'layout'    => '1-col',
+            'enabled'   => true,
+            'order'     => 1,
             'anchor_id' => 'test-section',
         ]);
 
         // Update with same anchor_id should be allowed
         $response = $this->patchJson("/api/admin/homepage/sections/{$section->id}", [
-            'title' => 'Updated Section',
+            'title'     => 'Updated Section',
             'anchor_id' => 'test-section', // Same anchor_id
         ]);
 
@@ -246,11 +246,11 @@ class HomepageSectionControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $section = Section::create([
-            'title' => 'Section to Delete',
-            'layout' => '1-col',
+            'title'   => 'Section to Delete',
+            'layout'  => '1-col',
             'enabled' => true,
-            'order' => 1,
-            'config' => [],
+            'order'   => 1,
+            'config'  => [],
         ]);
 
         $response = $this->deleteJson("/api/admin/homepage/sections/{$section->id}");
@@ -270,21 +270,21 @@ class HomepageSectionControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $section = Section::create([
-            'title' => 'Section with Widgets',
-            'layout' => '2-col',
+            'title'   => 'Section with Widgets',
+            'layout'  => '2-col',
             'enabled' => true,
-            'order' => 1,
-            'config' => [],
+            'order'   => 1,
+            'config'  => [],
         ]);
 
         $widget = Widget::create([
             'section_id' => $section->id,
-            'type' => 'hero',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => ['title' => 'Welcome'],
-            'config' => [],
+            'type'       => 'hero',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => ['title' => 'Welcome'],
+            'config'     => [],
         ]);
 
         $this->deleteJson("/api/admin/homepage/sections/{$section->id}");
@@ -300,23 +300,23 @@ class HomepageSectionControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $section = Section::create([
-            'title' => 'Toggle Section',
-            'layout' => '1-col',
+            'title'   => 'Toggle Section',
+            'layout'  => '1-col',
             'enabled' => true,
-            'order' => 1,
-            'config' => [],
+            'order'   => 1,
+            'config'  => [],
         ]);
 
         $response = $this->postJson("/api/admin/homepage/sections/{$section->id}/toggle");
 
         $response->assertStatus(200)
             ->assertJson([
-                'id' => $section->id,
+                'id'      => $section->id,
                 'enabled' => false,
             ]);
 
         $this->assertDatabaseHas('homepage_sections', [
-            'id' => $section->id,
+            'id'      => $section->id,
             'enabled' => false,
         ]);
 
@@ -324,7 +324,7 @@ class HomepageSectionControllerTest extends TestCase
         $response = $this->postJson("/api/admin/homepage/sections/{$section->id}/toggle");
 
         $this->assertDatabaseHas('homepage_sections', [
-            'id' => $section->id,
+            'id'      => $section->id,
             'enabled' => true,
         ]);
     }
@@ -334,27 +334,27 @@ class HomepageSectionControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $section1 = Section::create([
-            'title' => 'Section 1',
-            'layout' => '1-col',
+            'title'   => 'Section 1',
+            'layout'  => '1-col',
             'enabled' => true,
-            'order' => 1,
-            'config' => [],
+            'order'   => 1,
+            'config'  => [],
         ]);
 
         $section2 = Section::create([
-            'title' => 'Section 2',
-            'layout' => '2-col',
+            'title'   => 'Section 2',
+            'layout'  => '2-col',
             'enabled' => true,
-            'order' => 2,
-            'config' => [],
+            'order'   => 2,
+            'config'  => [],
         ]);
 
         $section3 = Section::create([
-            'title' => 'Section 3',
-            'layout' => '3-col',
+            'title'   => 'Section 3',
+            'layout'  => '3-col',
             'enabled' => true,
-            'order' => 3,
-            'config' => [],
+            'order'   => 3,
+            'config'  => [],
         ]);
 
         $response = $this->postJson('/api/admin/homepage/sections/reorder', [
@@ -371,17 +371,17 @@ class HomepageSectionControllerTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('homepage_sections', [
-            'id' => $section3->id,
+            'id'    => $section3->id,
             'order' => 1,
         ]);
 
         $this->assertDatabaseHas('homepage_sections', [
-            'id' => $section1->id,
+            'id'    => $section1->id,
             'order' => 2,
         ]);
 
         $this->assertDatabaseHas('homepage_sections', [
-            'id' => $section2->id,
+            'id'    => $section2->id,
             'order' => 3,
         ]);
     }
@@ -404,40 +404,40 @@ class HomepageSectionControllerTest extends TestCase
     {
         // Create enabled and disabled sections
         $enabledSection = Section::create([
-            'title' => 'Enabled Section',
-            'layout' => '2-col',
+            'title'   => 'Enabled Section',
+            'layout'  => '2-col',
             'enabled' => true,
-            'order' => 1,
-            'config' => [],
+            'order'   => 1,
+            'config'  => [],
         ]);
 
         $disabledSection = Section::create([
-            'title' => 'Disabled Section',
-            'layout' => '1-col',
+            'title'   => 'Disabled Section',
+            'layout'  => '1-col',
             'enabled' => false,
-            'order' => 2,
-            'config' => [],
+            'order'   => 2,
+            'config'  => [],
         ]);
 
         // Add widgets
         Widget::create([
             'section_id' => $enabledSection->id,
-            'type' => 'hero',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => ['title' => 'Welcome'],
-            'config' => [],
+            'type'       => 'hero',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => ['title' => 'Welcome'],
+            'config'     => [],
         ]);
 
         Widget::create([
             'section_id' => $disabledSection->id,
-            'type' => 'stats',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => ['stats' => []],
-            'config' => [],
+            'type'       => 'stats',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => ['stats' => []],
+            'config'     => [],
         ]);
 
         $response = $this->getJson('/api/homepage/sections');
@@ -469,10 +469,10 @@ class HomepageSectionControllerTest extends TestCase
 
         foreach ($validLayouts as $layout) {
             $response = $this->postJson('/api/admin/homepage/sections', [
-                'title' => "Section with {$layout}",
-                'layout' => $layout,
+                'title'   => "Section with {$layout}",
+                'layout'  => $layout,
                 'enabled' => true,
-                'order' => 1,
+                'order'   => 1,
             ]);
 
             $response->assertStatus(201);

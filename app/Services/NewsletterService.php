@@ -19,7 +19,7 @@ class NewsletterService
     }
 
     /**
-     * Load newsletter settings from database
+     * Load newsletter settings from database.
      */
     protected function loadSettings()
     {
@@ -30,7 +30,7 @@ class NewsletterService
     }
 
     /**
-     * Subscribe an email to the newsletter
+     * Subscribe an email to the newsletter.
      */
     public function subscribe(string $email): array
     {
@@ -43,7 +43,7 @@ class NewsletterService
 
         if (!$this->provider || !$this->apiKey || !$this->listId) {
             Log::warning('Newsletter settings incomplete', [
-                'provider' => $this->provider,
+                'provider'    => $this->provider,
                 'has_api_key' => !empty($this->apiKey),
                 'has_list_id' => !empty($this->listId),
             ]);
@@ -77,8 +77,8 @@ class NewsletterService
         } catch (\Exception $e) {
             Log::error('Newsletter subscription failed', [
                 'provider' => $this->provider,
-                'email' => $email,
-                'error' => $e->getMessage(),
+                'email'    => $email,
+                'error'    => $e->getMessage(),
             ]);
 
             return [
@@ -89,7 +89,7 @@ class NewsletterService
     }
 
     /**
-     * Subscribe via Mailchimp
+     * Subscribe via Mailchimp.
      */
     protected function subscribeMailchimp(string $email): array
     {
@@ -100,7 +100,7 @@ class NewsletterService
         $response = Http::withBasicAuth('anystring', $this->apiKey)
             ->post($url, [
                 'email_address' => $email,
-                'status' => 'subscribed',
+                'status'        => 'subscribed',
             ]);
 
         if ($response->successful() || $response->status() === 400 && str_contains($response->json('title', ''), 'Member Exists')) {
@@ -111,7 +111,7 @@ class NewsletterService
         }
 
         Log::error('Mailchimp subscription failed', [
-            'status' => $response->status(),
+            'status'   => $response->status(),
             'response' => $response->json(),
         ]);
 
@@ -122,7 +122,7 @@ class NewsletterService
     }
 
     /**
-     * Subscribe via MailerLite
+     * Subscribe via MailerLite.
      */
     protected function subscribeMailerlite(string $email): array
     {
@@ -148,14 +148,14 @@ class NewsletterService
     }
 
     /**
-     * Subscribe via SendGrid
+     * Subscribe via SendGrid.
      */
     protected function subscribeSendgrid(string $email): array
     {
         $url = 'https://api.sendgrid.com/v3/marketing/contacts';
 
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->apiKey,
+            'Authorization' => 'Bearer '.$this->apiKey,
         ])->put($url, [
             'list_ids' => [$this->listId],
             'contacts' => [
@@ -177,7 +177,7 @@ class NewsletterService
     }
 
     /**
-     * Subscribe via ConvertKit
+     * Subscribe via ConvertKit.
      */
     protected function subscribeConvertkit(string $email): array
     {
@@ -185,7 +185,7 @@ class NewsletterService
 
         $response = Http::post($url, [
             'api_key' => $this->apiKey,
-            'email' => $email,
+            'email'   => $email,
         ]);
 
         if ($response->successful()) {
@@ -202,7 +202,7 @@ class NewsletterService
     }
 
     /**
-     * Subscribe via ActiveCampaign
+     * Subscribe via ActiveCampaign.
      */
     protected function subscribeActiveCampaign(string $email): array
     {
@@ -215,7 +215,7 @@ class NewsletterService
     }
 
     /**
-     * Subscribe via Sendinblue (Brevo)
+     * Subscribe via Sendinblue (Brevo).
      */
     protected function subscribeSendinblue(string $email): array
     {
@@ -224,8 +224,8 @@ class NewsletterService
         $response = Http::withHeaders([
             'api-key' => $this->apiKey,
         ])->post($url, [
-            'email' => $email,
-            'listIds' => [(int) $this->listId],
+            'email'         => $email,
+            'listIds'       => [(int) $this->listId],
             'updateEnabled' => true,
         ]);
 

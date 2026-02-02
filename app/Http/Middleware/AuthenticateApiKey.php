@@ -36,7 +36,7 @@ class AuthenticateApiKey
         if (!$credentials) {
             return response()->json([
                 'message' => 'API key authentication required.',
-                'hint' => 'Provide X-API-Key and X-API-Secret headers, or Authorization: Bearer {key}:{secret}',
+                'hint'    => 'Provide X-API-Key and X-API-Secret headers, or Authorization: Bearer {key}:{secret}',
             ], 401);
         }
 
@@ -66,7 +66,7 @@ class AuthenticateApiKey
         // Check ability if required
         if ($ability && !$apiKey->hasAbility($ability)) {
             return response()->json([
-                'message' => 'API key does not have the required ability: ' . $ability,
+                'message' => 'API key does not have the required ability: '.$ability,
             ], 403);
         }
 
@@ -83,7 +83,7 @@ class AuthenticateApiKey
     }
 
     /**
-     * Extract API credentials from request
+     * Extract API credentials from request.
      */
     protected function extractCredentials(Request $request): ?array
     {

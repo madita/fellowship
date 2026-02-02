@@ -14,22 +14,22 @@ class Setting extends Model
     ];
 
     /**
-     * Default cache lifetime in seconds (used when setting not available)
+     * Default cache lifetime in seconds (used when setting not available).
      */
     protected static int $defaultCacheLifetime = 3600;
 
     /**
-     * Cached value for cache_enabled to avoid infinite recursion
+     * Cached value for cache_enabled to avoid infinite recursion.
      */
     protected static ?bool $cacheEnabled = null;
 
     /**
-     * Cached value for cache_lifetime to avoid infinite recursion
+     * Cached value for cache_lifetime to avoid infinite recursion.
      */
     protected static ?int $cacheLifetime = null;
 
     /**
-     * Check if caching is enabled
+     * Check if caching is enabled.
      */
     public static function isCacheEnabled(): bool
     {
@@ -50,7 +50,7 @@ class Setting extends Model
     }
 
     /**
-     * Get cache lifetime in seconds
+     * Get cache lifetime in seconds.
      */
     public static function getCacheLifetime(): int
     {
@@ -72,7 +72,7 @@ class Setting extends Model
     }
 
     /**
-     * Reset static cache (call after updating cache settings)
+     * Reset static cache (call after updating cache settings).
      */
     public static function resetCacheConfig(): void
     {
@@ -81,7 +81,7 @@ class Setting extends Model
     }
 
     /**
-     * Get a setting value by key
+     * Get a setting value by key.
      */
     public static function get(string $key, $default = null)
     {
@@ -91,6 +91,7 @@ class Setting extends Model
             if (!$setting) {
                 return $default;
             }
+
             return static::castValue($setting->value, $setting->type);
         }
 
@@ -108,7 +109,7 @@ class Setting extends Model
     }
 
     /**
-     * Set a setting value
+     * Set a setting value.
      */
     public static function set(string $key, $value, string $type = 'string'): void
     {
@@ -126,7 +127,7 @@ class Setting extends Model
     }
 
     /**
-     * Get all settings as key-value pairs
+     * Get all settings as key-value pairs.
      */
     public static function getAllSettings(): array
     {
@@ -137,6 +138,7 @@ class Setting extends Model
             foreach ($settings as $setting) {
                 $result[$setting->key] = static::castValue($setting->value, $setting->type);
             }
+
             return $result;
         }
 
@@ -155,7 +157,7 @@ class Setting extends Model
     }
 
     /**
-     * Clear all settings cache
+     * Clear all settings cache.
      */
     public static function clearCache(): void
     {
@@ -213,14 +215,14 @@ class Setting extends Model
     }
 
     /**
-     * Cast value to appropriate type
+     * Cast value to appropriate type.
      */
     protected static function castValue($value, string $type)
     {
         return match ($type) {
             'boolean' => in_array($value, ['1', 1, true, 'true', 'yes', 'on'], true),
             'integer' => (int) $value,
-            'float' => (float) $value,
+            'float'   => (float) $value,
             'array', 'json' => json_decode($value, true),
             default => $value,
         };

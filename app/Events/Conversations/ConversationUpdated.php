@@ -44,7 +44,7 @@ class ConversationUpdated implements ShouldBroadcast
     public function broadcastOn()
     {
         if (!$this->conversation->relationLoaded('users')) {
-                      $this->conversation->load('users');
+            $this->conversation->load('users');
         }
 
         return $this->conversation->users->map(function ($user) {

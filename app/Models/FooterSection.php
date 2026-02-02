@@ -20,8 +20,8 @@ class FooterSection extends Model
 
     protected $casts = [
         'enabled' => 'boolean',
-        'order' => 'integer',
-        'config' => 'array',
+        'order'   => 'integer',
+        'config'  => 'array',
     ];
 
     protected $attributes = [
@@ -29,7 +29,7 @@ class FooterSection extends Model
     ];
 
     /**
-     * Get the widgets for this section
+     * Get the widgets for this section.
      */
     public function widgets()
     {
@@ -39,7 +39,7 @@ class FooterSection extends Model
     }
 
     /**
-     * Scope to get only enabled sections
+     * Scope to get only enabled sections.
      */
     public function scopeEnabled($query)
     {
@@ -47,7 +47,7 @@ class FooterSection extends Model
     }
 
     /**
-     * Scope to order sections
+     * Scope to order sections.
      */
     public function scopeOrdered($query)
     {
@@ -55,7 +55,7 @@ class FooterSection extends Model
     }
 
     /**
-     * Get active sections with their widgets (cached)
+     * Get active sections with their widgets (cached).
      */
     public static function getActiveSections()
     {
@@ -72,7 +72,7 @@ class FooterSection extends Model
     }
 
     /**
-     * Clear the cache
+     * Clear the cache.
      */
     public static function clearCache()
     {
@@ -81,7 +81,7 @@ class FooterSection extends Model
     }
 
     /**
-     * Boot method to clear cache on save/delete
+     * Boot method to clear cache on save/delete.
      */
     protected static function boot()
     {
@@ -107,11 +107,11 @@ class FooterSection extends Model
     }
 
     /**
-     * Get the number of columns for this section's layout
+     * Get the number of columns for this section's layout.
      */
     public function getColumnCountAttribute()
     {
-        return match($this->layout) {
+        return match ($this->layout) {
             '1-col' => 1,
             '2-col' => 2,
             '3-col' => 3,
@@ -121,11 +121,11 @@ class FooterSection extends Model
     }
 
     /**
-     * Get the column widths for this layout (Vuetify grid system, 12 columns)
+     * Get the column widths for this layout (Vuetify grid system, 12 columns).
      */
     public function getColumnWidthsAttribute()
     {
-        return match($this->layout) {
+        return match ($this->layout) {
             '1-col' => [12],
             '2-col' => [6, 6],
             '3-col' => [4, 4, 4],

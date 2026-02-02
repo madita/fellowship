@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
 
 class AccountDeletionController extends Controller
 {
@@ -20,7 +19,7 @@ class AccountDeletionController extends Controller
     }
 
     /**
-     * Check if right to be forgotten is enabled
+     * Check if right to be forgotten is enabled.
      */
     public function status(): JsonResponse
     {
@@ -32,7 +31,7 @@ class AccountDeletionController extends Controller
     }
 
     /**
-     * Export user data (GDPR data portability)
+     * Export user data (GDPR data portability).
      */
     public function exportData(Request $request): JsonResponse
     {
@@ -41,32 +40,32 @@ class AccountDeletionController extends Controller
         // Collect all user data
         $userData = [
             'account' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'username' => $user->username,
-                'email' => $user->email,
-                'created_at' => $user->created_at->toISOString(),
-                'updated_at' => $user->updated_at->toISOString(),
+                'id'                => $user->id,
+                'name'              => $user->name,
+                'username'          => $user->username,
+                'email'             => $user->email,
+                'created_at'        => $user->created_at->toISOString(),
+                'updated_at'        => $user->updated_at->toISOString(),
                 'email_verified_at' => $user->email_verified_at?->toISOString(),
             ],
             'profile' => [
-                'avatar' => $user->avatar,
-                'timezone' => $user->timezone,
+                'avatar'      => $user->avatar,
+                'timezone'    => $user->timezone,
                 'date_format' => $user->date_format,
-                'theme_mode' => $user->theme_mode,
-                'language' => $user->language,
+                'theme_mode'  => $user->theme_mode,
+                'language'    => $user->language,
             ],
             'social_accounts' => $user->socialAccounts()->get()->map(function ($account) {
                 return [
-                    'provider' => $account->provider,
+                    'provider'   => $account->provider,
                     'created_at' => $account->created_at->toISOString(),
                 ];
             })->toArray(),
             'api_keys' => $user->apiKeys()->get()->map(function ($key) {
                 return [
-                    'name' => $key->name,
-                    'created_at' => $key->created_at->toISOString(),
-                    'last_used_at' => $key->last_used_at?->toISOString(),
+                    'name'          => $key->name,
+                    'created_at'    => $key->created_at->toISOString(),
+                    'last_used_at'  => $key->last_used_at?->toISOString(),
                     'request_count' => $key->request_count,
                 ];
             })->toArray(),
@@ -77,9 +76,9 @@ class AccountDeletionController extends Controller
         if (method_exists($user, 'posts')) {
             $userData['posts'] = $user->posts()->get()->map(function ($post) {
                 return [
-                    'id' => $post->id,
-                    'title' => $post->title,
-                    'content' => $post->content,
+                    'id'         => $post->id,
+                    'title'      => $post->title,
+                    'content'    => $post->content,
                     'created_at' => $post->created_at->toISOString(),
                 ];
             })->toArray();
@@ -89,8 +88,8 @@ class AccountDeletionController extends Controller
         if (method_exists($user, 'messages')) {
             $userData['messages'] = $user->messages()->get()->map(function ($message) {
                 return [
-                    'id' => $message->id,
-                    'content' => $message->content ?? $message->body,
+                    'id'         => $message->id,
+                    'content'    => $message->content ?? $message->body,
                     'created_at' => $message->created_at->toISOString(),
                 ];
             })->toArray();
@@ -98,12 +97,12 @@ class AccountDeletionController extends Controller
 
         return response()->json([
             'message' => 'Data export generated successfully',
-            'data' => $userData,
+            'data'    => $userData,
         ]);
     }
 
     /**
-     * Request account deletion
+     * Request account deletion.
      */
     public function requestDeletion(Request $request): JsonResponse
     {
@@ -117,8 +116,8 @@ class AccountDeletionController extends Controller
 
         $request->validate([
             'password' => 'required|string',
-            'reason' => 'nullable|string|max:1000',
-            'confirm' => 'required|accepted',
+            'reason'   => 'nullable|string|max:1000',
+            'confirm'  => 'required|accepted',
         ]);
 
         $user = $request->user();
@@ -127,16 +126,16 @@ class AccountDeletionController extends Controller
         if (!Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => 'Incorrect password.',
-                'errors' => ['password' => ['The password is incorrect.']],
+                'errors'  => ['password' => ['The password is incorrect.']],
             ], 422);
         }
 
         // Log the deletion request
         Log::info('Account deletion requested', [
             'user_id' => $user->id,
-            'email' => $user->email,
-            'reason' => $request->reason,
-            'ip' => $request->ip(),
+            'email'   => $user->email,
+            'reason'  => $request->reason,
+            'ip'      => $request->ip(),
         ]);
 
         // Send notification to admin
@@ -144,15 +143,15 @@ class AccountDeletionController extends Controller
         if ($adminEmail) {
             try {
                 Mail::raw(
-                    "User account deletion requested:\n\n" .
-                    "User ID: {$user->id}\n" .
-                    "Username: {$user->username}\n" .
-                    "Email: {$user->email}\n" .
-                    "Reason: " . ($request->reason ?: 'Not provided') . "\n" .
-                    "Requested at: " . now()->toISOString(),
+                    "User account deletion requested:\n\n".
+                    "User ID: {$user->id}\n".
+                    "Username: {$user->username}\n".
+                    "Email: {$user->email}\n".
+                    'Reason: '.($request->reason ?: 'Not provided')."\n".
+                    'Requested at: '.now()->toISOString(),
                     function ($message) use ($adminEmail, $user) {
                         $message->to($adminEmail)
-                            ->subject('Account Deletion Request - ' . $user->username);
+                            ->subject('Account Deletion Request - '.$user->username);
                     }
                 );
             } catch (\Exception $e) {
@@ -171,7 +170,7 @@ class AccountDeletionController extends Controller
     }
 
     /**
-     * Delete all user data
+     * Delete all user data.
      */
     protected function deleteUserData(User $user): void
     {

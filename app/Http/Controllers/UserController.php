@@ -65,19 +65,20 @@ class UserController extends Controller
     }
 
     /**
-     * Update user preferences (timezone, date format, theme, language)
+     * Update user preferences (timezone, date format, theme, language).
      *
      * @param Request $request
+     *
      * @return \Illuminate\Http\JsonResponse
      */
     public function updatePreferences(Request $request)
     {
         $validated = $request->validate([
-            'timezone' => 'nullable|string|timezone',
+            'timezone'    => 'nullable|string|timezone',
             'date_format' => 'nullable|string|in:Y-m-d,d/m/Y,m/d/Y,d.m.Y',
             'time_format' => 'nullable|string|in:H:i:s,h:i:s A,H:i,h:i A',
-            'theme_mode' => 'nullable|string|in:light,dark,system',
-            'language' => 'nullable|string|in:en,de,es,fr,it,pt,ja,zh',
+            'theme_mode'  => 'nullable|string|in:light,dark,system',
+            'language'    => 'nullable|string|in:en,de,es,fr,it,pt,ja,zh',
         ]);
 
         $user = auth()->user();
@@ -85,7 +86,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Preferences updated successfully',
-            'user' => $user,
+            'user'    => $user,
         ]);
     }
 }

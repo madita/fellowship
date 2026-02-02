@@ -20,10 +20,10 @@ class FooterWidget extends Model
     ];
 
     protected $casts = [
-        'config' => 'array',
-        'enabled' => 'boolean',
-        'order' => 'integer',
-        'column' => 'integer',
+        'config'     => 'array',
+        'enabled'    => 'boolean',
+        'order'      => 'integer',
+        'column'     => 'integer',
         'section_id' => 'integer',
     ];
 
@@ -32,7 +32,7 @@ class FooterWidget extends Model
     ];
 
     /**
-     * Relationship to section
+     * Relationship to section.
      */
     public function section()
     {
@@ -40,7 +40,7 @@ class FooterWidget extends Model
     }
 
     /**
-     * Scope query to only active widgets
+     * Scope query to only active widgets.
      */
     public function scopeActive($query)
     {
@@ -48,7 +48,7 @@ class FooterWidget extends Model
     }
 
     /**
-     * Scope query to order widgets
+     * Scope query to order widgets.
      */
     public function scopeOrdered($query)
     {
@@ -56,7 +56,7 @@ class FooterWidget extends Model
     }
 
     /**
-     * Get all active widgets (cached)
+     * Get all active widgets (cached).
      */
     public static function getActiveWidgets()
     {
@@ -66,7 +66,7 @@ class FooterWidget extends Model
     }
 
     /**
-     * Clear the footer widgets cache
+     * Clear the footer widgets cache.
      */
     public static function clearCache(): void
     {
@@ -74,7 +74,7 @@ class FooterWidget extends Model
     }
 
     /**
-     * Boot the model and add event listeners
+     * Boot the model and add event listeners.
      */
     protected static function booted(): void
     {

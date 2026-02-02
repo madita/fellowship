@@ -52,9 +52,9 @@ class OAuthConfigServiceProvider extends ServiceProvider
                     if ($clientId && $clientSecret) {
                         $redirectUrl = "{$siteUrl}/auth/{$provider}/callback";
                         config([
-                            "services.{$provider}.client_id" => $clientId,
+                            "services.{$provider}.client_id"     => $clientId,
                             "services.{$provider}.client_secret" => $clientSecret,
-                            "services.{$provider}.redirect" => $redirectUrl,
+                            "services.{$provider}.redirect"      => $redirectUrl,
                         ]);
                         \Log::debug("OAuth {$provider} redirect URL configured: {$redirectUrl}");
                     }
@@ -63,7 +63,7 @@ class OAuthConfigServiceProvider extends ServiceProvider
         } catch (\Exception $e) {
             // Silently fail if database isn't ready yet
             // This prevents errors during initial setup/migrations
-            \Log::debug('OAuth config loading skipped: ' . $e->getMessage());
+            \Log::debug('OAuth config loading skipped: '.$e->getMessage());
         }
     }
 }

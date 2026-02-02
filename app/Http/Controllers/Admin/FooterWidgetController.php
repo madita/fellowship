@@ -16,7 +16,7 @@ class FooterWidgetController extends Controller
     }
 
     /**
-     * Get all widgets (admin)
+     * Get all widgets (admin).
      */
     public function index(): JsonResponse
     {
@@ -28,7 +28,7 @@ class FooterWidgetController extends Controller
     }
 
     /**
-     * Get active widgets for public footer rendering
+     * Get active widgets for public footer rendering.
      */
     public function getActiveWidgets(): JsonResponse
     {
@@ -40,23 +40,23 @@ class FooterWidgetController extends Controller
     }
 
     /**
-     * Create a new widget
+     * Create a new widget.
      */
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'type' => 'required|string|in:quicklinks,contact,newsletter,social,text',
-            'config' => 'required|array',
-            'order' => 'integer',
-            'enabled' => 'boolean',
+            'type'       => 'required|string|in:quicklinks,contact,newsletter,social,text',
+            'config'     => 'required|array',
+            'order'      => 'integer',
+            'enabled'    => 'boolean',
             'section_id' => 'nullable|exists:sections,id',
-            'column' => 'nullable|integer|min:1|max:4',
+            'column'     => 'nullable|integer|min:1|max:4',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation failed',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
@@ -68,47 +68,47 @@ class FooterWidgetController extends Controller
 
         // Log what we're creating
         \Log::info('Creating footer widget', [
-            'data' => $data,
+            'data'       => $data,
             'section_id' => $data['section_id'] ?? 'null',
-            'column' => $data['column'] ?? 'null',
+            'column'     => $data['column'] ?? 'null',
         ]);
 
         $widget = FooterWidget::create($data);
 
         // Log what was actually created
         \Log::info('Footer widget created', [
-            'id' => $widget->id,
-            'section_id' => $widget->section_id,
-            'column' => $widget->column,
+            'id'          => $widget->id,
+            'section_id'  => $widget->section_id,
+            'column'      => $widget->column,
             'column_type' => gettype($widget->column),
         ]);
 
         return response()->json([
             'message' => 'Widget created successfully',
-            'widget' => $widget,
+            'widget'  => $widget,
         ], 201);
     }
 
     /**
-     * Update a widget
+     * Update a widget.
      */
     public function update($id, Request $request): JsonResponse
     {
         $widget = FooterWidget::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'type' => 'string|in:quicklinks,contact,newsletter,social,text',
-            'config' => 'array',
-            'order' => 'integer',
-            'enabled' => 'boolean',
+            'type'       => 'string|in:quicklinks,contact,newsletter,social,text',
+            'config'     => 'array',
+            'order'      => 'integer',
+            'enabled'    => 'boolean',
             'section_id' => 'nullable|exists:sections,id',
-            'column' => 'nullable|integer|min:1|max:4',
+            'column'     => 'nullable|integer|min:1|max:4',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation failed',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
@@ -116,12 +116,12 @@ class FooterWidgetController extends Controller
 
         return response()->json([
             'message' => 'Widget updated successfully',
-            'widget' => $widget->fresh(),
+            'widget'  => $widget->fresh(),
         ]);
     }
 
     /**
-     * Delete a widget
+     * Delete a widget.
      */
     public function destroy($id): JsonResponse
     {
@@ -134,7 +134,7 @@ class FooterWidgetController extends Controller
     }
 
     /**
-     * Toggle widget active status
+     * Toggle widget active status.
      */
     public function toggle($id): JsonResponse
     {
@@ -144,25 +144,25 @@ class FooterWidgetController extends Controller
 
         return response()->json([
             'message' => 'Widget toggled successfully',
-            'widget' => $widget,
+            'widget'  => $widget,
         ]);
     }
 
     /**
-     * Batch update widget order
+     * Batch update widget order.
      */
     public function updateOrder(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'widgets' => 'required|array',
-            'widgets.*.id' => 'required|exists:widgets,id',
+            'widgets'         => 'required|array',
+            'widgets.*.id'    => 'required|exists:widgets,id',
             'widgets.*.order' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation failed',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 

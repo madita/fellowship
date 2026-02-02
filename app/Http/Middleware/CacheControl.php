@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 class CacheControl
 {
     /**
-     * Routes that should never be cached
+     * Routes that should never be cached.
      */
     protected array $noCachePatterns = [
         'api/admin/*',
@@ -26,15 +26,15 @@ class CacheControl
     ];
 
     /**
-     * Routes that should be cached with their tags
+     * Routes that should be cached with their tags.
      */
     protected array $cacheableRoutes = [
-        'api/wiki/*' => 'wiki',
-        'api/pages/*' => 'pages',
-        'api/posts/*' => 'posts',
-        'api/homepage/*' => 'widgets',
+        'api/wiki/*'          => 'wiki',
+        'api/pages/*'         => 'pages',
+        'api/posts/*'         => 'posts',
+        'api/homepage/*'      => 'widgets',
         'api/settings/public' => 'settings',
-        'api/footer/*' => 'settings',
+        'api/footer/*'        => 'settings',
     ];
 
     /**
@@ -45,6 +45,7 @@ class CacheControl
         // Only cache GET and HEAD requests
         if (!in_array($request->method(), ['GET', 'HEAD'])) {
             $response = $this->handleMutatingRequest($request, $next);
+
             return $response->header('X-Cache-Middleware', 'active');
         }
 
@@ -52,6 +53,7 @@ class CacheControl
             // Check if caching is enabled
             if (!CacheService::isEnabled()) {
                 $response = $next($request);
+
                 return $this->addNoCacheHeaders($response)
                     ->header('X-Cache-Status', 'disabled')
                     ->header('X-Cache-Middleware', 'active');
@@ -60,6 +62,7 @@ class CacheControl
             // Don't cache if user is authenticated (personalized content)
             if ($request->user()) {
                 $response = $next($request);
+
                 return $this->addNoCacheHeaders($response)
                     ->header('X-Cache-Status', 'authenticated')
                     ->header('X-Cache-Middleware', 'active');
@@ -68,6 +71,7 @@ class CacheControl
             // Check if this route should not be cached
             if ($this->shouldNotCache($request)) {
                 $response = $next($request);
+
                 return $this->addNoCacheHeaders($response)
                     ->header('X-Cache-Status', 'excluded')
                     ->header('X-Cache-Middleware', 'active');
@@ -77,16 +81,17 @@ class CacheControl
             return $this->handleCachedRequest($request, $next, $ttl);
         } catch (\Exception $e) {
             // If caching fails, just return the response without caching
-            Log::warning('CacheControl middleware error: ' . $e->getMessage());
+            Log::warning('CacheControl middleware error: '.$e->getMessage());
             $response = $next($request);
+
             return $response
-                ->header('X-Cache-Status', 'error: ' . $e->getMessage())
+                ->header('X-Cache-Status', 'error: '.$e->getMessage())
                 ->header('X-Cache-Middleware', 'active');
         }
     }
 
     /**
-     * Handle a cacheable request
+     * Handle a cacheable request.
      */
     protected function handleCachedRequest(Request $request, Closure $next, ?string $ttl): Response
     {
@@ -102,6 +107,7 @@ class CacheControl
             foreach ($cached['headers'] as $key => $value) {
                 $response->header($key, $value);
             }
+
             return $response
                 ->header('X-Cache', 'HIT')
                 ->header('X-Cache-Key', $cacheKey)
@@ -116,7 +122,7 @@ class CacheControl
         if ($response->isSuccessful()) {
             $cacheData = [
                 'content' => $response->getContent(),
-                'status' => $response->getStatusCode(),
+                'status'  => $response->getStatusCode(),
                 'headers' => $this->getCacheableHeaders($response),
             ];
 
@@ -132,7 +138,7 @@ class CacheControl
 
     /**
      * Handle mutating requests (POST, PUT, DELETE, etc.)
-     * These may invalidate cache
+     * These may invalidate cache.
      */
     protected function handleMutatingRequest(Request $request, Closure $next): Response
     {
@@ -150,7 +156,7 @@ class CacheControl
     }
 
     /**
-     * Get cache tags for a route
+     * Get cache tags for a route.
      */
     protected function getTagsForRoute(Request $request): array
     {
@@ -166,18 +172,18 @@ class CacheControl
     }
 
     /**
-     * Generate cache key for request
+     * Generate cache key for request.
      */
     protected function getCacheKey(Request $request): string
     {
         $url = $request->fullUrl();
         $locale = app()->getLocale();
 
-        return 'http_cache:' . md5($url . ':' . $locale);
+        return 'http_cache:'.md5($url.':'.$locale);
     }
 
     /**
-     * Get headers that should be cached
+     * Get headers that should be cached.
      */
     protected function getCacheableHeaders(Response $response): array
     {
@@ -187,7 +193,7 @@ class CacheControl
     }
 
     /**
-     * Check if request should not be cached
+     * Check if request should not be cached.
      */
     protected function shouldNotCache(Request $request): bool
     {
@@ -212,7 +218,7 @@ class CacheControl
     }
 
     /**
-     * Add cache headers to response
+     * Add cache headers to response.
      */
     protected function addCacheHeaders(Response $response): Response
     {
@@ -225,13 +231,13 @@ class CacheControl
 
         $response->headers->set('Cache-Control', "public, max-age={$lifetime}, s-maxage={$lifetime}");
         $response->headers->set('Pragma', 'cache');
-        $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + $lifetime) . ' GMT');
+        $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + $lifetime).' GMT');
 
         return $response;
     }
 
     /**
-     * Add no-cache headers to response
+     * Add no-cache headers to response.
      */
     protected function addNoCacheHeaders(Response $response): Response
     {

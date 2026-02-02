@@ -16,7 +16,7 @@ class HomepageWidgetController extends Controller
     }
 
     /**
-     * Get all widgets (admin)
+     * Get all widgets (admin).
      */
     public function index(): JsonResponse
     {
@@ -28,7 +28,7 @@ class HomepageWidgetController extends Controller
     }
 
     /**
-     * Get active widgets for public homepage rendering
+     * Get active widgets for public homepage rendering.
      */
     public function getActiveWidgets(): JsonResponse
     {
@@ -40,26 +40,26 @@ class HomepageWidgetController extends Controller
     }
 
     /**
-     * Create a new widget
+     * Create a new widget.
      */
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'section_id' => 'nullable|exists:homepage_sections,id',
-            'type' => 'required|string',
-            'title' => 'nullable|string',
-            'enabled' => 'boolean',
-            'order' => 'integer',
-            'column' => 'integer|min:1',
-            'content' => 'required|array',
-            'config' => 'nullable|array',
-            'anchor_id' => 'nullable|string',
+            'type'       => 'required|string',
+            'title'      => 'nullable|string',
+            'enabled'    => 'boolean',
+            'order'      => 'integer',
+            'column'     => 'integer|min:1',
+            'content'    => 'required|array',
+            'config'     => 'nullable|array',
+            'anchor_id'  => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation failed',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
@@ -67,12 +67,12 @@ class HomepageWidgetController extends Controller
 
         return response()->json([
             'message' => 'Widget created successfully',
-            'widget' => $widget,
+            'widget'  => $widget,
         ], 201);
     }
 
     /**
-     * Update a widget
+     * Update a widget.
      */
     public function update($id, Request $request): JsonResponse
     {
@@ -80,44 +80,44 @@ class HomepageWidgetController extends Controller
 
         $validator = Validator::make($request->all(), [
             'section_id' => 'nullable|exists:homepage_sections,id',
-            'type' => 'string',
-            'title' => 'nullable|string',
-            'enabled' => 'boolean',
-            'order' => 'integer',
-            'column' => 'integer|min:1',
-            'content' => 'array',
-            'config' => 'nullable|array',
-            'anchor_id' => 'nullable|string',
+            'type'       => 'string',
+            'title'      => 'nullable|string',
+            'enabled'    => 'boolean',
+            'order'      => 'integer',
+            'column'     => 'integer|min:1',
+            'content'    => 'array',
+            'config'     => 'nullable|array',
+            'anchor_id'  => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation failed',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
         \Log::info('Updating widget', [
-            'id' => $id,
-            'content' => $request->input('content'),
-            'all_data' => $request->all()
+            'id'       => $id,
+            'content'  => $request->input('content'),
+            'all_data' => $request->all(),
         ]);
 
         $widget->update($request->all());
 
         \Log::info('Widget updated', [
-            'id' => $id,
-            'saved_content' => $widget->fresh()->content
+            'id'            => $id,
+            'saved_content' => $widget->fresh()->content,
         ]);
 
         return response()->json([
             'message' => 'Widget updated successfully',
-            'widget' => $widget->fresh(),
+            'widget'  => $widget->fresh(),
         ]);
     }
 
     /**
-     * Delete a widget
+     * Delete a widget.
      */
     public function destroy($id): JsonResponse
     {
@@ -130,7 +130,7 @@ class HomepageWidgetController extends Controller
     }
 
     /**
-     * Toggle widget enabled status
+     * Toggle widget enabled status.
      */
     public function toggle($id): JsonResponse
     {
@@ -140,44 +140,44 @@ class HomepageWidgetController extends Controller
 
         return response()->json([
             'message' => 'Widget toggled successfully',
-            'widget' => $widget,
+            'widget'  => $widget,
         ]);
     }
 
     /**
-     * Duplicate a widget
+     * Duplicate a widget.
      */
     public function duplicate($id): JsonResponse
     {
         $widget = Widget::findOrFail($id);
 
         $newWidget = $widget->replicate();
-        $newWidget->title = ($widget->title ?? $widget->type) . ' (Copy)';
+        $newWidget->title = ($widget->title ?? $widget->type).' (Copy)';
         $newWidget->order = Widget::max('order') + 1;
         $newWidget->enabled = false;
         $newWidget->save();
 
         return response()->json([
             'message' => 'Widget duplicated successfully',
-            'widget' => $newWidget,
+            'widget'  => $newWidget,
         ], 201);
     }
 
     /**
-     * Batch update widget order
+     * Batch update widget order.
      */
     public function updateOrder(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'widgets' => 'required|array',
-            'widgets.*.id' => 'required|exists:widgets,id',
+            'widgets'         => 'required|array',
+            'widgets.*.id'    => 'required|exists:widgets,id',
             'widgets.*.order' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation failed',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 

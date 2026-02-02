@@ -15,7 +15,7 @@ class FooterSectionController extends Controller
     }
 
     /**
-     * Get all sections with their widgets (admin)
+     * Get all sections with their widgets (admin).
      */
     public function index()
     {
@@ -29,16 +29,16 @@ class FooterSectionController extends Controller
     }
 
     /**
-     * Create a new section
+     * Create a new section.
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'title' => 'nullable|string|max:255',
-            'layout' => 'required|string|in:1-col,2-col,3-col,4-col',
+            'title'   => 'nullable|string|max:255',
+            'layout'  => 'required|string|in:1-col,2-col,3-col,4-col',
             'enabled' => 'boolean',
-            'order' => 'integer|min:0',
-            'config' => 'nullable|array',
+            'order'   => 'integer|min:0',
+            'config'  => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -51,18 +51,18 @@ class FooterSectionController extends Controller
     }
 
     /**
-     * Update a section
+     * Update a section.
      */
     public function update(Request $request, $id)
     {
         $section = FooterSection::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'title' => 'nullable|string|max:255',
-            'layout' => 'string|in:1-col,2-col,3-col,4-col',
+            'title'   => 'nullable|string|max:255',
+            'layout'  => 'string|in:1-col,2-col,3-col,4-col',
             'enabled' => 'boolean',
-            'order' => 'integer|min:0',
-            'config' => 'nullable|array',
+            'order'   => 'integer|min:0',
+            'config'  => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -75,7 +75,7 @@ class FooterSectionController extends Controller
     }
 
     /**
-     * Delete a section
+     * Delete a section.
      */
     public function destroy($id)
     {
@@ -86,7 +86,7 @@ class FooterSectionController extends Controller
     }
 
     /**
-     * Toggle section enabled status
+     * Toggle section enabled status.
      */
     public function toggle($id)
     {
@@ -98,13 +98,13 @@ class FooterSectionController extends Controller
     }
 
     /**
-     * Update sections order
+     * Update sections order.
      */
     public function updateOrder(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'sections' => 'required|array',
-            'sections.*.id' => 'required|exists:sections,id',
+            'sections'         => 'required|array',
+            'sections.*.id'    => 'required|exists:sections,id',
             'sections.*.order' => 'required|integer|min:0',
         ]);
 
@@ -123,11 +123,12 @@ class FooterSectionController extends Controller
     }
 
     /**
-     * Get active sections with widgets (public)
+     * Get active sections with widgets (public).
      */
     public function getActiveSections()
     {
         $sections = FooterSection::getActiveSections();
+
         return response()->json($sections);
     }
 }
