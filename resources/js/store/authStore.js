@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
 import { useUserStore } from '@/store/userStore.js'
 import { useApi } from '@/api/useAPI.js'
+import { debug } from '@/utils/debug.js'
 
+const log = debug.module('AuthStore')
 const web = useApi('web')
 
 export const useAuthStore = defineStore('auth', {
@@ -17,7 +19,7 @@ export const useAuthStore = defineStore('auth', {
         try {
             return savedState ? JSON.parse(savedState) : defaultState
         } catch (error) {
-            console.warn('Failed to parse AUTH_STATE from localStorage:', error)
+            // Silent fail - corrupted localStorage data
             localStorage.removeItem('AUTH_STATE')
             return defaultState
         }
@@ -40,7 +42,7 @@ export const useAuthStore = defineStore('auth', {
                     isVerified: this.isVerified,
                 }))
             } catch (error) {
-                console.error('Failed to save AUTH_STATE to localStorage:', error)
+                log.error('Failed to save AUTH_STATE to localStorage:', error)
             }
         },
 
@@ -98,12 +100,12 @@ export const useAuthStore = defineStore('auth', {
                     isVerified
                 })
 
-                console.log('User logged in:', user.user)
+                log.log('User logged in:', user.user)
             } catch (error) {
                 // Clear state on login failure
                 this.clearState()
                 user.clearState()
-                console.error('Login error:', error.message)
+                log.error('Login error:', error.message)
                 throw error
             }
         },
@@ -138,7 +140,7 @@ export const useAuthStore = defineStore('auth', {
             } catch (error) {
                 this.clearState()
                 user.clearState()
-                console.error('Registration error:', error.message)
+                log.error('Registration error:', error.message)
                 throw error
             }
         },
@@ -147,7 +149,7 @@ export const useAuthStore = defineStore('auth', {
             try {
                 await web.post('/forgot-password', { email })
             } catch (error) {
-                console.error('Forgot password error:', error.message)
+                log.error('Forgot password error:', error.message)
                 throw error
             }
         },
@@ -158,9 +160,8 @@ export const useAuthStore = defineStore('auth', {
             try {
                 // Call logout endpoint first
                 await web.post('/logout')
-                // user.clearState()
             } catch (error) {
-                console.error('Logout endpoint error:', error.message)
+                log.warn('Logout endpoint error:', error.message)
                 // Continue with logout even if endpoint fails
             }
 
@@ -168,7 +169,7 @@ export const useAuthStore = defineStore('auth', {
             this.clearState()
             user.clearState()
 
-            console.log('User logged out', user)
+            log.log('User logged out')
 
             // Clear all localStorage
             localStorage.clear()
@@ -206,7 +207,7 @@ export const useAuthStore = defineStore('auth', {
 
                 return true
             } catch (error) {
-                console.error('Auth status check failed:', error)
+                log.error('Auth status check failed:', error)
                 this.clearState()
                 return false
             }

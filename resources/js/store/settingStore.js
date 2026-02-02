@@ -1,5 +1,8 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
+import { debug } from '@/utils/debug.js';
+
+const log = debug.module('SettingsStore');
 
 export const useSettingsStore = defineStore({
     id: 'settings',
@@ -235,10 +238,10 @@ export const useSettingsStore = defineStore({
                     // Make sure body background is transparent to show the background element
                     document.body.style.background = 'transparent';
                 }).catch(e => {
-                    console.warn('Failed to apply background images:', e);
+                    log.warn('Failed to apply background images:', e);
                 });
             } catch (e) {
-                console.warn('Failed to apply background images:', e);
+                log.warn('Failed to apply background images:', e);
             }
         },
         applyCustomCss() {
@@ -256,7 +259,7 @@ export const useSettingsStore = defineStore({
                 // Apply custom CSS
                 styleEl.textContent = customCss;
             } catch (e) {
-                console.warn('Failed to apply custom CSS:', e);
+                log.warn('Failed to apply custom CSS:', e);
             }
         },
         applyOpacitySettings() {
@@ -306,10 +309,10 @@ export const useSettingsStore = defineStore({
                         }
                     `;
                 }).catch(e => {
-                    console.warn('Failed to apply opacity settings:', e);
+                    log.warn('Failed to apply opacity settings:', e);
                 });
             } catch (e) {
-                console.warn('Failed to apply opacity settings:', e);
+                log.warn('Failed to apply opacity settings:', e);
             }
         },
         async fetchAppSettings() {
@@ -317,18 +320,18 @@ export const useSettingsStore = defineStore({
                 const response = await axios.get('/api/settings/public');
                 const settings = response.data.settings;
 
-                console.log('Fetched settings from API:', { font_family: settings.font_family });
+                log.log('Fetched settings from API:', { font_family: settings.font_family });
 
                 // Settings are returned as a key-value object
                 this.appSettings = { ...this.appSettings, ...settings };
 
-                console.log('Current font_family in store:', this.fontFamily);
+                log.log('Current font_family in store:', this.fontFamily);
 
                 // Cache settings to localStorage for faster initial load
                 try {
                     localStorage.setItem('app_settings', JSON.stringify(this.appSettings));
                 } catch (e) {
-                    console.warn('Failed to cache settings to localStorage:', e);
+                    log.warn('Failed to cache settings to localStorage:', e);
                 }
 
                 // Apply theme colors dynamically
@@ -358,20 +361,19 @@ export const useSettingsStore = defineStore({
                     };
                     updateThemeColors(lightColors, darkColors);
                 } catch (e) {
-                    console.warn('Failed to update theme colors:', e);
+                    log.warn('Failed to update theme colors:', e);
                 }
 
                 // Apply font family dynamically
                 try {
                     const fontFamily = this.fontFamily;
-                    console.log('Applying font family:', fontFamily);
+                    log.log('Applying font family:', fontFamily);
                     if (fontFamily) {
                         const { updateFontFamily } = await import('@/plugins/vuetify.js');
                         updateFontFamily(fontFamily);
                     }
                 } catch (e) {
-                    console.warn('Failed to apply font family:', e);
-                    console.error(e);
+                    log.warn('Failed to apply font family:', e);
                 }
 
                 // Update favicon and app icons dynamically
@@ -392,7 +394,7 @@ export const useSettingsStore = defineStore({
                         if (appIcon512) appIcon512.href = iconUrl;
                     }
                 } catch (e) {
-                    console.warn('Failed to update favicon/app icons:', e);
+                    log.warn('Failed to update favicon/app icons:', e);
                 }
 
                 // Apply background images based on current theme
@@ -406,7 +408,7 @@ export const useSettingsStore = defineStore({
 
                 this.settingsLoaded = true;
             } catch (error) {
-                console.error('Failed to fetch app settings:', error);
+                log.error('Failed to fetch app settings:', error);
                 this.settingsLoaded = true; // Still mark as loaded to prevent infinite retries
             }
         },

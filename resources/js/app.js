@@ -12,6 +12,10 @@ import { useSettingsStore } from '@/store/settingStore.js'
 // Lazy loading directive
 import { vLazy } from '@/composables/useLazyLoading.js'
 
+// Debug utility
+import { debug } from '@/utils/debug.js'
+const log = debug.module('App')
+
 // Initialize theme before app mounts
 import { initializeTheme, setupThemeListener, setupThemeObserver } from './utils/themeInit.js'
 initializeTheme()
@@ -166,7 +170,7 @@ async function initializeApp() {
                 window.location.href = '/dashboard';
                 return;
             } catch (error) {
-                console.error('OAuth login failed:', error);
+                log.error('OAuth login failed:', error);
                 // Clean up URL and continue to show page
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
@@ -182,14 +186,14 @@ async function initializeApp() {
                     // Session expired, logout user
                     authStore.resetStore();
                     userStore.clearState();
-                    console.log('Session expired, automatic logout');
+                    log.log('Session expired, automatic logout');
                 } else {
-                    console.error('Failed to load user info:', error);
+                    log.error('Failed to load user info:', error);
                 }
             }
         }
     } catch (error) {
-        console.error('Failed to initialize app:', error);
+        log.error('Failed to initialize app:', error);
     }
 }
 
@@ -200,7 +204,7 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
             .then(registration => {
-                console.log('PWA: Service Worker registered successfully:', registration.scope);
+                log.log('PWA: Service Worker registered successfully:', registration.scope);
 
                 // Check for updates periodically (only in production)
                 if (import.meta.env.PROD) {
@@ -218,7 +222,7 @@ if ('serviceWorker' in navigator) {
                 }
             })
             .catch(error => {
-                console.error('PWA: Service Worker registration failed:', error);
+                log.error('PWA: Service Worker registration failed:', error);
             });
     });
 
