@@ -9,6 +9,9 @@ import { useAuthStore } from '@/store/authStore.js'
 import { useUserStore } from '@/store/userStore.js'
 import { useSettingsStore } from '@/store/settingStore.js'
 
+// Lazy loading directive
+import { vLazy } from '@/composables/useLazyLoading.js'
+
 // Initialize theme before app mounts
 import { initializeTheme, setupThemeListener, setupThemeObserver } from './utils/themeInit.js'
 initializeTheme()
@@ -106,6 +109,9 @@ vueApp.config.globalProperties.$helpers = helpers
 vueApp.use(pinia)
 vueApp.use(i18n)
 vueApp.use(vuetify)
+
+// Register lazy loading directive
+vueApp.directive('lazy', vLazy)
 vueApp.use(PerfectScrollbarPlugin);
 // vueApp.use(store)
 // vueApp.use(permissions)

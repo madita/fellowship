@@ -49,7 +49,7 @@
                 label="Enable Image Optimization"
                 color="primary"
                 class="mb-4"
-                hint="Automatically optimize uploaded images"
+                hint="Compress and optimize uploaded images (JPEG: 85% quality, PNG: optimized, backgrounds: max 1920x1080)"
                 persistent-hint
             ></v-switch>
 
@@ -57,9 +57,20 @@
                 v-model="settings.lazy_loading_enabled"
                 label="Enable Lazy Loading"
                 color="primary"
-                hint="Lazy load images and components"
+                class="mb-4"
+                hint="Defer loading of images and iframes until they enter the viewport (improves initial page load)"
                 persistent-hint
             ></v-switch>
+
+            <v-alert type="info" variant="tonal" density="compact" class="mb-4">
+                <div class="text-caption">
+                    <strong>Performance Tips:</strong>
+                    <ul class="mt-1 ml-4">
+                        <li><strong>Image Optimization:</strong> Reduces file size while maintaining quality. Uses Jpegoptim, Pngquant, and WebP conversion.</li>
+                        <li><strong>Lazy Loading:</strong> Uses native browser lazy loading (<code>loading="lazy"</code>) and IntersectionObserver for better performance.</li>
+                    </ul>
+                </div>
+            </v-alert>
 
             <v-divider class="my-6"></v-divider>
 
@@ -450,27 +461,56 @@
             </v-alert>
         </settings-card>
 
-        <!-- API & Developer Settings -->
-        <settings-card icon="mdi-api" title="API & Developer Settings">
-            <v-select
-                v-model="settings.environment"
+        <!-- Server Environment (Read-only from .env) -->
+        <settings-card icon="mdi-server" title="Server Environment">
+            <v-alert type="info" variant="tonal" density="compact" class="mb-4">
+                These settings are read from your server's <code>.env</code> file and cannot be changed from the admin panel.
+            </v-alert>
+
+            <v-text-field
+                :model-value="serverEnvironment"
                 label="Environment"
-                :items="environments"
                 prepend-inner-icon="mdi-monitor"
                 variant="outlined"
                 class="mb-4"
-                :error-messages="errors.environment"
-            ></v-select>
+                readonly
+                disabled
+            >
+                <template #append-inner>
+                    <v-chip
+                        :color="environmentColor"
+                        size="small"
+                    >
+                        {{ serverEnvironment }}
+                    </v-chip>
+                </template>
+            </v-text-field>
 
-            <v-switch
-                v-model="settings.debug_mode"
-                label="Enable Debug Mode"
-                color="warning"
-                class="mb-4"
-                hint="Show detailed error messages (disable in production)"
-                persistent-hint
-            ></v-switch>
+            <v-text-field
+                :model-value="serverDebugMode ? 'Enabled' : 'Disabled'"
+                label="Debug Mode"
+                prepend-inner-icon="mdi-bug"
+                variant="outlined"
+                readonly
+                disabled
+            >
+                <template #append-inner>
+                    <v-chip
+                        :color="serverDebugMode ? 'warning' : 'success'"
+                        size="small"
+                    >
+                        {{ serverDebugMode ? 'ON' : 'OFF' }}
+                    </v-chip>
+                </template>
+            </v-text-field>
 
+            <v-alert v-if="serverDebugMode && serverEnvironment === 'production'" type="warning" variant="tonal" density="compact" class="mt-4">
+                <strong>Warning:</strong> Debug mode is enabled in production. This may expose sensitive information.
+            </v-alert>
+        </settings-card>
+
+        <!-- API & Developer Settings -->
+        <settings-card icon="mdi-api" title="API & Developer Settings">
             <v-text-field
                 v-model.number="settings.api_rate_limit_per_minute"
                 label="API Rate Limit (per minute)"
@@ -496,9 +536,13 @@
                 v-model="settings.background_jobs_enabled"
                 label="Enable Background Jobs"
                 color="primary"
-                hint="Process tasks in background queue"
+                hint="Process tasks in background queue (requires queue worker running)"
                 persistent-hint
             ></v-switch>
+
+            <v-alert v-if="settings.background_jobs_enabled" type="info" variant="tonal" density="compact" class="mt-4">
+                Make sure you have a queue worker running: <code>php artisan queue:work</code>
+            </v-alert>
         </settings-card>
 
         <!-- Cookie Consent / GDPR -->
@@ -763,7 +807,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useApi } from '@/api/useAPI.js';
 import SettingsCard from '../SettingsCard.vue';
 
@@ -777,6 +821,20 @@ const props = defineProps({
 
 const emit = defineEmits(['save', 'message']);
 
+// Server environment info (fetched from backend)
+const serverEnvironment = ref('unknown');
+const serverDebugMode = ref(false);
+
+const environmentColor = computed(() => {
+    switch (serverEnvironment.value) {
+        case 'production': return 'success';
+        case 'staging': return 'warning';
+        case 'development': return 'info';
+        case 'local': return 'info';
+        default: return 'grey';
+    }
+});
+
 // Cache management
 const cacheStatus = ref(null);
 const clearingCache = ref(null);
@@ -787,6 +845,17 @@ async function fetchCacheStatus() {
         cacheStatus.value = response.data;
     } catch (error) {
         console.error('Failed to fetch cache status:', error);
+    }
+}
+
+// Fetch server environment info
+async function fetchServerInfo() {
+    try {
+        const response = await api.get('/admin/settings/server-info');
+        serverEnvironment.value = response.data.environment || 'unknown';
+        serverDebugMode.value = response.data.debug_mode || false;
+    } catch (error) {
+        console.error('Failed to fetch server info:', error);
     }
 }
 
@@ -813,13 +882,8 @@ async function clearCache(type) {
 
 onMounted(() => {
     fetchCacheStatus();
+    fetchServerInfo();
 });
-
-const environments = [
-    'development',
-    'staging',
-    'production'
-];
 
 const newsletterProviders = [
     { title: 'Mailchimp', value: 'mailchimp' },

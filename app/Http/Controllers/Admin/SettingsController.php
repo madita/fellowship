@@ -13,8 +13,8 @@ class SettingsController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth:sanctum'])->except(['public', 'getEnabledOAuthProviders']);
-        $this->middleware(['admin'])->except(['public', 'getEnabledOAuthProviders']);
+        $this->middleware(['auth:sanctum'])->except(['public', 'getEnabledOAuthProviders', 'performanceSettings']);
+        $this->middleware(['admin'])->except(['public', 'getEnabledOAuthProviders', 'performanceSettings']);
     }
 
     /**
@@ -167,6 +167,10 @@ class SettingsController extends Controller
             'custom_footer_enabled',
             'custom_footer_html',
             'footer_quicklinks',
+
+            // Performance
+            'lazy_loading_enabled',
+            'image_optimization_enabled',
         ];
 
         $settings = [];
@@ -198,6 +202,30 @@ class SettingsController extends Controller
 
         return response()->json([
             'settings' => $settings,
+        ]);
+    }
+
+    /**
+     * Get server environment info (read from .env, not database)
+     */
+    public function serverInfo(): JsonResponse
+    {
+        return response()->json([
+            'environment' => config('app.env', 'production'),
+            'debug_mode' => config('app.debug', false),
+            'php_version' => PHP_VERSION,
+            'laravel_version' => app()->version(),
+        ]);
+    }
+
+    /**
+     * Get performance settings (public, no authentication required)
+     */
+    public function performanceSettings(): JsonResponse
+    {
+        return response()->json([
+            'lazy_loading' => \App\Services\LazyLoadingService::getSettings(),
+            'image_optimization' => \App\Services\ImageOptimizationService::getSettings(),
         ]);
     }
 
@@ -539,6 +567,17 @@ class SettingsController extends Controller
             $path = 'images/' . $filename;
 
             Storage::disk('public')->put($path, file_get_contents($file->getRealPath() ?: $file->getPathname()));
+
+            // Optimize image if enabled (skip SVG and ICO files)
+            $optimizableExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+            if (in_array(strtolower($extension), $optimizableExtensions)) {
+                $fullPath = Storage::disk('public')->path($path);
+                \App\Services\ImageOptimizationService::optimize($fullPath, [
+                    'quality' => 85,
+                    'max_width' => $key === 'background_light' || $key === 'background_dark' ? 1920 : null,
+                    'max_height' => $key === 'background_light' || $key === 'background_dark' ? 1080 : null,
+                ]);
+            }
 
             // Save to settings
             Setting::set($key, $path, 'file');

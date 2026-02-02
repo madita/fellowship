@@ -66,6 +66,7 @@ class Kernel extends HttpKernel
             ShareErrorsFromSession::class,
             VerifyCsrfToken::class,
             SubstituteBindings::class,
+            \App\Http\Middleware\LazyLoadingMiddleware::class,
         ],
 
         'api' => [
@@ -99,5 +100,6 @@ class Kernel extends HttpKernel
         'cache.control'      => \App\Http\Middleware\CacheControl::class,
         'api.key'            => \App\Http\Middleware\AuthenticateApiKey::class,
         'api.rate'           => \App\Http\Middleware\DynamicRateLimit::class,
+        'lazy.loading'       => \App\Http\Middleware\LazyLoadingMiddleware::class,
     ];
 }

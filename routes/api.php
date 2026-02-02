@@ -157,6 +157,7 @@ Route::get('/cache-test', function () {
 Route::middleware(['cache.control'])->group(function () {
     // Public Settings
     Route::get('/settings/public', 'App\Http\Controllers\Admin\SettingsController@public');
+    Route::get('/settings/performance', 'App\Http\Controllers\Admin\SettingsController@performanceSettings');
 
     // Homepage
     Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@getActiveWidgets');
@@ -182,6 +183,13 @@ Route::group(['prefix' => 'api-keys', 'middleware' => ['auth:sanctum']], functio
     Route::post('/{id}/regenerate', 'App\Http\Controllers\Api\ApiKeyController@regenerate');
 });
 
+// Account Deletion (GDPR Right to be Forgotten)
+Route::group(['prefix' => 'account', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('/deletion/status', 'App\Http\Controllers\Api\AccountDeletionController@status');
+    Route::get('/export-data', 'App\Http\Controllers\Api\AccountDeletionController@exportData');
+    Route::post('/delete', 'App\Http\Controllers\Api\AccountDeletionController@requestDeletion');
+});
+
 // External API Routes (authenticated via API key with dynamic rate limiting)
 Route::group(['prefix' => 'v1', 'middleware' => ['api.key', 'api.rate']], function () {
     // Example: Get current user info via API key
@@ -204,6 +212,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     // Settings
     Route::get('/settings', 'App\Http\Controllers\Admin\SettingsController@index');
     Route::post('/settings', 'App\Http\Controllers\Admin\SettingsController@update');
+    Route::get('/settings/server-info', 'App\Http\Controllers\Admin\SettingsController@serverInfo');
     Route::post('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@uploadLogo');
     Route::delete('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@deleteLogo');
     Route::post('/settings/image', 'App\Http\Controllers\Admin\SettingsController@uploadImage');

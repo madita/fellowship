@@ -59,7 +59,7 @@
                 label="Enable Image Optimization"
                 color="primary"
                 class="mb-4"
-                hint="Automatically optimize uploaded images"
+                hint="Compress and optimize uploaded images (JPEG: 85% quality, PNG: optimized, backgrounds: max 1920x1080)"
                 persistent-hint
             ></v-switch>
 
@@ -67,9 +67,20 @@
                 v-model="settings.lazy_loading_enabled"
                 label="Enable Lazy Loading"
                 color="primary"
-                hint="Lazy load images and components"
+                class="mb-4"
+                hint="Defer loading of images and iframes until they enter the viewport (improves initial page load)"
                 persistent-hint
             ></v-switch>
+
+            <v-alert type="info" variant="tonal" density="compact" class="mb-4">
+                <div class="text-caption">
+                    <strong>Performance Tips:</strong>
+                    <ul class="mt-1 ml-4">
+                        <li><strong>Image Optimization:</strong> Reduces file size while maintaining quality. Uses Jpegoptim, Pngquant, and WebP conversion.</li>
+                        <li><strong>Lazy Loading:</strong> Uses native browser lazy loading (<code>loading="lazy"</code>) and IntersectionObserver for better performance.</li>
+                    </ul>
+                </div>
+            </v-alert>
 
             <v-divider class="my-6"></v-divider>
 

@@ -82,6 +82,9 @@ export const useSettingsStore = defineStore({
             // Age confirmation
             age_confirmation_required: false,
             age_minimum: 18,
+            // Performance settings
+            lazy_loading_enabled: true,
+            image_optimization_enabled: true,
         },
         settingsLoaded: false,
     }),
@@ -154,6 +157,22 @@ export const useSettingsStore = defineStore({
             const value = state.appSettings.age_minimum;
             return parseInt(value) || 18;
         },
+        lazyLoadingEnabled: (state) => {
+            const value = state.appSettings.lazy_loading_enabled;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value !== false;
+        },
+        imageOptimizationEnabled: (state) => {
+            const value = state.appSettings.image_optimization_enabled;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value !== false;
+        },
+        // Alias for components that use settings.xxx
+        settings: (state) => state.appSettings,
     },
 
     actions: {

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { useApi } from '@/api/useAPI.js'
 
 const api = useApi()
+const web = useApi('web')
 
 export const useUserStore = defineStore('user', {
     state: () => {
@@ -95,7 +96,7 @@ export const useUserStore = defineStore('user', {
         // Get CSRF token
         async getToken() {
             try {
-                await api.get('/sanctum/csrf-cookie')
+                await web.get('/sanctum/csrf-cookie')
             } catch (error) {
                 console.error('Failed to get CSRF token:', error)
                 throw error

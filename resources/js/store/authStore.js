@@ -75,10 +75,17 @@ export const useAuthStore = defineStore('auth', {
         async login({ email, password }) {
             const user = useUserStore()
 
+            // Clear any existing state from previous user BEFORE logging in
+            this.clearState()
+            user.clearState()
+
             try {
+                // Get fresh CSRF token before login (required after clearing state)
+                await user.getToken()
+
                 await web.post('/login', { email, password })
 
-                // Store user info first
+                // Store user info (fresh from server)
                 await user.storeInfo()
 
                 // Determine verification status
@@ -95,6 +102,7 @@ export const useAuthStore = defineStore('auth', {
             } catch (error) {
                 // Clear state on login failure
                 this.clearState()
+                user.clearState()
                 console.error('Login error:', error.message)
                 throw error
             }
@@ -108,7 +116,14 @@ export const useAuthStore = defineStore('auth', {
         async register(props) {
             const user = useUserStore()
 
+            // Clear any existing state from previous user BEFORE registering
+            this.clearState()
+            user.clearState()
+
             try {
+                // Get fresh CSRF token before register (required after clearing state)
+                await user.getToken()
+
                 await web.post('/register', props)
 
                 // Update auth state
@@ -118,10 +133,11 @@ export const useAuthStore = defineStore('auth', {
                     isVerified: false // New registrations typically need verification
                 })
 
-                // Store user info
+                // Store user info (fresh from server)
                 await user.storeInfo()
             } catch (error) {
                 this.clearState()
+                user.clearState()
                 console.error('Registration error:', error.message)
                 throw error
             }

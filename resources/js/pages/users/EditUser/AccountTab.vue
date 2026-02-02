@@ -157,6 +157,15 @@
                 </v-card-text>
             </v-card>
 
+            <!-- Account Deletion (GDPR) - for own account -->
+            <v-card class="mt-4">
+                <v-card-title>Data & Privacy</v-card-title>
+                <v-card-subtitle>Manage your data and account deletion options</v-card-subtitle>
+                <v-card-text>
+                    <account-deletion />
+                </v-card-text>
+            </v-card>
+
             <v-expansion-panels v-if="roles.includes('admin')" v-model="panel" multiple class="mt-3">
                 <v-expansion-panel>
                     <v-expansion-panel-title class="title">Actions</v-expansion-panel-title>
@@ -291,11 +300,13 @@ import { useSettingsStore } from '@/store/settingStore.js';
 import { useUserStore } from '@/store/userStore.js';
 import { formatDateInTimezone } from '@/plugins/formatDate.js';
 import ImageUpload from "../../../components/common/ImageUpload.vue";
+import AccountDeletion from "../../../components/settings/AccountDeletion.vue";
 import axios from 'axios';
 
 export default {
     components: {
-        ImageUpload
+        ImageUpload,
+        AccountDeletion,
     },
     props: {
         user: {
