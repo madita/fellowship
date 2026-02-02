@@ -10,8 +10,9 @@ class JobDispatcher
     /**
      * Dispatch a job, either to the queue or synchronously based on settings.
      *
-     * @param ShouldQueue $job The job to dispatch
+     * @param ShouldQueue $job   The job to dispatch
      * @param string|null $queue Optional queue name
+     *
      * @return mixed
      */
     public static function dispatch(ShouldQueue $job, ?string $queue = null)
@@ -23,6 +24,7 @@ class JobDispatcher
             if ($queue) {
                 return dispatch($job)->onQueue($queue);
             }
+
             return dispatch($job);
         }
 
@@ -34,6 +36,7 @@ class JobDispatcher
      * Dispatch a job to run after the response is sent.
      *
      * @param ShouldQueue $job The job to dispatch
+     *
      * @return mixed
      */
     public static function dispatchAfterResponse(ShouldQueue $job)
@@ -51,8 +54,9 @@ class JobDispatcher
     /**
      * Dispatch a job with a delay.
      *
-     * @param ShouldQueue $job The job to dispatch
+     * @param ShouldQueue                          $job   The job to dispatch
      * @param \DateTimeInterface|\DateInterval|int $delay The delay
+     *
      * @return mixed
      */
     public static function dispatchWithDelay(ShouldQueue $job, $delay)

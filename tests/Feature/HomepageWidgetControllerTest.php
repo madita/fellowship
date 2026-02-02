@@ -3,8 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Section;
-use App\Models\Widget;
 use App\Models\User;
+use App\Models\Widget;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -24,11 +24,11 @@ class HomepageWidgetControllerTest extends TestCase
 
         // Create a test section
         $this->section = Section::create([
-            'title' => 'Test Section',
-            'layout' => '2-col',
+            'title'   => 'Test Section',
+            'layout'  => '2-col',
             'enabled' => true,
-            'order' => 1,
-            'config' => [],
+            'order'   => 1,
+            'config'  => [],
         ]);
     }
 
@@ -39,24 +39,24 @@ class HomepageWidgetControllerTest extends TestCase
         // Create some test widgets
         Widget::create([
             'section_id' => $this->section->id,
-            'type' => 'hero',
-            'title' => 'Hero Widget',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => ['title' => 'Welcome'],
-            'config' => [],
+            'type'       => 'hero',
+            'title'      => 'Hero Widget',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => ['title' => 'Welcome'],
+            'config'     => [],
         ]);
 
         Widget::create([
             'section_id' => $this->section->id,
-            'type' => 'stats',
-            'title' => 'Stats Widget',
-            'enabled' => false,
-            'order' => 2,
-            'column' => 2,
-            'content' => ['stats' => []],
-            'config' => [],
+            'type'       => 'stats',
+            'title'      => 'Stats Widget',
+            'enabled'    => false,
+            'order'      => 2,
+            'column'     => 2,
+            'content'    => ['stats' => []],
+            'config'     => [],
         ]);
 
         $response = $this->getJson('/api/admin/homepage/widgets');
@@ -92,22 +92,22 @@ class HomepageWidgetControllerTest extends TestCase
         // Create enabled and disabled widgets
         Widget::create([
             'section_id' => $this->section->id,
-            'type' => 'hero',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => ['title' => 'Welcome'],
-            'config' => [],
+            'type'       => 'hero',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => ['title' => 'Welcome'],
+            'config'     => [],
         ]);
 
         Widget::create([
             'section_id' => $this->section->id,
-            'type' => 'stats',
-            'enabled' => false,
-            'order' => 2,
-            'column' => 2,
-            'content' => ['stats' => []],
-            'config' => [],
+            'type'       => 'stats',
+            'enabled'    => false,
+            'order'      => 2,
+            'column'     => 2,
+            'content'    => ['stats' => []],
+            'config'     => [],
         ]);
 
         $response = $this->getJson('/api/homepage/widgets');
@@ -133,18 +133,18 @@ class HomepageWidgetControllerTest extends TestCase
 
         $widgetData = [
             'section_id' => $this->section->id,
-            'type' => 'hero',
-            'title' => 'New Hero Widget',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => [
-                'title' => 'Welcome to our site',
-                'subtitle' => 'Lorem ipsum',
-                'primaryButton' => ['text' => 'Get Started', 'link' => '/signup'],
+            'type'       => 'hero',
+            'title'      => 'New Hero Widget',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => [
+                'title'           => 'Welcome to our site',
+                'subtitle'        => 'Lorem ipsum',
+                'primaryButton'   => ['text' => 'Get Started', 'link' => '/signup'],
                 'secondaryButton' => null,
             ],
-            'config' => [],
+            'config'    => [],
             'anchor_id' => 'hero-section',
         ];
 
@@ -168,8 +168,8 @@ class HomepageWidgetControllerTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('homepage_widgets', [
-            'type' => 'hero',
-            'title' => 'New Hero Widget',
+            'type'       => 'hero',
+            'title'      => 'New Hero Widget',
             'section_id' => $this->section->id,
         ]);
     }
@@ -193,21 +193,21 @@ class HomepageWidgetControllerTest extends TestCase
 
         $widget = Widget::create([
             'section_id' => $this->section->id,
-            'type' => 'hero',
-            'title' => 'Original Title',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => ['title' => 'Welcome'],
-            'config' => [],
+            'type'       => 'hero',
+            'title'      => 'Original Title',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => ['title' => 'Welcome'],
+            'config'     => [],
         ]);
 
         $updateData = [
-            'title' => 'Updated Title',
+            'title'   => 'Updated Title',
             'content' => [
-                'title' => 'Updated Welcome',
-                'subtitle' => 'New subtitle',
-                'primaryButton' => ['text' => 'Click Here', 'link' => '/start'],
+                'title'           => 'Updated Welcome',
+                'subtitle'        => 'New subtitle',
+                'primaryButton'   => ['text' => 'Click Here', 'link' => '/start'],
                 'secondaryButton' => null,
             ],
             'enabled' => false,
@@ -222,8 +222,8 @@ class HomepageWidgetControllerTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('homepage_widgets', [
-            'id' => $widget->id,
-            'title' => 'Updated Title',
+            'id'      => $widget->id,
+            'title'   => 'Updated Title',
             'enabled' => false,
         ]);
 
@@ -237,13 +237,13 @@ class HomepageWidgetControllerTest extends TestCase
 
         $widget = Widget::create([
             'section_id' => $this->section->id,
-            'type' => 'hero',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => [
-                'title' => 'Welcome',
-                'primaryButton' => ['text' => 'Click', 'link' => '/test'],
+            'type'       => 'hero',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => [
+                'title'           => 'Welcome',
+                'primaryButton'   => ['text' => 'Click', 'link' => '/test'],
                 'secondaryButton' => ['text' => 'Learn', 'link' => '/learn'],
             ],
             'config' => [],
@@ -251,8 +251,8 @@ class HomepageWidgetControllerTest extends TestCase
 
         $updateData = [
             'content' => [
-                'title' => 'Welcome',
-                'primaryButton' => ['text' => 'Click', 'link' => '/test'],
+                'title'           => 'Welcome',
+                'primaryButton'   => ['text' => 'Click', 'link' => '/test'],
                 'secondaryButton' => null, // Explicitly disable secondary button
             ],
         ];
@@ -271,12 +271,12 @@ class HomepageWidgetControllerTest extends TestCase
 
         $widget = Widget::create([
             'section_id' => $this->section->id,
-            'type' => 'hero',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => ['title' => 'Welcome'],
-            'config' => [],
+            'type'       => 'hero',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => ['title' => 'Welcome'],
+            'config'     => [],
         ]);
 
         $response = $this->deleteJson("/api/admin/homepage/widgets/{$widget->id}");
@@ -297,12 +297,12 @@ class HomepageWidgetControllerTest extends TestCase
 
         $widget = Widget::create([
             'section_id' => $this->section->id,
-            'type' => 'hero',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => ['title' => 'Welcome'],
-            'config' => [],
+            'type'       => 'hero',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => ['title' => 'Welcome'],
+            'config'     => [],
         ]);
 
         $response = $this->postJson("/api/admin/homepage/widgets/{$widget->id}/toggle");
@@ -314,7 +314,7 @@ class HomepageWidgetControllerTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('homepage_widgets', [
-            'id' => $widget->id,
+            'id'      => $widget->id,
             'enabled' => false,
         ]);
 
@@ -322,7 +322,7 @@ class HomepageWidgetControllerTest extends TestCase
         $response = $this->postJson("/api/admin/homepage/widgets/{$widget->id}/toggle");
 
         $this->assertDatabaseHas('homepage_widgets', [
-            'id' => $widget->id,
+            'id'      => $widget->id,
             'enabled' => true,
         ]);
     }
@@ -333,13 +333,13 @@ class HomepageWidgetControllerTest extends TestCase
 
         $widget = Widget::create([
             'section_id' => $this->section->id,
-            'type' => 'hero',
-            'title' => 'Original Widget',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => ['title' => 'Welcome'],
-            'config' => [],
+            'type'       => 'hero',
+            'title'      => 'Original Widget',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => ['title' => 'Welcome'],
+            'config'     => [],
         ]);
 
         $response = $this->postJson("/api/admin/homepage/widgets/{$widget->id}/duplicate");
@@ -352,8 +352,8 @@ class HomepageWidgetControllerTest extends TestCase
 
         // Check that the duplicate exists and is disabled by default
         $this->assertDatabaseHas('homepage_widgets', [
-            'type' => 'hero',
-            'title' => 'Original Widget (Copy)',
+            'type'    => 'hero',
+            'title'   => 'Original Widget (Copy)',
             'enabled' => false,
         ]);
 
@@ -366,22 +366,22 @@ class HomepageWidgetControllerTest extends TestCase
 
         $widget1 = Widget::create([
             'section_id' => $this->section->id,
-            'type' => 'hero',
-            'enabled' => true,
-            'order' => 1,
-            'column' => 1,
-            'content' => ['title' => 'Widget 1'],
-            'config' => [],
+            'type'       => 'hero',
+            'enabled'    => true,
+            'order'      => 1,
+            'column'     => 1,
+            'content'    => ['title' => 'Widget 1'],
+            'config'     => [],
         ]);
 
         $widget2 = Widget::create([
             'section_id' => $this->section->id,
-            'type' => 'stats',
-            'enabled' => true,
-            'order' => 2,
-            'column' => 1,
-            'content' => ['stats' => []],
-            'config' => [],
+            'type'       => 'stats',
+            'enabled'    => true,
+            'order'      => 2,
+            'column'     => 1,
+            'content'    => ['stats' => []],
+            'config'     => [],
         ]);
 
         $response = $this->postJson('/api/admin/homepage/widgets/reorder', [
@@ -397,12 +397,12 @@ class HomepageWidgetControllerTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('homepage_widgets', [
-            'id' => $widget2->id,
+            'id'    => $widget2->id,
             'order' => 1,
         ]);
 
         $this->assertDatabaseHas('homepage_widgets', [
-            'id' => $widget1->id,
+            'id'    => $widget1->id,
             'order' => 2,
         ]);
     }

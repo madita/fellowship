@@ -9,7 +9,7 @@ use Laravel\Socialite\Facades\Socialite;
 class SocialAccountController extends Controller
 {
     /**
-     * Supported OAuth providers
+     * Supported OAuth providers.
      */
     private const PROVIDERS = ['google', 'discord', 'github', 'facebook'];
 
@@ -17,6 +17,7 @@ class SocialAccountController extends Controller
      * Get list of user's connected social accounts.
      *
      * @param Request $request
+     *
      * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
@@ -25,9 +26,9 @@ class SocialAccountController extends Controller
 
         $accounts = $user->socialAccounts()->get()->map(function ($account) {
             return [
-                'provider' => $account->provider,
-                'provider_id' => $account->provider_id,
-                'avatar' => $account->avatar,
+                'provider'     => $account->provider,
+                'provider_id'  => $account->provider_id,
+                'avatar'       => $account->avatar,
                 'connected_at' => $account->created_at->diffForHumans(),
             ];
         });
@@ -38,8 +39,8 @@ class SocialAccountController extends Controller
         })->values();
 
         return response()->json([
-            'connected' => $accounts,
-            'available' => $availableProviders,
+            'connected'    => $accounts,
+            'available'    => $availableProviders,
             'has_password' => !is_null($user->password),
         ]);
     }
@@ -48,7 +49,8 @@ class SocialAccountController extends Controller
      * Disconnect (unlink) a social account from user.
      *
      * @param Request $request
-     * @param string $provider
+     * @param string  $provider
+     *
      * @return JsonResponse
      */
     public function disconnect(Request $request, $provider): JsonResponse
@@ -65,7 +67,7 @@ class SocialAccountController extends Controller
 
         if ($connectedAccounts === 1 && !$hasPassword) {
             return response()->json([
-                'error' => 'Cannot disconnect last authentication method. Please set a password first.'
+                'error' => 'Cannot disconnect last authentication method. Please set a password first.',
             ], 422);
         }
 
@@ -77,7 +79,7 @@ class SocialAccountController extends Controller
         }
 
         return response()->json([
-            'message' => ucfirst($provider) . ' account disconnected successfully'
+            'message' => ucfirst($provider).' account disconnected successfully',
         ]);
     }
 
@@ -85,7 +87,8 @@ class SocialAccountController extends Controller
      * Link a new social provider to existing user account.
      *
      * @param Request $request
-     * @param string $provider
+     * @param string  $provider
+     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function link(Request $request, $provider)
@@ -107,7 +110,8 @@ class SocialAccountController extends Controller
 
             return Socialite::driver($provider)->redirect();
         } catch (\Exception $e) {
-            \Log::error('OAuth link error: ' . $e->getMessage());
+            \Log::error('OAuth link error: '.$e->getMessage());
+
             return redirect('/')->with('error', 'OAuth configuration error');
         }
     }

@@ -16,11 +16,11 @@ class HomepageMenuItem extends Model
 
     protected $casts = [
         'enabled' => 'boolean',
-        'order' => 'integer',
+        'order'   => 'integer',
     ];
 
     /**
-     * Scope query to only enabled menu items
+     * Scope query to only enabled menu items.
      */
     public function scopeEnabled($query)
     {
@@ -28,7 +28,7 @@ class HomepageMenuItem extends Model
     }
 
     /**
-     * Scope query to order menu items
+     * Scope query to order menu items.
      */
     public function scopeOrdered($query)
     {
@@ -36,7 +36,7 @@ class HomepageMenuItem extends Model
     }
 
     /**
-     * Get all active menu items (cached)
+     * Get all active menu items (cached).
      */
     public static function getActiveItems()
     {
@@ -46,7 +46,7 @@ class HomepageMenuItem extends Model
     }
 
     /**
-     * Clear the homepage menu items cache
+     * Clear the homepage menu items cache.
      */
     public static function clearCache(): void
     {
@@ -54,7 +54,7 @@ class HomepageMenuItem extends Model
     }
 
     /**
-     * Boot the model and add event listeners
+     * Boot the model and add event listeners.
      */
     protected static function booted(): void
     {

@@ -47,24 +47,24 @@ class DynamicRateLimit
     }
 
     /**
-     * Resolve the request signature for rate limiting
+     * Resolve the request signature for rate limiting.
      */
     protected function resolveRequestSignature(Request $request, string $prefix): string
     {
         // Use API key if present, otherwise use user ID or IP
         if ($apiKey = $request->attributes->get('api_key')) {
-            return $prefix . ':' . $apiKey->id;
+            return $prefix.':'.$apiKey->id;
         }
 
         if ($user = $request->user()) {
-            return $prefix . ':user:' . $user->id;
+            return $prefix.':user:'.$user->id;
         }
 
-        return $prefix . ':ip:' . $request->ip();
+        return $prefix.':ip:'.$request->ip();
     }
 
     /**
-     * Calculate remaining attempts
+     * Calculate remaining attempts.
      */
     protected function calculateRemainingAttempts(string $key, int $maxAttempts): int
     {
@@ -72,30 +72,30 @@ class DynamicRateLimit
     }
 
     /**
-     * Build response for too many attempts
+     * Build response for too many attempts.
      */
     protected function buildTooManyAttemptsResponse(string $key, int $maxAttempts): Response
     {
         $retryAfter = $this->limiter->availableIn($key);
 
         return response()->json([
-            'message' => 'Too many requests. Please try again later.',
+            'message'     => 'Too many requests. Please try again later.',
             'retry_after' => $retryAfter,
         ], 429)->withHeaders([
-            'X-RateLimit-Limit' => $maxAttempts,
+            'X-RateLimit-Limit'     => $maxAttempts,
             'X-RateLimit-Remaining' => 0,
-            'Retry-After' => $retryAfter,
-            'X-RateLimit-Reset' => time() + $retryAfter,
+            'Retry-After'           => $retryAfter,
+            'X-RateLimit-Reset'     => time() + $retryAfter,
         ]);
     }
 
     /**
-     * Add rate limit headers to response
+     * Add rate limit headers to response.
      */
     protected function addHeaders(Response $response, int $maxAttempts, int $remainingAttempts): Response
     {
         $response->headers->add([
-            'X-RateLimit-Limit' => $maxAttempts,
+            'X-RateLimit-Limit'     => $maxAttempts,
             'X-RateLimit-Remaining' => max(0, $remainingAttempts),
         ]);
 

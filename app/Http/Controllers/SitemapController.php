@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Cache;
 class SitemapController extends Controller
 {
     /**
-     * Generate the sitemap index (sitemap_index.xml)
+     * Generate the sitemap index (sitemap_index.xml).
      */
     public function sitemapIndex(): Response
     {
@@ -30,29 +30,29 @@ class SitemapController extends Controller
     }
 
     /**
-     * Generate the sitemap index content
+     * Generate the sitemap index content.
      */
     private function generateSitemapIndex(): string
     {
         $baseUrl = config('app.url');
 
         $sitemaps = [
-            ['loc' => $baseUrl . '/sitemap.xml', 'lastmod' => now()->toW3cString()],
-            ['loc' => $baseUrl . '/sitemap-pages.xml', 'lastmod' => $this->getLastModified(Page::class)],
-            ['loc' => $baseUrl . '/sitemap-wiki.xml', 'lastmod' => $this->getLastModified(Wiki::class)],
-            ['loc' => $baseUrl . '/sitemap-posts.xml', 'lastmod' => $this->getLastModified(Post::class)],
+            ['loc' => $baseUrl.'/sitemap.xml', 'lastmod' => now()->toW3cString()],
+            ['loc' => $baseUrl.'/sitemap-pages.xml', 'lastmod' => $this->getLastModified(Page::class)],
+            ['loc' => $baseUrl.'/sitemap-wiki.xml', 'lastmod' => $this->getLastModified(Wiki::class)],
+            ['loc' => $baseUrl.'/sitemap-posts.xml', 'lastmod' => $this->getLastModified(Post::class)],
         ];
 
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
-        $xml .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . PHP_EOL;
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL;
+        $xml .= '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.PHP_EOL;
 
         foreach ($sitemaps as $sitemap) {
-            $xml .= '  <sitemap>' . PHP_EOL;
-            $xml .= '    <loc>' . htmlspecialchars($sitemap['loc']) . '</loc>' . PHP_EOL;
+            $xml .= '  <sitemap>'.PHP_EOL;
+            $xml .= '    <loc>'.htmlspecialchars($sitemap['loc']).'</loc>'.PHP_EOL;
             if (!empty($sitemap['lastmod'])) {
-                $xml .= '    <lastmod>' . $sitemap['lastmod'] . '</lastmod>' . PHP_EOL;
+                $xml .= '    <lastmod>'.$sitemap['lastmod'].'</lastmod>'.PHP_EOL;
             }
-            $xml .= '  </sitemap>' . PHP_EOL;
+            $xml .= '  </sitemap>'.PHP_EOL;
         }
 
         $xml .= '</sitemapindex>';
@@ -61,12 +61,13 @@ class SitemapController extends Controller
     }
 
     /**
-     * Get last modified date for a model
+     * Get last modified date for a model.
      */
     private function getLastModified(string $modelClass): ?string
     {
         try {
             $latest = $modelClass::orderBy('updated_at', 'desc')->first();
+
             return $latest?->updated_at?->toW3cString();
         } catch (\Exception $e) {
             return now()->toW3cString();
@@ -74,7 +75,7 @@ class SitemapController extends Controller
     }
 
     /**
-     * Generate the main sitemap.xml (static pages + homepage)
+     * Generate the main sitemap.xml (static pages + homepage).
      */
     public function index(): Response
     {
@@ -92,7 +93,7 @@ class SitemapController extends Controller
     }
 
     /**
-     * Generate sitemap for wiki pages
+     * Generate sitemap for wiki pages.
      */
     public function wikiSitemap(): Response
     {
@@ -110,7 +111,7 @@ class SitemapController extends Controller
     }
 
     /**
-     * Generate sitemap for pages
+     * Generate sitemap for pages.
      */
     public function pagesSitemap(): Response
     {
@@ -128,7 +129,7 @@ class SitemapController extends Controller
     }
 
     /**
-     * Generate sitemap for posts
+     * Generate sitemap for posts.
      */
     public function postsSitemap(): Response
     {
@@ -146,7 +147,7 @@ class SitemapController extends Controller
     }
 
     /**
-     * Generate main sitemap (homepage + static pages)
+     * Generate main sitemap (homepage + static pages).
      */
     private function generateMainSitemap(): string
     {
@@ -154,16 +155,16 @@ class SitemapController extends Controller
 
         $urls = [
             ['loc' => $baseUrl, 'changefreq' => 'daily', 'priority' => '1.0'],
-            ['loc' => $baseUrl . '/about', 'changefreq' => 'monthly', 'priority' => '0.8'],
-            ['loc' => $baseUrl . '/contact', 'changefreq' => 'monthly', 'priority' => '0.7'],
-            ['loc' => $baseUrl . '/wiki', 'changefreq' => 'weekly', 'priority' => '0.9'],
+            ['loc' => $baseUrl.'/about', 'changefreq' => 'monthly', 'priority' => '0.8'],
+            ['loc' => $baseUrl.'/contact', 'changefreq' => 'monthly', 'priority' => '0.7'],
+            ['loc' => $baseUrl.'/wiki', 'changefreq' => 'weekly', 'priority' => '0.9'],
         ];
 
         return $this->buildUrlsetXml($urls);
     }
 
     /**
-     * Generate wiki sitemap
+     * Generate wiki sitemap.
      */
     private function generateWikiSitemap(): string
     {
@@ -173,10 +174,10 @@ class SitemapController extends Controller
         $wikis = Wiki::all();
         foreach ($wikis as $wiki) {
             $urls[] = [
-                'loc' => $baseUrl . '/wiki/' . $wiki->slug,
-                'lastmod' => $wiki->updated_at?->toW3cString(),
+                'loc'        => $baseUrl.'/wiki/'.$wiki->slug,
+                'lastmod'    => $wiki->updated_at?->toW3cString(),
                 'changefreq' => 'weekly',
-                'priority' => '0.8',
+                'priority'   => '0.8',
             ];
         }
 
@@ -184,7 +185,7 @@ class SitemapController extends Controller
     }
 
     /**
-     * Generate pages sitemap
+     * Generate pages sitemap.
      */
     private function generatePagesSitemap(): string
     {
@@ -194,10 +195,10 @@ class SitemapController extends Controller
         $pages = Page::where('published', true)->get();
         foreach ($pages as $page) {
             $urls[] = [
-                'loc' => $baseUrl . '/pages/' . $page->slug,
-                'lastmod' => $page->updated_at?->toW3cString(),
+                'loc'        => $baseUrl.'/pages/'.$page->slug,
+                'lastmod'    => $page->updated_at?->toW3cString(),
                 'changefreq' => 'weekly',
-                'priority' => '0.7',
+                'priority'   => '0.7',
             ];
         }
 
@@ -205,7 +206,7 @@ class SitemapController extends Controller
     }
 
     /**
-     * Generate posts sitemap
+     * Generate posts sitemap.
      */
     private function generatePostsSitemap(): string
     {
@@ -216,10 +217,10 @@ class SitemapController extends Controller
             $posts = Post::where('published', true)->get();
             foreach ($posts as $post) {
                 $urls[] = [
-                    'loc' => $baseUrl . '/posts/' . $post->slug,
-                    'lastmod' => $post->updated_at?->toW3cString(),
+                    'loc'        => $baseUrl.'/posts/'.$post->slug,
+                    'lastmod'    => $post->updated_at?->toW3cString(),
                     'changefreq' => 'monthly',
-                    'priority' => '0.6',
+                    'priority'   => '0.6',
                 ];
             }
         } catch (\Exception $e) {
@@ -230,26 +231,26 @@ class SitemapController extends Controller
     }
 
     /**
-     * Build URL set XML from array of URLs
+     * Build URL set XML from array of URLs.
      */
     private function buildUrlsetXml(array $urls): string
     {
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
-        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . PHP_EOL;
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'.PHP_EOL;
+        $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'.PHP_EOL;
 
         foreach ($urls as $url) {
-            $xml .= '  <url>' . PHP_EOL;
-            $xml .= '    <loc>' . htmlspecialchars($url['loc']) . '</loc>' . PHP_EOL;
+            $xml .= '  <url>'.PHP_EOL;
+            $xml .= '    <loc>'.htmlspecialchars($url['loc']).'</loc>'.PHP_EOL;
             if (!empty($url['lastmod'])) {
-                $xml .= '    <lastmod>' . $url['lastmod'] . '</lastmod>' . PHP_EOL;
+                $xml .= '    <lastmod>'.$url['lastmod'].'</lastmod>'.PHP_EOL;
             }
             if (!empty($url['changefreq'])) {
-                $xml .= '    <changefreq>' . $url['changefreq'] . '</changefreq>' . PHP_EOL;
+                $xml .= '    <changefreq>'.$url['changefreq'].'</changefreq>'.PHP_EOL;
             }
             if (!empty($url['priority'])) {
-                $xml .= '    <priority>' . $url['priority'] . '</priority>' . PHP_EOL;
+                $xml .= '    <priority>'.$url['priority'].'</priority>'.PHP_EOL;
             }
-            $xml .= '  </url>' . PHP_EOL;
+            $xml .= '  </url>'.PHP_EOL;
         }
 
         $xml .= '</urlset>';
@@ -258,7 +259,7 @@ class SitemapController extends Controller
     }
 
     /**
-     * Generate robots.txt
+     * Generate robots.txt.
      */
     public function robots(): Response
     {
@@ -289,7 +290,7 @@ class SitemapController extends Controller
         // Append custom robots.txt content
         if (!empty($customRobots)) {
             $content .= "\n# Custom rules\n";
-            $content .= $customRobots . "\n";
+            $content .= $customRobots."\n";
         }
 
         return response($content, 200)

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Validator;
 class HomepageSectionController extends Controller
 {
     /**
-     * Get all sections with their widgets (admin)
+     * Get all sections with their widgets (admin).
      */
     public function index()
     {
@@ -24,16 +24,16 @@ class HomepageSectionController extends Controller
     }
 
     /**
-     * Create a new section
+     * Create a new section.
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'title' => 'nullable|string|max:255',
-            'layout' => 'required|string|in:1-col,2-col,3-col,4-col,2-1-col,1-2-col',
-            'enabled' => 'boolean',
-            'order' => 'integer|min:0',
-            'config' => 'nullable|array',
+            'title'     => 'nullable|string|max:255',
+            'layout'    => 'required|string|in:1-col,2-col,3-col,4-col,2-1-col,1-2-col',
+            'enabled'   => 'boolean',
+            'order'     => 'integer|min:0',
+            'config'    => 'nullable|array',
             'anchor_id' => 'nullable|string|max:255|unique:sections,anchor_id|regex:/^[a-z0-9-]+$/',
         ]);
 
@@ -47,18 +47,18 @@ class HomepageSectionController extends Controller
     }
 
     /**
-     * Update a section
+     * Update a section.
      */
     public function update(Request $request, $id)
     {
         $section = Section::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'title' => 'nullable|string|max:255',
-            'layout' => 'string|in:1-col,2-col,3-col,4-col,2-1-col,1-2-col',
-            'enabled' => 'boolean',
-            'order' => 'integer|min:0',
-            'config' => 'nullable|array',
+            'title'     => 'nullable|string|max:255',
+            'layout'    => 'string|in:1-col,2-col,3-col,4-col,2-1-col,1-2-col',
+            'enabled'   => 'boolean',
+            'order'     => 'integer|min:0',
+            'config'    => 'nullable|array',
             'anchor_id' => 'nullable|string|max:255|unique:sections,anchor_id,'.$id.'|regex:/^[a-z0-9-]+$/',
         ]);
 
@@ -72,7 +72,7 @@ class HomepageSectionController extends Controller
     }
 
     /**
-     * Delete a section
+     * Delete a section.
      */
     public function destroy($id)
     {
@@ -83,7 +83,7 @@ class HomepageSectionController extends Controller
     }
 
     /**
-     * Toggle section enabled status
+     * Toggle section enabled status.
      */
     public function toggle($id)
     {
@@ -95,13 +95,13 @@ class HomepageSectionController extends Controller
     }
 
     /**
-     * Update sections order
+     * Update sections order.
      */
     public function updateOrder(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'sections' => 'required|array',
-            'sections.*.id' => 'required|exists:sections,id',
+            'sections'         => 'required|array',
+            'sections.*.id'    => 'required|exists:sections,id',
             'sections.*.order' => 'required|integer|min:0',
         ]);
 
@@ -120,11 +120,12 @@ class HomepageSectionController extends Controller
     }
 
     /**
-     * Get active sections with widgets (public)
+     * Get active sections with widgets (public).
      */
     public function getActiveSections()
     {
         $sections = Section::getActiveSections();
+
         return response()->json($sections);
     }
 }

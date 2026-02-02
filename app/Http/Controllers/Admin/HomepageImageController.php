@@ -10,12 +10,12 @@ use Illuminate\Support\Str;
 class HomepageImageController extends Controller
 {
     /**
-     * Upload an image for homepage widgets
+     * Upload an image for homepage widgets.
      */
     public function upload(Request $request)
     {
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // 2MB max
+            'image'      => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // 2MB max
             'collection' => 'nullable|string|in:home',
         ]);
 
@@ -32,27 +32,27 @@ class HomepageImageController extends Controller
 
             // Generate filename
             $extension = $file->getClientOriginalExtension();
-            $filename = uniqid('widget_') . '_' . Str::random(10) . '.' . $extension;
-            $path = $collection . '/' . $filename;
+            $filename = uniqid('widget_').'_'.Str::random(10).'.'.$extension;
+            $path = $collection.'/'.$filename;
 
             // Store file (Windows-compatible method)
             Storage::disk('public')->put($path, file_get_contents($file->getRealPath() ?: $file->getPathname()));
 
             return response()->json([
                 'success' => true,
-                'path' => $path,
-                'url' => Storage::url($path),
+                'path'    => $path,
+                'url'     => Storage::url($path),
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to upload image: ' . $e->getMessage(),
+                'message' => 'Failed to upload image: '.$e->getMessage(),
             ], 500);
         }
     }
 
     /**
-     * Delete an image
+     * Delete an image.
      */
     public function delete(Request $request)
     {
@@ -81,7 +81,7 @@ class HomepageImageController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete image: ' . $e->getMessage(),
+                'message' => 'Failed to delete image: '.$e->getMessage(),
             ], 500);
         }
     }

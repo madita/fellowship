@@ -12,12 +12,12 @@ use Symfony\Component\HttpFoundation\Response;
 class ConditionalStartSession extends StartSession
 {
     /**
-     * Cookie name that indicates consent was given
+     * Cookie name that indicates consent was given.
      */
     protected const CONSENT_COOKIE = 'cookie_consent_given';
 
     /**
-     * Track whether we should save the session cookie
+     * Track whether we should save the session cookie.
      */
     protected bool $shouldSaveCookie = true;
 
@@ -46,11 +46,11 @@ class ConditionalStartSession extends StartSession
 
         // No consent - don't add session cookie, but still save session data
         // This allows the session to work for the current request only
-        return;
+
     }
 
     /**
-     * Determine if we should save the session cookie
+     * Determine if we should save the session cookie.
      */
     protected function shouldSaveSessionCookie(Request $request): bool
     {
@@ -69,7 +69,7 @@ class ConditionalStartSession extends StartSession
     }
 
     /**
-     * Check if user has given cookie consent
+     * Check if user has given cookie consent.
      */
     protected function hasConsent(Request $request): bool
     {
@@ -77,13 +77,14 @@ class ConditionalStartSession extends StartSession
     }
 
     /**
-     * Check if cookie consent feature is enabled in settings
+     * Check if cookie consent feature is enabled in settings.
      */
     protected function isCookieConsentEnabled(): bool
     {
         try {
             // Check setting from database/cache
             $setting = \App\Models\Setting::get('cookie_consent_enabled', true);
+
             return (bool) $setting;
         } catch (\Exception $e) {
             // If we can't check settings, assume consent is not required

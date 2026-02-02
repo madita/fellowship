@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Traits\HasCache;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
-use App\Traits\HasCache;
 
 class Wiki extends Model
 {
@@ -14,7 +14,6 @@ class Wiki extends Model
     protected $table = 'wikiables';
     protected $cacheTag = 'wikiables';
 //    protected $guard_name = 'api';
-
 
     /**
      * The attributes that are mass assignable.

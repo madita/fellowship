@@ -135,7 +135,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     }
 
     /**
-     * Get the user's timezone preference with fallback to global setting
+     * Get the user's timezone preference with fallback to global setting.
      *
      * @return string
      */
@@ -158,7 +158,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     }
 
     /**
-     * Get the user's date format preference with fallback to global setting
+     * Get the user's date format preference with fallback to global setting.
      *
      * @return string
      */
@@ -181,7 +181,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     }
 
     /**
-     * Get the user's time format preference with fallback to global setting
+     * Get the user's time format preference with fallback to global setting.
      *
      * @return string
      */
@@ -204,7 +204,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     }
 
     /**
-     * Get the user's theme mode preference with fallback to global setting
+     * Get the user's theme mode preference with fallback to global setting.
      *
      * @return string
      */
@@ -227,7 +227,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     }
 
     /**
-     * Get the user's language preference with fallback to global setting
+     * Get the user's language preference with fallback to global setting.
      *
      * @return string
      */
@@ -316,6 +316,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
      * Check if user has a specific social provider linked.
      *
      * @param string $provider
+     *
      * @return bool
      */
     public function hasSocialProvider($provider)

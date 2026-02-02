@@ -147,9 +147,9 @@ Route::get('/common/items', [App\Http\Controllers\CommonController::class, 'getI
 // Cache test route
 Route::get('/cache-test', function () {
     return response()->json([
-        'cache_enabled' => \App\Models\Setting::isCacheEnabled(),
+        'cache_enabled'  => \App\Models\Setting::isCacheEnabled(),
         'cache_lifetime' => \App\Models\Setting::getCacheLifetime(),
-        'time' => now()->toDateTimeString(),
+        'time'           => now()->toDateTimeString(),
     ]);
 })->middleware('cache.control');
 
@@ -195,9 +195,9 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api.key', 'api.rate']], functi
     // Example: Get current user info via API key
     Route::get('/me', function (Request $request) {
         return response()->json([
-            'user' => $request->user()->only(['id', 'name', 'username', 'email']),
+            'user'    => $request->user()->only(['id', 'name', 'username', 'email']),
             'api_key' => [
-                'id' => $request->attributes->get('api_key')->id,
+                'id'   => $request->attributes->get('api_key')->id,
                 'name' => $request->attributes->get('api_key')->name,
             ],
         ]);

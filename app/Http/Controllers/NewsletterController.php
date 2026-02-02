@@ -17,7 +17,7 @@ class NewsletterController extends Controller
     }
 
     /**
-     * Subscribe to newsletter
+     * Subscribe to newsletter.
      */
     public function subscribe(Request $request): JsonResponse
     {
@@ -28,7 +28,7 @@ class NewsletterController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Invalid email address',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 

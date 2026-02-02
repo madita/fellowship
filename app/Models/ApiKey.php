@@ -21,10 +21,10 @@ class ApiKey extends Model
     ];
 
     protected $casts = [
-        'abilities' => 'array',
-        'last_used_at' => 'datetime',
-        'expires_at' => 'datetime',
-        'is_active' => 'boolean',
+        'abilities'     => 'array',
+        'last_used_at'  => 'datetime',
+        'expires_at'    => 'datetime',
+        'is_active'     => 'boolean',
         'request_count' => 'integer',
     ];
 
@@ -33,7 +33,7 @@ class ApiKey extends Model
     ];
 
     /**
-     * Get the user that owns the API key
+     * Get the user that owns the API key.
      */
     public function user(): BelongsTo
     {
@@ -41,22 +41,22 @@ class ApiKey extends Model
     }
 
     /**
-     * Generate a new API key pair
+     * Generate a new API key pair.
      */
     public static function generateKeyPair(): array
     {
-        $key = 'fk_' . Str::random(32); // fk = fellowship key
+        $key = 'fk_'.Str::random(32); // fk = fellowship key
         $secret = Str::random(48);
 
         return [
-            'key' => $key,
-            'secret' => $secret,
+            'key'         => $key,
+            'secret'      => $secret,
             'secret_hash' => hash('sha256', $secret),
         ];
     }
 
     /**
-     * Verify the secret against the stored hash
+     * Verify the secret against the stored hash.
      */
     public function verifySecret(string $secret): bool
     {
@@ -64,7 +64,7 @@ class ApiKey extends Model
     }
 
     /**
-     * Check if the API key is valid (active and not expired)
+     * Check if the API key is valid (active and not expired).
      */
     public function isValid(): bool
     {
@@ -80,7 +80,7 @@ class ApiKey extends Model
     }
 
     /**
-     * Check if the API key has a specific ability
+     * Check if the API key has a specific ability.
      */
     public function hasAbility(string $ability): bool
     {
@@ -96,7 +96,7 @@ class ApiKey extends Model
     }
 
     /**
-     * Record usage of the API key
+     * Record usage of the API key.
      */
     public function recordUsage(): void
     {
@@ -105,7 +105,7 @@ class ApiKey extends Model
     }
 
     /**
-     * Scope to get only active keys
+     * Scope to get only active keys.
      */
     public function scopeActive($query)
     {
@@ -117,7 +117,7 @@ class ApiKey extends Model
     }
 
     /**
-     * Find an API key by its key string
+     * Find an API key by its key string.
      */
     public static function findByKey(string $key): ?self
     {

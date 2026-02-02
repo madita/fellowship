@@ -2,13 +2,13 @@
 
 namespace App\Models\Tag;
 
+use App\Traits\HasCache;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-use App\Traits\HasCache;
 
 /**
  * Class Term.

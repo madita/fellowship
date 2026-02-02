@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Cache;
 class CacheService
 {
     /**
-     * Cache tags for different content types
+     * Cache tags for different content types.
      */
     public const TAG_SETTINGS = 'settings';
     public const TAG_PAGES = 'pages';
@@ -19,7 +19,7 @@ class CacheService
     public const TAG_USERS = 'users';
 
     /**
-     * Check if caching is enabled
+     * Check if caching is enabled.
      */
     public static function isEnabled(): bool
     {
@@ -27,7 +27,7 @@ class CacheService
     }
 
     /**
-     * Get cache lifetime in seconds
+     * Get cache lifetime in seconds.
      */
     public static function getLifetime(): int
     {
@@ -35,7 +35,7 @@ class CacheService
     }
 
     /**
-     * Remember a value in cache (respects cache settings)
+     * Remember a value in cache (respects cache settings).
      */
     public static function remember(string $key, \Closure $callback, ?int $ttl = null, array $tags = [])
     {
@@ -54,7 +54,7 @@ class CacheService
     }
 
     /**
-     * Store a value in cache
+     * Store a value in cache.
      */
     public static function put(string $key, $value, ?int $ttl = null, array $tags = []): void
     {
@@ -72,7 +72,7 @@ class CacheService
     }
 
     /**
-     * Get a value from cache
+     * Get a value from cache.
      */
     public static function get(string $key, $default = null, array $tags = [])
     {
@@ -88,7 +88,7 @@ class CacheService
     }
 
     /**
-     * Forget a specific cache key
+     * Forget a specific cache key.
      */
     public static function forget(string $key, array $tags = []): void
     {
@@ -100,7 +100,7 @@ class CacheService
     }
 
     /**
-     * Flush cache by tag
+     * Flush cache by tag.
      */
     public static function flushTag(string $tag): void
     {
@@ -110,7 +110,7 @@ class CacheService
     }
 
     /**
-     * Flush multiple tags
+     * Flush multiple tags.
      */
     public static function flushTags(array $tags): void
     {
@@ -120,7 +120,7 @@ class CacheService
     }
 
     /**
-     * Flush all application cache
+     * Flush all application cache.
      */
     public static function flushAll(): void
     {
@@ -130,7 +130,7 @@ class CacheService
     }
 
     /**
-     * Check if cache driver supports tags
+     * Check if cache driver supports tags.
      */
     public static function supportsTags(): bool
     {
@@ -142,22 +142,23 @@ class CacheService
     }
 
     /**
-     * Generate a cache key for a model
+     * Generate a cache key for a model.
      */
     public static function modelKey(string $model, $id): string
     {
-        return strtolower($model) . ':' . $id;
+        return strtolower($model).':'.$id;
     }
 
     /**
-     * Generate a cache key for a list/collection
+     * Generate a cache key for a list/collection.
      */
     public static function listKey(string $model, array $params = []): string
     {
-        $key = strtolower($model) . ':list';
+        $key = strtolower($model).':list';
         if (!empty($params)) {
-            $key .= ':' . md5(serialize($params));
+            $key .= ':'.md5(serialize($params));
         }
+
         return $key;
     }
 }
