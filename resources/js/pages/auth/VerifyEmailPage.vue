@@ -9,7 +9,7 @@
         <v-alert v-if="message" type="success">
             {{ message }}
         </v-alert>
-        <v-card class="pa-2">
+        <v-card class="pa-2" elevation="4">
             <h1>Please verify the email</h1>
             <div class="mb-6 overline">Please check your email for the link to verify the email.</div>
 

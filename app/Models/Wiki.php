@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\HasCache;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
 
 class Wiki extends Model
 {
     use Sluggable;
+    use HasCache;
 
     protected $table = 'wikiables';
+    protected $cacheTag = 'wikiables';
 //    protected $guard_name = 'api';
 
     /**

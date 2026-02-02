@@ -1,5 +1,5 @@
 <template>
-    <v-container fluid>
+    <v-container fluid class="chat-container">
         <v-row>
             <div class="left-part" v-if="1">
                  <perfect-scrollbar style="height: calc(100vh - 290px)">
@@ -184,6 +184,11 @@ export default {
 
 <style lang="scss">
 /* Styles for chat layout */
+.chat-container {
+    background: rgb(var(--v-theme-surface)) !important;
+    min-height: calc(100vh - 64px);
+}
+
 .mainbox {
     position: relative;
     overflow: hidden;
@@ -194,11 +199,13 @@ left-part {
     min-height: 500px;
     transition: 0.1s ease-in;
     flex-shrink: 0;
+    background: rgb(var(--v-theme-surface)) !important;
 }
 .right-part {
     width: 100%;
     min-height: 500px;
     position: relative;
+    background: rgb(var(--v-theme-surface)) !important;
 }
 .rightpartHeight {
     height: 530px;
@@ -213,6 +220,7 @@ left-part {
     border-left: 1px solid rgb(var(--v-theme-borderColor));
     transition: 0.1s ease-in;
     flex-shrink: 0;
+    background: rgb(var(--v-theme-surface)) !important;
 }
 
 .shadow-none .v-field--no-label {

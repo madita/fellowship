@@ -2,6 +2,7 @@
 
 namespace App\Models\Tag;
 
+use App\Traits\HasCache;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,7 @@ class Term extends Model
 {
     use Sluggable;
     use SoftDeletes;
+    use HasCache;
 
     /** @inheritdoc */
     protected $fillable = [

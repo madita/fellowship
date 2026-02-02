@@ -224,7 +224,7 @@
                         </template>
 
                         <template v-slot:item.created_at="{ item }">
-                            {{ new Date(item.created_at).toLocaleString() }}
+                            {{ $formatDate(item.created_at, 'Y-m-d H:i') }}
                         </template>
 
                         <template #actions="{ item }">

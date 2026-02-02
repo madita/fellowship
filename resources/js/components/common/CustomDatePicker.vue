@@ -4,23 +4,23 @@
             <div class="v-input__slot">
                 <label :for="id" class="v-label" :class="{ 'v-label--active': isFocused || localModelValue }">{{ label }}</label>
                 <VueDatePicker
-                    locale="de"
+                    :locale="userLocale"
                     :id="id"
                     v-model="localModelValue"
                     :class="{'v-input--error':localError}"
                     :enable-time-picker="!localAllDay"
-                    :timezone="tz"
+                    :timezone="userTimezone"
                     :min-date="minDate"
                     :max-date="maxDate"
                     :minutes-increment="15"
                     :hours-increment="1"
+                    :is-24="is24HourFormat"
                     :must-show-time-select="!localAllDay"
                     time-picker-inline
                     :format="dateFormat"
                     :preview-format="dateFormat"
                     @focus="isFocused = true"
                     @blur="isFocused = false"
-                    utc
                     auto-apply
                     @update:model-value="handleModelUpdate"
                     class="v-text-field__slot"
@@ -41,6 +41,12 @@
 import {ref, computed, watch} from 'vue';
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
+import { useUserStore } from '@/store/userStore.js';
+import { useSettingsStore } from '@/store/settingStore.js';
+
+// Stores for user preferences
+const userStore = useUserStore();
+const settingsStore = useSettingsStore();
 
 const props = defineProps({
     modelValue: [Date, String],
@@ -49,15 +55,15 @@ const props = defineProps({
     allDay: Boolean,
     error: Boolean,
     errorMessages: Array,
-    minDate: [Date, String], // Add this prop to pass minimum date from parent
-    maxDate: [Date, String], // Add this prop to pass maximum date from parent
+    minDate: [Date, String],
+    maxDate: [Date, String],
     isEndDate: {
         type: Boolean,
         default: false
     },
     format: {
         type: String,
-        default: 'dd.MM.yyyy' // German format by default
+        default: null // Will use user preference if not specified
     }
 });
 
@@ -67,45 +73,55 @@ const localModelValue = ref(props.modelValue);
 const localError = ref(props.error);
 const localAllDay = ref(props.allDay);
 
-// Date format for the picker (German format: dd.MM.yyyy)
-const dateFormat = computed(() => {
-    return localAllDay.value ? props.format : `${props.format} HH:mm`;
+// User timezone preference
+const userTimezone = computed(() => {
+    return userStore.user?.timezone || settingsStore.appSettings?.default_timezone || 'UTC';
 });
 
-const timezone = ref({ timezone: undefined })
-const selectedTz = ref(12);
+// User locale preference
+const userLocale = computed(() => {
+    const lang = userStore.user?.language || settingsStore.appSettings?.default_language || 'en';
+    const localeMap = {
+        'en': 'en-US',
+        'de': 'de-DE',
+        'es': 'es-ES',
+        'fr': 'fr-FR',
+    };
+    return localeMap[lang] || 'en-US';
+});
 
-const timezones = [
-    { tz: 'Pacific/Midway', offset: -11 },
-    { tz: 'America/Adak', offset: -10 },
-    { tz: 'Pacific/Gambier', offset: -9 },
-    { tz: 'America/Los_Angeles', offset: -8 },
-    { tz: 'America/Denver', offset: -7 },
-    { tz: 'America/Chicago', offset: -6 },
-    { tz: 'America/New_York', offset: -5 },
-    { tz: 'America/Santiago', offset: -4 },
-    { tz: 'America/Sao_Paulo', offset: -3 },
-    { tz: 'America/Noronha', offset: -2 },
-    { tz: 'Atlantic/Cape_Verde', offset: -1 },
-    { tz: 'UTC', offset: 0 },
-    { tz: 'Europe/Berlin', offset: 3 },
-    { tz: 'Europe/Brussels', offset: 1 },
-    { tz: 'Africa/Cairo', offset: 2 },
-    { tz: 'Europe/Minsk', offset: 3 },
-    { tz: 'Europe/Moscow', offset: 4 },
-    { tz: 'Asia/Tashkent', offset: 5 },
-    { tz: 'Asia/Dhaka', offset: 6 },
-    { tz: 'Asia/Novosibirsk', offset: 7 },
-    { tz: 'Australia/Perth', offset: 8 },
-    { tz: 'Asia/Tokyo', offset: 9 },
-    { tz: 'Australia/Hobart', offset: 10 },
-    { tz: 'Asia/Vladivostok', offset: 11 },
-];
+// User date format preference
+const userDateFormatPHP = computed(() => {
+    return userStore.user?.date_format || settingsStore.appSettings?.date_format || 'Y-m-d';
+});
 
-const activeTz = computed(() => timezones[selectedTz.value]);
+// User time format preference
+const userTimeFormat = computed(() => {
+    return userStore.user?.time_format || settingsStore.appSettings?.time_format || 'H:i:s';
+});
 
-const tz = computed(() => {
-    return { ...timezone.value, timezone: activeTz.value.tz };
+// Check if 24-hour format (PHP 'H' = 24h, 'h' = 12h)
+const is24HourFormat = computed(() => {
+    return userTimeFormat.value.includes('H');
+});
+
+// Convert PHP date format to vue-datepicker format
+const userDateFormatPicker = computed(() => {
+    const phpFormat = userDateFormatPHP.value;
+    const formatMap = {
+        'Y-m-d': 'yyyy-MM-dd',
+        'd/m/Y': 'dd/MM/yyyy',
+        'm/d/Y': 'MM/dd/yyyy',
+        'd.m.Y': 'dd.MM.yyyy',
+    };
+    return formatMap[phpFormat] || 'yyyy-MM-dd';
+});
+
+// Date format for the picker - use prop if provided, otherwise user preference
+const dateFormat = computed(() => {
+    const baseFormat = props.format || userDateFormatPicker.value;
+    const timeFormat = is24HourFormat.value ? 'HH:mm' : 'hh:mm a';
+    return localAllDay.value ? baseFormat : `${baseFormat} ${timeFormat}`;
 });
 
 // Handle model update

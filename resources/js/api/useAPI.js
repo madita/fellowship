@@ -22,9 +22,12 @@ export const useApi = (endpoint = 'api') => {
         baseURL,
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         withCredentials: true,
+        // Explicitly configure XSRF token handling
+        xsrfCookieName: 'XSRF-TOKEN',
+        xsrfHeaderName: 'X-XSRF-TOKEN',
     })
 
-    axiosInstance.interceptors.request.use( middlewareCSRF, err => Promise.reject(err))
+    axiosInstance.interceptors.request.use(middlewareCSRF, err => Promise.reject(err))
 
     axiosInstance.interceptors.response.use(resp => resp, middleware401)
 

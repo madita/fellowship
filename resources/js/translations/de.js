@@ -110,7 +110,8 @@ export default {
     'orsign': 'Oder melden Sie sich an mit',
     'agree': 'Mit Ihrer Anmeldung stimmen Sie dem zu',
     'account': 'Sie haben bereits ein Konto?',
-    'signin': 'Anmelden'
+    'signin': 'Anmelden',
+    'ageConfirmation': 'Ich bestätige, dass ich mindestens {age} Jahre alt bin'
   },
   'utility': {
     'maintenance': 'In Wartung'
@@ -148,12 +149,21 @@ export default {
     'continue': 'Mit dem Einkaufen fortfahren',
     'checkout': 'Auschecken'
   },
+  'toolbar': {
+    'users': 'Benutzer',
+    'settings': 'Einstellungen'
+  },
+  'auth': {
+    'signin': 'Anmelden',
+    'signup': 'Registrieren'
+  },
   'menu': {
     'main': 'Hauptmenü',
     'search': 'Suchen (drücken Sie \'Strg + /\', um zu fokussieren)',
     'dashboard': 'Instrumententafel',
     'logout': 'Ausloggen',
     'profile': 'Profil',
+    'settings': 'Einstellungen',
      'wiki': 'Wiki',
     'blank': 'Leere Seite',
     'pages': 'Seiten',
@@ -200,6 +210,7 @@ export default {
     'adminTaxonomie': 'Taxonomie',
     'adminTerms': 'Begriffe',
     'adminAnnouncement': 'Verkündung',
+    'adminSettings': 'Einstellungen',
     'adminEvents': 'Termine'
   },
   '$vuetify': {

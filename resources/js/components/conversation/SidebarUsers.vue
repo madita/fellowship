@@ -17,6 +17,9 @@
         <v-btn icon variant="text" size="small" @click="collapsed = !collapsed">
           <v-icon>{{ collapsed ? 'mdi-chevron-down' : 'mdi-chevron-up' }}</v-icon>
         </v-btn>
+        <v-btn icon variant="text" size="small" @click="$emit('close')">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
       </div>
     </v-card-title>
 
@@ -195,6 +198,8 @@ import { useConversationsStore } from '@/store/conversationsStore.js'
 import { useOnlineUsers } from '@/composables/conversation/useOnlineUsers'
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import axios from 'axios'
+
+const emit = defineEmits(['close'])
 
 const allUsers = ref([])
 const collapsed = ref(false)

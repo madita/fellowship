@@ -3,6 +3,7 @@
 namespace App\Models\Tag;
 
 use App\Models\Page;
+use App\Traits\HasCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,6 +23,7 @@ class Taxonomy extends Model
      * @inheritdoc
      */
     use SoftDeletes;
+    use HasCache;
 
     /** @inheritdoc */
     protected $fillable = [

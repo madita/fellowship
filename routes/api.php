@@ -2,7 +2,6 @@
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 
@@ -18,10 +17,19 @@ use Illuminate\Support\Facades\Route;
 */
 //Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
-Route::resource('wiki', "\App\Http\Controllers\WikiController");
+// Public cacheable routes
+Route::middleware(['cache.control'])->group(function () {
+    Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['index', 'show']);
+    Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
+});
+
+// Wiki write operations (not cached)
+Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['store', 'update', 'destroy']);
 Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
 Route::patch('wiki/category/{slug}', "\App\Http\Controllers\WikiController@updateCategory");
-Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
+
+// Public OAuth Providers endpoint (for login page)
+Route::get('/settings/oauth-providers', 'App\Http\Controllers\Admin\SettingsController@getEnabledOAuthProviders');
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     $user = $request->user();
@@ -42,6 +50,15 @@ Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 
     Route::get('/notification/markasread/{id}', 'App\Http\Controllers\NotificationController@notificationsingleread');
 
     Route::post('/avatar', 'App\Http\Controllers\UserController@uploadAvatar');
+    Route::patch('/preferences', 'App\Http\Controllers\UserController@updatePreferences');
+
+    // Social Account Management
+    Route::get('/social-accounts', [\App\Http\Controllers\SocialAccountController::class, 'index'])
+        ->name('social-accounts.index');
+    Route::delete('/social-accounts/{provider}', [\App\Http\Controllers\SocialAccountController::class, 'disconnect'])
+        ->name('social-accounts.disconnect');
+    Route::get('/social-accounts/{provider}/link', [\App\Http\Controllers\SocialAccountController::class, 'link'])
+        ->name('social-accounts.link');
 });
 
 Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function () {
@@ -126,6 +143,128 @@ Route::post('/relate-models', [App\Http\Controllers\RelateableController::class,
 Route::post('/related-items', [App\Http\Controllers\RelateableController::class, 'getRelatedItems']);
 
 Route::get('/common/items', [App\Http\Controllers\CommonController::class, 'getItems']);
+
+// Cache test route
+Route::get('/cache-test', function () {
+    return response()->json([
+        'cache_enabled'  => \App\Models\Setting::isCacheEnabled(),
+        'cache_lifetime' => \App\Models\Setting::getCacheLifetime(),
+        'time'           => now()->toDateTimeString(),
+    ]);
+})->middleware('cache.control');
+
+// Public cacheable routes (settings, homepage, footer)
+Route::middleware(['cache.control'])->group(function () {
+    // Public Settings
+    Route::get('/settings/public', 'App\Http\Controllers\Admin\SettingsController@public');
+    Route::get('/settings/performance', 'App\Http\Controllers\Admin\SettingsController@performanceSettings');
+
+    // Homepage
+    Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@getActiveWidgets');
+    Route::get('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@getActiveMenu');
+    Route::get('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@getActiveSections');
+
+    // Footer
+    Route::get('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@getActiveWidgets');
+    Route::get('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@getActiveSections');
+});
+
+// Newsletter Subscription
+Route::post('/newsletter/subscribe', 'App\Http\Controllers\NewsletterController@subscribe');
+
+// API Keys Management (for users to manage their own API keys)
+Route::group(['prefix' => 'api-keys', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('/status', 'App\Http\Controllers\Api\ApiKeyController@status');
+    Route::get('/', 'App\Http\Controllers\Api\ApiKeyController@index');
+    Route::post('/', 'App\Http\Controllers\Api\ApiKeyController@store');
+    Route::get('/{id}', 'App\Http\Controllers\Api\ApiKeyController@show');
+    Route::patch('/{id}', 'App\Http\Controllers\Api\ApiKeyController@update');
+    Route::delete('/{id}', 'App\Http\Controllers\Api\ApiKeyController@destroy');
+    Route::post('/{id}/regenerate', 'App\Http\Controllers\Api\ApiKeyController@regenerate');
+});
+
+// Account Deletion (GDPR Right to be Forgotten)
+Route::group(['prefix' => 'account', 'middleware' => ['auth:sanctum']], function () {
+    Route::get('/deletion/status', 'App\Http\Controllers\Api\AccountDeletionController@status');
+    Route::get('/export-data', 'App\Http\Controllers\Api\AccountDeletionController@exportData');
+    Route::post('/delete', 'App\Http\Controllers\Api\AccountDeletionController@requestDeletion');
+});
+
+// External API Routes (authenticated via API key with dynamic rate limiting)
+Route::group(['prefix' => 'v1', 'middleware' => ['api.key', 'api.rate']], function () {
+    // Example: Get current user info via API key
+    Route::get('/me', function (Request $request) {
+        return response()->json([
+            'user'    => $request->user()->only(['id', 'name', 'username', 'email']),
+            'api_key' => [
+                'id'   => $request->attributes->get('api_key')->id,
+                'name' => $request->attributes->get('api_key')->name,
+            ],
+        ]);
+    });
+
+    // Add more external API endpoints here as needed
+    // These endpoints are accessible via API key authentication
+});
+
+// Admin Settings Routes
+Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
+    // Settings
+    Route::get('/settings', 'App\Http\Controllers\Admin\SettingsController@index');
+    Route::post('/settings', 'App\Http\Controllers\Admin\SettingsController@update');
+    Route::get('/settings/server-info', 'App\Http\Controllers\Admin\SettingsController@serverInfo');
+    Route::post('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@uploadLogo');
+    Route::delete('/settings/logo', 'App\Http\Controllers\Admin\SettingsController@deleteLogo');
+    Route::post('/settings/image', 'App\Http\Controllers\Admin\SettingsController@uploadImage');
+    Route::delete('/settings/image', 'App\Http\Controllers\Admin\SettingsController@deleteImage');
+    Route::post('/settings/test-email', 'App\Http\Controllers\Admin\SettingsController@testEmail');
+    Route::get('/settings/cache-status', 'App\Http\Controllers\Admin\SettingsController@cacheStatus');
+    Route::post('/settings/clear-cache', 'App\Http\Controllers\Admin\SettingsController@clearCache');
+
+    // Homepage Widgets
+    Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@index');
+    Route::post('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@store');
+    Route::patch('/homepage/widgets/{id}', 'App\Http\Controllers\Admin\HomepageWidgetController@update');
+    Route::delete('/homepage/widgets/{id}', 'App\Http\Controllers\Admin\HomepageWidgetController@destroy');
+    Route::post('/homepage/widgets/reorder', 'App\Http\Controllers\Admin\HomepageWidgetController@updateOrder');
+    Route::post('/homepage/widgets/{id}/toggle', 'App\Http\Controllers\Admin\HomepageWidgetController@toggle');
+    Route::post('/homepage/widgets/{id}/duplicate', 'App\Http\Controllers\Admin\HomepageWidgetController@duplicate');
+
+    // Homepage Menu
+    Route::get('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@index');
+    Route::post('/homepage/menu', 'App\Http\Controllers\Admin\HomepageMenuController@store');
+    Route::patch('/homepage/menu/{id}', 'App\Http\Controllers\Admin\HomepageMenuController@update');
+    Route::delete('/homepage/menu/{id}', 'App\Http\Controllers\Admin\HomepageMenuController@destroy');
+    Route::post('/homepage/menu/reorder', 'App\Http\Controllers\Admin\HomepageMenuController@updateOrder');
+
+    // Homepage Sections
+    Route::get('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@index');
+    Route::post('/homepage/sections', 'App\Http\Controllers\Admin\HomepageSectionController@store');
+    Route::patch('/homepage/sections/{id}', 'App\Http\Controllers\Admin\HomepageSectionController@update');
+    Route::delete('/homepage/sections/{id}', 'App\Http\Controllers\Admin\HomepageSectionController@destroy');
+    Route::post('/homepage/sections/reorder', 'App\Http\Controllers\Admin\HomepageSectionController@updateOrder');
+    Route::post('/homepage/sections/{id}/toggle', 'App\Http\Controllers\Admin\HomepageSectionController@toggle');
+
+    // Homepage Image Upload
+    Route::post('/homepage/upload-image', 'App\Http\Controllers\Admin\HomepageImageController@upload');
+    Route::delete('/homepage/delete-image', 'App\Http\Controllers\Admin\HomepageImageController@delete');
+
+    // Footer Widgets
+    Route::get('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@index');
+    Route::post('/footer/widgets', 'App\Http\Controllers\Admin\FooterWidgetController@store');
+    Route::patch('/footer/widgets/{id}', 'App\Http\Controllers\Admin\FooterWidgetController@update');
+    Route::delete('/footer/widgets/{id}', 'App\Http\Controllers\Admin\FooterWidgetController@destroy');
+    Route::post('/footer/widgets/reorder', 'App\Http\Controllers\Admin\FooterWidgetController@updateOrder');
+    Route::post('/footer/widgets/{id}/toggle', 'App\Http\Controllers\Admin\FooterWidgetController@toggle');
+
+    // Footer Sections
+    Route::get('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@index');
+    Route::post('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@store');
+    Route::patch('/footer/sections/{id}', 'App\Http\Controllers\Admin\FooterSectionController@update');
+    Route::delete('/footer/sections/{id}', 'App\Http\Controllers\Admin\FooterSectionController@destroy');
+    Route::post('/footer/sections/reorder', 'App\Http\Controllers\Admin\FooterSectionController@updateOrder');
+    Route::post('/footer/sections/{id}/toggle', 'App\Http\Controllers\Admin\FooterSectionController@toggle');
+});
 
 Route::post('/login', function (Request $request) {
     $data = $request->validate([

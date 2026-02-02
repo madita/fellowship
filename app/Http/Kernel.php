@@ -3,7 +3,9 @@
 namespace App\Http;
 
 use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\ConditionalStartSession;
 use App\Http\Middleware\EncryptCookies;
+use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\TrimStrings;
@@ -22,7 +24,6 @@ use Illuminate\Http\Middleware\SetCacheHeaders;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Routing\Middleware\ValidateSignature;
-use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use Spatie\Permission\Middlewares\PermissionMiddleware;
@@ -47,6 +48,7 @@ class Kernel extends HttpKernel
         ValidatePostSize::class,
         TrimStrings::class,
         ConvertEmptyStringsToNull::class,
+        // CacheControl moved to route middleware 'cache.control' - use explicitly on routes that need caching
     ];
 
     /**
@@ -58,11 +60,12 @@ class Kernel extends HttpKernel
         'web' => [
             EncryptCookies::class,
             AddQueuedCookiesToResponse::class,
-            StartSession::class,
+            ConditionalStartSession::class,
             // \Illuminate\Session\Middleware\AuthenticateSession::class,
             ShareErrorsFromSession::class,
             VerifyCsrfToken::class,
             SubstituteBindings::class,
+            \App\Http\Middleware\LazyLoadingMiddleware::class,
         ],
 
         'api' => [
@@ -92,5 +95,10 @@ class Kernel extends HttpKernel
         'role'               => RoleMiddleware::class,
         'permission'         => PermissionMiddleware::class,
         'role_or_permission' => RoleOrPermissionMiddleware::class,
+        'admin'              => EnsureUserIsAdmin::class,
+        'cache.control'      => \App\Http\Middleware\CacheControl::class,
+        'api.key'            => \App\Http\Middleware\AuthenticateApiKey::class,
+        'api.rate'           => \App\Http\Middleware\DynamicRateLimit::class,
+        'lazy.loading'       => \App\Http\Middleware\LazyLoadingMiddleware::class,
     ];
 }

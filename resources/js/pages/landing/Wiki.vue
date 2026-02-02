@@ -298,6 +298,8 @@
 
 <script>
 import { useUserStore } from "@/store/userStore.js";
+import { formatDate as formatDateUtil } from '@/plugins/formatDate.js';
+import axios from 'axios';
 
 export default {
     name: 'WikiComponent',
@@ -309,8 +311,8 @@ export default {
             wikiable: [],
             response: {},
             searchText: "",
-            searchRequest: null,
             searchTimeout: null,
+            cancelToken: null,
         }
     },
     computed: {
@@ -326,8 +328,10 @@ export default {
         async getWikiPages() {
             try {
                 this.loading = true;
-                const response = await fetch(`/api/wiki?page=${this.page}&q=${this.searchText}`);
-                const data = await response.json();
+                const response = await axios.get(`/api/wiki`, {
+                    params: { page: this.page, q: this.searchText }
+                });
+                const data = response.data;
                 this.response = data;
 
                 if (this.page === 1) {
@@ -358,8 +362,8 @@ export default {
                 const query = this.searchText.trim();
 
                 // Cancel previous search request
-                if (this.searchRequest) {
-                    this.searchRequest.abort();
+                if (this.cancelToken) {
+                    this.cancelToken.cancel('New search initiated');
                 }
 
                 if (query === '') {
@@ -367,16 +371,12 @@ export default {
                     return;
                 }
 
-                // Make a new search request
-                const controller = new AbortController();
-                this.searchRequest = controller;
-
                 try {
                     this.searching = true;
-                    this.wikiable = await this.searchWithAbort(query, controller.signal);
+                    this.wikiable = await this.searchWithAbort(query);
                     this.page++;
                 } catch (err) {
-                    if (err.name !== 'AbortError') {
+                    if (!axios.isCancel(err)) {
                         console.error('Search error:', err);
                     }
                 } finally {
@@ -385,9 +385,15 @@ export default {
             }, 300); // 300ms debounce
         },
 
-        async searchWithAbort(query, signal) {
-            const response = await fetch(`/api/wiki?page=${this.page}&q=${query}`, { signal });
-            const data = await response.json();
+        async searchWithAbort(query) {
+            // Create new cancel token for this request
+            this.cancelToken = axios.CancelToken.source();
+
+            const response = await axios.get(`/api/wiki`, {
+                params: { page: this.page, q: query },
+                cancelToken: this.cancelToken.token
+            });
+            const data = response.data;
             this.response = data;
             return data.data;
         },
@@ -435,7 +441,7 @@ export default {
         async deletePage(id) {
             if (confirm('Are you sure you want to delete this page?')) {
                 try {
-                    await fetch(`/api/wiki/${id}`, { method: 'DELETE' });
+                    await axios.delete(`/api/wiki/${id}`);
                     this.wikiable = this.wikiable.filter(item => item.data.id !== id);
                     this.$emit('success', 'Page deleted successfully');
                 } catch (error) {
@@ -452,14 +458,8 @@ export default {
         },
 
         formatDate(dateString) {
-            // console.log('dateString',dateString)
             if (!dateString) return 'Unknown';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-            });
+            return formatDateUtil(dateString, 'M d, Y');
         }
     },
 
@@ -470,8 +470,8 @@ export default {
 
     beforeUnmount() {
         window.removeEventListener("scroll", this.handleScroll);
-        if (this.searchRequest) {
-            this.searchRequest.abort();
+        if (this.cancelToken) {
+            this.cancelToken.cancel('Component unmounted');
         }
         if (this.searchTimeout) {
             clearTimeout(this.searchTimeout);
@@ -483,17 +483,42 @@ export default {
 <style scoped>
 .wiki-container {
     min-height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
 }
 
 .wiki-header {
-    background: linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(156, 39, 176, 0.1) 100%);
+    background: rgba(var(--v-theme-primary), 0.1);
     padding: 32px 0;
     backdrop-filter: blur(10px);
 }
 
+/* Light mode header gradient */
+.v-theme--light .wiki-header {
+    background: linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(156, 39, 176, 0.1) 100%);
+}
+
+/* Dark mode header */
+.v-theme--dark .wiki-header {
+    background: linear-gradient(135deg, rgba(77, 166, 199, 0.15) 0%, rgba(124, 169, 186, 0.15) 100%);
+}
+
 .wiki-title {
+    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Ensure text is visible in both modes */
+.v-theme--light .wiki-title {
     background: linear-gradient(135deg, #1976d2 0%, #9c27b0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.v-theme--dark .wiki-title {
+    background: linear-gradient(135deg, #4da6c7 0%, #7ca9ba 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -521,32 +546,33 @@ export default {
 
 .wiki-card {
     border-radius: 20px !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 4px 20px rgba(var(--v-theme-on-surface), 0.08) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
     backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
+    background-color: rgb(var(--v-theme-surface));
 }
 
 .wiki-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 12px 40px rgba(var(--v-theme-on-surface), 0.15) !important;
 }
 
 .featured-card {
-    background: linear-gradient(135deg, rgba(25, 118, 210, 0.05) 0%, rgba(156, 39, 176, 0.05) 100%);
-    border: 2px solid rgba(25, 118, 210, 0.2);
+    background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.05) 0%, rgba(var(--v-theme-secondary), 0.05) 100%);
+    border: 2px solid rgba(var(--v-theme-primary), 0.2);
 }
 
 .card-header {
-    background: rgba(255, 255, 255, 0.05);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(var(--v-theme-on-surface), 0.05);
+    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.1);
 }
 
 .card-avatar {
-    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+    box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.3);
 }
 
 .tags-container {
@@ -586,7 +612,7 @@ export default {
     border-radius: 12px !important;
     text-transform: none !important;
     font-weight: 600 !important;
-    box-shadow: 0 4px 16px rgba(25, 118, 210, 0.3) !important;
+    box-shadow: 0 4px 16px rgba(var(--v-theme-primary), 0.3) !important;
 }
 
 /* Button styling */

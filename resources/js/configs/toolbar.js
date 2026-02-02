@@ -10,6 +10,7 @@ export default {
 
   // user dropdown menu
   user: [
-    { icon: 'mdi-account-box-outline', key: 'menu.profile', text: 'Profile', link: '/users/edit' }
+    { icon: 'mdi-account-box-outline', key: 'menu.profile', text: 'Profile', link: '/users/edit' },
+    { icon: 'mdi-cog-outline', key: 'menu.settings', text: 'Settings', action: 'settings' }
   ]
 }

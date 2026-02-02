@@ -28,6 +28,9 @@
 <!--      {{ toast.message }}-->
 <!--      <v-btn v-if="toast.timeout === 0" color="white" text @click="toast.show = false">{{ $t('common.close') }}</v-btn>-->
 <!--    </v-snackbar>-->
+
+    <!-- GDPR Cookie Consent Banner -->
+    <CookieConsent ref="cookieConsent" />
   </v-app>
 </template>
 
@@ -42,6 +45,9 @@ import simpleLayout from './layouts/SimpleLayout.vue'
 import landingLayout from './layouts/LandingLayout.vue'
 import authLayout from './layouts/AuthLayout.vue'
 import errorLayout from './layouts/ErrorLayout.vue'
+
+// Components
+import CookieConsent from './components/common/CookieConsent.vue'
 // import { mapGetters } from 'vuex'
 
 
@@ -63,7 +69,8 @@ export default {
     simpleLayout,
     landingLayout,
     authLayout,
-    errorLayout
+    errorLayout,
+    CookieConsent
   },
   computed: {
       authenticated() {

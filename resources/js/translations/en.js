@@ -110,7 +110,8 @@ export default {
         orsign: 'Or sign up with',
         agree: 'By signing up, you agree to the',
         account: 'Already have an account?',
-        signin: 'Sign In'
+        signin: 'Sign In',
+        ageConfirmation: 'I confirm that I am at least {age} years old'
     },
     utility: {
         maintenance: 'In Maintenance'
@@ -148,12 +149,21 @@ export default {
         continue: 'Continue Shopping',
         checkout: 'Checkout'
     },
+    toolbar: {
+        users: 'Users',
+        settings: 'Settings'
+    },
+    auth: {
+        signin: 'Sign In',
+        signup: 'Sign Up'
+    },
     menu: {
         main: 'Main',
         search: 'Search (press "ctrl + /" to focus)',
         dashboard: 'Dashboard',
         logout: 'Logout',
         profile: 'Profile',
+        settings: 'Settings',
         wiki: 'Wiki',
         blank: 'Blank Page',
         pages: 'Pages',
@@ -201,6 +211,7 @@ export default {
         adminTaxonomie: 'Taxonomie',
         adminTerms: 'Terms',
         adminAnnouncement: 'Announcement',
+        adminSettings: 'Settings',
         adminEvents: 'Event'
 
     },

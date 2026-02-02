@@ -121,6 +121,7 @@ export default {
 <style lang="scss">
 #messages {
     overflow-y: scroll;
+    background: rgb(var(--v-theme-surface)) !important;
 }
 .chat {
     &__messages {

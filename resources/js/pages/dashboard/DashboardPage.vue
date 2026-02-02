@@ -923,7 +923,7 @@ export default {
 .dashboard-container {
     padding: 24px;
     min-height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ea 100%);
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
 }
 
 .dashboard-header {
@@ -974,14 +974,30 @@ export default {
 
 .widget-card {
     border-radius: 16px !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
+    background-color: rgb(var(--v-theme-surface));
 }
 
-.widget-card:hover {
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
+/* Light theme widget cards */
+.v-theme--light .widget-card {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.v-theme--light .widget-card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+    transform: translateY(-2px);
+}
+
+/* Dark theme widget cards */
+.v-theme--dark .widget-card {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.v-theme--dark .widget-card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6) !important;
     transform: translateY(-2px);
 }
 
@@ -994,9 +1010,16 @@ export default {
 
 .widget-card.dragging {
     transform: rotate(2deg) scale(1.05);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3) !important;
     z-index: 1000;
     opacity: 0.8;
+}
+
+.v-theme--light .widget-card.dragging {
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2) !important;
+}
+
+.v-theme--dark .widget-card.dragging {
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7) !important;
 }
 
 .widget-dragging {
@@ -1005,8 +1028,16 @@ export default {
 
 .widget-header {
     cursor: grab;
-    background: rgba(255, 255, 255, 0.05);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.v-theme--light .widget-header {
+    background: rgba(0, 0, 0, 0.02);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.v-theme--dark .widget-header {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .widget-header:active {
@@ -1026,7 +1057,14 @@ export default {
 
 .widget-preview:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+.v-theme--light .widget-preview:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12) !important;
+}
+
+.v-theme--dark .widget-preview:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5) !important;
 }
 
 .drag-handle {
@@ -1102,18 +1140,32 @@ export default {
     width: 4px;
 }
 
-.widget-content::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+.v-theme--light .widget-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 2px;
 }
 
-.widget-content::-webkit-scrollbar-thumb {
+.v-theme--light .widget-content::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+}
+
+.v-theme--light .widget-content::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.3);
+}
+
+.v-theme--dark .widget-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 2px;
 }
 
-.widget-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.5);
+.v-theme--dark .widget-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+.v-theme--dark .widget-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 /* Button styling */
@@ -1126,14 +1178,28 @@ export default {
 /* Dialog styling */
 .v-dialog .v-card {
     border-radius: 20px !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+}
+
+.v-theme--light .v-dialog .v-card {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
+}
+
+.v-theme--dark .v-dialog .v-card {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
 }
 
 /* Color picker styling */
 .v-color-picker {
     border-radius: 12px !important;
     box-shadow: none !important;
+}
+
+.v-theme--light .v-color-picker {
     border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.v-theme--dark .v-color-picker {
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 </style>

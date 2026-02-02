@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 import { useApi } from '@/api/useAPI.js'
+import { debug } from '@/utils/debug.js'
 
+const log = debug.module('UserStore')
 const api = useApi()
+const web = useApi('web')
 
 export const useUserStore = defineStore('user', {
     state: () => {
@@ -16,7 +19,7 @@ export const useUserStore = defineStore('user', {
         try {
             return savedState ? JSON.parse(savedState) : defaultState
         } catch (error) {
-            console.warn('Failed to parse USER_INFO from localStorage:', error)
+            // Silent fail - corrupted localStorage data
             localStorage.removeItem('USER_INFO')
             return defaultState
         }
@@ -43,7 +46,12 @@ export const useUserStore = defineStore('user', {
         hasPermission: (state) => (permissionName) => {
             if (!state.permissions || !Array.isArray(state.permissions)) return false
             return state.permissions.some(permission => permission.name === permissionName)
-        }
+        },
+
+        // User preference getters
+        userTimezone: (state) => state.user?.timezone || null,
+        userDateFormat: (state) => state.user?.date_format || null,
+        userTimeFormat: (state) => state.user?.time_format || null,
     },
 
     actions: {
@@ -57,7 +65,7 @@ export const useUserStore = defineStore('user', {
                 }
                 localStorage.setItem('USER_INFO', JSON.stringify(stateToSave))
             } catch (error) {
-                console.error('Failed to save USER_INFO to localStorage:', error)
+                log.error('Failed to save USER_INFO to localStorage:', error)
             }
         },
 
@@ -90,9 +98,9 @@ export const useUserStore = defineStore('user', {
         // Get CSRF token
         async getToken() {
             try {
-                await api.get('/sanctum/csrf-cookie')
+                await web.get('/sanctum/csrf-cookie')
             } catch (error) {
-                console.error('Failed to get CSRF token:', error)
+                log.error('Failed to get CSRF token:', error)
                 throw error
             }
         },
@@ -109,10 +117,10 @@ export const useUserStore = defineStore('user', {
                     permissions: userInfo.permissions || null
                 })
 
-                console.log('User info stored:', userInfo)
+                log.log('User info stored:', userInfo)
                 return userInfo
             } catch (error) {
-                console.error('Failed to fetch user info:', error)
+                log.error('Failed to fetch user info:', error)
                 // Clear state on failure
                 this.clearState()
                 throw error
@@ -142,6 +150,22 @@ export const useUserStore = defineStore('user', {
             return this.hasPermission(permissionName)
         },
 
+        // Update user preferences (timezone, date_format, time_format)
+        async updatePreferences(preferences) {
+            try {
+                const { data } = await api.patch('/account/preferences', preferences)
+
+                // Refresh the full user data from the server to get updated values
+                // This ensures we have the complete user object with all computed attributes
+                await this.refreshUserInfo()
+
+                return data
+            } catch (error) {
+                log.error('Failed to update preferences:', error)
+                throw error
+            }
+        },
+
         // Method to initialize user data (useful for app startup)
         async initializeUser() {
             // If we have user data in state, verify it's still valid
@@ -150,7 +174,7 @@ export const useUserStore = defineStore('user', {
                     await this.refreshUserInfo()
                     return true
                 } catch (error) {
-                    console.warn('User data validation failed:', error)
+                    log.warn('User data validation failed:', error)
                     this.clearState()
                     return false
                 }

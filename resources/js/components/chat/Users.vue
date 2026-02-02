@@ -129,8 +129,8 @@ export default {
 
 <style lang="scss">
 .users {
-    background-color: #fff;
-    border: 1px solid #d3e0e9;
+    background: rgb(var(--v-theme-surface)) !important;
+    border: 1px solid rgb(var(--v-border-color));
     border-radius: 3px;
 
     &__header {

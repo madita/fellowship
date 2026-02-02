@@ -2,13 +2,17 @@
 
 namespace App\Models\Tag;
 
+use App\Traits\HasCache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Taxable extends Model
 {
+    use HasCache;
+
     protected $table = 'taxables';
+    protected $cacheTag = 'taxables';
     /**
      * @inheritdoc
      */

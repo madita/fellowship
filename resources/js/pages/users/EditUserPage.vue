@@ -41,7 +41,8 @@
         >
             <v-tab value="account">Account</v-tab>
             <v-tab value="info">Information</v-tab>
-
+            <v-tab value="social">Social Accounts</v-tab>
+            <v-tab value="api-keys">API Keys</v-tab>
         </v-tabs>
 
         <v-card>
@@ -55,6 +56,13 @@
                     <information-tab :user="user"></information-tab>
                 </v-window-item>
 
+                <v-window-item value="social">
+                    <social-accounts-tab :user="user"></social-accounts-tab>
+                </v-window-item>
+
+                <v-window-item value="api-keys">
+                    <api-keys-tab></api-keys-tab>
+                </v-window-item>
             </v-window>
         </v-card-text>
         </v-card>
@@ -69,12 +77,16 @@ import { useUserStore } from '@/store/userStore.js'
 import CopyLabel from '../../components/common/CopyLabel.vue';
 import AccountTab from './EditUser/AccountTab.vue';
 import InformationTab from './EditUser/InformationTab.vue';
+import SocialAccountsTab from './EditUser/SocialAccountsTab.vue';
+import ApiKeysTab from './EditUser/ApiKeysTab.vue';
 
 export default {
     components: {
         CopyLabel,
         AccountTab,
         InformationTab,
+        SocialAccountsTab,
+        ApiKeysTab,
     },
     setup() {
         const authStore = useAuthStore();

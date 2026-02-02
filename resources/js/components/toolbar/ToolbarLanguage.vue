@@ -4,16 +4,21 @@
     left
     transition="slide-y-transition"
   >
-<!--    <template v-slot:activator="{ probs }">-->
-<!--      <v-btn :icon="$vuetify.display.smAndDown" v-bind="probs">-->
-<!--        <span v-show="$vuetify.display.mdAndUp && showLabel" :class="[$vuetify.rtl ? 'mr-1' : 'ml-1']">{{ currentLocale.label }}</span>-->
-<!--        <v-icon v-if="showArrow" right>mdi-chevron-down</v-icon>-->
-<!--      </v-btn>-->
-<!--    </template>-->
+    <template v-slot:activator="{ props }">
+      <v-btn v-bind="props" variant="text">
+        <v-icon class="mr-1">mdi-translate</v-icon>
+        <span v-if="showLabel">{{ currentLocale.label }}</span>
+        <v-icon v-if="showArrow" class="ml-1">mdi-chevron-down</v-icon>
+      </v-btn>
+    </template>
 
     <v-list>
-      <v-list-item v-for="locale in availableLocales" :key="locale.code" @click="setLocale(locale.code)">
-        <v-list-item-title>{{ locale.label }}</v-list-item-title>
+      <v-list-item v-for="locale in allLocales" :key="locale.code" @click="setLocale(locale.code)">
+        <template v-slot:prepend>
+          <v-icon v-if="locale.code === currentLocale.code">mdi-check</v-icon>
+          <div v-else style="width: 24px;"></div>
+        </template>
+        <v-list-item-title>{{ locale.label }} - {{ locale.code.toUpperCase() }}</v-list-item-title>
       </v-list-item>
     </v-list>
   </v-menu>
@@ -30,7 +35,8 @@
 | vue-i18n locales available array
 |
 */
-import  { i18n } from "@/plugins/vue-i18n.js";
+import { i18n } from "@/plugins/vue-i18n.js";
+import localesConfig from "@/configs/locales.js";
 
 export default {
   props: {
@@ -47,17 +53,22 @@ export default {
   },
   computed: {
     currentLocale() {
-        // return 'de'
-        // console.log('i18n',this.$i18n)
-      return i18n.locales.find((i) => i.code === i18n.locale)
+      const currentCode = i18n.global?.locale?.value || i18n.global?.locale || 'en';
+      return localesConfig.availableLocales.find((i) => i.code === currentCode) || localesConfig.availableLocales[0];
     },
-    availableLocales () {
-      return i18n.locales.filter((i) => i.code !== i18n.locale)
+    availableLocales() {
+      const currentCode = i18n.global?.locale?.value || i18n.global?.locale || 'en';
+      return localesConfig.availableLocales.filter((i) => i.code !== currentCode);
+    },
+    allLocales() {
+      return localesConfig.availableLocales;
     }
   },
   methods: {
     setLocale(locale) {
-      i18n.locale = locale
+      if (i18n.global?.locale) {
+        i18n.global.locale.value = locale;
+      }
       // this.$vuetify.lang.current = locale
 
       // example on how certain languages can be RTL

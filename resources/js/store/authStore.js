@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { useUserStore } from '@/store/userStore.js'
 import { useApi } from '@/api/useAPI.js'
-import axios from "axios"
+import { debug } from '@/utils/debug.js'
 
+const log = debug.module('AuthStore')
 const web = useApi('web')
 
 export const useAuthStore = defineStore('auth', {
@@ -18,7 +19,7 @@ export const useAuthStore = defineStore('auth', {
         try {
             return savedState ? JSON.parse(savedState) : defaultState
         } catch (error) {
-            console.warn('Failed to parse AUTH_STATE from localStorage:', error)
+            // Silent fail - corrupted localStorage data
             localStorage.removeItem('AUTH_STATE')
             return defaultState
         }
@@ -41,7 +42,7 @@ export const useAuthStore = defineStore('auth', {
                     isVerified: this.isVerified,
                 }))
             } catch (error) {
-                console.error('Failed to save AUTH_STATE to localStorage:', error)
+                log.error('Failed to save AUTH_STATE to localStorage:', error)
             }
         },
 
@@ -76,10 +77,17 @@ export const useAuthStore = defineStore('auth', {
         async login({ email, password }) {
             const user = useUserStore()
 
+            // Clear any existing state from previous user BEFORE logging in
+            this.clearState()
+            user.clearState()
+
             try {
+                // Get fresh CSRF token before login (required after clearing state)
+                await user.getToken()
+
                 await web.post('/login', { email, password })
 
-                // Store user info first
+                // Store user info (fresh from server)
                 await user.storeInfo()
 
                 // Determine verification status
@@ -92,11 +100,12 @@ export const useAuthStore = defineStore('auth', {
                     isVerified
                 })
 
-                console.log('User logged in:', user.user)
+                log.log('User logged in:', user.user)
             } catch (error) {
                 // Clear state on login failure
                 this.clearState()
-                console.error('Login error:', error.message)
+                user.clearState()
+                log.error('Login error:', error.message)
                 throw error
             }
         },
@@ -109,7 +118,14 @@ export const useAuthStore = defineStore('auth', {
         async register(props) {
             const user = useUserStore()
 
+            // Clear any existing state from previous user BEFORE registering
+            this.clearState()
+            user.clearState()
+
             try {
+                // Get fresh CSRF token before register (required after clearing state)
+                await user.getToken()
+
                 await web.post('/register', props)
 
                 // Update auth state
@@ -119,11 +135,12 @@ export const useAuthStore = defineStore('auth', {
                     isVerified: false // New registrations typically need verification
                 })
 
-                // Store user info
+                // Store user info (fresh from server)
                 await user.storeInfo()
             } catch (error) {
                 this.clearState()
-                console.error('Registration error:', error.message)
+                user.clearState()
+                log.error('Registration error:', error.message)
                 throw error
             }
         },
@@ -132,7 +149,7 @@ export const useAuthStore = defineStore('auth', {
             try {
                 await web.post('/forgot-password', { email })
             } catch (error) {
-                console.error('Forgot password error:', error.message)
+                log.error('Forgot password error:', error.message)
                 throw error
             }
         },
@@ -142,10 +159,9 @@ export const useAuthStore = defineStore('auth', {
 
             try {
                 // Call logout endpoint first
-                await axios.post('/logout')
-                // user.clearState()
+                await web.post('/logout')
             } catch (error) {
-                console.error('Logout endpoint error:', error.message)
+                log.warn('Logout endpoint error:', error.message)
                 // Continue with logout even if endpoint fails
             }
 
@@ -153,7 +169,7 @@ export const useAuthStore = defineStore('auth', {
             this.clearState()
             user.clearState()
 
-            console.log('User logged out', user)
+            log.log('User logged out')
 
             // Clear all localStorage
             localStorage.clear()
@@ -191,7 +207,7 @@ export const useAuthStore = defineStore('auth', {
 
                 return true
             } catch (error) {
-                console.error('Auth status check failed:', error)
+                log.error('Auth status check failed:', error)
                 this.clearState()
                 return false
             }

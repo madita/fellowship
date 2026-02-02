@@ -1,6 +1,6 @@
 <template>
     <div>
-        <v-card class="text-center pa-1">
+        <v-card class="text-center pa-1" elevation="4">
             <v-card-title class="justify-center display-1 mb-2">Welcome</v-card-title>
             <v-card-subtitle>Sign in to your account</v-card-subtitle>
 
@@ -51,7 +51,55 @@
                     >{{ $t('login.button') }}
                     </v-btn>
 
-                    <div class="caption font-weight-bold text-uppercase my-3">{{ $t('login.orsign') }}</div>
+                    <div v-if="enabledProviders.length > 0" class="caption font-weight-bold text-uppercase my-3">{{ $t('login.orsign') }}</div>
+
+                    <!-- Social Login Buttons -->
+                    <v-row v-if="enabledProviders.length > 0" dense class="mb-3">
+                        <v-col v-if="enabledProviders.includes('google')" cols="6">
+                            <v-btn
+                                block
+                                variant="outlined"
+                                color="red"
+                                :href="`/auth/google`"
+                                prepend-icon="mdi-google"
+                            >
+                                Google
+                            </v-btn>
+                        </v-col>
+                        <v-col v-if="enabledProviders.includes('discord')" cols="6">
+                            <v-btn
+                                block
+                                variant="outlined"
+                                color="indigo"
+                                :href="`/auth/discord`"
+                                prepend-icon="mdi-discord"
+                            >
+                                Discord
+                            </v-btn>
+                        </v-col>
+                        <v-col v-if="enabledProviders.includes('github')" cols="6">
+                            <v-btn
+                                block
+                                variant="outlined"
+                                color="grey-darken-3"
+                                :href="`/auth/github`"
+                                prepend-icon="mdi-github"
+                            >
+                                GitHub
+                            </v-btn>
+                        </v-col>
+                        <v-col v-if="enabledProviders.includes('facebook')" cols="6">
+                            <v-btn
+                                block
+                                variant="outlined"
+                                color="blue"
+                                :href="`/auth/facebook`"
+                                prepend-icon="mdi-facebook"
+                            >
+                                Facebook
+                            </v-btn>
+                        </v-col>
+                    </v-row>
 
                     <div class="mt-5">
                         <router-link to="/auth/forgot-password">
@@ -65,9 +113,10 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/authStore.js'
+import axios from 'axios'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -76,6 +125,7 @@ const auth = useAuthStore()
 const isLoading = ref(false)
 const isSignInDisabled = ref(false)
 const showPassword = ref(false)
+const enabledProviders = ref([])
 
 const credentials = reactive({
     email: null,
@@ -158,6 +208,16 @@ const submit = async () => {
         isSignInDisabled.value = false
     }
 }
+
+// Fetch enabled OAuth providers on mount
+onMounted(async () => {
+    try {
+        const response = await axios.get('/api/settings/oauth-providers')
+        enabledProviders.value = response.data.providers || []
+    } catch (error) {
+        console.error('Failed to fetch OAuth providers:', error)
+    }
+})
 </script>
 
 <style scoped>

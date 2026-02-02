@@ -10,6 +10,8 @@ import ProfileDialog from '../common/ProfileDialog.vue';
 import DetailsDialog from '../common/DetailsDialog.vue';
 import RelatedContent from '../common/RelatedContent.vue';
 import { useUserStore } from "@/store/userStore.js";
+import { useSettingsStore } from "@/store/settingStore.js";
+import { useDateFormat } from '@/plugins/formatDate.js';
 
 const props = defineProps({
     isDrawerOpen: Boolean,
@@ -32,7 +34,19 @@ const showDetailsDialog = ref(false);
 const guestResponses = ref({});
 
 const calendarStore = useCalendarStore();
+const userStore = useUserStore();
+const settingsStore = useSettingsStore();
+const { formatDate: formatDateUtil } = useDateFormat();
 const localEditMode = ref(props.editMode);
+
+// Get user's time format preference (without seconds for display)
+const userTimeFormat = computed(() => {
+    const timeFormat = userStore.user?.time_format ||
+                      settingsStore.appSettings?.time_format ||
+                      'H:i:s';
+    // Remove seconds for cleaner display
+    return timeFormat.replace(':s', '').replace(' s', '');
+});
 const refForm = ref();
 const isFocused = ref(true);
 const loadEventDetails = ref(true);
@@ -47,7 +61,6 @@ const profileAnswer = ref(null);
 
 const confirmationDialog = ref(null);
 const relatedItems = ref([]);
-const userStore = useUserStore();
 
 const openConfirmationDialog = () => {
     confirmationDialog.value.isOpen = true;
@@ -395,15 +408,19 @@ const formatDateRange = computed(() => {
     const startDate = new Date(localEvent.value.start);
     const endDate = localEvent.value.end ? new Date(localEvent.value.end) : null;
 
-    const options = {weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'};
-    let formattedDate = startDate.toLocaleDateString(undefined, options);
+    // Format the date part using user's date format preference
+    let formattedDate = formatDateUtil(startDate);
+
+    // Add time part using user's time format preference (without seconds for display)
+    formattedDate += ' ' + formatDateUtil(startDate, userTimeFormat.value);
 
     if (endDate) {
-        // If same day, just show time
+        // If same day, just show end time
         if (startDate.toDateString() === endDate.toDateString()) {
-            formattedDate += ` - ${endDate.toLocaleTimeString(undefined, {hour: '2-digit', minute: '2-digit'})}`;
+            formattedDate += ` - ${formatDateUtil(endDate, userTimeFormat.value)}`;
         } else {
-            formattedDate += ` - ${endDate.toLocaleDateString(undefined, options)}`;
+            // Different day, show full date and time
+            formattedDate += ` - ${formatDateUtil(endDate)} ${formatDateUtil(endDate, userTimeFormat.value)}`;
         }
     }
 
@@ -498,7 +515,7 @@ onMounted(() => {
         localEvent.value.start = roundDateToNextTimeIncrement(new Date());
     } else {
         // If we already have a date (from editing an event), ensure it's displayed correctly
-        // The date picker will handle the timezone conversion with the :utc="true" prop
+        // The date picker handles timezone conversion using user preferences from userStore/settingsStore
     }
 });
 

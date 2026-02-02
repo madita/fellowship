@@ -313,6 +313,14 @@
                     </v-tab>
 
                     <v-tab
+                        value="social"
+                        prepend-icon="mdi-link-variant"
+                        class="tab-button"
+                    >
+                        Social Accounts
+                    </v-tab>
+
+                    <v-tab
                         value="activity"
                         prepend-icon="mdi-chart-timeline"
                         class="tab-button"
@@ -370,6 +378,17 @@
                                 @change="onInfoChange"
                                 @save="onInfoSave"
                             />
+                        </v-window-item>
+
+                        <!-- Social Accounts Tab -->
+                        <v-window-item value="social">
+                            <div class="tab-header mb-4">
+                                <h3 class="text-h6 font-weight-bold">Connected Social Accounts</h3>
+                                <p class="text-body-2 text-medium-emphasis">
+                                    Link your social media accounts for easier sign-in
+                                </p>
+                            </div>
+                            <social-accounts-tab :user="user" />
                         </v-window-item>
 
                         <!-- Activity Tab -->
@@ -529,9 +548,11 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useDisplay } from 'vuetify'
 import { useAuthStore } from '@/store/authStore.js'
 import { useUserStore } from '@/store/userStore.js'
+import { formatDate, formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import CopyLabel from '../../components/common/CopyLabel.vue'
 import AccountTab from './EditUser/AccountTab.vue'
 import InformationTab from './EditUser/InformationTab.vue'
+import SocialAccountsTab from './EditUser/SocialAccountsTab.vue'
 import ActivityTab from './EditUser/ActivityTab.vue'
 import PermissionsTab from './EditUser/PermissionsTab.vue'
 
@@ -541,6 +562,7 @@ export default {
         CopyLabel,
         AccountTab,
         InformationTab,
+        SocialAccountsTab,
         ActivityTab,
         PermissionsTab,
     },
@@ -602,27 +624,12 @@ export default {
 
         const memberSince = computed(() => {
             if (!user.value?.created_at) return 'Unknown'
-            return new Date(user.value.created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            })
+            return formatDate(user.value.created_at, 'd F Y')
         })
 
         const lastActive = computed(() => {
             if (!user.value?.last_login_at) return 'Never'
-            const date = new Date(user.value.last_login_at)
-            const now = new Date()
-            const diffMs = now - date
-            const diffMins = Math.floor(diffMs / 60000)
-            const diffHours = Math.floor(diffMins / 60)
-            const diffDays = Math.floor(diffHours / 24)
-
-            if (diffMins < 1) return 'Just now'
-            if (diffMins < 60) return `${diffMins}m ago`
-            if (diffHours < 24) return `${diffHours}h ago`
-            if (diffDays < 7) return `${diffDays}d ago`
-            return date.toLocaleDateString()
+            return formatDateDistanceToNow(user.value.last_login_at)
         })
 
         const hasAnyChanges = computed(() => {

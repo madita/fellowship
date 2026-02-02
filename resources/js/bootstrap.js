@@ -13,6 +13,8 @@ import { default as _ } from 'lodash'
 window._ = _
 window.axios = axios
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
+window.axios.defaults.headers.common['Accept'] = 'application/json'
+window.axios.defaults.withCredentials = true
 
 // Set CSRF token for axios requests
 const token = document.head.querySelector('meta[name="csrf-token"]');
@@ -21,8 +23,6 @@ if (token) {
 } else {
     console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
 }
-
-// axios.defaults.withCredentials = true;
 
 // window.route = require('./helper/route');
 /**
@@ -71,13 +71,14 @@ import * as Ably from 'ably';
 window.Ably = Ably;
 
 // Create new echo client instance using ably-js client driver.
+// Note: broadcasting/auth is excluded from CSRF verification in VerifyCsrfToken middleware
+// This prevents CSRF token mismatch errors after login when the session is regenerated
 window.Echo = new Echo({
     broadcaster: 'ably',
     key: import.meta.env.VITE_ABLY_PUBLIC_KEY,
     authEndpoint: '/broadcasting/auth',
     auth: {
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
             'X-Requested-With': 'XMLHttpRequest',
             'Accept': 'application/json'
         }

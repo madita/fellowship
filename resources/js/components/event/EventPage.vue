@@ -48,13 +48,14 @@
 
                                     <div class="d-flex align-center justify-center py-2">
                                         <VueDatePicker
-                                        locale="de"
+                                        :locale="userLocale"
                                         v-model="startTime"
                                         :enable-time-picker="false"
-                                        utc
+                                        :timezone="userTimezone"
                                         inline
                                         auto-apply
-                                        :preview-format="format"
+                                        :preview-format="userDateFormat"
+                                        :format="userDateFormat"
                                         @update:modelValue="jumpToDate"
                                     />
                                     </div>
@@ -165,6 +166,7 @@
 
                                         <full-calendar
                                             ref="refCalendar"
+                                            :key="userTimezone"
                                             :options="calendarOptions"
                                             class="calendar-component"
                                         />
@@ -384,20 +386,29 @@
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue';
 import axios from 'axios';
-import { format, addDays, isEqual, isAfter, isBefore, formatDistance } from "date-fns";
+import { addDays, isEqual, isAfter, isBefore } from "date-fns";
+import { useDateFormat } from '@/plugins/formatDate.js';
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
+import luxon3Plugin from '@fullcalendar/luxon3';
 import customViewPlugin from './custom-list-view.js';
 import CalendarEventHandler from "./CalendarEventHandler.vue";
 import { useCalendarStore } from '@/store/calendarStore.js';
+import { useUserStore } from '@/store/userStore.js';
+import { useSettingsStore } from '@/store/settingStore.js';
 import VueDatePicker from "@vuepic/vue-datepicker";
 import eventBus from "../common/eventBus.js";
 
 // Store
 const calendarStore = useCalendarStore();
+const userStore = useUserStore();
+const settingsStore = useSettingsStore();
+
+// Composables
+const { formatDate: formatDateUtil } = useDateFormat();
 
 // Local state
 const activeTab = ref('calendar');
@@ -413,6 +424,7 @@ const isLeftSidebarOpen = ref(true);
 const startTime = ref(new Date());
 const value = ref(new Date());
 const endpoint = '/api/events';
+const format = ref('dd.MM.yyyy'); // Date format for the date picker preview
 
 // Blank event template
 const blankEvent = {
@@ -517,6 +529,53 @@ const eventStats = computed(() => [
     }
 ]);
 
+// Get user's timezone preference
+const userTimezone = computed(() => {
+    const timezone = userStore.user?.timezone ||
+           settingsStore.appSettings?.default_timezone ||
+           'UTC';
+    console.log('timezone',timezone)
+    return timezone;
+});
+
+// Get user's locale preference
+const userLocale = computed(() => {
+    const lang = userStore.user?.language || settingsStore.appSettings?.default_language || 'en';
+    const localeMap = {
+        'en': 'en-US',
+        'de': 'de-DE',
+        'es': 'es-ES',
+        'fr': 'fr-FR',
+    };
+    return localeMap[lang] || 'en-US';
+});
+
+// Get user's date format preference for picker
+const userDateFormat = computed(() => {
+    const phpFormat = userStore.user?.date_format || settingsStore.appSettings?.date_format || 'Y-m-d';
+    const formatMap = {
+        'Y-m-d': 'yyyy-MM-dd',
+        'd/m/Y': 'dd/MM/yyyy',
+        'm/d/Y': 'MM/dd/yyyy',
+        'd.m.Y': 'dd.MM.yyyy',
+    };
+    return formatMap[phpFormat] || 'yyyy-MM-dd';
+});
+
+// Get user's time format preference
+const userTimeFormatString = computed(() => {
+    const timeFormat = userStore.user?.time_format ||
+                      settingsStore.appSettings?.time_format ||
+                      'H:i:s';
+    // Remove seconds for cleaner display
+    return timeFormat.replace(':s', '').replace(' s', '');
+});
+
+// Get user's time format preference for 12h/24h display (for FullCalendar)
+const userTimeFormat = computed(() => {
+    return userTimeFormatString.value.includes('A') || userTimeFormatString.value.includes('a');
+});
+
 // Calendar configuration
 const calendarOptions = computed(() => ({
     plugins: [
@@ -524,6 +583,7 @@ const calendarOptions = computed(() => ({
         timeGridPlugin,
         interactionPlugin,
         listPlugin,
+        luxon3Plugin,
         customViewPlugin
     ],
     initialView: calendarViewType.value,
@@ -545,10 +605,10 @@ const calendarOptions = computed(() => ({
     selectMirror: true,
     dayMaxEvents: true,
     weekends: true,
-    // Use UTC timezone for FullCalendar to properly handle the dates
-    timeZone: 'local',
+    // Use user's preferred timezone with Luxon plugin support
+    timeZone: userTimezone.value,
     events: filterEvents.value.map(event => {
-        // Ensure event dates are properly formatted for FullCalendar
+        // Events are stored in UTC in database, FullCalendar will convert to user's timezone
         const mappedEvent = { ...event };
         if (mappedEvent.start) {
             mappedEvent.start = new Date(mappedEvent.start).toISOString();
@@ -563,19 +623,12 @@ const calendarOptions = computed(() => ({
     eventTimeFormat: {
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hour12: userTimeFormat.value
     },
-    // Custom event render to display times in local timezone
+    // Custom event render to display times in user's timezone
     eventDidMount: function(info) {
-        // You can customize how events are displayed here
-        // For example, add custom tooltips with local times
-        if (!info.event.allDay) {
-            const startLocal = new Date(info.event.start);
-            const tooltip = format(startLocal, 'HH:mm');
-
-            // You could add a tooltip or modify the event title/time display
-            // This is optional and depends on your UI requirements
-        }
+        // Events are automatically displayed in the user's timezone by FullCalendar
+        // No additional conversion needed
     },
     eventClassNames({ event: calendarEvent }) {
         const colorName = calendarEvent._def.extendedProps.colorName || 'primary';
@@ -656,7 +709,7 @@ const viewEventDetails = (event) => {
 // Helper methods for event display
 const formatEventDate = (event) => {
     const eventDate = new Date(event.start);
-    return format(eventDate, 'EEE, MMM d, yyyy');
+    return formatDateUtil(eventDate);
 };
 
 const formatEventTime = (event) => {
@@ -665,11 +718,14 @@ const formatEventTime = (event) => {
     const start = new Date(event.start);
     const end = event.end ? new Date(event.end) : null;
 
+    // Use user's time format preference
+    const timeFormat = userTimeFormatString.value;
+
     if (end) {
-        return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+        return `${formatDateUtil(start, timeFormat)} - ${formatDateUtil(end, timeFormat)}`;
     }
 
-    return format(start, 'HH:mm');
+    return formatDateUtil(start, timeFormat);
 };
 
 // const getEventColor = (type) => {
@@ -766,8 +822,8 @@ onMounted(async () => {
 }
 
 .calendar-sidebar {
-    background-color: #fafafa;
-    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    background-color: rgb(var(--v-theme-surface));
+    border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 }
 
 .calendar-datepicker {
@@ -778,7 +834,7 @@ onMounted(async () => {
 }
 
 .calendar-main {
-    background-color: #fff;
+    background-color: rgb(var(--v-theme-background));
     min-height: 700px;
 
     .fc {
@@ -808,6 +864,44 @@ onMounted(async () => {
 
         .fc-day-today {
             background-color: rgba(var(--v-theme-primary), 0.05) !important;
+        }
+
+        // Dark mode specific styles
+        .fc-scrollgrid {
+            border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+        }
+
+        .fc-col-header-cell {
+            background-color: rgb(var(--v-theme-surface));
+            border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+        }
+
+        .fc-daygrid-day {
+            background-color: rgb(var(--v-theme-background));
+            border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+        }
+
+        .fc-timegrid-slot {
+            border-color: rgba(var(--v-theme-on-surface), 0.08) !important;
+        }
+
+        .fc-button {
+            background-color: rgb(var(--v-theme-primary)) !important;
+            border-color: rgb(var(--v-theme-primary)) !important;
+
+            &:not(:disabled):hover {
+                background-color: rgba(var(--v-theme-primary), 0.8) !important;
+            }
+
+            &.fc-button-active {
+                background-color: rgba(var(--v-theme-primary), 0.9) !important;
+            }
+        }
+
+        .fc-daygrid-day-number,
+        .fc-col-header-cell-cushion,
+        .fc-timegrid-slot-label {
+            color: rgb(var(--v-theme-on-surface));
         }
     }
 }
