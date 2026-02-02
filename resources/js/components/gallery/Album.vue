@@ -102,7 +102,7 @@
                                                 </v-icon>
 
                                             </template>
-                                            <span>Date: {{ new Date(media.created_at).toLocaleDateString() }}</span>
+                                            <span>Date: {{ $formatDate(media.created_at) }}</span>
                                         </v-tooltip>
 
                                         <v-tooltip

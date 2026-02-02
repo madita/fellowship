@@ -13,6 +13,8 @@ import { default as _ } from 'lodash'
 window._ = _
 window.axios = axios
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
+window.axios.defaults.headers.common['Accept'] = 'application/json'
+window.axios.defaults.withCredentials = true
 
 // Set CSRF token for axios requests
 const token = document.head.querySelector('meta[name="csrf-token"]');
@@ -21,8 +23,6 @@ if (token) {
 } else {
     console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
 }
-
-// axios.defaults.withCredentials = true;
 
 // window.route = require('./helper/route');
 /**

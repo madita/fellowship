@@ -153,8 +153,7 @@ import { useTheme } from 'vuetify'
 import { useUserStore } from '@/store/userStore'
 import { useSettingsStore } from '@/store/settingStore'
 import { useI18n } from 'vue-i18n'
-import { format } from 'date-fns'
-import { toZonedTime } from 'date-fns-tz'
+import { formatDateInTimezone, formatDate } from '@/plugins/formatDate.js'
 import axios from 'axios'
 
 const emit = defineEmits(['close'])
@@ -241,24 +240,15 @@ const dateFormats = ref([
 const currentTime = ref('')
 const updateCurrentTime = () => {
   try {
-    const now = new Date()
-    const zonedTime = toZonedTime(now, userTimezone.value)
-    currentTime.value = format(zonedTime, 'HH:mm:ss')
+    currentTime.value = formatDateInTimezone(new Date(), 'H:i:s', userTimezone.value)
   } catch (error) {
-    currentTime.value = format(new Date(), 'HH:mm:ss')
+    currentTime.value = formatDate(new Date(), 'H:i:s')
   }
 }
 
 // Date preview
 const datePreview = computed(() => {
-  const formatMap = {
-    'Y-m-d': 'yyyy-MM-dd',
-    'd/m/Y': 'dd/MM/yyyy',
-    'm/d/Y': 'MM/dd/yyyy',
-    'd.m.Y': 'dd.MM.yyyy',
-  }
-  const dateFnsFormat = formatMap[userDateFormat.value] || 'yyyy-MM-dd'
-  return format(new Date(), dateFnsFormat)
+  return formatDateInTimezone(new Date(), userDateFormat.value, userTimezone.value)
 })
 
 // Watch theme mode changes and apply immediately

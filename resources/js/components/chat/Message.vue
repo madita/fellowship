@@ -59,10 +59,14 @@
 
 <script>
 import UserAvatar from "@/components/common/UserAvatar.vue";
-import {formatDistanceToNow} from "date-fns";
+import { formatDateDistanceToNow } from "@/plugins/formatDate.js";
 
 export default {
-    methods: {formatDistanceToNow},
+    methods: {
+        formatDistanceToNow(date) {
+            return formatDateDistanceToNow(date);
+        }
+    },
     components: {UserAvatar},
     props: {
         message: {

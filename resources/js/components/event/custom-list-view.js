@@ -60,7 +60,7 @@ const CustomViewConfig = {
             Object.keys(eventsByDate).sort().forEach(date => {
                 // Format date with user preferences
                 const formattedDate = formatDate(new Date(date));
-                const weekday = new Date(date).toLocaleDateString(i18n.locale, { weekday: 'long' });
+                const weekday = formatDate(new Date(date), 'l'); // 'l' is PHP format for full weekday name
 
                 html += `<div class="event-list-custom fc-list-day-cushion fc-cell-shaded">
                   <a id="fc-dom-10" class="fc-list-day-text" aria-label="${formattedDate}">

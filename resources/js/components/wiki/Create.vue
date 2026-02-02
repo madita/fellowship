@@ -545,7 +545,7 @@
                                             </v-chip>
                                         </h4>
                                         <div class="text-caption text-medium-emphasis">
-                                            Created {{ new Date().toLocaleDateString() }}
+                                            Created {{ $formatDate(new Date()) }}
                                         </div>
                                     </div>
 

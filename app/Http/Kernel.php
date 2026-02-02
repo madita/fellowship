@@ -48,7 +48,7 @@ class Kernel extends HttpKernel
         ValidatePostSize::class,
         TrimStrings::class,
         ConvertEmptyStringsToNull::class,
-        \App\Http\Middleware\CacheControl::class, // Must be last to override session's no-cache headers
+        // CacheControl moved to route middleware 'cache.control' - use explicitly on routes that need caching
     ];
 
     /**

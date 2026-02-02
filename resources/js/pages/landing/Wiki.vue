@@ -298,6 +298,8 @@
 
 <script>
 import { useUserStore } from "@/store/userStore.js";
+import { formatDate as formatDateUtil } from '@/plugins/formatDate.js';
+import axios from 'axios';
 
 export default {
     name: 'WikiComponent',
@@ -309,8 +311,8 @@ export default {
             wikiable: [],
             response: {},
             searchText: "",
-            searchRequest: null,
             searchTimeout: null,
+            cancelToken: null,
         }
     },
     computed: {
@@ -326,8 +328,10 @@ export default {
         async getWikiPages() {
             try {
                 this.loading = true;
-                const response = await fetch(`/api/wiki?page=${this.page}&q=${this.searchText}`);
-                const data = await response.json();
+                const response = await axios.get(`/api/wiki`, {
+                    params: { page: this.page, q: this.searchText }
+                });
+                const data = response.data;
                 this.response = data;
 
                 if (this.page === 1) {
@@ -358,8 +362,8 @@ export default {
                 const query = this.searchText.trim();
 
                 // Cancel previous search request
-                if (this.searchRequest) {
-                    this.searchRequest.abort();
+                if (this.cancelToken) {
+                    this.cancelToken.cancel('New search initiated');
                 }
 
                 if (query === '') {
@@ -367,16 +371,12 @@ export default {
                     return;
                 }
 
-                // Make a new search request
-                const controller = new AbortController();
-                this.searchRequest = controller;
-
                 try {
                     this.searching = true;
-                    this.wikiable = await this.searchWithAbort(query, controller.signal);
+                    this.wikiable = await this.searchWithAbort(query);
                     this.page++;
                 } catch (err) {
-                    if (err.name !== 'AbortError') {
+                    if (!axios.isCancel(err)) {
                         console.error('Search error:', err);
                     }
                 } finally {
@@ -385,9 +385,15 @@ export default {
             }, 300); // 300ms debounce
         },
 
-        async searchWithAbort(query, signal) {
-            const response = await fetch(`/api/wiki?page=${this.page}&q=${query}`, { signal });
-            const data = await response.json();
+        async searchWithAbort(query) {
+            // Create new cancel token for this request
+            this.cancelToken = axios.CancelToken.source();
+
+            const response = await axios.get(`/api/wiki`, {
+                params: { page: this.page, q: query },
+                cancelToken: this.cancelToken.token
+            });
+            const data = response.data;
             this.response = data;
             return data.data;
         },
@@ -435,7 +441,7 @@ export default {
         async deletePage(id) {
             if (confirm('Are you sure you want to delete this page?')) {
                 try {
-                    await fetch(`/api/wiki/${id}`, { method: 'DELETE' });
+                    await axios.delete(`/api/wiki/${id}`);
                     this.wikiable = this.wikiable.filter(item => item.data.id !== id);
                     this.$emit('success', 'Page deleted successfully');
                 } catch (error) {
@@ -452,14 +458,8 @@ export default {
         },
 
         formatDate(dateString) {
-            // console.log('dateString',dateString)
             if (!dateString) return 'Unknown';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-            });
+            return formatDateUtil(dateString, 'M d, Y');
         }
     },
 
@@ -470,8 +470,8 @@ export default {
 
     beforeUnmount() {
         window.removeEventListener("scroll", this.handleScroll);
-        if (this.searchRequest) {
-            this.searchRequest.abort();
+        if (this.cancelToken) {
+            this.cancelToken.cancel('Component unmounted');
         }
         if (this.searchTimeout) {
             clearTimeout(this.searchTimeout);

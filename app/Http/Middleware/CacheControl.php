@@ -42,6 +42,12 @@ class CacheControl
      */
     public function handle(Request $request, Closure $next, ?string $ttl = null): Response
     {
+        // Check if OpenSSL is available (required for Laravel's encryption)
+        if (!function_exists('openssl_cipher_iv_length')) {
+            Log::warning('CacheControl middleware skipped: OpenSSL extension is not available');
+            return $next($request)->header('X-Cache-Status', 'openssl-missing');
+        }
+
         // Only cache GET and HEAD requests
         if (!in_array($request->method(), ['GET', 'HEAD'])) {
             $response = $this->handleMutatingRequest($request, $next);

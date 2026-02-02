@@ -710,6 +710,7 @@ import { useDisplay } from 'vuetify'
 import Tiptap from '../common/tiptap/Tiptap.vue'
 import { useAuthStore } from '@/store/authStore.js'
 import { useRouter } from 'vue-router'
+import { formatDate } from '@/plugins/formatDate.js'
 
 export default {
     name: 'WikiEditPage',
@@ -977,7 +978,7 @@ export default {
             try {
                 // Auto-save implementation
                 await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-                lastSaved.value = new Date().toLocaleTimeString()
+                lastSaved.value = formatDate(new Date(), 'H:i:s')
                 console.log('Auto-saved successfully')
             } catch (error) {
                 console.error('Auto-save failed:', error)
@@ -1039,7 +1040,7 @@ export default {
                 }
 
                 lastModified.value = response.data.page.updated_at ?
-                    new Date(response.data.page.updated_at).toLocaleDateString() : null
+                    formatDate(response.data.page.updated_at) : null
 
             } catch (error) {
                 if (error.response?.status === 404) {
@@ -1132,7 +1133,7 @@ export default {
                 }
 
                 message.value = "Wiki page updated successfully!"
-                lastSaved.value = new Date().toLocaleTimeString()
+                lastSaved.value = formatDate(new Date(), 'H:i:s')
                 currentStep.value = 3
                 dismissChangeAlert.value = true
 

@@ -223,6 +223,7 @@ X-API-Secret: {{ createdKey?.secret }}</pre>
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
+import { formatDate as formatDateUtil } from '@/plugins/formatDate.js';
 
 const isEnabled = ref(false);
 const rateLimit = ref(60);
@@ -374,11 +375,7 @@ function copyToClipboard(text, label) {
 
 function formatDate(dateString) {
     if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
+    return formatDateUtil(dateString, 'd M Y');
 }
 
 function isExpired(dateString) {

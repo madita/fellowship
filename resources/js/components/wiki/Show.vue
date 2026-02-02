@@ -181,11 +181,11 @@
                                     <div class="page-info">
                                         <div class="info-item mb-2">
                                             <v-icon size="16" class="mr-2">mdi-calendar</v-icon>
-                                            <span class="text-caption">Created: {{ formatDate(wikipage.created_at, 'dd.MM.yyyy HH:ii') }}</span>
+                                            <span class="text-caption">Created: {{ $formatDate(wikipage.created_at) }}</span>
                                         </div>
                                         <div class="info-item mb-2">
                                             <v-icon size="16" class="mr-2">mdi-calendar</v-icon>
-                                            <span class="text-caption">Last modified: {{ formatDate(wikipage.updated_at, 'dd.MM.yyyy HH:ii') }}</span>
+                                            <span class="text-caption">Last modified: {{ $formatDate(wikipage.updated_at) }}{{ formatDate(wikipage.updated_at, 'dd.MM.yyyy HH:ii') }}</span>
                                         </div>
                                         <div class="info-item mb-2">
                                             <v-icon size="16" class="mr-2">mdi-account</v-icon>
