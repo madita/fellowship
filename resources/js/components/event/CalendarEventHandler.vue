@@ -515,7 +515,7 @@ onMounted(() => {
         localEvent.value.start = roundDateToNextTimeIncrement(new Date());
     } else {
         // If we already have a date (from editing an event), ensure it's displayed correctly
-        // The date picker will handle the timezone conversion with the :utc="true" prop
+        // The date picker handles timezone conversion using user preferences from userStore/settingsStore
     }
 });
 

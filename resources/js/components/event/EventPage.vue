@@ -48,13 +48,14 @@
 
                                     <div class="d-flex align-center justify-center py-2">
                                         <VueDatePicker
-                                        locale="de"
+                                        :locale="userLocale"
                                         v-model="startTime"
                                         :enable-time-picker="false"
-                                        utc
+                                        :timezone="userTimezone"
                                         inline
                                         auto-apply
-                                        :preview-format="format"
+                                        :preview-format="userDateFormat"
+                                        :format="userDateFormat"
                                         @update:modelValue="jumpToDate"
                                     />
                                     </div>
@@ -535,6 +536,30 @@ const userTimezone = computed(() => {
            'UTC';
     console.log('timezone',timezone)
     return timezone;
+});
+
+// Get user's locale preference
+const userLocale = computed(() => {
+    const lang = userStore.user?.language || settingsStore.appSettings?.default_language || 'en';
+    const localeMap = {
+        'en': 'en-US',
+        'de': 'de-DE',
+        'es': 'es-ES',
+        'fr': 'fr-FR',
+    };
+    return localeMap[lang] || 'en-US';
+});
+
+// Get user's date format preference for picker
+const userDateFormat = computed(() => {
+    const phpFormat = userStore.user?.date_format || settingsStore.appSettings?.date_format || 'Y-m-d';
+    const formatMap = {
+        'Y-m-d': 'yyyy-MM-dd',
+        'd/m/Y': 'dd/MM/yyyy',
+        'm/d/Y': 'MM/dd/yyyy',
+        'd.m.Y': 'dd.MM.yyyy',
+    };
+    return formatMap[phpFormat] || 'yyyy-MM-dd';
 });
 
 // Get user's time format preference
