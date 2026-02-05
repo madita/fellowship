@@ -512,36 +512,11 @@
             </v-card>
         </v-dialog>
 
-        <!-- Image Dialog -->
-        <v-dialog v-model="showImageDialog" max-width="400">
-            <v-card>
-                <v-card-title>Add Image</v-card-title>
-                <v-card-text>
-                    <v-text-field
-                        v-model="imageUrl"
-                        label="Image URL"
-                        placeholder="https://example.com/image.jpg"
-                        variant="outlined"
-                        density="compact"
-                        autofocus
-                        @keyup.enter="confirmImage"
-                    />
-                    <v-text-field
-                        v-model="imageAlt"
-                        label="Alt Text (optional)"
-                        placeholder="Description of the image"
-                        variant="outlined"
-                        density="compact"
-                        class="mt-2"
-                    />
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn @click="showImageDialog = false">Cancel</v-btn>
-                    <v-btn color="primary" @click="confirmImage">Add Image</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
+        <!-- Media Picker Modal -->
+        <MediaPickerModal
+            v-model="showMediaPicker"
+            @select="onMediaSelect"
+        />
     </div>
 </template>
 
@@ -564,6 +539,7 @@ import HashtagMention from './mention/HashtagMention.js'
 import suggestion from './mention/suggestion.js'
 import hashtag from './mention/hashtag.js'
 import wiki from './mention/wiki.js'
+import MediaPickerModal from './MediaPickerModal.vue'
 
 const props = defineProps({
     type: {
@@ -583,10 +559,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 const showLinkDialog = ref(false);
-const showImageDialog = ref(false);
+const showMediaPicker = ref(false);
 const linkUrl = ref('');
-const imageUrl = ref('');
-const imageAlt = ref('');
 
 const editor = useEditor({
     content: props.modelValue,
@@ -657,25 +631,20 @@ const confirmLink = () => {
 };
 
 const addImage = () => {
-    imageUrl.value = '';
-    imageAlt.value = '';
-    showImageDialog.value = true;
+    showMediaPicker.value = true;
 };
 
-const confirmImage = () => {
-    if (imageUrl.value) {
+const onMediaSelect = (imageData) => {
+    if (imageData.src) {
         editor.value
             .chain()
             .focus()
             .setImage({
-                src: imageUrl.value,
-                alt: imageAlt.value || null
+                src: imageData.src,
+                alt: imageData.alt || null
             })
             .run();
     }
-    showImageDialog.value = false;
-    imageUrl.value = '';
-    imageAlt.value = '';
 };
 
 const insertTable = () => {
