@@ -25,7 +25,7 @@
                                 max-height="90"
                             ></v-img>
                             <!--                <v-text-field label="Select Image" @click='pickFile' v-model='avatar' prepend-icon='attach_file'></v-text-field>-->
-                            <image-upload v-show="false" ref="avatar" name="avatar" class="mr-1" @loaded="onLoad"></image-upload>
+                            <image-upload v-show="false" ref="avatarUploadRef" name="avatar" class="mr-1" @loaded="onLoad"></image-upload>
 
                             <v-btn class="mt-1" @click="trigger" small>Edit Avatar</v-btn>
                         </div>
@@ -321,6 +321,7 @@ export default {
         const userStore = useUserStore();
 
         const avatar = ref(null);
+        const avatarUploadRef = ref(null); // Template ref for ImageUpload component
         const panel = ref([1]);
         const deleteDialog = ref(false);
         const disableDialog = ref(false);
@@ -442,17 +443,18 @@ export default {
         };
 
         const trigger = () => {
-            // Assuming ref is still set on the ImageUpload component
-            this.$refs.avatar.$el.click()
+            if (avatarUploadRef.value && avatarUploadRef.value.$el) {
+                avatarUploadRef.value.$el.click();
+            }
         };
 
         const updateUser = () => {
-            axios.patch(`/api/datatable/users/${this.user.id}`, this.user).then(() => {
+            axios.patch(`/api/datatable/users/${props.user.id}`, props.user).then(() => {
                 // console.log('done')
             }).catch((error) => {
                 console.log(error);
                 if (error.response.status === 422) {
-                    this.editing.errors = error.response.data
+                    console.error('Validation errors:', error.response.data);
                 }
             })
         };
@@ -473,6 +475,7 @@ export default {
 
         return {
             avatar,
+            avatarUploadRef,
             panel,
             deleteDialog,
             disableDialog,

@@ -76,7 +76,25 @@ export const admin = [{
             auth, permission, verified
         ]
     },
-    component: () => import(/* webpackChunkName: "admin-users" */ '@/pages/admin/Gallery.vue')
+    component: () => import(/* webpackChunkName: "admin-gallery" */ '@/pages/admin/Gallery.vue')
+}, {
+    path: '/admin/media',
+    name: 'admin-media',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-media" */ '@/pages/admin/MediaCenter.vue')
+}, {
+    path: '/admin/migrations',
+    name: 'admin-migrations',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-migrations" */ '@/pages/admin/MigrationDashboard.vue')
 }, {
     path: '/admin/roles',
     name: 'admin-roles',
