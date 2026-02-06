@@ -46,7 +46,6 @@ class ConditionalStartSession extends StartSession
 
         // No consent - don't add session cookie, but still save session data
         // This allows the session to work for the current request only
-
     }
 
     /**
