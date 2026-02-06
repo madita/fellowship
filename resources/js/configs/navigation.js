@@ -46,6 +46,8 @@ export default {
                         {icon: 'mdi-tag-outline', key: 'menu.adminTerms', text: 'Terms', link: '/admin/tags/terms'}
                     ]
                 },
+                {icon: 'mdi-folder-multiple-image', key: 'menu.adminMedia', text: 'Media Center', link: '/admin/media'},
+                {icon: 'mdi-database-import', key: 'menu.adminMigrations', text: 'Migrations', link: '/admin/migrations'},
                 {icon: 'mdi-cog-outline', key: 'menu.adminSettings', text: 'Settings', link: '/admin/settings'},
                 {icon: 'mdi-bullhorn-outline', key: 'menu.adminAnnouncement', text: 'Announcement', link: '/admin/announcements'},
             ]

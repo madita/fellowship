@@ -264,6 +264,27 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::delete('/footer/sections/{id}', 'App\Http\Controllers\Admin\FooterSectionController@destroy');
     Route::post('/footer/sections/reorder', 'App\Http\Controllers\Admin\FooterSectionController@updateOrder');
     Route::post('/footer/sections/{id}/toggle', 'App\Http\Controllers\Admin\FooterSectionController@toggle');
+
+    // Media Center
+    Route::get('/media', 'App\Http\Controllers\Admin\MediaController@index');
+    Route::get('/media/folders', 'App\Http\Controllers\Admin\MediaController@folders');
+    Route::get('/media/model-items', 'App\Http\Controllers\Admin\MediaController@modelItems');
+    Route::get('/media/stats', 'App\Http\Controllers\Admin\MediaController@stats');
+    Route::get('/media/contexts', 'App\Http\Controllers\Admin\MediaController@contexts');
+    Route::get('/media/library', 'App\Http\Controllers\Admin\MediaController@libraryImages');
+    Route::post('/media/upload', 'App\Http\Controllers\Admin\MediaController@upload');
+    Route::get('/media/{media}', 'App\Http\Controllers\Admin\MediaController@show');
+    Route::delete('/media/{media}', 'App\Http\Controllers\Admin\MediaController@destroy');
+    Route::post('/media/bulk-delete', 'App\Http\Controllers\Admin\MediaController@bulkDestroy');
+
+    // Migration Dashboard
+    Route::get('/migrations', 'App\Http\Controllers\Admin\MigrationController@index');
+    Route::post('/migrations/start', 'App\Http\Controllers\Admin\MigrationController@start');
+    Route::get('/migrations/status/{batchId}', 'App\Http\Controllers\Admin\MigrationController@status');
+    Route::get('/migrations/logs/{batchId}/{migrationKey}', 'App\Http\Controllers\Admin\MigrationController@logs');
+    Route::post('/migrations/cancel/{batchId}', 'App\Http\Controllers\Admin\MigrationController@cancel');
+    Route::get('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@history');
+    Route::delete('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@clearHistory');
 });
 
 Route::post('/login', function (Request $request) {
