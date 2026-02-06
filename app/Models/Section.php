@@ -63,7 +63,7 @@ class Section extends Model
      */
     public static function getActiveSections()
     {
-        return Cache::remember('homepage_sections_active', 3600, function () {
+        return Cache::remember('sections_active', 3600, function () {
             return self::enabled()
                 ->ordered()
                 ->with(['widgets' => function ($query) {
@@ -80,7 +80,7 @@ class Section extends Model
      */
     public static function clearCache()
     {
-        Cache::forget('homepage_sections_active');
+        Cache::forget('sections_active');
         Widget::clearCache(); // Also clear widgets cache
     }
 

@@ -167,7 +167,7 @@ class HomepageWidgetControllerTest extends TestCase
                 ],
             ]);
 
-        $this->assertDatabaseHas('homepage_widgets', [
+        $this->assertDatabaseHas('widgets', [
             'type'       => 'hero',
             'title'      => 'New Hero Widget',
             'section_id' => $this->section->id,
@@ -221,7 +221,7 @@ class HomepageWidgetControllerTest extends TestCase
                 'widget',
             ]);
 
-        $this->assertDatabaseHas('homepage_widgets', [
+        $this->assertDatabaseHas('widgets', [
             'id'      => $widget->id,
             'title'   => 'Updated Title',
             'enabled' => false,
@@ -286,7 +286,7 @@ class HomepageWidgetControllerTest extends TestCase
                 'message' => 'Widget deleted successfully',
             ]);
 
-        $this->assertDatabaseMissing('homepage_widgets', [
+        $this->assertDatabaseMissing('widgets', [
             'id' => $widget->id,
         ]);
     }
@@ -313,7 +313,7 @@ class HomepageWidgetControllerTest extends TestCase
                 'widget',
             ]);
 
-        $this->assertDatabaseHas('homepage_widgets', [
+        $this->assertDatabaseHas('widgets', [
             'id'      => $widget->id,
             'enabled' => false,
         ]);
@@ -321,7 +321,7 @@ class HomepageWidgetControllerTest extends TestCase
         // Toggle again
         $response = $this->postJson("/api/admin/homepage/widgets/{$widget->id}/toggle");
 
-        $this->assertDatabaseHas('homepage_widgets', [
+        $this->assertDatabaseHas('widgets', [
             'id'      => $widget->id,
             'enabled' => true,
         ]);
@@ -351,7 +351,7 @@ class HomepageWidgetControllerTest extends TestCase
             ]);
 
         // Check that the duplicate exists and is disabled by default
-        $this->assertDatabaseHas('homepage_widgets', [
+        $this->assertDatabaseHas('widgets', [
             'type'    => 'hero',
             'title'   => 'Original Widget (Copy)',
             'enabled' => false,
@@ -396,12 +396,12 @@ class HomepageWidgetControllerTest extends TestCase
                 'message' => 'Widget order updated successfully',
             ]);
 
-        $this->assertDatabaseHas('homepage_widgets', [
+        $this->assertDatabaseHas('widgets', [
             'id'    => $widget2->id,
             'order' => 1,
         ]);
 
-        $this->assertDatabaseHas('homepage_widgets', [
+        $this->assertDatabaseHas('widgets', [
             'id'    => $widget1->id,
             'order' => 2,
         ]);

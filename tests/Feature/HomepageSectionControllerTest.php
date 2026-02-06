@@ -117,7 +117,7 @@ class HomepageSectionControllerTest extends TestCase
                 'anchor_id',
             ]);
 
-        $this->assertDatabaseHas('homepage_sections', [
+        $this->assertDatabaseHas('sections', [
             'title'     => 'New Section',
             'layout'    => '2-col',
             'anchor_id' => 'new-section',
@@ -212,7 +212,7 @@ class HomepageSectionControllerTest extends TestCase
                 'enabled' => false,
             ]);
 
-        $this->assertDatabaseHas('homepage_sections', [
+        $this->assertDatabaseHas('sections', [
             'id'      => $section->id,
             'title'   => 'Updated Title',
             'layout'  => '3-col',
@@ -260,7 +260,7 @@ class HomepageSectionControllerTest extends TestCase
                 'message' => 'Section deleted successfully',
             ]);
 
-        $this->assertDatabaseMissing('homepage_sections', [
+        $this->assertDatabaseMissing('sections', [
             'id' => $section->id,
         ]);
     }
@@ -290,7 +290,7 @@ class HomepageSectionControllerTest extends TestCase
         $this->deleteJson("/api/admin/homepage/sections/{$section->id}");
 
         // Widget should be deleted due to cascade
-        $this->assertDatabaseMissing('homepage_widgets', [
+        $this->assertDatabaseMissing('widgets', [
             'id' => $widget->id,
         ]);
     }
@@ -315,7 +315,7 @@ class HomepageSectionControllerTest extends TestCase
                 'enabled' => false,
             ]);
 
-        $this->assertDatabaseHas('homepage_sections', [
+        $this->assertDatabaseHas('sections', [
             'id'      => $section->id,
             'enabled' => false,
         ]);
@@ -323,7 +323,7 @@ class HomepageSectionControllerTest extends TestCase
         // Toggle again
         $response = $this->postJson("/api/admin/homepage/sections/{$section->id}/toggle");
 
-        $this->assertDatabaseHas('homepage_sections', [
+        $this->assertDatabaseHas('sections', [
             'id'      => $section->id,
             'enabled' => true,
         ]);
@@ -370,17 +370,17 @@ class HomepageSectionControllerTest extends TestCase
                 'message' => 'Sections reordered successfully',
             ]);
 
-        $this->assertDatabaseHas('homepage_sections', [
+        $this->assertDatabaseHas('sections', [
             'id'    => $section3->id,
             'order' => 1,
         ]);
 
-        $this->assertDatabaseHas('homepage_sections', [
+        $this->assertDatabaseHas('sections', [
             'id'    => $section1->id,
             'order' => 2,
         ]);
 
-        $this->assertDatabaseHas('homepage_sections', [
+        $this->assertDatabaseHas('sections', [
             'id'    => $section2->id,
             'order' => 3,
         ]);
