@@ -45,7 +45,7 @@ class HomepageWidgetController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'section_id' => 'nullable|exists:homepage_sections,id',
+            'section_id' => 'nullable|exists:sections,id',
             'type'       => 'required|string',
             'title'      => 'nullable|string',
             'enabled'    => 'boolean',
@@ -79,7 +79,7 @@ class HomepageWidgetController extends Controller
         $widget = Widget::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'section_id' => 'nullable|exists:homepage_sections,id',
+            'section_id' => 'nullable|exists:sections,id',
             'type'       => 'string',
             'title'      => 'nullable|string',
             'enabled'    => 'boolean',
