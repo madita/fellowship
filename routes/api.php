@@ -285,6 +285,18 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::post('/migrations/cancel/{batchId}', 'App\Http\Controllers\Admin\MigrationController@cancel');
     Route::get('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@history');
     Route::delete('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@clearHistory');
+
+    // Translation Management
+    Route::get('/translations/locales', 'App\Http\Controllers\Admin\TranslationController@locales');
+    Route::get('/translations/js/{locale}', 'App\Http\Controllers\Admin\TranslationController@getJsTranslations');
+    Route::put('/translations/js/{locale}', 'App\Http\Controllers\Admin\TranslationController@updateJsTranslations');
+    Route::get('/translations/php/{locale}/{file?}', 'App\Http\Controllers\Admin\TranslationController@getPhpTranslations');
+    Route::put('/translations/php/{locale}/{file}', 'App\Http\Controllers\Admin\TranslationController@updatePhpTranslations');
+    Route::post('/translations/locales', 'App\Http\Controllers\Admin\TranslationController@createLocale');
+    Route::post('/translations/keys', 'App\Http\Controllers\Admin\TranslationController@addKey');
+    Route::delete('/translations/keys', 'App\Http\Controllers\Admin\TranslationController@deleteKey');
+    Route::get('/translations/scan', 'App\Http\Controllers\Admin\TranslationController@scanMissing');
+    Route::get('/translations/compare', 'App\Http\Controllers\Admin\TranslationController@compareLocales');
 });
 
 Route::post('/login', function (Request $request) {

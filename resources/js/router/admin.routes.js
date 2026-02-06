@@ -86,7 +86,16 @@ export const admin = [{
         ]
     },
     component: () => import(/* webpackChunkName: "admin-media" */ '@/pages/admin/MediaCenter.vue')
-},  {
+}, {
+    path: '/admin/translations',
+    name: 'admin-translations',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-translations" */ '@/pages/admin/TranslationManager.vue')
+}, {
     path: '/admin/roles',
     name: 'admin-roles',
     meta: {
