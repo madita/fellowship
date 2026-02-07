@@ -1,7 +1,10 @@
 <script setup>
 import { ref, watch, computed, nextTick, onMounted  } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import CustomDatePicker from "../common/CustomDatePicker.vue";
+
+const { t } = useI18n();
 import UserAvatar from "../common/UserAvatar.vue";
 import axios from "axios";
 import { useCalendarStore } from '@/store/calendarStore.js';
@@ -381,8 +384,8 @@ const dialogModelValueUpdate = (val) => {
 };
 
 const rules = {
-    title: [v => !!v || 'Title is required'],
-    date: [v => !!v || 'Date is required']
+    title: [v => !!v || t('events.titleRequired')],
+    date: [v => !!v || t('events.dateRequired')]
 };
 
 const handleConfirmation = (isConfirmed) => {
@@ -533,7 +536,7 @@ onMounted(() => {
         <!-- Header Section -->
         <div class="event-drawer-header" :class="{ 'edit-mode': localEditMode }">
             <div v-if="localEditMode" class="d-flex align-center py-3 px-4">
-                <h5 class="text-h5 font-weight-medium">{{ localEvent?.id ? 'Update Event' : 'Add Event' }}</h5>
+                <h5 class="text-h5 font-weight-medium">{{ localEvent?.id ? $t('events.updateEvent') : $t('events.addEvent') }}</h5>
                 <VSpacer/>
                 <VBtn
                     v-if="localEvent?.id"
@@ -542,7 +545,7 @@ onMounted(() => {
                     class="me-2"
                     @click="localEditMode = !localEditMode"
                 >
-                    {{ localEditMode ? 'View' : 'Edit' }}
+                    {{ localEditMode ? $t('events.view') : $t('events.edit') }}
                 </VBtn>
             </div>
 
@@ -616,8 +619,8 @@ onMounted(() => {
                             <VCol cols="12" v-if="eventTypeItems.length > 0">
                                 <VSelect
                                     v-model="localEvent.extendedProps.event_type_id"
-                                    label="Type"
-                                    placeholder="Select Event Type"
+                                    :label="$t('events.type')"
+                                    :placeholder="$t('events.selectEventType')"
                                     :items="eventTypeItems"
                                     :item-title="item => item.name"
                                     :item-value="item => item.id"
@@ -652,7 +655,7 @@ onMounted(() => {
                                 <VCol cols="12">
                                     <VTextField
                                         v-model="localEvent.title"
-                                        label="Title"
+                                        :label="$t('common.title')"
                                         :rules="rules.title"
                                         variant="outlined"
                                         density="comfortable"
@@ -662,10 +665,10 @@ onMounted(() => {
 
                                 <VCol cols="12">
                                     <CustomDatePicker
-                                        label="Start Date"
+                                        :label="$t('events.startDate')"
                                         v-model="localEvent.start"
                                         :error="!isStartDateValid"
-                                        :error-messages="['Start date is required']"
+                                        :error-messages="[$t('events.startDateRequired')]"
                                         @date-selected="handleStartDateChange"
                                         :id="'start-date'"
                                         :all-day="localEvent.allDay"
@@ -674,10 +677,10 @@ onMounted(() => {
 
                                 <VCol cols="12" v-show="eventTypeOptions.showAttributtes?.includes('endDate')">
                                     <CustomDatePicker
-                                        label="End Date"
+                                        :label="$t('events.endDate')"
                                         v-model="localEvent.end"
                                         :error="!isEndDateValid"
-                                        :error-messages="['End date is required']"
+                                        :error-messages="[$t('events.endDateRequired')]"
                                         :min-date="localEvent.start"
                                         :is-end-date="true"
                                         :id="'end-date'"
@@ -689,14 +692,14 @@ onMounted(() => {
                                     <VSwitch
                                         color="primary"
                                         v-model="localEvent.allDay"
-                                        label="All day"
+                                        :label="$t('events.allDay')"
                                     />
                                 </VCol>
 
                                 <VCol cols="12">
                                     <VTextField
                                         v-model="localEvent.extendedProps.location"
-                                        label="Location"
+                                        :label="$t('events.location')"
                                         :rules="rules.location"
                                         variant="outlined"
                                         density="comfortable"
@@ -707,7 +710,7 @@ onMounted(() => {
                                 <VCol cols="12">
                                     <VTextarea
                                         v-model="localEvent.extendedProps.description"
-                                        label="Description"
+                                        :label="$t('common.description')"
                                         variant="outlined"
                                         density="comfortable"
                                         rows="4"
@@ -723,14 +726,14 @@ onMounted(() => {
                                     color="primary"
                                     class="me-3"
                                 >
-                                    Submit
+                                    {{ $t('events.submit') }}
                                 </VBtn>
                                 <VBtn
                                     variant="outlined"
                                     color="secondary"
                                     @click="onCancel"
                                 >
-                                    Cancel
+                                    {{ $t('common.cancel') }}
                                 </VBtn>
                             </VCol>
                         </VRow>
@@ -747,10 +750,10 @@ onMounted(() => {
                         <div class="event-info-item mb-4">
                             <div class="info-label">
                                 <v-icon color="primary" class="mr-2">mdi-map-marker</v-icon>
-                                <span>Location</span>
+                                <span>{{ $t('events.location') }}</span>
                             </div>
                             <div class="info-content">
-                                {{ localEvent?.extendedProps?.location || 'No location specified' }}
+                                {{ localEvent?.extendedProps?.location || $t('events.noLocationSpecified') }}
                             </div>
                         </div>
 
@@ -758,7 +761,7 @@ onMounted(() => {
                         <div class="event-info-item" v-if="localEvent?.extendedProps?.description">
                             <div class="info-label">
                                 <v-icon color="primary" class="mr-2">mdi-text-box-outline</v-icon>
-                                <span>Description</span>
+                                <span>{{ $t('common.description') }}</span>
                             </div>
                             <div class="info-content description-content"
                                  v-html="localEvent.extendedProps.description"></div>
@@ -775,7 +778,7 @@ onMounted(() => {
                     elevation="0"
                 >
                     <v-card-text>
-                        <h3 class="text-h6 mb-3">Are you coming?</h3>
+                        <h3 class="text-h6 mb-3">{{ $t('events.areYouComing') }}</h3>
                         <div class="d-flex flex-wrap gap-2">
                             <VBtn
                                 v-for="(answer, value) in eventTypeOptions.answers"
@@ -803,7 +806,7 @@ onMounted(() => {
                 <v-card flat class="attendees-card mb-4" v-if="Object.keys(eventAnswers).length > 0">
                     <v-card-text>
                         <div class="d-flex align-center justify-space-between mb-3">
-                            <h3 class="text-h6">Attendees</h3>
+                            <h3 class="text-h6">{{ $t('events.attendees') }}</h3>
                             <v-btn
                                 icon="mdi-information-outline"
                                 variant="text"
@@ -826,7 +829,7 @@ onMounted(() => {
                                 >
                                     {{ status }}
                                 </v-chip>
-                                <span class="text-subtitle-2">{{ guests.length }} people</span>
+                                <span class="text-subtitle-2">{{ $t('events.peopleCount', { count: guests.length }) }}</span>
                             </div>
 
                             <div class="d-flex flex-wrap gap-1">
@@ -850,7 +853,7 @@ onMounted(() => {
                          eventTypeOptions.guest.includes('approval')"
                 >
                     <v-card-text>
-                        <h3 class="text-h6 mb-3">Pending Approvals</h3>
+                        <h3 class="text-h6 mb-3">{{ $t('events.pendingApprovals') }}</h3>
 
                         <div v-for="(guests, status) in filterGuestsByApproval(eventAnswers).guestsRequiringApproval"
                              :key="`pending-${status}`"
@@ -897,7 +900,7 @@ onMounted(() => {
                 <!-- Related Content Section -->
                 <v-card flat class="related-content-card" v-if="relatedItems.length > 0">
                     <v-card-text>
-                        <h3 class="text-h6 mb-3">Related Content</h3>
+                        <h3 class="text-h6 mb-3">{{ $t('events.relatedContent') }}</h3>
 
                         <div class="related-items-grid">
                             <v-card
@@ -928,7 +931,7 @@ onMounted(() => {
                                         {{ item.related.title }}
                                     </h4>
                                     <p class="text-caption text-medium-emphasis text-truncate">
-                                        {{ item.related.description || 'Related content' }}
+                                        {{ item.related.description || $t('events.relatedContent') }}
                                     </p>
                                 </v-card-text>
                             </v-card>
@@ -951,16 +954,16 @@ onMounted(() => {
 
     <ConfirmDialog
         v-model="showConfirmationDialog"
-        title="Delete Event"
-        content="Are you sure you want to delete this event? This action cannot be undone."
-        confirmationText="Delete"
-        cancellationText="Cancel"
+        :title="$t('events.deleteEvent')"
+        :content="$t('events.confirmDeleteEvent')"
+        :confirmationText="$t('common.delete')"
+        :cancellationText="$t('common.cancel')"
         :resolve="handleConfirmation"
     />
 
     <RelatedContent
         v-model="showRelateContentDialog"
-        contentName="Current Event"
+        :contentName="$t('events.currentEvent')"
         initialSourceType="App\Models\Event\Event"
         :initialSourceItem="String(localEvent?.id)"
         @confirmRelation="handleRelationConfirmed"

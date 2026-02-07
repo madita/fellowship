@@ -10,8 +10,8 @@
                         dark
                         class="calendar-tabs"
                     >
-                        <v-tab value="calendar">Calendar View</v-tab>
-                        <v-tab value="overview">Events Overview</v-tab>
+                        <v-tab value="calendar">{{ $t('events.calendarView') }}</v-tab>
+                        <v-tab value="overview">{{ $t('events.eventsOverview') }}</v-tab>
                     </v-tabs>
 
                     <v-window v-model="activeTab" class="mt-2">
@@ -40,7 +40,7 @@
                                             size="large"
                                             rounded="lg"
                                         >
-                                            Add New Event
+                                            {{ $t('events.addNewEvent') }}
                                         </v-btn>
                                     </div>
 
@@ -64,20 +64,20 @@
 
                                     <div class="pa-4">
                                         <div class="d-flex align-center justify-space-between mb-4">
-                                            <h5 class="text-h6 font-weight-bold">Event Filters</h5>
+                                            <h5 class="text-h6 font-weight-bold">{{ $t('events.eventFilters') }}</h5>
                                             <v-btn
                                                 variant="text"
                                                 density="comfortable"
                                                 size="small"
                                                 @click="checkAll = !checkAll"
-                                            >{{ checkAll ? 'Clear All' : 'Select All' }}</v-btn>
+                                            >{{ checkAll ? $t('events.clearAll') : $t('events.selectAll') }}</v-btn>
                                         </div>
 
                                         <v-fade-transition hide-on-leave>
                                             <div class="d-flex flex-column calendars-checkbox">
                                                 <v-checkbox
                                                     v-model="checkAll"
-                                                    label="View all"
+                                                    :label="$t('events.viewAll')"
                                                     color="primary"
                                                     hide-details
                                                     density="compact"
@@ -100,7 +100,7 @@
 
                                     <!-- Quick Upcoming Events Preview -->
                                     <div class="pa-4">
-                                        <h5 class="text-h6 font-weight-bold mb-4">Coming Up Soon</h5>
+                                        <h5 class="text-h6 font-weight-bold mb-4">{{ $t('events.comingUpSoon') }}</h5>
                                         <div v-if="upcomingEvents.length > 0">
                                             <v-list lines="two" class="pa-0">
                                                 <v-list-item
@@ -128,7 +128,7 @@
                                             </v-list>
                                         </div>
                                         <div v-else class="text-center pa-4 text-body-2 text-disabled">
-                                            No upcoming events
+                                            {{ $t('events.noUpcomingEvents') }}
                                         </div>
                                     </div>
                                 </v-navigation-drawer>
@@ -148,10 +148,10 @@
                                                 mandatory
                                                 density="comfortable"
                                             >
-                                                <v-btn value="dayGridMonth">Month</v-btn>
-                                                <v-btn value="timeGridWeek">Week</v-btn>
-                                                <v-btn value="timeGridDay">Day</v-btn>
-                                                <v-btn value="custom">List</v-btn>
+                                                <v-btn value="dayGridMonth">{{ $t('events.month') }}</v-btn>
+                                                <v-btn value="timeGridWeek">{{ $t('events.week') }}</v-btn>
+                                                <v-btn value="timeGridDay">{{ $t('events.day') }}</v-btn>
+                                                <v-btn value="custom">{{ $t('events.list') }}</v-btn>
                                             </v-btn-toggle>
 
                                             <v-btn
@@ -187,8 +187,8 @@
                                         <v-card class="rounded-lg elevation-2 h-100">
                                             <v-card-title class="d-flex justify-space-between align-center py-4 px-6">
                                                 <div>
-                                                    <h3 class="text-h5 font-weight-bold">Upcoming Events</h3>
-                                                    <span class="text-caption text-medium-emphasis">Next 7 days</span>
+                                                    <h3 class="text-h5 font-weight-bold">{{ $t('events.upcomingEvents') }}</h3>
+                                                    <span class="text-caption text-medium-emphasis">{{ $t('events.next7Days') }}</span>
                                                 </div>
                                                 <v-badge
                                                     :content="upcomingEvents.length"
@@ -205,15 +205,15 @@
                                             <v-card-text class="pa-0">
                                                 <v-list v-if="upcomingEvents.length > 0" class="py-0">
                                                     <v-list-subheader class="d-flex justify-space-between px-6">
-                                                        <span>Event</span>
-                                                        <span>Date & Time</span>
+                                                        <span>{{ $t('events.event') }}</span>
+                                                        <span>{{ $t('events.dateAndTime') }}</span>
                                                     </v-list-subheader>
 
                                                     <v-list-item
                                                         v-for="event in upcomingEvents"
                                                         :key="event.id"
                                                         :title="event.title"
-                                                        :subtitle="event.extendedProps?.location || 'No location'"
+                                                        :subtitle="event.extendedProps?.location || $t('events.noLocation')"
                                                         class="px-6 event-list-item"
                                                         @click="viewEventDetails(event)"
                                                     >
@@ -238,9 +238,9 @@
 
                                                 <v-sheet v-else class="d-flex flex-column justify-center align-center py-12">
                                                     <v-icon size="64" color="grey-lighten-2">mdi-calendar-blank</v-icon>
-                                                    <span class="text-medium-emphasis mt-4">No upcoming events for the next 7 days</span>
+                                                    <span class="text-medium-emphasis mt-4">{{ $t('events.noUpcomingEventsNext7Days') }}</span>
                                                     <v-btn variant="text" color="primary" class="mt-4" @click="createEvent">
-                                                        Add Event
+                                                        {{ $t('events.addEvent') }}
                                                     </v-btn>
                                                 </v-sheet>
                                             </v-card-text>
@@ -252,8 +252,8 @@
                                         <v-card class="rounded-lg elevation-2 h-100">
                                             <v-card-title class="d-flex justify-space-between align-center py-4 px-6">
                                                 <div>
-                                                    <h3 class="text-h5 font-weight-bold">All Events</h3>
-                                                    <span class="text-caption text-medium-emphasis">By category</span>
+                                                    <h3 class="text-h5 font-weight-bold">{{ $t('events.allEvents') }}</h3>
+                                                    <span class="text-caption text-medium-emphasis">{{ $t('events.byCategory') }}</span>
                                                 </div>
                                                 <v-badge
                                                     :content="filterEvents.length"
@@ -326,9 +326,9 @@
 
                                                 <v-sheet v-else class="d-flex flex-column justify-center align-center py-12">
                                                     <v-icon size="64" color="grey-lighten-2">mdi-calendar-blank</v-icon>
-                                                    <span class="text-medium-emphasis mt-4">No events found</span>
+                                                    <span class="text-medium-emphasis mt-4">{{ $t('events.noEventsFound') }}</span>
                                                     <v-btn variant="text" color="primary" class="mt-4" @click="createEvent">
-                                                        Add Event
+                                                        {{ $t('events.addEvent') }}
                                                     </v-btn>
                                                 </v-sheet>
                                             </v-card-text>
@@ -339,7 +339,7 @@
                                     <v-col cols="12">
                                         <v-card class="rounded-lg elevation-2">
                                             <v-card-title class="py-4 px-6">
-                                                <h3 class="text-h5 font-weight-bold">Event Statistics</h3>
+                                                <h3 class="text-h5 font-weight-bold">{{ $t('events.eventStatistics') }}</h3>
                                             </v-card-title>
 
                                             <v-divider />
@@ -385,9 +385,12 @@
 
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { addDays, isEqual, isAfter, isBefore } from "date-fns";
 import { useDateFormat } from '@/plugins/formatDate.js';
+
+const { t } = useI18n();
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -504,25 +507,25 @@ const groupedEvents = computed(() => {
 // Event statistics
 const eventStats = computed(() => [
     {
-        title: 'Total Events',
+        title: t('events.totalEvents'),
         value: filterEvents.value.length,
         icon: 'mdi-calendar-multiple',
         color: 'primary'
     },
     {
-        title: 'This Week',
+        title: t('events.thisWeek'),
         value: upcomingEvents.value.length,
         icon: 'mdi-calendar-clock',
         color: 'success'
     },
     {
-        title: 'Categories',
+        title: t('events.categories'),
         value: Object.keys(groupedEvents.value).length,
         icon: 'mdi-tag-multiple',
         color: 'info'
     },
     {
-        title: 'All-day Events',
+        title: t('events.allDayEvents'),
         value: filterEvents.value.filter(e => e.allDay).length,
         icon: 'mdi-calendar-today',
         color: 'warning'
@@ -593,11 +596,11 @@ const calendarOptions = computed(() => ({
         right: '',
     },
     buttonText: {
-        custom: 'List',
-        today: 'Today',
-        month: 'Month',
-        week: 'Week',
-        day: 'Day',
+        custom: t('events.list'),
+        today: t('events.today'),
+        month: t('events.month'),
+        week: t('events.week'),
+        day: t('events.day'),
     },
     initialEvents: [],
     editable: false,
@@ -713,7 +716,7 @@ const formatEventDate = (event) => {
 };
 
 const formatEventTime = (event) => {
-    if (event.allDay) return 'All day';
+    if (event.allDay) return t('events.allDay');
 
     const start = new Date(event.start);
     const end = event.end ? new Date(event.end) : null;

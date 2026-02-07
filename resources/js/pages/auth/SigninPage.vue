@@ -1,8 +1,8 @@
 <template>
     <div>
         <v-card class="text-center pa-1" elevation="4">
-            <v-card-title class="justify-center display-1 mb-2">Welcome</v-card-title>
-            <v-card-subtitle>Sign in to your account</v-card-subtitle>
+            <v-card-title class="justify-center display-1 mb-2">{{ $t('login.welcome') }}</v-card-title>
+            <v-card-subtitle>{{ $t('login.subtitle') }}</v-card-subtitle>
 
             <!-- sign in form -->
             <v-card-text>
@@ -115,9 +115,11 @@
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/store/authStore.js'
 import axios from 'axios'
 
+const { t } = useI18n()
 const router = useRouter()
 const auth = useAuthStore()
 
@@ -133,10 +135,10 @@ const credentials = reactive({
 })
 
 const rules = {
-    required: (value) => (value && Boolean(value)) || 'Required',
+    required: (value) => (value && Boolean(value)) || t('validation.required'),
     email: value => {
         const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-        return pattern.test(value) || 'Invalid e-mail.'
+        return pattern.test(value) || t('validation.email')
     }
 }
 
@@ -179,7 +181,7 @@ const submit = async () => {
             const data = error.response.data
 
             // Set general error message
-            errorMessages.message = data.message || 'An error occurred during login'
+            errorMessages.message = data.message || t('login.error')
 
             // Set specific field errors
             if (data.errors) {
@@ -201,7 +203,7 @@ const submit = async () => {
             }
         } else {
             // Handle network or other errors
-            errorMessages.message = 'Network error. Please try again.'
+            errorMessages.message = t('login.networkError')
         }
     } finally {
         isLoading.value = false

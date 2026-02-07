@@ -10,20 +10,22 @@
     >
       <div class="d-flex align-center">
         <v-icon class="mr-2" size="small">mdi-wrench</v-icon>
-        <strong>Maintenance Mode Active</strong>
-        <span class="ml-1 d-none d-sm-inline">- Only admins can access the site</span>
+        <strong>{{ $t('auth.maintenanceModeActive') }}</strong>
+        <span class="ml-1 d-none d-sm-inline">- {{ $t('auth.onlyAdminsCanAccess') }}</span>
       </div>
     </v-alert>
 
-    <!-- Theme Toggle Button -->
-    <v-btn
-      icon
-      class="theme-toggle-btn"
-      @click="toggleTheme"
-      :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-    >
-      <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
-    </v-btn>
+    <!-- Theme Toggle and Language Switch -->
+    <div class="auth-controls">
+      <ToolbarLanguage :show-label="false" />
+      <v-btn
+        icon
+        @click="toggleTheme"
+        :title="isDark ? $t('common.switchToLightMode') : $t('common.switchToDarkMode')"
+      >
+        <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+      </v-btn>
+    </div>
 
     <v-sheet class="layout-side mx-auto mx-md-1 d-none d-md-flex flex-md-column justify-space-between px-2" color="surface">
       <div class="mt-3 mt-md-10 pa-2">
@@ -40,8 +42,8 @@
         <div class="display-2 font-weight-bold text-primary">
           {{ appName }}
         </div>
-        <div class="title my-2">{{ siteTagline || 'Welcome! Let\'s build amazing things together.' }}</div>
-        <v-btn to="/" class="my-4">Take me back</v-btn>
+        <div class="title my-2">{{ siteTagline || $t('auth.welcomeTagline') }}</div>
+        <v-btn to="/" class="my-4">{{ $t('auth.takeMeBack') }}</v-btn>
       </div>
       <v-img v-if="!loginBrandingEnabled || !currentLogo" src="/images/illustrations/signin-illustration.svg" max-height="400" contain />
     </v-sheet>
@@ -58,8 +60,12 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useTheme } from 'vuetify'
+import { useI18n } from 'vue-i18n'
 import { useAppStore } from "../store/app/index.js"
 import { useSettingsStore } from "../store/settingStore.js"
+import ToolbarLanguage from "../components/toolbar/ToolbarLanguage.vue"
+
+const { t } = useI18n()
 
 const theme = useTheme()
 const appStore = useAppStore()
@@ -131,11 +137,14 @@ onMounted(async () => {
   border-radius: 0;
 }
 
-.theme-toggle-btn {
+.auth-controls {
   position: absolute;
   top: 16px;
   right: 16px;
   z-index: 10;
+  display: flex;
+  gap: 4px;
+  align-items: center;
 }
 
 .layout-side {

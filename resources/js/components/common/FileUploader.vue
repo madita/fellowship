@@ -15,7 +15,7 @@
             color="primary"
             @click="uploadFiles"
         >
-            Upload Files ({{ validFiles.length }} Valid)
+            {{ t('commonComponents.fileUploader.uploadFiles', { count: validFiles.length }) }}
         </v-btn>
         <!-- Dropzone -->
         <div
@@ -36,10 +36,10 @@
             <div class="dropzone-content">
                 <v-icon size="48">mdi-cloud-upload</v-icon>
                 <p>
-                    Drag & Drop files here, or
-                    <span class="file-select" @click="triggerFileInput">browse</span>
+                    {{ t('commonComponents.fileUploader.dragDropOr') }}
+                    <span class="file-select" @click="triggerFileInput">{{ t('commonComponents.fileUploader.browse') }}</span>
                 </p>
-                <p v-if="files.length">{{ files.length }} file(s) selected</p>
+                <p v-if="files.length">{{ t('commonComponents.fileUploader.filesSelected', { count: files.length }) }}</p>
             </div>
         </div>
 
@@ -85,8 +85,8 @@
                     <v-card-text>
                         <v-text-field
                             v-model="file.caption"
-                            label="Add Caption"
-                            placeholder="Enter caption"
+                            :label="t('commonComponents.fileUploader.addCaption')"
+                            :placeholder="t('commonComponents.fileUploader.captionPlaceholder')"
                         />
                         <div v-if="file.warning" class="warning">
                             {{ file.warning }}
@@ -103,15 +103,18 @@
             color="primary"
             @click="uploadFiles"
         >
-            Upload Files ({{ validFiles.length }} Valid)
+            {{ t('commonComponents.fileUploader.uploadFiles', { count: validFiles.length }) }}
         </v-btn>
     </v-container>
 </template>
 
 <script setup>
 import { ref, computed } from "vue";
+import { useI18n } from 'vue-i18n';
 import axios from "axios";
 import { useSettingsStore } from "@/store/settingStore";
+
+const { t } = useI18n();
 
 const props = defineProps({
     accept: {
@@ -159,9 +162,7 @@ const addFiles = (newFiles) => {
     const processedFiles = Array.from(newFiles).map((file) => {
         const warning =
             file.size > settingStore.maxFileSize
-                ? `File exceeds max size of ${(settingStore.maxFileSize / 1024 / 1024).toFixed(
-                    2
-                )} MB`
+                ? t('commonComponents.fileUploader.fileTooLarge', { size: (settingStore.maxFileSize / 1024 / 1024).toFixed(2) })
                 : null;
 
         return {
@@ -253,7 +254,7 @@ const uploadIndividually = async () => {
             file.uploadProgress = 100;
         } catch (error) {
             console.error(`Failed to upload file ${file.name}:`, error.response?.data || error.message);
-            file.warning = "Failed to upload file.";
+            file.warning = t('commonComponents.fileUploader.uploadFailed');
         }
     }
     uploadInProgress.value = false;

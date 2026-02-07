@@ -11,7 +11,7 @@
           solo
           hide-details
           append-icon="mdi-magnify"
-          placeholder="Search"
+          :placeholder="$t('faq.searchPlaceholder')"
         ></v-text-field>
       </div>
     </v-card>
@@ -20,7 +20,7 @@
     <v-row>
       <v-col cols="12" md="3" xl="2">
         <div class="sticky" style="top: 90px">
-          <div class="title mb-2">Contents</div>
+          <div class="title mb-2">{{ $t('faq.contents') }}</div>
           <div v-for="faq in faqs" :key="faq.id" class="mb-1">
             <v-btn text color="bg-primary" @click="$vuetify.goTo(`#${faq.id}`, { offset: 30 })">{{ faq.title }}</v-btn>
           </div>
@@ -67,11 +67,11 @@ export default {
       search: '',
 
       breadcrumbs: [{
-        text: 'Pages',
+        text: this.$t('common.pages'),
         disabled: false,
         href: '#'
       }, {
-        text: 'FAQ'
+        text: this.$t('common.faq')
       }],
 
       faqs: [{
