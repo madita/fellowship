@@ -1,38 +1,37 @@
-// Import existing refactored components
-import StatsWidget from '../Stats.vue';
-import PartnersWidget from '../Partners.vue';
-import FeatureGridWidget from '../Feature2.vue'; // Feature2 is the grid
-import FeatureShowcaseWidget from '../Feature1.vue'; // Feature1 is the showcase
-import CtaWidget from '../CallToAction.vue';
+import { defineAsyncComponent, markRaw } from 'vue';
 
-// Import new widgets
-import HeroWidget from './HeroWidget.vue';
-import BlogPostsWidget from './BlogPostsWidget.vue';
-import TeamMembersWidget from './TeamMembersWidget.vue';
-import ContactFormWidget from './ContactFormWidget.vue';
-import VideoWidget from './VideoWidget.vue';
-import NewsletterWidget from './NewsletterWidget.vue';
-import TimelineWidget from './TimelineWidget.vue';
-import ClientsWidget from './ClientsWidget.vue';
-import CustomHtmlWidget from './CustomHtmlWidget.vue';
+// Import widget components
+const HeroWidget = defineAsyncComponent(() => import('./HeroWidget.vue'));
+const PartnersWidget = defineAsyncComponent(() => import('./PartnersWidget.vue'));
+const StatsWidget = defineAsyncComponent(() => import('./StatsWidget.vue'));
+const FeatureGridWidget = defineAsyncComponent(() => import('./FeatureGridWidget.vue'));
+const FeatureShowcaseWidget = defineAsyncComponent(() => import('./FeatureShowcaseWidget.vue'));
+const CtaWidget = defineAsyncComponent(() => import('./CtaWidget.vue'));
+const TestimonialsWidget = defineAsyncComponent(() => import('./TestimonialsWidget.vue'));
+const PricingWidget = defineAsyncComponent(() => import('./PricingWidget.vue'));
+const FaqWidget = defineAsyncComponent(() => import('./FaqWidget.vue'));
+const GalleryWidget = defineAsyncComponent(() => import('./GalleryWidget.vue'));
+const BlogPostsWidget = defineAsyncComponent(() => import('./BlogPostsWidget.vue'));
+const TeamMembersWidget = defineAsyncComponent(() => import('./TeamMembersWidget.vue'));
+const ContactFormWidget = defineAsyncComponent(() => import('./ContactFormWidget.vue'));
+const VideoWidget = defineAsyncComponent(() => import('./VideoWidget.vue'));
+const NewsletterWidget = defineAsyncComponent(() => import('./NewsletterWidget.vue'));
+const TimelineWidget = defineAsyncComponent(() => import('./TimelineWidget.vue'));
+const ClientsWidget = defineAsyncComponent(() => import('./ClientsWidget.vue'));
+const CustomHtmlWidget = defineAsyncComponent(() => import('./CustomHtmlWidget.vue'));
 
-// These will be created later
-// import TestimonialsWidget from './TestimonialsWidget.vue';
-// import PricingWidget from './PricingWidget.vue';
-// import FaqWidget from './FaqWidget.vue';
-// import GalleryWidget from './GalleryWidget.vue';
-
-/**
- * Widget component registry
- * Maps widget type strings to Vue components
- */
-export const WIDGET_COMPONENTS = {
+// Widget component mapping
+const widgetComponents = {
     hero: HeroWidget,
-    stats: StatsWidget,
     partners: PartnersWidget,
+    stats: StatsWidget,
     feature_grid: FeatureGridWidget,
     feature_showcase: FeatureShowcaseWidget,
     cta: CtaWidget,
+    testimonials: TestimonialsWidget,
+    pricing: PricingWidget,
+    faq: FaqWidget,
+    gallery: GalleryWidget,
     blog_posts: BlogPostsWidget,
     team_members: TeamMembersWidget,
     contact_form: ContactFormWidget,
@@ -41,34 +40,20 @@ export const WIDGET_COMPONENTS = {
     timeline: TimelineWidget,
     clients: ClientsWidget,
     custom_html: CustomHtmlWidget,
-    // testimonials: TestimonialsWidget,
-    // pricing: PricingWidget,
-    // faq: FaqWidget,
-    // gallery: GalleryWidget,
 };
 
 /**
- * Get widget component by type
- * @param {string} type - Widget type
+ * Get Vue component for a widget type
+ * @param {string} type - Widget type identifier
  * @returns {Component|null} Vue component or null if not found
  */
 export function getWidgetComponent(type) {
-    return WIDGET_COMPONENTS[type] || null;
+    const component = widgetComponents[type];
+    if (component) {
+        return markRaw(component);
+    }
+    console.warn(`Unknown widget type: ${type}`);
+    return null;
 }
 
-/**
- * Check if a widget type is registered
- * @param {string} type - Widget type
- * @returns {boolean}
- */
-export function hasWidgetComponent(type) {
-    return type in WIDGET_COMPONENTS;
-}
-
-/**
- * Get all registered widget types
- * @returns {string[]}
- */
-export function getRegisteredWidgetTypes() {
-    return Object.keys(WIDGET_COMPONENTS);
-}
+export default widgetComponents;

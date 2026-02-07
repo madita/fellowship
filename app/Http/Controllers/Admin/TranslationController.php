@@ -536,19 +536,43 @@ class TranslationController extends Controller
         // Remove trailing semicolon if present
         $content = rtrim($content, ';');
 
-        // Convert JS object to JSON
-        // Replace single quotes with double quotes
-        $content = preg_replace("/'/", '"', $content);
+        // Remove single-line comments (// ...)
+        $content = preg_replace('/\/\/[^\n]*/', '', $content);
 
-        // Handle unquoted keys
-        $content = preg_replace('/(\s*)(\w+)(\s*):/', '$1"$2"$3:', $content);
+        // Remove multi-line comments (/* ... */)
+        $content = preg_replace('/\/\*[\s\S]*?\*\//', '', $content);
+
+        // Handle escaped apostrophes in strings before converting quotes
+        // Convert \' to a placeholder, then back after quote conversion
+        $content = str_replace("\\'", '___ESCAPED_APOSTROPHE___', $content);
+
+        // Escape double quotes inside single-quoted strings before converting
+        // This prevents issues like 'Type "DELETE"' becoming "Type "DELETE""
+        $content = preg_replace_callback(
+            "/'([^']*?)'/",
+            function ($matches) {
+                // Escape any double quotes inside the single-quoted string
+                $inner = str_replace('"', '\\"', $matches[1]);
+                return '"' . $inner . '"';
+            },
+            $content
+        );
+
+        // Convert placeholder back to escaped apostrophe (as literal apostrophe in JSON string)
+        $content = str_replace('___ESCAPED_APOSTROPHE___', "'", $content);
 
         // Remove trailing commas before closing braces
         $content = preg_replace('/,(\s*[\}\]])/', '$1', $content);
 
         try {
-            return json_decode($content, true) ?? [];
+            $result = json_decode($content, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                \Log::warning('JSON parse error in translations: ' . json_last_error_msg() . ' - Content sample: ' . substr($content, 0, 500));
+                return [];
+            }
+            return $result ?? [];
         } catch (\Exception $e) {
+            \Log::warning('Exception parsing translations: ' . $e->getMessage());
             return [];
         }
     }
@@ -658,6 +682,644 @@ class TranslationController extends Controller
     }
 
     /**
+     * Generate a detailed report for AI/programmatic translation updates.
+     */
+    public function generateReport(Request $request): JsonResponse
+    {
+        $type = $request->input('type', 'all'); // js, php, all
+        $format = $request->input('format', 'detailed'); // detailed, summary, actionable
+
+        $report = [
+            'generated_at' => now()->toISOString(),
+            'format'       => $format,
+            'files'        => [],
+            'summary'      => [
+                'total_files_scanned'    => 0,
+                'files_with_hardcoded'   => 0,
+                'total_hardcoded_strings' => 0,
+                'missing_translation_keys' => 0,
+            ],
+            'suggested_translations' => [],
+            'actionable_changes'     => [],
+        ];
+
+        if ($type === 'js' || $type === 'all') {
+            $jsReport = $this->generateDetailedJsReport();
+            $report['files'] = array_merge($report['files'], $jsReport['files']);
+            $report['summary']['total_files_scanned'] += $jsReport['summary']['total_files'];
+            $report['summary']['files_with_hardcoded'] += $jsReport['summary']['files_with_hardcoded'];
+            $report['summary']['total_hardcoded_strings'] += $jsReport['summary']['total_hardcoded'];
+            $report['summary']['missing_translation_keys'] += $jsReport['summary']['missing_keys'];
+            $report['suggested_translations'] = array_merge(
+                $report['suggested_translations'],
+                $jsReport['suggested_translations']
+            );
+            $report['actionable_changes'] = array_merge(
+                $report['actionable_changes'],
+                $jsReport['actionable_changes']
+            );
+        }
+
+        if ($type === 'php' || $type === 'all') {
+            $phpReport = $this->generateDetailedPhpReport();
+            $report['files'] = array_merge($report['files'], $phpReport['files']);
+            $report['summary']['total_files_scanned'] += $phpReport['summary']['total_files'];
+            $report['summary']['files_with_hardcoded'] += $phpReport['summary']['files_with_hardcoded'];
+            $report['summary']['total_hardcoded_strings'] += $phpReport['summary']['total_hardcoded'];
+            $report['summary']['missing_translation_keys'] += $phpReport['summary']['missing_keys'];
+            $report['suggested_translations'] = array_merge(
+                $report['suggested_translations'],
+                $phpReport['suggested_translations']
+            );
+            $report['actionable_changes'] = array_merge(
+                $report['actionable_changes'],
+                $phpReport['actionable_changes']
+            );
+        }
+
+        // Generate markdown report for AI consumption
+        if ($format === 'actionable') {
+            $report['markdown_report'] = $this->generateMarkdownReport($report);
+        }
+
+        return response()->json($report);
+    }
+
+    /**
+     * Generate detailed JS/Vue report with line numbers and context.
+     */
+    protected function generateDetailedJsReport(): array
+    {
+        $vueFiles = $this->getFilesWithExtension(resource_path('js'), ['vue', 'js']);
+        $files = [];
+        $suggestedTranslations = [];
+        $actionableChanges = [];
+        $usedKeys = [];
+        $totalHardcoded = 0;
+        $filesWithHardcoded = 0;
+
+        // Enhanced patterns with named captures
+        $hardcodedPatterns = [
+            // Vue template attributes
+            [
+                'pattern' => '/<v-[a-z-]+[^>]*\s(label|title|text|placeholder|hint|message|prepend-inner-icon-text|append-inner-icon-text)="([^"]+)"/',
+                'type'    => 'vue_attribute',
+                'capture' => 2,
+                'attr'    => 1,
+            ],
+            // Vue template content (text between tags)
+            [
+                'pattern' => '/>([A-Z][^<>{}\n]{2,50})</s',
+                'type'    => 'vue_content',
+                'capture' => 1,
+            ],
+            // JS object properties
+            [
+                'pattern' => '/(?:label|title|placeholder|hint|message|text|description|buttonText|headerText)\s*:\s*[\'"]([^\'"]{3,100})[\'"]/',
+                'type'    => 'js_property',
+                'capture' => 1,
+            ],
+            // Alert/snackbar messages
+            [
+                'pattern' => '/(?:showSnackbar|showMessage|showError|showSuccess|alert)\s*\(\s*[\'"]([^\'"]{3,100})[\'"]/',
+                'type'    => 'message_call',
+                'capture' => 1,
+            ],
+            // v-btn content
+            [
+                'pattern' => '/<v-btn[^>]*>([A-Za-z][^<>{}\n]{1,30})<\/v-btn>/',
+                'type'    => 'button_text',
+                'capture' => 1,
+            ],
+            // v-card-title content
+            [
+                'pattern' => '/<v-card-title[^>]*>([^<>{}\n]{3,50})<\/v-card-title>/',
+                'type'    => 'card_title',
+                'capture' => 1,
+            ],
+            // Heading content
+            [
+                'pattern' => '/<h[1-6][^>]*>([^<>{}\n]{3,100})<\/h[1-6]>/',
+                'type'    => 'heading',
+                'capture' => 1,
+            ],
+        ];
+
+        // Translation key patterns
+        $translationPatterns = [
+            '/\$t\([\'"]([^\'"]+)[\'"]\)/',
+            '/\bt\([\'"]([^\'"]+)[\'"]\)/',
+            '/i18n\.t\([\'"]([^\'"]+)[\'"]\)/',
+        ];
+
+        foreach ($vueFiles as $filePath) {
+            $content = File::get($filePath);
+            $lines = explode("\n", $content);
+            $relativePath = str_replace(resource_path('js') . DIRECTORY_SEPARATOR, '', $filePath);
+            $relativePath = str_replace('\\', '/', $relativePath);
+
+            $fileHardcoded = [];
+
+            // Find used translation keys
+            foreach ($translationPatterns as $pattern) {
+                preg_match_all($pattern, $content, $matches);
+                foreach ($matches[1] as $key) {
+                    if (!isset($usedKeys[$key])) {
+                        $usedKeys[$key] = [];
+                    }
+                    $usedKeys[$key][] = $relativePath;
+                }
+            }
+
+            // Find hardcoded strings with line numbers
+            foreach ($lines as $lineNum => $line) {
+                $lineNumber = $lineNum + 1;
+
+                foreach ($hardcodedPatterns as $patternInfo) {
+                    $pattern = $patternInfo['pattern'];
+                    $captureIndex = $patternInfo['capture'];
+
+                    if (preg_match_all($pattern, $line, $matches, PREG_OFFSET_CAPTURE)) {
+                        foreach ($matches[$captureIndex] as $match) {
+                            $text = $match[0];
+
+                            // Skip if already using translation
+                            if (preg_match('/\$t\(|\bt\(|i18n\.t\(/', $line)) {
+                                continue;
+                            }
+
+                            // Skip common false positives
+                            if ($this->shouldSkipString($text)) {
+                                continue;
+                            }
+
+                            // Generate suggested translation key
+                            $suggestedKey = $this->generateTranslationKey($relativePath, $text, $patternInfo['type']);
+
+                            $fileHardcoded[] = [
+                                'line'          => $lineNumber,
+                                'column'        => $match[1] ?? 0,
+                                'text'          => $text,
+                                'type'          => $patternInfo['type'],
+                                'context'       => trim($line),
+                                'suggested_key' => $suggestedKey,
+                                'suggested_fix' => $this->generateSuggestedFix($line, $text, $suggestedKey, $patternInfo['type']),
+                            ];
+
+                            $suggestedTranslations[$suggestedKey] = [
+                                'en' => $text,
+                                'de' => '', // To be filled
+                            ];
+
+                            $actionableChanges[] = [
+                                'file'            => $relativePath,
+                                'file_full_path'  => $filePath,
+                                'line'            => $lineNumber,
+                                'original'        => trim($line),
+                                'text'            => $text,
+                                'suggested_key'   => $suggestedKey,
+                                'suggested_fix'   => $this->generateSuggestedFix($line, $text, $suggestedKey, $patternInfo['type']),
+                                'type'            => 'js',
+                            ];
+                        }
+                    }
+                }
+            }
+
+            if (!empty($fileHardcoded)) {
+                $filesWithHardcoded++;
+                $totalHardcoded += count($fileHardcoded);
+
+                $files[] = [
+                    'path'      => $relativePath,
+                    'full_path' => $filePath,
+                    'type'      => 'vue/js',
+                    'hardcoded' => $fileHardcoded,
+                ];
+            }
+        }
+
+        // Load English translations
+        $enFile = $this->jsTranslationsPath . '/en.js';
+        $enTranslations = [];
+        if (File::exists($enFile)) {
+            $enTranslations = $this->flattenArray(
+                $this->parseJsTranslations(File::get($enFile))
+            );
+        }
+
+        // Find missing keys
+        $missingKeys = [];
+        foreach ($usedKeys as $key => $keyFiles) {
+            if (!isset($enTranslations[$key])) {
+                $missingKeys[$key] = $keyFiles;
+            }
+        }
+
+        return [
+            'files'   => $files,
+            'summary' => [
+                'total_files'          => count($vueFiles),
+                'files_with_hardcoded' => $filesWithHardcoded,
+                'total_hardcoded'      => $totalHardcoded,
+                'missing_keys'         => count($missingKeys),
+            ],
+            'missing_keys'            => $missingKeys,
+            'suggested_translations'  => $suggestedTranslations,
+            'actionable_changes'      => $actionableChanges,
+        ];
+    }
+
+    /**
+     * Generate detailed PHP report.
+     */
+    protected function generateDetailedPhpReport(): array
+    {
+        $phpFiles = $this->getFilesWithExtension(app_path(), ['php']);
+        $bladeFiles = $this->getFilesWithExtension(resource_path('views'), ['php']);
+        $allFiles = array_merge($phpFiles, $bladeFiles);
+
+        $files = [];
+        $suggestedTranslations = [];
+        $actionableChanges = [];
+        $usedKeys = [];
+        $totalHardcoded = 0;
+        $filesWithHardcoded = 0;
+
+        $hardcodedPatterns = [
+            // Response messages
+            [
+                'pattern' => '/return\s+response\(\)\s*->\s*json\(\s*\[\s*[\'"](?:message|error|success)[\'"]\s*=>\s*[\'"]([^\'"]{3,100})[\'"]/',
+                'type'    => 'response_message',
+                'capture' => 1,
+            ],
+            // Throw exceptions with messages
+            [
+                'pattern' => '/throw\s+new\s+\w+Exception\(\s*[\'"]([^\'"]{3,100})[\'"]/',
+                'type'    => 'exception_message',
+                'capture' => 1,
+            ],
+            // Validation messages
+            [
+                'pattern' => '/[\'"](?:required|min|max|email|unique)[\'"](?:\s*=>\s*|\s*,\s*)[\'"]([^\'"]{3,100})[\'"]/',
+                'type'    => 'validation_message',
+                'capture' => 1,
+            ],
+            // Flash messages
+            [
+                'pattern' => '/(?:flash|with)\([\'"](?:success|error|message|warning)[\'"]\s*,\s*[\'"]([^\'"]{3,100})[\'"]/',
+                'type'    => 'flash_message',
+                'capture' => 1,
+            ],
+            // Array messages
+            [
+                'pattern' => '/[\'"]message[\'"]\s*=>\s*[\'"]([^\'"]{3,100})[\'"]/',
+                'type'    => 'array_message',
+                'capture' => 1,
+            ],
+        ];
+
+        $translationPatterns = [
+            '/__\([\'"]([^\'"]+)[\'"]\)/',
+            '/trans\([\'"]([^\'"]+)[\'"]\)/',
+            '/trans_choice\([\'"]([^\'"]+)[\'"]/',
+            '/@lang\([\'"]([^\'"]+)[\'"]\)/',
+            '/Lang::get\([\'"]([^\'"]+)[\'"]\)/',
+        ];
+
+        foreach ($allFiles as $filePath) {
+            $content = File::get($filePath);
+            $lines = explode("\n", $content);
+            $relativePath = str_replace(base_path() . DIRECTORY_SEPARATOR, '', $filePath);
+            $relativePath = str_replace('\\', '/', $relativePath);
+
+            $fileHardcoded = [];
+
+            // Find used translation keys
+            foreach ($translationPatterns as $pattern) {
+                preg_match_all($pattern, $content, $matches);
+                foreach ($matches[1] as $key) {
+                    if (!isset($usedKeys[$key])) {
+                        $usedKeys[$key] = [];
+                    }
+                    $usedKeys[$key][] = $relativePath;
+                }
+            }
+
+            // Find hardcoded strings
+            foreach ($lines as $lineNum => $line) {
+                $lineNumber = $lineNum + 1;
+
+                // Skip if already using translation
+                if (preg_match('/__\(|trans\(|@lang\(|Lang::get\(/', $line)) {
+                    continue;
+                }
+
+                foreach ($hardcodedPatterns as $patternInfo) {
+                    if (preg_match_all($patternInfo['pattern'], $line, $matches, PREG_OFFSET_CAPTURE)) {
+                        foreach ($matches[$patternInfo['capture']] as $match) {
+                            $text = $match[0];
+
+                            if ($this->shouldSkipString($text)) {
+                                continue;
+                            }
+
+                            $suggestedKey = $this->generatePhpTranslationKey($relativePath, $text, $patternInfo['type']);
+
+                            $fileHardcoded[] = [
+                                'line'          => $lineNumber,
+                                'text'          => $text,
+                                'type'          => $patternInfo['type'],
+                                'context'       => trim($line),
+                                'suggested_key' => $suggestedKey,
+                                'suggested_fix' => str_replace("'{$text}'", "__('messages.{$suggestedKey}')", $line),
+                            ];
+
+                            $suggestedTranslations[$suggestedKey] = [
+                                'en' => $text,
+                                'de' => '',
+                            ];
+
+                            $actionableChanges[] = [
+                                'file'           => $relativePath,
+                                'file_full_path' => $filePath,
+                                'line'           => $lineNumber,
+                                'original'       => trim($line),
+                                'text'           => $text,
+                                'suggested_key'  => 'messages.' . $suggestedKey,
+                                'suggested_fix'  => str_replace("'{$text}'", "__('messages.{$suggestedKey}')", trim($line)),
+                                'type'           => 'php',
+                            ];
+                        }
+                    }
+                }
+            }
+
+            if (!empty($fileHardcoded)) {
+                $filesWithHardcoded++;
+                $totalHardcoded += count($fileHardcoded);
+
+                $files[] = [
+                    'path'      => $relativePath,
+                    'full_path' => $filePath,
+                    'type'      => 'php',
+                    'hardcoded' => $fileHardcoded,
+                ];
+            }
+        }
+
+        // Load English translations
+        $enPath = $this->phpTranslationsPath . '/en';
+        $enTranslations = [];
+        if (File::isDirectory($enPath)) {
+            foreach (File::files($enPath) as $file) {
+                if ($file->getExtension() === 'php') {
+                    $fileName = $file->getFilenameWithoutExtension();
+                    $translations = include $file->getPathname();
+                    foreach ($this->flattenArray($translations) as $key => $value) {
+                        $enTranslations[$fileName . '.' . $key] = $value;
+                    }
+                }
+            }
+        }
+
+        $missingKeys = [];
+        foreach ($usedKeys as $key => $keyFiles) {
+            if (!isset($enTranslations[$key])) {
+                $missingKeys[$key] = $keyFiles;
+            }
+        }
+
+        return [
+            'files'   => $files,
+            'summary' => [
+                'total_files'          => count($allFiles),
+                'files_with_hardcoded' => $filesWithHardcoded,
+                'total_hardcoded'      => $totalHardcoded,
+                'missing_keys'         => count($missingKeys),
+            ],
+            'missing_keys'           => $missingKeys,
+            'suggested_translations' => $suggestedTranslations,
+            'actionable_changes'     => $actionableChanges,
+        ];
+    }
+
+    /**
+     * Check if a string should be skipped (false positive).
+     */
+    protected function shouldSkipString(string $text): bool
+    {
+        // Skip very short strings
+        if (strlen($text) < 3) {
+            return true;
+        }
+
+        // Skip if it looks like a translation key
+        if (preg_match('/^[a-z_]+\.[a-z_]+/i', $text)) {
+            return true;
+        }
+
+        // Skip template variables
+        if (preg_match('/^\{|^\$|^{{/', $text)) {
+            return true;
+        }
+
+        // Skip icons
+        if (preg_match('/^mdi-/', $text)) {
+            return true;
+        }
+
+        // Skip colors
+        if (preg_match('/^#[a-fA-F0-9]{3,6}$/', $text)) {
+            return true;
+        }
+
+        // Skip numbers
+        if (preg_match('/^\d+$/', $text)) {
+            return true;
+        }
+
+        // Skip URLs
+        if (preg_match('/^https?:\/\/|^\/[a-z]/i', $text)) {
+            return true;
+        }
+
+        // Skip CSS classes
+        if (preg_match('/^[a-z-]+(-[a-z]+)+$/', $text)) {
+            return true;
+        }
+
+        // Skip common technical strings
+        $skipPatterns = [
+            '/^(id|class|style|type|name|value|href|src)$/',
+            '/^v-[a-z]/',
+            '/^:[a-z]/',
+            '/^@[a-z]/',
+            '/^\d+px$/',
+            '/^(GET|POST|PUT|DELETE|PATCH)$/',
+            '/^(true|false|null)$/i',
+        ];
+
+        foreach ($skipPatterns as $pattern) {
+            if (preg_match($pattern, $text)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Generate a translation key based on context.
+     */
+    protected function generateTranslationKey(string $filePath, string $text, string $type): string
+    {
+        // Extract component/page name from path
+        $pathParts = explode('/', $filePath);
+        $fileName = pathinfo(end($pathParts), PATHINFO_FILENAME);
+
+        // Determine prefix based on file location
+        $prefix = 'common';
+        if (str_contains($filePath, 'pages/admin/')) {
+            $prefix = 'admin';
+        } elseif (str_contains($filePath, 'pages/auth/')) {
+            $prefix = 'auth';
+        } elseif (str_contains($filePath, 'components/')) {
+            $prefix = 'components';
+        } elseif (str_contains($filePath, 'layouts/')) {
+            $prefix = 'layout';
+        }
+
+        // Generate key from text
+        $key = strtolower($text);
+        $key = preg_replace('/[^a-z0-9\s]/', '', $key);
+        $key = preg_replace('/\s+/', '_', $key);
+        $key = substr($key, 0, 30);
+        $key = rtrim($key, '_');
+
+        // Add type suffix for context
+        $typeSuffix = match ($type) {
+            'button_text'   => '_btn',
+            'card_title'    => '_title',
+            'vue_attribute' => '_label',
+            'heading'       => '_heading',
+            default         => '',
+        };
+
+        return $prefix . '.' . $fileName . '.' . $key . $typeSuffix;
+    }
+
+    /**
+     * Generate PHP translation key.
+     */
+    protected function generatePhpTranslationKey(string $filePath, string $text, string $type): string
+    {
+        // Extract controller/class name
+        $pathParts = explode('/', $filePath);
+        $fileName = pathinfo(end($pathParts), PATHINFO_FILENAME);
+
+        $prefix = match ($type) {
+            'response_message' => 'success',
+            'exception_message' => 'error',
+            'validation_message' => 'validation',
+            'flash_message' => 'flash',
+            default => 'general',
+        };
+
+        $key = strtolower($text);
+        $key = preg_replace('/[^a-z0-9\s]/', '', $key);
+        $key = preg_replace('/\s+/', '_', $key);
+        $key = substr($key, 0, 30);
+        $key = rtrim($key, '_');
+
+        return $prefix . '.' . $key;
+    }
+
+    /**
+     * Generate suggested fix for a hardcoded string.
+     */
+    protected function generateSuggestedFix(string $line, string $text, string $suggestedKey, string $type): string
+    {
+        $escapedText = preg_quote($text, '/');
+
+        return match ($type) {
+            'vue_attribute' => preg_replace(
+                '/="' . $escapedText . '"/',
+                '="\$t(\'' . $suggestedKey . '\')"',
+                $line
+            ),
+            'button_text', 'card_title', 'heading', 'vue_content' => preg_replace(
+                '/>' . $escapedText . '</',
+                '>{{ $t(\'' . $suggestedKey . '\') }}<',
+                $line
+            ),
+            'js_property' => preg_replace(
+                '/:\s*[\'"]' . $escapedText . '[\'"]/',
+                ': t(\'' . $suggestedKey . '\')',
+                $line
+            ),
+            'message_call' => preg_replace(
+                '/\([\'"]' . $escapedText . '[\'"]\)/',
+                '(t(\'' . $suggestedKey . '\'))',
+                $line
+            ),
+            default => $line,
+        };
+    }
+
+    /**
+     * Generate markdown report for AI consumption.
+     */
+    protected function generateMarkdownReport(array $report): string
+    {
+        $md = "# Translation Report\n\n";
+        $md .= "Generated: {$report['generated_at']}\n\n";
+
+        $md .= "## Summary\n\n";
+        $md .= "| Metric | Count |\n";
+        $md .= "|--------|-------|\n";
+        $md .= "| Total Files Scanned | {$report['summary']['total_files_scanned']} |\n";
+        $md .= "| Files with Hardcoded Strings | {$report['summary']['files_with_hardcoded']} |\n";
+        $md .= "| Total Hardcoded Strings | {$report['summary']['total_hardcoded_strings']} |\n";
+        $md .= "| Missing Translation Keys | {$report['summary']['missing_translation_keys']} |\n\n";
+
+        $md .= "## Actionable Changes\n\n";
+        $md .= "Below are the files that need translation updates:\n\n";
+
+        $groupedChanges = [];
+        foreach ($report['actionable_changes'] as $change) {
+            $file = $change['file'];
+            if (!isset($groupedChanges[$file])) {
+                $groupedChanges[$file] = [];
+            }
+            $groupedChanges[$file][] = $change;
+        }
+
+        foreach ($groupedChanges as $file => $changes) {
+            $md .= "### `{$file}`\n\n";
+
+            foreach ($changes as $change) {
+                $md .= "**Line {$change['line']}:**\n";
+                $md .= "- Text: `{$change['text']}`\n";
+                $md .= "- Suggested Key: `{$change['suggested_key']}`\n";
+                $md .= "- Original:\n```\n{$change['original']}\n```\n";
+                $md .= "- Suggested Fix:\n```\n{$change['suggested_fix']}\n```\n\n";
+            }
+        }
+
+        $md .= "## Suggested Translations to Add\n\n";
+        $md .= "Add these to your translation files:\n\n";
+        $md .= "```javascript\n";
+        $md .= "// For en.js\n";
+        foreach ($report['suggested_translations'] as $key => $values) {
+            $md .= "'{$key}': '{$values['en']}',\n";
+        }
+        $md .= "```\n";
+
+        return $md;
+    }
+
+    /**
      * Scan for missing JS translations in Vue files.
      */
     protected function scanMissingJsTranslations(): array
@@ -699,12 +1361,9 @@ class TranslationController extends Controller
                 preg_match_all($pattern, $content, $matches);
                 foreach ($matches[1] as $match) {
                     // Skip if it looks like a translation key, variable, or is too short
-                    if (strlen($match) < 3) continue;
-                    if (preg_match('/^[a-z_]+\.[a-z_]+/', $match)) continue; // Looks like a key
-                    if (preg_match('/^\{/', $match)) continue; // Template variable
-                    if (preg_match('/^mdi-/', $match)) continue; // Icon
-                    if (preg_match('/^#[a-fA-F0-9]{3,6}$/', $match)) continue; // Color
-                    if (preg_match('/^\d+$/', $match)) continue; // Number
+                    if ($this->shouldSkipString($match)) {
+                        continue;
+                    }
 
                     $hardcoded[] = [
                         'file'  => $relativePath,

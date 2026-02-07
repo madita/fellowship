@@ -296,6 +296,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::post('/translations/keys', 'App\Http\Controllers\Admin\TranslationController@addKey');
     Route::delete('/translations/keys', 'App\Http\Controllers\Admin\TranslationController@deleteKey');
     Route::get('/translations/scan', 'App\Http\Controllers\Admin\TranslationController@scanMissing');
+    Route::get('/translations/report', 'App\Http\Controllers\Admin\TranslationController@generateReport');
     Route::get('/translations/compare', 'App\Http\Controllers\Admin\TranslationController@compareLocales');
 });
 

@@ -54,6 +54,10 @@
                         {{ totalMissing }}
                     </v-chip>
                 </v-tab>
+                <v-tab value="report">
+                    <v-icon icon="mdi-file-document-outline" start />
+                    AI Report
+                </v-tab>
             </v-tabs>
 
             <v-divider />
@@ -466,6 +470,213 @@
                         </template>
                     </div>
                 </v-window-item>
+
+                <!-- AI Report Tab -->
+                <v-window-item value="report">
+                    <div class="pa-4">
+                        <div class="d-flex align-center justify-space-between mb-4">
+                            <div>
+                                <h3 class="text-h6">AI-Friendly Translation Report</h3>
+                                <p class="text-body-2 text-grey">
+                                    Generate a detailed report with actionable changes for updating translations
+                                </p>
+                            </div>
+                            <div class="d-flex ga-2">
+                                <v-btn-toggle v-model="reportType" mandatory density="compact">
+                                    <v-btn value="all" size="small">All</v-btn>
+                                    <v-btn value="js" size="small">JS Only</v-btn>
+                                    <v-btn value="php" size="small">PHP Only</v-btn>
+                                </v-btn-toggle>
+                                <v-btn
+                                    color="primary"
+                                    @click="generateReport"
+                                    :loading="generatingReport"
+                                >
+                                    <v-icon icon="mdi-file-document-edit" start />
+                                    Generate Report
+                                </v-btn>
+                            </div>
+                        </div>
+
+                        <v-alert
+                            v-if="!reportData"
+                            type="info"
+                            class="mb-4"
+                        >
+                            Click "Generate Report" to create a detailed translation report with line numbers, suggested fixes, and actionable changes.
+                        </v-alert>
+
+                        <template v-else>
+                            <!-- Report Summary -->
+                            <v-row class="mb-4">
+                                <v-col cols="12" md="3">
+                                    <v-card variant="tonal">
+                                        <v-card-text class="text-center">
+                                            <div class="text-h4">{{ reportData.summary.total_files_scanned }}</div>
+                                            <div class="text-body-2">Files Scanned</div>
+                                        </v-card-text>
+                                    </v-card>
+                                </v-col>
+                                <v-col cols="12" md="3">
+                                    <v-card color="warning" variant="tonal">
+                                        <v-card-text class="text-center">
+                                            <div class="text-h4">{{ reportData.summary.files_with_hardcoded }}</div>
+                                            <div class="text-body-2">Files with Issues</div>
+                                        </v-card-text>
+                                    </v-card>
+                                </v-col>
+                                <v-col cols="12" md="3">
+                                    <v-card color="error" variant="tonal">
+                                        <v-card-text class="text-center">
+                                            <div class="text-h4">{{ reportData.summary.total_hardcoded_strings }}</div>
+                                            <div class="text-body-2">Hardcoded Strings</div>
+                                        </v-card-text>
+                                    </v-card>
+                                </v-col>
+                                <v-col cols="12" md="3">
+                                    <v-card color="info" variant="tonal">
+                                        <v-card-text class="text-center">
+                                            <div class="text-h4">{{ reportData.summary.missing_translation_keys }}</div>
+                                            <div class="text-body-2">Missing Keys</div>
+                                        </v-card-text>
+                                    </v-card>
+                                </v-col>
+                            </v-row>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex ga-2 mb-4">
+                                <v-btn
+                                    variant="outlined"
+                                    @click="copyMarkdownReport"
+                                    :disabled="!reportData.markdown_report"
+                                >
+                                    <v-icon icon="mdi-content-copy" start />
+                                    Copy Markdown Report
+                                </v-btn>
+                                <v-btn
+                                    variant="outlined"
+                                    @click="downloadJsonReport"
+                                >
+                                    <v-icon icon="mdi-download" start />
+                                    Download JSON
+                                </v-btn>
+                                <v-btn
+                                    variant="outlined"
+                                    color="success"
+                                    @click="showSuggestedTranslations = !showSuggestedTranslations"
+                                >
+                                    <v-icon :icon="showSuggestedTranslations ? 'mdi-chevron-up' : 'mdi-chevron-down'" start />
+                                    Suggested Translations ({{ Object.keys(reportData.suggested_translations).length }})
+                                </v-btn>
+                            </div>
+
+                            <!-- Suggested Translations Panel -->
+                            <v-expand-transition>
+                                <v-card v-if="showSuggestedTranslations" class="mb-4" variant="outlined">
+                                    <v-card-title class="text-subtitle-1">
+                                        Suggested Translations to Add
+                                    </v-card-title>
+                                    <v-card-text>
+                                        <pre class="suggested-translations-code">{{ formatSuggestedTranslations() }}</pre>
+                                    </v-card-text>
+                                    <v-card-actions>
+                                        <v-btn
+                                            variant="text"
+                                            size="small"
+                                            @click="copySuggestedTranslations"
+                                        >
+                                            <v-icon icon="mdi-content-copy" start />
+                                            Copy
+                                        </v-btn>
+                                    </v-card-actions>
+                                </v-card>
+                            </v-expand-transition>
+
+                            <!-- Actionable Changes by File -->
+                            <v-expansion-panels v-model="expandedReportPanels">
+                                <v-expansion-panel
+                                    v-for="(fileChanges, fileName) in groupedActionableChanges"
+                                    :key="fileName"
+                                >
+                                    <v-expansion-panel-title>
+                                        <v-icon
+                                            :icon="fileName.endsWith('.vue') ? 'mdi-vuejs' : (fileName.endsWith('.php') ? 'mdi-language-php' : 'mdi-file-code')"
+                                            class="mr-2"
+                                            :color="fileName.endsWith('.vue') ? 'green' : 'blue'"
+                                        />
+                                        <span class="font-weight-medium">{{ fileName }}</span>
+                                        <v-chip size="x-small" color="warning" class="ml-2">
+                                            {{ fileChanges.length }} changes
+                                        </v-chip>
+                                    </v-expansion-panel-title>
+                                    <v-expansion-panel-text>
+                                        <v-list density="compact">
+                                            <v-list-item
+                                                v-for="(change, index) in fileChanges"
+                                                :key="index"
+                                                class="mb-3 change-item"
+                                            >
+                                                <div class="d-flex align-start">
+                                                    <v-chip
+                                                        size="x-small"
+                                                        color="grey"
+                                                        class="mr-2 mt-1"
+                                                        label
+                                                    >
+                                                        L{{ change.line }}
+                                                    </v-chip>
+                                                    <div class="flex-grow-1">
+                                                        <div class="text-caption text-grey mb-1">
+                                                            Text: <code class="text-error">"{{ change.text }}"</code>
+                                                        </div>
+                                                        <div class="text-caption mb-1">
+                                                            Suggested Key: <code class="text-primary">{{ change.suggested_key }}</code>
+                                                        </div>
+                                                        <div class="code-block original mb-1">
+                                                            <span class="label">Original:</span>
+                                                            <code>{{ change.original }}</code>
+                                                        </div>
+                                                        <div class="code-block suggested">
+                                                            <span class="label">Suggested:</span>
+                                                            <code>{{ change.suggested_fix }}</code>
+                                                        </div>
+                                                    </div>
+                                                    <v-btn
+                                                        icon
+                                                        size="small"
+                                                        variant="text"
+                                                        @click="copyChange(change)"
+                                                    >
+                                                        <v-icon icon="mdi-content-copy" size="small" />
+                                                    </v-btn>
+                                                </div>
+                                            </v-list-item>
+                                        </v-list>
+                                    </v-expansion-panel-text>
+                                </v-expansion-panel>
+                            </v-expansion-panels>
+
+                            <!-- Markdown Report Preview -->
+                            <v-card v-if="reportData.markdown_report" class="mt-4" variant="outlined">
+                                <v-card-title class="d-flex align-center justify-space-between">
+                                    <span class="text-subtitle-1">Markdown Report Preview</span>
+                                    <v-btn
+                                        variant="text"
+                                        size="small"
+                                        @click="showMarkdownPreview = !showMarkdownPreview"
+                                    >
+                                        {{ showMarkdownPreview ? 'Hide' : 'Show' }}
+                                    </v-btn>
+                                </v-card-title>
+                                <v-expand-transition>
+                                    <v-card-text v-if="showMarkdownPreview">
+                                        <pre class="markdown-preview">{{ reportData.markdown_report }}</pre>
+                                    </v-card-text>
+                                </v-expand-transition>
+                            </v-card>
+                        </template>
+                    </div>
+                </v-window-item>
             </v-window>
         </v-card>
 
@@ -642,6 +853,14 @@ const hasPhpChanges = ref(false);
 // Missing State
 const missingData = ref(null);
 
+// Report State
+const reportData = ref(null);
+const reportType = ref('all');
+const generatingReport = ref(false);
+const showSuggestedTranslations = ref(false);
+const showMarkdownPreview = ref(false);
+const expandedReportPanels = ref([]);
+
 // Dialogs
 const showCreateLocaleDialog = ref(false);
 const showAddKeyDialogVisible = ref(false);
@@ -775,6 +994,19 @@ const totalMissing = computed(() => {
     );
 });
 
+const groupedActionableChanges = computed(() => {
+    if (!reportData.value?.actionable_changes) return {};
+    const grouped = {};
+    reportData.value.actionable_changes.forEach(change => {
+        const file = change.file;
+        if (!grouped[file]) {
+            grouped[file] = [];
+        }
+        grouped[file].push(change);
+    });
+    return grouped;
+});
+
 // Methods
 const fetchLocales = async () => {
     loading.value = true;
@@ -894,6 +1126,65 @@ const scanMissing = async () => {
     } finally {
         scanning.value = false;
     }
+};
+
+const generateReport = async () => {
+    generatingReport.value = true;
+    try {
+        const response = await axios.get('/api/admin/translations/report', {
+            params: {
+                type: reportType.value,
+                format: 'actionable',
+            },
+        });
+        reportData.value = response.data;
+        showSnackbar('Report generated successfully');
+    } catch (error) {
+        console.error('Failed to generate report:', error);
+        showSnackbar('Failed to generate report', 'error');
+    } finally {
+        generatingReport.value = false;
+    }
+};
+
+const copyMarkdownReport = () => {
+    if (reportData.value?.markdown_report) {
+        navigator.clipboard.writeText(reportData.value.markdown_report);
+        showSnackbar('Markdown report copied to clipboard');
+    }
+};
+
+const downloadJsonReport = () => {
+    if (!reportData.value) return;
+    const blob = new Blob([JSON.stringify(reportData.value, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `translation-report-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showSnackbar('Report downloaded');
+};
+
+const formatSuggestedTranslations = () => {
+    if (!reportData.value?.suggested_translations) return '';
+    const lines = ['// Add these translations to en.js:'];
+    Object.entries(reportData.value.suggested_translations).forEach(([key, values]) => {
+        lines.push(`'${key}': '${values.en}',`);
+    });
+    return lines.join('\n');
+};
+
+const copySuggestedTranslations = () => {
+    const text = formatSuggestedTranslations();
+    navigator.clipboard.writeText(text);
+    showSnackbar('Suggested translations copied to clipboard');
+};
+
+const copyChange = (change) => {
+    const text = `File: ${change.file}:${change.line}\nKey: ${change.suggested_key}\nOriginal: ${change.original}\nSuggested: ${change.suggested_fix}`;
+    navigator.clipboard.writeText(text);
+    showSnackbar('Change copied to clipboard');
 };
 
 const createLocale = async () => {
@@ -1028,5 +1319,64 @@ onMounted(() => {
 
 .border-e {
     border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.code-block {
+    font-family: monospace;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.code-block.original {
+    background: rgba(var(--v-theme-error), 0.1);
+    border-left: 3px solid rgb(var(--v-theme-error));
+}
+
+.code-block.suggested {
+    background: rgba(var(--v-theme-success), 0.1);
+    border-left: 3px solid rgb(var(--v-theme-success));
+}
+
+.code-block .label {
+    font-weight: bold;
+    margin-right: 8px;
+    color: rgba(var(--v-theme-on-surface), 0.6);
+}
+
+.change-item {
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+    padding: 12px 0 !important;
+}
+
+.change-item:last-child {
+    border-bottom: none;
+}
+
+.suggested-translations-code {
+    background: rgba(var(--v-theme-surface-variant), 0.5);
+    padding: 16px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 12px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.markdown-preview {
+    background: rgba(var(--v-theme-surface-variant), 0.5);
+    padding: 16px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 11px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    max-height: 500px;
+    overflow-y: auto;
 }
 </style>
