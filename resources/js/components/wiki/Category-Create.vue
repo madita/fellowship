@@ -7,7 +7,7 @@
 <!--                </v-btn>-->
 <!--            </template>-->
 
-            <v-alert type="info" v-if="message.length === 0">Die Kategorie existiert nicht, wenn du sie erstellen willst fülle das Formular aus.</v-alert>
+            <v-alert type="info" v-if="message.length === 0">{{ $t('wiki.categoryNotExistsFillForm') }}</v-alert>
             <v-alert type="success" v-if="message.length > 0">{{ message }}</v-alert>
             <v-row>
                 <v-col
@@ -21,7 +21,7 @@
                     </v-alert>
 
                     <v-text-field
-                        label="Title"
+                        :label="$t('common.title')"
                         v-model="newCategory"
                     ></v-text-field>
 
@@ -38,7 +38,7 @@
                             v-model="parentValue"
                             :items="parents"
                             item-title="title"
-                            label="Parent Category"
+                            :label="$t('wiki.parentCategory')"
                             chips
                             clearable
                         ></v-combobox>
@@ -46,14 +46,14 @@
                             v-model="colorsValue"
                             :items="colors"
                             item-title="title"
-                            label="Colors"
+                            :label="$t('wiki.colors')"
                             chips
                             clearable
                         ></v-combobox>
 
                     </template>
 
-                    <v-btn @click="saveCategory">Save</v-btn>
+                    <v-btn @click="saveCategory">{{ $t('common.save') }}</v-btn>
                 </v-col>
             </v-row>
 
@@ -97,7 +97,7 @@ export default {
                 errors: []
             },
             rules: {
-                required: value => !!value || 'Required.'
+                required: value => !!value || this.$t('validation.required')
             },
             colors: ['green', 'purple', 'indigo', 'cyan', 'teal', 'orange'],
             nonce: 1
@@ -148,7 +148,7 @@ export default {
 
                 this.getCategories(this.taxonomyValue.taxonomy)
                 this.categoryValue.push(this.newCategory);
-                this.message = "Page created"
+                this.message = this.$t('wiki.pageCreated')
                 // this.categories = this.parents = response.data
 
                 // this.loading = false

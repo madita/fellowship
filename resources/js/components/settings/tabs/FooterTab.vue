@@ -1,23 +1,23 @@
 <template>
   <div>
     <v-alert type="info" variant="tonal" class="mb-4">
-      <div class="text-h6 mb-2">Footer Builder</div>
-      <div>Create sections with column layouts, drag widgets into columns, and customize your footer.</div>
+      <div class="text-h6 mb-2">{{ $t('settings.footer.title') }}</div>
+      <div>{{ $t('settings.footer.description') }}</div>
     </v-alert>
 
     <!-- Tabs for Sections and Widgets -->
     <v-tabs v-model="tab" bg-color="transparent" color="primary">
       <v-tab value="sections">
         <v-icon class="mr-2">mdi-view-grid-outline</v-icon>
-        Sections & Grid
+        {{ $t('settings.footer.sectionsGrid') }}
       </v-tab>
       <v-tab value="widgets">
         <v-icon class="mr-2">mdi-widgets</v-icon>
-        All Widgets
+        {{ $t('settings.footer.allWidgets') }}
       </v-tab>
       <v-tab value="custom">
         <v-icon class="mr-2">mdi-code-tags</v-icon>
-        Custom HTML
+        {{ $t('settings.footer.customHtml') }}
       </v-tab>
     </v-tabs>
 
@@ -38,14 +38,14 @@
         <div class="d-flex justify-space-between align-center mb-4">
           <div>
             <v-btn color="primary" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">
-              Add Widget
+              {{ $t('settings.footer.addWidget') }}
             </v-btn>
             <v-btn class="ml-2" prepend-icon="mdi-refresh" @click="loadWidgets" :loading="isLoading">
-              Refresh
+              {{ $t('settings.footer.refresh') }}
             </v-btn>
           </div>
           <v-chip v-if="hasChanges" color="warning">
-            Unsaved Changes
+            {{ $t('settings.footer.unsavedChanges') }}
           </v-chip>
         </div>
 
@@ -55,7 +55,7 @@
             <v-card>
               <v-card-text class="text-center">
                 <div class="text-h4 text-primary">{{ sections.length }}</div>
-                <div class="text-caption text-grey">Sections</div>
+                <div class="text-caption text-grey">{{ $t('settings.footer.sections') }}</div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -63,7 +63,7 @@
             <v-card>
               <v-card-text class="text-center">
                 <div class="text-h4">{{ widgets.length }}</div>
-                <div class="text-caption text-grey">Total Widgets</div>
+                <div class="text-caption text-grey">{{ $t('settings.footer.totalWidgets') }}</div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -71,7 +71,7 @@
             <v-card>
               <v-card-text class="text-center">
                 <div class="text-h4 text-success">{{ enabledCount }}</div>
-                <div class="text-caption text-grey">Enabled</div>
+                <div class="text-caption text-grey">{{ $t('settings.footer.enabled') }}</div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -81,20 +81,20 @@
         <v-card>
           <v-card-title>
             <v-icon class="mr-2">mdi-drag</v-icon>
-            Drag to Reorder Widgets
+            {{ $t('settings.footer.dragToReorder') }}
           </v-card-title>
           <v-divider></v-divider>
 
           <v-card-text v-if="isLoading" class="text-center py-8">
             <v-progress-circular indeterminate color="primary"></v-progress-circular>
-            <div class="mt-2">Loading widgets...</div>
+            <div class="mt-2">{{ $t('settings.footer.loadingWidgets') }}</div>
           </v-card-text>
 
           <v-card-text v-else-if="widgets.length === 0" class="text-center py-8">
             <v-icon size="64" color="grey">mdi-widgets-outline</v-icon>
-            <div class="text-h6 mt-4">No widgets yet</div>
-            <div class="text-caption text-grey mb-4">Click "Add Widget" to get started</div>
-            <v-btn color="primary" @click="showWidgetLibrary = true">Add Your First Widget</v-btn>
+            <div class="text-h6 mt-4">{{ $t('settings.footer.noWidgetsYet') }}</div>
+            <div class="text-caption text-grey mb-4">{{ $t('settings.footer.clickAddWidget') }}</div>
+            <v-btn color="primary" @click="showWidgetLibrary = true">{{ $t('settings.footer.addFirstWidget') }}</v-btn>
           </v-card-text>
 
           <draggable
@@ -126,8 +126,8 @@
                 </v-list-item-title>
 
                 <v-list-item-subtitle>
-                  Order: {{ widget.order }}
-                  <span v-if="widget.section_id"> | Section: {{ widget.section_id }} | Column: {{ widget.column }}</span>
+                  {{ $t('settings.footer.order') }}: {{ widget.order }}
+                  <span v-if="widget.section_id"> | {{ $t('settings.footer.section') }}: {{ widget.section_id }} | {{ $t('settings.footer.column') }}: {{ widget.column }}</span>
                 </v-list-item-subtitle>
 
                 <template #append>
@@ -146,7 +146,7 @@
                       size="small"
                       variant="text"
                       @click="editWidget(widget)"
-                      title="Edit Widget"
+                      :title="$t('settings.footer.editWidget')"
                     ></v-btn>
 
                     <v-btn
@@ -154,7 +154,7 @@
                       size="small"
                       variant="text"
                       @click="duplicateWidget(widget)"
-                      title="Duplicate Widget"
+                      :title="$t('settings.footer.duplicateWidget')"
                     ></v-btn>
 
                     <v-btn
@@ -163,7 +163,7 @@
                       variant="text"
                       color="error"
                       @click="confirmDelete(widget)"
-                      title="Delete Widget"
+                      :title="$t('settings.footer.deleteWidget')"
                     ></v-btn>
                   </div>
                 </template>
@@ -175,33 +175,33 @@
 
       <!-- Custom HTML Tab -->
       <v-window-item value="custom">
-        <settings-card icon="mdi-code-tags" title="Custom Footer HTML">
+        <settings-card icon="mdi-code-tags" :title="$t('settings.footer.customFooterHtml')">
           <v-alert type="info" variant="tonal" class="mb-4" density="compact">
             <div class="text-caption">
-              Use custom HTML instead of the widget-based footer. The custom footer will replace all widget sections.
+              {{ $t('settings.footer.customHtmlDescription') }}
             </div>
           </v-alert>
 
           <v-switch
             v-model="settings.custom_footer_enabled"
-            label="Enable Custom Footer HTML"
+            :label="$t('settings.footer.enableCustomFooter')"
             color="primary"
             class="mb-4"
-            hint="Replace the widget-based footer with custom HTML"
+            :hint="$t('settings.footer.enableCustomFooterHint')"
             persistent-hint
           ></v-switch>
 
           <template v-if="settings.custom_footer_enabled">
             <v-textarea
               v-model="settings.custom_footer_html"
-              label="Custom Footer HTML"
+              :label="$t('settings.footer.customFooterHtml')"
               prepend-inner-icon="mdi-code-tags"
               variant="outlined"
               rows="16"
               :error-messages="errors?.custom_footer_html"
-              hint="Custom HTML for the footer section"
+              :hint="$t('settings.footer.customHtmlHint')"
               persistent-hint
-              placeholder="Enter your custom HTML here..."
+              :placeholder="$t('settings.footer.customHtmlPlaceholder')"
               class="mb-4"
             ></v-textarea>
 
@@ -212,7 +212,7 @@
                 @click="loadSimpleFooterTemplate"
                 prepend-icon="mdi-code-braces"
               >
-                Load Simple Template
+                {{ $t('settings.footer.loadSimpleTemplate') }}
               </v-btn>
               <v-btn
                 color="primary"
@@ -220,22 +220,22 @@
                 @click="loadComplexFooterTemplate"
                 prepend-icon="mdi-code-tags"
               >
-                Load Complex Template
+                {{ $t('settings.footer.loadComplexTemplate') }}
               </v-btn>
             </div>
 
             <v-alert type="info" variant="tonal" class="mb-4">
               <div class="text-body-2">
-                <strong>Available Variables:</strong>
+                <strong>{{ $t('settings.footer.availableVariables') }}:</strong>
                 <ul class="mt-2">
-                  <li><code v-pre>{{appName}}</code> - Application name</li>
-                  <li><code v-pre>{{appCopyright}}</code> - Copyright text</li>
-                  <li><code v-pre>{{contactEmail}}</code> - Contact email</li>
-                  <li><code v-pre>{{contactPhone}}</code> - Contact phone</li>
-                  <li><code v-pre>{{contactAddress}}</code> - Contact address</li>
-                  <li><code v-pre>{{socialTwitter}}</code> - Twitter URL</li>
-                  <li><code v-pre>{{socialFacebook}}</code> - Facebook URL</li>
-                  <li><code v-pre>{{socialInstagram}}</code> - Instagram URL</li>
+                  <li><code v-pre>{{appName}}</code> - {{ $t('settings.footer.varAppName') }}</li>
+                  <li><code v-pre>{{appCopyright}}</code> - {{ $t('settings.footer.varCopyright') }}</li>
+                  <li><code v-pre>{{contactEmail}}</code> - {{ $t('settings.footer.varContactEmail') }}</li>
+                  <li><code v-pre>{{contactPhone}}</code> - {{ $t('settings.footer.varContactPhone') }}</li>
+                  <li><code v-pre>{{contactAddress}}</code> - {{ $t('settings.footer.varContactAddress') }}</li>
+                  <li><code v-pre>{{socialTwitter}}</code> - {{ $t('settings.footer.varTwitter') }}</li>
+                  <li><code v-pre>{{socialFacebook}}</code> - {{ $t('settings.footer.varFacebook') }}</li>
+                  <li><code v-pre>{{socialInstagram}}</code> - {{ $t('settings.footer.varInstagram') }}</li>
                 </ul>
               </div>
             </v-alert>
@@ -248,7 +248,7 @@
               @click="handleSave"
               prepend-icon="mdi-content-save"
             >
-              Save Settings
+              {{ $t('settings.footer.saveSettings') }}
             </v-btn>
           </template>
         </settings-card>
@@ -271,15 +271,14 @@
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="500">
       <v-card>
-        <v-card-title>Confirm Delete</v-card-title>
+        <v-card-title>{{ $t('settings.footer.confirmDelete') }}</v-card-title>
         <v-card-text>
-          Are you sure you want to delete the widget "{{ widgetToDelete?.title || widgetToDelete?.type }}"?
-          This action cannot be undone.
+          {{ $t('settings.footer.deleteConfirmMessage', { name: widgetToDelete?.title || widgetToDelete?.type }) }}
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="showDeleteDialog = false">Cancel</v-btn>
-          <v-btn color="error" @click="deleteWidget">Delete</v-btn>
+          <v-btn @click="showDeleteDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="error" @click="deleteWidget">{{ $t('common.delete') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -293,6 +292,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useFooterStore } from '@/store/footerStore';
 import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
 import draggable from 'vuedraggable';
@@ -300,6 +300,8 @@ import FooterWidgetEditor from '../footer/FooterWidgetEditor.vue';
 import FooterWidgetLibrary from '../footer/FooterWidgetLibrary.vue';
 import FooterSectionBuilder from '../footer/FooterSectionBuilder.vue';
 import SettingsCard from '../SettingsCard.vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
   settings: Object,
@@ -356,7 +358,7 @@ async function loadWidgets() {
     await footerStore.fetchWidgets(); // Also load all widgets for legacy tab
     hasChanges.value = false;
   } catch (error) {
-    showSnackbar('Failed to load data', 'error');
+    showSnackbar(t('settings.footer.failedToLoadData'), 'error');
   } finally {
     isLoading.value = false;
   }
@@ -370,9 +372,9 @@ async function onDragEnd() {
     }));
     await footerStore.reorderWidgets(newOrder);
     hasChanges.value = false;
-    showSnackbar('Widget order updated successfully', 'success');
+    showSnackbar(t('settings.footer.orderUpdated'), 'success');
   } catch (error) {
-    showSnackbar('Failed to update widget order', 'error');
+    showSnackbar(t('settings.footer.failedToUpdateOrder'), 'error');
     await loadWidgets(); // Reload to reset order
   }
 }
@@ -386,13 +388,13 @@ async function saveWidget(updatedWidget) {
   try {
     console.log('Saving widget with data:', JSON.stringify(updatedWidget, null, 2));
     await footerStore.updateWidget(updatedWidget.id, updatedWidget);
-    showSnackbar('Widget updated successfully', 'success');
+    showSnackbar(t('settings.footer.widgetUpdated'), 'success');
     showEditor.value = false;
     // Reload to show updated data
     await loadWidgets();
   } catch (error) {
     console.error('Failed to save widget:', error);
-    showSnackbar('Failed to update widget', 'error');
+    showSnackbar(t('settings.footer.failedToUpdateWidget'), 'error');
   }
 }
 
@@ -400,7 +402,7 @@ async function addWidget(widgetType) {
   try {
     const definition = getWidgetDefinition(widgetType);
     if (!definition) {
-      showSnackbar(`Widget type "${widgetType}" not found`, 'error');
+      showSnackbar(t('settings.footer.widgetTypeNotFound', { type: widgetType }), 'error');
       return;
     }
 
@@ -430,7 +432,7 @@ async function addWidget(widgetType) {
 
     console.log('Creating widget with data:', JSON.stringify(newWidget, null, 2));
     await footerStore.createWidget(newWidget);
-    showSnackbar('Widget added successfully', 'success');
+    showSnackbar(t('settings.footer.widgetAdded'), 'success');
     showWidgetLibrary.value = false;
     widgetSectionContext.value = null;
 
@@ -442,7 +444,7 @@ async function addWidget(widgetType) {
     }
   } catch (error) {
     console.error('Failed to add widget:', error);
-    showSnackbar('Failed to add widget', 'error');
+    showSnackbar(t('settings.footer.failedToAddWidget'), 'error');
   }
 }
 
@@ -454,9 +456,9 @@ function handleAddWidgetToSection({ sectionId, column }) {
 async function toggleWidget(widget) {
   try {
     await footerStore.toggleWidget(widget.id);
-    showSnackbar(`Widget ${widget.enabled ? 'enabled' : 'disabled'}`, 'success');
+    showSnackbar(widget.enabled ? t('settings.footer.widgetEnabled') : t('settings.footer.widgetDisabled'), 'success');
   } catch (error) {
-    showSnackbar('Failed to toggle widget', 'error');
+    showSnackbar(t('settings.footer.failedToToggleWidget'), 'error');
     widget.enabled = !widget.enabled; // Revert on error
   }
 }
@@ -466,14 +468,14 @@ async function duplicateWidget(widget) {
     const newWidget = {
       ...widget,
       id: undefined,
-      title: `${widget.title} (Copy)`,
+      title: `${widget.title} (${t('common.copy')})`,
       order: widgets.value.length + 1,
     };
     await footerStore.createWidget(newWidget);
-    showSnackbar('Widget duplicated successfully', 'success');
+    showSnackbar(t('settings.footer.widgetDuplicated'), 'success');
     await loadWidgets();
   } catch (error) {
-    showSnackbar('Failed to duplicate widget', 'error');
+    showSnackbar(t('settings.footer.failedToDuplicateWidget'), 'error');
   }
 }
 
@@ -485,12 +487,12 @@ function confirmDelete(widget) {
 async function deleteWidget() {
   try {
     await footerStore.deleteWidget(widgetToDelete.value.id);
-    showSnackbar('Widget deleted successfully', 'success');
+    showSnackbar(t('settings.footer.widgetDeleted'), 'success');
     showDeleteDialog.value = false;
     widgetToDelete.value = null;
     await loadWidgets();
   } catch (error) {
-    showSnackbar('Failed to delete widget', 'error');
+    showSnackbar(t('settings.footer.failedToDeleteWidget'), 'error');
   }
 }
 

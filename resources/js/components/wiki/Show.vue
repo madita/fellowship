@@ -10,7 +10,7 @@
                     indeterminate
                     class="mb-4"
                 />
-                <h3 class="text-h6 text-medium-emphasis">Loading wiki page...</h3>
+                <h3 class="text-h6 text-medium-emphasis">{{ $t('wiki.loadingPage') }}</h3>
             </v-container>
         </div>
 
@@ -32,7 +32,7 @@
                                     <template v-slot:prepend>
                                         <v-icon>mdi-arrow-right</v-icon>
                                     </template>
-                                    Redirected from
+                                    {{ $t('wiki.redirectedFrom') }}
                                     <v-btn
                                         :href="`/wiki/${redirect}?redirect=no`"
                                         variant="text"
@@ -47,7 +47,7 @@
                             <!-- Page Title -->
                             <div class="page-title-section">
                                 <h1 class="page-title text-h3 font-weight-bold mb-2">
-                                    {{ wikipage.title || 'Untitled Page' }}
+                                    {{ wikipage.title || $t('wiki.untitledPage') }}
                                 </h1>
 
                                 <!-- Status Message -->
@@ -69,7 +69,7 @@
                                             class="ml-3"
                                             :to="`/wiki/${slug}/create`"
                                         >
-                                            Create Page
+                                            {{ $t('wiki.createPage') }}
                                         </v-btn>
                                     </template>
                                 </v-alert>
@@ -87,7 +87,7 @@
                                     :to="`/wiki/${slug}/${mode}`"
                                     class="action-btn"
                                 >
-                                    {{ mode === 'edit' ? 'Edit Page' : 'Create Page' }}
+                                    {{ mode === 'edit' ? $t('wiki.editPage') : $t('wiki.createPage') }}
                                 </v-btn>
                             </div>
                         </v-col>
@@ -123,7 +123,7 @@
                             <v-card v-if="terms && terms.length > 0" class="mb-4" elevation="1" rounded="lg">
                                 <v-card-title class="text-h6 pb-2">
                                     <v-icon class="mr-2" color="primary">mdi-folder-outline</v-icon>
-                                    Categories
+                                    {{ $t('wiki.categories') }}
                                 </v-card-title>
                                 <v-card-text class="pt-0">
                                     <div class="d-flex flex-wrap ga-2">
@@ -150,7 +150,7 @@
                             <v-card v-if="tags && tags.length > 0" class="mb-4" elevation="1" rounded="lg">
                                 <v-card-title class="text-h6 pb-2">
                                     <v-icon class="mr-2" color="secondary">mdi-tag-outline</v-icon>
-                                    Tags
+                                    {{ $t('wiki.tags') }}
                                 </v-card-title>
                                 <v-card-text class="pt-0">
                                     <div class="d-flex flex-wrap ga-2">
@@ -175,21 +175,21 @@
                             <v-card elevation="1" rounded="lg">
                                 <v-card-title class="text-h6 pb-2">
                                     <v-icon class="mr-2" color="success">mdi-information-outline</v-icon>
-                                    Page Information
+                                    {{ $t('wiki.pageInformation') }}
                                 </v-card-title>
                                 <v-card-text class="pt-0">
                                     <div class="page-info">
                                         <div class="info-item mb-2">
                                             <v-icon size="16" class="mr-2">mdi-calendar</v-icon>
-                                            <span class="text-caption">Created: {{ $formatDate(wikipage.created_at) }}</span>
+                                            <span class="text-caption">{{ $t('wiki.created') }}: {{ $formatDate(wikipage.created_at) }}</span>
                                         </div>
                                         <div class="info-item mb-2">
                                             <v-icon size="16" class="mr-2">mdi-calendar</v-icon>
-                                            <span class="text-caption">Last modified: {{ $formatDate(wikipage.updated_at) }}{{ formatDate(wikipage.updated_at, 'dd.MM.yyyy HH:ii') }}</span>
+                                            <span class="text-caption">{{ $t('wiki.lastModified') }}: {{ $formatDate(wikipage.updated_at) }}{{ formatDate(wikipage.updated_at, 'dd.MM.yyyy HH:ii') }}</span>
                                         </div>
                                         <div class="info-item mb-2">
                                             <v-icon size="16" class="mr-2">mdi-account</v-icon>
-                                            <span class="text-caption">Author: {{ wikiuser?.username || 'Anonymous' }}</span>
+                                            <span class="text-caption">{{ $t('wiki.author') }}: {{ wikiuser?.username || $t('wiki.anonymous') }}</span>
                                         </div>
                                     </div>
                                 </v-card-text>
@@ -205,9 +205,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/store/authStore.js'
 import { useDateFormat } from '@/plugins/formatDate.js' // Adjust path as needed
 import axios from 'axios'
+
+const { t } = useI18n()
 
 // Props (if any would be passed to this component)
 const props = defineProps({
@@ -264,7 +267,7 @@ const getWikiPage = async () => {
         if (error.response?.status === 404) {
             wikipage.value = error.response.data.page
             loading.value = false
-            message.value = "This page doesn't exist yet. Would you like to create it?"
+            message.value = t('wiki.pageNotExistsCreate')
             mode.value = 'create'
         }
         if (error.response?.status === 401) {

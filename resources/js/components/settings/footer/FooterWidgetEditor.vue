@@ -3,7 +3,7 @@
     <v-card v-if="widget">
       <v-card-title class="d-flex align-center bg-primary text-white">
         <v-icon class="mr-2">{{ widgetIcon }}</v-icon>
-        Edit {{ widgetDefinition?.name || widget.type }}
+        {{ $t('settings.widgetEditor.edit') }} {{ widgetDefinition?.name || widget.type }}
         <v-spacer></v-spacer>
         <v-btn icon="mdi-close" variant="text" @click="cancel"></v-btn>
       </v-card-title>
@@ -26,13 +26,13 @@
         <template v-if="editedWidget.type === 'quicklinks'">
           <v-text-field
             v-model="editedWidget.config.title"
-            label="Section Title"
-            hint="Title displayed above the links"
+            :label="$t('settings.widgetEditor.sectionTitle')"
+            :hint="$t('settings.widgetEditor.titleAboveLinks')"
             persistent-hint
             class="mb-4"
           ></v-text-field>
 
-          <div class="text-subtitle-2 mb-3">Links</div>
+          <div class="text-subtitle-2 mb-3">{{ $t('settings.widgetEditor.links') }}</div>
           <div v-if="editedWidget.config.links && editedWidget.config.links.length > 0" class="mb-3">
             <v-card
               v-for="(link, idx) in editedWidget.config.links"
@@ -44,7 +44,7 @@
                 <div class="flex-grow-1">
                   <div class="font-weight-medium">{{ link.label }}</div>
                   <div class="text-caption text-grey">{{ link.url }}</div>
-                  <v-chip v-if="link.authOnly" size="x-small" color="warning" class="mt-1">Auth Only</v-chip>
+                  <v-chip v-if="link.authOnly" size="x-small" color="warning" class="mt-1">{{ $t('settings.widgetEditor.authOnly') }}</v-chip>
                 </div>
                 <v-btn icon size="small" variant="text" @click="editQuicklink(idx)">
                   <v-icon size="small">mdi-pencil</v-icon>
@@ -56,7 +56,7 @@
             </v-card>
           </div>
           <v-btn prepend-icon="mdi-plus" @click="showQuicklinkDialog = true">
-            Add Link
+            {{ $t('settings.widgetEditor.addLink') }}
           </v-btn>
         </template>
 
@@ -64,38 +64,37 @@
         <template v-if="editedWidget.type === 'contact'">
           <v-text-field
             v-model="editedWidget.config.title"
-            label="Section Title"
-            hint="Title displayed above contact information"
+            :label="$t('settings.widgetEditor.sectionTitle')"
+            :hint="$t('settings.widgetEditor.titleAboveContact')"
             persistent-hint
             class="mb-4"
           ></v-text-field>
 
-          <div class="text-subtitle-2 mb-3">Display Options</div>
+          <div class="text-subtitle-2 mb-3">{{ $t('settings.widgetEditor.displayOptions') }}</div>
           <v-switch
             v-model="editedWidget.config.showAddress"
-            label="Show Address"
+            :label="$t('settings.widgetEditor.showAddress')"
             color="primary"
             hide-details
             class="mb-2"
           ></v-switch>
           <v-switch
             v-model="editedWidget.config.showPhone"
-            label="Show Phone"
+            :label="$t('settings.widgetEditor.showPhone')"
             color="primary"
             hide-details
             class="mb-2"
           ></v-switch>
           <v-switch
             v-model="editedWidget.config.showEmail"
-            label="Show Email"
+            :label="$t('settings.widgetEditor.showEmail')"
             color="primary"
             hide-details
           ></v-switch>
 
           <v-alert type="info" variant="tonal" class="mt-4">
             <div class="text-caption">
-              Contact information is pulled from your global settings (Contact Address, Phone, Email).
-              Go to Settings → General to update these values.
+              {{ $t('settings.widgetEditor.contactInfoHint') }}
             </div>
           </v-alert>
         </template>
@@ -104,16 +103,16 @@
         <template v-if="editedWidget.type === 'newsletter'">
           <v-text-field
             v-model="editedWidget.config.title"
-            label="Section Title"
-            hint="Title displayed above the newsletter form"
+            :label="$t('settings.widgetEditor.sectionTitle')"
+            :hint="$t('settings.widgetEditor.titleAboveNewsletter')"
             persistent-hint
             class="mb-4"
           ></v-text-field>
 
           <v-textarea
             v-model="editedWidget.config.description"
-            label="Description"
-            hint="Short description encouraging users to subscribe"
+            :label="$t('settings.widgetEditor.description')"
+            :hint="$t('settings.widgetEditor.descriptionHint')"
             persistent-hint
             rows="2"
             class="mb-4"
@@ -121,15 +120,14 @@
 
           <v-text-field
             v-model="editedWidget.config.buttonText"
-            label="Button Text"
-            hint="Text displayed on the subscribe button"
+            :label="$t('settings.widgetEditor.buttonText')"
+            :hint="$t('settings.widgetEditor.buttonTextHint')"
             persistent-hint
           ></v-text-field>
 
           <v-alert type="info" variant="tonal" class="mt-4">
             <div class="text-caption">
-              Newsletter integration settings can be configured in Settings → Advanced.
-              Make sure to enable and configure your newsletter provider (Mailchimp, MailerLite, etc.).
+              {{ $t('settings.widgetEditor.newsletterHint') }}
             </div>
           </v-alert>
         </template>
@@ -138,38 +136,37 @@
         <template v-if="editedWidget.type === 'social'">
           <v-text-field
             v-model="editedWidget.config.title"
-            label="Section Title"
-            hint="Title displayed above social media links"
+            :label="$t('settings.widgetEditor.sectionTitle')"
+            :hint="$t('settings.widgetEditor.titleAboveSocial')"
             persistent-hint
             class="mb-4"
           ></v-text-field>
 
-          <div class="text-subtitle-2 mb-3">Display Options</div>
+          <div class="text-subtitle-2 mb-3">{{ $t('settings.widgetEditor.displayOptions') }}</div>
           <v-switch
             v-model="editedWidget.config.showTwitter"
-            label="Show Twitter/X"
+            :label="$t('settings.widgetEditor.showTwitter')"
             color="primary"
             hide-details
             class="mb-2"
           ></v-switch>
           <v-switch
             v-model="editedWidget.config.showFacebook"
-            label="Show Facebook"
+            :label="$t('settings.widgetEditor.showFacebook')"
             color="primary"
             hide-details
             class="mb-2"
           ></v-switch>
           <v-switch
             v-model="editedWidget.config.showInstagram"
-            label="Show Instagram"
+            :label="$t('settings.widgetEditor.showInstagram')"
             color="primary"
             hide-details
           ></v-switch>
 
           <v-alert type="info" variant="tonal" class="mt-4">
             <div class="text-caption">
-              Social media URLs are pulled from your global settings.
-              Go to Settings → General to update your social media links.
+              {{ $t('settings.widgetEditor.socialHint') }}
             </div>
           </v-alert>
         </template>
@@ -178,19 +175,19 @@
         <template v-if="editedWidget.type === 'text'">
           <v-text-field
             v-model="editedWidget.config.title"
-            label="Section Title (Optional)"
-            hint="Leave empty for no title"
+            :label="$t('settings.widgetEditor.sectionTitleOptional')"
+            :hint="$t('settings.widgetEditor.leaveEmptyNoTitle')"
             persistent-hint
             class="mb-4"
           ></v-text-field>
 
           <v-textarea
             v-model="editedWidget.config.content"
-            label="Content"
-            hint="Text content for this footer section. Supports line breaks."
+            :label="$t('settings.widgetEditor.content')"
+            :hint="$t('settings.widgetEditor.textContentHint')"
             persistent-hint
             rows="8"
-            placeholder="Enter your custom text here..."
+            :placeholder="$t('settings.widgetEditor.enterCustomText')"
           ></v-textarea>
         </template>
       </v-card-text>
@@ -198,11 +195,11 @@
       <v-divider></v-divider>
 
       <v-card-actions class="pa-4">
-        <v-btn @click="cancel">Cancel</v-btn>
+        <v-btn @click="cancel">{{ $t('common.cancel') }}</v-btn>
         <v-spacer></v-spacer>
         <v-btn color="primary" @click="save">
           <v-icon class="mr-1">mdi-content-save</v-icon>
-          Save Changes
+          {{ $t('settings.widgetEditor.saveChanges') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -211,22 +208,22 @@
     <v-dialog v-model="showQuicklinkDialog" max-width="500">
       <v-card>
         <v-card-title class="bg-primary text-white">
-          {{ editingQuicklinkIndex !== null ? 'Edit Link' : 'Add Link' }}
+          {{ editingQuicklinkIndex !== null ? $t('settings.widgetEditor.editLink') : $t('settings.widgetEditor.addLink') }}
         </v-card-title>
 
         <v-card-text class="pa-4">
           <v-text-field
             v-model="currentQuicklink.label"
-            label="Link Label"
-            hint="Display text for this link"
+            :label="$t('settings.widgetEditor.linkLabel')"
+            :hint="$t('settings.widgetEditor.linkLabelHint')"
             persistent-hint
             class="mb-3"
           ></v-text-field>
 
           <v-text-field
             v-model="currentQuicklink.url"
-            label="Link URL"
-            hint="URL or path (e.g., /about or https://example.com)"
+            :label="$t('settings.widgetEditor.linkUrl')"
+            :hint="$t('settings.widgetEditor.linkUrlHint')"
             persistent-hint
             class="mb-3"
             placeholder="/about or https://example.com"
@@ -234,7 +231,7 @@
 
           <v-switch
             v-model="currentQuicklink.external"
-            label="Open in New Tab"
+            :label="$t('settings.widgetEditor.openInNewTab')"
             color="primary"
             hide-details
             class="mb-2"
@@ -242,7 +239,7 @@
 
           <v-switch
             v-model="currentQuicklink.authOnly"
-            label="Visible Only to Signed-In Users"
+            :label="$t('settings.widgetEditor.visibleToSignedIn')"
             color="warning"
             hide-details
           ></v-switch>
@@ -250,9 +247,9 @@
 
         <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
-          <v-btn @click="cancelQuicklinkEdit">Cancel</v-btn>
+          <v-btn @click="cancelQuicklinkEdit">{{ $t('common.cancel') }}</v-btn>
           <v-btn color="primary" @click="saveQuicklink">
-            {{ editingQuicklinkIndex !== null ? 'Update' : 'Add' }}
+            {{ editingQuicklinkIndex !== null ? $t('settings.widgetEditor.update') : $t('settings.widgetEditor.add') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -262,7 +259,10 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
+
+const { t } = useI18n();
 
 const props = defineProps({
   modelValue: Boolean,

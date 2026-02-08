@@ -1,73 +1,73 @@
 <template>
     <div>
         <!-- Performance & Technical -->
-        <settings-card icon="mdi-speedometer" title="Performance & Caching">
+        <settings-card icon="mdi-speedometer" :title="$t('settings.advanced.performanceCaching')">
             <v-switch
                 v-model="settings.cache_enabled"
-                label="Enable Caching"
+                :label="$t('settings.advanced.enableCaching')"
                 color="primary"
                 class="mb-4"
-                hint="Enable application-wide caching"
+                :hint="$t('settings.advanced.enableCachingHint')"
                 persistent-hint
             ></v-switch>
 
             <v-text-field
                 v-model.number="settings.cache_lifetime_minutes"
-                label="Cache Lifetime (minutes)"
+                :label="$t('settings.advanced.cacheLifetime')"
                 prepend-inner-icon="mdi-clock"
                 variant="outlined"
                 type="number"
                 class="mb-4"
                 :error-messages="errors.cache_lifetime_minutes"
-                hint="How long to cache data (in minutes)"
+                :hint="$t('settings.advanced.cacheLifetimeHint')"
                 persistent-hint
             ></v-text-field>
 
             <v-switch
                 v-model="settings.cdn_enabled"
-                label="Enable CDN"
+                :label="$t('settings.advanced.enableCdn')"
                 color="primary"
                 class="mb-4"
-                hint="Use CDN for static assets"
+                :hint="$t('settings.advanced.enableCdnHint')"
                 persistent-hint
             ></v-switch>
 
             <v-text-field
                 v-if="settings.cdn_enabled"
                 v-model="settings.cdn_url"
-                label="CDN URL"
+                :label="$t('settings.advanced.cdnUrl')"
                 prepend-inner-icon="mdi-server-network"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.cdn_url"
-                hint="CDN base URL for assets"
+                :hint="$t('settings.advanced.cdnUrlHint')"
                 persistent-hint
             ></v-text-field>
 
             <v-switch
                 v-model="settings.image_optimization_enabled"
-                label="Enable Image Optimization"
+                :label="$t('settings.advanced.enableImageOptimization')"
                 color="primary"
                 class="mb-4"
-                hint="Compress and optimize uploaded images (JPEG: 85% quality, PNG: optimized, backgrounds: max 1920x1080)"
+                :hint="$t('settings.advanced.imageOptimizationHint')"
                 persistent-hint
             ></v-switch>
 
             <v-switch
                 v-model="settings.lazy_loading_enabled"
-                label="Enable Lazy Loading"
+                :label="$t('settings.advanced.enableLazyLoading')"
                 color="primary"
                 class="mb-4"
-                hint="Defer loading of images and iframes until they enter the viewport (improves initial page load)"
+                :hint="$t('settings.advanced.lazyLoadingHint')"
                 persistent-hint
             ></v-switch>
 
             <v-alert type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <strong>Performance Tips:</strong>
+                    <strong>{{ $t('settings.advanced.performanceTips') }}:</strong>
                     <ul class="mt-1 ml-4">
-                        <li><strong>Image Optimization:</strong> Reduces file size while maintaining quality. Uses Jpegoptim, Pngquant, and WebP conversion.</li>
-                        <li><strong>Lazy Loading:</strong> Uses native browser lazy loading (<code>loading="lazy"</code>) and IntersectionObserver for better performance.</li>
+                        <li><strong>{{ $t('settings.advanced.imageOptimization') }}:</strong> {{ $t('settings.advanced.imageOptimizationDesc') }}</li>
+                        <li><strong>{{ $t('settings.advanced.lazyLoading') }}:</strong> {{ $t('settings.advanced.lazyLoadingDesc') }}</li>
                     </ul>
                 </div>
             </v-alert>
@@ -77,9 +77,9 @@
             <!-- Cache Management -->
             <div class="d-flex align-center justify-space-between mb-4">
                 <div>
-                    <div class="text-subtitle-1 font-weight-medium">Cache Management</div>
+                    <div class="text-subtitle-1 font-weight-medium">{{ $t('settings.advanced.cacheManagement') }}</div>
                     <div class="text-caption text-medium-emphasis">
-                        Clear application cache to refresh data. Cached content types: settings, pages, wiki, posts, widgets, and HTTP responses.
+                        {{ $t('settings.advanced.cacheManagementDesc') }}
                     </div>
                 </div>
                 <div class="d-flex align-center ga-2">
@@ -89,14 +89,14 @@
                         size="small"
                         variant="tonal"
                     >
-                        {{ cacheStatus.enabled ? 'Cache Enabled' : 'Cache Disabled' }}
+                        {{ cacheStatus.enabled ? $t('settings.advanced.cacheEnabled') : $t('settings.advanced.cacheDisabled') }}
                     </v-chip>
                     <v-chip
                         v-if="cacheStatus"
                         size="small"
                         variant="outlined"
                     >
-                        {{ cacheStatus.lifetime_minutes }} min TTL
+                        {{ cacheStatus.lifetime_minutes }} {{ $t('settings.advanced.minTtl') }}
                     </v-chip>
                     <v-chip
                         v-if="cacheStatus"
@@ -110,7 +110,7 @@
             </div>
 
             <!-- System Cache -->
-            <div class="text-caption text-medium-emphasis mb-2 mt-4">System Cache</div>
+            <div class="text-caption text-medium-emphasis mb-2 mt-4">{{ $t('settings.advanced.systemCache') }}</div>
             <v-row dense>
                 <v-col cols="6" sm="4" md="2">
                     <v-btn
@@ -121,7 +121,7 @@
                         @click="clearCache('settings')"
                     >
                         <v-icon start size="small">mdi-cog</v-icon>
-                        Settings
+                        {{ $t('settings.advanced.cacheSettings') }}
                     </v-btn>
                 </v-col>
                 <v-col cols="6" sm="4" md="2">
@@ -133,7 +133,7 @@
                         @click="clearCache('views')"
                     >
                         <v-icon start size="small">mdi-file-document</v-icon>
-                        Views
+                        {{ $t('settings.advanced.cacheViews') }}
                     </v-btn>
                 </v-col>
                 <v-col cols="6" sm="4" md="2">
@@ -145,7 +145,7 @@
                         @click="clearCache('routes')"
                     >
                         <v-icon start size="small">mdi-routes</v-icon>
-                        Routes
+                        {{ $t('settings.advanced.cacheRoutes') }}
                     </v-btn>
                 </v-col>
                 <v-col cols="6" sm="4" md="2">
@@ -157,7 +157,7 @@
                         @click="clearCache('config')"
                     >
                         <v-icon start size="small">mdi-wrench</v-icon>
-                        Config
+                        {{ $t('settings.advanced.cacheConfig') }}
                     </v-btn>
                 </v-col>
                 <v-col cols="6" sm="4" md="2">
@@ -169,7 +169,7 @@
                         @click="clearCache('application')"
                     >
                         <v-icon start size="small">mdi-database</v-icon>
-                        App
+                        {{ $t('settings.advanced.cacheApp') }}
                     </v-btn>
                 </v-col>
                 <v-col cols="6" sm="4" md="2">
@@ -181,13 +181,13 @@
                         @click="clearCache('http')"
                     >
                         <v-icon start size="small">mdi-web</v-icon>
-                        HTTP
+                        {{ $t('settings.advanced.cacheHttp') }}
                     </v-btn>
                 </v-col>
             </v-row>
 
             <!-- Content Cache -->
-            <div class="text-caption text-medium-emphasis mb-2 mt-4">Content Cache</div>
+            <div class="text-caption text-medium-emphasis mb-2 mt-4">{{ $t('settings.advanced.contentCache') }}</div>
             <v-row dense>
                 <v-col cols="6" sm="4" md="2">
                     <v-btn
@@ -198,7 +198,7 @@
                         @click="clearCache('pages')"
                     >
                         <v-icon start size="small">mdi-file-multiple</v-icon>
-                        Pages
+                        {{ $t('settings.advanced.cachePages') }}
                     </v-btn>
                 </v-col>
                 <v-col cols="6" sm="4" md="2">
@@ -210,7 +210,7 @@
                         @click="clearCache('wiki')"
                     >
                         <v-icon start size="small">mdi-book-open-page-variant</v-icon>
-                        Wiki
+                        {{ $t('settings.advanced.cacheWiki') }}
                     </v-btn>
                 </v-col>
                 <v-col cols="6" sm="4" md="2">
@@ -222,7 +222,7 @@
                         @click="clearCache('posts')"
                     >
                         <v-icon start size="small">mdi-post</v-icon>
-                        Posts
+                        {{ $t('settings.advanced.cachePosts') }}
                     </v-btn>
                 </v-col>
                 <v-col cols="6" sm="4" md="2">
@@ -234,7 +234,7 @@
                         @click="clearCache('widgets')"
                     >
                         <v-icon start size="small">mdi-widgets</v-icon>
-                        Widgets
+                        {{ $t('settings.advanced.cacheWidgets') }}
                     </v-btn>
                 </v-col>
                 <v-col cols="6" sm="4" md="4">
@@ -247,22 +247,22 @@
                         @click="clearCache('all')"
                     >
                         <v-icon start size="small">mdi-delete-sweep</v-icon>
-                        Clear All Caches
+                        {{ $t('settings.advanced.clearAllCaches') }}
                     </v-btn>
                 </v-col>
             </v-row>
         </settings-card>
 
         <!-- PWA Settings -->
-        <settings-card icon="mdi-cellphone-check" title="Progressive Web App (PWA)">
+        <settings-card icon="mdi-cellphone-check" :title="$t('settings.advanced.pwaTitle')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
                 <div class="text-caption">
-                    <strong>What is PWA?</strong> Progressive Web Apps allow users to install your site as an app on their device. Features include:
+                    <strong>{{ $t('settings.advanced.whatIsPwa') }}</strong> {{ $t('settings.advanced.pwaDescription') }}
                     <ul class="mt-1 ml-4">
-                        <li>Install to home screen (mobile & desktop)</li>
-                        <li>Offline access with service workers</li>
-                        <li>App-like experience in standalone mode</li>
-                        <li>Fast loading with caching</li>
+                        <li>{{ $t('settings.advanced.pwaFeature1') }}</li>
+                        <li>{{ $t('settings.advanced.pwaFeature2') }}</li>
+                        <li>{{ $t('settings.advanced.pwaFeature3') }}</li>
+                        <li>{{ $t('settings.advanced.pwaFeature4') }}</li>
                     </ul>
                 </div>
             </v-alert>
@@ -270,15 +270,15 @@
             <div class="mb-4">
                 <div class="text-subtitle-2 mb-2">
                     <v-icon size="small" class="mr-1">mdi-information</v-icon>
-                    PWA Status
+                    {{ $t('settings.advanced.pwaStatus') }}
                 </div>
                 <v-alert type="success" variant="tonal" density="compact">
                     <div class="d-flex align-center">
                         <v-icon class="mr-2">mdi-check-circle</v-icon>
                         <div>
-                            <div class="font-weight-medium">PWA is enabled and configured</div>
+                            <div class="font-weight-medium">{{ $t('settings.advanced.pwaEnabled') }}</div>
                             <div class="text-caption mt-1">
-                                Your app is ready to be installed by users. The manifest is dynamically generated from your settings.
+                                {{ $t('settings.advanced.pwaEnabledDesc') }}
                             </div>
                         </div>
                     </div>
@@ -288,32 +288,32 @@
             <div class="mb-4">
                 <div class="text-subtitle-2 mb-2">
                     <v-icon size="small" class="mr-1">mdi-cog</v-icon>
-                    PWA Configuration
+                    {{ $t('settings.advanced.pwaConfiguration') }}
                 </div>
                 <v-card variant="outlined" class="pa-3">
                     <div class="d-flex justify-space-between align-center mb-2">
-                        <span class="text-body-2">App Name:</span>
+                        <span class="text-body-2">{{ $t('settings.advanced.appName') }}:</span>
                         <span class="text-body-2 font-weight-medium">{{ settings.app_name || 'Fellowship' }}</span>
                     </div>
                     <v-divider class="my-2"></v-divider>
                     <div class="d-flex justify-space-between align-center mb-2">
-                        <span class="text-body-2">Theme Color:</span>
+                        <span class="text-body-2">{{ $t('settings.advanced.themeColor') }}:</span>
                         <v-chip :color="settings.primary_color || '#1976D2'" size="small">
                             {{ settings.primary_color || '#1976D2' }}
                         </v-chip>
                     </div>
                     <v-divider class="my-2"></v-divider>
                     <div class="d-flex justify-space-between align-center mb-2">
-                        <span class="text-body-2">App Icon:</span>
+                        <span class="text-body-2">{{ $t('settings.advanced.appIcon') }}:</span>
                         <span class="text-body-2 font-weight-medium">
-                            {{ settings.app_icon ? '✓ Uploaded' : '⚠ Using default' }}
+                            {{ settings.app_icon ? $t('settings.advanced.uploaded') : $t('settings.advanced.usingDefault') }}
                         </span>
                     </div>
                     <v-divider class="my-2"></v-divider>
                     <div class="d-flex justify-space-between align-center">
-                        <span class="text-body-2">Favicon:</span>
+                        <span class="text-body-2">{{ $t('settings.advanced.favicon') }}:</span>
                         <span class="text-body-2 font-weight-medium">
-                            {{ settings.favicon ? '✓ Uploaded' : '⚠ Using default' }}
+                            {{ settings.favicon ? $t('settings.advanced.uploaded') : $t('settings.advanced.usingDefault') }}
                         </span>
                     </div>
                 </v-card>
@@ -322,15 +322,15 @@
             <v-alert type="warning" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
                     <v-icon size="small" class="mr-1">mdi-alert</v-icon>
-                    <strong>Important:</strong> For PWA installation to work, you must upload an App Icon that meets these requirements:
+                    <strong>{{ $t('settings.advanced.important') }}:</strong> {{ $t('settings.advanced.pwaIconRequirements') }}
                     <ul class="mt-1 ml-4">
-                        <li><strong>Format:</strong> PNG, WebP, or SVG (NOT JPEG)</li>
-                        <li><strong>Size:</strong> At least 192×192 pixels (512×512 recommended)</li>
-                        <li><strong>Shape:</strong> Square (equal width and height)</li>
-                        <li><strong>Purpose:</strong> Used for home screen icon and app icon</li>
+                        <li><strong>{{ $t('settings.advanced.format') }}:</strong> {{ $t('settings.advanced.pwaFormatReq') }}</li>
+                        <li><strong>{{ $t('settings.advanced.size') }}:</strong> {{ $t('settings.advanced.pwaSizeReq') }}</li>
+                        <li><strong>{{ $t('settings.advanced.shape') }}:</strong> {{ $t('settings.advanced.pwaShapeReq') }}</li>
+                        <li><strong>{{ $t('settings.advanced.purpose') }}:</strong> {{ $t('settings.advanced.pwaPurposeReq') }}</li>
                     </ul>
                     <div class="mt-2">
-                        Go to <strong>Branding</strong> tab → <strong>App Icon (PWA)</strong> to upload a suitable icon.
+                        {{ $t('settings.advanced.pwaIconInstructions') }}
                     </div>
                 </div>
             </v-alert>
@@ -343,7 +343,7 @@
                     href="/manifest.json"
                     target="_blank"
                 >
-                    View Manifest
+                    {{ $t('settings.advanced.viewManifest') }}
                 </v-btn>
                 <v-btn
                     color="primary"
@@ -351,50 +351,50 @@
                     prepend-icon="mdi-refresh"
                     @click="testServiceWorker"
                 >
-                    Test Service Worker
+                    {{ $t('settings.advanced.testServiceWorker') }}
                 </v-btn>
             </div>
         </settings-card>
 
         <!-- Newsletter Integration -->
-        <settings-card icon="mdi-email-newsletter" title="Newsletter Integration">
+        <settings-card icon="mdi-email-newsletter" :title="$t('settings.advanced.newsletterIntegration')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
                 <div class="text-caption">
-                    Connect your newsletter service to enable email subscriptions through your website.
+                    {{ $t('settings.advanced.newsletterDesc') }}
                 </div>
             </v-alert>
 
             <v-switch
                 v-model="settings.newsletter_enabled"
-                label="Enable Newsletter"
+                :label="$t('settings.advanced.enableNewsletter')"
                 color="primary"
                 class="mb-4"
-                hint="Enable newsletter subscription functionality"
+                :hint="$t('settings.advanced.enableNewsletterHint')"
                 persistent-hint
             ></v-switch>
 
             <v-select
                 v-if="settings.newsletter_enabled"
                 v-model="settings.newsletter_provider"
-                label="Newsletter Provider"
+                :label="$t('settings.advanced.newsletterProvider')"
                 :items="newsletterProviders"
                 prepend-inner-icon="mdi-email-variant"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.newsletter_provider"
-                hint="Select your newsletter service provider"
+                :hint="$t('settings.advanced.newsletterProviderHint')"
                 persistent-hint
             ></v-select>
 
             <v-text-field
                 v-if="settings.newsletter_enabled && settings.newsletter_provider"
                 v-model="settings.newsletter_api_key"
-                label="API Key"
+                :label="$t('settings.advanced.apiKey')"
                 prepend-inner-icon="mdi-key"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.newsletter_api_key"
-                hint="Your newsletter provider API key"
+                :hint="$t('settings.advanced.newsletterApiKeyHint')"
                 persistent-hint
                 type="password"
             ></v-text-field>
@@ -402,74 +402,74 @@
             <v-text-field
                 v-if="settings.newsletter_enabled && settings.newsletter_provider"
                 v-model="settings.newsletter_list_id"
-                label="List/Audience ID"
+                :label="$t('settings.advanced.listAudienceId')"
                 prepend-inner-icon="mdi-format-list-bulleted"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.newsletter_list_id"
-                hint="The ID of your newsletter list or audience"
+                :hint="$t('settings.advanced.listIdHint')"
                 persistent-hint
             ></v-text-field>
 
             <v-alert v-if="settings.newsletter_enabled && settings.newsletter_provider === 'mailchimp'" type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <strong>Mailchimp Setup:</strong>
+                    <strong>{{ $t('settings.advanced.mailchimpSetup') }}:</strong>
                     <ol class="mt-1 ml-4">
-                        <li>Go to your Mailchimp account → Profile → Extras → API keys</li>
-                        <li>Create a new API key and paste it above</li>
-                        <li>Go to Audience → Settings → Audience name and defaults</li>
-                        <li>Copy the Audience ID and paste it above</li>
+                        <li>{{ $t('settings.advanced.mailchimpStep1') }}</li>
+                        <li>{{ $t('settings.advanced.mailchimpStep2') }}</li>
+                        <li>{{ $t('settings.advanced.mailchimpStep3') }}</li>
+                        <li>{{ $t('settings.advanced.mailchimpStep4') }}</li>
                     </ol>
                 </div>
             </v-alert>
 
             <v-alert v-if="settings.newsletter_enabled && settings.newsletter_provider === 'mailerlite'" type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <strong>MailerLite Setup:</strong>
+                    <strong>{{ $t('settings.advanced.mailerliteSetup') }}:</strong>
                     <ol class="mt-1 ml-4">
-                        <li>Go to your MailerLite account → Integrations → Developer API</li>
-                        <li>Generate a new API key and paste it above</li>
-                        <li>Go to Subscribers → Groups</li>
-                        <li>Copy the Group ID and paste it above</li>
+                        <li>{{ $t('settings.advanced.mailerliteStep1') }}</li>
+                        <li>{{ $t('settings.advanced.mailerliteStep2') }}</li>
+                        <li>{{ $t('settings.advanced.mailerliteStep3') }}</li>
+                        <li>{{ $t('settings.advanced.mailerliteStep4') }}</li>
                     </ol>
                 </div>
             </v-alert>
 
             <v-alert v-if="settings.newsletter_enabled && settings.newsletter_provider === 'sendgrid'" type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <strong>SendGrid Setup:</strong>
+                    <strong>{{ $t('settings.advanced.sendgridSetup') }}:</strong>
                     <ol class="mt-1 ml-4">
-                        <li>Go to Settings → API Keys → Create API Key</li>
-                        <li>Give it full access to Marketing permissions</li>
-                        <li>Copy the API key and paste it above</li>
-                        <li>Go to Marketing → Contacts → Lists</li>
-                        <li>Copy the List ID and paste it above</li>
+                        <li>{{ $t('settings.advanced.sendgridStep1') }}</li>
+                        <li>{{ $t('settings.advanced.sendgridStep2') }}</li>
+                        <li>{{ $t('settings.advanced.sendgridStep3') }}</li>
+                        <li>{{ $t('settings.advanced.sendgridStep4') }}</li>
+                        <li>{{ $t('settings.advanced.sendgridStep5') }}</li>
                     </ol>
                 </div>
             </v-alert>
 
             <v-alert v-if="settings.newsletter_enabled && settings.newsletter_provider === 'convertkit'" type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <strong>ConvertKit Setup:</strong>
+                    <strong>{{ $t('settings.advanced.convertkitSetup') }}:</strong>
                     <ol class="mt-1 ml-4">
-                        <li>Go to Settings → Advanced → API Key</li>
-                        <li>Copy your API Secret (not API Key) and paste it above</li>
-                        <li>Go to Grow → Landing Pages & Forms</li>
-                        <li>Find your form and copy the Form ID from the URL</li>
+                        <li>{{ $t('settings.advanced.convertkitStep1') }}</li>
+                        <li>{{ $t('settings.advanced.convertkitStep2') }}</li>
+                        <li>{{ $t('settings.advanced.convertkitStep3') }}</li>
+                        <li>{{ $t('settings.advanced.convertkitStep4') }}</li>
                     </ol>
                 </div>
             </v-alert>
         </settings-card>
 
         <!-- Server Environment (Read-only from .env) -->
-        <settings-card icon="mdi-server" title="Server Environment">
+        <settings-card icon="mdi-server" :title="$t('settings.advanced.serverEnvironment')">
             <v-alert type="info" variant="tonal" density="compact" class="mb-4">
-                These settings are read from your server's <code>.env</code> file and cannot be changed from the admin panel.
+                {{ $t('settings.advanced.serverEnvDesc') }}
             </v-alert>
 
             <v-text-field
                 :model-value="serverEnvironment"
-                label="Environment"
+                :label="$t('settings.advanced.environment')"
                 prepend-inner-icon="mdi-monitor"
                 variant="outlined"
                 class="mb-4"
@@ -487,8 +487,8 @@
             </v-text-field>
 
             <v-text-field
-                :model-value="serverDebugMode ? 'Enabled' : 'Disabled'"
-                label="Debug Mode"
+                :model-value="serverDebugMode ? $t('settings.advanced.enabled') : $t('settings.advanced.disabled')"
+                :label="$t('settings.advanced.debugMode')"
                 prepend-inner-icon="mdi-bug"
                 variant="outlined"
                 readonly
@@ -505,138 +505,136 @@
             </v-text-field>
 
             <v-alert v-if="serverDebugMode && serverEnvironment === 'production'" type="warning" variant="tonal" density="compact" class="mt-4">
-                <strong>Warning:</strong> Debug mode is enabled in production. This may expose sensitive information.
+                <strong>{{ $t('settings.advanced.warning') }}:</strong> {{ $t('settings.advanced.debugWarning') }}
             </v-alert>
         </settings-card>
 
         <!-- API & Developer Settings -->
-        <settings-card icon="mdi-api" title="API & Developer Settings">
+        <settings-card icon="mdi-api" :title="$t('settings.advanced.apiDeveloperSettings')">
             <v-text-field
                 v-model.number="settings.api_rate_limit_per_minute"
-                label="API Rate Limit (per minute)"
+                :label="$t('settings.advanced.apiRateLimit')"
                 prepend-inner-icon="mdi-speedometer"
                 variant="outlined"
                 type="number"
                 class="mb-4"
                 :error-messages="errors.api_rate_limit_per_minute"
-                hint="Maximum API requests per minute per user"
+                :hint="$t('settings.advanced.apiRateLimitHint')"
                 persistent-hint
             ></v-text-field>
 
             <v-switch
                 v-model="settings.api_keys_enabled"
-                label="Enable API Keys"
+                :label="$t('settings.advanced.enableApiKeys')"
                 color="primary"
                 class="mb-4"
-                hint="Allow users to generate API keys"
+                :hint="$t('settings.advanced.enableApiKeysHint')"
                 persistent-hint
             ></v-switch>
 
             <v-switch
                 v-model="settings.background_jobs_enabled"
-                label="Enable Background Jobs"
+                :label="$t('settings.advanced.enableBackgroundJobs')"
                 color="primary"
-                hint="Process tasks in background queue (requires queue worker running)"
+                :hint="$t('settings.advanced.backgroundJobsHint')"
                 persistent-hint
             ></v-switch>
 
             <v-alert v-if="settings.background_jobs_enabled" type="info" variant="tonal" density="compact" class="mt-4">
-                Make sure you have a queue worker running: <code>php artisan queue:work</code>
+                {{ $t('settings.advanced.queueWorkerNote') }}: <code>php artisan queue:work</code>
             </v-alert>
         </settings-card>
 
         <!-- Cookie Consent / GDPR -->
-        <settings-card icon="mdi-cookie" title="Cookie Consent (GDPR)">
+        <settings-card icon="mdi-cookie" :title="$t('settings.advanced.cookieConsent')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
                 <div class="text-caption">
-                    <strong>GDPR Compliance:</strong> This cookie banner allows visitors to manage their cookie preferences.
-                    It's required by EU law (GDPR) and similar regulations worldwide.
+                    <strong>{{ $t('settings.advanced.gdprCompliance') }}:</strong> {{ $t('settings.advanced.gdprDesc') }}
                 </div>
             </v-alert>
 
             <v-switch
                 v-model="settings.cookie_consent_enabled"
-                label="Enable Cookie Consent Banner"
+                :label="$t('settings.advanced.enableCookieBanner')"
                 color="primary"
                 class="mb-4"
-                hint="Show GDPR-compliant cookie consent banner to visitors"
+                :hint="$t('settings.advanced.cookieBannerHint')"
                 persistent-hint
             ></v-switch>
 
             <template v-if="settings.cookie_consent_enabled">
                 <v-text-field
                     v-model="settings.cookie_banner_title"
-                    label="Banner Title"
+                    :label="$t('settings.advanced.bannerTitle')"
                     prepend-inner-icon="mdi-format-title"
                     variant="outlined"
                     class="mb-4"
-                    hint="Title shown on the cookie banner (default: 'Cookie Consent')"
+                    :hint="$t('settings.advanced.bannerTitleHint')"
                     persistent-hint
-                    placeholder="Cookie Consent"
+                    :placeholder="$t('settings.advanced.cookieConsentPlaceholder')"
                 ></v-text-field>
 
                 <v-textarea
                     v-model="settings.cookie_banner_text"
-                    label="Banner Text"
+                    :label="$t('settings.advanced.bannerText')"
                     prepend-inner-icon="mdi-text"
                     variant="outlined"
                     class="mb-4"
                     rows="3"
-                    hint="Main message shown on the cookie consent banner"
+                    :hint="$t('settings.advanced.bannerTextHint')"
                     persistent-hint
-                    placeholder="We use cookies to enhance your browsing experience, analyze site traffic, and personalize content."
+                    :placeholder="$t('settings.advanced.bannerTextPlaceholder')"
                 ></v-textarea>
 
                 <v-textarea
                     v-model="settings.cookie_preferences_text"
-                    label="Preferences Description"
+                    :label="$t('settings.advanced.preferencesDescription')"
                     prepend-inner-icon="mdi-text"
                     variant="outlined"
                     class="mb-4"
                     rows="2"
-                    hint="Text shown when user opens cookie preferences"
+                    :hint="$t('settings.advanced.preferencesHint')"
                     persistent-hint
-                    placeholder="Manage your cookie preferences below. You can enable or disable different types of cookies."
+                    :placeholder="$t('settings.advanced.preferencesPlaceholder')"
                 ></v-textarea>
 
                 <v-divider class="my-4"></v-divider>
 
                 <div class="text-subtitle-2 mb-3">
                     <v-icon size="small" class="mr-1">mdi-toggle-switch</v-icon>
-                    Default Cookie States
+                    {{ $t('settings.advanced.defaultCookieStates') }}
                 </div>
 
                 <v-alert type="warning" variant="tonal" class="mb-4" density="compact">
                     <div class="text-caption">
-                        <strong>Note:</strong> For GDPR compliance, non-essential cookies should be disabled by default.
-                        Users must actively opt-in to analytics and marketing cookies.
+                        <strong>{{ $t('settings.advanced.note') }}:</strong> {{ $t('settings.advanced.gdprCookieNote') }}
                     </div>
                 </v-alert>
 
                 <v-switch
                     v-model="settings.cookie_analytics_default"
-                    label="Analytics cookies enabled by default"
+                    :label="$t('settings.advanced.analyticsDefault')"
                     color="primary"
                     class="mb-2"
-                    hint="Pre-enable analytics cookies (not GDPR compliant if enabled)"
+                    :hint="$t('settings.advanced.analyticsDefaultHint')"
                     persistent-hint
                 ></v-switch>
 
                 <v-switch
                     v-model="settings.cookie_marketing_default"
-                    label="Marketing cookies enabled by default"
+                    :label="$t('settings.advanced.marketingDefault')"
                     color="primary"
                     class="mb-2"
-                    hint="Pre-enable marketing cookies (not GDPR compliant if enabled)"
+                    :hint="$t('settings.advanced.marketingDefaultHint')"
                     persistent-hint
                 ></v-switch>
 
                 <v-switch
                     v-model="settings.cookie_functional_default"
-                    label="Functional cookies enabled by default"
+                    :label="$t('settings.advanced.functionalDefault')"
                     color="primary"
                     class="mb-4"
-                    hint="Pre-enable functional cookies for enhanced features"
+                    :hint="$t('settings.advanced.functionalDefaultHint')"
                     persistent-hint
                 ></v-switch>
 
@@ -644,52 +642,52 @@
 
                 <div class="text-subtitle-2 mb-3">
                     <v-icon size="small" class="mr-1">mdi-link</v-icon>
-                    Related Pages
+                    {{ $t('settings.advanced.relatedPages') }}
                 </div>
 
                 <v-text-field
                     v-model="settings.cookie_policy_url"
-                    label="Cookie Policy URL"
+                    :label="$t('settings.advanced.cookiePolicyUrl')"
                     prepend-inner-icon="mdi-cookie"
                     variant="outlined"
                     class="mb-4"
                     :error-messages="errors.cookie_policy_url"
-                    hint="Link to your cookie policy page (shown in banner)"
+                    :hint="$t('settings.advanced.cookiePolicyHint')"
                     persistent-hint
-                    placeholder="/cookies or https://example.com/cookies"
+                    placeholder="/cookies"
                 ></v-text-field>
 
                 <v-text-field
                     v-model="settings.privacy_policy_url"
-                    label="Privacy Policy URL"
+                    :label="$t('settings.advanced.privacyPolicyUrl')"
                     prepend-inner-icon="mdi-shield-account"
                     variant="outlined"
                     :error-messages="errors.privacy_policy_url"
-                    hint="Link to your privacy policy page"
+                    :hint="$t('settings.advanced.privacyPolicyHint')"
                     persistent-hint
-                    placeholder="/privacy or https://example.com/privacy"
+                    placeholder="/privacy"
                 ></v-text-field>
             </template>
         </settings-card>
 
         <!-- Custom Scripts -->
-        <settings-card icon="mdi-code-tags" title="Custom Scripts">
+        <settings-card icon="mdi-code-tags" :title="$t('settings.advanced.customScripts')">
             <v-alert type="warning" variant="tonal" class="mb-4" density="compact">
                 <div class="text-caption">
                     <v-icon size="small" class="mr-1">mdi-alert</v-icon>
-                    <strong>Security Warning:</strong> Only add scripts from trusted sources. Malicious scripts can compromise your site and user data.
+                    <strong>{{ $t('settings.advanced.securityWarning') }}:</strong> {{ $t('settings.advanced.scriptsWarning') }}
                 </div>
             </v-alert>
 
             <v-textarea
                 v-model="settings.custom_head_scripts"
-                label="Head Scripts"
+                :label="$t('settings.advanced.headScripts')"
                 prepend-inner-icon="mdi-xml"
                 variant="outlined"
                 class="mb-4 monospace-input"
                 rows="6"
                 :error-messages="errors.custom_head_scripts"
-                hint="Scripts to insert in the <head> section. Include full <script> tags. Great for analytics, meta pixels, etc."
+                :hint="$t('settings.advanced.headScriptsHint')"
                 persistent-hint
                 placeholder="<script>
   // Your head scripts here
@@ -699,13 +697,13 @@
 
             <v-textarea
                 v-model="settings.custom_body_scripts"
-                label="Body Scripts (before </body>)"
+                :label="$t('settings.advanced.bodyScripts')"
                 prepend-inner-icon="mdi-xml"
                 variant="outlined"
                 class="mb-4 monospace-input"
                 rows="6"
                 :error-messages="errors.custom_body_scripts"
-                hint="Scripts to insert before the closing </body> tag. Include full <script> tags. Great for chat widgets, tracking scripts, etc."
+                :hint="$t('settings.advanced.bodyScriptsHint')"
                 persistent-hint
                 placeholder="<script>
   // Your body scripts here
@@ -715,80 +713,80 @@
 
             <v-alert type="info" variant="tonal" density="compact">
                 <div class="text-caption">
-                    <strong>Common uses:</strong>
+                    <strong>{{ $t('settings.advanced.commonUses') }}:</strong>
                     <ul class="mt-1 ml-4">
-                        <li><strong>Head:</strong> Google Tag Manager, Meta/Facebook Pixel, Google Analytics</li>
-                        <li><strong>Body:</strong> Chat widgets (Intercom, Crisp), HotJar, deferred loading scripts</li>
+                        <li><strong>{{ $t('settings.advanced.head') }}:</strong> {{ $t('settings.advanced.headExamples') }}</li>
+                        <li><strong>{{ $t('settings.advanced.body') }}:</strong> {{ $t('settings.advanced.bodyExamples') }}</li>
                     </ul>
                 </div>
             </v-alert>
         </settings-card>
 
         <!-- Legal & Compliance -->
-        <settings-card icon="mdi-gavel" title="Legal & Compliance">
+        <settings-card icon="mdi-gavel" :title="$t('settings.advanced.legalCompliance')">
             <v-text-field
                 v-model="settings.privacy_policy_url"
-                label="Privacy Policy URL"
+                :label="$t('settings.advanced.privacyPolicyUrl')"
                 prepend-inner-icon="mdi-shield-check"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.privacy_policy_url"
-                hint="Relative path (/privacy-policy) or full URL (https://example.com/privacy)"
+                :hint="$t('settings.advanced.legalUrlHint')"
                 persistent-hint
                 placeholder="/privacy-policy"
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.terms_conditions_url"
-                label="Terms & Conditions URL"
+                :label="$t('settings.advanced.termsConditionsUrl')"
                 prepend-inner-icon="mdi-file-document"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.terms_conditions_url"
-                hint="Relative path (/terms) or full URL (https://example.com/terms)"
+                :hint="$t('settings.advanced.legalUrlHint')"
                 persistent-hint
                 placeholder="/terms"
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.cookie_policy_url"
-                label="Cookie Policy URL"
+                :label="$t('settings.advanced.cookiePolicyUrl')"
                 prepend-inner-icon="mdi-cookie"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.cookie_policy_url"
-                hint="Relative path (/cookies) or full URL (https://example.com/cookies)"
+                :hint="$t('settings.advanced.legalUrlHint')"
                 persistent-hint
                 placeholder="/cookies"
             ></v-text-field>
 
             <v-switch
                 v-model="settings.right_to_be_forgotten_enabled"
-                label="Enable Right to be Forgotten (GDPR)"
+                :label="$t('settings.advanced.rightToBeForgotten')"
                 color="primary"
                 class="mb-4"
-                hint="Allow users to request data deletion"
+                :hint="$t('settings.advanced.rightToBeForgottenHint')"
                 persistent-hint
             ></v-switch>
 
             <v-switch
                 v-model="settings.age_confirmation_required"
-                label="Require Age Confirmation"
+                :label="$t('settings.advanced.requireAgeConfirmation')"
                 color="primary"
                 class="mb-4"
-                hint="Users must confirm their age"
+                :hint="$t('settings.advanced.ageConfirmationHint')"
                 persistent-hint
             ></v-switch>
 
             <v-text-field
                 v-if="settings.age_confirmation_required"
                 v-model.number="settings.age_minimum"
-                label="Minimum Age"
+                :label="$t('settings.advanced.minimumAge')"
                 prepend-inner-icon="mdi-numeric"
                 variant="outlined"
                 type="number"
                 :error-messages="errors.age_minimum"
-                hint="Minimum age required to use the site"
+                :hint="$t('settings.advanced.minimumAgeHint')"
                 persistent-hint
             ></v-text-field>
         </settings-card>
@@ -801,16 +799,18 @@
             @click="$emit('save')"
             prepend-icon="mdi-content-save"
         >
-            Save Settings
+            {{ $t('settings.advanced.saveSettings') }}
         </v-btn>
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useApi } from '@/api/useAPI.js';
 import SettingsCard from '../SettingsCard.vue';
 
+const { t } = useI18n();
 const api = useApi('api');
 
 const props = defineProps({

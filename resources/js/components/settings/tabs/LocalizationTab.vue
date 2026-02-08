@@ -1,10 +1,10 @@
 <template>
     <div>
         <!-- Localization Settings -->
-        <settings-card icon="mdi-earth" title="Localization Settings">
+        <settings-card icon="mdi-earth" :title="$t('settings.localization.title')">
             <v-select
                 v-model="settings.default_language"
-                label="Default Language"
+                :label="$t('settings.localization.defaultLanguage')"
                 :items="languages"
                 item-title="name"
                 item-value="code"
@@ -16,7 +16,7 @@
 
             <v-autocomplete
                 v-model="settings.default_timezone"
-                label="Default Timezone"
+                :label="$t('settings.localization.defaultTimezone')"
                 :items="timezones"
                 prepend-inner-icon="mdi-clock-outline"
                 variant="outlined"
@@ -26,7 +26,7 @@
 
             <v-select
                 v-model="settings.date_format"
-                label="Date Format"
+                :label="$t('settings.localization.dateFormat')"
                 :items="dateFormats"
                 item-title="label"
                 item-value="value"
@@ -37,7 +37,7 @@
 
             <v-select
                 v-model="settings.time_format"
-                label="Time Format"
+                :label="$t('settings.localization.timeFormat')"
                 :items="timeFormats"
                 item-title="label"
                 item-value="value"
@@ -48,32 +48,32 @@
 
             <v-switch
                 v-model="settings.language_change_enabled"
-                label="Allow users to change language"
+                :label="$t('settings.localization.allowLanguageChange')"
                 color="primary"
-                :hint="settings.language_change_enabled ? 'Users can switch between available languages' : 'Language selection is disabled for users'"
+                :hint="settings.language_change_enabled ? $t('settings.localization.languageChangeEnabledHint') : $t('settings.localization.languageChangeDisabledHint')"
                 persistent-hint
                 class="mb-4"
             ></v-switch>
 
             <v-switch
                 v-model="settings.locale_auto_detect"
-                label="Auto-detect user locale"
+                :label="$t('settings.localization.autoDetectLocale')"
                 color="primary"
-                :hint="settings.locale_auto_detect ? 'Automatically detect user language from browser' : 'Use default language for all users'"
+                :hint="settings.locale_auto_detect ? $t('settings.localization.autoDetectEnabledHint') : $t('settings.localization.autoDetectDisabledHint')"
                 persistent-hint
                 class="mb-4"
             ></v-switch>
 
             <v-select
                 v-model="settings.translation_fallback_language"
-                label="Translation Fallback Language"
+                :label="$t('settings.localization.fallbackLanguage')"
                 :items="languages"
                 item-title="name"
                 item-value="code"
                 prepend-inner-icon="mdi-translate-variant"
                 variant="outlined"
                 :error-messages="errors.translation_fallback_language"
-                hint="Language to use when translation is missing"
+                :hint="$t('settings.localization.fallbackHint')"
                 persistent-hint
             ></v-select>
         </settings-card>
@@ -86,7 +86,7 @@
             @click="$emit('save')"
             prepend-icon="mdi-content-save"
         >
-            Save Settings
+            {{ $t('settings.localization.saveSettings') }}
         </v-btn>
     </div>
 </template>

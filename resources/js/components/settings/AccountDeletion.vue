@@ -1,14 +1,14 @@
 <template>
     <div>
         <v-alert v-if="!isEnabled" type="info" variant="tonal" class="mb-4">
-            Account deletion is not enabled. Please contact support if you wish to delete your account.
+            {{ $t('accountDeletion.notEnabled') }}
         </v-alert>
 
         <template v-else>
             <v-alert type="warning" variant="tonal" class="mb-4">
-                <v-alert-title>Delete Your Account</v-alert-title>
+                <v-alert-title>{{ $t('accountDeletion.deleteYourAccount') }}</v-alert-title>
                 <p class="mt-2 mb-0">
-                    This action is permanent and cannot be undone. All your data will be permanently deleted.
+                    {{ $t('accountDeletion.permanentWarning') }}
                 </p>
             </v-alert>
 
@@ -18,9 +18,9 @@
                     <div class="d-flex align-center">
                         <v-icon color="primary" class="mr-3">mdi-download</v-icon>
                         <div class="flex-grow-1">
-                            <div class="font-weight-medium">Export Your Data</div>
+                            <div class="font-weight-medium">{{ $t('accountDeletion.exportYourData') }}</div>
                             <div class="text-body-2 text-medium-emphasis">
-                                Download a copy of all your data before deleting your account.
+                                {{ $t('accountDeletion.exportDescription') }}
                             </div>
                         </div>
                         <v-btn
@@ -29,7 +29,7 @@
                             :loading="isExporting"
                             @click="exportData"
                         >
-                            Export Data
+                            {{ $t('accountDeletion.exportData') }}
                         </v-btn>
                     </div>
                 </v-card-text>
@@ -41,9 +41,9 @@
                     <div class="d-flex align-center mb-4">
                         <v-icon color="error" class="mr-3">mdi-account-remove</v-icon>
                         <div>
-                            <div class="font-weight-medium text-error">Delete Account</div>
+                            <div class="font-weight-medium text-error">{{ $t('accountDeletion.deleteAccount') }}</div>
                             <div class="text-body-2 text-medium-emphasis">
-                                Permanently delete your account and all associated data.
+                                {{ $t('accountDeletion.deleteDescription') }}
                             </div>
                         </div>
                     </div>
@@ -53,7 +53,7 @@
                         variant="outlined"
                         @click="showConfirmDialog = true"
                     >
-                        Delete My Account
+                        {{ $t('accountDeletion.deleteMyAccount') }}
                     </v-btn>
                 </v-card-text>
             </v-card>
@@ -64,15 +64,15 @@
             <v-card>
                 <v-card-title class="d-flex align-center text-error">
                     <v-icon color="error" class="mr-2">mdi-alert</v-icon>
-                    Are you sure?
+                    {{ $t('accountDeletion.areYouSure') }}
                 </v-card-title>
 
                 <v-card-text>
                     <p class="text-body-1 mb-4">
-                        You are about to permanently delete your account. This action <strong>cannot be undone</strong>.
+                        {{ $t('accountDeletion.aboutToDelete') }}
                     </p>
                     <p class="text-body-2 text-medium-emphasis mb-0">
-                        All your data, including your profile, posts, messages, and API keys will be permanently removed.
+                        {{ $t('accountDeletion.allDataRemoved') }}
                     </p>
                 </v-card-text>
 
@@ -82,14 +82,14 @@
                         variant="text"
                         @click="showConfirmDialog = false"
                     >
-                        Cancel
+                        {{ $t('common.cancel') }}
                     </v-btn>
                     <v-btn
                         color="error"
                         variant="tonal"
                         @click="proceedToDelete"
                     >
-                        Yes, I want to delete my account
+                        {{ $t('accountDeletion.yesDelete') }}
                     </v-btn>
                 </v-card-actions>
             </v-card>
@@ -100,24 +100,23 @@
             <v-card>
                 <v-card-title class="d-flex align-center text-error">
                     <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
-                    Delete Account
+                    {{ $t('accountDeletion.deleteAccount') }}
                 </v-card-title>
 
                 <v-card-text>
                     <v-alert type="error" variant="tonal" class="mb-4">
-                        This action is <strong>permanent</strong> and <strong>cannot be undone</strong>.
-                        All your data will be permanently deleted including:
+                        {{ $t('accountDeletion.permanentActionWarning') }}
                         <ul class="mt-2 mb-0">
-                            <li>Your profile and account information</li>
-                            <li>All posts and content you've created</li>
-                            <li>Messages and conversations</li>
-                            <li>API keys and integrations</li>
+                            <li>{{ $t('accountDeletion.dataList.profile') }}</li>
+                            <li>{{ $t('accountDeletion.dataList.posts') }}</li>
+                            <li>{{ $t('accountDeletion.dataList.messages') }}</li>
+                            <li>{{ $t('accountDeletion.dataList.apiKeys') }}</li>
                         </ul>
                     </v-alert>
 
                     <v-text-field
                         v-model="deleteForm.password"
-                        label="Enter your password to confirm"
+                        :label="$t('accountDeletion.enterPassword')"
                         type="password"
                         variant="outlined"
                         :error-messages="formErrors.password"
@@ -126,10 +125,10 @@
 
                     <v-textarea
                         v-model="deleteForm.reason"
-                        label="Reason for leaving (optional)"
+                        :label="$t('accountDeletion.reasonLabel')"
                         variant="outlined"
                         rows="2"
-                        hint="Help us improve by sharing why you're leaving"
+                        :hint="$t('accountDeletion.reasonHint')"
                         persistent-hint
                         class="mb-4"
                     />
@@ -141,7 +140,7 @@
                     >
                         <template v-slot:label>
                             <span class="text-body-2">
-                                I understand that this action is permanent and all my data will be deleted.
+                                {{ $t('accountDeletion.understandCheckbox') }}
                             </span>
                         </template>
                     </v-checkbox>
@@ -153,7 +152,7 @@
                         variant="text"
                         @click="closeDeleteDialog"
                     >
-                        Cancel
+                        {{ $t('common.cancel') }}
                     </v-btn>
                     <v-btn
                         color="error"
@@ -161,7 +160,7 @@
                         :disabled="!deleteForm.confirm"
                         @click="deleteAccount"
                     >
-                        Permanently Delete Account
+                        {{ $t('accountDeletion.permanentlyDelete') }}
                     </v-btn>
                 </v-card-actions>
             </v-card>
@@ -172,12 +171,12 @@
             <v-card>
                 <v-card-title class="d-flex align-center">
                     <v-icon color="primary" class="mr-2">mdi-download</v-icon>
-                    Your Data Export
+                    {{ $t('accountDeletion.exportSuccess') }}
                 </v-card-title>
 
                 <v-card-text>
                     <v-alert type="success" variant="tonal" class="mb-4">
-                        Your data has been exported successfully.
+                        {{ $t('accountDeletion.exportSuccessMessage') }}
                     </v-alert>
 
                     <v-textarea
@@ -191,10 +190,10 @@
 
                 <v-card-actions class="pa-4 pt-0">
                     <v-spacer />
-                    <v-btn variant="text" @click="showExportDialog = false">Close</v-btn>
+                    <v-btn variant="text" @click="showExportDialog = false">{{ $t('common.close') }}</v-btn>
                     <v-btn color="primary" @click="downloadExport">
                         <v-icon start>mdi-download</v-icon>
-                        Download JSON
+                        {{ $t('accountDeletion.downloadJson') }}
                     </v-btn>
                 </v-card-actions>
             </v-card>
@@ -204,7 +203,7 @@
         <v-snackbar v-model="showError" color="error" :timeout="5000">
             {{ errorMessage }}
             <template v-slot:actions>
-                <v-btn variant="text" @click="showError = false">Close</v-btn>
+                <v-btn variant="text" @click="showError = false">{{ $t('common.close') }}</v-btn>
             </template>
         </v-snackbar>
     </div>
@@ -213,9 +212,12 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import axios from 'axios';
+
+const { t } = useI18n();
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -283,12 +285,12 @@ async function deleteAccount() {
     formErrors.confirm = '';
 
     if (!deleteForm.password) {
-        formErrors.password = 'Password is required';
+        formErrors.password = t('accountDeletion.passwordRequired');
         return;
     }
 
     if (!deleteForm.confirm) {
-        formErrors.confirm = 'You must confirm to proceed';
+        formErrors.confirm = t('accountDeletion.mustConfirm');
         return;
     }
 

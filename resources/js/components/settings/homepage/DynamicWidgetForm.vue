@@ -57,7 +57,7 @@
         v-else-if="field.type === 'icon'"
         v-model="localValue[key]"
         :label="field.label"
-        hint="Material Design Icon name (e.g., mdi-home)"
+        :hint="$t('settings.dynamicForm.iconHint')"
         persistent-hint
         :prepend-icon="localValue[key] || 'mdi-checkbox-blank-circle-outline'"
       ></v-text-field>
@@ -81,20 +81,20 @@
             color="grey"
             variant="outlined"
           >
-            Disabled
+            {{ $t('settings.dynamicForm.disabled') }}
           </v-chip>
         </div>
 
         <div v-if="localValue[key] === null" class="text-center py-4">
           <v-icon size="48" color="grey-lighten-1">mdi-cancel</v-icon>
-          <p class="text-caption text-grey mt-2">This element is disabled</p>
+          <p class="text-caption text-grey mt-2">{{ $t('settings.dynamicForm.elementDisabled') }}</p>
           <v-btn
             size="small"
             variant="outlined"
             color="primary"
             @click="enableObjectField(key, field)"
           >
-            Enable {{ field.label }}
+            {{ $t('settings.dynamicForm.enable') }} {{ field.label }}
           </v-btn>
         </div>
 
@@ -115,7 +115,7 @@
             prepend-icon="mdi-close"
             @click="disableObjectField(key)"
           >
-            Disable {{ field.label }}
+            {{ $t('settings.dynamicForm.disable') }} {{ field.label }}
           </v-btn>
         </div>
       </v-card>
@@ -130,7 +130,7 @@
             prepend-icon="mdi-plus"
             @click="addArrayItem(key, field)"
           >
-            Add Item
+            {{ $t('settings.dynamicForm.addItem') }}
           </v-btn>
         </div>
 
@@ -144,7 +144,7 @@
               <v-card-text>
                 <div class="d-flex align-center mb-2">
                   <v-icon class="array-drag-handle mr-2" style="cursor: grab;">mdi-drag-vertical</v-icon>
-                  <div class="text-caption text-grey">Item {{ index + 1 }}</div>
+                  <div class="text-caption text-grey">{{ $t('settings.dynamicForm.item') }} {{ index + 1 }}</div>
                   <v-spacer></v-spacer>
                   <v-btn
                     icon="mdi-delete"
@@ -202,22 +202,25 @@
         </draggable>
 
         <v-alert v-if="!localValue[key] || localValue[key].length === 0" type="info" variant="tonal" density="compact">
-          No items yet. Click "Add Item" to get started.
+          {{ $t('settings.dynamicForm.noItemsYet') }}
         </v-alert>
       </v-card>
     </div>
 
     <v-alert v-if="Object.keys(schema).length === 0" type="info" variant="tonal">
-      This widget type has no configurable content fields.
+      {{ $t('settings.dynamicForm.noConfigurableFields') }}
     </v-alert>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getWidgetDefinition } from '@/configs/widgetTypes';
 import draggable from 'vuedraggable';
 import HomepageImageUpload from './HomepageImageUpload.vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
   modelValue: Object,

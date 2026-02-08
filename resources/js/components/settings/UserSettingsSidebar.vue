@@ -4,7 +4,7 @@
       <div class="d-flex align-center">
         <v-icon class="mr-2" color="primary">mdi-cog</v-icon>
         <span class="text-subtitle-1 font-weight-medium">
-          User Settings
+          {{ $t('settings.userSettings') }}
         </span>
       </div>
       <div class="d-flex align-center">
@@ -26,7 +26,7 @@
           <div class="mb-6">
             <div class="text-caption text-medium-emphasis mb-2">
               <v-icon size="small" class="mr-1">mdi-theme-light-dark</v-icon>
-              Theme Mode
+              {{ $t('settings.themeMode') }}
             </div>
             <v-btn-toggle
               v-model="themeMode"
@@ -39,15 +39,15 @@
             >
               <v-btn value="light" class="flex-grow-1">
                 <v-icon size="small" class="mr-1">mdi-white-balance-sunny</v-icon>
-                Light
+                {{ $t('settings.light') }}
               </v-btn>
               <v-btn value="dark" class="flex-grow-1">
                 <v-icon size="small" class="mr-1">mdi-moon-waning-crescent</v-icon>
-                Dark
+                {{ $t('settings.dark') }}
               </v-btn>
               <v-btn value="system" class="flex-grow-1">
                 <v-icon size="small" class="mr-1">mdi-laptop</v-icon>
-                Auto
+                {{ $t('settings.auto') }}
               </v-btn>
             </v-btn-toggle>
             <div class="text-caption text-medium-emphasis mt-1">
@@ -61,7 +61,7 @@
           <div class="mb-6" v-if="languageChangeEnabled">
             <div class="text-caption text-medium-emphasis mb-2">
               <v-icon size="small" class="mr-1">mdi-translate</v-icon>
-              Language
+              {{ $t('settings.language') }}
             </div>
             <v-select
               v-model="selectedLanguage"
@@ -80,7 +80,7 @@
           <div class="mb-6">
             <div class="text-caption text-medium-emphasis mb-2">
               <v-icon size="small" class="mr-1">mdi-clock-outline</v-icon>
-              Timezone
+              {{ $t('settings.timezone') }}
             </div>
             <v-autocomplete
               v-model="userTimezone"
@@ -88,10 +88,10 @@
               variant="outlined"
               density="compact"
               hide-details
-              placeholder="Select timezone"
+              :placeholder="$t('settings.selectTimezone')"
             ></v-autocomplete>
             <div class="text-caption text-medium-emphasis mt-1">
-              Current: {{ currentTime }}
+              {{ $t('settings.current') }}: {{ currentTime }}
             </div>
           </div>
 
@@ -101,7 +101,7 @@
           <div class="mb-6">
             <div class="text-caption text-medium-emphasis mb-2">
               <v-icon size="small" class="mr-1">mdi-calendar</v-icon>
-              Date Format
+              {{ $t('settings.dateFormat') }}
             </div>
             <v-select
               v-model="userDateFormat"
@@ -113,7 +113,7 @@
               hide-details
             ></v-select>
             <div class="text-caption text-medium-emphasis mt-1">
-              Preview: {{ datePreview }}
+              {{ $t('settings.preview') }}: {{ datePreview }}
             </div>
           </div>
 
@@ -127,7 +127,7 @@
             @click="savePreferences"
             prepend-icon="mdi-content-save"
           >
-            Save Preferences
+            {{ $t('settings.savePreferences') }}
           </v-btn>
 
           <!-- Success/Error Messages -->
@@ -170,11 +170,13 @@ const messageType = ref('success')
 
 // Theme Mode
 const themeMode = ref('system')
+const { t } = useI18n()
+
 const themeHint = computed(() => {
   const hints = {
-    light: 'Always use light theme',
-    dark: 'Always use dark theme',
-    system: 'Follows your system preferences'
+    light: t('settings.lightHint'),
+    dark: t('settings.darkHint'),
+    system: t('settings.systemHint')
   }
   return hints[themeMode.value]
 })
@@ -308,11 +310,11 @@ async function savePreferences() {
       userStore.user.language = selectedLanguage.value
     }
 
-    message.value = 'Preferences saved successfully!'
+    message.value = t('settings.preferencesSaved')
     messageType.value = 'success'
   } catch (error) {
     console.error('Failed to save preferences:', error)
-    message.value = 'Failed to save preferences. Please try again.'
+    message.value = t('settings.preferencesFailed')
     messageType.value = 'error'
   } finally {
     saving.value = false

@@ -43,11 +43,11 @@
                         <div class="d-flex align-center mb-2">
                             <v-icon color="success" size="28" class="mr-3">mdi-file-document-plus</v-icon>
                             <h1 class="create-title text-h4 font-weight-bold">
-                                Create New Wiki Page
+                                {{ $t('wiki.createNewPage') }}
                             </h1>
                         </div>
                         <p class="text-subtitle-1 text-medium-emphasis">
-                            {{ slug ? `Creating page: "${slug}"` : 'Build your knowledge base with rich, organized content' }}
+                            {{ slug ? $t('wiki.creatingPage', { slug: slug }) : $t('wiki.buildKnowledgeBase') }}
                         </p>
                     </v-col>
                     <v-col cols="12" md="4" class="text-right">
@@ -60,7 +60,7 @@
                                 :to="`/wiki/${slug}`"
                                 class="mr-2"
                             >
-                                Cancel
+                                {{ $t('common.cancel') }}
                             </v-btn>
                             <v-btn
                                 color="success"
@@ -71,7 +71,7 @@
                                 :disabled="!canCreate"
                                 class="create-btn"
                             >
-                                {{ creating ? 'Creating...' : 'Create Page' }}
+                                {{ creating ? $t('wiki.creating') : $t('wiki.createPage') }}
                             </v-btn>
                         </div>
                     </v-col>
@@ -89,8 +89,8 @@
                         <v-icon>mdi-information</v-icon>
                     </template>
                     <div class="alert-content">
-                        <h4 class="alert-title">Ready to Create</h4>
-                        <p class="mb-0">The page "{{ slug }}" doesn't exist yet. Fill out the form below to create it and start building your knowledge base.</p>
+                        <h4 class="alert-title">{{ $t('wiki.readyToCreate') }}</h4>
+                        <p class="mb-0">{{ $t('wiki.pageNotExistsFillForm', { slug: slug }) }}</p>
                     </div>
                 </v-alert>
 
@@ -118,7 +118,7 @@
                                 prepend-icon="mdi-eye"
                                 class="mr-2"
                             >
-                                View Page
+                                {{ $t('wiki.viewPage') }}
                             </v-btn>
                             <v-btn
                                 variant="outlined"
@@ -126,7 +126,7 @@
                                 @click="createAnother"
                                 prepend-icon="mdi-plus"
                             >
-                                Create Another
+                                {{ $t('wiki.createAnother') }}
                             </v-btn>
                         </div>
                     </div>
@@ -145,7 +145,7 @@
                         <v-icon>mdi-alert-circle</v-icon>
                     </template>
                     <div class="error-content">
-                        <h4 class="mb-2">Please fix the following issues:</h4>
+                        <h4 class="mb-2">{{ $t('wiki.pleaseFixIssues') }}</h4>
                         <ul class="mb-0">
                             <li v-for="(error, index) in editing.errors" :key="index">{{ error }}</li>
                         </ul>
@@ -161,7 +161,7 @@
                         <v-card-title class="editor-card-title d-flex justify-space-between align-center">
                             <div class="d-flex align-center">
                                 <v-icon class="mr-2" color="success">mdi-file-document-edit</v-icon>
-                                <span>Page Content</span>
+                                <span>{{ $t('wiki.pageContent') }}</span>
                             </div>
                             <div class="editor-actions">
                                 <v-btn
@@ -170,7 +170,7 @@
                                     @click="showPreview = !showPreview"
                                     :prepend-icon="showPreview ? 'mdi-eye-off' : 'mdi-eye'"
                                 >
-                                    {{ showPreview ? 'Hide' : 'Show' }} Preview
+                                    {{ showPreview ? $t('wiki.hidePreview') : $t('wiki.showPreview') }}
                                 </v-btn>
                                 <v-btn
                                     variant="text"
@@ -179,7 +179,7 @@
                                     :loading="autoSaving"
                                     prepend-icon="mdi-content-save-outline"
                                 >
-                                    Auto Save
+                                    {{ $t('wiki.autoSave') }}
                                 </v-btn>
                             </div>
                         </v-card-title>
@@ -189,11 +189,11 @@
                             <div class="title-section mb-6">
                                 <v-text-field
                                     v-model="wikipage.title"
-                                    label="Page Title"
+                                    :label="$t('wiki.pageTitle')"
                                     variant="outlined"
                                     density="comfortable"
                                     prepend-inner-icon="mdi-format-title"
-                                    placeholder="Enter a clear, descriptive title..."
+                                    :placeholder="$t('wiki.enterTitle')"
                                     class="title-field"
                                     :error="titleError"
                                     :error-messages="titleErrorMessage"
@@ -204,7 +204,7 @@
                                     maxlength="100"
                                 >
                                     <template #append-inner>
-                                        <v-tooltip text="A good title is descriptive and helps others find your content">
+                                        <v-tooltip :text="$t('wiki.titleHelpTooltip')">
                                             <template #activator="{ props }">
                                                 <v-icon v-bind="props" size="small" color="info">mdi-help-circle</v-icon>
                                             </template>
@@ -216,7 +216,7 @@
                                 <div v-if="wikipage.title" class="url-preview mt-2">
                                     <v-chip size="small" color="success" variant="tonal">
                                         <v-icon start size="16">mdi-link</v-icon>
-                                        URL: /wiki/{{ generateSlug(wikipage.title) }}
+                                        {{ $t('wiki.url') }}: /wiki/{{ generateSlug(wikipage.title) }}
                                     </v-chip>
                                 </div>
                             </div>
@@ -226,11 +226,11 @@
                                 <div class="content-header mb-3 d-flex justify-space-between align-center">
                                     <div class="d-flex align-center">
                                         <v-icon class="mr-2" size="20" color="success">mdi-text</v-icon>
-                                        <span class="text-subtitle-1 font-weight-medium">Page Content</span>
+                                        <span class="text-subtitle-1 font-weight-medium">{{ $t('wiki.pageContent') }}</span>
                                     </div>
                                     <div class="content-stats">
                                         <v-chip size="small" variant="tonal" color="info">
-                                            {{ contentStats.words }} words, {{ contentStats.chars }} characters
+                                            {{ $t('wiki.wordsChars', { words: contentStats.words, chars: contentStats.chars }) }}
                                         </v-chip>
                                     </div>
                                 </div>
@@ -260,7 +260,7 @@
                                         @click="showTemplates = !showTemplates"
                                         :prepend-icon="showTemplates ? 'mdi-chevron-up' : 'mdi-chevron-down'"
                                     >
-                                        Templates
+                                        {{ $t('wiki.templates') }}
                                     </v-btn>
                                 </div>
 
@@ -268,7 +268,7 @@
                                 <v-expand-transition>
                                     <div v-if="showTemplates" class="templates-section mb-4">
                                         <v-card variant="outlined" class="pa-3">
-                                            <div class="text-subtitle-2 mb-2">Quick Templates</div>
+                                            <div class="text-subtitle-2 mb-2">{{ $t('wiki.quickTemplates') }}</div>
                                             <v-chip-group>
                                                 <v-chip
                                                     v-for="template in contentTemplates"
@@ -307,7 +307,7 @@
                         <v-card class="quick-actions-card mb-4" elevation="1" rounded="lg">
                             <v-card-title class="quick-actions-title">
                                 <v-icon class="mr-2" color="primary">mdi-lightning-bolt</v-icon>
-                                Quick Actions
+                                {{ $t('wiki.quickActions') }}
                             </v-card-title>
                             <v-card-text class="pa-4">
                                 <v-row dense>
@@ -319,7 +319,7 @@
                                             @click="focusTitle"
                                             prepend-icon="mdi-format-title"
                                         >
-                                            Focus Title
+                                            {{ $t('wiki.focusTitle') }}
                                         </v-btn>
                                     </v-col>
                                     <v-col cols="6">
@@ -330,7 +330,7 @@
                                             @click="focusContent"
                                             prepend-icon="mdi-text"
                                         >
-                                            Focus Content
+                                            {{ $t('wiki.focusContent') }}
                                         </v-btn>
                                     </v-col>
                                     <v-col cols="6">
@@ -341,7 +341,7 @@
                                             @click="clearForm"
                                             prepend-icon="mdi-refresh"
                                         >
-                                            Clear All
+                                            {{ $t('wiki.clearAll') }}
                                         </v-btn>
                                     </v-col>
                                     <v-col cols="6">
@@ -352,7 +352,7 @@
                                             @click="saveAsDraft"
                                             prepend-icon="mdi-content-save-outline"
                                         >
-                                            Save Draft
+                                            {{ $t('wiki.saveDraft') }}
                                         </v-btn>
                                     </v-col>
                                 </v-row>
@@ -363,21 +363,21 @@
                         <v-card class="settings-card mb-4" elevation="1" rounded="lg">
                             <v-card-title class="settings-title">
                                 <v-icon class="mr-2" color="info">mdi-file-tree</v-icon>
-                                Organization
+                                {{ $t('wiki.organization') }}
                             </v-card-title>
                             <v-card-text class="pa-4">
                                 <v-select
                                     v-model="wikipage.parent"
                                     :items="pages"
-                                    label="Parent Page"
+                                    :label="$t('wiki.parentPage')"
                                     variant="outlined"
                                     density="compact"
                                     prepend-inner-icon="mdi-file-tree"
                                     item-title="title"
                                     item-value="id"
                                     clearable
-                                    no-data-text="No parent pages available"
-                                    hint="Choose a parent page to organize your content hierarchically"
+                                    :no-data-text="$t('wiki.noParentPages')"
+                                    :hint="$t('wiki.parentPageHint')"
                                     persistent-hint
                                 >
                                     <template #selection="{ item }">
@@ -403,7 +403,7 @@
                         <v-card class="categories-card mb-4" elevation="1" rounded="lg">
                             <v-card-title class="categories-title">
                                 <v-icon class="mr-2" color="primary">mdi-folder-outline</v-icon>
-                                Categories
+                                {{ $t('wiki.categories') }}
                                 <v-spacer />
                                 <v-chip size="small" color="primary" variant="tonal">
                                     {{ categoryValue.length }}
@@ -416,7 +416,7 @@
                                     :search-input.sync="searchTax"
                                     item-title="title"
                                     item-value="id"
-                                    label="Select or create categories"
+                                    :label="$t('wiki.selectOrCreateCategories')"
                                     variant="outlined"
                                     density="compact"
                                     multiple
@@ -424,8 +424,8 @@
                                     deletable-chips
                                     clearable
                                     prepend-inner-icon="mdi-folder-plus"
-                                    placeholder="Type to search or create..."
-                                    hint="Categories help organize and discover your content"
+                                    :placeholder="$t('wiki.typeToSearchOrCreate')"
+                                    :hint="$t('wiki.categoriesHint')"
                                     persistent-hint
                                 >
                                     <template #chip="{ props, item }">
@@ -444,7 +444,7 @@
 
                                 <!-- Popular Categories -->
                                 <div v-if="popularCategories.length" class="popular-categories mt-3">
-                                    <div class="text-caption text-medium-emphasis mb-2">Popular Categories:</div>
+                                    <div class="text-caption text-medium-emphasis mb-2">{{ $t('wiki.popularCategories') }}:</div>
                                     <v-chip-group>
                                         <v-chip
                                             v-for="category in popularCategories"
@@ -464,7 +464,7 @@
                         <v-card class="tags-card mb-4" elevation="1" rounded="lg">
                             <v-card-title class="tags-title">
                                 <v-icon class="mr-2" color="secondary">mdi-tag-outline</v-icon>
-                                Tags
+                                {{ $t('wiki.tags') }}
                                 <v-spacer />
                                 <v-chip size="small" color="secondary" variant="tonal">
                                     {{ termValue.length }}
@@ -476,7 +476,7 @@
                                     :items="terms"
                                     item-title="title"
                                     :search-input.sync="searchTerm"
-                                    label="Add tags"
+                                    :label="$t('wiki.addTags')"
                                     variant="outlined"
                                     density="compact"
                                     multiple
@@ -484,15 +484,15 @@
                                     deletable-chips
                                     clearable
                                     prepend-inner-icon="mdi-tag-plus"
-                                    placeholder="Type to search or create tags"
-                                    hint="Tags make your content discoverable across topics"
+                                    :placeholder="$t('wiki.typeToSearchOrCreateTags')"
+                                    :hint="$t('wiki.tagsHint')"
                                     persistent-hint
                                 >
                                     <template #no-data>
                                         <v-list-item>
                                             <v-list-item-title>
-                                                No results for "<strong>{{ searchTerm }}</strong>".
-                                                Press <kbd class="kbd">Enter</kbd> to create a new tag
+                                                {{ $t('wiki.noResultsFor', { term: searchTerm }) }}
+                                                {{ $t('wiki.pressEnterToCreate') }}
                                             </v-list-item-title>
                                         </v-list-item>
                                     </template>
@@ -513,7 +513,7 @@
 
                                 <!-- Suggested Tags -->
                                 <div v-if="suggestedTags.length" class="suggested-tags mt-3">
-                                    <div class="text-caption text-medium-emphasis mb-2">Suggested based on content:</div>
+                                    <div class="text-caption text-medium-emphasis mb-2">{{ $t('wiki.suggestedTags') }}:</div>
                                     <v-chip-group>
                                         <v-chip
                                             v-for="tag in suggestedTags"
@@ -533,25 +533,25 @@
                         <v-card class="preview-card" elevation="1" rounded="lg">
                             <v-card-title class="preview-title">
                                 <v-icon class="mr-2" color="success">mdi-eye-outline</v-icon>
-                                Live Preview
+                                {{ $t('wiki.livePreview') }}
                             </v-card-title>
                             <v-card-text class="pa-4">
                                 <div class="preview-content">
                                     <div class="preview-header mb-3">
                                         <h4 class="preview-page-title">
-                                            {{ wikipage.title || 'Untitled Page' }}
+                                            {{ wikipage.title || $t('wiki.untitledPage') }}
                                             <v-chip v-if="!wikipage.title" color="warning" size="x-small" class="ml-2">
-                                                Title Required
+                                                {{ $t('wiki.titleRequired') }}
                                             </v-chip>
                                         </h4>
                                         <div class="text-caption text-medium-emphasis">
-                                            Created {{ $formatDate(new Date()) }}
+                                            {{ $t('wiki.created') }} {{ $formatDate(new Date()) }}
                                         </div>
                                     </div>
 
                                     <div class="preview-meta mb-3">
                                         <div v-if="categoryValue.length" class="preview-categories mb-2">
-                                            <span class="text-caption text-medium-emphasis">Categories: </span>
+                                            <span class="text-caption text-medium-emphasis">{{ $t('wiki.categories') }}: </span>
                                             <v-chip
                                                 v-for="category in categoryValue.slice(0, 3)"
                                                 :key="category.id || category"
@@ -568,7 +568,7 @@
                                         </div>
 
                                         <div v-if="termValue.length" class="preview-tags mb-2">
-                                            <span class="text-caption text-medium-emphasis">Tags: </span>
+                                            <span class="text-caption text-medium-emphasis">{{ $t('wiki.tags') }}: </span>
                                             <v-chip
                                                 v-for="tag in termValue.slice(0, 3)"
                                                 :key="tag.id || tag"
@@ -588,11 +588,11 @@
                                     <div class="preview-stats">
                                         <v-row dense>
                                             <v-col cols="6">
-                                                <div class="text-caption text-medium-emphasis">Content</div>
+                                                <div class="text-caption text-medium-emphasis">{{ $t('wiki.content') }}</div>
                                                 <div class="text-body-2">{{ contentStats.status }}</div>
                                             </v-col>
                                             <v-col cols="6">
-                                                <div class="text-caption text-medium-emphasis">Readiness</div>
+                                                <div class="text-caption text-medium-emphasis">{{ $t('wiki.readiness') }}</div>
                                                 <v-progress-linear
                                                     :model-value="completionPercentage"
                                                     :color="completionPercentage < 50 ? 'warning' : 'success'"
@@ -628,15 +628,15 @@
             <v-card>
                 <v-card-title class="d-flex align-center">
                     <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
-                    Confirm Action
+                    {{ $t('common.confirmAction') }}
                 </v-card-title>
                 <v-card-text>
                     {{ confirmMessage }}
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn variant="text" @click="showConfirmDialog = false">Cancel</v-btn>
-                    <v-btn color="primary" variant="elevated" @click="confirmAction">Confirm</v-btn>
+                    <v-btn variant="text" @click="showConfirmDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" variant="elevated" @click="confirmAction">{{ $t('common.confirm') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -646,6 +646,7 @@
 <script>
 import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
 import { useDisplay } from 'vuetify'
+import { useI18n } from 'vue-i18n'
 import Tiptap from '../common/tiptap/Tiptap.vue'
 import { useAuthStore } from '@/store/authStore.js'
 import { useRouter } from 'vue-router'
@@ -656,6 +657,8 @@ export default {
         Tiptap
     },
     setup() {
+        const { t } = useI18n()
+
         // Reactive data
         const slug = ref('')
         const currentStep = ref(1)
@@ -832,12 +835,12 @@ Answer to the third question.`
         const validateTitle = () => {
             if (!wikipage.value.title || wikipage.value.title.trim().length === 0) {
                 titleError.value = true
-                titleErrorMessage.value = 'Page title is required'
+                titleErrorMessage.value = t('wiki.pageTitleRequired')
                 return false
             }
             if (wikipage.value.title.length > 100) {
                 titleError.value = true
-                titleErrorMessage.value = 'Title must be less than 100 characters'
+                titleErrorMessage.value = t('wiki.titleTooLong')
                 return false
             }
             return true
@@ -886,7 +889,7 @@ Answer to the third question.`
         }
 
         const clearForm = () => {
-            confirmMessage.value = 'Are you sure you want to clear all content? This action cannot be undone.'
+            confirmMessage.value = t('wiki.confirmClearAll')
             confirmCallback.value = () => {
                 wikipage.value = {
                     title: '',
@@ -954,7 +957,7 @@ Answer to the third question.`
             }
 
             if (!wikipage.value.content || wikipage.value.content.trim().length === 0) {
-                editing.errors = ['Page content is required']
+                editing.errors = [t('wiki.pageContentRequired')]
                 return
             }
 
@@ -1032,7 +1035,7 @@ Answer to the third question.`
                 termValue.value = []
                 categoryValue.value = []
 
-                message.value = "Wiki page created successfully!"
+                message.value = t('wiki.pageCreatedSuccessfully')
                 currentStep.value = 3
 
                 setTimeout(() => {
@@ -1041,9 +1044,9 @@ Answer to the third question.`
 
             } catch (error) {
                 if (error.response?.status === 422) {
-                    editing.errors = error.response.data.errors || [error.response.data.message || 'Validation failed']
+                    editing.errors = error.response.data.errors || [error.response.data.message || t('wiki.validationFailed')]
                 } else {
-                    editing.errors = ['An error occurred while creating the page. Please try again.']
+                    editing.errors = [t('wiki.errorCreatingPage')]
                 }
             } finally {
                 creating.value = false

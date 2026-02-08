@@ -1,74 +1,74 @@
 <template>
     <div>
         <!-- Basic SEO Metadata -->
-        <settings-card icon="mdi-text-search" title="Basic SEO Metadata">
+        <settings-card icon="mdi-text-search" :title="$t('settings.seoSettings.basicMetadata')">
             <v-text-field
                 v-model="settings.meta_title"
-                label="Meta Title"
+                :label="$t('settings.seoSettings.metaTitle')"
                 prepend-inner-icon="mdi-format-title"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.meta_title"
-                hint="Default page title for SEO (50-60 characters recommended)"
+                :hint="$t('settings.seoSettings.metaTitleHint')"
                 persistent-hint
                 counter="60"
             ></v-text-field>
 
             <v-textarea
                 v-model="settings.meta_description"
-                label="Meta Description"
+                :label="$t('settings.seoSettings.metaDescription')"
                 prepend-inner-icon="mdi-text"
                 variant="outlined"
                 class="mb-4"
                 rows="3"
                 :error-messages="errors.meta_description"
-                hint="Default meta description (150-160 characters recommended)"
+                :hint="$t('settings.seoSettings.metaDescriptionHint')"
                 persistent-hint
                 counter="160"
             ></v-textarea>
 
             <v-text-field
                 v-model="settings.meta_keywords"
-                label="Meta Keywords"
+                :label="$t('settings.seoSettings.metaKeywords')"
                 prepend-inner-icon="mdi-key-variant"
                 variant="outlined"
                 :error-messages="errors.meta_keywords"
-                hint="Comma-separated keywords (e.g., gaming, community, rpg)"
+                :hint="$t('settings.seoSettings.metaKeywordsHint')"
                 persistent-hint
             ></v-text-field>
         </settings-card>
 
         <!-- Open Graph -->
-        <settings-card icon="mdi-share-variant" title="Open Graph (Social Media)">
+        <settings-card icon="mdi-share-variant" :title="$t('settings.seoSettings.openGraph')">
             <v-text-field
                 v-model="settings.og_title"
-                label="OG Title"
+                :label="$t('settings.seoSettings.ogTitle')"
                 prepend-inner-icon="mdi-format-title"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.og_title"
-                hint="Title shown when shared on social media"
+                :hint="$t('settings.seoSettings.ogTitleHint')"
                 persistent-hint
             ></v-text-field>
 
             <v-textarea
                 v-model="settings.og_description"
-                label="OG Description"
+                :label="$t('settings.seoSettings.ogDescription')"
                 prepend-inner-icon="mdi-text"
                 variant="outlined"
                 class="mb-4"
                 rows="2"
                 :error-messages="errors.og_description"
-                hint="Description shown when shared on social media"
+                :hint="$t('settings.seoSettings.ogDescriptionHint')"
                 persistent-hint
             ></v-textarea>
 
-            <div class="text-subtitle-2 mb-2">OG Image</div>
+            <div class="text-subtitle-2 mb-2">{{ $t('settings.seoSettings.ogImage') }}</div>
             <image-upload
                 image-key="og_image"
-                label="Upload OG Image"
+                :label="$t('settings.seoSettings.uploadOgImage')"
                 :current-image="settings.og_image"
-                hint="Recommended: 1200x630px (optimized for social media sharing)"
+                :hint="$t('settings.seoSettings.ogImageHint')"
                 :max-height="300"
                 :max-width="600"
                 placeholder-size="large"
@@ -79,10 +79,10 @@
         </settings-card>
 
         <!-- Twitter Card -->
-        <settings-card icon="mdi-twitter" title="Twitter Card Settings">
+        <settings-card icon="mdi-twitter" :title="$t('settings.seoSettings.twitterCard')">
             <v-select
                 v-model="settings.twitter_card_type"
-                label="Twitter Card Type"
+                :label="$t('settings.seoSettings.twitterCardType')"
                 :items="twitterCardTypes"
                 item-title="label"
                 item-value="value"
@@ -94,56 +94,56 @@
 
             <v-text-field
                 v-model="settings.twitter_site"
-                label="Twitter Site Handle"
+                :label="$t('settings.seoSettings.twitterSiteHandle')"
                 prepend-inner-icon="mdi-at"
                 variant="outlined"
                 :error-messages="errors.twitter_site"
-                hint="Your Twitter username (e.g., @yourhandle)"
+                :hint="$t('settings.seoSettings.twitterSiteHint')"
                 persistent-hint
                 placeholder="@yourhandle"
             ></v-text-field>
         </settings-card>
 
         <!-- Search Engine Settings -->
-        <settings-card icon="mdi-search-web" title="Search Engine Settings">
+        <settings-card icon="mdi-search-web" :title="$t('settings.seoSettings.searchEngineSettings')">
             <v-text-field
                 v-model="settings.canonical_url"
-                label="Canonical URL"
+                :label="$t('settings.seoSettings.canonicalUrl')"
                 prepend-inner-icon="mdi-link-variant"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.canonical_url"
-                hint="Preferred full URL for search engines (e.g., https://example.com)"
+                :hint="$t('settings.seoSettings.canonicalUrlHint')"
                 persistent-hint
                 placeholder="https://example.com"
             ></v-text-field>
 
             <v-switch
                 v-model="settings.indexing_enabled"
-                label="Allow Search Engine Indexing"
+                :label="$t('settings.seoSettings.allowIndexing')"
                 color="primary"
                 class="mb-4"
-                hint="Allow search engines to index your site"
+                :hint="$t('settings.seoSettings.allowIndexingHint')"
                 persistent-hint
             ></v-switch>
 
             <v-switch
                 v-model="settings.sitemap_enabled"
-                label="Enable Sitemap"
+                :label="$t('settings.seoSettings.enableSitemap')"
                 color="primary"
                 class="mb-4"
-                hint="Generate and maintain sitemap.xml"
+                :hint="$t('settings.seoSettings.enableSitemapHint')"
                 persistent-hint
             ></v-switch>
 
             <v-textarea
                 v-model="settings.robots_txt_custom"
-                label="Custom Robots.txt Rules"
+                :label="$t('settings.seoSettings.customRobots')"
                 prepend-inner-icon="mdi-robot"
                 variant="outlined"
                 rows="4"
                 :error-messages="errors.robots_txt_custom"
-                hint="Custom rules for robots.txt (advanced users only)"
+                :hint="$t('settings.seoSettings.customRobotsHint')"
                 persistent-hint
                 placeholder="User-agent: *&#10;Disallow: /admin/"
             ></v-textarea>
@@ -157,7 +157,7 @@
             @click="$emit('save')"
             prepend-icon="mdi-content-save"
         >
-            Save Settings
+            {{ $t('settings.seoSettings.saveSettings') }}
         </v-btn>
     </div>
 </template>
