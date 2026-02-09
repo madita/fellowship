@@ -79,7 +79,7 @@ class HomepageSectionController extends Controller
         $section = Section::findOrFail($id);
         $section->delete();
 
-        return response()->json(['message' => 'Section deleted successfully']);
+        return response()->json(['message' => __('messages.homepage.section_deleted')]);
     }
 
     /**
@@ -116,7 +116,7 @@ class HomepageSectionController extends Controller
 
         Section::clearCache();
 
-        return response()->json(['message' => 'Sections reordered successfully']);
+        return response()->json(['message' => __('messages.homepage.sections_reordered')]);
     }
 
     /**

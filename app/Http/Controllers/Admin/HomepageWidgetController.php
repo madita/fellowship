@@ -58,7 +58,7 @@ class HomepageWidgetController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -66,7 +66,7 @@ class HomepageWidgetController extends Controller
         $widget = Widget::create($request->all());
 
         return response()->json([
-            'message' => 'Widget created successfully',
+            'message' => __('messages.widget.created'),
             'widget'  => $widget,
         ], 201);
     }
@@ -92,7 +92,7 @@ class HomepageWidgetController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -111,7 +111,7 @@ class HomepageWidgetController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Widget updated successfully',
+            'message' => __('messages.widget.updated'),
             'widget'  => $widget->fresh(),
         ]);
     }
@@ -125,7 +125,7 @@ class HomepageWidgetController extends Controller
         $widget->delete();
 
         return response()->json([
-            'message' => 'Widget deleted successfully',
+            'message' => __('messages.widget.deleted'),
         ]);
     }
 
@@ -139,7 +139,7 @@ class HomepageWidgetController extends Controller
         $widget->save();
 
         return response()->json([
-            'message' => 'Widget toggled successfully',
+            'message' => __('messages.widget.toggled'),
             'widget'  => $widget,
         ]);
     }
@@ -152,13 +152,13 @@ class HomepageWidgetController extends Controller
         $widget = Widget::findOrFail($id);
 
         $newWidget = $widget->replicate();
-        $newWidget->title = ($widget->title ?? $widget->type).' (Copy)';
+        $newWidget->title = ($widget->title ?? $widget->type).' '.__('messages.common.copy_suffix');
         $newWidget->order = Widget::max('order') + 1;
         $newWidget->enabled = false;
         $newWidget->save();
 
         return response()->json([
-            'message' => 'Widget duplicated successfully',
+            'message' => __('messages.widget.duplicated'),
             'widget'  => $newWidget,
         ], 201);
     }
@@ -176,7 +176,7 @@ class HomepageWidgetController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -189,7 +189,7 @@ class HomepageWidgetController extends Controller
         Widget::clearCache();
 
         return response()->json([
-            'message' => 'Widget order updated successfully',
+            'message' => __('messages.widget.order_updated'),
         ]);
     }
 }

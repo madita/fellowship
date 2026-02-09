@@ -277,7 +277,7 @@ class SettingsController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -352,7 +352,7 @@ class SettingsController extends Controller
 
         if (!empty($valueErrors)) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $valueErrors,
             ], 422);
         }
@@ -381,7 +381,7 @@ class SettingsController extends Controller
         Setting::clearCache();
 
         return response()->json([
-            'message'  => 'Settings updated successfully',
+            'message'  => __('messages.settings.updated'),
             'settings' => Setting::getAllSettings(),
         ]);
     }
@@ -397,7 +397,7 @@ class SettingsController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -407,7 +407,7 @@ class SettingsController extends Controller
 
             if (!$file || !$file->isValid()) {
                 return response()->json([
-                    'message' => 'Invalid file upload',
+                    'message' => __('messages.media.invalid_upload'),
                 ], 422);
             }
 
@@ -430,13 +430,13 @@ class SettingsController extends Controller
             Setting::clearCache();
 
             return response()->json([
-                'message'   => 'Logo uploaded successfully',
+                'message'   => __('messages.settings.logo_uploaded'),
                 'logo_url'  => Storage::url($path),
                 'logo_path' => $path,
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to upload logo',
+                'message' => __('messages.settings.logo_upload_failed'),
                 'error'   => $e->getMessage(),
             ], 500);
         }
@@ -458,11 +458,11 @@ class SettingsController extends Controller
             Setting::clearCache();
 
             return response()->json([
-                'message' => 'Logo deleted successfully',
+                'message' => __('messages.settings.logo_deleted'),
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to delete logo',
+                'message' => __('messages.settings.logo_delete_failed'),
                 'error'   => $e->getMessage(),
             ], 500);
         }
@@ -480,7 +480,7 @@ class SettingsController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -491,7 +491,7 @@ class SettingsController extends Controller
 
             if (!$file || !$file->isValid()) {
                 return response()->json([
-                    'message' => 'Invalid file upload',
+                    'message' => __('messages.media.invalid_upload'),
                 ], 422);
             }
 
@@ -502,9 +502,9 @@ class SettingsController extends Controller
 
                 if (!in_array($mimeType, $validMimes)) {
                     return response()->json([
-                        'message' => 'Validation failed',
+                        'message' => __('messages.error.validation'),
                         'errors'  => [
-                            'image' => ['PWA app icon must be PNG, WebP, or SVG format. JPEG is not supported.'],
+                            'image' => [__('messages.settings.pwa_icon_format')],
                         ],
                     ], 422);
                 }
@@ -516,9 +516,9 @@ class SettingsController extends Controller
 
                     if (!$imageInfo) {
                         return response()->json([
-                            'message' => 'Validation failed',
+                            'message' => __('messages.error.validation'),
                             'errors'  => [
-                                'image' => ['Unable to read image dimensions.'],
+                                'image' => [__('messages.settings.pwa_icon_dimensions_error')],
                             ],
                         ], 422);
                     }
@@ -529,9 +529,9 @@ class SettingsController extends Controller
                     // Check minimum dimensions
                     if ($width < 144 || $height < 144) {
                         return response()->json([
-                            'message' => 'Validation failed',
+                            'message' => __('messages.error.validation'),
                             'errors'  => [
-                                'image' => ["PWA app icon must be at least 144×144 pixels. Your image is {$width}×{$height}."],
+                                'image' => [__('messages.settings.pwa_icon_min_size', ['size' => "{$width}×{$height}"])],
                             ],
                         ], 422);
                     }
@@ -540,9 +540,9 @@ class SettingsController extends Controller
                     $aspectRatio = max($width, $height) / min($width, $height);
                     if ($aspectRatio > 1.1) {
                         return response()->json([
-                            'message' => 'Validation failed',
+                            'message' => __('messages.error.validation'),
                             'errors'  => [
-                                'image' => ["PWA app icon should be square. Your image is {$width}×{$height}. Please upload a square image."],
+                                'image' => [__('messages.settings.pwa_icon_square', ['size' => "{$width}×{$height}"])],
                             ],
                         ], 422);
                     }
@@ -584,13 +584,13 @@ class SettingsController extends Controller
             Setting::clearCache();
 
             return response()->json([
-                'message' => 'Image uploaded successfully',
+                'message' => __('messages.settings.image_uploaded'),
                 'url'     => Storage::url($path),
                 'path'    => $path,
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to upload image',
+                'message' => __('messages.settings.image_upload_failed'),
                 'error'   => $e->getMessage(),
             ], 500);
         }
@@ -607,7 +607,7 @@ class SettingsController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -624,11 +624,11 @@ class SettingsController extends Controller
             Setting::clearCache();
 
             return response()->json([
-                'message' => 'Image deleted successfully',
+                'message' => __('messages.settings.image_deleted'),
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to delete image',
+                'message' => __('messages.settings.image_delete_failed'),
                 'error'   => $e->getMessage(),
             ], 500);
         }
@@ -645,7 +645,7 @@ class SettingsController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -665,11 +665,11 @@ class SettingsController extends Controller
             );
 
             return response()->json([
-                'message' => 'Test email sent successfully to '.$recipient,
+                'message' => __('messages.settings.test_email_sent', ['recipient' => $recipient]),
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to send test email',
+                'message' => __('messages.settings.test_email_failed'),
                 'error'   => $e->getMessage(),
             ], 500);
         }
@@ -791,12 +791,12 @@ class SettingsController extends Controller
             }
 
             return response()->json([
-                'message' => 'Cache cleared successfully',
+                'message' => __('messages.settings.cache_cleared'),
                 'cleared' => $cleared,
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Failed to clear cache',
+                'message' => __('messages.settings.cache_clear_failed'),
                 'error'   => $e->getMessage(),
             ], 500);
         }

@@ -61,7 +61,7 @@ class TranslationController extends Controller
         $filePath = $this->jsTranslationsPath . '/' . $locale . '.js';
 
         if (!File::exists($filePath)) {
-            return response()->json(['error' => 'Locale not found'], 404);
+            return response()->json(['error' => __('messages.translations.locale_not_found')], 404);
         }
 
         $content = File::get($filePath);
@@ -100,13 +100,13 @@ class TranslationController extends Controller
             File::put($filePath, $content);
 
             return response()->json([
-                'message'    => 'Translations updated successfully',
+                'message'    => __('messages.translations.updated'),
                 'locale'     => $locale,
                 'total_keys' => count($translations),
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'error'   => 'Failed to save translations',
+                'error'   => __('messages.translations.save_failed'),
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -120,14 +120,14 @@ class TranslationController extends Controller
         $localePath = $this->phpTranslationsPath . '/' . $locale;
 
         if (!File::isDirectory($localePath)) {
-            return response()->json(['error' => 'Locale not found'], 404);
+            return response()->json(['error' => __('messages.translations.locale_not_found')], 404);
         }
 
         if ($file) {
             // Get specific file
             $filePath = $localePath . '/' . $file . '.php';
             if (!File::exists($filePath)) {
-                return response()->json(['error' => 'Translation file not found'], 404);
+                return response()->json(['error' => __('messages.translations.file_not_found')], 404);
             }
 
             $translations = include $filePath;
@@ -193,14 +193,14 @@ class TranslationController extends Controller
             File::put($filePath, $content);
 
             return response()->json([
-                'message'    => 'Translations updated successfully',
+                'message'    => __('messages.translations.updated'),
                 'locale'     => $locale,
                 'file'       => $file,
                 'total_keys' => count($translations),
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'error'   => 'Failed to save translations',
+                'error'   => __('messages.translations.save_failed'),
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -248,7 +248,7 @@ class TranslationController extends Controller
         }
 
         return response()->json([
-            'message' => 'Locale created successfully',
+            'message' => __('messages.translations.locale_created'),
             'code'    => $code,
             'created' => $created,
         ]);
@@ -295,7 +295,7 @@ class TranslationController extends Controller
         }
 
         return response()->json([
-            'message' => 'Translation key added successfully',
+            'message' => __('messages.translations.key_added'),
             'key'     => $key,
             'updated' => $updated,
         ]);
@@ -342,7 +342,7 @@ class TranslationController extends Controller
         }
 
         return response()->json([
-            'message' => 'Translation key deleted successfully',
+            'message' => __('messages.translations.key_deleted'),
             'key'     => $key,
             'deleted' => $deleted,
         ]);
@@ -389,7 +389,7 @@ class TranslationController extends Controller
         if ($type === 'js') {
             $baseFile = $this->jsTranslationsPath . '/' . $baseLocale . '.js';
             if (!File::exists($baseFile)) {
-                return response()->json(['error' => 'Base locale not found'], 404);
+                return response()->json(['error' => __('messages.translations.base_locale_not_found')], 404);
             }
 
             $baseTranslations = $this->flattenArray(
@@ -421,7 +421,7 @@ class TranslationController extends Controller
             // PHP comparison
             $basePhpPath = $this->phpTranslationsPath . '/' . $baseLocale;
             if (!File::isDirectory($basePhpPath)) {
-                return response()->json(['error' => 'Base locale not found'], 404);
+                return response()->json(['error' => __('messages.translations.base_locale_not_found')], 404);
             }
 
             foreach ($this->getPhpLocales() as $locale => $info) {

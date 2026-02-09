@@ -26,7 +26,7 @@ class AuthenticateApiKey
         $apiKeysEnabled = Setting::get('api_keys_enabled', false);
         if (!$apiKeysEnabled) {
             return response()->json([
-                'message' => 'API key authentication is not enabled.',
+                'message' => __('messages.api_keys.auth_disabled'),
             ], 403);
         }
 
@@ -35,7 +35,7 @@ class AuthenticateApiKey
 
         if (!$credentials) {
             return response()->json([
-                'message' => 'API key authentication required.',
+                'message' => __('messages.api_keys.auth_required'),
                 'hint'    => 'Provide X-API-Key and X-API-Secret headers, or Authorization: Bearer {key}:{secret}',
             ], 401);
         }
@@ -45,28 +45,28 @@ class AuthenticateApiKey
 
         if (!$apiKey) {
             return response()->json([
-                'message' => 'Invalid API key.',
+                'message' => __('messages.api_keys.invalid_key'),
             ], 401);
         }
 
         // Verify secret
         if (!$apiKey->verifySecret($credentials['secret'])) {
             return response()->json([
-                'message' => 'Invalid API secret.',
+                'message' => __('messages.api_keys.invalid_secret'),
             ], 401);
         }
 
         // Check if key is valid (active and not expired)
         if (!$apiKey->isValid()) {
             return response()->json([
-                'message' => 'API key is inactive or expired.',
+                'message' => __('messages.api_keys.inactive_or_expired'),
             ], 401);
         }
 
         // Check ability if required
         if ($ability && !$apiKey->hasAbility($ability)) {
             return response()->json([
-                'message' => 'API key does not have the required ability: '.$ability,
+                'message' => __('messages.api_keys.missing_ability', ['ability' => $ability]),
             ], 403);
         }
 

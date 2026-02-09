@@ -61,7 +61,7 @@ class RelateableController extends Controller
 
         $sourceItem->relate($relatedItem);
 
-        return response()->json(['message' => 'Item related']);
+        return response()->json(['message' => __('messages.common.item_related')]);
     }
 
     public function getRelatedItems(Request $request)
@@ -70,7 +70,7 @@ class RelateableController extends Controller
         $modelId = $request->get('modelId');
 
         if (!$modelId || !$modelType) {
-            return response()->json(['error' => 'Model ID and type are required'], 400);
+            return response()->json(['error' => __('messages.common.invalid_params')], 400);
         }
 
         $relatedItems = Relateable::with(['source', 'related'])

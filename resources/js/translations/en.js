@@ -164,7 +164,16 @@ export default {
         'addUserToConversation': 'Add user to conversation',
         'pleaseSelectUser': 'Please select a user to add',
         'userAddedSuccess': '{name} has been added to the conversation',
-        'failedToAddUser': 'Failed to add user to conversation'
+        'failedToAddUser': 'Failed to add user to conversation',
+        'allConversations': 'All Conversations',
+        'loading': 'Loading conversations...',
+        'youAnd': 'You and',
+        'started': 'Started',
+        'lastReply': 'Last reply',
+        'new': 'new',
+        'noConversationsYet': 'No conversations yet',
+        'startToSee': 'Start a conversation to see it here',
+        'startNew': 'Start New Conversation'
     },
     'formBuilder': {
         'formFields': 'Form Fields',

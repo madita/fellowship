@@ -164,7 +164,16 @@ export default {
         'addUserToConversation': 'Benutzer zur Unterhaltung hinzufügen',
         'pleaseSelectUser': 'Bitte wählen Sie einen Benutzer aus',
         'userAddedSuccess': '{name} wurde zur Unterhaltung hinzugefügt',
-        'failedToAddUser': 'Benutzer konnte nicht hinzugefügt werden'
+        'failedToAddUser': 'Benutzer konnte nicht hinzugefügt werden',
+        'allConversations': 'Alle Unterhaltungen',
+        'loading': 'Unterhaltungen werden geladen...',
+        'youAnd': 'Sie und',
+        'started': 'Gestartet',
+        'lastReply': 'Letzte Antwort',
+        'new': 'neu',
+        'noConversationsYet': 'Noch keine Unterhaltungen',
+        'startToSee': 'Starten Sie eine Unterhaltung, um sie hier zu sehen',
+        'startNew': 'Neue Unterhaltung starten'
     },
     'formBuilder': {
         'formFields': 'Formularfelder',

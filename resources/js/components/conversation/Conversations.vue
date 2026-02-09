@@ -3,7 +3,7 @@
         <v-card elevation="2" class="mx-auto" max-width="100%">
             <v-card-title class="text-h5 font-weight-bold pa-6 bg-gradient">
                 <v-icon class="mr-3" size="28">mdi-chat-outline</v-icon>
-                All Conversations
+                {{ $t('conversation.allConversations') }}
             </v-card-title>
 
             <v-divider></v-divider>
@@ -16,7 +16,7 @@
                         color="primary"
                         size="64"
                     ></v-progress-circular>
-                    <p class="mt-4 text-body-1 text-medium-emphasis">Loading conversations...</p>
+                    <p class="mt-4 text-body-1 text-medium-emphasis">{{ $t('conversation.loading') }}</p>
                 </div>
 
                 <!-- Conversations List -->
@@ -46,7 +46,7 @@
 
                                             <p class="text-body-2 text-medium-emphasis mb-3">
                                                 <v-icon size="16" class="mr-1">mdi-account-group</v-icon>
-                                                You and {{ conversation.participant_count }}
+                                                {{ $t('conversation.youAnd') }} {{ conversation.participant_count }}
                                                 {{ $t('pluralize.other', conversation.participant_count) }}
                                             </p>
 
@@ -57,7 +57,7 @@
                                                     variant="outlined"
                                                     prepend-icon="mdi-clock-plus-outline"
                                                 >
-                                                    Started {{ conversation.created_at_human }}
+                                                    {{ $t('conversation.started') }} {{ conversation.created_at_human }}
                                                 </v-chip>
 
                                                 <v-chip
@@ -66,7 +66,7 @@
                                                     variant="outlined"
                                                     prepend-icon="mdi-clock-outline"
                                                 >
-                                                    Last reply {{ conversation.last_reply_human }}
+                                                    {{ $t('conversation.lastReply') }} {{ conversation.last_reply_human }}
                                                 </v-chip>
                                             </div>
                                             <!-- Avatar Group -->
@@ -89,7 +89,7 @@
                                                 variant="elevated"
                                                 prepend-icon="mdi-bell-badge-outline"
                                             >
-                                                {{ newCounts[conversation.uuid] }} new
+                                                {{ newCounts[conversation.uuid] }} {{ $t('conversation.new') }}
                                             </v-chip>
                                             <v-btn
                                                 icon
@@ -116,9 +116,9 @@
                     >
                         mdi-chat-outline
                     </v-icon>
-                    <h3 class="text-h5 font-weight-medium mb-2">No conversations yet</h3>
+                    <h3 class="text-h5 font-weight-medium mb-2">{{ $t('conversation.noConversationsYet') }}</h3>
                     <p class="text-body-1 text-medium-emphasis mb-4">
-                        Start a conversation to see it here
+                        {{ $t('conversation.startToSee') }}
                     </p>
                     <v-btn
                         color="primary"
@@ -126,7 +126,7 @@
                         size="large"
                         rounded
                     >
-                        Start New Conversation
+                        {{ $t('conversation.startNew') }}
                     </v-btn>
                 </div>
             </v-card-text>

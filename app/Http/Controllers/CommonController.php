@@ -19,7 +19,7 @@ class CommonController extends Controller
 //        dd($foreignKeyField);
 
         if (!$foreignKeyField) {
-            return response()->json(['error' => 'Invalid parameters provided'], 400);
+            return response()->json(['error' => __('messages.common.invalid_params')], 400);
         }
 
         if ($foreignKeyField === 'taxonomy') {
@@ -53,7 +53,7 @@ class CommonController extends Controller
                 $relatedModelClass = "App\\Models\\$namespacePart\\$relatedModelName";
             }
         } else {
-            return response()->json(['error' => 'Invalid foreign key field'], 400);
+            return response()->json(['error' => __('messages.common.invalid_foreign_key')], 400);
         }
 
 //        dd($relatedModelClass);
@@ -64,7 +64,7 @@ class CommonController extends Controller
         // Check if the related model class exists
         if (!class_exists($relatedModelClass)) {
 //            dd($relatedModelClass);
-            return response()->json(['error' => 'Related model not found'], 404);
+            return response()->json(['error' => __('messages.common.model_not_found')], 404);
         }
 
         try {
@@ -73,7 +73,7 @@ class CommonController extends Controller
 
             return response()->json($items);
         } catch (Exception $e) {
-            return response()->json(['error' => 'An error occurred while fetching the items: '.$e->getMessage()], 500);
+            return response()->json(['error' => __('messages.common.fetch_error', ['error' => $e->getMessage()])], 500);
         }
     }
 }

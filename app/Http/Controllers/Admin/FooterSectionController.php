@@ -82,7 +82,7 @@ class FooterSectionController extends Controller
         $section = FooterSection::findOrFail($id);
         $section->delete();
 
-        return response()->json(['message' => 'Section deleted successfully']);
+        return response()->json(['message' => __('messages.footer.section_deleted')]);
     }
 
     /**
@@ -119,7 +119,7 @@ class FooterSectionController extends Controller
 
         FooterSection::clearCache();
 
-        return response()->json(['message' => 'Sections reordered successfully']);
+        return response()->json(['message' => __('messages.footer.sections_reordered')]);
     }
 
     /**

@@ -76,7 +76,7 @@ class ApiKeyController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -85,7 +85,7 @@ class ApiKeyController extends Controller
         $maxKeys = 10;
         if ($request->user()->apiKeys()->count() >= $maxKeys) {
             return response()->json([
-                'message' => "You can only have up to {$maxKeys} API keys.",
+                'message' => __('messages.api_keys.max_reached', ['max' => $maxKeys]),
             ], 422);
         }
 
@@ -103,7 +103,7 @@ class ApiKeyController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'API key created successfully. Save the secret - it will not be shown again!',
+            'message' => __('messages.api_keys.created'),
             'api_key' => [
                 'id'         => $apiKey->id,
                 'name'       => $apiKey->name,
@@ -159,7 +159,7 @@ class ApiKeyController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -167,7 +167,7 @@ class ApiKeyController extends Controller
         $apiKey->update($validator->validated());
 
         return response()->json([
-            'message' => 'API key updated successfully',
+            'message' => __('messages.api_keys.updated'),
             'api_key' => [
                 'id'         => $apiKey->id,
                 'name'       => $apiKey->name,
@@ -190,7 +190,7 @@ class ApiKeyController extends Controller
         $apiKey->delete();
 
         return response()->json([
-            'message' => 'API key deleted successfully',
+            'message' => __('messages.api_keys.deleted'),
         ]);
     }
 
@@ -212,7 +212,7 @@ class ApiKeyController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'API key regenerated successfully. Save the new secret - it will not be shown again!',
+            'message' => __('messages.api_keys.regenerated'),
             'api_key' => [
                 'id'     => $apiKey->id,
                 'name'   => $apiKey->name,
@@ -230,7 +230,7 @@ class ApiKeyController extends Controller
         $enabled = (bool) Setting::get('api_keys_enabled', false);
 
         if (!$enabled) {
-            abort(403, 'API keys feature is not enabled.');
+            abort(403, __('messages.api_keys.disabled'));
         }
     }
 }

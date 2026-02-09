@@ -1,6 +1,7 @@
 import { useAuthStore } from '@/store/authStore.js'
 import axios from 'axios'
 import { refreshCsrfToken, resetCsrfRefreshTimer } from '@/api/middlewareCSRF.js'
+import { i18n } from '@/plugins/vue-i18n.js'
 
 /**
  * Get the value of a specific cookie
@@ -81,7 +82,7 @@ const middleware401 = async error => {
         setTimeout(async () => await auth.logout(), 3000)
         return Promise.reject({
             name: 'Session expired',
-            message: 'Your session has expired - redirecting to login page.',
+            message: i18n.global.t('common.middleware401.sessionExpired'),
         })
     }
 
@@ -92,7 +93,7 @@ const middleware401 = async error => {
         setTimeout(async () => await auth.logout(), 3000)
         return Promise.reject({
             name: 'Permission denied',
-            message: 'You lost your credentials - will be redirected to login page.',
+            message: i18n.global.t('common.middleware401.credentialsLost'),
         })
     }
 

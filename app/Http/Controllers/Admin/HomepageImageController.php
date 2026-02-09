@@ -26,7 +26,7 @@ class HomepageImageController extends Controller
             if (!$file || !$file->isValid()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid file upload',
+                    'message' => __('messages.media.invalid_upload'),
                 ], 422);
             }
 
@@ -46,7 +46,7 @@ class HomepageImageController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to upload image: '.$e->getMessage(),
+                'message' => __('messages.homepage.image_upload_failed', ['error' => $e->getMessage()]),
             ], 500);
         }
     }
@@ -62,7 +62,7 @@ class HomepageImageController extends Controller
         if (empty($path) || !is_string($path) || trim($path) === '') {
             return response()->json([
                 'success' => true,
-                'message' => 'No image to delete',
+                'message' => __('messages.homepage.no_image'),
             ]);
         }
 
@@ -76,12 +76,12 @@ class HomepageImageController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Image deleted successfully',
+                'message' => __('messages.homepage.image_deleted'),
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete image: '.$e->getMessage(),
+                'message' => __('messages.homepage.image_delete_failed', ['error' => $e->getMessage()]),
             ], 500);
         }
     }

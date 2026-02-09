@@ -31,7 +31,7 @@ class NotificationController extends Controller
         $user = auth()->user();
         $user->unreadNotifications->markAsRead();
 
-        return ['message' => 'All notifications are mark as read.'];
+        return ['message' => __('messages.notifications.all_read')];
     }
 
     public function notificationdelete(Request $request)
@@ -40,12 +40,12 @@ class NotificationController extends Controller
         $user = auth()->user();
         $notification = $user->notifications()->find($request->id);
         if (!$notification) {
-            return ['message' => 'notifications does not exist.'];
+            return ['message' => __('messages.notifications.not_found')];
         }
 
         $notification->delete();
 
-        return ['message' => 'Notification was deleted successfully.'];
+        return ['message' => __('messages.notifications.deleted')];
     }
 
     public function notificationsingleread(Request $request)
@@ -55,10 +55,10 @@ class NotificationController extends Controller
         $notification = $user->notifications()->find($request->id);
 
         if (!$notification) {
-            return ['message' => 'notifications does not exist.'];
+            return ['message' => __('messages.notifications.not_found')];
         }
         $notification->markAsRead();
 
-        return ['message' => 'notifications was marked as read.'];
+        return ['message' => __('messages.notifications.marked_read')];
     }
 }
