@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Sections & Grid"
-        description="Manage footer sections and layout"
+        :title="$t('settings.footer.sectionsGrid')"
+        :description="$t('settings.footer.description')"
         icon="mdi-view-grid-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'footer' } }"
@@ -34,12 +34,15 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useFooterStore } from '@/store/footerStore';
 import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import FooterSectionBuilder from '@/components/settings/footer/FooterSectionBuilder.vue';
 import FooterWidgetEditor from '@/components/settings/footer/FooterWidgetEditor.vue';
 import FooterWidgetLibrary from '@/components/settings/footer/FooterWidgetLibrary.vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
     settings: Object,
@@ -71,12 +74,12 @@ function editWidget(widget) {
 async function saveWidget(updatedWidget) {
     try {
         await footerStore.updateWidget(updatedWidget.id, updatedWidget);
-        showSnackbar('Widget updated successfully', 'success');
+        showSnackbar(t('settings.footer.widgetUpdated'), 'success');
         showEditor.value = false;
         await footerStore.fetchSections();
     } catch (error) {
         console.error('Failed to save widget:', error);
-        showSnackbar('Failed to update widget', 'error');
+        showSnackbar(t('settings.footer.failedToUpdateWidget'), 'error');
     }
 }
 
@@ -89,7 +92,7 @@ async function addWidget(widgetType) {
     try {
         const definition = getWidgetDefinition(widgetType);
         if (!definition) {
-            showSnackbar(`Widget type "${widgetType}" not found`, 'error');
+            showSnackbar(t('settings.footer.widgetTypeNotFound', { type: widgetType }), 'error');
             return;
         }
 
@@ -115,7 +118,7 @@ async function addWidget(widgetType) {
         }
 
         await footerStore.createWidget(newWidget);
-        showSnackbar('Widget added successfully', 'success');
+        showSnackbar(t('settings.footer.widgetAdded'), 'success');
         showWidgetLibrary.value = false;
         widgetSectionContext.value = null;
 
@@ -124,7 +127,7 @@ async function addWidget(widgetType) {
         }
     } catch (error) {
         console.error('Failed to add widget:', error);
-        showSnackbar('Failed to add widget', 'error');
+        showSnackbar(t('settings.footer.failedToAddWidget'), 'error');
     }
 }
 

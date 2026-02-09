@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Custom HTML"
-        description="Configure custom footer HTML content"
+        :title="$t('settings.footer.customHtml')"
+        :description="$t('settings.footer.customHtmlDescription')"
         icon="mdi-code-tags"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'footer' } }"
@@ -11,33 +11,33 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-code-tags" title="Custom Footer HTML">
+        <settings-card icon="mdi-code-tags" :title="$t('settings.footer.customFooterHtml')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
                 <div class="text-caption">
-                    Use custom HTML instead of the widget-based footer. The custom footer will replace all widget sections.
+                    {{ $t('settings.footer.customHtmlDescription') }}
                 </div>
             </v-alert>
 
             <v-switch
                 v-model="settings.custom_footer_enabled"
-                label="Enable Custom Footer HTML"
+                :label="$t('settings.footer.enableCustomFooter')"
                 color="primary"
                 class="mb-4"
-                hint="Replace the widget-based footer with custom HTML"
+                :hint="$t('settings.footer.enableCustomFooterHint')"
                 persistent-hint
             ></v-switch>
 
             <template v-if="settings.custom_footer_enabled">
                 <v-textarea
                     v-model="settings.custom_footer_html"
-                    label="Custom Footer HTML"
+                    :label="$t('settings.footer.customFooterHtml')"
                     prepend-inner-icon="mdi-code-tags"
                     variant="outlined"
                     rows="16"
                     :error-messages="errors?.custom_footer_html"
-                    hint="Custom HTML for the footer section"
+                    :hint="$t('settings.footer.customHtmlHint')"
                     persistent-hint
-                    placeholder="Enter your custom HTML here..."
+                    :placeholder="$t('settings.footer.customHtmlPlaceholder')"
                     class="mb-4"
                 ></v-textarea>
 
@@ -48,7 +48,7 @@
                         @click="loadSimpleFooterTemplate"
                         prepend-icon="mdi-code-braces"
                     >
-                        Load Simple Template
+                        {{ $t('settings.footer.loadSimpleTemplate') }}
                     </v-btn>
                     <v-btn
                         color="primary"
@@ -56,22 +56,22 @@
                         @click="loadComplexFooterTemplate"
                         prepend-icon="mdi-code-tags"
                     >
-                        Load Complex Template
+                        {{ $t('settings.footer.loadComplexTemplate') }}
                     </v-btn>
                 </div>
 
                 <v-alert type="info" variant="tonal" class="mb-4">
                     <div class="text-body-2">
-                        <strong>Available Variables:</strong>
+                        <strong>{{ $t('settings.footer.availableVariables') }}:</strong>
                         <ul class="mt-2">
-                            <li><code v-pre>{{appName}}</code> - Application name</li>
-                            <li><code v-pre>{{appCopyright}}</code> - Copyright text</li>
-                            <li><code v-pre>{{contactEmail}}</code> - Contact email</li>
-                            <li><code v-pre>{{contactPhone}}</code> - Contact phone</li>
-                            <li><code v-pre>{{contactAddress}}</code> - Contact address</li>
-                            <li><code v-pre>{{socialTwitter}}</code> - Twitter URL</li>
-                            <li><code v-pre>{{socialFacebook}}</code> - Facebook URL</li>
-                            <li><code v-pre>{{socialInstagram}}</code> - Instagram URL</li>
+                            <li><code v-pre>{{appName}}</code> - {{ $t('settings.footer.varAppName') }}</li>
+                            <li><code v-pre>{{appCopyright}}</code> - {{ $t('settings.footer.varCopyright') }}</li>
+                            <li><code v-pre>{{contactEmail}}</code> - {{ $t('settings.footer.varContactEmail') }}</li>
+                            <li><code v-pre>{{contactPhone}}</code> - {{ $t('settings.footer.varContactPhone') }}</li>
+                            <li><code v-pre>{{contactAddress}}</code> - {{ $t('settings.footer.varContactAddress') }}</li>
+                            <li><code v-pre>{{socialTwitter}}</code> - {{ $t('settings.footer.varTwitter') }}</li>
+                            <li><code v-pre>{{socialFacebook}}</code> - {{ $t('settings.footer.varFacebook') }}</li>
+                            <li><code v-pre>{{socialInstagram}}</code> - {{ $t('settings.footer.varInstagram') }}</li>
                         </ul>
                     </div>
                 </v-alert>
@@ -87,7 +87,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.footer.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

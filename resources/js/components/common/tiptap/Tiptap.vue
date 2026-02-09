@@ -4,7 +4,7 @@
         <div v-if="editor && type === 'full'" class="editor-toolbar">
             <!-- Text Formatting Group -->
             <div class="toolbar-group">
-                <v-tooltip text="Bold" location="bottom">
+                <v-tooltip :text="$t('editor.bold')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -19,7 +19,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="Italic" location="bottom">
+                <v-tooltip :text="$t('editor.italic')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -34,7 +34,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="Strike Through" location="bottom">
+                <v-tooltip :text="$t('editor.strikeThrough')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -49,7 +49,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="Code" location="bottom">
+                <v-tooltip :text="$t('editor.code')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -64,7 +64,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="Clear Formatting" location="bottom">
+                <v-tooltip :text="$t('editor.clearFormatting')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -92,7 +92,7 @@
                             append-icon="mdi-chevron-down"
                         >
                             <v-icon class="mr-1">mdi-format-header-pound</v-icon>
-                            Heading
+                            {{ $t('editor.heading') }}
                         </v-btn>
                     </template>
                     <v-list density="compact">
@@ -103,7 +103,7 @@
                             <template v-slot:prepend>
                                 <v-icon>mdi-format-pilcrow</v-icon>
                             </template>
-                            <v-list-item-title>Paragraph</v-list-item-title>
+                            <v-list-item-title>{{ $t('editor.paragraph') }}</v-list-item-title>
                         </v-list-item>
                         <v-list-item
                             v-for="level in 6"
@@ -114,7 +114,7 @@
                             <template v-slot:prepend>
                                 <v-icon>{{ `mdi-format-header-${level}` }}</v-icon>
                             </template>
-                            <v-list-item-title>Heading {{ level }}</v-list-item-title>
+                            <v-list-item-title>{{ $t('editor.headingLevel', { level }) }}</v-list-item-title>
                         </v-list-item>
                     </v-list>
                 </v-menu>
@@ -124,7 +124,7 @@
 
             <!-- Lists and Blocks -->
             <div class="toolbar-group">
-                <v-tooltip text="Bullet List" location="bottom">
+                <v-tooltip :text="$t('editor.bulletList')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -139,7 +139,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="Numbered List" location="bottom">
+                <v-tooltip :text="$t('editor.numberedList')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -154,7 +154,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="Quote" location="bottom">
+                <v-tooltip :text="$t('editor.quote')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -169,7 +169,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="Code Block" location="bottom">
+                <v-tooltip :text="$t('editor.codeBlock')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -189,7 +189,7 @@
 
             <!-- Links and Media -->
             <div class="toolbar-group">
-                <v-tooltip text="Add Link" location="bottom">
+                <v-tooltip :text="$t('editor.addLink')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -204,7 +204,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="Remove Link" location="bottom">
+                <v-tooltip :text="$t('editor.removeLink')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -219,7 +219,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="Add Image" location="bottom">
+                <v-tooltip :text="$t('editor.addImage')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -247,7 +247,7 @@
                             append-icon="mdi-chevron-down"
                         >
                             <v-icon class="mr-1">mdi-table</v-icon>
-                            Table
+                            {{ $t('editor.table') }}
                         </v-btn>
                     </template>
                     <v-list density="compact" class="table-menu">
@@ -256,77 +256,77 @@
                             <template v-slot:prepend>
                                 <v-icon>mdi-table-plus</v-icon>
                             </template>
-                            <v-list-item-title>Insert Table</v-list-item-title>
+                            <v-list-item-title>{{ $t('editor.insertTable') }}</v-list-item-title>
                         </v-list-item>
 
                         <v-divider v-if="editor.isActive('table')" />
 
                         <!-- Column Operations -->
                         <template v-if="editor.isActive('table')">
-                            <v-list-subheader>Columns</v-list-subheader>
+                            <v-list-subheader>{{ $t('editor.columns') }}</v-list-subheader>
                             <v-list-item @click="editor.chain().focus().addColumnBefore().run()">
                                 <template v-slot:prepend>
                                     <v-icon>mdi-table-column-plus-before</v-icon>
                                 </template>
-                                <v-list-item-title>Add Column Before</v-list-item-title>
+                                <v-list-item-title>{{ $t('editor.addColumnBefore') }}</v-list-item-title>
                             </v-list-item>
                             <v-list-item @click="editor.chain().focus().addColumnAfter().run()">
                                 <template v-slot:prepend>
                                     <v-icon>mdi-table-column-plus-after</v-icon>
                                 </template>
-                                <v-list-item-title>Add Column After</v-list-item-title>
+                                <v-list-item-title>{{ $t('editor.addColumnAfter') }}</v-list-item-title>
                             </v-list-item>
                             <v-list-item @click="editor.chain().focus().deleteColumn().run()">
                                 <template v-slot:prepend>
                                     <v-icon>mdi-table-column-remove</v-icon>
                                 </template>
-                                <v-list-item-title>Delete Column</v-list-item-title>
+                                <v-list-item-title>{{ $t('editor.deleteColumn') }}</v-list-item-title>
                             </v-list-item>
 
                             <v-divider />
 
                             <!-- Row Operations -->
-                            <v-list-subheader>Rows</v-list-subheader>
+                            <v-list-subheader>{{ $t('editor.rows') }}</v-list-subheader>
                             <v-list-item @click="editor.chain().focus().addRowBefore().run()">
                                 <template v-slot:prepend>
                                     <v-icon>mdi-table-row-plus-before</v-icon>
                                 </template>
-                                <v-list-item-title>Add Row Before</v-list-item-title>
+                                <v-list-item-title>{{ $t('editor.addRowBefore') }}</v-list-item-title>
                             </v-list-item>
                             <v-list-item @click="editor.chain().focus().addRowAfter().run()">
                                 <template v-slot:prepend>
                                     <v-icon>mdi-table-row-plus-after</v-icon>
                                 </template>
-                                <v-list-item-title>Add Row After</v-list-item-title>
+                                <v-list-item-title>{{ $t('editor.addRowAfter') }}</v-list-item-title>
                             </v-list-item>
                             <v-list-item @click="editor.chain().focus().deleteRow().run()">
                                 <template v-slot:prepend>
                                     <v-icon>mdi-table-row-remove</v-icon>
                                 </template>
-                                <v-list-item-title>Delete Row</v-list-item-title>
+                                <v-list-item-title>{{ $t('editor.deleteRow') }}</v-list-item-title>
                             </v-list-item>
 
                             <v-divider />
 
                             <!-- Cell Operations -->
-                            <v-list-subheader>Cells</v-list-subheader>
+                            <v-list-subheader>{{ $t('editor.cells') }}</v-list-subheader>
                             <v-list-item @click="editor.chain().focus().mergeCells().run()">
                                 <template v-slot:prepend>
                                     <v-icon>mdi-table-merge-cells</v-icon>
                                 </template>
-                                <v-list-item-title>Merge Cells</v-list-item-title>
+                                <v-list-item-title>{{ $t('editor.mergeCells') }}</v-list-item-title>
                             </v-list-item>
                             <v-list-item @click="editor.chain().focus().splitCell().run()">
                                 <template v-slot:prepend>
                                     <v-icon>mdi-table-split-cell</v-icon>
                                 </template>
-                                <v-list-item-title>Split Cell</v-list-item-title>
+                                <v-list-item-title>{{ $t('editor.splitCell') }}</v-list-item-title>
                             </v-list-item>
                             <v-list-item @click="editor.chain().focus().toggleHeaderRow().run()">
                                 <template v-slot:prepend>
                                     <v-icon>mdi-table-headers-eye</v-icon>
                                 </template>
-                                <v-list-item-title>Toggle Header Row</v-list-item-title>
+                                <v-list-item-title>{{ $t('editor.toggleHeaderRow') }}</v-list-item-title>
                             </v-list-item>
 
                             <v-divider />
@@ -336,7 +336,7 @@
                                 <template v-slot:prepend>
                                     <v-icon color="error">mdi-table-remove</v-icon>
                                 </template>
-                                <v-list-item-title>Delete Table</v-list-item-title>
+                                <v-list-item-title>{{ $t('editor.deleteTable') }}</v-list-item-title>
                             </v-list-item>
                         </template>
                     </v-list>
@@ -347,7 +347,7 @@
 
             <!-- Utility Actions -->
             <div class="toolbar-group">
-                <v-tooltip text="Horizontal Rule" location="bottom">
+                <v-tooltip :text="$t('editor.horizontalRule')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -361,7 +361,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="Line Break" location="bottom">
+                <v-tooltip :text="$t('editor.lineBreak')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -380,7 +380,7 @@
 
             <!-- Undo/Redo -->
             <div class="toolbar-group">
-                <v-tooltip text="Undo" location="bottom">
+                <v-tooltip :text="$t('editor.undo')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -395,7 +395,7 @@
                     </template>
                 </v-tooltip>
 
-                <v-tooltip text="Redo" location="bottom">
+                <v-tooltip :text="$t('editor.redo')" location="bottom">
                     <template v-slot:activator="{ props }">
                         <v-btn
                             v-bind="props"
@@ -484,7 +484,7 @@
                     class="mr-2"
                 />
                 <span class="text-caption">
-          {{ editor.storage.characterCount.characters() }}/{{ limit }} characters
+          {{ editor.storage.characterCount.characters() }}/{{ limit }} {{ $t('editor.characters') }}
         </span>
             </div>
         </div>
@@ -492,12 +492,12 @@
         <!-- Link Dialog -->
         <v-dialog v-model="showLinkDialog" max-width="400">
             <v-card>
-                <v-card-title>Add Link</v-card-title>
+                <v-card-title>{{ $t('editor.addLink') }}</v-card-title>
                 <v-card-text>
                     <v-text-field
                         v-model="linkUrl"
-                        label="URL"
-                        placeholder="https://example.com"
+                        :label="$t('editor.url')"
+                        :placeholder="$t('editor.urlPlaceholder')"
                         variant="outlined"
                         density="compact"
                         autofocus
@@ -506,8 +506,8 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn @click="showLinkDialog = false">Cancel</v-btn>
-                    <v-btn color="primary" @click="confirmLink">Add Link</v-btn>
+                    <v-btn @click="showLinkDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" @click="confirmLink">{{ $t('editor.addLink') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -522,6 +522,7 @@
 
 <script setup>
 import { ref, watch, computed, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { BubbleMenu, useEditor, EditorContent } from '@tiptap/vue-3';
 import CharacterCount from '@tiptap/extension-character-count';
 import StarterKit from '@tiptap/starter-kit';
@@ -557,6 +558,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:modelValue']);
+
+const { t } = useI18n();
 
 const showLinkDialog = ref(false);
 const showMediaPicker = ref(false);

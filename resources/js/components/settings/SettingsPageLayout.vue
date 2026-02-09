@@ -27,7 +27,7 @@
                             prepend-icon="mdi-content-save"
                             class="d-none d-sm-flex"
                         >
-                            Save
+                            {{ $t('common.save') }}
                         </v-btn>
                     </div>
                 </v-card-title>
@@ -77,7 +77,7 @@
                         @click="$emit('save')"
                         prepend-icon="mdi-content-save"
                     >
-                        Save Settings
+                        {{ $t('settings.saveSettings') }}
                     </v-btn>
                 </v-card-actions>
             </v-card>
@@ -88,6 +88,9 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
     title: {
@@ -140,7 +143,7 @@ const route = useRoute();
 const breadcrumbs = computed(() => {
     const items = [
         {
-            title: 'Settings',
+            title: t('settings.overview.settings'),
             disabled: false,
             to: { name: 'admin-settings' }
         }

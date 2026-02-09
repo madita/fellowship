@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Sections & Grid"
-        description="Manage homepage sections and layout"
+        :title="$t('settings.homepage.sections.title')"
+        :description="$t('settings.homepage.sections.description')"
         icon="mdi-view-grid-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'homepage' } }"
@@ -34,12 +34,15 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useHomepageStore } from '@/store/homepageStore';
 import { getWidgetDefinition } from '@/configs/widgetTypes';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SectionBuilder from '@/components/settings/homepage/SectionBuilder.vue';
 import WidgetEditor from '@/components/settings/homepage/WidgetEditor.vue';
 import WidgetLibrary from '@/components/settings/homepage/WidgetLibrary.vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
     settings: Object,
@@ -71,11 +74,11 @@ function editWidget(widget) {
 async function saveWidget(updatedWidget) {
     try {
         await homepageStore.updateWidget(updatedWidget.id, updatedWidget);
-        showSnackbar('Widget updated successfully', 'success');
+        showSnackbar(t('settings.homepage.sections.widgetUpdated'), 'success');
         showEditor.value = false;
     } catch (error) {
         console.error('Failed to save widget:', error);
-        showSnackbar('Failed to update widget', 'error');
+        showSnackbar(t('settings.homepage.sections.failedToUpdateWidget'), 'error');
     }
 }
 
@@ -104,7 +107,7 @@ async function addWidget(widgetType) {
         }
 
         await homepageStore.createWidget(newWidget);
-        showSnackbar('Widget added successfully', 'success');
+        showSnackbar(t('settings.homepage.sections.widgetAdded'), 'success');
         showWidgetLibrary.value = false;
         widgetSectionContext.value = null;
 
@@ -112,7 +115,7 @@ async function addWidget(widgetType) {
             await homepageStore.fetchSections();
         }
     } catch (error) {
-        showSnackbar('Failed to add widget', 'error');
+        showSnackbar(t('settings.homepage.sections.failedToAddWidget'), 'error');
     }
 }
 

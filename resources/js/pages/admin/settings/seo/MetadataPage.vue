@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Basic Metadata"
-        description="Configure your site's default SEO metadata"
+        :title="$t('settings.seo.metadata.title')"
+        :description="$t('settings.seo.metadata.description')"
         icon="mdi-tag-text-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'seo' } }"
@@ -11,39 +11,39 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-text-search" title="Basic SEO Metadata">
+        <settings-card icon="mdi-text-search" :title="$t('settings.seo.metadata.cardTitle')">
             <v-text-field
                 v-model="settings.meta_title"
-                label="Meta Title"
+                :label="$t('settings.seo.metadata.metaTitle')"
                 prepend-inner-icon="mdi-format-title"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.meta_title"
-                hint="Default page title for SEO (50-60 characters recommended)"
+                :hint="$t('settings.seo.metadata.metaTitleHint')"
                 persistent-hint
                 counter="60"
             ></v-text-field>
 
             <v-textarea
                 v-model="settings.meta_description"
-                label="Meta Description"
+                :label="$t('settings.seo.metadata.metaDescription')"
                 prepend-inner-icon="mdi-text"
                 variant="outlined"
                 class="mb-4"
                 rows="3"
                 :error-messages="errors.meta_description"
-                hint="Default meta description (150-160 characters recommended)"
+                :hint="$t('settings.seo.metadata.metaDescriptionHint')"
                 persistent-hint
                 counter="160"
             ></v-textarea>
 
             <v-text-field
                 v-model="settings.meta_keywords"
-                label="Meta Keywords"
+                :label="$t('settings.seo.metadata.metaKeywords')"
                 prepend-inner-icon="mdi-key-variant"
                 variant="outlined"
                 :error-messages="errors.meta_keywords"
-                hint="Comma-separated keywords (e.g., gaming, community, rpg)"
+                :hint="$t('settings.seo.metadata.metaKeywordsHint')"
                 persistent-hint
             ></v-text-field>
         </settings-card>
@@ -57,7 +57,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

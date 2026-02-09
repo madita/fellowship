@@ -5,27 +5,27 @@
               {{ message }}
           </v-alert>
           <v-text-field
-              label="Subject"
+              :label="$t('announcement.subject')"
               v-model="form.subject"
               :rules="[rules.required]"
               :error-messages="errors.subject"
           ></v-text-field>
           <v-textarea
-              label="Message"
+              :label="$t('announcement.message')"
               v-model="form.body"
               :rules="[rules.required]"
               :error-messages="errors.body"
           ></v-textarea>
           <v-text-field
-              label="Action Button"
+              :label="$t('announcement.actionButton')"
               v-model="form.action"
           ></v-text-field>
           <v-text-field
-              label="URL"
+              :label="$t('announcement.url')"
               v-model="form.url"
           ></v-text-field>
           <v-text-field
-              label="Footer (say thanks)"
+              :label="$t('announcement.footer')"
               v-model="form.thanks"
               :rules="[rules.required]"
               :error-messages="errors.thanks"
@@ -36,7 +36,7 @@
               size="large"
               color="primary"
               @click="save"
-          >{{ $t('save') }}
+          >{{ $t('common.save') }}
           </v-btn>
       </v-container>
 
@@ -44,8 +44,13 @@
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n';
 
 export default {
+    setup() {
+        const { t } = useI18n();
+        return { t };
+    },
     data () {
         return {
             isLoading: false,
@@ -66,7 +71,7 @@ export default {
                 thanks: '',
             },
             rules: {
-                required: (value) => (value && Boolean(value)) || 'Required',
+                required: (value) => (value && Boolean(value)) || this.t('validation.required'),
             }
         }
     },
@@ -87,7 +92,7 @@ export default {
             this.isLoading = true
             axios.post('/api/admin/announcement', this.form).then(() => {
 
-                this.message = 'Tadaaa'
+                this.message = this.t('announcement.sentSuccess')
                 this.type = 'success'
 
                 this.form = {

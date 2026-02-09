@@ -6,15 +6,15 @@
                 <v-card class="roles-overview-card" elevation="2" rounded="lg">
                     <v-card-title class="d-flex align-center">
                         <v-icon class="mr-2" color="primary">mdi-shield-account</v-icon>
-                        Current Roles
+                        {{ $t('users.edit.currentRoles') }}
                     </v-card-title>
 
                     <v-card-text>
                         <div v-if="currentRoles.length === 0" class="text-center pa-4">
                             <v-icon size="48" color="medium-emphasis">mdi-account</v-icon>
-                            <div class="text-h6 mt-2">No Roles Assigned</div>
+                            <div class="text-h6 mt-2">{{ $t('users.edit.noRolesAssigned') }}</div>
                             <div class="text-body-2 text-medium-emphasis">
-                                This user has no special roles or permissions
+                                {{ $t('users.edit.noRolesDescription') }}
                             </div>
                         </div>
 
@@ -54,7 +54,7 @@
                                                         <template #prepend>
                                                             <v-icon>mdi-information</v-icon>
                                                         </template>
-                                                        <v-list-item-title>View Details</v-list-item-title>
+                                                        <v-list-item-title>{{ $t('users.edit.viewDetails') }}</v-list-item-title>
                                                     </v-list-item>
                                                     <v-list-item
                                                         @click="confirmRemoveRole(role)"
@@ -63,7 +63,7 @@
                                                         <template #prepend>
                                                             <v-icon color="error">mdi-minus-circle</v-icon>
                                                         </template>
-                                                        <v-list-item-title>Remove Role</v-list-item-title>
+                                                        <v-list-item-title>{{ $t('users.edit.removeRole') }}</v-list-item-title>
                                                     </v-list-item>
                                                 </v-list>
                                             </v-menu>
@@ -76,7 +76,7 @@
 
                                         <div class="d-flex align-center">
                                             <v-chip size="x-small" variant="outlined">
-                                                {{ role.permissions?.length || 0 }} permissions
+                                                {{ $t('users.edit.permissionsCount', { count: role.permissions?.length || 0 }) }}
                                             </v-chip>
                                             <v-spacer />
 
@@ -87,7 +87,7 @@
                                                 size="small"
                                                 @click="confirmRemoveAdmin"
                                             >
-                                                Remove Admin
+                                                {{ $t('users.edit.removeAdmin') }}
                                             </v-btn>
                                         </div>
                                     </v-card-text>
@@ -114,7 +114,7 @@
                                 size="small"
                                 @click="showAdmin = true"
                             >
-                                Add Admin
+                                {{ $t('users.edit.addAdmin') }}
                             </v-btn>
                             <v-btn
                                 v-else
@@ -123,7 +123,7 @@
                                 size="small"
                                 @click="showAdmin = false"
                             >
-                                Hide Admin
+                                {{ $t('users.edit.hideAdmin') }}
                             </v-btn>
                         </div>
                         <v-btn
@@ -133,7 +133,7 @@
                             @click="refreshAvailableRoles"
                             :loading="refreshing"
                         >
-                            Refresh
+                            {{ $t('users.edit.refresh') }}
                         </v-btn>
                     </v-card-title>
 
@@ -145,7 +145,7 @@
                                     :items="availableRoles"
                                     item-title="name"
                                     item-value="id"
-                                    label="Select role to assign"
+                                    :label="$t('users.edit.selectRoleToAssign')"
                                     variant="outlined"
                                     density="compact"
                                     prepend-inner-icon="mdi-shield-plus"
@@ -177,7 +177,7 @@
                                     :disabled="!selectedRole"
                                     :loading="assigning"
                                 >
-                                    Assign Role
+                                    {{ $t('users.edit.assignRole') }}
                                 </v-btn>
                             </v-col>
                         </v-row>
@@ -190,7 +190,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+
+const { t } = useI18n();
 
 const props = defineProps({
     user: {
@@ -210,6 +213,7 @@ const selectedRoleDetails = ref(null);
 const assigning = ref(false);
 const refreshing = ref(false);
 const loadingRoles = ref(false);
+const showAdmin = ref(false);
 
 const getRoleColor = (roleName) => {
     // ToDO Implement role color logic

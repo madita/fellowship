@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Branding Options"
-        description="Configure login page branding and other branding settings"
+        :title="$t('settings.branding.options.title')"
+        :description="$t('settings.branding.options.description')"
         icon="mdi-toggle-switch-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'branding' } }"
@@ -11,12 +11,12 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-cog-outline" title="Branding Options">
+        <settings-card icon="mdi-cog-outline" :title="$t('settings.branding.options.cardTitle')">
             <v-switch
                 v-model="settings.login_branding_enabled"
-                label="Enable Login Page Branding"
+                :label="$t('settings.branding.options.enableLoginBranding')"
                 color="primary"
-                :hint="settings.login_branding_enabled ? 'Show custom branding on login page' : 'Use default login page appearance'"
+                :hint="settings.login_branding_enabled ? $t('settings.branding.options.enableLoginBrandingHintEnabled') : $t('settings.branding.options.enableLoginBrandingHintDisabled')"
                 persistent-hint
             ></v-switch>
         </settings-card>
@@ -30,7 +30,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

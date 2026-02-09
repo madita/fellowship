@@ -6,9 +6,9 @@
 
         <div v-else-if="!media.length" class="text-center pa-8">
             <v-icon icon="mdi-image-off" size="64" color="grey" />
-            <div class="text-h6 text-grey mt-4">No media found</div>
+            <div class="text-h6 text-grey mt-4">{{ $t('mediaCenter.noMediaFound') }}</div>
             <div class="text-body-2 text-grey">
-                Try adjusting your filters or search criteria
+                {{ $t('mediaCenter.adjustFiltersHint') }}
             </div>
         </div>
 
@@ -24,13 +24,13 @@
                         />
                     </th>
                     <th style="width: 60px;"></th>
-                    <th>File Name</th>
-                    <th>Type</th>
-                    <th>Size</th>
-                    <th>Context</th>
-                    <th>Collection</th>
-                    <th>Date</th>
-                    <th style="width: 100px;">Actions</th>
+                    <th>{{ $t('mediaCenter.fileName') }}</th>
+                    <th>{{ $t('mediaCenter.type') }}</th>
+                    <th>{{ $t('mediaCenter.size') }}</th>
+                    <th>{{ $t('mediaCenter.context') }}</th>
+                    <th>{{ $t('mediaCenter.collectionName') }}</th>
+                    <th>{{ $t('mediaCenter.date') }}</th>
+                    <th style="width: 100px;">{{ $t('mediaCenter.actions') }}</th>
                 </tr>
             </thead>
             <tbody>

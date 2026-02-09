@@ -20,7 +20,7 @@
                             <v-select
                                 v-model="state.search.column"
                                 :items="state.response.displayable"
-                                label="Columns"
+                                :label="$t('dataTable.columns')"
                                 density="compact"
                                 hide-details
                             />
@@ -33,7 +33,7 @@
                                 :items="state.searchOperators"
                                 item-title="text"
                                 item-value="value"
-                                label="Operators"
+                                :label="$t('dataTable.operators')"
                                 density="compact"
                                 hide-details
                             />
@@ -46,7 +46,7 @@
                                 <v-text-field
                                     v-model="state.search.value"
                                     append-inner-icon="mdi-magnify"
-                                    label="Search value"
+                                    :label="$t('dataTable.searchValue')"
                                     class="flex-grow-1"
                                     hide-details
                                     density="compact"
@@ -62,7 +62,7 @@
                                     @click="getRecords"
                                     min-width="80"
                                 >
-                                    Search
+                                    {{ $t('dataTable.search') }}
                                 </v-btn>
 
                                 <!-- Refresh Button -->
@@ -109,14 +109,14 @@
                                                                 class="mb-2 mr-1"
                                                                 v-bind="menuProps"
                                                             >
-                                                                Actions
+                                                                {{ $t('dataTable.actions') }}
                                                                 <v-icon>mdi-menu-down</v-icon>
                                                             </v-btn>
                                                         </transition>
                                                     </template>
                                                     <v-list density="compact">
                                                         <v-list-item @click="destroy(state.selected)">
-                                                            <v-list-item-title>Delete</v-list-item-title>
+                                                            <v-list-item-title>{{ $t('common.delete') }}</v-list-item-title>
                                                         </v-list-item>
                                                     </v-list>
                                                 </v-menu>
@@ -126,7 +126,7 @@
                                                     class="mb-2"
                                                     @click="isSidebarActive = true"
                                                 >
-                                                    New Item
+                                                    {{ $t('dataTable.newItem') }}
                                                 </v-btn>
                                             </v-col>
                                             <v-col cols="6">
@@ -134,7 +134,7 @@
                                                     class="ml-2"
                                                     v-model="state.quickSearchQuery"
                                                     append-icon="mdi-magnify"
-                                                    label="Quick Search"
+                                                    :label="$t('dataTable.quickSearch')"
                                                     single-line
                                                     hide-details
                                                 ></v-text-field>
@@ -196,14 +196,14 @@
                                                 variant="text"
                                                 @click="close"
                                             >
-                                                Cancel
+                                                {{ $t('common.cancel') }}
                                             </v-btn>
                                             <v-btn
                                                 color="blue-darken-1"
                                                 variant="text"
                                                 @click="save"
                                             >
-                                                Save
+                                                {{ $t('common.save') }}
                                             </v-btn>
                                         </v-card-actions>
                                     </v-card>
@@ -211,11 +211,11 @@
 
                                 <v-dialog v-model="state.dialogDelete" max-width="500px">
                                     <v-card>
-                                        <v-card-title class="text-h5">Are you sure you want to delete this item?</v-card-title>
+                                        <v-card-title class="text-h5">{{ $t('dataTable.deleteConfirm') }}</v-card-title>
                                         <v-card-actions>
                                             <v-spacer></v-spacer>
-                                            <v-btn color="blue-darken-1" variant="text" @click="closeDelete">Cancel</v-btn>
-                                            <v-btn color="blue-darken-1" variant="text" @click="deleteItemConfirm">OK</v-btn>
+                                            <v-btn color="blue-darken-1" variant="text" @click="closeDelete">{{ $t('common.cancel') }}</v-btn>
+                                            <v-btn color="blue-darken-1" variant="text" @click="deleteItemConfirm">{{ $t('dataTable.ok') }}</v-btn>
                                             <v-spacer></v-spacer>
                                         </v-card-actions>
                                     </v-card>
@@ -270,6 +270,7 @@
 
 <script>
 import { ref, reactive, computed, nextTick, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { useApi } from '@/api/useAPI.js'
 import AppDataTable from '../AppDataTable.vue'
@@ -290,17 +291,18 @@ export default {
         }
     },
     setup(props) {
+        const { t } = useI18n()
         const api = useApi()
         const isSidebarActive = ref(false)
 
-        const breadcrumbs = ref([
+        const breadcrumbs = computed(() => [
             {
                 text: '',
                 disabled: false,
                 href: '#'
             },
             {
-                text: 'List'
+                text: t('dataTable.list')
             }
         ])
 
@@ -336,16 +338,7 @@ export default {
                 operator: 'equals',
                 value: null,
             },
-            searchOperators: [
-                { text: '=', value: 'equals' },
-                { text: 'contains', value: 'contains' },
-                { text: 'starts with', value: 'starts_with' },
-                { text: 'ends with', value: 'ends_with' },
-                { text: '>', value: 'greater_than' },
-                { text: '<', value: 'less_than' },
-                { text: '>=', value: 'greater_than_or_equal_to' },
-                { text: '<=', value: 'less_than_or_equal_to' },
-            ],
+            searchOperators: [],
             quickSearchQuery: '',
             response: {
                 table: null,
@@ -365,16 +358,30 @@ export default {
             },
             selected: [],
             rules: {
-                required: value => !!value || 'Required.',
+                required: value => !!value || t('dataTable.required'),
                 email: value => {
                     const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-                    return pattern.test(value) || 'Invalid e-mail.'
+                    return pattern.test(value) || t('dataTable.invalidEmail')
                 },
             }
         })
 
+        // Initialize search operators with translations
+        const initSearchOperators = () => {
+            state.searchOperators = [
+                { text: t('dataTable.operatorEquals'), value: 'equals' },
+                { text: t('dataTable.operatorContains'), value: 'contains' },
+                { text: t('dataTable.operatorStartsWith'), value: 'starts_with' },
+                { text: t('dataTable.operatorEndsWith'), value: 'ends_with' },
+                { text: t('dataTable.operatorGreaterThan'), value: 'greater_than' },
+                { text: t('dataTable.operatorLessThan'), value: 'less_than' },
+                { text: t('dataTable.operatorGreaterThanOrEqual'), value: 'greater_than_or_equal_to' },
+                { text: t('dataTable.operatorLessThanOrEqual'), value: 'less_than_or_equal_to' },
+            ]
+        }
+
         const formTitle = computed(() => {
-            return state.editedIndex === -1 ? 'New Item' : 'Edit Item'
+            return state.editedIndex === -1 ? t('dataTable.newItem') : t('dataTable.editItem')
         })
 
         const buildQueryString = (params) => {
@@ -593,6 +600,7 @@ export default {
         })
 
         onMounted(() => {
+            initSearchOperators()
             getRecords()
         })
 

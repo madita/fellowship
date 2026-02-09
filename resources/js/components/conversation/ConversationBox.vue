@@ -39,10 +39,10 @@
                             </v-icon>
                         </div>
                         <div v-if="!isGroupChat && user" class="text-caption opacity-70">
-                            {{ isUserOnline(user.id) ? 'Online' : 'Offline' }}
+                            {{ isUserOnline(user.id) ? $t('conversation.online') : $t('conversation.offline') }}
                         </div>
                         <div v-else-if="isGroupChat" class="text-caption opacity-70">
-                            {{ conversationUsers.length }} participants
+                            {{ $t('conversation.participants', { count: conversationUsers.length }) }}
                         </div>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
             <div v-if="loading && !conversation" class="d-flex align-center justify-center" style="height: 400px;">
                 <div class="text-center">
                     <v-progress-circular indeterminate size="64" color="primary" class="mb-4" />
-                    <div class="text-body-1 text-medium-emphasis">Loading conversation...</div>
+                    <div class="text-body-1 text-medium-emphasis">{{ $t('conversation.loadingConversation') }}</div>
                 </div>
             </div>
 
@@ -90,8 +90,8 @@
             <div v-else class="d-flex align-center justify-center" style="height: 400px;">
                 <div class="text-center">
                     <v-icon size="64" color="medium-emphasis">mdi-chat-outline</v-icon>
-                    <div class="text-h6 mt-2">No conversation yet</div>
-                    <div class="text-body-2 text-medium-emphasis">Start typing to begin chatting</div>
+                    <div class="text-h6 mt-2">{{ $t('conversation.noConversationYet') }}</div>
+                    <div class="text-body-2 text-medium-emphasis">{{ $t('conversation.startTypingToBegin') }}</div>
                 </div>
             </div>
         </div>
@@ -109,7 +109,7 @@
                     chips
                     multiple
                     clearable
-                    placeholder="Type username to add recipients..."
+                    :placeholder="$t('conversation.typeUsernameToAdd')"
                     class="mb-2"
                     variant="outlined"
                     density="compact"
@@ -131,7 +131,7 @@
                 <div class="d-flex align-center">
                     <v-text-field
                         v-model="body"
-                        placeholder="Type your message..."
+                        :placeholder="$t('conversation.typeYourMessage')"
                         variant="outlined"
                         density="compact"
                         hide-details
@@ -157,6 +157,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import eventBus from "../common/eventBus.js";
 import { useConversationStore } from "@/store/conversationStore.js";
@@ -168,6 +169,8 @@ import { useOnlineUsers } from "@/composables/conversation/useOnlineUsers";
 import { useScrollToBottom } from "@/composables/conversation/useScrollToBottom";
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import {useUserStore} from "@/store/userStore.js";
+
+const { t } = useI18n()
 
 
 // Props

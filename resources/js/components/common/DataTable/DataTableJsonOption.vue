@@ -1,5 +1,8 @@
 <script setup>
 import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 // Reactive modal state
 const showModal = ref(false);
@@ -76,8 +79,8 @@ watch(localOption, (newValue) => {
             <!-- Modal for adding new option -->
             <template v-if="showModal">
                 <v-row>
-                    <v-text-field v-model="newOptionKey" label="Key" density="compact" class="me-1 v-col-5" />
-                    <v-text-field v-model="newOptionValue" label="Value" density="compact" class="me-1 v-col-5" />
+                    <v-text-field v-model="newOptionKey" :label="$t('formBuilder.key')" density="compact" class="me-1 v-col-5" />
+                    <v-text-field v-model="newOptionValue" :label="$t('formBuilder.value')" density="compact" class="me-1 v-col-5" />
                     <v-icon @click="addOption()">mdi-check</v-icon>
                     <v-icon @click="showModal = false">mdi-close</v-icon>
                 </v-row>
@@ -88,8 +91,8 @@ watch(localOption, (newValue) => {
                 {{localOption}}
                 <li v-for="(value, index) in localOption" :key="index" class="answer-item d-flex align-center mb-1 ml-2">
                     <template v-if="editIndex === index">
-                        <v-text-field v-model="editKey" label="Key" density="compact" class="me-1 v-col-5" />
-                        <v-text-field v-model="editValue" label="Value" density="compact" class="me-1 v-col-5" />
+                        <v-text-field v-model="editKey" :label="$t('formBuilder.key')" density="compact" class="me-1 v-col-5" />
+                        <v-text-field v-model="editValue" :label="$t('formBuilder.value')" density="compact" class="me-1 v-col-5" />
                         <v-icon @click="saveEdit(index)">mdi-check</v-icon>
                     </template>
                     <template v-else>

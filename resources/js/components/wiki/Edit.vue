@@ -315,7 +315,7 @@
                                         id="text-content"
                                         name="content"
                                         type="full"
-                                        placeholder="Edit your wiki page content..."
+                                        :placeholder="$t('wiki.editPlaceholder')"
                                         ref="editorRef"
                                         @update:modelValue="onContentChange"
                                     />

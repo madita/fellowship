@@ -5,7 +5,7 @@
                 <v-col cols="12" sm="6" md="3">
                     <v-text-field
                         v-model="filters.search"
-                        label="Search by filename"
+                        :label="$t('mediaFilters.searchByFilename')"
                         prepend-inner-icon="mdi-magnify"
                         variant="outlined"
                         density="compact"
@@ -21,7 +21,7 @@
                         :items="contextOptions"
                         item-title="label"
                         item-value="value"
-                        label="Context"
+                        :label="$t('mediaFilters.context')"
                         variant="outlined"
                         density="compact"
                         hide-details
@@ -36,7 +36,7 @@
                         :items="collectionOptions"
                         item-title="label"
                         item-value="value"
-                        label="Collection"
+                        :label="$t('mediaFilters.collection')"
                         variant="outlined"
                         density="compact"
                         hide-details
@@ -51,7 +51,7 @@
                         :items="fileTypeOptions"
                         item-title="label"
                         item-value="value"
-                        label="File Type"
+                        :label="$t('mediaFilters.fileType')"
                         variant="outlined"
                         density="compact"
                         hide-details
@@ -65,7 +65,7 @@
                         <v-col cols="6">
                             <v-text-field
                                 v-model="filters.date_from"
-                                label="From"
+                                :label="$t('mediaFilters.from')"
                                 type="date"
                                 variant="outlined"
                                 density="compact"
@@ -76,7 +76,7 @@
                         <v-col cols="6">
                             <v-text-field
                                 v-model="filters.date_to"
-                                label="To"
+                                :label="$t('mediaFilters.to')"
                                 type="date"
                                 variant="outlined"
                                 density="compact"
@@ -95,7 +95,7 @@
                         :items="sortOptions"
                         item-title="label"
                         item-value="value"
-                        label="Sort By"
+                        :label="$t('mediaFilters.sortBy')"
                         variant="outlined"
                         density="compact"
                         hide-details
@@ -112,11 +112,11 @@
                     >
                         <v-btn value="desc" size="small">
                             <v-icon icon="mdi-sort-descending" />
-                            Newest
+                            {{ $t('mediaFilters.newest') }}
                         </v-btn>
                         <v-btn value="asc" size="small">
                             <v-icon icon="mdi-sort-ascending" />
-                            Oldest
+                            {{ $t('mediaFilters.oldest') }}
                         </v-btn>
                     </v-btn-toggle>
                 </v-col>
@@ -125,7 +125,7 @@
                     <v-select
                         v-model="filters.per_page"
                         :items="perPageOptions"
-                        label="Per Page"
+                        :label="$t('mediaFilters.perPage')"
                         variant="outlined"
                         density="compact"
                         hide-details
@@ -142,7 +142,7 @@
                         @click="clearFilters"
                     >
                         <v-icon icon="mdi-filter-off" start />
-                        Clear Filters
+                        {{ $t('mediaFilters.clearFilters') }}
                     </v-btn>
                 </v-col>
             </v-row>
@@ -151,8 +151,11 @@
 </template>
 
 <script setup>
-import { reactive, watch } from 'vue';
+import { reactive, watch, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { debounce } from 'lodash';
+
+const { t } = useI18n();
 
 const props = defineProps({
     contexts: {
@@ -192,30 +195,30 @@ watch(
     { immediate: true }
 );
 
-const contextOptions = [
-    { label: 'All Contexts', value: null },
+const contextOptions = computed(() => [
+    { label: t('mediaFilters.allContexts'), value: null },
     ...props.contexts,
-];
+]);
 
-const collectionOptions = [
-    { label: 'All Collections', value: null },
+const collectionOptions = computed(() => [
+    { label: t('mediaFilters.allCollections'), value: null },
     ...props.collections,
-];
+]);
 
-const fileTypeOptions = [
-    { label: 'All Types', value: null },
-    { label: 'Images', value: 'image' },
-    { label: 'Videos', value: 'video' },
-    { label: 'Audio', value: 'audio' },
-    { label: 'PDFs', value: 'application/pdf' },
-    { label: 'Documents', value: 'application' },
-];
+const fileTypeOptions = computed(() => [
+    { label: t('mediaFilters.allTypes'), value: null },
+    { label: t('mediaFilters.images'), value: 'image' },
+    { label: t('mediaFilters.videos'), value: 'video' },
+    { label: t('mediaFilters.audio'), value: 'audio' },
+    { label: t('mediaFilters.pdfs'), value: 'application/pdf' },
+    { label: t('mediaFilters.documents'), value: 'application' },
+]);
 
-const sortOptions = [
-    { label: 'Date', value: 'created_at' },
-    { label: 'Name', value: 'file_name' },
-    { label: 'Size', value: 'size' },
-];
+const sortOptions = computed(() => [
+    { label: t('mediaFilters.date'), value: 'created_at' },
+    { label: t('mediaFilters.name'), value: 'file_name' },
+    { label: t('mediaFilters.size'), value: 'size' },
+]);
 
 const perPageOptions = [12, 24, 48, 96];
 

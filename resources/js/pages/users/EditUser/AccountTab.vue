@@ -76,7 +76,7 @@
                                 <template #activator="{ props: tooltipProps }">
                                     <v-icon v-bind="tooltipProps" color="info">mdi-information</v-icon>
                                 </template>
-                                <span>Leave empty to use system default ({{ defaultTimezone }})</span>
+                                <span>{{ $t('users.edit.leaveEmptyForDefault', { value: defaultTimezone }) }}</span>
                             </v-tooltip>
                         </template>
                     </v-autocomplete>
@@ -100,7 +100,7 @@
                                 <template #activator="{ props: tooltipProps }">
                                     <v-icon v-bind="tooltipProps" color="info">mdi-information</v-icon>
                                 </template>
-                                <span>Leave empty to use system default ({{ defaultDateFormat }})</span>
+                                <span>{{ $t('users.edit.leaveEmptyForDefault', { value: defaultDateFormat }) }}</span>
                             </v-tooltip>
                         </template>
                     </v-select>
@@ -124,7 +124,7 @@
                                 <template #activator="{ props: tooltipProps }">
                                     <v-icon v-bind="tooltipProps" color="info">mdi-information</v-icon>
                                 </template>
-                                <span>Leave empty to use system default ({{ defaultTimeFormat }})</span>
+                                <span>{{ $t('users.edit.leaveEmptyForDefault', { value: defaultTimeFormat }) }}</span>
                             </v-tooltip>
                         </template>
                     </v-select>
@@ -296,6 +296,7 @@
 
 <script>
 import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSettingsStore } from '@/store/settingStore.js';
 import { useUserStore } from '@/store/userStore.js';
 import { formatDateInTimezone } from '@/plugins/formatDate.js';
@@ -317,6 +318,7 @@ export default {
         }
     },
     setup(props) {
+        const { t } = useI18n();
         const settingsStore = useSettingsStore();
         const userStore = useUserStore();
 
@@ -425,7 +427,7 @@ export default {
                 const combinedFormat = `${dateFmt} ${timeFmt}`;
                 return formatDateInTimezone(new Date().toISOString(), combinedFormat, tz);
             } catch (error) {
-                return 'Preview unavailable';
+                return t('users.edit.previewUnavailable');
             }
         });
 

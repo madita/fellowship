@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Twitter Card"
-        description="Configure Twitter/X sharing settings"
+        :title="$t('settings.seo.twitterCard.title')"
+        :description="$t('settings.seo.twitterCard.description')"
         icon="mdi-twitter"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'seo' } }"
@@ -11,10 +11,10 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-twitter" title="Twitter Card Settings">
+        <settings-card icon="mdi-twitter" :title="$t('settings.seo.twitterCard.cardTitle')">
             <v-select
                 v-model="settings.twitter_card_type"
-                label="Twitter Card Type"
+                :label="$t('settings.seo.twitterCard.cardType')"
                 :items="twitterCardTypes"
                 item-title="label"
                 item-value="value"
@@ -26,11 +26,11 @@
 
             <v-text-field
                 v-model="settings.twitter_site"
-                label="Twitter Site Handle"
+                :label="$t('settings.seo.twitterCard.siteHandle')"
                 prepend-inner-icon="mdi-at"
                 variant="outlined"
                 :error-messages="errors.twitter_site"
-                hint="Your Twitter username (e.g., @yourhandle)"
+                :hint="$t('settings.seo.twitterCard.siteHandleHint')"
                 persistent-hint
                 placeholder="@yourhandle"
             ></v-text-field>
@@ -45,7 +45,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

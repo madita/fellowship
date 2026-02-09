@@ -4,7 +4,7 @@
       <div class="d-flex align-center">
         <v-icon class="mr-2" color="primary">mdi-forum</v-icon>
         <span class="text-subtitle-1 font-weight-medium">
-          Messages
+          {{ $t('messaging.messages') }}
         </span>
         <v-chip v-if="totalUnreadCount > 0" size="x-small" color="error" variant="flat" class="ml-2">
           {{ totalUnreadCount }}
@@ -31,14 +31,14 @@
         <v-tabs v-model="activeTab" density="compact" grow>
           <v-tab value="conversations">
             <v-icon size="small" class="mr-1">mdi-message</v-icon>
-            Chats
+            {{ $t('messaging.chats') }}
             <v-chip v-if="totalUnreadCount > 0" size="x-small" color="error" class="ml-1">
               {{ totalUnreadCount }}
             </v-chip>
           </v-tab>
           <v-tab value="users">
             <v-icon size="small" class="mr-1">mdi-account-group</v-icon>
-            Users
+            {{ $t('messaging.users') }}
             <v-chip size="x-small" color="success" class="ml-1">
               {{ onlineCount }}
             </v-chip>
@@ -54,7 +54,7 @@
               <v-list density="compact" class="conversation-list">
                 <!-- Group Conversations -->
                 <template v-if="groupConversations.length > 0">
-                  <v-list-subheader class="text-overline">Group Chats</v-list-subheader>
+                  <v-list-subheader class="text-overline">{{ $t('messaging.groupChats') }}</v-list-subheader>
                   <v-list-item
                     v-for="conv in groupConversations"
                     :key="conv.uuid"
@@ -85,7 +85,7 @@
 
                 <!-- Direct Conversations -->
                 <template v-if="directConversations.length > 0">
-                  <v-list-subheader class="text-overline">Direct Messages</v-list-subheader>
+                  <v-list-subheader class="text-overline">{{ $t('messaging.directMessages') }}</v-list-subheader>
                   <v-list-item
                     v-for="conv in directConversations"
                     :key="conv.uuid"
@@ -114,7 +114,7 @@
 
                     <v-list-item-subtitle class="text-caption">
                       <span :class="isUserOnline(getOtherUser(conv)?.id).value ? 'text-success' : 'text-grey'">
-                        {{ isUserOnline(getOtherUser(conv)?.id).value ? 'Online' : 'Offline' }}
+                        {{ isUserOnline(getOtherUser(conv)?.id).value ? $t('messaging.online') : $t('messaging.offline') }}
                       </span>
                       • {{ conv.created_at_human }}
                     </v-list-item-subtitle>
@@ -131,10 +131,10 @@
                 <!-- Empty state -->
                 <v-list-item v-if="!conversationsLoading && allConversations.length === 0">
                   <v-list-item-title class="text-medium-emphasis text-center">
-                    No conversations yet
+                    {{ $t('messaging.noConversationsYet') }}
                   </v-list-item-title>
                   <v-list-item-subtitle class="text-center text-caption">
-                    Start a chat from the Users tab
+                    {{ $t('messaging.startChatFromUsersTab') }}
                   </v-list-item-subtitle>
                 </v-list-item>
               </v-list>
@@ -167,7 +167,7 @@
 
                   <v-list-item-subtitle class="text-caption">
                     <span :class="isUserOnline(u.id).value ? 'text-success' : 'text-grey'">
-                      {{ isUserOnline(u.id).value ? 'Online' : 'Offline' }}
+                      {{ isUserOnline(u.id).value ? $t('messaging.online') : $t('messaging.offline') }}
                     </span>
                   </v-list-item-subtitle>
                 </v-list-item>
@@ -179,7 +179,7 @@
                 </v-list-item>
 
                 <v-list-item v-if="!loading && allUsers.length === 0">
-                  <v-list-item-title class="text-medium-emphasis">No users found</v-list-item-title>
+                  <v-list-item-title class="text-medium-emphasis">{{ $t('messaging.noUsersFound') }}</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-window-item>
@@ -192,6 +192,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import eventBus from '../common/eventBus.js'
 import { useUserStore } from '@/store/userStore.js'
 import { useConversationsStore } from '@/store/conversationsStore.js'
@@ -200,6 +201,8 @@ import UserAvatar from "@/components/common/UserAvatar.vue";
 import axios from 'axios'
 
 const emit = defineEmits(['close'])
+
+const { t } = useI18n()
 
 const allUsers = ref([])
 const collapsed = ref(false)
@@ -270,9 +273,9 @@ function getOtherUser(conversation) {
 
 // Get group chat name (comma-separated usernames, excluding current user)
 function getGroupChatName(conversation) {
-  if (!conversation?.users) return 'Group Chat'
+  if (!conversation?.users) return t('messaging.groupChat')
   const otherUsers = conversation.users.filter(u => u.id !== userStore.user?.id)
-  return otherUsers.map(u => u.username).join(', ') || 'Group Chat'
+  return otherUsers.map(u => u.username).join(', ') || t('messaging.groupChat')
 }
 
 // Open an existing conversation

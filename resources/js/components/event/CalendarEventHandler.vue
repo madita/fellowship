@@ -572,7 +572,7 @@ onMounted(() => {
                         density="comfortable"
                         class="action-btn"
                         @click="localEditMode = true"
-                        title="Edit event"
+                        :title="$t('events.edit')"
                     />
 
                     <v-btn
@@ -582,7 +582,7 @@ onMounted(() => {
                         density="comfortable"
                         class="action-btn"
                         @click="showRelateContentDialog = true"
-                        title="Related content"
+                        :title="$t('events.relatedContent')"
                     />
 
                     <v-btn
@@ -592,7 +592,7 @@ onMounted(() => {
                         density="comfortable"
                         class="action-btn"
                         @click="showConfirmationDialog = true"
-                        title="Delete event"
+                        :title="$t('events.delete')"
                     />
 
                     <v-btn
@@ -601,7 +601,7 @@ onMounted(() => {
                         density="comfortable"
                         class="action-btn"
                         @click="dialogModelValueUpdate(false)"
-                        title="Close"
+                        :title="$t('common.close')"
                     />
                 </div>
             </div>
@@ -814,7 +814,7 @@ onMounted(() => {
                                 density="comfortable"
                                 size="small"
                                 @click="openDialog()"
-                                title="View detailed attendee list"
+                                :title="$t('events.viewDetailedAttendeeList')"
                             />
                         </div>
 

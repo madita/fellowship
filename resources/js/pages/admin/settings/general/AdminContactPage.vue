@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Admin Contact"
-        description="Configure administrator and support email addresses"
+        :title="$t('settings.adminContact.title')"
+        :description="$t('settings.adminContact.description')"
         icon="mdi-email-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'general' } }"
@@ -11,27 +11,27 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-email-outline" title="Admin Contact">
+        <settings-card icon="mdi-email-outline" :title="$t('settings.adminContact.cardTitle')">
             <v-text-field
                 v-model="settings.admin_email"
-                label="Admin Email"
+                :label="$t('settings.adminContact.adminEmail')"
                 prepend-inner-icon="mdi-shield-account"
                 variant="outlined"
                 type="email"
                 class="mb-4"
                 :error-messages="errors.admin_email"
-                hint="Primary admin email for system notifications"
+                :hint="$t('settings.adminContact.adminEmailHint')"
                 persistent-hint
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.support_email"
-                label="Support Email"
+                :label="$t('settings.adminContact.supportEmail')"
                 prepend-inner-icon="mdi-lifebuoy"
                 variant="outlined"
                 type="email"
                 :error-messages="errors.support_email"
-                hint="Support email shown to users for help requests"
+                :hint="$t('settings.adminContact.supportEmailHint')"
                 persistent-hint
             ></v-text-field>
         </settings-card>
@@ -45,7 +45,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

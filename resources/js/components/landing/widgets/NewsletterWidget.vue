@@ -27,7 +27,7 @@
               <div class="d-flex flex-column flex-sm-row gap-2">
                 <v-text-field
                   v-model="email"
-                  :label="content.emailPlaceholder || 'Enter your email'"
+                  :label="content.emailPlaceholder || $t('newsletterWidget.emailPlaceholder')"
                   :required="true"
                   type="email"
                   variant="outlined"
@@ -42,7 +42,7 @@
                   :loading="isSubscribing"
                   class="subscribe-btn"
                 >
-                  {{ content.buttonText || 'Subscribe' }}
+                  {{ content.buttonText || $t('newsletterWidget.subscribe') }}
                 </v-btn>
               </div>
 
@@ -87,6 +87,9 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
   content: {
@@ -132,11 +135,11 @@ async function handleSubscribe() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     subscribeSuccess.value = true;
-    subscribeMessage.value = props.content.successMessage;
+    subscribeMessage.value = props.content.successMessage || t('newsletterWidget.successMessage');
     email.value = '';
   } catch (error) {
     subscribeSuccess.value = false;
-    subscribeMessage.value = props.content.errorMessage;
+    subscribeMessage.value = props.content.errorMessage || t('newsletterWidget.errorMessage');
   } finally {
     isSubscribing.value = false;
   }

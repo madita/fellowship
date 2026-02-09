@@ -13,7 +13,7 @@
             <v-text-field
                 v-model="email"
                 variant="outlined"
-                label="Your email"
+                :label="$t('common.yourEmail')"
                 density="compact"
                 class="mr-sm-2 mb-2 mb-sm-0"
                 :error-messages="error"
@@ -25,7 +25,7 @@
                 :loading="loading"
                 @click="subscribe"
             >
-                {{ config.buttonText || 'Subscribe' }}
+                {{ config.buttonText || $t('common.subscribe') }}
             </v-btn>
         </div>
 
@@ -37,7 +37,10 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+
+const { t } = useI18n();
 
 const props = defineProps({
     config: {
@@ -57,7 +60,7 @@ async function subscribe() {
     success.value = false;
 
     if (!email.value || !email.value.includes('@')) {
-        error.value = 'Please enter a valid email address';
+        error.value = t('newsletter.invalidEmail');
         return;
     }
 
@@ -69,7 +72,7 @@ async function subscribe() {
         });
 
         success.value = true;
-        successMessage.value = response.data.message || 'Thank you for subscribing!';
+        successMessage.value = response.data.message || t('newsletter.thankYou');
         email.value = '';
 
         setTimeout(() => {
@@ -77,7 +80,7 @@ async function subscribe() {
         }, 5000);
     } catch (err) {
         console.error('Newsletter subscription error:', err);
-        error.value = err.response?.data?.message || 'Failed to subscribe. Please try again.';
+        error.value = err.response?.data?.message || t('newsletter.failedToSubscribe');
     } finally {
         loading.value = false;
     }

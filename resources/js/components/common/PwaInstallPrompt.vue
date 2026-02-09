@@ -8,8 +8,8 @@
     >
         <template #text>
             <div class="d-flex flex-column">
-                <span class="text-subtitle-1 font-weight-medium">Install {{ appName }}</span>
-                <span class="text-caption">Install our app for a better experience with offline access!</span>
+                <span class="text-subtitle-1 font-weight-medium">{{ $t('pwa.installApp', { appName }) }}</span>
+                <span class="text-caption">{{ $t('pwa.installDescription') }}</span>
             </div>
         </template>
 
@@ -21,7 +21,7 @@
                 @click="install"
                 :loading="installing"
             >
-                Install
+                {{ $t('common.install') }}
             </v-btn>
             <v-btn
                 color="white"
@@ -29,7 +29,7 @@
                 size="small"
                 @click="dismiss"
             >
-                Not Now
+                {{ $t('common.notNow') }}
             </v-btn>
         </template>
     </v-banner>
@@ -37,7 +37,10 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSettingsStore } from '@/store/settingStore.js';
+
+const { t } = useI18n();
 
 const settingsStore = useSettingsStore();
 

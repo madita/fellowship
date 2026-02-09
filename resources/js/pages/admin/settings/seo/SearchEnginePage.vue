@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Search Engines"
-        description="Configure search engine indexing, sitemap, and robots.txt"
+        :title="$t('settings.seo.searchEngine.title')"
+        :description="$t('settings.seo.searchEngine.description')"
         icon="mdi-robot-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'seo' } }"
@@ -11,45 +11,45 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-search-web" title="Search Engine Settings">
+        <settings-card icon="mdi-search-web" :title="$t('settings.seo.searchEngine.cardTitle')">
             <v-text-field
                 v-model="settings.canonical_url"
-                label="Canonical URL"
+                :label="$t('settings.seo.searchEngine.canonicalUrl')"
                 prepend-inner-icon="mdi-link-variant"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.canonical_url"
-                hint="Preferred full URL for search engines (e.g., https://example.com)"
+                :hint="$t('settings.seo.searchEngine.canonicalUrlHint')"
                 persistent-hint
                 placeholder="https://example.com"
             ></v-text-field>
 
             <v-switch
                 v-model="settings.indexing_enabled"
-                label="Allow Search Engine Indexing"
+                :label="$t('settings.seo.searchEngine.indexingEnabled')"
                 color="primary"
                 class="mb-4"
-                hint="Allow search engines to index your site"
+                :hint="$t('settings.seo.searchEngine.indexingEnabledHint')"
                 persistent-hint
             ></v-switch>
 
             <v-switch
                 v-model="settings.sitemap_enabled"
-                label="Enable Sitemap"
+                :label="$t('settings.seo.searchEngine.sitemapEnabled')"
                 color="primary"
                 class="mb-4"
-                hint="Generate and maintain sitemap.xml"
+                :hint="$t('settings.seo.searchEngine.sitemapEnabledHint')"
                 persistent-hint
             ></v-switch>
 
             <v-textarea
                 v-model="settings.robots_txt_custom"
-                label="Custom Robots.txt Rules"
+                :label="$t('settings.seo.searchEngine.robotsTxt')"
                 prepend-inner-icon="mdi-robot"
                 variant="outlined"
                 rows="4"
                 :error-messages="errors.robots_txt_custom"
-                hint="Custom rules for robots.txt (advanced users only)"
+                :hint="$t('settings.seo.searchEngine.robotsTxtHint')"
                 persistent-hint
                 placeholder="User-agent: *&#10;Disallow: /admin/"
             ></v-textarea>
@@ -64,7 +64,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

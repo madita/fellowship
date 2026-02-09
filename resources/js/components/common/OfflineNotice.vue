@@ -9,8 +9,8 @@
         <div class="d-flex align-center">
             <v-icon class="mr-2">mdi-wifi-off</v-icon>
             <div>
-                <div class="font-weight-medium">You're offline</div>
-                <div class="text-caption">Some features may not be available until you reconnect.</div>
+                <div class="font-weight-medium">{{ $t('offline.youreOffline') }}</div>
+                <div class="text-caption">{{ $t('offline.someFeatures') }}</div>
             </div>
         </div>
 
@@ -20,7 +20,7 @@
                 @click="checkConnection"
                 :loading="checking"
             >
-                Retry
+                {{ $t('common.retry') }}
             </v-btn>
         </template>
     </v-snackbar>
@@ -28,6 +28,9 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const isOffline = ref(false);
 const checking = ref(false);

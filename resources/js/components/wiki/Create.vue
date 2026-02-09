@@ -291,7 +291,7 @@
                                         id="text-content"
                                         name="content"
                                         type="full"
-                                        placeholder="Start writing your wiki page content here... Use @ to link to other pages, # for headings, and * for lists."
+                                        :placeholder="$t('wiki.createPlaceholder')"
                                         @update:modelValue="onContentChange"
                                     />
                                 </div>

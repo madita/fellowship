@@ -2,7 +2,7 @@
     <v-container fluid class="pa-5">
         <v-row>
             <v-col cols="12">
-                <v-btn @click="$router.back()" color="primary" class="ma-2">Back to Gallery</v-btn>
+                <v-btn @click="$router.back()" color="primary" class="ma-2">{{ $t('gallery.backToGallery') }}</v-btn>
             </v-col>
 
             <v-col cols="12">
@@ -11,20 +11,20 @@
                         <v-img :src="media.url" :alt="media.file_name" height="200"></v-img>
                         <v-text-field
                             v-model="media.newCaption"
-                            :label="media.caption ? 'Edit Caption' : 'Add Caption'"
+                            :label="media.caption ? $t('gallery.editCaption') : $t('gallery.addCaption')"
                             outlined
                             dense
                         />
-                        <v-btn @click="updateMediaCaption(media.id, media.newCaption)" color="success" small>Update Caption</v-btn>
-                        <v-btn @click="deleteMedia(media.id)" color="error" small>Delete</v-btn>
+                        <v-btn @click="updateMediaCaption(media.id, media.newCaption)" color="success" small>{{ $t('gallery.updateCaption') }}</v-btn>
+                        <v-btn @click="deleteMedia(media.id)" color="error" small>{{ $t('common.delete') }}</v-btn>
                     </v-col>
                 </v-row>
             </v-col>
 
             <v-col cols="12">
-                <v-file-input @change="onFileChange($event)" label="Select File" outlined dense></v-file-input>
-                <v-text-field v-model="newCaption" label="Add Caption" outlined dense></v-text-field>
-                <v-btn @click="uploadMedia" color="primary">Upload to Album</v-btn>
+                <v-file-input @change="onFileChange($event)" :label="$t('gallery.selectFile')" outlined dense></v-file-input>
+                <v-text-field v-model="newCaption" :label="$t('gallery.addCaption')" outlined dense></v-text-field>
+                <v-btn @click="uploadMedia" color="primary">{{ $t('gallery.uploadToAlbum') }}</v-btn>
             </v-col>
         </v-row>
     </v-container>
@@ -32,8 +32,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
+
+const { t } = useI18n();
 
 const route = useRoute();
 const album = ref(null);
@@ -58,7 +61,7 @@ const onFileChange = (event) => {
 
 const uploadMedia = async () => {
     if (!selectedFile.value) {
-        alert('Please select a file first');
+        alert(t('gallery.pleaseSelectFile'));
         return;
     }
 

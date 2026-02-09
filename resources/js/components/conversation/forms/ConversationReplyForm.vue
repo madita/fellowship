@@ -15,7 +15,7 @@
                     <div class="flex-grow-1">
                         <v-textarea
                             v-model="body"
-                            label="Write your reply..."
+                            :label="$t('conversation.writeReply')"
                             variant="outlined"
                             rows="3"
                             auto-grow
@@ -23,7 +23,7 @@
                             :rules="[rules.required, rules.minLength]"
                             :loading="isSubmitting"
                             :disabled="isSubmitting"
-                            placeholder="Share your thoughts..."
+                            :placeholder="$t('conversation.shareThoughts')"
                             class="reply-textarea"
                             hide-details="auto"
                             @keydown.ctrl.enter="reply"
@@ -50,7 +50,7 @@
                                             <v-icon>mdi-emoticon-happy-outline</v-icon>
                                         </v-btn>
                                     </template>
-                                    <span>Add emoji</span>
+                                    <span>{{ $t('conversation.addEmoji') }}</span>
                                 </v-tooltip>
 
                                 <v-tooltip bottom>
@@ -66,7 +66,7 @@
                                             <v-icon>mdi-attachment</v-icon>
                                         </v-btn>
                                     </template>
-                                    <span>Attach file</span>
+                                    <span>{{ $t('conversation.attachFile') }}</span>
                                 </v-tooltip>
 
                                 <v-chip
@@ -76,7 +76,7 @@
                                     variant="outlined"
                                     class="ml-2"
                                 >
-                                    {{ characterCount }} characters
+                                    {{ characterCount }} {{ $t('conversation.characters') }}
                                 </v-chip>
                             </div>
 
@@ -89,7 +89,7 @@
                                     @click="clearMessage"
                                     :disabled="isSubmitting"
                                 >
-                                    Clear
+                                    {{ $t('conversation.clear') }}
                                 </v-btn>
 
                                 <v-btn
@@ -100,7 +100,7 @@
                                     class="px-6"
                                     append-icon="mdi-send"
                                 >
-                                    {{ isSubmitting ? 'Sending...' : 'Send Reply' }}
+                                    {{ isSubmitting ? $t('conversation.sending') : $t('conversation.sendReply') }}
                                 </v-btn>
                             </div>
                         </div>
@@ -108,7 +108,7 @@
                         <!-- Keyboard Shortcut Hint -->
                         <div class="text-caption text-grey-darken-1 mt-2">
                             <v-icon size="12" class="mr-1">mdi-keyboard</v-icon>
-                            Press Ctrl+Enter (Cmd+Enter on Mac) to send
+                            {{ $t('conversation.keyboardShortcutHint') }}
                         </div>
                     </div>
                 </div>
@@ -123,7 +123,7 @@
             location="bottom right"
         >
             <v-icon class="mr-2">mdi-check-circle</v-icon>
-            Reply sent successfully!
+            {{ $t('conversation.replySentSuccess') }}
         </v-snackbar>
 
         <v-snackbar
@@ -140,6 +140,7 @@
 
 <script>
 import { ref, computed, defineComponent } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useConversationStore } from "@/store/conversationStore";
 import { useUserStore } from "@/store/userStore";
 import { VALIDATION_RULES } from '../constants';
@@ -147,6 +148,7 @@ import { VALIDATION_RULES } from '../constants';
 export default defineComponent({
     name: "ConversationReplyForm",
     setup() {
+        const { t } = useI18n();
         const conversationStore = useConversationStore();
         const userStore = useUserStore();
 
@@ -187,7 +189,7 @@ export default defineComponent({
                 formRef.value.reset();
             } catch (error) {
                 console.error('Error sending reply:', error);
-                errorMessage.value = error.message || 'Failed to send reply. Please try again.';
+                errorMessage.value = error.message || t('conversation.replyFailedError');
                 showError.value = true;
             } finally {
                 isSubmitting.value = false;
@@ -210,6 +212,7 @@ export default defineComponent({
         };
 
         return {
+            t,
             body,
             isSubmitting,
             showSuccess,

@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Language Options"
-        description="Configure user language preferences and fallback settings"
+        :title="$t('settings.localization.languageOptions.title')"
+        :description="$t('settings.localization.languageOptions.description')"
         icon="mdi-translate"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'localization' } }"
@@ -11,35 +11,35 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-translate" title="Language Options">
+        <settings-card icon="mdi-translate" :title="$t('settings.localization.languageOptions.cardTitle')">
             <v-switch
                 v-model="settings.language_change_enabled"
-                label="Allow users to change language"
+                :label="$t('settings.localization.languageOptions.allowChange')"
                 color="primary"
-                :hint="settings.language_change_enabled ? 'Users can switch between available languages' : 'Language selection is disabled for users'"
+                :hint="settings.language_change_enabled ? $t('settings.localization.languageOptions.allowChangeHintEnabled') : $t('settings.localization.languageOptions.allowChangeHintDisabled')"
                 persistent-hint
                 class="mb-4"
             ></v-switch>
 
             <v-switch
                 v-model="settings.locale_auto_detect"
-                label="Auto-detect user locale"
+                :label="$t('settings.localization.languageOptions.autoDetect')"
                 color="primary"
-                :hint="settings.locale_auto_detect ? 'Automatically detect user language from browser' : 'Use default language for all users'"
+                :hint="settings.locale_auto_detect ? $t('settings.localization.languageOptions.autoDetectHintEnabled') : $t('settings.localization.languageOptions.autoDetectHintDisabled')"
                 persistent-hint
                 class="mb-4"
             ></v-switch>
 
             <v-select
                 v-model="settings.translation_fallback_language"
-                label="Translation Fallback Language"
+                :label="$t('settings.localization.languageOptions.fallbackLanguage')"
                 :items="languages"
                 item-title="name"
                 item-value="code"
                 prepend-inner-icon="mdi-translate-variant"
                 variant="outlined"
                 :error-messages="errors.translation_fallback_language"
-                hint="Language to use when translation is missing"
+                :hint="$t('settings.localization.languageOptions.fallbackLanguageHint')"
                 persistent-hint
             ></v-select>
         </settings-card>
@@ -53,7 +53,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

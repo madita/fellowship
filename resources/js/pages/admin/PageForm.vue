@@ -9,7 +9,7 @@
                     </v-alert>
 
                     <v-text-field
-                        label="Title"
+                        :label="$t('common.title')"
                         v-model="page.title"
                     ></v-text-field>
 
@@ -22,7 +22,7 @@
                     <v-select
                         v-model="page.parent"
                         :items="pages"
-                        label="Pages"
+                        :label="$t('common.pages')"
                         persistent-hint
                         return-object
                         single-line
@@ -43,7 +43,7 @@
                         :search-input.sync="searchTax"
                         hide-selected
                         :disabled="isDisabled"
-                        label="Taxonomy"
+                        :label="$t('pageForm.taxonomy')"
                         persistent-hint
                         small-chips
                     >
@@ -53,14 +53,14 @@
                         v-model="categoryValue"
                         :items="categories"
                         item-title="title"
-                        label="Category"
+                        :label="$t('pageForm.category')"
                         multiple
                         small-chips
                         deletable-chips
                         clearable
                     ></v-combobox>
 
-                    <a href="#" @click="addCategory=!addCategory">Add new category</a>
+                    <a href="#" @click="addCategory=!addCategory">{{ $t('pageForm.addNewCategory') }}</a>
 
 
                     <template v-if="addCategory">
@@ -73,12 +73,12 @@
                             v-model="parentValue"
                             :items="parents"
                             item-title="title"
-                            label="Parent Category"
+                            :label="$t('pageForm.parentCategory')"
                             chips
                             clearable
                         ></v-combobox>
 
-                        <v-btn @click="saveCategory">Add New Category</v-btn>
+                        <v-btn @click="saveCategory">{{ $t('pageForm.addNewCategoryBtn') }}</v-btn>
 
                     </template>
 
@@ -88,7 +88,7 @@
                         item-title="title"
                         :search-input.sync="searchTerm"
                         hide-selected
-                        label="Terms"
+                        :label="$t('pageForm.terms')"
                         multiple
                         persistent-hint
                         small-chips
@@ -98,8 +98,7 @@
                         <template v-slot:no-data>
                             <v-list-item>
                                 <v-list-item-content>
-                                    <v-list-item-title>
-                                        No results matching "<strong>{{ searchTerm }}</strong>". Press <kbd>enter</kbd> to create a new one
+                                    <v-list-item-title v-html="$t('pageForm.noResultsMatching', { term: searchTerm })">
                                     </v-list-item-title>
                                 </v-list-item-content>
                             </v-list-item>
@@ -140,12 +139,12 @@
 
                     <v-checkbox
                         v-model="page.published"
-                        label="Published"
+                        :label="$t('pageForm.published')"
                     ></v-checkbox>
 
                     <v-checkbox
                         v-model="page.sign_in_only"
-                        label="Sign in only"
+                        :label="$t('pageForm.signInOnly')"
                     ></v-checkbox>
 
 
@@ -188,7 +187,7 @@ export default {
             parents: [],
             parentValue: null,
             rules: {
-                required: value => !!value || 'Required.'
+                required: value => !!value || this.$t('validation.required')
             },
             colors: ['green', 'purple', 'indigo', 'cyan', 'teal', 'orange'],
             nonce: 1
@@ -310,7 +309,7 @@ export default {
             this.page.categories = this.categoryValue.map(x => { return x.title ?? x})
 
             axios.patch(`${this.endpoint}/${this.id}`, this.page).then(() => {
-                this.message = "Page updated"
+                this.message = this.$t('pageForm.pageUpdated')
             }).catch((error) => {
                 if (error.response.status === 422) {
                     this.editing.errors = error.response.data
@@ -325,7 +324,7 @@ export default {
 
             axios.post(`${this.endpoint}`, this.page).then(() => {
                 this.page = {title: "", content: ""};
-                this.message = "Page saved ..link"
+                this.message = this.$t('pageForm.pageSaved')
             }).catch((error) => {
                 if (error.response.status === 422) {
                     // this.creating.errors = error.response.data

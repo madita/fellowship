@@ -197,7 +197,7 @@
                                             {{ item.model_name }}
                                         </div>
                                         <div class="text-caption text-grey">
-                                            {{ item.count }} files - {{ item.size_formatted }}
+                                            {{ t('mediaCenter.filesCount', { count: item.count }) }} - {{ item.size_formatted }}
                                         </div>
                                     </v-card-text>
                                 </v-card>
@@ -236,7 +236,7 @@
                         <v-card v-if="meta.total > 0" class="mt-4" flat>
                             <v-card-text class="d-flex align-center justify-space-between">
                                 <div class="text-body-2 text-grey">
-                                    Showing {{ meta.from }} - {{ meta.to }} of {{ meta.total }} files
+                                    {{ t('mediaCenter.showingRange', { from: meta.from, to: meta.to, total: meta.total }) }}
                                 </div>
                                 <v-pagination
                                     v-model="page"
@@ -474,10 +474,10 @@ const uploadCollection = ref('images');
 const isDragging = ref(false);
 const fileInputRef = ref(null);
 
-const uploadCollectionOptions = [
-    { label: 'Images (for pages)', value: 'images' },
-    { label: 'Documents', value: 'documents' },
-];
+const uploadCollectionOptions = computed(() => [
+    { label: t('mediaCenter.imagesForPages'), value: 'images' },
+    { label: t('mediaCenter.documents'), value: 'documents' },
+]);
 
 // Computed
 const availableCollections = computed(() => {

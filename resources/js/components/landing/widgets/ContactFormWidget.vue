@@ -16,7 +16,7 @@
             <v-form ref="contactForm" @submit.prevent="handleSubmit">
               <v-text-field
                 v-model="formData.name"
-                :label="content.nameLabel || 'Name'"
+                :label="content.nameLabel || $t('contactForm.name')"
                 :required="content.nameRequired"
                 variant="outlined"
                 class="mb-4"
@@ -24,7 +24,7 @@
 
               <v-text-field
                 v-model="formData.email"
-                :label="content.emailLabel || 'Email'"
+                :label="content.emailLabel || $t('contactForm.email')"
                 :required="content.emailRequired"
                 type="email"
                 variant="outlined"
@@ -34,7 +34,7 @@
               <v-text-field
                 v-if="content.showPhoneField"
                 v-model="formData.phone"
-                :label="content.phoneLabel || 'Phone'"
+                :label="content.phoneLabel || $t('contactForm.phone')"
                 :required="content.phoneRequired"
                 variant="outlined"
                 class="mb-4"
@@ -43,7 +43,7 @@
               <v-text-field
                 v-if="content.showSubjectField"
                 v-model="formData.subject"
-                :label="content.subjectLabel || 'Subject'"
+                :label="content.subjectLabel || $t('contactForm.subject')"
                 :required="content.subjectRequired"
                 variant="outlined"
                 class="mb-4"
@@ -51,7 +51,7 @@
 
               <v-textarea
                 v-model="formData.message"
-                :label="content.messageLabel || 'Message'"
+                :label="content.messageLabel || $t('contactForm.message')"
                 :required="content.messageRequired"
                 rows="5"
                 variant="outlined"
@@ -65,7 +65,7 @@
                   size="large"
                   :loading="isSubmitting"
                 >
-                  {{ content.submitButtonText || 'Send Message' }}
+                  {{ content.submitButtonText || $t('contactForm.sendMessage') }}
                 </v-btn>
               </div>
             </v-form>
@@ -87,6 +87,9 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
   content: {
@@ -141,7 +144,7 @@ async function handleSubmit() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     submitSuccess.value = true;
-    submitMessage.value = props.content.successMessage;
+    submitMessage.value = props.content.successMessage || t('contactForm.successMessage');
 
     // Reset form
     formData.value = {
@@ -153,7 +156,7 @@ async function handleSubmit() {
     };
   } catch (error) {
     submitSuccess.value = false;
-    submitMessage.value = props.content.errorMessage;
+    submitMessage.value = props.content.errorMessage || t('contactForm.errorMessage');
   } finally {
     isSubmitting.value = false;
   }

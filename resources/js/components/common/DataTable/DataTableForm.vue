@@ -1,11 +1,14 @@
 <script setup>
 import { ref, watch, computed, nextTick, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import { VForm } from 'vuetify/components/VForm';
 import axios from "axios";
 import Tiptap from "@/components/common/tiptap/Tiptap.vue";
 import DataTableJson from "@/components/common/DataTable/DataTableJson.vue";
 import DataTableModel from "@/components/common/DataTable/DataTableModel.vue";
+
+const { t } = useI18n();
 
 // 👉 Props
 const props = defineProps({
@@ -289,7 +292,7 @@ onMounted(() => {
                         v-if="!hasUpdatableFields"
                         type="warning"
                         class="mb-4"
-                        text="No updatable fields configured for this form."
+                        :text="$t('formBuilder.noUpdatableFields')"
                     />
 
                     <!-- Form Section -->
@@ -328,7 +331,7 @@ onMounted(() => {
                                             v-else
                                             type="error"
                                             density="compact"
-                                            text="Unknown field configuration"
+                                            :text="$t('formBuilder.unknownFieldConfiguration')"
                                         />
                                     </template>
 
