@@ -466,10 +466,24 @@ export default {
     mounted() {
         this.getWikiPages();
         window.addEventListener("scroll", this.handleScroll);
+
+        // Listen for locale changes to refetch content in new language
+        this.onLocaleChange = () => {
+            this.wikiable = [];
+            this.page = 1;
+            this.getWikiPages();
+        };
+        window.addEventListener('locale-changed', this.onLocaleChange);
     },
 
     beforeUnmount() {
         window.removeEventListener("scroll", this.handleScroll);
+
+        // Clean up locale change listener
+        if (this.onLocaleChange) {
+            window.removeEventListener('locale-changed', this.onLocaleChange);
+        }
+
         if (this.cancelToken) {
             this.cancelToken.cancel('Component unmounted');
         }

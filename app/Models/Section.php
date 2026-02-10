@@ -2,19 +2,23 @@
 
 namespace App\Models;
 
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
-class Section extends Model
+class Section extends Model implements TranslatableContract
 {
     use HasFactory;
+    use Translatable;
 
     protected $table = 'sections';
 
+    public $translatedAttributes = ['title'];
+
     protected $fillable = [
         'location',
-        'title',
         'layout',
         'enabled',
         'order',

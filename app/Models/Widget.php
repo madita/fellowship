@@ -2,22 +2,26 @@
 
 namespace App\Models;
 
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
-class Widget extends Model
+class Widget extends Model implements TranslatableContract
 {
+    use Translatable;
+
     protected $table = 'widgets';
+
+    public $translatedAttributes = ['title', 'content'];
 
     protected $fillable = [
         'location',
         'section_id',
         'type',
-        'title',
         'enabled',
         'order',
         'column',
-        'content',
         'config',
         'anchor_id',
     ];
@@ -26,7 +30,6 @@ class Widget extends Model
         'enabled' => 'boolean',
         'order'   => 'integer',
         'column'  => 'integer',
-        'content' => 'array',
         'config'  => 'array',
     ];
 

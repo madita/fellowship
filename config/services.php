@@ -64,4 +64,22 @@ return [
         'redirect'      => env('FACEBOOK_REDIRECT_URI', env('APP_URL').'/auth/facebook/callback'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Translation API Service
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for automatic translation services like Google Translate
+    | or DeepL. Set the provider and API key to enable machine translation.
+    |
+    | Supported providers: 'google', 'deepl' (future)
+    |
+    */
+
+    'translation' => [
+        'enabled'  => env('TRANSLATION_API_ENABLED', false),
+        'provider' => env('TRANSLATION_API_PROVIDER', 'google'),
+        'api_key'  => env('TRANSLATION_API_KEY'),
+    ],
+
 ];

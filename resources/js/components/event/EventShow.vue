@@ -112,7 +112,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useDateFormat } from '@/plugins/formatDate.js' // Adjust path as needed
@@ -205,12 +205,27 @@ const getIsGoing = (answer) => {
     return eventData.value.isGoing !== undefined && eventData.value.isGoing.type === answer
 }
 
+// Locale change handler
+function onLocaleChange() {
+    if (id.value) {
+        getEvent()
+    }
+}
+
 // Lifecycle
 onMounted(() => {
     if (route.params.id) {
         id.value = route.params.id
         getEvent()
     }
+
+    // Listen for locale changes to refetch content in new language
+    window.addEventListener('locale-changed', onLocaleChange)
+})
+
+onUnmounted(() => {
+    // Clean up locale change listener
+    window.removeEventListener('locale-changed', onLocaleChange)
 })
 </script>
 

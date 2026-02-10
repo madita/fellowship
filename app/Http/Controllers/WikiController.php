@@ -51,7 +51,10 @@ class WikiController extends Controller
         if ($query === null || $query === '') {
             $wikidata = Wiki::where('status', null)->orderBy('created_at', 'desc')->paginate($perPage);
         } else {
-            $wikidata = Wiki::where('title', 'LIKE', '%'.$query.'%')->where('status', null)->paginate($perPage);
+            // Search in translated title field
+            $wikidata = Wiki::whereTranslationLike('title', '%'.$query.'%')
+                ->where('status', null)
+                ->paginate($perPage);
         }
 
         $total = $wikidata->total();

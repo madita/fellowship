@@ -384,7 +384,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue';
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { addDays, isEqual, isAfter, isBefore } from "date-fns";
@@ -799,6 +799,15 @@ eventBus.on('openSidebarWithEvent', (event) => {
     isEventHandlerSidebarActive.value = true;
 });
 
+// Locale change handler - refetch events to get translated titles/descriptions
+async function onLocaleChange() {
+    try {
+        await calendarStore.fetchEvents();
+    } catch (error) {
+        console.error('Error refetching events after locale change:', error);
+    }
+}
+
 // Lifecycle hooks
 onMounted(async () => {
     loading.value = true;
@@ -815,6 +824,14 @@ onMounted(async () => {
     } finally {
         loading.value = false;
     }
+
+    // Listen for locale changes to refetch content in new language
+    window.addEventListener('locale-changed', onLocaleChange);
+});
+
+onUnmounted(() => {
+    // Clean up locale change listener
+    window.removeEventListener('locale-changed', onLocaleChange);
 });
 </script>
 

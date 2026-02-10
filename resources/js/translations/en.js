@@ -37,7 +37,8 @@ export default {
         'yourEmail': 'Your email',
         'customize': 'Customize',
         'showLess': 'Show Less',
-        'showDetails': 'Show Details'
+        'showDetails': 'Show Details',
+        'refresh': 'Refresh'
     },
     'cookie': {
         'consentTitle': 'Cookie Consent',
@@ -3790,6 +3791,7 @@ export default {
         'addLocale': 'Add Locale',
         'jsTranslations': 'JS Translations',
         'phpTranslations': 'PHP Translations',
+        'modelTranslations': 'Model Translations',
         'missingTranslations': 'Missing Translations',
         'aiReport': 'AI Report',
         'availableLocales': 'Available Locales',
@@ -3865,6 +3867,22 @@ export default {
         'failedToAddKey': 'Failed to add key',
         'keyDeletedSuccessfully': 'Key deleted successfully',
         'failedToDeleteKey': 'Failed to delete key'
+    },
+    'modelTranslations': {
+        'translationCoverage': 'Translation Coverage',
+        'models': 'Models',
+        'coverageByLocale': 'Coverage by Locale',
+        'selectModelToManage': 'Select a model to manage translations',
+        'identifier': 'Identifier',
+        'translations': 'Translations',
+        'editTranslations': 'Edit Translations',
+        'sourceText': 'Source Text',
+        'translationsSaved': 'Translations saved successfully',
+        'failedToLoadModels': 'Failed to load models',
+        'failedToLoadStats': 'Failed to load translation statistics',
+        'failedToLoadItems': 'Failed to load items',
+        'failedToLoadTranslations': 'Failed to load translations',
+        'failedToSaveTranslations': 'Failed to save translations'
     },
     'migrationDashboard': {
         'title': 'Migration Dashboard',

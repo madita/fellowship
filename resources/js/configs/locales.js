@@ -5,10 +5,21 @@ const supported = ['en', 'de']
 let locale = 'en'
 
 try {
-  // get browser default language
-  const { 0: browserLang } = navigator.language.split('-')
-
-  if (supported.includes(browserLang)) locale = browserLang
+  // Check localStorage first (user's explicit preference)
+  const storedLocale = localStorage.getItem('locale')
+  if (storedLocale && supported.includes(storedLocale)) {
+    locale = storedLocale
+  } else {
+    // Check cookie (set by server or previous session)
+    const cookieMatch = document.cookie.match(/(?:^|;\s*)locale=([^;]*)/)
+    if (cookieMatch && supported.includes(cookieMatch[1])) {
+      locale = cookieMatch[1]
+    } else {
+      // Fall back to browser default language
+      const { 0: browserLang } = navigator.language.split('-')
+      if (supported.includes(browserLang)) locale = browserLang
+    }
+  }
 } catch (e) {
   console.log(e)
 }
@@ -28,4 +39,6 @@ const availableLocales = [
     },
 ];
 
-export default { locale, availableLocales };
+const fallbackLocale = 'en'
+
+export default { locale, availableLocales, fallbackLocale, supported };

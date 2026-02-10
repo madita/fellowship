@@ -298,6 +298,15 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::get('/translations/scan', 'App\Http\Controllers\Admin\TranslationController@scanMissing');
     Route::get('/translations/report', 'App\Http\Controllers\Admin\TranslationController@generateReport');
     Route::get('/translations/compare', 'App\Http\Controllers\Admin\TranslationController@compareLocales');
+
+    // Model Translations Management
+    Route::get('/model-translations', 'App\Http\Controllers\Admin\ModelTranslationController@index');
+    Route::get('/model-translations/stats', 'App\Http\Controllers\Admin\ModelTranslationController@stats');
+    Route::get('/model-translations/missing/{locale}', 'App\Http\Controllers\Admin\ModelTranslationController@missing');
+    Route::get('/model-translations/{modelType}', 'App\Http\Controllers\Admin\ModelTranslationController@listItems');
+    Route::get('/model-translations/{modelType}/{id}', 'App\Http\Controllers\Admin\ModelTranslationController@show');
+    Route::put('/model-translations/{modelType}/{id}', 'App\Http\Controllers\Admin\ModelTranslationController@update');
+    Route::put('/model-translations/{modelType}/bulk', 'App\Http\Controllers\Admin\ModelTranslationController@bulkUpdate');
 });
 
 Route::post('/login', function (Request $request) {

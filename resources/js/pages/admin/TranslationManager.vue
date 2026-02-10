@@ -42,6 +42,10 @@
                     <v-icon icon="mdi-language-php" start />
                     {{ $t('translationManager.phpTranslations') }}
                 </v-tab>
+                <v-tab value="models">
+                    <v-icon icon="mdi-database" start />
+                    {{ $t('translationManager.modelTranslations') }}
+                </v-tab>
                 <v-tab value="missing">
                     <v-icon icon="mdi-alert-circle-outline" start />
                     {{ $t('translationManager.missingTranslations') }}
@@ -202,6 +206,11 @@
                             </div>
                         </v-col>
                     </v-row>
+                </v-window-item>
+
+                <!-- Model Translations Tab -->
+                <v-window-item value="models">
+                    <ModelTranslationsTab />
                 </v-window-item>
 
                 <!-- PHP Translations Tab -->
@@ -820,6 +829,7 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import ModelTranslationsTab from '@/components/admin/ModelTranslationsTab.vue';
 
 const { t } = useI18n();
 

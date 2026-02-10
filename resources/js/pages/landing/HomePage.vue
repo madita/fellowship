@@ -109,7 +109,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useHomepageStore } from '@/store/homepageStore';
 import { getWidgetComponent } from '@/components/landing/widgets';
 
@@ -154,7 +154,9 @@ function getWidgetsForColumn(section, columnNumber) {
         .sort((a, b) => a.order - b.order);
 }
 
-onMounted(async () => {
+// Function to load homepage content
+async function loadHomepageContent() {
+    isLoading.value = true;
     try {
         // Try to fetch sections first (new approach)
         await homepageStore.fetchPublicSections();
@@ -175,5 +177,22 @@ onMounted(async () => {
     } finally {
         isLoading.value = false;
     }
+}
+
+// Locale change handler
+function onLocaleChange() {
+    loadHomepageContent();
+}
+
+onMounted(async () => {
+    await loadHomepageContent();
+
+    // Listen for locale changes to refetch content in new language
+    window.addEventListener('locale-changed', onLocaleChange);
+});
+
+onUnmounted(() => {
+    // Clean up locale change listener
+    window.removeEventListener('locale-changed', onLocaleChange);
 });
 </script>

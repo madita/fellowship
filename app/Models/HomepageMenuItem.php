@@ -2,13 +2,18 @@
 
 namespace App\Models;
 
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
-class HomepageMenuItem extends Model
+class HomepageMenuItem extends Model implements TranslatableContract
 {
+    use Translatable;
+
+    public $translatedAttributes = ['label'];
+
     protected $fillable = [
-        'label',
         'anchor_target',
         'order',
         'enabled',

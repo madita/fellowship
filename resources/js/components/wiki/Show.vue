@@ -203,7 +203,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/store/authStore.js'
@@ -280,6 +280,14 @@ const goTo = (slugParam, type) => {
     router.push({ name: type, params: { slug: slugParam } })
 }
 
+// Locale change handler
+const onLocaleChange = () => {
+    if (slug.value) {
+        loading.value = true
+        getWikiPage()
+    }
+}
+
 // Lifecycle
 onMounted(() => {
     loading.value = true
@@ -292,6 +300,14 @@ onMounted(() => {
     if (route.query.redirect) {
         redirect.value = route.query.redirect
     }
+
+    // Listen for locale changes to refetch content in new language
+    window.addEventListener('locale-changed', onLocaleChange)
+})
+
+onUnmounted(() => {
+    // Clean up locale change listener
+    window.removeEventListener('locale-changed', onLocaleChange)
 })
 </script>
 

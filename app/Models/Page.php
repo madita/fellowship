@@ -8,12 +8,14 @@ use App\Traits\HasTaxonomies;
 use App\Traits\Revisionable;
 //use Lecturize\Taxonomies\Traits\HasCategories;
 use App\Traits\Wikiable;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Page extends Model implements HasMedia, CanHaveTaxonomies
+class Page extends Model implements HasMedia, CanHaveTaxonomies, TranslatableContract
 {
     use InteractsWithMedia;
     use HasTaxonomies;
@@ -21,12 +23,13 @@ class Page extends Model implements HasMedia, CanHaveTaxonomies
     use Wikiable;
     use Sluggable;
     use HasCache;
+    use Translatable;
+
+    public $translatedAttributes = ['title', 'content'];
 
     protected $fillable = [
         'published',
-        'title',
         'slug',
-        'content',
         'parent_id',
         'user_id',
         'created_at',
