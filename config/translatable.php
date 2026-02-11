@@ -8,6 +8,14 @@ return [
     |
     | Contains an array with the applications available locales.
     |
+    | IMPORTANT: Keep this list in sync with resources/js/configs/locales.js
+    | The JS config is the master source - this PHP config should mirror it.
+    |
+    | To add a new language:
+    | 1. Add to resources/js/configs/locales.js (master)
+    | 2. Add to this array
+    | 3. Create translation files in resources/js/translations/
+    |
     */
     'locales' => [
         'en',
