@@ -235,8 +235,12 @@ export default {
                 this.taxonomyValue = taxonomies[0];
 
                 if (this.taxonomyValue.length > 0 && terms.hasOwnProperty(this.taxonomyValue)) {
-                    //TODO categorie update needs fixing can only delete all values
-                    this.categoryValue = terms[this.taxonomyValue]
+                    // Ensure categories are in the correct format for updates
+                    // Convert term objects to strings (titles) if needed
+                    const rawCategories = terms[this.taxonomyValue];
+                    this.categoryValue = Array.isArray(rawCategories) 
+                        ? rawCategories.map(cat => typeof cat === 'object' ? (cat.title || cat) : cat)
+                        : rawCategories;
                 }
 
                 this.getCategories(this.taxonomyValue)
@@ -320,8 +324,8 @@ export default {
         store() {
             this.page.terms = this.termValue
             this.page.taxonomy = this.taxonomyValue
-            this.page.categories = this.categoryValue
-
+            // Ensure consistent format for categories (extract title if object)
+            this.page.categories = this.categoryValue.map(x => { return x.title ?? x})
 
             axios.post(`${this.endpoint}`, this.page).then(() => {
                 this.page = {title: "", content: ""};
