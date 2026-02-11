@@ -320,14 +320,14 @@ class MediaController extends Controller
                 $uploaded[] = $this->transformMedia($media);
             } catch (\Exception $e) {
                 return response()->json([
-                    'message' => 'Failed to upload file: ' . $file->getClientOriginalName(),
+                    'message' => 'Failed to upload file: '.$file->getClientOriginalName(),
                     'error'   => $e->getMessage(),
                 ], 500);
             }
         }
 
         return response()->json([
-            'message' => count($uploaded) . ' file(s) uploaded successfully',
+            'message' => count($uploaded).' file(s) uploaded successfully',
             'data'    => $uploaded,
         ]);
     }
@@ -388,10 +388,10 @@ class MediaController extends Controller
             ->get()
             ->map(function ($item) {
                 return [
-                    'model_type' => $item->model_type,
-                    'label'      => $this->contextLabels[$item->model_type] ?? $this->formatModelType($item->model_type),
-                    'count'      => $item->count,
-                    'total_size' => $item->total_size,
+                    'model_type'     => $item->model_type,
+                    'label'          => $this->contextLabels[$item->model_type] ?? $this->formatModelType($item->model_type),
+                    'count'          => $item->count,
+                    'total_size'     => $item->total_size,
                     'size_formatted' => $this->formatBytes($item->total_size),
                 ];
             });
