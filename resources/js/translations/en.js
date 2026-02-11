@@ -1266,7 +1266,19 @@ export default {
         'hours': '{count} hours',
         'minutes': '{count} minutes',
         'recurring': 'Recurring',
-        'oneTime': 'One-time event'
+        'oneTime': 'One-time event',
+        'rsvp': {
+            'going': 'Yes',
+            'notgoing': 'No',
+            'maybe': 'Interested',
+            'participant': 'Yes',
+            'guest': 'Guest',
+        },
+        'types': {
+            'treffen': 'Meeting',
+            'live': 'Live',
+            'multi': 'Multi',
+        },
     },
     'landing': {
         'hero': {

@@ -1236,7 +1236,19 @@ export default {
         'hours': '{count} Stunden',
         'minutes': '{count} Minuten',
         'recurring': 'Wiederkehrend',
-        'oneTime': 'Einmaliger Termin'
+        'oneTime': 'Einmaliger Termin',
+        'rsvp': {
+            'going': 'Ja',
+            'notgoing': 'Nein',
+            'maybe': 'Interessiert',
+            'participant': 'Ja',
+            'guest': 'Gast',
+        },
+        'types': {
+            'treffen': 'Treffen',
+            'live': 'Live',
+            'multi': 'Multi',
+        },
     },
     'gallery': {
         'title': 'Galerie',

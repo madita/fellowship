@@ -4,7 +4,12 @@ import { useI18n } from 'vue-i18n';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import CustomDatePicker from "../common/CustomDatePicker.vue";
 
-const { t } = useI18n();
+const { t, te } = useI18n();
+
+const translateTypeName = (name) => {
+    const key = 'events.types.' + name.toLowerCase();
+    return te(key) ? t(key) : name;
+};
 import UserAvatar from "../common/UserAvatar.vue";
 import axios from "axios";
 import { useCalendarStore } from '@/store/calendarStore.js';
@@ -622,7 +627,7 @@ onMounted(() => {
                                     :label="$t('events.type')"
                                     :placeholder="$t('events.selectEventType')"
                                     :items="eventTypeItems"
-                                    :item-title="item => item.name"
+                                    :item-title="item => translateTypeName(item.name)"
                                     :item-value="item => item.id"
                                     variant="outlined"
                                     density="comfortable"
@@ -634,7 +639,7 @@ onMounted(() => {
                                                 :color="item.raw.color"
                                                 class="me-2"
                                             />
-                                            <span>{{ item.raw.name }}</span>
+                                            <span>{{ translateTypeName(item.raw.name) }}</span>
                                         </div>
                                     </template>
 
@@ -783,7 +788,7 @@ onMounted(() => {
                             <VBtn
                                 v-for="(answer, value) in eventTypeOptions.answers"
                                 :key="`answer-${value}`"
-                                :color="answer.value === 'Yes' ? 'success' : answer.value === 'No' ? 'error' : 'primary'"
+                                :color="['going', 'participant'].includes(answer.key) ? 'success' : answer.key === 'notgoing' ? 'error' : 'primary'"
                                 :variant="isGoing && isGoing.type === value ? 'elevated' : 'outlined'"
                                 class="response-btn mr-1"
                                 @click="joinEvent(answer.key)"
@@ -796,7 +801,7 @@ onMounted(() => {
                                 >
                                     mdi-check-circle
                                 </v-icon>
-                                {{ answer.value }}
+                                {{ te('events.rsvp.' + answer.key) ? t('events.rsvp.' + answer.key) : answer.value }}
                             </VBtn>
                         </div>
                     </v-card-text>
@@ -823,11 +828,11 @@ onMounted(() => {
                              class="mb-4">
                             <div class="d-flex align-center mb-2">
                                 <v-chip
-                                    :color="status === 'Yes' ? 'success' : status === 'No' ? 'error' : 'primary'"
+                                    :color="['going', 'participant'].includes(status) ? 'success' : status === 'notgoing' ? 'error' : 'primary'"
                                     size="small"
                                     class="me-2"
                                 >
-                                    {{ status }}
+                                    {{ te('events.rsvp.' + status) ? t('events.rsvp.' + status) : status }}
                                 </v-chip>
                                 <span class="text-subtitle-2">{{ $t('events.peopleCount', { count: guests.length }) }}</span>
                             </div>
@@ -858,7 +863,7 @@ onMounted(() => {
                         <div v-for="(guests, status) in filterGuestsByApproval(eventAnswers).guestsRequiringApproval"
                              :key="`pending-${status}`"
                              class="mb-4">
-                            <v-list-subheader>{{ status }}</v-list-subheader>
+                            <v-list-subheader>{{ te('events.rsvp.' + status) ? t('events.rsvp.' + status) : status }}</v-list-subheader>
 
                             <v-list>
                                 <v-list-item

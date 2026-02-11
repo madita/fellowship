@@ -88,7 +88,7 @@
                                                     v-model="calendarStore.selectedEventTypes"
                                                     :value="type.name"
                                                     :color="type.color"
-                                                    :label="type.name"
+                                                    :label="translateTypeName(type.name)"
                                                     hide-details
                                                     density="compact"
                                                 />
@@ -282,7 +282,7 @@
                                                                         </v-avatar>
                                                                     </v-col>
                                                                     <v-col cols="8" class="d-flex align-center">
-                                                                        {{ typeName }}
+                                                                        {{ translateTypeName(typeName) }}
                                                                     </v-col>
                                                                     <v-col cols="2" class="text-right">
                                                                         <v-chip
@@ -390,7 +390,12 @@ import axios from 'axios';
 import { addDays, isEqual, isAfter, isBefore } from "date-fns";
 import { useDateFormat } from '@/plugins/formatDate.js';
 
-const { t } = useI18n();
+const { t, te } = useI18n();
+
+const translateTypeName = (name) => {
+    const key = 'events.types.' + name.toLowerCase();
+    return te(key) ? t(key) : name;
+};
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
