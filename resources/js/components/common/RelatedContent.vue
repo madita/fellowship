@@ -1,9 +1,9 @@
 <template>
     <VDialog v-model="internalModelValue" max-width="500">
         <VCard>
-            <VCardTitle class="text-h5">Relate Content</VCardTitle>
+            <VCardTitle class="text-h5">{{ $t('relatedContent.title') }}</VCardTitle>
             <VCardText>
-                <p>Select the type of relation for <strong>{{ contentName }}</strong>:</p>
+                <p>{{ $t('relatedContent.selectRelationType') }} <strong>{{ contentName }}</strong>:</p>
 
                 <!-- Dropdown to select relation type -->
                 <VSelect
@@ -11,8 +11,8 @@
                     :items="sourceModels"
                     item-title="name"
                     item-value="class"
-                    label="Relation Type"
-                    placeholder="Select source type"
+                    :label="$t('relatedContent.relationType')"
+                    :placeholder="$t('relatedContent.selectSourceType')"
                     variant="underlined"
                 />
 
@@ -21,8 +21,8 @@
                     :items="sourceItems"
                     item-title="title"
                     item-value="id"
-                    label="Select Item"
-                    placeholder="Select an item"
+                    :label="$t('relatedContent.selectItem')"
+                    :placeholder="$t('relatedContent.selectAnItem')"
                     variant="underlined"
                     :disabled="!selectedSource"
                 />
@@ -33,8 +33,8 @@
                     :items="relatedModels"
                     item-title="name"
                     item-value="class"
-                    label="Model Type"
-                    placeholder="Select model type"
+                    :label="$t('relatedContent.modelType')"
+                    :placeholder="$t('relatedContent.selectModelType')"
                     variant="underlined"
                     :disabled="!selectedSource"
                 />
@@ -45,17 +45,17 @@
                     :items="relatedItems"
                     item-title="title"
                     item-value="id"
-                    label="Select Item"
-                    placeholder="Select an item"
+                    :label="$t('relatedContent.selectItem')"
+                    :placeholder="$t('relatedContent.selectAnItem')"
                     variant="underlined"
                     :disabled="!selectedRelated"
                 />
             </VCardText>
             <VCardActions>
                 <VSpacer/>
-                <VBtn color="grey" @click="cancel">Cancel</VBtn>
+                <VBtn color="grey" @click="cancel">{{ $t('common.cancel') }}</VBtn>
                 <VBtn color="primary" :disabled="!selectedSource || !selectedSourceItem || !selectedRelated || !selectedRelatedItem" @click="confirm">
-                    Confirm
+                    {{ $t('common.confirm') }}
                 </VBtn>
             </VCardActions>
         </VCard>
@@ -64,7 +64,10 @@
 
 <script setup>
 import {ref, watch, computed, onMounted} from 'vue';
+import {useI18n} from 'vue-i18n';
 import axios from 'axios';
+
+const {t} = useI18n();
 
 const props = defineProps({
     modelValue: Boolean,

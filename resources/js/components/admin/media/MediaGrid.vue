@@ -6,9 +6,9 @@
 
         <div v-else-if="!media.length" class="text-center pa-8">
             <v-icon icon="mdi-image-off" size="64" color="grey" />
-            <div class="text-h6 text-grey mt-4">No media found</div>
+            <div class="text-h6 text-grey mt-4">{{ $t('mediaCenter.noMediaFound') }}</div>
             <div class="text-body-2 text-grey">
-                Try adjusting your filters or search criteria
+                {{ $t('mediaCenter.adjustFiltersHint') }}
             </div>
         </div>
 
@@ -34,7 +34,6 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
 import MediaCard from './MediaCard.vue';
 
 const props = defineProps({

@@ -104,7 +104,7 @@ class CollectionController extends Controller
         }
 
         return response()->json([
-            'message'        => 'Media uploaded successfully',
+            'message'        => __('messages.media.uploaded'),
             'uploaded_media' => $uploadedMedia,
         ]);
     }
@@ -120,7 +120,7 @@ class CollectionController extends Controller
         $media->setCustomProperty('caption', $request->input('caption'));
         $media->save();
 
-        return response()->json(['message' => 'Caption updated successfully']);
+        return response()->json(['message' => __('messages.media.caption_updated')]);
     }
 
     public function setCoverImage(Request $request, $collectionId)
@@ -142,6 +142,6 @@ class CollectionController extends Controller
         $media = $collection->media()->findOrFail($request->media_id);
         $media->setCustomProperty('is_cover', true)->save();
 
-        return response()->json(['message' => 'Cover image updated successfully.']);
+        return response()->json(['message' => __('messages.media.cover_updated')]);
     }
 }

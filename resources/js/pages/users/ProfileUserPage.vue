@@ -65,7 +65,7 @@
 
                                 <div class="profile-info">
                                     <h1 class="profile-title text-h4 font-weight-bold mb-1">
-                                        {{ user?.username || 'Unknown User' }}
+                                        {{ user?.username || $t('userProfile.unknownUser') }}
                                     </h1>
                                     <div class="d-flex align-center flex-wrap gap-2 mb-2">
                                         <v-chip
@@ -83,7 +83,7 @@
                                             size="small"
                                             prepend-icon="mdi-check-circle"
                                         >
-                                            Verified
+                                            {{ $t('userProfile.verified') }}
                                         </v-chip>
                                         <v-chip
                                             v-if="isOnline"
@@ -92,7 +92,7 @@
                                             size="small"
                                             prepend-icon="mdi-circle"
                                         >
-                                            Online
+                                            {{ $t('userProfile.online') }}
                                         </v-chip>
                                     </div>
                                     <v-breadcrumbs
@@ -116,8 +116,8 @@
                                 </template>
                                 <div class="d-flex justify-space-between align-center">
                                     <div>
-                                        <h4 class="mb-1">Administrator Access</h4>
-                                        <p class="mb-0 text-body-2">This user has administrative privileges</p>
+                                        <h4 class="mb-1">{{ $t('userProfile.administratorAccess') }}</h4>
+                                        <p class="mb-0 text-body-2">{{ $t('userProfile.adminPrivileges') }}</p>
                                     </div>
                                     <v-btn
                                         variant="outlined"
@@ -125,7 +125,7 @@
                                         prepend-icon="mdi-cog"
                                         @click="showAdminSettings = true"
                                     >
-                                        Manage
+                                        {{ $t('userProfile.manage') }}
                                     </v-btn>
                                 </div>
                             </v-alert>
@@ -140,13 +140,13 @@
                                     :loading="refreshing"
                                     prepend-icon="mdi-refresh"
                                 >
-                                    Refresh
+                                    {{ $t('userProfile.refresh') }}
                                 </v-btn>
                                 <v-btn
                                     @click="exportProfile"
                                     prepend-icon="mdi-download"
                                 >
-                                    Export
+                                    {{ $t('userProfile.export') }}
                                 </v-btn>
                                 <v-menu>
                                     <template #activator="{ props }">
@@ -154,7 +154,7 @@
                                             v-bind="props"
                                             append-icon="mdi-chevron-down"
                                         >
-                                            Actions
+                                            {{ $t('userProfile.actions') }}
                                         </v-btn>
                                     </template>
                                     <v-list>
@@ -162,20 +162,20 @@
                                             <template #prepend>
                                                 <v-icon>mdi-message</v-icon>
                                             </template>
-                                            <v-list-item-title>Send Message</v-list-item-title>
+                                            <v-list-item-title>{{ $t('userProfile.sendMessage') }}</v-list-item-title>
                                         </v-list-item>
                                         <v-list-item @click="viewActivity">
                                             <template #prepend>
                                                 <v-icon>mdi-chart-line</v-icon>
                                             </template>
-                                            <v-list-item-title>View Activity</v-list-item-title>
+                                            <v-list-item-title>{{ $t('userProfile.viewActivity') }}</v-list-item-title>
                                         </v-list-item>
                                         <v-divider />
                                         <v-list-item @click="confirmResetPassword" class="text-warning">
                                             <template #prepend>
                                                 <v-icon color="warning">mdi-lock-reset</v-icon>
                                             </template>
-                                            <v-list-item-title>Reset Password</v-list-item-title>
+                                            <v-list-item-title>{{ $t('userProfile.resetPassword') }}</v-list-item-title>
                                         </v-list-item>
                                     </v-list>
                                 </v-menu>
@@ -192,9 +192,9 @@
                         <v-card-text class="pa-4">
                             <div class="d-flex align-center justify-space-between">
                                 <div>
-                                    <div class="text-caption text-medium-emphasis">Email</div>
+                                    <div class="text-caption text-medium-emphasis">{{ $t('userProfile.email') }}</div>
                                     <div class="text-body-1 font-weight-medium">
-                                        {{ user?.email || 'Not provided' }}
+                                        {{ user?.email || $t('userProfile.notProvided') }}
                                     </div>
                                 </div>
                                 <div class="d-flex align-center">
@@ -217,9 +217,9 @@
                         <v-card-text class="pa-4">
                             <div class="d-flex align-center justify-space-between">
                                 <div>
-                                    <div class="text-caption text-medium-emphasis">User ID</div>
+                                    <div class="text-caption text-medium-emphasis">{{ $t('userProfile.userId') }}</div>
                                     <div class="text-body-1 font-weight-medium">
-                                        {{ user?.id || 'Unknown' }}
+                                        {{ user?.id || $t('userProfile.unknown') }}
                                     </div>
                                 </div>
                                 <div class="d-flex align-center">
@@ -241,7 +241,7 @@
                         <v-card-text class="pa-4">
                             <div class="d-flex align-center justify-space-between">
                                 <div>
-                                    <div class="text-caption text-medium-emphasis">Member Since</div>
+                                    <div class="text-caption text-medium-emphasis">{{ $t('userProfile.memberSince') }}</div>
                                     <div class="text-body-1 font-weight-medium">
                                         {{ memberSince }}
                                     </div>
@@ -257,7 +257,7 @@
                         <v-card-text class="pa-4">
                             <div class="d-flex align-center justify-space-between">
                                 <div>
-                                    <div class="text-caption text-medium-emphasis">Last Active</div>
+                                    <div class="text-caption text-medium-emphasis">{{ $t('userProfile.lastActive') }}</div>
                                     <div class="text-body-1 font-weight-medium">
                                         {{ lastActive }}
                                     </div>
@@ -285,14 +285,14 @@
                         prepend-icon="mdi-account-cog"
                         class="tab-button"
                     >
-                        Account
+                        {{ $t('userProfile.account') }}
                         <v-chip
                             v-if="hasAccountChanges"
                             color="warning"
                             size="x-small"
                             class="ml-2"
                         >
-                            Modified
+                            {{ $t('userProfile.modified') }}
                         </v-chip>
                     </v-tab>
 
@@ -301,14 +301,14 @@
                         prepend-icon="mdi-information"
                         class="tab-button"
                     >
-                        Information
+                        {{ $t('userProfile.information') }}
                         <v-chip
                             v-if="hasInfoChanges"
                             color="warning"
                             size="x-small"
                             class="ml-2"
                         >
-                            Modified
+                            {{ $t('userProfile.modified') }}
                         </v-chip>
                     </v-tab>
 
@@ -317,7 +317,7 @@
                         prepend-icon="mdi-link-variant"
                         class="tab-button"
                     >
-                        Social Accounts
+                        {{ $t('userProfile.socialAccounts') }}
                     </v-tab>
 
                     <v-tab
@@ -325,7 +325,7 @@
                         prepend-icon="mdi-chart-timeline"
                         class="tab-button"
                     >
-                        Activity
+                        {{ $t('userProfile.activity') }}
                     </v-tab>
 
                     <v-tab
@@ -333,7 +333,7 @@
                         prepend-icon="mdi-shield-account"
                         class="tab-button"
                     >
-                        Permissions
+                        {{ $t('userProfile.permissions') }}
                         <v-chip
                             v-if="roles.length > 1"
                             color="info"
@@ -352,9 +352,9 @@
                         <!-- Account Tab -->
                         <v-window-item value="account">
                             <div class="tab-header mb-4">
-                                <h3 class="text-h6 font-weight-bold">Account Settings</h3>
+                                <h3 class="text-h6 font-weight-bold">{{ $t('userProfile.accountSettings') }}</h3>
                                 <p class="text-body-2 text-medium-emphasis">
-                                    Manage security settings, password, and account preferences
+                                    {{ $t('userProfile.accountSettingsDescription') }}
                                 </p>
                             </div>
                             <account-tab
@@ -368,9 +368,9 @@
                         <!-- Information Tab -->
                         <v-window-item value="info">
                             <div class="tab-header mb-4">
-                                <h3 class="text-h6 font-weight-bold">Personal Information</h3>
+                                <h3 class="text-h6 font-weight-bold">{{ $t('userProfile.personalInformation') }}</h3>
                                 <p class="text-body-2 text-medium-emphasis">
-                                    Update profile details, contact information, and preferences
+                                    {{ $t('userProfile.personalInfoDescription') }}
                                 </p>
                             </div>
                             <information-tab
@@ -383,9 +383,9 @@
                         <!-- Social Accounts Tab -->
                         <v-window-item value="social">
                             <div class="tab-header mb-4">
-                                <h3 class="text-h6 font-weight-bold">Connected Social Accounts</h3>
+                                <h3 class="text-h6 font-weight-bold">{{ $t('userProfile.connectedSocialAccounts') }}</h3>
                                 <p class="text-body-2 text-medium-emphasis">
-                                    Link your social media accounts for easier sign-in
+                                    {{ $t('userProfile.connectedSocialDescription') }}
                                 </p>
                             </div>
                             <social-accounts-tab :user="user" />
@@ -394,9 +394,9 @@
                         <!-- Activity Tab -->
                         <v-window-item value="activity">
                             <div class="tab-header mb-4">
-                                <h3 class="text-h6 font-weight-bold">User Activity</h3>
+                                <h3 class="text-h6 font-weight-bold">{{ $t('userProfile.userActivity') }}</h3>
                                 <p class="text-body-2 text-medium-emphasis">
-                                    View login history, actions, and usage statistics
+                                    {{ $t('userProfile.userActivityDescription') }}
                                 </p>
                             </div>
                             <activity-tab :user="user" />
@@ -405,9 +405,9 @@
                         <!-- Permissions Tab -->
                         <v-window-item value="permissions">
                             <div class="tab-header mb-4">
-                                <h3 class="text-h6 font-weight-bold">Roles & Permissions</h3>
+                                <h3 class="text-h6 font-weight-bold">{{ $t('userProfile.rolesPermissions') }}</h3>
                                 <p class="text-body-2 text-medium-emphasis">
-                                    Manage user roles, permissions, and access levels
+                                    {{ $t('userProfile.rolesPermissionsDescription') }}
                                 </p>
                             </div>
                             <permissions-tab
@@ -453,14 +453,14 @@
             <v-card>
                 <v-card-title class="d-flex align-center">
                     <v-icon color="primary" class="mr-2">mdi-shield-crown</v-icon>
-                    Administrator Management
+                    {{ $t('userProfile.administratorManagement') }}
                 </v-card-title>
                 <v-card-text>
                     <v-alert type="warning" variant="tonal" class="mb-4">
                         <template #prepend>
                             <v-icon>mdi-alert</v-icon>
                         </template>
-                        Modifying administrator privileges requires careful consideration
+                        {{ $t('userProfile.adminWarning') }}
                     </v-alert>
 
                     <div class="admin-actions">
@@ -471,7 +471,7 @@
                             class="mb-3"
                             @click="confirmRemoveAdmin"
                         >
-                            Remove Admin Privileges
+                            {{ $t('userProfile.removeAdminPrivileges') }}
                         </v-btn>
                         <v-btn
                             block
@@ -479,13 +479,13 @@
                             prepend-icon="mdi-history"
                             @click="viewAdminHistory"
                         >
-                            View Admin History
+                            {{ $t('userProfile.viewAdminHistory') }}
                         </v-btn>
                     </div>
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn variant="text" @click="showAdminSettings = false">Close</v-btn>
+                    <v-btn variant="text" @click="showAdminSettings = false">{{ $t('common.close') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -495,21 +495,21 @@
             <v-card>
                 <v-card-title class="d-flex align-center">
                     <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
-                    Confirm Action
+                    {{ $t('userProfile.confirmAction') }}
                 </v-card-title>
                 <v-card-text>
                     {{ confirmMessage }}
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn variant="text" @click="showConfirmDialog = false">Cancel</v-btn>
+                    <v-btn variant="text" @click="showConfirmDialog = false">{{ $t('common.cancel') }}</v-btn>
                     <v-btn
                         color="primary"
                         variant="elevated"
                         @click="confirmAction"
                         :loading="confirming"
                     >
-                        Confirm
+                        {{ $t('common.confirm') }}
                     </v-btn>
                 </v-card-actions>
             </v-card>
@@ -545,6 +545,7 @@
 
 <script>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
 import { useAuthStore } from '@/store/authStore.js'
 import { useUserStore } from '@/store/userStore.js'
@@ -588,6 +589,7 @@ export default {
         const hasPermissionChanges = ref(false)
 
         // Composables
+        const { t } = useI18n()
         const { mobile } = useDisplay()
         const authStore = useAuthStore()
         const userStore = useUserStore()
@@ -599,22 +601,22 @@ export default {
 
         const breadcrumbs = computed(() => [
             {
-                title: 'Users',
+                title: t('userProfile.users'),
                 to: '/users/list',
                 disabled: false
             },
             {
-                title: user.value?.name || 'Edit User',
+                title: user.value?.name || t('userProfile.editUser'),
                 disabled: true
             }
         ])
 
         const userStatus = computed(() => {
-            if (!user.value) return { color: 'error', icon: 'mdi-account-off', text: 'Unknown' }
+            if (!user.value) return { color: 'error', icon: 'mdi-account-off', text: t('userProfile.unknown') }
             if (user.value.email_verified_at) {
-                return { color: 'success', icon: 'mdi-account-check', text: 'Active' }
+                return { color: 'success', icon: 'mdi-account-check', text: t('userProfile.active') }
             }
-            return { color: 'warning', icon: 'mdi-account-clock', text: 'Pending' }
+            return { color: 'warning', icon: 'mdi-account-clock', text: t('userProfile.pending') }
         })
 
         const isOnline = computed(() => {
@@ -623,12 +625,12 @@ export default {
         })
 
         const memberSince = computed(() => {
-            if (!user.value?.created_at) return 'Unknown'
+            if (!user.value?.created_at) return t('userProfile.unknown')
             return formatDate(user.value.created_at, 'd F Y')
         })
 
         const lastActive = computed(() => {
-            if (!user.value?.last_login_at) return 'Never'
+            if (!user.value?.last_login_at) return t('userProfile.never')
             return formatDateDistanceToNow(user.value.last_login_at)
         })
 
@@ -637,21 +639,21 @@ export default {
         })
 
         // Steps configuration
-        const steps = [
-            { title: 'Overview', subtitle: 'Profile summary', value: 1 },
-            { title: 'Account', subtitle: 'Security & settings', value: 2 },
-            { title: 'Information', subtitle: 'Personal details', value: 3 }
-        ]
+        const steps = computed(() => [
+            { title: t('userProfile.overview'), subtitle: t('userProfile.profileSummary'), value: 1 },
+            { title: t('userProfile.account'), subtitle: t('userProfile.securitySettings'), value: 2 },
+            { title: t('userProfile.information'), subtitle: t('userProfile.personalDetails'), value: 3 }
+        ])
 
         // Methods
         const refreshUser = async () => {
             refreshing.value = true
             try {
                 await userStore.fetchUser()
-                successMessage.value = 'User data refreshed successfully'
+                successMessage.value = t('userProfile.userDataRefreshed')
                 showSuccess.value = true
             } catch (error) {
-                errorMessage.value = 'Failed to refresh user data'
+                errorMessage.value = t('userProfile.failedRefresh')
                 showError.value = true
             } finally {
                 refreshing.value = false
@@ -695,7 +697,7 @@ export default {
         }
 
         const confirmResetPassword = () => {
-            confirmMessage.value = `Are you sure you want to reset the password for ${user.value?.name || 'this user'}? They will receive an email with instructions.`
+            confirmMessage.value = t('userProfile.passwordResetConfirm', { name: user.value?.name || t('userProfile.unknownUser') })
             confirmCallback.value = resetPassword
             showConfirmDialog.value = true
         }
@@ -705,11 +707,11 @@ export default {
             try {
                 // Implement password reset API call
                 await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-                successMessage.value = 'Password reset email sent successfully'
+                successMessage.value = t('userProfile.passwordResetSent')
                 showSuccess.value = true
                 showConfirmDialog.value = false
             } catch (error) {
-                errorMessage.value = 'Failed to send password reset email'
+                errorMessage.value = t('userProfile.passwordResetFailed')
                 showError.value = true
             } finally {
                 confirming.value = false
@@ -717,7 +719,7 @@ export default {
         }
 
         const confirmRemoveAdmin = () => {
-            confirmMessage.value = `Are you sure you want to remove administrator privileges from ${user.value?.name || 'this user'}? This action cannot be undone.`
+            confirmMessage.value = t('userProfile.removeAdminConfirm', { name: user.value?.name || t('userProfile.unknownUser') })
             confirmCallback.value = removeAdminPrivileges
             showConfirmDialog.value = true
         }
@@ -727,12 +729,12 @@ export default {
             try {
                 // Implement remove admin API call
                 await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-                successMessage.value = 'Administrator privileges removed successfully'
+                successMessage.value = t('userProfile.adminRemoved')
                 showSuccess.value = true
                 showAdminSettings.value = false
                 showConfirmDialog.value = false
             } catch (error) {
-                errorMessage.value = 'Failed to remove administrator privileges'
+                errorMessage.value = t('userProfile.adminRemoveFailed')
                 showError.value = true
             } finally {
                 confirming.value = false
@@ -769,10 +771,10 @@ export default {
                 // Implement account save API call
                 await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
                 hasAccountChanges.value = false
-                successMessage.value = 'Account settings saved successfully'
+                successMessage.value = t('userProfile.accountSaved')
                 showSuccess.value = true
             } catch (error) {
-                errorMessage.value = 'Failed to save account settings'
+                errorMessage.value = t('userProfile.accountSaveFailed')
                 showError.value = true
             }
         }
@@ -782,10 +784,10 @@ export default {
                 // Implement info save API call
                 await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
                 hasInfoChanges.value = false
-                successMessage.value = 'Information updated successfully'
+                successMessage.value = t('userProfile.infoUpdated')
                 showSuccess.value = true
             } catch (error) {
-                errorMessage.value = 'Failed to update information'
+                errorMessage.value = t('userProfile.infoUpdateFailed')
                 showError.value = true
             }
         }
@@ -795,10 +797,10 @@ export default {
                 // Implement permission save API call
                 await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
                 hasPermissionChanges.value = false
-                successMessage.value = 'Permissions updated successfully'
+                successMessage.value = t('userProfile.permissionsUpdated')
                 showSuccess.value = true
             } catch (error) {
-                errorMessage.value = 'Failed to update permissions'
+                errorMessage.value = t('userProfile.permissionsUpdateFailed')
                 showError.value = true
             }
         }
@@ -819,10 +821,10 @@ export default {
                 }
 
                 await Promise.all(promises)
-                successMessage.value = 'All changes saved successfully'
+                successMessage.value = t('userProfile.allChangesSaved')
                 showSuccess.value = true
             } catch (error) {
-                errorMessage.value = 'Some changes failed to save'
+                errorMessage.value = t('userProfile.someChangesFailed')
                 showError.value = true
             } finally {
                 saving.value = false

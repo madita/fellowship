@@ -27,7 +27,7 @@ class NewsletterController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Invalid email address',
+                'message' => __('messages.newsletter.invalid_email'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -37,13 +37,13 @@ class NewsletterController extends Controller
 
             if ($result['success']) {
                 return response()->json([
-                    'message' => $result['message'] ?? 'Successfully subscribed to newsletter!',
+                    'message' => $result['message'] ?? __('messages.newsletter.subscribed'),
                     'success' => true,
                 ]);
             }
 
             return response()->json([
-                'message' => $result['message'] ?? 'Failed to subscribe to newsletter',
+                'message' => $result['message'] ?? __('messages.newsletter.subscribe_failed'),
                 'success' => false,
             ], 400);
         } catch (\Exception $e) {
@@ -53,7 +53,7 @@ class NewsletterController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'An error occurred while subscribing. Please try again later.',
+                'message' => __('messages.newsletter.error_occurred'),
                 'success' => false,
             ], 500);
         }

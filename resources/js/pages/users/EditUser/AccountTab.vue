@@ -2,18 +2,18 @@
     <div class="my-2">
         <div>
             <v-card v-if="user.disabled" class="warning mb-4" light>
-                <v-card-title>User Disabled</v-card-title>
-                <v-card-subtitle>This user has been disabled! Login accesss has been revoked.</v-card-subtitle>
+                <v-card-title>{{ $t('users.edit.userDisabled') }}</v-card-title>
+                <v-card-subtitle>{{ $t('users.edit.userDisabledMessage') }}</v-card-subtitle>
                 <v-card-text>
                     <v-btn dark @click="user.disabled = false">
                         <v-icon left small>mdi-account-check</v-icon>
-                        Enable User
+                        {{ $t('users.edit.enableUser') }}
                     </v-btn>
                 </v-card-text>
             </v-card>
 
             <v-card>
-                <v-card-title>Basic Information</v-card-title>
+                <v-card-title>{{ $t('users.edit.basicInfo') }}</v-card-title>
                 <v-card-text>
                     <div class="d-flex flex-column flex-sm-row">
                         <div>
@@ -27,26 +27,26 @@
                             <!--                <v-text-field label="Select Image" @click='pickFile' v-model='avatar' prepend-icon='attach_file'></v-text-field>-->
                             <image-upload v-show="false" ref="avatarUploadRef" name="avatar" class="mr-1" @loaded="onLoad"></image-upload>
 
-                            <v-btn class="mt-1" @click="trigger" small>Edit Avatar</v-btn>
+                            <v-btn class="mt-1" @click="trigger" small>{{ $t('users.edit.editAvatar') }}</v-btn>
                         </div>
                         <div class="flex-grow-1 pt-2 pa-sm-2">
-                            <v-text-field v-model="user.name" label="Display name" placeholder="name"></v-text-field>
-                            <v-text-field v-model="user.email" label="Email" hide-details></v-text-field>
+                            <v-text-field v-model="user.name" :label="$t('users.edit.displayName')" :placeholder="$t('users.edit.namePlaceholder')"></v-text-field>
+                            <v-text-field v-model="user.email" :label="$t('login.email')" hide-details></v-text-field>
 
                             <div class="d-flex flex-column">
-                                <v-checkbox v-model="user.email_verified_at" dense label="Email Verified"></v-checkbox>
+                                <v-checkbox v-model="user.email_verified_at" dense :label="$t('users.edit.emailVerified')"></v-checkbox>
                                 <div>
                                     <v-btn
                                         v-if="!user.email_verified_at"
                                     >
                                         <v-icon left small>mdi-email</v-icon>
-                                        Send Verification Email
+                                        {{ $t('users.edit.sendVerificationEmail') }}
                                     </v-btn>
                                 </div>
                             </div>
 
                             <div class="mt-2">
-                                <v-btn color="bg-primary" @click="updateUser">Save</v-btn>
+                                <v-btn color="bg-primary" @click="updateUser">{{ $t('common.save') }}</v-btn>
                             </div>
                         </div>
                     </div>
@@ -54,13 +54,13 @@
             </v-card>
 
             <v-card class="mt-4">
-                <v-card-title>Localization Preferences</v-card-title>
-                <v-card-subtitle>Customize how dates and times are displayed</v-card-subtitle>
+                <v-card-title>{{ $t('users.edit.localizationPreferences') }}</v-card-title>
+                <v-card-subtitle>{{ $t('users.edit.localizationDescription') }}</v-card-subtitle>
                 <v-card-text>
                     <!-- Timezone Selection -->
                     <v-autocomplete
                         v-model="userPreferences.timezone"
-                        label="Timezone"
+                        :label="$t('users.edit.timezone')"
                         :items="timezones"
                         item-title="label"
                         item-value="value"
@@ -76,7 +76,7 @@
                                 <template #activator="{ props: tooltipProps }">
                                     <v-icon v-bind="tooltipProps" color="info">mdi-information</v-icon>
                                 </template>
-                                <span>Leave empty to use system default ({{ defaultTimezone }})</span>
+                                <span>{{ $t('users.edit.leaveEmptyForDefault', { value: defaultTimezone }) }}</span>
                             </v-tooltip>
                         </template>
                     </v-autocomplete>
@@ -84,7 +84,7 @@
                     <!-- Date Format Selection -->
                     <v-select
                         v-model="userPreferences.date_format"
-                        label="Date Format"
+                        :label="$t('users.edit.dateFormat')"
                         :items="dateFormats"
                         item-title="label"
                         item-value="value"
@@ -100,7 +100,7 @@
                                 <template #activator="{ props: tooltipProps }">
                                     <v-icon v-bind="tooltipProps" color="info">mdi-information</v-icon>
                                 </template>
-                                <span>Leave empty to use system default ({{ defaultDateFormat }})</span>
+                                <span>{{ $t('users.edit.leaveEmptyForDefault', { value: defaultDateFormat }) }}</span>
                             </v-tooltip>
                         </template>
                     </v-select>
@@ -108,7 +108,7 @@
                     <!-- Time Format Selection -->
                     <v-select
                         v-model="userPreferences.time_format"
-                        label="Time Format"
+                        :label="$t('users.edit.timeFormat')"
                         :items="timeFormats"
                         item-title="label"
                         item-value="value"
@@ -124,7 +124,7 @@
                                 <template #activator="{ props: tooltipProps }">
                                     <v-icon v-bind="tooltipProps" color="info">mdi-information</v-icon>
                                 </template>
-                                <span>Leave empty to use system default ({{ defaultTimeFormat }})</span>
+                                <span>{{ $t('users.edit.leaveEmptyForDefault', { value: defaultTimeFormat }) }}</span>
                             </v-tooltip>
                         </template>
                     </v-select>
@@ -140,8 +140,8 @@
                             <v-icon>mdi-eye</v-icon>
                         </template>
                         <div class="text-body-2">
-                            <strong>Preview:</strong><br>
-                            Current time in your timezone: {{ previewDateTime }}
+                            <strong>{{ $t('users.edit.preview') }}:</strong><br>
+                            {{ $t('users.edit.currentTimePreview') }}: {{ previewDateTime }}
                         </div>
                     </v-alert>
 
@@ -151,7 +151,7 @@
                             @click="savePreferences"
                             :loading="savingPreferences"
                         >
-                            Save Preferences
+                            {{ $t('users.edit.savePreferences') }}
                         </v-btn>
                     </div>
                 </v-card-text>
@@ -159,8 +159,8 @@
 
             <!-- Account Deletion (GDPR) - for own account -->
             <v-card class="mt-4">
-                <v-card-title>Data & Privacy</v-card-title>
-                <v-card-subtitle>Manage your data and account deletion options</v-card-subtitle>
+                <v-card-title>{{ $t('users.edit.dataPrivacy') }}</v-card-title>
+                <v-card-subtitle>{{ $t('users.edit.dataPrivacyDescription') }}</v-card-subtitle>
                 <v-card-text>
                     <account-deletion />
                 </v-card-text>
@@ -168,35 +168,35 @@
 
             <v-expansion-panels v-if="roles.includes('admin')" v-model="panel" multiple class="mt-3">
                 <v-expansion-panel>
-                    <v-expansion-panel-title class="title">Actions</v-expansion-panel-title>
+                    <v-expansion-panel-title class="title">{{ $t('users.edit.actions') }}</v-expansion-panel-title>
                     <v-expansion-panel-text>
                         <div class="mb-2">
-                            <div class="title">Reset User Password</div>
-                            <div class="subtitle mb-2">Sends a reset password email to the user.</div>
+                            <div class="title">{{ $t('users.edit.resetPassword') }}</div>
+                            <div class="subtitle mb-2">{{ $t('users.edit.resetPasswordDescription') }}</div>
                             <v-btn
                                 class="mb-2"
                             >
                                 <v-icon left small>mdi-email</v-icon>
-                                Send Reset Password Email
+                                {{ $t('users.edit.sendResetPasswordEmail') }}
                             </v-btn>
                         </div>
 
                         <v-divider></v-divider>
 
                         <div class="my-2">
-                            <div class="title">Export Account Data</div>
-                            <div class="subtitle mb-2">Export all the platform metadata for this user.</div>
+                            <div class="title">{{ $t('users.edit.exportData') }}</div>
+                            <div class="subtitle mb-2">{{ $t('users.edit.exportDataDescription') }}</div>
                             <v-btn class="mb-2">
                                 <v-icon left small>mdi-clipboard-account</v-icon>
-                                Export User Data
+                                {{ $t('users.edit.exportUserData') }}
                             </v-btn>
                         </div>
 
                         <v-divider></v-divider>
 
                         <div class="my-2">
-                            <div class="error--text title">Danger Zone</div>
-                            <div class="subtitle mb-2">Full administrator with access to this dashboard.</div>
+                            <div class="error--text title">{{ $t('users.edit.dangerZone') }}</div>
+                            <div class="subtitle mb-2">{{ $t('users.edit.adminAccessDescription') }}</div>
 
                             <div class="my-2">
                                 <v-btn
@@ -205,17 +205,17 @@
                                     @click="user.role = 'USER'"
                                 >
                                     <v-icon left small>mdi-security</v-icon>
-                                    Remove admin access
+                                    {{ $t('users.edit.removeAdminAccess') }}
                                 </v-btn>
                                 <v-btn v-else color="bg-primary" @click="user.role = 'ADMIN'">
                                     <v-icon left small>mdi-security</v-icon>
-                                    Set User as Admin
+                                    {{ $t('users.edit.setAsAdmin') }}
                                 </v-btn>
                             </div>
 
                             <v-divider></v-divider>
 
-                            <div class="subtitle mt-3 mb-2">Prevent the user from signing in on the platform.</div>
+                            <div class="subtitle mt-3 mb-2">{{ $t('users.edit.preventSignIn') }}</div>
                             <div class="my-2">
                                 <v-btn
                                     v-if="user.disabled"
@@ -223,7 +223,7 @@
                                     @click="user.disabled = false"
                                 >
                                     <v-icon left small>mdi-account-check</v-icon>
-                                    Enable User
+                                    {{ $t('users.edit.enableUser') }}
                                 </v-btn>
                                 <v-btn
                                     v-else
@@ -231,34 +231,34 @@
                                     @click="disableDialog = true"
                                 >
                                     <v-icon left small>mdi-cancel</v-icon>
-                                    Disable User
+                                    {{ $t('users.edit.disableUser') }}
                                 </v-btn>
                             </div>
 
                             <v-divider></v-divider>
                             <div
                                 class="subtitle mt-3 mb-2"
-                            >To delete the user please transfer ownership or delete user's subscriptions.
+                            >{{ $t('users.edit.deleteUserWarning') }}
                             </div>
                             <v-btn color="error" @click="deleteDialog = true">
                                 <v-icon left small>mdi-delete</v-icon>
-                                Delete User
+                                {{ $t('users.edit.deleteUser') }}
                             </v-btn>
                         </div>
                     </v-expansion-panel-text>
                 </v-expansion-panel>
                 <v-expansion-panel>
-                    <v-expansion-panel-title class="title">Metadata</v-expansion-panel-title>
+                    <v-expansion-panel-title class="title">{{ $t('users.edit.metadata') }}</v-expansion-panel-title>
                     <v-expansion-panel-text class="body-2">
-                        <span class="font-weight-bold">Created</span>
+                        <span class="font-weight-bold">{{ $t('users.edit.created') }}</span>
                         {{ $formatDate(new Date(user?.created_at), 'd LLL yyyy') }}
                         <br/>
-                        <span class="font-weight-bold">Last Sign In</span>
+                        <span class="font-weight-bold">{{ $t('users.edit.lastSignIn') }}</span>
                         {{ $formatDate(new Date(user?.last_login_at), 'd LLL yyyy') }}
                     </v-expansion-panel-text>
                 </v-expansion-panel>
                 <v-expansion-panel>
-                    <v-expansion-panel-title class="title">Raw Data</v-expansion-panel-title>
+                    <v-expansion-panel-title class="title">{{ $t('users.edit.rawData') }}</v-expansion-panel-title>
                     <v-expansion-panel-text>
                         <pre class="body-2">{{ user }}</pre>
                     </v-expansion-panel-text>
@@ -269,12 +269,12 @@
         <!-- disable modal -->
         <v-dialog v-model="disableDialog" max-width="290">
             <v-card>
-                <v-card-title class="headline">Disable User</v-card-title>
-                <v-card-text>Are you sure you want to disable this user?</v-card-text>
+                <v-card-title class="headline">{{ $t('users.edit.disableUser') }}</v-card-title>
+                <v-card-text>{{ $t('users.edit.confirmDisableUser') }}</v-card-text>
                 <v-card-actions>
                     <v-spacer></v-spacer>
-                    <v-btn @click="disableDialog = false">Cancel</v-btn>
-                    <v-btn color="warning" @click="user.disabled = true; disableDialog = false">Disable</v-btn>
+                    <v-btn @click="disableDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="warning" @click="user.disabled = true; disableDialog = false">{{ $t('users.edit.disable') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -282,12 +282,12 @@
         <!-- delete modal -->
         <v-dialog v-model="deleteDialog" max-width="290">
             <v-card>
-                <v-card-title class="headline">Delete User</v-card-title>
-                <v-card-text>Are you sure you want to delete this user?</v-card-text>
+                <v-card-title class="headline">{{ $t('users.edit.deleteUser') }}</v-card-title>
+                <v-card-text>{{ $t('users.edit.confirmDeleteUser') }}</v-card-text>
                 <v-card-actions>
                     <v-spacer></v-spacer>
-                    <v-btn @click="deleteDialog = false">Cancel</v-btn>
-                    <v-btn color="error" @click="deleteDialog = false">Delete</v-btn>
+                    <v-btn @click="deleteDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="error" @click="deleteDialog = false">{{ $t('common.delete') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -296,6 +296,7 @@
 
 <script>
 import { ref, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSettingsStore } from '@/store/settingStore.js';
 import { useUserStore } from '@/store/userStore.js';
 import { formatDateInTimezone } from '@/plugins/formatDate.js';
@@ -317,6 +318,7 @@ export default {
         }
     },
     setup(props) {
+        const { t } = useI18n();
         const settingsStore = useSettingsStore();
         const userStore = useUserStore();
 
@@ -425,7 +427,7 @@ export default {
                 const combinedFormat = `${dateFmt} ${timeFmt}`;
                 return formatDateInTimezone(new Date().toISOString(), combinedFormat, tz);
             } catch (error) {
-                return 'Preview unavailable';
+                return t('users.edit.previewUnavailable');
             }
         });
 

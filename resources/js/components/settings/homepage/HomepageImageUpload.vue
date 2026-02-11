@@ -38,7 +38,7 @@
           :loading="uploading"
           @click="handleUpload"
         >
-          Upload
+          {{ $t('common.upload') }}
         </v-btn>
         <v-btn
           v-if="modelValue"
@@ -47,7 +47,7 @@
           variant="outlined"
           @click="handleDelete"
         >
-          Delete
+          {{ $t('common.delete') }}
         </v-btn>
       </div>
     </div>
@@ -56,7 +56,10 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+
+const { t } = useI18n();
 
 const props = defineProps({
   modelValue: {
@@ -122,14 +125,14 @@ async function handleUpload() {
     console.log('Emitted image path to parent:', imagePath);
   } catch (error) {
     console.error('Failed to upload image:', error);
-    alert('Failed to upload image. Please try again.');
+    alert(t('settings.imageUpload.uploadFailed'));
   } finally {
     uploading.value = false;
   }
 }
 
 function handleDelete() {
-  if (!confirm('Are you sure you want to delete this image?')) {
+  if (!confirm(t('settings.imageUpload.confirmDelete'))) {
     return;
   }
 

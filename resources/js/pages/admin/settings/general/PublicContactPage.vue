@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Public Contact"
-        description="Configure public contact information displayed on your site"
+        :title="$t('settings.publicContact.title')"
+        :description="$t('settings.publicContact.description')"
         icon="mdi-phone-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'general' } }"
@@ -11,46 +11,46 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-card-account-details" title="Public Contact Information">
+        <settings-card icon="mdi-card-account-details" :title="$t('settings.publicContact.cardTitle')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
                 <div class="text-caption">
-                    This information is displayed publicly in your site footer and contact pages.
+                    {{ $t('settings.publicContact.infoText') }}
                 </div>
             </v-alert>
 
             <v-text-field
                 v-model="settings.contact_email"
-                label="Contact Email"
+                :label="$t('settings.publicContact.contactEmail')"
                 prepend-inner-icon="mdi-email"
                 variant="outlined"
                 type="email"
                 class="mb-4"
                 :error-messages="errors.contact_email"
-                hint="Public contact email shown in footer"
+                :hint="$t('settings.publicContact.contactEmailHint')"
                 persistent-hint
                 placeholder="contact@example.com"
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.contact_phone"
-                label="Contact Phone"
+                :label="$t('settings.publicContact.contactPhone')"
                 prepend-inner-icon="mdi-phone"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.contact_phone"
-                hint="Public phone number shown in footer"
+                :hint="$t('settings.publicContact.contactPhoneHint')"
                 persistent-hint
                 placeholder="+1 (555) 123-4567"
             ></v-text-field>
 
             <v-textarea
                 v-model="settings.contact_address"
-                label="Contact Address"
+                :label="$t('settings.publicContact.contactAddress')"
                 prepend-inner-icon="mdi-map-marker"
                 variant="outlined"
                 rows="2"
                 :error-messages="errors.contact_address"
-                hint="Physical address shown in footer"
+                :hint="$t('settings.publicContact.contactAddressHint')"
                 persistent-hint
                 placeholder="123 Main Street, City, State 12345"
             ></v-textarea>
@@ -65,7 +65,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="API & Developer"
-        description="Configure environment, debug, and rate limit settings"
+        :title="$t('settings.advanced.api.title')"
+        :description="$t('settings.advanced.api.description')"
         icon="mdi-api"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'advanced' } }"
@@ -12,14 +12,14 @@
         @clear-message="message = ''"
     >
         <!-- Server Environment (Read-only from .env) -->
-        <settings-card icon="mdi-server" title="Server Environment" class="mb-4">
+        <settings-card icon="mdi-server" :title="$t('settings.advanced.api.serverEnvironment')" class="mb-4">
             <v-alert type="info" variant="tonal" density="compact" class="mb-4">
-                These settings are read from your server's <code>.env</code> file and cannot be changed from the admin panel.
+                {{ $t('settings.advanced.api.serverEnvironmentInfo') }}
             </v-alert>
 
             <v-text-field
                 :model-value="serverEnvironment"
-                label="Environment"
+                :label="$t('settings.advanced.api.environment')"
                 prepend-inner-icon="mdi-monitor"
                 variant="outlined"
                 class="mb-4"
@@ -37,8 +37,8 @@
             </v-text-field>
 
             <v-text-field
-                :model-value="serverDebugMode ? 'Enabled' : 'Disabled'"
-                label="Debug Mode"
+                :model-value="serverDebugMode ? $t('settings.advanced.api.enabled') : $t('settings.advanced.api.disabled')"
+                :label="$t('settings.advanced.api.debugMode')"
                 prepend-inner-icon="mdi-bug"
                 variant="outlined"
                 readonly
@@ -55,43 +55,43 @@
             </v-text-field>
 
             <v-alert v-if="serverDebugMode && serverEnvironment === 'production'" type="warning" variant="tonal" density="compact" class="mt-4">
-                <strong>Warning:</strong> Debug mode is enabled in production. This may expose sensitive information.
+                <strong>{{ $t('settings.advanced.api.warning') }}</strong> {{ $t('settings.advanced.api.debugWarning') }}
             </v-alert>
         </settings-card>
 
         <!-- API Settings -->
-        <settings-card icon="mdi-api" title="API Settings">
+        <settings-card icon="mdi-api" :title="$t('settings.advanced.api.apiSettings')">
             <v-text-field
                 v-model.number="settings.api_rate_limit_per_minute"
-                label="API Rate Limit (per minute)"
+                :label="$t('settings.advanced.api.rateLimit')"
                 prepend-inner-icon="mdi-speedometer"
                 variant="outlined"
                 type="number"
                 class="mb-4"
                 :error-messages="errors.api_rate_limit_per_minute"
-                hint="Maximum API requests per minute per user/key"
+                :hint="$t('settings.advanced.api.rateLimitHint')"
                 persistent-hint
             ></v-text-field>
 
             <v-switch
                 v-model="settings.api_keys_enabled"
-                label="Enable API Keys"
+                :label="$t('settings.advanced.api.enableApiKeys')"
                 color="primary"
                 class="mb-4"
-                hint="Allow users to generate API keys for external integrations"
+                :hint="$t('settings.advanced.api.enableApiKeysHint')"
                 persistent-hint
             ></v-switch>
 
             <v-switch
                 v-model="settings.background_jobs_enabled"
-                label="Enable Background Jobs"
+                :label="$t('settings.advanced.api.enableBackgroundJobs')"
                 color="primary"
-                hint="Process tasks in background queue (requires queue worker running)"
+                :hint="$t('settings.advanced.api.enableBackgroundJobsHint')"
                 persistent-hint
             ></v-switch>
 
             <v-alert v-if="settings.background_jobs_enabled" type="info" variant="tonal" density="compact" class="mt-4">
-                Make sure you have a queue worker running: <code>php artisan queue:work</code>
+                {{ $t('settings.advanced.api.queueWorkerInfo') }}
             </v-alert>
         </settings-card>
 
@@ -104,7 +104,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

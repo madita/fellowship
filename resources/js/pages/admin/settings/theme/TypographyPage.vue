@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Typography & CSS"
-        description="Configure fonts and custom CSS styles"
+        :title="$t('settings.typography.title')"
+        :description="$t('settings.typography.description')"
         icon="mdi-format-font"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'theme' } }"
@@ -11,7 +11,7 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-format-font" title="Typography & Custom Styles">
+        <settings-card icon="mdi-format-font" :title="$t('settings.typography.cardTitle')">
             <!-- Font Preview -->
             <v-card
                 v-if="settings.font_family"
@@ -20,21 +20,21 @@
                 class="pa-4 mb-4 font-preview-card"
                 :style="previewStyle"
             >
-                <div class="text-subtitle-2 font-weight-bold mb-3 preview-label">Font Preview</div>
-                <div class="text-h5 mb-3 preview-text">The quick brown fox jumps over the lazy dog</div>
-                <div class="text-h6 mb-3 preview-text">The quick brown fox jumps over the lazy dog</div>
+                <div class="text-subtitle-2 font-weight-bold mb-3 preview-label">{{ $t('settings.typography.fontPreview') }}</div>
+                <div class="text-h5 mb-3 preview-text">{{ $t('settings.typography.sampleText') }}</div>
+                <div class="text-h6 mb-3 preview-text">{{ $t('settings.typography.sampleText') }}</div>
                 <div class="text-body-1 mb-2 preview-text">
                     AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz
                 </div>
                 <div class="text-body-2 mb-2 preview-text">0123456789 !@#$%^&*()</div>
                 <div class="text-caption text-medium-emphasis preview-label">
-                    Current selection: {{ fontFamilies.find(f => f.value === settings.font_family)?.label || settings.font_family }}
+                    {{ $t('settings.typography.currentSelection') }}: {{ fontFamilies.find(f => f.value === settings.font_family)?.label || settings.font_family }}
                 </div>
             </v-card>
 
             <v-select
                 v-model="settings.font_family"
-                label="Font Family"
+                :label="$t('settings.typography.fontFamily')"
                 :items="fontFamilies"
                 item-title="label"
                 item-value="value"
@@ -55,12 +55,12 @@
 
             <v-textarea
                 v-model="settings.custom_css"
-                label="Custom CSS"
+                :label="$t('settings.typography.customCss')"
                 prepend-inner-icon="mdi-language-css3"
                 variant="outlined"
                 rows="6"
                 :error-messages="errors.custom_css"
-                hint="Add custom CSS styles (advanced users only)"
+                :hint="$t('settings.typography.customCssHint')"
                 persistent-hint
                 placeholder=".my-custom-class { color: red; }"
             ></v-textarea>
@@ -75,16 +75,19 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
 import { fontFamilies } from '@/composables/settingsConstants';
+
+const { t } = useI18n();
 
 const props = defineProps({
     settings: Object,

@@ -85,7 +85,7 @@ class UserController extends Controller
         $user->update($validated);
 
         return response()->json([
-            'message' => 'Preferences updated successfully',
+            'message' => __('messages.user.preferences_updated'),
             'user'    => $user,
         ]);
     }

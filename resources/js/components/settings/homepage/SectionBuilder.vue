@@ -3,24 +3,24 @@
     <!-- Action Buttons -->
     <div class="d-flex justify-space-between align-center mb-4">
       <v-btn color="primary" prepend-icon="mdi-plus" @click="showAddSectionDialog = true">
-        Add Section
+        {{ $t('settings.homepageBuilder.addSection') }}
       </v-btn>
       <v-btn prepend-icon="mdi-refresh" @click="loadSections" :loading="isLoading">
-        Refresh
+        {{ $t('settings.homepageBuilder.refresh') }}
       </v-btn>
     </div>
 
     <!-- Sections List with Drag-and-Drop -->
     <v-card v-if="isLoading" class="pa-8 text-center">
       <v-progress-circular indeterminate color="primary"></v-progress-circular>
-      <div class="mt-2">Loading sections...</div>
+      <div class="mt-2">{{ $t('settings.homepageBuilder.loadingSections') }}</div>
     </v-card>
 
     <div v-else-if="sections.length === 0" class="text-center py-8">
       <v-icon size="64" color="grey">mdi-view-grid-outline</v-icon>
-      <div class="text-h6 mt-4">No sections yet</div>
-      <div class="text-caption text-grey mb-4">Create sections to organize your homepage widgets</div>
-      <v-btn color="primary" @click="showAddSectionDialog = true">Add Your First Section</v-btn>
+      <div class="text-h6 mt-4">{{ $t('settings.homepageBuilder.noSectionsYet') }}</div>
+      <div class="text-caption text-grey mb-4">{{ $t('settings.homepageBuilder.createSectionsHint') }}</div>
+      <v-btn color="primary" @click="showAddSectionDialog = true">{{ $t('settings.homepageBuilder.addFirstSection') }}</v-btn>
     </div>
 
     <draggable
@@ -38,7 +38,7 @@
             <div class="flex-grow-1">
               <div class="text-h6">{{ section.title || `Section ${section.order}` }}</div>
               <div class="text-caption text-grey">
-                Layout: {{ getLayoutLabel(section.layout) }} | Order: {{ section.order }}
+                {{ $t('settings.homepageBuilder.layout') }}: {{ getLayoutLabel(section.layout) }} | {{ $t('settings.homepageBuilder.order') }}: {{ section.order }}
               </div>
             </div>
             <v-switch
@@ -54,7 +54,7 @@
               size="small"
               variant="text"
               @click="editSection(section)"
-              title="Edit Section"
+              :title="$t('settings.homepageBuilder.editSection')"
             ></v-btn>
             <v-btn
               icon="mdi-delete"
@@ -62,7 +62,7 @@
               variant="text"
               color="error"
               @click="confirmDeleteSection(section)"
-              title="Delete Section"
+              :title="$t('settings.homepageBuilder.deleteSection')"
             ></v-btn>
           </v-card-title>
 
@@ -77,7 +77,7 @@
               >
                 <div class="column-container pa-3">
                   <div class="text-caption text-grey mb-2">
-                    Column {{ colIndex + 1 }}
+                    {{ $t('settings.homepageBuilder.column') }} {{ colIndex + 1 }}
                     <v-btn
                       size="x-small"
                       variant="text"
@@ -85,7 +85,7 @@
                       prepend-icon="mdi-plus"
                       @click="addWidgetToColumn(section, colIndex + 1)"
                     >
-                      Add Widget
+                      {{ $t('settings.homepageBuilder.addWidget') }}
                     </v-btn>
                   </div>
 
@@ -140,32 +140,32 @@
     <!-- Add/Edit Section Dialog -->
     <v-dialog v-model="showAddSectionDialog" max-width="600px">
       <v-card>
-        <v-card-title>{{ editingSection ? 'Edit' : 'Add' }} Section</v-card-title>
+        <v-card-title>{{ editingSection ? $t('settings.homepageBuilder.editSection') : $t('settings.homepageBuilder.addSection') }}</v-card-title>
         <v-card-text>
           <v-text-field
             v-model="sectionFormData.title"
-            label="Section Title"
-            hint="Optional: Name for this section"
+            :label="$t('settings.homepageBuilder.sectionTitle')"
+            :hint="$t('settings.homepageBuilder.sectionTitleHint')"
             persistent-hint
             class="mb-4"
           ></v-text-field>
 
           <v-text-field
             v-model="sectionFormData.anchor_id"
-            label="Anchor ID"
-            hint="For navigation menu (e.g., 'about', 'features'). Only lowercase letters, numbers, and dashes."
+            :label="$t('settings.homepageBuilder.anchorId')"
+            :hint="$t('settings.homepageBuilder.anchorIdHint')"
             persistent-hint
             prefix="#"
-            :rules="[v => !v || /^[a-z0-9-]+$/.test(v) || 'Only lowercase letters, numbers, and dashes allowed']"
+            :rules="[v => !v || /^[a-z0-9-]+$/.test(v) || t('settings.homepageBuilder.anchorIdRule')]"
             class="mb-4"
           ></v-text-field>
 
           <v-select
             v-model="sectionFormData.layout"
-            label="Layout"
+            :label="$t('settings.homepageBuilder.layout')"
             :items="layoutOptions"
             persistent-hint
-            hint="Choose how many columns this section should have"
+            :hint="$t('settings.homepageBuilder.layoutHint')"
             class="mb-4"
           >
             <template #item="{ props, item }">
@@ -178,20 +178,20 @@
           </v-select>
 
           <v-divider class="my-4"></v-divider>
-          <div class="text-subtitle-2 mb-3">Section Styling</div>
+          <div class="text-subtitle-2 mb-3">{{ $t('settings.homepageBuilder.sectionStyling') }}</div>
 
           <v-text-field
             v-model="sectionFormData.background"
-            label="Background Class"
-            hint="Vuetify class (e.g., 'bg-grey-lighten-4', 'bg-primary')"
+            :label="$t('settings.homepageBuilder.backgroundClass')"
+            :hint="$t('settings.homepageBuilder.backgroundClassHint')"
             persistent-hint
             class="mb-4"
           ></v-text-field>
 
           <v-text-field
             v-model="sectionFormData.backgroundColor"
-            label="Background Color"
-            hint="Custom color (e.g., '#f5f5f5', 'rgb(245, 245, 245)')"
+            :label="$t('settings.homepageBuilder.backgroundColor')"
+            :hint="$t('settings.homepageBuilder.backgroundColorHint')"
             persistent-hint
             type="color"
             class="mb-4"
@@ -209,8 +209,8 @@
 
           <v-switch
             v-model="sectionFormData.fullWidth"
-            label="Full Width Section"
-            hint="Remove container padding for edge-to-edge content"
+            :label="$t('settings.homepageBuilder.fullWidthSection')"
+            :hint="$t('settings.homepageBuilder.fullWidthHint')"
             persistent-hint
             color="primary"
             class="mb-2"
@@ -218,8 +218,8 @@
 
           <v-switch
             v-model="sectionFormData.showDecoration"
-            label="Show SVG Decoration"
-            hint="Add decorative SVG divider above this section"
+            :label="$t('settings.homepageBuilder.showSvgDecoration')"
+            :hint="$t('settings.homepageBuilder.svgDecorationHint')"
             persistent-hint
             color="primary"
             class="mb-2"
@@ -228,9 +228,9 @@
           <template v-if="sectionFormData.showDecoration">
             <v-select
               v-model="sectionFormData.decorationStyle"
-              label="Decoration Style"
+              :label="$t('settings.homepageBuilder.decorationStyle')"
               :items="decorationStyles"
-              hint="Choose the SVG decoration pattern"
+              :hint="$t('settings.homepageBuilder.decorationStyleHint')"
               persistent-hint
               class="mb-4"
             >
@@ -245,8 +245,8 @@
 
             <v-text-field
               v-model="sectionFormData.decorationColor"
-              label="Decoration Fill Color"
-              hint="SVG fill color - usually matches the section below"
+              :label="$t('settings.homepageBuilder.decorationFillColor')"
+              :hint="$t('settings.homepageBuilder.decorationFillColorHint')"
               persistent-hint
               type="color"
               class="mb-4"
@@ -264,22 +264,22 @@
 
             <v-radio-group
               v-model="sectionFormData.decorationBackgroundType"
-              label="Background Type"
-              hint="Choose how the decoration background adapts"
+              :label="$t('settings.homepageBuilder.backgroundType')"
+              :hint="$t('settings.homepageBuilder.backgroundTypeHint')"
               persistent-hint
               inline
               class="mb-2"
             >
-              <v-radio label="Custom Color" value="custom"></v-radio>
-              <v-radio label="Theme Color" value="theme"></v-radio>
-              <v-radio label="Transparent" value="transparent"></v-radio>
+              <v-radio :label="$t('settings.homepageBuilder.customColor')" value="custom"></v-radio>
+              <v-radio :label="$t('settings.homepageBuilder.themeColor')" value="theme"></v-radio>
+              <v-radio :label="$t('settings.homepageBuilder.transparent')" value="transparent"></v-radio>
             </v-radio-group>
 
             <v-text-field
               v-if="sectionFormData.decorationBackgroundType === 'custom'"
               v-model="sectionFormData.decorationBackgroundColor"
-              label="Decoration Background Color"
-              hint="Background behind SVG - usually matches the section above"
+              :label="$t('settings.homepageBuilder.decorationBackgroundColor')"
+              :hint="$t('settings.homepageBuilder.decorationBackgroundColorHint')"
               persistent-hint
               type="color"
               class="mb-4"
@@ -298,9 +298,9 @@
             <v-select
               v-if="sectionFormData.decorationBackgroundType === 'theme'"
               v-model="sectionFormData.decorationBackgroundTheme"
-              label="Theme Background"
+              :label="$t('settings.homepageBuilder.themeBackground')"
               :items="themeBackgrounds"
-              hint="Adapts to light/dark theme automatically"
+              :hint="$t('settings.homepageBuilder.themeBackgroundHint')"
               persistent-hint
               class="mb-4"
             >
@@ -317,8 +317,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="cancelSectionEdit">Cancel</v-btn>
-          <v-btn color="primary" @click="saveSection">{{ editingSection ? 'Update' : 'Add' }}</v-btn>
+          <v-btn @click="cancelSectionEdit">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" @click="saveSection">{{ editingSection ? $t('settings.homepageBuilder.update') : $t('settings.homepageBuilder.add') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -326,15 +326,14 @@
     <!-- Delete Section Confirmation -->
     <v-dialog v-model="showDeleteSectionDialog" max-width="500">
       <v-card>
-        <v-card-title>Confirm Delete</v-card-title>
+        <v-card-title>{{ $t('settings.homepageBuilder.confirmDelete') }}</v-card-title>
         <v-card-text>
-          Are you sure you want to delete the section "{{ sectionToDelete?.title }}"?
-          All widgets in this section will also be deleted.
+          {{ $t('settings.homepageBuilder.deleteSectionConfirm', { title: sectionToDelete?.title }) }}
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="showDeleteSectionDialog = false">Cancel</v-btn>
-          <v-btn color="error" @click="deleteSection">Delete</v-btn>
+          <v-btn @click="showDeleteSectionDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="error" @click="deleteSection">{{ $t('common.delete') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -348,10 +347,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useHomepageStore } from '@/store/homepageStore';
 import { getWidgetDefinition } from '@/configs/widgetTypes';
 import draggable from 'vuedraggable';
 
+const { t } = useI18n();
 const emit = defineEmits(['edit-widget', 'add-widget']);
 
 const homepageStore = useHomepageStore();
@@ -366,32 +367,32 @@ const sections = computed({
   }
 });
 
-const layoutOptions = [
-  { value: '1-col', title: '1 Column (Full Width)', icon: 'mdi-rectangle' },
-  { value: '2-col', title: '2 Columns (Equal)', icon: 'mdi-view-column' },
-  { value: '3-col', title: '3 Columns (Equal)', icon: 'mdi-view-grid' },
-  { value: '4-col', title: '4 Columns (Equal)', icon: 'mdi-view-grid-outline' },
-  { value: '2-1-col', title: '2 Columns (66% / 33%)', icon: 'mdi-view-split-vertical' },
-  { value: '1-2-col', title: '2 Columns (33% / 66%)', icon: 'mdi-view-split-vertical' },
-];
+const layoutOptions = computed(() => [
+  { value: '1-col', title: t('settings.homepageBuilder.layout1Col'), icon: 'mdi-rectangle' },
+  { value: '2-col', title: t('settings.homepageBuilder.layout2Col'), icon: 'mdi-view-column' },
+  { value: '3-col', title: t('settings.homepageBuilder.layout3Col'), icon: 'mdi-view-grid' },
+  { value: '4-col', title: t('settings.homepageBuilder.layout4Col'), icon: 'mdi-view-grid-outline' },
+  { value: '2-1-col', title: t('settings.homepageBuilder.layout21Col'), icon: 'mdi-view-split-vertical' },
+  { value: '1-2-col', title: t('settings.homepageBuilder.layout12Col'), icon: 'mdi-view-split-vertical' },
+]);
 
-const decorationStyles = [
-  { value: 'wave1', title: 'Wave 1 - Smooth Flow', icon: 'mdi-wave' },
-  { value: 'wave2', title: 'Wave 2 - Gentle Curves', icon: 'mdi-wave' },
-  { value: 'wave3', title: 'Wave 3 - Subtle Wave', icon: 'mdi-wave' },
-  { value: 'curve1', title: 'Curve 1 - Diagonal Up', icon: 'mdi-chart-line-variant' },
-  { value: 'curve2', title: 'Curve 2 - Diagonal Down', icon: 'mdi-chart-line-variant' },
-  { value: 'angle1', title: 'Angle 1 - Peak Center', icon: 'mdi-triangle' },
-  { value: 'angle2', title: 'Angle 2 - Slanted', icon: 'mdi-triangle-outline' },
-];
+const decorationStyles = computed(() => [
+  { value: 'wave1', title: t('settings.homepageBuilder.wave1'), icon: 'mdi-wave' },
+  { value: 'wave2', title: t('settings.homepageBuilder.wave2'), icon: 'mdi-wave' },
+  { value: 'wave3', title: t('settings.homepageBuilder.wave3'), icon: 'mdi-wave' },
+  { value: 'curve1', title: t('settings.homepageBuilder.curve1'), icon: 'mdi-chart-line-variant' },
+  { value: 'curve2', title: t('settings.homepageBuilder.curve2'), icon: 'mdi-chart-line-variant' },
+  { value: 'angle1', title: t('settings.homepageBuilder.angle1'), icon: 'mdi-triangle' },
+  { value: 'angle2', title: t('settings.homepageBuilder.angle2'), icon: 'mdi-triangle-outline' },
+]);
 
-const themeBackgrounds = [
-  { value: 'background', title: 'Background (Main)', icon: 'mdi-palette' },
-  { value: 'surface', title: 'Surface', icon: 'mdi-palette-outline' },
-  { value: 'surface-variant', title: 'Surface Variant', icon: 'mdi-palette-swatch' },
-  { value: 'surface-bright', title: 'Surface Bright', icon: 'mdi-brightness-7' },
-  { value: 'surface-dim', title: 'Surface Dim', icon: 'mdi-brightness-5' },
-];
+const themeBackgrounds = computed(() => [
+  { value: 'background', title: t('settings.homepageBuilder.bgMain'), icon: 'mdi-palette' },
+  { value: 'surface', title: t('settings.homepageBuilder.bgSurface'), icon: 'mdi-palette-outline' },
+  { value: 'surface-variant', title: t('settings.homepageBuilder.bgSurfaceVariant'), icon: 'mdi-palette-swatch' },
+  { value: 'surface-bright', title: t('settings.homepageBuilder.bgSurfaceBright'), icon: 'mdi-brightness-7' },
+  { value: 'surface-dim', title: t('settings.homepageBuilder.bgSurfaceDim'), icon: 'mdi-brightness-5' },
+]);
 
 const showAddSectionDialog = ref(false);
 const showDeleteSectionDialog = ref(false);
@@ -418,7 +419,7 @@ const snackbarMessage = ref('');
 const snackbarColor = ref('success');
 
 function getLayoutLabel(layout) {
-  return layoutOptions.find(opt => opt.value === layout)?.title || layout;
+  return layoutOptions.value.find(opt => opt.value === layout)?.title || layout;
 }
 
 function getColumnWidths(layout) {
@@ -455,7 +456,7 @@ async function loadSections() {
   try {
     await homepageStore.fetchSections();
   } catch (error) {
-    showSnackbar('Failed to load sections', 'error');
+    showSnackbar(t('settings.homepageBuilder.failedToLoadSections'), 'error');
   } finally {
     isLoading.value = false;
   }
@@ -468,9 +469,9 @@ async function onSectionDragEnd() {
       order: index + 1
     }));
     await homepageStore.reorderSections(newOrder);
-    showSnackbar('Sections reordered successfully', 'success');
+    showSnackbar(t('settings.homepageBuilder.sectionsReordered'), 'success');
   } catch (error) {
-    showSnackbar('Failed to reorder sections', 'error');
+    showSnackbar(t('settings.homepageBuilder.failedToReorderSections'), 'error');
     await loadSections();
   }
 }
@@ -496,7 +497,7 @@ function editSection(section) {
 
 async function saveSection() {
   if (!sectionFormData.value.layout) {
-    showSnackbar('Please select a layout', 'error');
+    showSnackbar(t('settings.homepageBuilder.pleaseSelectLayout'), 'error');
     return;
   }
 
@@ -522,16 +523,16 @@ async function saveSection() {
 
     if (editingSection.value) {
       await homepageStore.updateSection(editingSection.value.id, sectionData);
-      showSnackbar('Section updated successfully', 'success');
+      showSnackbar(t('settings.homepageBuilder.sectionUpdated'), 'success');
     } else {
       await homepageStore.createSection(sectionData);
-      showSnackbar('Section added successfully', 'success');
+      showSnackbar(t('settings.homepageBuilder.sectionAdded'), 'success');
     }
 
     cancelSectionEdit();
     await loadSections();
   } catch (error) {
-    showSnackbar('Failed to save section', 'error');
+    showSnackbar(t('settings.homepageBuilder.failedToSaveSection'), 'error');
   }
 }
 
@@ -557,9 +558,9 @@ function cancelSectionEdit() {
 async function toggleSection(section) {
   try {
     await homepageStore.toggleSection(section.id);
-    showSnackbar(`Section ${section.enabled ? 'enabled' : 'disabled'}`, 'success');
+    showSnackbar(section.enabled ? t('settings.homepageBuilder.sectionEnabled') : t('settings.homepageBuilder.sectionDisabled'), 'success');
   } catch (error) {
-    showSnackbar('Failed to toggle section', 'error');
+    showSnackbar(t('settings.homepageBuilder.failedToToggleSection'), 'error');
     section.enabled = !section.enabled;
   }
 }
@@ -572,12 +573,12 @@ function confirmDeleteSection(section) {
 async function deleteSection() {
   try {
     await homepageStore.deleteSection(sectionToDelete.value.id);
-    showSnackbar('Section deleted successfully', 'success');
+    showSnackbar(t('settings.homepageBuilder.sectionDeleted'), 'success');
     showDeleteSectionDialog.value = false;
     sectionToDelete.value = null;
     await loadSections();
   } catch (error) {
-    showSnackbar('Failed to delete section', 'error');
+    showSnackbar(t('settings.homepageBuilder.failedToDeleteSection'), 'error');
   }
 }
 
@@ -592,10 +593,10 @@ function editWidget(widget) {
 async function deleteWidget(widget) {
   try {
     await homepageStore.deleteWidget(widget.id);
-    showSnackbar('Widget deleted successfully', 'success');
+    showSnackbar(t('settings.homepageBuilder.widgetDeleted'), 'success');
     await loadSections();
   } catch (error) {
-    showSnackbar('Failed to delete widget', 'error');
+    showSnackbar(t('settings.homepageBuilder.failedToDeleteWidget'), 'error');
   }
 }
 
@@ -628,10 +629,10 @@ async function onWidgetDragEnd() {
       });
     });
 
-    showSnackbar('Widget positions updated', 'success');
+    showSnackbar(t('settings.homepageBuilder.widgetPositionsUpdated'), 'success');
     await loadSections();
   } catch (error) {
-    showSnackbar('Failed to update widget positions', 'error');
+    showSnackbar(t('settings.homepageBuilder.failedToUpdateWidgetPositions'), 'error');
     await loadSections();
   }
 }
@@ -678,9 +679,7 @@ onMounted(async () => {
   color: rgba(var(--v-theme-on-surface), 0.38);
 }
 
-.widget-drop-zone-empty::before {
-  content: 'Drop widgets here';
-}
+/* Drop zone placeholder is handled via template */
 
 .widget-card {
   transition: all 0.2s;

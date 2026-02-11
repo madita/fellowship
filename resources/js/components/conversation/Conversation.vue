@@ -7,7 +7,7 @@
                 color="primary"
                 size="64"
             ></v-progress-circular>
-            <p class="mt-4 text-body-1 text-medium-emphasis">Loading conversation...</p>
+            <p class="mt-4 text-body-1 text-medium-emphasis">{{ $t('conversation.loadingConversation') }}</p>
         </div>
 
         <!-- Conversation Content -->
@@ -17,7 +17,7 @@
             <v-card class="mb-4" elevation="2">
                 <v-card-title class="bg-gradient text-white">
                     <v-icon class="mr-3">mdi-chat</v-icon>
-                    Conversation Details
+                    {{ $t('conversation.conversationDetails') }}
                 </v-card-title>
 
 
@@ -26,7 +26,7 @@
             <v-card elevation="2">
                 <v-card-title class="v-col-6 text-h6 font-weight-medium">
                     <v-icon class="mr-2">mdi-message-text</v-icon>
-                    Messages
+                    {{ $t('conversation.messages') }}
                     <v-spacer></v-spacer>
                     <v-chip
                         v-if="messages?.length"
@@ -35,7 +35,7 @@
                         variant="outlined"
                         class="mr-2"
                     >
-                        {{ messages.length }} messages
+                        {{ $t('conversation.messagesCount', { count: messages.length }) }}
                     </v-chip>
 
                     <!-- Add User Dropdown in title -->
@@ -47,7 +47,7 @@
                                 size="small"
                                 prepend-icon="mdi-account-plus"
                             >
-                                Add Participant
+                                {{ $t('conversation.addParticipant') }}
                             </v-btn>
                         </template>
                         <v-card min-width="300">
@@ -69,7 +69,7 @@
             <v-card style="padding-bottom: 20px;" class="mb-4" elevation="2">
                 <v-card-title class="text-h6 font-weight-medium">
                     <v-icon class="mr-2">mdi-reply</v-icon>
-                    Send Reply
+                    {{ $t('conversation.sendReply') }}
                 </v-card-title>
                 <v-card-text>
                     <ConversationReplyForm />
@@ -80,15 +80,16 @@
         <!-- Empty State -->
         <div v-else class="text-center py-12">
             <v-icon size="80" color="grey-lighten-2">mdi-chat-question-outline</v-icon>
-            <h3 class="text-h5 font-weight-medium mt-4 mb-2">No conversation selected</h3>
+            <h3 class="text-h5 font-weight-medium mt-4 mb-2">{{ $t('conversation.noConversationSelected') }}</h3>
             <p class="text-body-1 text-medium-emphasis">
-                Select a conversation from the list to view its details
+                {{ $t('conversation.selectConversationHint') }}
             </p>
         </div>
     </div>
 </template>
 
 <script>
+import { useI18n } from 'vue-i18n';
 import { useConversationStore } from "@/store/conversationStore";
 import { computed, ref, watch, onUnmounted } from "vue";
 import ConversationAddUserForm from "@/components/conversation/forms/ConversationAddUserForm.vue";
@@ -113,6 +114,7 @@ export default {
         UserAvatar
     },
     setup(props) {
+        const { t } = useI18n();
         const conversationStore = useConversationStore();
         const conversation = computed(() => conversationStore.currentConversation);
         const loading = computed(() => conversationStore.loadingConversation);
@@ -165,6 +167,7 @@ export default {
         });
 
         return {
+            t,
             conversation,
             loading,
             messages,

@@ -64,7 +64,7 @@ class TaxonomyController extends Controller
         $term = Term::where('slug', $params['term'])->first();
 
         if (!isset($term->id)) {
-            return response()->json(['message' => 'No data found', 'data' => null, 'category' => null]);
+            return response()->json(['message' => __('messages.common.no_data'), 'data' => null, 'category' => null]);
         }
 
         $taxonomy = Taxonomy::where('term_id', $term->id);

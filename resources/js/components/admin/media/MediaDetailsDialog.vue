@@ -43,13 +43,13 @@
                     <!-- Details Column -->
                     <v-col cols="12" md="5">
                         <v-list lines="two" class="pa-4">
-                            <v-list-subheader>File Information</v-list-subheader>
+                            <v-list-subheader>{{ $t('mediaCenter.fileInformation') }}</v-list-subheader>
 
                             <v-list-item>
                                 <template #prepend>
                                     <v-icon icon="mdi-file" />
                                 </template>
-                                <v-list-item-title>File Name</v-list-item-title>
+                                <v-list-item-title>{{ $t('mediaCenter.fileName') }}</v-list-item-title>
                                 <v-list-item-subtitle>{{ media.file_name }}</v-list-item-subtitle>
                             </v-list-item>
 
@@ -57,7 +57,7 @@
                                 <template #prepend>
                                     <v-icon icon="mdi-file-document-outline" />
                                 </template>
-                                <v-list-item-title>MIME Type</v-list-item-title>
+                                <v-list-item-title>{{ $t('mediaCenter.mimeType') }}</v-list-item-title>
                                 <v-list-item-subtitle>{{ media.mime_type }}</v-list-item-subtitle>
                             </v-list-item>
 
@@ -65,7 +65,7 @@
                                 <template #prepend>
                                     <v-icon icon="mdi-database" />
                                 </template>
-                                <v-list-item-title>Size</v-list-item-title>
+                                <v-list-item-title>{{ $t('mediaCenter.size') }}</v-list-item-title>
                                 <v-list-item-subtitle>{{ media.size_formatted }}</v-list-item-subtitle>
                             </v-list-item>
 
@@ -73,7 +73,7 @@
                                 <template #prepend>
                                     <v-icon icon="mdi-aspect-ratio" />
                                 </template>
-                                <v-list-item-title>Dimensions</v-list-item-title>
+                                <v-list-item-title>{{ $t('mediaCenter.dimensions') }}</v-list-item-title>
                                 <v-list-item-subtitle>{{ media.width }} x {{ media.height }} px</v-list-item-subtitle>
                             </v-list-item>
 
@@ -81,18 +81,18 @@
                                 <template #prepend>
                                     <v-icon icon="mdi-calendar" />
                                 </template>
-                                <v-list-item-title>Upload Date</v-list-item-title>
+                                <v-list-item-title>{{ $t('mediaCenter.uploadDate') }}</v-list-item-title>
                                 <v-list-item-subtitle>{{ formatDate(media.created_at) }}</v-list-item-subtitle>
                             </v-list-item>
 
                             <v-divider class="my-2" />
-                            <v-list-subheader>Associated Model</v-list-subheader>
+                            <v-list-subheader>{{ $t('mediaCenter.associatedModel') }}</v-list-subheader>
 
                             <v-list-item>
                                 <template #prepend>
                                     <v-icon icon="mdi-tag" />
                                 </template>
-                                <v-list-item-title>Context</v-list-item-title>
+                                <v-list-item-title>{{ $t('mediaCenter.context') }}</v-list-item-title>
                                 <v-list-item-subtitle>{{ media.model_type_label }}</v-list-item-subtitle>
                             </v-list-item>
 
@@ -100,7 +100,7 @@
                                 <template #prepend>
                                     <v-icon icon="mdi-folder" />
                                 </template>
-                                <v-list-item-title>Collection</v-list-item-title>
+                                <v-list-item-title>{{ $t('mediaCenter.collectionName') }}</v-list-item-title>
                                 <v-list-item-subtitle>{{ media.collection_name }}</v-list-item-subtitle>
                             </v-list-item>
 
@@ -108,7 +108,7 @@
                                 <template #prepend>
                                     <v-icon icon="mdi-link" />
                                 </template>
-                                <v-list-item-title>Associated With</v-list-item-title>
+                                <v-list-item-title>{{ $t('mediaCenter.associatedWith') }}</v-list-item-title>
                                 <v-list-item-subtitle>{{ media.model_name }}</v-list-item-subtitle>
                             </v-list-item>
 
@@ -116,13 +116,13 @@
                                 <template #prepend>
                                     <v-icon icon="mdi-identifier" />
                                 </template>
-                                <v-list-item-title>UUID</v-list-item-title>
+                                <v-list-item-title>{{ $t('mediaCenter.uuid') }}</v-list-item-title>
                                 <v-list-item-subtitle class="text-truncate">{{ media.uuid }}</v-list-item-subtitle>
                             </v-list-item>
 
                             <template v-if="media.custom_properties && Object.keys(media.custom_properties).length">
                                 <v-divider class="my-2" />
-                                <v-list-subheader>Custom Properties</v-list-subheader>
+                                <v-list-subheader>{{ $t('mediaCenter.customProperties') }}</v-list-subheader>
                                 <v-list-item
                                     v-for="(value, key) in media.custom_properties"
                                     :key="key"
@@ -150,7 +150,7 @@
                     download
                 >
                     <v-icon icon="mdi-download" start />
-                    Download
+                    {{ $t('mediaCenter.download') }}
                 </v-btn>
 
                 <v-btn
@@ -159,7 +159,7 @@
                     @click="copyUrl"
                 >
                     <v-icon icon="mdi-content-copy" start />
-                    Copy URL
+                    {{ $t('mediaCenter.copyUrl') }}
                 </v-btn>
 
                 <v-spacer />
@@ -170,7 +170,7 @@
                     @click="confirmDelete"
                 >
                     <v-icon icon="mdi-delete" start />
-                    Delete
+                    {{ $t('common.delete') }}
                 </v-btn>
             </v-card-actions>
         </v-card>
@@ -179,14 +179,14 @@
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="deleteConfirmDialog" max-width="400">
         <v-card>
-            <v-card-title>Delete Media</v-card-title>
+            <v-card-title>{{ $t('mediaCenter.deleteMedia') }}</v-card-title>
             <v-card-text>
-                Are you sure you want to delete this file? This action cannot be undone.
+                {{ $t('mediaCenter.deleteConfirm') }}
             </v-card-text>
             <v-card-actions>
                 <v-spacer />
-                <v-btn variant="text" @click="deleteConfirmDialog = false">Cancel</v-btn>
-                <v-btn color="error" @click="deleteMedia">Delete</v-btn>
+                <v-btn variant="text" @click="deleteConfirmDialog = false">{{ $t('common.cancel') }}</v-btn>
+                <v-btn color="error" @click="deleteMedia">{{ $t('common.delete') }}</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -194,6 +194,9 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
     modelValue: {
@@ -254,7 +257,7 @@ const formatPropertyKey = (key) => {
 
 const formatPropertyValue = (value) => {
     if (typeof value === 'boolean') {
-        return value ? 'Yes' : 'No';
+        return value ? t('common.yes') : t('common.no');
     }
     if (typeof value === 'object') {
         return JSON.stringify(value);

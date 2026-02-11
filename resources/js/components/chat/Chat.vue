@@ -34,7 +34,7 @@
                     color="primary"
                     class="shadow-none"
                     density="compact"
-                    placeholder="Type a Message"
+                    :placeholder="$t('chat.typeMessage')"
                 ></v-text-field>
                 <v-btn icon variant="text" type="submit" class="text-medium-emphasis" :disabled="!body">
                     <v-icon small>mdi-send</v-icon>

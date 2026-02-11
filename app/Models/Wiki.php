@@ -3,17 +3,23 @@
 namespace App\Models;
 
 use App\Traits\HasCache;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
 
-class Wiki extends Model
+class Wiki extends Model implements TranslatableContract
 {
     use Sluggable;
     use HasCache;
+    use Translatable;
 
     protected $table = 'wikiables';
     protected $cacheTag = 'wikiables';
 //    protected $guard_name = 'api';
+
+    public $translatedAttributes = ['title'];
+    public $translationForeignKey = 'wiki_id';
 
     /**
      * The attributes that are mass assignable.
@@ -21,7 +27,7 @@ class Wiki extends Model
      * @var array
      */
     protected $fillable = [
-        'title', 'slug', 'status', 'parent_id',
+        'slug', 'status', 'parent_id',
     ];
 
     public function sluggable(): array

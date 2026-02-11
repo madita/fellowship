@@ -13,7 +13,7 @@
                 icon
                 size="small"
                 color="primary"
-                title="Twitter / X"
+                :title="$t('footer.social.twitter')"
             >
                 <v-icon size="small">mdi-twitter</v-icon>
             </v-btn>
@@ -24,7 +24,7 @@
                 icon
                 size="small"
                 color="primary"
-                title="Facebook"
+                :title="$t('footer.social.facebook')"
             >
                 <v-icon size="small">mdi-facebook</v-icon>
             </v-btn>
@@ -35,7 +35,7 @@
                 icon
                 size="small"
                 color="primary"
-                title="Instagram"
+                :title="$t('footer.social.instagram')"
             >
                 <v-icon size="small">mdi-instagram</v-icon>
             </v-btn>
@@ -46,7 +46,7 @@
                 icon
                 size="small"
                 color="primary"
-                title="LinkedIn"
+                :title="$t('footer.social.linkedin')"
             >
                 <v-icon size="small">mdi-linkedin</v-icon>
             </v-btn>
@@ -57,7 +57,7 @@
                 icon
                 size="small"
                 color="primary"
-                title="YouTube"
+                :title="$t('footer.social.youtube')"
             >
                 <v-icon size="small">mdi-youtube</v-icon>
             </v-btn>
@@ -68,21 +68,24 @@
                 icon
                 size="small"
                 color="primary"
-                title="Discord"
+                :title="$t('footer.social.discord')"
             >
                 <v-icon size="small">mdi-discord</v-icon>
             </v-btn>
         </div>
 
         <div v-else class="text-caption text-medium-emphasis">
-            No social media links configured
+            {{ $t('footer.social.noLinksConfigured') }}
         </div>
     </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSettingsStore } from '@/store/settingStore.js';
+
+const { t } = useI18n();
 
 const props = defineProps({
     config: {

@@ -2,7 +2,7 @@
     <v-form @submit.prevent="handleSubmit" ref="formRef">
         <v-card flat>
             <v-card-title class="text-h6 pa-0 mb-4">
-                New Conversation
+                {{ $t('conversation.newConversation') }}
             </v-card-title>
 
             <v-card-text class="pa-0">
@@ -13,8 +13,8 @@
                     :loading="loadingUsers"
                     :search="userSearch"
                     @update:search="handleUserSearch"
-                    label="Select Recipients"
-                    placeholder="Type to search for users..."
+                    :label="$t('conversation.selectRecipients')"
+                    :placeholder="$t('conversation.searchUsersPlaceholder')"
                     variant="outlined"
                     item-title="username"
                     item-value="id"
@@ -47,7 +47,7 @@
                     <template #no-data>
                         <v-list-item>
                             <v-list-item-title>
-                                {{ userSearch ? 'No users found' : 'Start typing to search for users' }}
+                                {{ userSearch ? $t('conversation.noUsersFound') : $t('conversation.startTypingToSearch') }}
                             </v-list-item-title>
                         </v-list-item>
                     </template>
@@ -56,8 +56,8 @@
                 <!-- Message Body -->
                 <v-textarea
                     v-model="body"
-                    label="Message Body"
-                    placeholder="Type your message here..."
+                    :label="$t('conversation.messageBody')"
+                    :placeholder="$t('conversation.messageBodyPlaceholder')"
                     variant="outlined"
                     rows="4"
                     auto-grow
@@ -74,7 +74,7 @@
                         @click="handleCancel"
                         :disabled="isSubmitting"
                     >
-                        Cancel
+                        {{ $t('common.cancel') }}
                     </v-btn>
 
                     <v-btn
@@ -84,7 +84,7 @@
                         :disabled="!isFormValid"
                     >
                         <v-icon start>mdi-send</v-icon>
-                        Send Message
+                        {{ $t('conversation.sendMessage') }}
                     </v-btn>
                 </div>
             </v-card-text>
@@ -94,10 +94,13 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConversationStore } from '@/store/conversationStore.js'
 import { useUserSearch } from '@/composables/conversation/useUserSearch'
 import { VALIDATION_RULES, MESSAGE_LIMITS } from '../constants'
 import axios from "axios"
+
+const { t } = useI18n()
 
 // Emits
 const emit = defineEmits(['conversation-created', 'cancel'])

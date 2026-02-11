@@ -3,7 +3,7 @@
     <v-card>
       <v-card-title class="bg-primary text-white">
         <v-icon class="mr-2">mdi-widgets</v-icon>
-        Widget Library
+        {{ $t('settings.widgetLibrary.homepageWidgetLibrary') }}
         <v-spacer></v-spacer>
         <v-btn icon="mdi-close" variant="text" @click="close"></v-btn>
       </v-card-title>
@@ -11,7 +11,7 @@
       <v-card-text class="pa-0">
         <!-- Category Filter -->
         <v-tabs v-model="selectedCategory" bg-color="grey-lighten-4" color="primary">
-          <v-tab value="all">All Widgets</v-tab>
+          <v-tab value="all">{{ $t('settings.widgetLibrary.allWidgets') }}</v-tab>
           <v-tab v-for="category in categories" :key="category.value" :value="category.value">
             {{ category.label }}
           </v-tab>
@@ -63,7 +63,7 @@
                     size="small"
                     prepend-icon="mdi-plus"
                   >
-                    Add Widget
+                    {{ $t('settings.widgetLibrary.addWidget') }}
                   </v-btn>
                 </v-card-actions>
               </v-card>
@@ -71,7 +71,7 @@
           </v-row>
 
           <v-alert v-if="filteredWidgets.length === 0" type="info" variant="tonal" class="mt-4">
-            No widgets found in this category.
+            {{ $t('settings.widgetLibrary.noWidgetsInCategory') }}
           </v-alert>
         </div>
       </v-card-text>
@@ -81,7 +81,10 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getAvailableWidgets, WIDGET_CATEGORIES } from '@/configs/widgetTypes';
+
+const { t } = useI18n();
 
 const props = defineProps({
   modelValue: Boolean

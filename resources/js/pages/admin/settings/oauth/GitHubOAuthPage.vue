@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="GitHub OAuth"
-        description="Configure GitHub sign-in for your application"
+        :title="$t('settings.oauth.github.title')"
+        :description="$t('settings.oauth.github.description')"
         icon="mdi-github"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'oauth' } }"
@@ -11,10 +11,10 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-github" title="GitHub OAuth">
+        <settings-card icon="mdi-github" :title="$t('settings.oauth.github.cardTitle')">
             <v-switch
                 v-model="settings.oauth_github_enabled"
-                label="Enable GitHub Login"
+                :label="$t('settings.oauth.github.enableLogin')"
                 color="primary"
                 density="compact"
                 class="mb-3"
@@ -22,16 +22,16 @@
 
             <v-alert v-if="settings.oauth_github_enabled" type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <strong>Setup:</strong> Create OAuth App at
+                    <strong>{{ $t('settings.oauth.common.setup') }}</strong> {{ $t('settings.oauth.github.setupText') }}
                     <a href="https://github.com/settings/developers" target="_blank" class="text-primary">GitHub Developer Settings</a><br>
-                    <strong>Callback URL:</strong> <code>{{ redirectUrl }}</code>
+                    <strong>{{ $t('settings.oauth.common.callbackUrl') }}</strong> <code>{{ redirectUrl }}</code>
                 </div>
             </v-alert>
 
             <v-text-field
                 v-if="settings.oauth_github_enabled"
                 v-model="settings.oauth_github_client_id"
-                label="Client ID"
+                :label="$t('settings.oauth.common.clientId')"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-key"
@@ -42,7 +42,7 @@
             <v-text-field
                 v-if="settings.oauth_github_enabled"
                 v-model="settings.oauth_github_client_secret"
-                label="Client Secret"
+                :label="$t('settings.oauth.common.clientSecret')"
                 variant="outlined"
                 density="compact"
                 type="password"
@@ -60,7 +60,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

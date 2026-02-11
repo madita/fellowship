@@ -1,15 +1,15 @@
 <template>
     <div>
         <v-alert v-if="!isEnabled" type="info" variant="tonal" class="mb-4">
-            API keys feature is not enabled. Contact your administrator to enable it.
+            {{ $t('apiKeys.notEnabled') }}
         </v-alert>
 
         <template v-else>
             <div class="d-flex justify-space-between align-center mb-4">
                 <div>
-                    <div class="text-h6">API Keys</div>
+                    <div class="text-h6">{{ $t('apiKeys.title') }}</div>
                     <div class="text-caption text-medium-emphasis">
-                        Manage your API keys for external integrations. Rate limit: {{ rateLimit }} requests/minute
+                        {{ $t('apiKeys.description', { rateLimit: rateLimit }) }}
                     </div>
                 </div>
                 <v-btn
@@ -17,7 +17,7 @@
                     prepend-icon="mdi-plus"
                     @click="showCreateDialog = true"
                 >
-                    Create API Key
+                    {{ $t('apiKeys.createKey') }}
                 </v-btn>
             </div>
 
@@ -44,14 +44,14 @@
                                 <code class="text-caption">{{ key.key_preview }}</code>
                                 <span class="mx-2">|</span>
                                 <span v-if="key.last_used_at">
-                                    Last used: {{ formatDate(key.last_used_at) }}
+                                    {{ $t('apiKeys.lastUsed') }}: {{ formatDate(key.last_used_at) }}
                                 </span>
-                                <span v-else class="text-medium-emphasis">Never used</span>
+                                <span v-else class="text-medium-emphasis">{{ $t('apiKeys.neverUsed') }}</span>
                                 <span class="mx-2">|</span>
-                                <span>{{ key.request_count }} requests</span>
+                                <span>{{ $t('apiKeys.requestCount', { count: key.request_count }) }}</span>
                                 <span v-if="key.expires_at" class="mx-2">|</span>
                                 <span v-if="key.expires_at" :class="isExpired(key.expires_at) ? 'text-error' : ''">
-                                    {{ isExpired(key.expires_at) ? 'Expired' : `Expires: ${formatDate(key.expires_at)}` }}
+                                    {{ isExpired(key.expires_at) ? $t('apiKeys.expired') : $t('apiKeys.expires', { date: formatDate(key.expires_at) }) }}
                                 </span>
                             </v-list-item-subtitle>
 
@@ -61,7 +61,7 @@
                                     variant="text"
                                     size="small"
                                     @click="toggleKey(key)"
-                                    :title="key.is_active ? 'Deactivate' : 'Activate'"
+                                    :title="key.is_active ? $t('apiKeys.deactivate') : $t('apiKeys.activate')"
                                 >
                                     <v-icon>{{ key.is_active ? 'mdi-pause' : 'mdi-play' }}</v-icon>
                                 </v-btn>
@@ -70,7 +70,7 @@
                                     variant="text"
                                     size="small"
                                     @click="confirmRegenerate(key)"
-                                    title="Regenerate"
+                                    :title="$t('apiKeys.regenerate')"
                                 >
                                     <v-icon>mdi-refresh</v-icon>
                                 </v-btn>
@@ -80,7 +80,7 @@
                                     size="small"
                                     color="error"
                                     @click="confirmDelete(key)"
-                                    title="Delete"
+                                    :title="$t('common.delete')"
                                 >
                                     <v-icon>mdi-delete</v-icon>
                                 </v-btn>
@@ -93,12 +93,12 @@
 
             <v-card v-else variant="outlined" class="pa-8 text-center">
                 <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-key-outline</v-icon>
-                <div class="text-h6 text-medium-emphasis mb-2">No API Keys</div>
+                <div class="text-h6 text-medium-emphasis mb-2">{{ $t('apiKeys.noKeys') }}</div>
                 <div class="text-body-2 text-medium-emphasis mb-4">
-                    Create an API key to access the API programmatically.
+                    {{ $t('apiKeys.noKeysDescription') }}
                 </div>
                 <v-btn color="primary" @click="showCreateDialog = true">
-                    Create Your First API Key
+                    {{ $t('apiKeys.createFirstKey') }}
                 </v-btn>
             </v-card>
         </template>
@@ -106,12 +106,12 @@
         <!-- Create Dialog -->
         <v-dialog v-model="showCreateDialog" max-width="500">
             <v-card>
-                <v-card-title>Create API Key</v-card-title>
+                <v-card-title>{{ $t('apiKeys.createKey') }}</v-card-title>
                 <v-card-text>
                     <v-text-field
                         v-model="newKey.name"
-                        label="Key Name"
-                        placeholder="e.g., My Integration"
+                        :label="$t('apiKeys.keyName')"
+                        :placeholder="$t('apiKeys.keyNamePlaceholder')"
                         variant="outlined"
                         :error-messages="formErrors.name"
                         class="mb-4"
@@ -119,18 +119,18 @@
 
                     <v-text-field
                         v-model="newKey.expires_at"
-                        label="Expiration Date (Optional)"
+                        :label="$t('apiKeys.expirationDate')"
                         type="date"
                         variant="outlined"
                         :min="minDate"
-                        hint="Leave empty for no expiration"
+                        :hint="$t('apiKeys.expirationHint')"
                         persistent-hint
                     />
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn variant="text" @click="showCreateDialog = false">Cancel</v-btn>
-                    <v-btn color="primary" :loading="isCreating" @click="createKey">Create</v-btn>
+                    <v-btn variant="text" @click="showCreateDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" :loading="isCreating" @click="createKey">{{ $t('common.create') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -140,15 +140,15 @@
             <v-card>
                 <v-card-title class="d-flex align-center">
                     <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
-                    Save Your API Secret
+                    {{ $t('apiKeys.saveYourSecret') }}
                 </v-card-title>
                 <v-card-text>
                     <v-alert type="warning" variant="tonal" class="mb-4">
-                        This is the only time you will see this secret. Save it securely!
+                        {{ $t('apiKeys.secretWarning') }}
                     </v-alert>
 
                     <div class="mb-4">
-                        <div class="text-caption text-medium-emphasis mb-1">API Key</div>
+                        <div class="text-caption text-medium-emphasis mb-1">{{ $t('apiKeys.apiKey') }}</div>
                         <v-text-field
                             :model-value="createdKey?.key"
                             readonly
@@ -160,7 +160,7 @@
                     </div>
 
                     <div class="mb-4">
-                        <div class="text-caption text-medium-emphasis mb-1">API Secret</div>
+                        <div class="text-caption text-medium-emphasis mb-1">{{ $t('apiKeys.apiSecret') }}</div>
                         <v-text-field
                             :model-value="createdKey?.secret"
                             readonly
@@ -173,7 +173,7 @@
 
                     <v-alert type="info" variant="tonal" density="compact">
                         <div class="text-caption">
-                            <strong>Usage:</strong> Include these headers in your API requests:
+                            <strong>{{ $t('apiKeys.usage') }}:</strong> {{ $t('apiKeys.usageDescription') }}
                             <pre class="mt-2 pa-2 bg-grey-darken-3 rounded text-white">X-API-Key: {{ createdKey?.key }}
 X-API-Secret: {{ createdKey?.secret }}</pre>
                         </div>
@@ -181,7 +181,7 @@ X-API-Secret: {{ createdKey?.secret }}</pre>
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn color="primary" @click="closeSecretDialog">I've Saved the Secret</v-btn>
+                    <v-btn color="primary" @click="closeSecretDialog">{{ $t('apiKeys.savedSecret') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -189,15 +189,14 @@ X-API-Secret: {{ createdKey?.secret }}</pre>
         <!-- Confirm Delete Dialog -->
         <v-dialog v-model="showDeleteDialog" max-width="400">
             <v-card>
-                <v-card-title>Delete API Key</v-card-title>
+                <v-card-title>{{ $t('apiKeys.deleteKey') }}</v-card-title>
                 <v-card-text>
-                    Are you sure you want to delete the API key "{{ keyToDelete?.name }}"?
-                    This action cannot be undone.
+                    {{ $t('apiKeys.confirmDelete', { name: keyToDelete?.name }) }}
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn variant="text" @click="showDeleteDialog = false">Cancel</v-btn>
-                    <v-btn color="error" :loading="isDeleting" @click="deleteKey">Delete</v-btn>
+                    <v-btn variant="text" @click="showDeleteDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="error" :loading="isDeleting" @click="deleteKey">{{ $t('common.delete') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -205,15 +204,14 @@ X-API-Secret: {{ createdKey?.secret }}</pre>
         <!-- Confirm Regenerate Dialog -->
         <v-dialog v-model="showRegenerateDialog" max-width="400">
             <v-card>
-                <v-card-title>Regenerate API Key</v-card-title>
+                <v-card-title>{{ $t('apiKeys.regenerateKey') }}</v-card-title>
                 <v-card-text>
-                    Are you sure you want to regenerate the API key "{{ keyToRegenerate?.name }}"?
-                    The current key and secret will stop working immediately.
+                    {{ $t('apiKeys.confirmRegenerate', { name: keyToRegenerate?.name }) }}
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn variant="text" @click="showRegenerateDialog = false">Cancel</v-btn>
-                    <v-btn color="warning" :loading="isRegenerating" @click="regenerateKey">Regenerate</v-btn>
+                    <v-btn variant="text" @click="showRegenerateDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="warning" :loading="isRegenerating" @click="regenerateKey">{{ $t('apiKeys.regenerate') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -222,8 +220,11 @@ X-API-Secret: {{ createdKey?.secret }}</pre>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { formatDate as formatDateUtil } from '@/plugins/formatDate.js';
+
+const { t } = useI18n();
 
 const isEnabled = ref(false);
 const rateLimit = ref(60);

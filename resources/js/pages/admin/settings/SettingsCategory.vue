@@ -56,9 +56,9 @@
             <v-card v-else elevation="2">
                 <v-card-text class="text-center py-12">
                     <v-icon size="80" color="grey-lighten-1">mdi-alert-circle-outline</v-icon>
-                    <div class="text-h5 mt-4">Category Not Found</div>
+                    <div class="text-h5 mt-4">{{ $t('settings.category.notFound') }}</div>
                     <div class="text-body-2 text-medium-emphasis mt-2">
-                        The settings category you're looking for doesn't exist.
+                        {{ $t('settings.category.notFoundMessage') }}
                     </div>
                     <v-btn
                         color="primary"
@@ -66,7 +66,7 @@
                         @click="goBack"
                         prepend-icon="mdi-arrow-left"
                     >
-                        Back to Settings
+                        {{ $t('settings.category.backToSettings') }}
                     </v-btn>
                 </v-card-text>
             </v-card>
@@ -77,9 +77,11 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { getCategoryBySlug } from '@/configs/settingsConfig';
 import SettingsItemCard from '@/components/settings/SettingsItemCard.vue';
 
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 
@@ -87,12 +89,12 @@ const category = computed(() => getCategoryBySlug(route.params.category));
 
 const breadcrumbs = computed(() => [
     {
-        title: 'Settings',
+        title: t('settings.overview.settings'),
         disabled: false,
         to: { name: 'admin-settings' }
     },
     {
-        title: category.value?.title || 'Category',
+        title: category.value?.title || t('settings.category.category'),
         disabled: true
     }
 ]);

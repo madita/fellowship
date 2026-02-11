@@ -55,7 +55,7 @@ class FooterWidgetController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -84,7 +84,7 @@ class FooterWidgetController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Widget created successfully',
+            'message' => __('messages.footer.widget_created'),
             'widget'  => $widget,
         ], 201);
     }
@@ -107,7 +107,7 @@ class FooterWidgetController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -115,7 +115,7 @@ class FooterWidgetController extends Controller
         $widget->update($validator->validated());
 
         return response()->json([
-            'message' => 'Widget updated successfully',
+            'message' => __('messages.footer.widget_updated'),
             'widget'  => $widget->fresh(),
         ]);
     }
@@ -129,7 +129,7 @@ class FooterWidgetController extends Controller
         $widget->delete();
 
         return response()->json([
-            'message' => 'Widget deleted successfully',
+            'message' => __('messages.footer.widget_deleted'),
         ]);
     }
 
@@ -143,7 +143,7 @@ class FooterWidgetController extends Controller
         $widget->save();
 
         return response()->json([
-            'message' => 'Widget toggled successfully',
+            'message' => __('messages.footer.widget_toggled'),
             'widget'  => $widget,
         ]);
     }
@@ -161,7 +161,7 @@ class FooterWidgetController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -174,7 +174,7 @@ class FooterWidgetController extends Controller
         FooterWidget::clearCache();
 
         return response()->json([
-            'message' => 'Widget order updated successfully',
+            'message' => __('messages.footer.widget_reordered'),
         ]);
     }
 }

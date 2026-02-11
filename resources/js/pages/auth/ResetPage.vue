@@ -6,7 +6,7 @@
             type="error">
             {{ message[0] }}
         </v-alert>
-        <v-card-title class="justify-center display-1 mb-2">Set new password</v-card-title>
+        <v-card-title class="justify-center display-1 mb-2">{{ $t('auth.setNewPassword') }}</v-card-title>
         <div class="overline">{{ status }}</div>
 <!--        <div class="error&#45;&#45;text mt-2 mb-4">{{ error }}</div>-->
 
@@ -20,7 +20,7 @@
                 :error="errorNewPassword"
                 :error-messages="errorNewPasswordMessage"
                 name="password"
-                label="New Password"
+                :label="$t('auth.newPassword')"
                 variant="outlined"
                 class="mt-4"
                 @change="resetErrors"
@@ -48,7 +48,7 @@
             size="large"
             color="primary"
             @click="submit"
-        >Set new password and Sign In
+        >{{ $t('auth.setNewPasswordAndSignIn') }}
         </v-btn>
     </v-card>
 </template>
@@ -93,12 +93,12 @@ export default {
             // show password field
             showPassword: false,
 
-            status: 'Resetting password',
+            status: this.$t ? this.$t('auth.resettingPassword') : 'Resetting password',
             error: null,
 
             // input rules
             rules: {
-                required: (value) => (value && Boolean(value)) || 'Required'
+                required: (value) => (value && Boolean(value)) || this.$t('auth.required')
             }
         }
     },

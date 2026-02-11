@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Social Media"
-        description="Configure your social media profile links"
+        :title="$t('settings.socialMedia.title')"
+        :description="$t('settings.socialMedia.description')"
         icon="mdi-share-variant-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'general' } }"
@@ -11,44 +11,44 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-share-variant" title="Social Media Links">
+        <settings-card icon="mdi-share-variant" :title="$t('settings.socialMedia.cardTitle')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
                 <div class="text-caption">
-                    Add your social media profiles. These links will appear in your site footer.
+                    {{ $t('settings.socialMedia.infoText') }}
                 </div>
             </v-alert>
 
             <v-text-field
                 v-model="settings.social_twitter"
-                label="Twitter / X URL"
+                :label="$t('settings.socialMedia.twitter')"
                 prepend-inner-icon="mdi-twitter"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.social_twitter"
-                hint="Full URL to your Twitter/X profile"
+                :hint="$t('settings.socialMedia.twitterHint')"
                 persistent-hint
                 placeholder="https://twitter.com/yourusername"
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.social_facebook"
-                label="Facebook URL"
+                :label="$t('settings.socialMedia.facebook')"
                 prepend-inner-icon="mdi-facebook"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.social_facebook"
-                hint="Full URL to your Facebook page"
+                :hint="$t('settings.socialMedia.facebookHint')"
                 persistent-hint
                 placeholder="https://facebook.com/yourpage"
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.social_instagram"
-                label="Instagram URL"
+                :label="$t('settings.socialMedia.instagram')"
                 prepend-inner-icon="mdi-instagram"
                 variant="outlined"
                 :error-messages="errors.social_instagram"
-                hint="Full URL to your Instagram profile"
+                :hint="$t('settings.socialMedia.instagramHint')"
                 persistent-hint
                 placeholder="https://instagram.com/yourusername"
             ></v-text-field>
@@ -63,7 +63,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

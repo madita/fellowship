@@ -2,7 +2,7 @@
     <v-dialog v-model="dialogOpen" max-width="900" scrollable>
         <v-card class="media-picker-modal">
             <v-card-title class="d-flex align-center justify-space-between py-3">
-                <span>Select Image</span>
+                <span>{{ $t('mediaPicker.selectImage') }}</span>
                 <v-btn icon variant="text" @click="close">
                     <v-icon icon="mdi-close" />
                 </v-btn>
@@ -13,15 +13,15 @@
             <v-tabs v-model="activeTab" color="primary">
                 <v-tab value="library">
                     <v-icon icon="mdi-image-multiple" start />
-                    Media Library
+                    {{ $t('mediaPicker.mediaLibrary') }}
                 </v-tab>
                 <v-tab value="upload">
                     <v-icon icon="mdi-upload" start />
-                    Upload New
+                    {{ $t('mediaPicker.uploadNew') }}
                 </v-tab>
                 <v-tab value="url">
                     <v-icon icon="mdi-link" start />
-                    From URL
+                    {{ $t('mediaPicker.fromUrl') }}
                 </v-tab>
             </v-tabs>
 
@@ -36,7 +36,7 @@
                             <div class="d-flex align-center ga-2 mb-4">
                                 <v-text-field
                                     v-model="search"
-                                    placeholder="Search images..."
+                                    :placeholder="$t('mediaPicker.searchImages')"
                                     prepend-inner-icon="mdi-magnify"
                                     variant="outlined"
                                     density="compact"
@@ -51,7 +51,7 @@
                                     :items="collectionOptions"
                                     item-title="label"
                                     item-value="value"
-                                    placeholder="All Collections"
+                                    :placeholder="$t('mediaPicker.allCollections')"
                                     prepend-inner-icon="mdi-filter-variant"
                                     variant="outlined"
                                     density="compact"
@@ -68,9 +68,9 @@
 
                             <div v-else-if="!media.length" class="text-center pa-8">
                                 <v-icon icon="mdi-image-off" size="64" color="grey" />
-                                <div class="text-h6 text-grey mt-4">No images found</div>
+                                <div class="text-h6 text-grey mt-4">{{ $t('mediaPicker.noImagesFound') }}</div>
                                 <div class="text-body-2 text-grey">
-                                    Try adjusting your search or upload a new image
+                                    {{ $t('mediaPicker.tryAdjustingSearch') }}
                                 </div>
                             </div>
 
@@ -140,7 +140,7 @@
                             <!-- Collection Selection -->
                             <v-select
                                 v-model="uploadCollection"
-                                label="Collection"
+                                :label="$t('mediaPicker.collection')"
                                 :items="uploadCollectionOptions"
                                 item-title="label"
                                 item-value="value"
@@ -171,20 +171,20 @@
 
                                 <template v-if="uploadFiles.length === 0">
                                     <v-icon icon="mdi-cloud-upload" size="64" color="grey" />
-                                    <div class="text-h6 mt-2">Drop images here or click to upload</div>
-                                    <div class="text-caption text-grey">Supports: JPEG, PNG, GIF, WebP, SVG (max 10MB each)</div>
+                                    <div class="text-h6 mt-2">{{ $t('mediaPicker.dropImagesHere') }}</div>
+                                    <div class="text-caption text-grey">{{ $t('mediaPicker.supportedFormats') }}</div>
                                 </template>
 
                                 <template v-else>
                                     <v-icon icon="mdi-check-circle" size="48" color="success" />
-                                    <div class="text-h6 mt-2">{{ uploadFiles.length }} file(s) selected</div>
+                                    <div class="text-h6 mt-2">{{ $t('mediaPicker.filesSelected', { count: uploadFiles.length }) }}</div>
                                     <v-btn
                                         variant="text"
                                         size="small"
                                         color="primary"
                                         @click.stop="triggerFileInput"
                                     >
-                                        Add more files
+                                        {{ $t('mediaPicker.addMoreFiles') }}
                                     </v-btn>
                                 </template>
                             </div>
@@ -239,13 +239,13 @@
                                     @click="executeUpload"
                                 >
                                     <v-icon icon="mdi-upload" start />
-                                    Upload {{ uploadFiles.length }} file(s)
+                                    {{ $t('mediaPicker.uploadFiles', { count: uploadFiles.length }) }}
                                 </v-btn>
                             </div>
 
                             <!-- Recently Uploaded -->
                             <div v-if="recentlyUploaded.length > 0" class="mt-6">
-                                <div class="text-subtitle-2 mb-2">Recently Uploaded</div>
+                                <div class="text-subtitle-2 mb-2">{{ $t('mediaPicker.recentlyUploaded') }}</div>
                                 <v-row>
                                     <v-col
                                         v-for="item in recentlyUploaded"
@@ -289,27 +289,27 @@
                         <div class="pa-4">
                             <v-text-field
                                 v-model="imageUrl"
-                                label="Image URL"
+                                :label="$t('mediaPicker.imageUrl')"
                                 placeholder="https://example.com/image.jpg"
                                 variant="outlined"
                                 prepend-inner-icon="mdi-link"
-                                hint="Enter the full URL of an external image"
+                                :hint="$t('mediaPicker.enterFullUrl')"
                                 persistent-hint
                             />
 
                             <v-text-field
                                 v-model="imageAlt"
-                                label="Alt Text (optional)"
-                                placeholder="Description of the image"
+                                :label="$t('mediaPicker.altTextOptional')"
+                                :placeholder="$t('mediaPicker.imageDescription')"
                                 variant="outlined"
                                 class="mt-4"
-                                hint="Describe the image for accessibility"
+                                :hint="$t('mediaPicker.describeForAccessibility')"
                                 persistent-hint
                             />
 
                             <!-- URL Preview -->
                             <div v-if="imageUrl && isValidUrl" class="mt-4">
-                                <div class="text-subtitle-2 mb-2">Preview</div>
+                                <div class="text-subtitle-2 mb-2">{{ $t('mediaPicker.preview') }}</div>
                                 <v-card max-width="300" class="mx-auto">
                                     <v-img
                                         :src="imageUrl"
@@ -327,7 +327,7 @@
                                             <v-row class="fill-height ma-0 bg-grey-lighten-3" align="center" justify="center">
                                                 <div class="text-center">
                                                     <v-icon icon="mdi-image-broken" size="48" color="grey" />
-                                                    <div class="text-caption text-grey">Failed to load image</div>
+                                                    <div class="text-caption text-grey">{{ $t('mediaPicker.failedToLoadImage') }}</div>
                                                 </div>
                                             </v-row>
                                         </template>
@@ -351,13 +351,13 @@
                     </div>
                 </div>
                 <v-spacer />
-                <v-btn variant="text" @click="close">Cancel</v-btn>
+                <v-btn variant="text" @click="close">{{ $t('common.cancel') }}</v-btn>
                 <v-btn
                     color="primary"
                     :disabled="!canInsert"
                     @click="insertImage"
                 >
-                    Insert Image
+                    {{ $t('mediaPicker.insertImage') }}
                 </v-btn>
             </v-card-actions>
         </v-card>
@@ -371,8 +371,11 @@
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { debounce } from 'lodash';
+
+const { t } = useI18n();
 
 const props = defineProps({
     modelValue: {
@@ -406,9 +409,9 @@ const meta = reactive({
     total: 0,
 });
 
-const collectionOptions = ref([
-    { value: 'images', label: 'Images' },
-    { value: 'avatars', label: 'Avatars' },
+const collectionOptions = computed(() => [
+    { value: 'images', label: t('mediaPicker.images') },
+    { value: 'avatars', label: t('mediaPicker.avatars') },
 ]);
 
 // Upload state
@@ -420,9 +423,9 @@ const isDragging = ref(false);
 const fileInputRef = ref(null);
 const recentlyUploaded = ref([]);
 
-const uploadCollectionOptions = [
-    { label: 'Images (for pages)', value: 'images' },
-];
+const uploadCollectionOptions = computed(() => [
+    { label: t('mediaPicker.imagesForPages'), value: 'images' },
+]);
 
 // URL state
 const imageUrl = ref('');
@@ -478,7 +481,7 @@ const fetchMedia = async () => {
         Object.assign(meta, response.data.meta);
     } catch (error) {
         console.error('Failed to fetch media:', error);
-        showSnackbar('Failed to load media', 'error');
+        showSnackbar(t('mediaPicker.failedToLoadMedia'), 'error');
     } finally {
         loading.value = false;
     }
@@ -555,11 +558,11 @@ const addFiles = (files) => {
 
     files.forEach(file => {
         if (!validTypes.includes(file.type)) {
-            showSnackbar(`Invalid file type: ${file.name}`, 'error');
+            showSnackbar(t('mediaPicker.invalidFileType', { name: file.name }), 'error');
             return;
         }
         if (file.size > maxSize) {
-            showSnackbar(`File too large: ${file.name} (max 10MB)`, 'error');
+            showSnackbar(t('mediaPicker.fileTooLarge', { name: file.name }), 'error');
             return;
         }
 
@@ -608,7 +611,7 @@ const executeUpload = async () => {
             },
         });
 
-        showSnackbar(`${uploadFiles.value.length} file(s) uploaded successfully`);
+        showSnackbar(t('mediaPicker.filesUploadedSuccessfully', { count: uploadFiles.value.length }));
         recentlyUploaded.value = response.data.data;
         uploadFiles.value = [];
 
@@ -618,7 +621,7 @@ const executeUpload = async () => {
         }
     } catch (error) {
         console.error('Failed to upload files:', error);
-        showSnackbar(error.response?.data?.message || 'Failed to upload files', 'error');
+        showSnackbar(error.response?.data?.message || t('mediaPicker.failedToUploadFiles'), 'error');
     } finally {
         uploading.value = false;
     }

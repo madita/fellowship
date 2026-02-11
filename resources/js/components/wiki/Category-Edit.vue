@@ -19,7 +19,7 @@
                     </v-alert>
 
                     <v-text-field
-                        label="Title"
+                        :label="$t('common.title')"
                         v-model="info.term.title"
                     ></v-text-field>
 
@@ -35,7 +35,7 @@
                             v-model="parentValue"
                             :items="parents"
                             item-title="title"
-                            label="Parent Category"
+                            :label="$t('wiki.parentCategory')"
                             chips
                             clearable
                         ></v-combobox>
@@ -43,14 +43,14 @@
                             v-model="colorsValue"
                             :items="colors"
                             item-title="title"
-                            label="Colors"
+                            :label="$t('wiki.colors')"
                             chips
                             clearable
                         ></v-combobox>
 
                     </template>
 
-                    <v-btn @click="updateCategory">Save</v-btn>
+                    <v-btn @click="updateCategory">{{ $t('common.save') }}</v-btn>
                 </v-col>
             </v-row>
 
@@ -97,7 +97,7 @@ export default {
                 errors: []
             },
             rules: {
-                required: value => !!value || 'Required.'
+                required: value => !!value || this.$t('validation.required')
             },
             colors: ['green', 'purple', 'indigo', 'cyan', 'teal', 'orange'],
             nonce: 1
@@ -129,7 +129,7 @@ export default {
 
 
                 if(this.info == null) {
-                    this.message = "Die Kategorie existiert nicht..willst du sie erstellen."
+                    this.message = this.$t('wiki.categoryNotExistsCreate')
                     this.mode = "create"
                     this.info = {term: this.slug, children:[]}
                     this.categories = {total:0}

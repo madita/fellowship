@@ -2,16 +2,15 @@
     <div>
         <v-alert type="info" variant="tonal" class="mb-4">
             <div class="text-body-2">
-                Configure OAuth providers to allow users to sign in with their social media accounts.
-                Users can link multiple providers to a single account.
+                {{ $t('settings.oauthSettings.description') }}
             </div>
         </v-alert>
 
         <!-- Google OAuth -->
-        <settings-card icon="mdi-google" title="Google OAuth">
+        <settings-card icon="mdi-google" :title="$t('settings.oauthSettings.googleOAuth')">
             <v-switch
                 v-model="settings.oauth_google_enabled"
-                label="Enable Google Login"
+                :label="$t('settings.oauthSettings.enableGoogleLogin')"
                 color="primary"
                 density="compact"
                 class="mb-3"
@@ -19,16 +18,16 @@
 
             <v-alert v-if="settings.oauth_google_enabled" type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <strong>Setup:</strong> Create OAuth credentials at
+                    <strong>{{ $t('settings.oauthSettings.setup') }}:</strong> {{ $t('settings.oauthSettings.googleSetupText') }}
                     <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-primary">Google Cloud Console</a><br>
-                    <strong>Redirect URI:</strong> <code>{{ redirectUrl('google') }}</code>
+                    <strong>{{ $t('settings.oauthSettings.redirectUri') }}:</strong> <code>{{ redirectUrl('google') }}</code>
                 </div>
             </v-alert>
 
             <v-text-field
                 v-if="settings.oauth_google_enabled"
                 v-model="settings.oauth_google_client_id"
-                label="Client ID"
+                :label="$t('settings.oauthSettings.clientId')"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-key"
@@ -39,7 +38,7 @@
             <v-text-field
                 v-if="settings.oauth_google_enabled"
                 v-model="settings.oauth_google_client_secret"
-                label="Client Secret"
+                :label="$t('settings.oauthSettings.clientSecret')"
                 variant="outlined"
                 density="compact"
                 type="password"
@@ -49,10 +48,10 @@
         </settings-card>
 
         <!-- Discord OAuth -->
-        <settings-card icon="mdi-discord" title="Discord OAuth">
+        <settings-card icon="mdi-discord" :title="$t('settings.oauthSettings.discordOAuth')">
             <v-switch
                 v-model="settings.oauth_discord_enabled"
-                label="Enable Discord Login"
+                :label="$t('settings.oauthSettings.enableDiscordLogin')"
                 color="primary"
                 density="compact"
                 class="mb-3"
@@ -60,16 +59,16 @@
 
             <v-alert v-if="settings.oauth_discord_enabled" type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <strong>Setup:</strong> Create application at
+                    <strong>{{ $t('settings.oauthSettings.setup') }}:</strong> {{ $t('settings.oauthSettings.discordSetupText') }}
                     <a href="https://discord.com/developers/applications" target="_blank" class="text-primary">Discord Developer Portal</a><br>
-                    <strong>Redirect URI:</strong> <code>{{ redirectUrl('discord') }}</code>
+                    <strong>{{ $t('settings.oauthSettings.redirectUri') }}:</strong> <code>{{ redirectUrl('discord') }}</code>
                 </div>
             </v-alert>
 
             <v-text-field
                 v-if="settings.oauth_discord_enabled"
                 v-model="settings.oauth_discord_client_id"
-                label="Client ID"
+                :label="$t('settings.oauthSettings.clientId')"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-key"
@@ -80,7 +79,7 @@
             <v-text-field
                 v-if="settings.oauth_discord_enabled"
                 v-model="settings.oauth_discord_client_secret"
-                label="Client Secret"
+                :label="$t('settings.oauthSettings.clientSecret')"
                 variant="outlined"
                 density="compact"
                 type="password"
@@ -90,10 +89,10 @@
         </settings-card>
 
         <!-- GitHub OAuth -->
-        <settings-card icon="mdi-github" title="GitHub OAuth">
+        <settings-card icon="mdi-github" :title="$t('settings.oauthSettings.githubOAuth')">
             <v-switch
                 v-model="settings.oauth_github_enabled"
-                label="Enable GitHub Login"
+                :label="$t('settings.oauthSettings.enableGithubLogin')"
                 color="primary"
                 density="compact"
                 class="mb-3"
@@ -101,16 +100,16 @@
 
             <v-alert v-if="settings.oauth_github_enabled" type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <strong>Setup:</strong> Create OAuth App at
+                    <strong>{{ $t('settings.oauthSettings.setup') }}:</strong> {{ $t('settings.oauthSettings.githubSetupText') }}
                     <a href="https://github.com/settings/developers" target="_blank" class="text-primary">GitHub Developer Settings</a><br>
-                    <strong>Callback URL:</strong> <code>{{ redirectUrl('github') }}</code>
+                    <strong>{{ $t('settings.oauthSettings.callbackUrl') }}:</strong> <code>{{ redirectUrl('github') }}</code>
                 </div>
             </v-alert>
 
             <v-text-field
                 v-if="settings.oauth_github_enabled"
                 v-model="settings.oauth_github_client_id"
-                label="Client ID"
+                :label="$t('settings.oauthSettings.clientId')"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-key"
@@ -121,7 +120,7 @@
             <v-text-field
                 v-if="settings.oauth_github_enabled"
                 v-model="settings.oauth_github_client_secret"
-                label="Client Secret"
+                :label="$t('settings.oauthSettings.clientSecret')"
                 variant="outlined"
                 density="compact"
                 type="password"
@@ -131,10 +130,10 @@
         </settings-card>
 
         <!-- Facebook OAuth -->
-        <settings-card icon="mdi-facebook" title="Facebook OAuth">
+        <settings-card icon="mdi-facebook" :title="$t('settings.oauthSettings.facebookOAuth')">
             <v-switch
                 v-model="settings.oauth_facebook_enabled"
-                label="Enable Facebook Login"
+                :label="$t('settings.oauthSettings.enableFacebookLogin')"
                 color="primary"
                 density="compact"
                 class="mb-3"
@@ -142,16 +141,16 @@
 
             <v-alert v-if="settings.oauth_facebook_enabled" type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <strong>Setup:</strong> Create app at
+                    <strong>{{ $t('settings.oauthSettings.setup') }}:</strong> {{ $t('settings.oauthSettings.facebookSetupText') }}
                     <a href="https://developers.facebook.com/apps/" target="_blank" class="text-primary">Facebook Developers</a><br>
-                    <strong>Redirect URI:</strong> <code>{{ redirectUrl('facebook') }}</code>
+                    <strong>{{ $t('settings.oauthSettings.redirectUri') }}:</strong> <code>{{ redirectUrl('facebook') }}</code>
                 </div>
             </v-alert>
 
             <v-text-field
                 v-if="settings.oauth_facebook_enabled"
                 v-model="settings.oauth_facebook_client_id"
-                label="App ID"
+                :label="$t('settings.oauthSettings.appId')"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-key"
@@ -162,7 +161,7 @@
             <v-text-field
                 v-if="settings.oauth_facebook_enabled"
                 v-model="settings.oauth_facebook_client_secret"
-                label="App Secret"
+                :label="$t('settings.oauthSettings.appSecret')"
                 variant="outlined"
                 density="compact"
                 type="password"
@@ -172,11 +171,11 @@
         </settings-card>
 
         <!-- General OAuth Settings -->
-        <settings-card icon="mdi-cog" title="General OAuth Settings">
+        <settings-card icon="mdi-cog" :title="$t('settings.oauthSettings.generalSettings')">
             <v-checkbox
                 v-model="settings.oauth_allow_registration"
-                label="Allow new user registration via OAuth"
-                hint="When disabled, only existing users can link OAuth accounts"
+                :label="$t('settings.oauthSettings.allowRegistration')"
+                :hint="$t('settings.oauthSettings.allowRegistrationHint')"
                 persistent-hint
                 density="compact"
                 class="mb-3"
@@ -184,8 +183,8 @@
 
             <v-checkbox
                 v-model="settings.oauth_auto_verify_email"
-                label="Automatically verify email from OAuth providers"
-                hint="Trust OAuth providers' email verification status"
+                :label="$t('settings.oauthSettings.autoVerifyEmail')"
+                :hint="$t('settings.oauthSettings.autoVerifyEmailHint')"
                 persistent-hint
                 density="compact"
             ></v-checkbox>
@@ -199,7 +198,7 @@
             @click="$emit('save')"
             prepend-icon="mdi-content-save"
         >
-            Save Settings
+            {{ $t('settings.oauthSettings.saveSettings') }}
         </v-btn>
     </div>
 </template>

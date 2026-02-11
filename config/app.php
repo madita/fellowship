@@ -176,6 +176,7 @@ return [
         App\Providers\RouteServiceProvider::class,
         App\Providers\OAuthConfigServiceProvider::class,
         App\Providers\ImageOptimizationServiceProvider::class,
+        App\Providers\TranslationServiceProvider::class,
 
     ],
 

@@ -24,6 +24,29 @@ if (token) {
     console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
 }
 
+// Set X-Locale header for API requests
+// This allows the backend to return translated content in the user's preferred language
+const getStoredLocale = () => {
+    try {
+        // Check localStorage first
+        const stored = localStorage.getItem('locale');
+        if (stored) return stored;
+
+        // Check cookie
+        const cookieMatch = document.cookie.match(/(?:^|;\s*)locale=([^;]*)/);
+        if (cookieMatch) return cookieMatch[1];
+
+        // Fall back to browser language
+        const browserLang = navigator.language?.split('-')[0];
+        if (['en', 'de'].includes(browserLang)) return browserLang;
+
+        return 'en';
+    } catch (e) {
+        return 'en';
+    }
+};
+window.axios.defaults.headers.common['X-Locale'] = getStoredLocale();
+
 // window.route = require('./helper/route');
 /**
  * Echo exposes an expressive API for subscribing to channels and listening

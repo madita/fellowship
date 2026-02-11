@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Background Images"
-        description="Configure background images for light and dark themes"
+        :title="$t('settings.backgroundImages.title')"
+        :description="$t('settings.backgroundImages.description')"
         icon="mdi-image-multiple-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'theme' } }"
@@ -11,11 +11,10 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-image-area" title="Background Images">
+        <settings-card icon="mdi-image-area" :title="$t('settings.backgroundImages.cardTitle')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
                 <div class="text-caption">
-                    Upload background tiles or images for light and dark themes.
-                    Choose between full cover or repeating tile pattern.
+                    {{ $t('settings.backgroundImages.infoText') }}
                 </div>
             </v-alert>
 
@@ -23,13 +22,13 @@
                 <v-col cols="12">
                     <v-select
                         v-model="settings.background_style"
-                        label="Background Style"
+                        :label="$t('settings.backgroundImages.backgroundStyle')"
                         :items="backgroundStyles"
                         item-title="label"
                         item-value="value"
                         prepend-inner-icon="mdi-image-size-select-large"
                         variant="outlined"
-                        hint="Choose how background images should be displayed"
+                        :hint="$t('settings.backgroundImages.backgroundStyleHint')"
                         persistent-hint
                     ></v-select>
                 </v-col>
@@ -37,17 +36,17 @@
                 <v-col cols="12" md="6">
                     <div class="text-subtitle-2 mb-2">
                         <v-icon size="small" class="mr-1">mdi-white-balance-sunny</v-icon>
-                        Light Theme Background
+                        {{ $t('settings.backgroundImages.lightThemeBackground') }}
                     </div>
                     <image-upload
                         image-key="background_light"
-                        label="Upload Light Background"
+                        :label="$t('settings.backgroundImages.uploadLightBackground')"
                         :current-image="settings.background_light"
                         :max-height="1080"
                         :max-width="1920"
                         placeholder-size="large"
                         image-class="bg-grey-lighten-4"
-                        hint="Background image for light theme"
+                        :hint="$t('settings.backgroundImages.lightBackgroundHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
                         @error="handleImageError"
@@ -57,17 +56,17 @@
                 <v-col cols="12" md="6">
                     <div class="text-subtitle-2 mb-2">
                         <v-icon size="small" class="mr-1">mdi-weather-night</v-icon>
-                        Dark Theme Background
+                        {{ $t('settings.backgroundImages.darkThemeBackground') }}
                     </div>
                     <image-upload
                         image-key="background_dark"
-                        label="Upload Dark Background"
+                        :label="$t('settings.backgroundImages.uploadDarkBackground')"
                         :current-image="settings.background_dark"
                         :max-height="1080"
                         :max-width="1920"
                         placeholder-size="large"
                         image-class="bg-grey-darken-4"
-                        hint="Background image for dark theme"
+                        :hint="$t('settings.backgroundImages.darkBackgroundHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
                         @error="handleImageError"
@@ -85,16 +84,19 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
 import ImageUpload from '@/components/settings/ImageUpload.vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
     settings: Object,
@@ -109,19 +111,19 @@ const emit = defineEmits(['save', 'message']);
 const message = ref('');
 const alertType = ref('success');
 
-const backgroundStyles = [
-    { label: 'Full Cover (Stretch to fit)', value: 'cover' },
-    { label: 'Repeating Tile (Pattern)', value: 'repeat' },
-];
+const backgroundStyles = computed(() => [
+    { label: t('settings.backgroundImages.styleCover'), value: 'cover' },
+    { label: t('settings.backgroundImages.styleRepeat'), value: 'repeat' },
+]);
 
 function handleImageUploaded({ key, path }) {
     props.settings[key] = path;
-    emit('message', { text: `${key.replace(/_/g, ' ')} uploaded successfully`, type: 'success' });
+    emit('message', { text: t('settings.backgroundImages.uploadSuccess'), type: 'success' });
 }
 
 function handleImageDeleted(key) {
     props.settings[key] = null;
-    emit('message', { text: `${key.replace(/_/g, ' ')} deleted successfully`, type: 'success' });
+    emit('message', { text: t('settings.backgroundImages.deleteSuccess'), type: 'success' });
 }
 
 function handleImageError(errorMessage) {

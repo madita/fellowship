@@ -53,7 +53,7 @@ class HomepageMenuController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -61,7 +61,7 @@ class HomepageMenuController extends Controller
         $item = HomepageMenuItem::create($request->all());
 
         return response()->json([
-            'message' => 'Menu item created successfully',
+            'message' => __('messages.menu.item_created'),
             'item'    => $item,
         ], 201);
     }
@@ -82,7 +82,7 @@ class HomepageMenuController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -90,7 +90,7 @@ class HomepageMenuController extends Controller
         $item->update($request->all());
 
         return response()->json([
-            'message' => 'Menu item updated successfully',
+            'message' => __('messages.menu.item_updated'),
             'item'    => $item,
         ]);
     }
@@ -104,7 +104,7 @@ class HomepageMenuController extends Controller
         $item->delete();
 
         return response()->json([
-            'message' => 'Menu item deleted successfully',
+            'message' => __('messages.menu.item_deleted'),
         ]);
     }
 
@@ -121,7 +121,7 @@ class HomepageMenuController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Validation failed',
+                'message' => __('messages.error.validation'),
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -134,7 +134,7 @@ class HomepageMenuController extends Controller
         HomepageMenuItem::clearCache();
 
         return response()->json([
-            'message' => 'Menu order updated successfully',
+            'message' => __('messages.menu.order_updated'),
         ]);
     }
 }

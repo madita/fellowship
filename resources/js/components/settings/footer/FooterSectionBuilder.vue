@@ -3,24 +3,24 @@
     <!-- Action Buttons -->
     <div class="d-flex justify-space-between align-center mb-4">
       <v-btn color="primary" prepend-icon="mdi-plus" @click="showAddSectionDialog = true">
-        Add Section
+        {{ $t('settings.footerBuilder.addSection') }}
       </v-btn>
       <v-btn prepend-icon="mdi-refresh" @click="loadSections" :loading="isLoading">
-        Refresh
+        {{ $t('settings.footerBuilder.refresh') }}
       </v-btn>
     </div>
 
     <!-- Sections List with Drag-and-Drop -->
     <v-card v-if="isLoading" class="pa-8 text-center">
       <v-progress-circular indeterminate color="primary"></v-progress-circular>
-      <div class="mt-2">Loading sections...</div>
+      <div class="mt-2">{{ $t('settings.footerBuilder.loadingSections') }}</div>
     </v-card>
 
     <div v-else-if="sections.length === 0" class="text-center py-8">
       <v-icon size="64" color="grey">mdi-view-grid-outline</v-icon>
-      <div class="text-h6 mt-4">No footer sections yet</div>
-      <div class="text-caption text-grey mb-4">Create sections to organize your footer widgets</div>
-      <v-btn color="primary" @click="showAddSectionDialog = true">Add Your First Section</v-btn>
+      <div class="text-h6 mt-4">{{ $t('settings.footerBuilder.noSectionsYet') }}</div>
+      <div class="text-caption text-grey mb-4">{{ $t('settings.footerBuilder.createSectionsHint') }}</div>
+      <v-btn color="primary" @click="showAddSectionDialog = true">{{ $t('settings.footerBuilder.addFirstSection') }}</v-btn>
     </div>
 
     <draggable
@@ -38,7 +38,7 @@
             <div class="flex-grow-1">
               <div class="text-h6">{{ section.title || `Section ${section.order}` }}</div>
               <div class="text-caption text-grey">
-                Layout: {{ getLayoutLabel(section.layout) }} | Order: {{ section.order }}
+                {{ $t('settings.footerBuilder.layout') }}: {{ getLayoutLabel(section.layout) }} | {{ $t('settings.footerBuilder.order') }}: {{ section.order }}
               </div>
             </div>
             <v-switch
@@ -54,7 +54,7 @@
               size="small"
               variant="text"
               @click="editSection(section)"
-              title="Edit Section"
+              :title="$t('settings.footerBuilder.editSection')"
             ></v-btn>
             <v-btn
               icon="mdi-delete"
@@ -62,7 +62,7 @@
               variant="text"
               color="error"
               @click="confirmDeleteSection(section)"
-              title="Delete Section"
+              :title="$t('settings.footerBuilder.deleteSection')"
             ></v-btn>
           </v-card-title>
 
@@ -77,7 +77,7 @@
               >
                 <div class="column-container pa-3">
                   <div class="text-caption text-grey mb-2">
-                    Column {{ colIndex + 1 }}
+                    {{ $t('settings.footerBuilder.column') }} {{ colIndex + 1 }}
                     <v-btn
                       size="x-small"
                       variant="text"
@@ -85,7 +85,7 @@
                       prepend-icon="mdi-plus"
                       @click="addWidgetToColumn(section, colIndex + 1)"
                     >
-                      Add Widget
+                      {{ $t('settings.footerBuilder.addWidget') }}
                     </v-btn>
                   </div>
 
@@ -100,6 +100,11 @@
                     class="widget-drop-zone"
                     :class="{ 'widget-drop-zone-empty': getWidgetsForColumn(section, colIndex + 1).length === 0 }"
                   >
+                    <template #header>
+                      <div v-if="getWidgetsForColumn(section, colIndex + 1).length === 0" class="drop-zone-placeholder">
+                        {{ $t('settings.footerBuilder.dropWidgetsHere') }}
+                      </div>
+                    </template>
                     <template #item="{ element: widget }">
                       <v-card
                         class="widget-card mb-2"
@@ -140,22 +145,22 @@
     <!-- Add/Edit Section Dialog -->
     <v-dialog v-model="showAddSectionDialog" max-width="600px">
       <v-card>
-        <v-card-title>{{ editingSection ? 'Edit' : 'Add' }} Footer Section</v-card-title>
+        <v-card-title>{{ editingSection ? $t('settings.footerBuilder.editFooterSection') : $t('settings.footerBuilder.addFooterSection') }}</v-card-title>
         <v-card-text>
           <v-text-field
             v-model="sectionFormData.title"
-            label="Section Title"
-            hint="Optional: Name for this footer section"
+            :label="$t('settings.footerBuilder.sectionTitle')"
+            :hint="$t('settings.footerBuilder.sectionTitleHint')"
             persistent-hint
             class="mb-4"
           ></v-text-field>
 
           <v-select
             v-model="sectionFormData.layout"
-            label="Layout"
+            :label="$t('settings.footerBuilder.layout')"
             :items="layoutOptions"
             persistent-hint
-            hint="Choose how many columns this section should have"
+            :hint="$t('settings.footerBuilder.layoutHint')"
             class="mb-4"
           >
             <template #item="{ props, item }">
@@ -170,8 +175,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="cancelSectionEdit">Cancel</v-btn>
-          <v-btn color="primary" @click="saveSection">{{ editingSection ? 'Update' : 'Add' }}</v-btn>
+          <v-btn @click="cancelSectionEdit">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" @click="saveSection">{{ editingSection ? $t('settings.footerBuilder.update') : $t('settings.footerBuilder.add') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -179,15 +184,14 @@
     <!-- Delete Section Confirmation -->
     <v-dialog v-model="showDeleteSectionDialog" max-width="500">
       <v-card>
-        <v-card-title>Confirm Delete</v-card-title>
+        <v-card-title>{{ $t('settings.footerBuilder.confirmDelete') }}</v-card-title>
         <v-card-text>
-          Are you sure you want to delete the section "{{ sectionToDelete?.title }}"?
-          All widgets in this section will also be deleted.
+          {{ $t('settings.footerBuilder.deleteSectionConfirm', { title: sectionToDelete?.title }) }}
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="showDeleteSectionDialog = false">Cancel</v-btn>
-          <v-btn color="error" @click="deleteSection">Delete</v-btn>
+          <v-btn @click="showDeleteSectionDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="error" @click="deleteSection">{{ $t('common.delete') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -201,10 +205,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useFooterStore } from '@/store/footerStore';
 import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
 import draggable from 'vuedraggable';
 
+const { t } = useI18n();
 const emit = defineEmits(['edit-widget', 'add-widget']);
 
 const footerStore = useFooterStore();
@@ -219,12 +225,12 @@ const sections = computed({
   }
 });
 
-const layoutOptions = [
-  { value: '1-col', title: '1 Column (Full Width)', icon: 'mdi-rectangle' },
-  { value: '2-col', title: '2 Columns (Equal)', icon: 'mdi-view-column' },
-  { value: '3-col', title: '3 Columns (Equal)', icon: 'mdi-view-grid' },
-  { value: '4-col', title: '4 Columns (Equal)', icon: 'mdi-view-grid-outline' },
-];
+const layoutOptions = computed(() => [
+  { value: '1-col', title: t('settings.footerBuilder.layout1Col'), icon: 'mdi-rectangle' },
+  { value: '2-col', title: t('settings.footerBuilder.layout2Col'), icon: 'mdi-view-column' },
+  { value: '3-col', title: t('settings.footerBuilder.layout3Col'), icon: 'mdi-view-grid' },
+  { value: '4-col', title: t('settings.footerBuilder.layout4Col'), icon: 'mdi-view-grid-outline' },
+]);
 
 const showAddSectionDialog = ref(false);
 const showDeleteSectionDialog = ref(false);
@@ -241,7 +247,7 @@ const snackbarMessage = ref('');
 const snackbarColor = ref('success');
 
 function getLayoutLabel(layout) {
-  return layoutOptions.find(opt => opt.value === layout)?.title || layout;
+  return layoutOptions.value.find(opt => opt.value === layout)?.title || layout;
 }
 
 function getColumnWidths(layout) {
@@ -282,7 +288,7 @@ async function loadSections() {
   try {
     await footerStore.fetchSections();
   } catch (error) {
-    showSnackbar('Failed to load sections', 'error');
+    showSnackbar(t('settings.footerBuilder.failedToLoadSections'), 'error');
   } finally {
     isLoading.value = false;
   }
@@ -295,9 +301,9 @@ async function onSectionDragEnd() {
       order: index + 1
     }));
     await footerStore.reorderSections(newOrder);
-    showSnackbar('Sections reordered successfully', 'success');
+    showSnackbar(t('settings.footerBuilder.sectionsReordered'), 'success');
   } catch (error) {
-    showSnackbar('Failed to reorder sections', 'error');
+    showSnackbar(t('settings.footerBuilder.failedToReorderSections'), 'error');
     await loadSections();
   }
 }
@@ -313,7 +319,7 @@ function editSection(section) {
 
 async function saveSection() {
   if (!sectionFormData.value.layout) {
-    showSnackbar('Please select a layout', 'error');
+    showSnackbar(t('settings.footerBuilder.pleaseSelectLayout'), 'error');
     return;
   }
 
@@ -327,17 +333,17 @@ async function saveSection() {
 
     if (editingSection.value) {
       await footerStore.updateSection(editingSection.value.id, sectionData);
-      showSnackbar('Section updated successfully', 'success');
+      showSnackbar(t('settings.footerBuilder.sectionUpdated'), 'success');
     } else {
       await footerStore.createSection(sectionData);
-      showSnackbar('Section added successfully', 'success');
+      showSnackbar(t('settings.footerBuilder.sectionAdded'), 'success');
     }
 
     cancelSectionEdit();
     await loadSections();
   } catch (error) {
     console.error('Failed to save section:', error);
-    showSnackbar('Failed to save section', 'error');
+    showSnackbar(t('settings.footerBuilder.failedToSaveSection'), 'error');
   }
 }
 
@@ -353,9 +359,9 @@ function cancelSectionEdit() {
 async function toggleSection(section) {
   try {
     await footerStore.toggleSection(section.id);
-    showSnackbar(`Section ${section.enabled ? 'enabled' : 'disabled'}`, 'success');
+    showSnackbar(section.enabled ? t('settings.footerBuilder.sectionEnabled') : t('settings.footerBuilder.sectionDisabled'), 'success');
   } catch (error) {
-    showSnackbar('Failed to toggle section', 'error');
+    showSnackbar(t('settings.footerBuilder.failedToToggleSection'), 'error');
     section.enabled = !section.enabled;
   }
 }
@@ -368,12 +374,12 @@ function confirmDeleteSection(section) {
 async function deleteSection() {
   try {
     await footerStore.deleteSection(sectionToDelete.value.id);
-    showSnackbar('Section deleted successfully', 'success');
+    showSnackbar(t('settings.footerBuilder.sectionDeleted'), 'success');
     showDeleteSectionDialog.value = false;
     sectionToDelete.value = null;
     await loadSections();
   } catch (error) {
-    showSnackbar('Failed to delete section', 'error');
+    showSnackbar(t('settings.footerBuilder.failedToDeleteSection'), 'error');
   }
 }
 
@@ -388,10 +394,10 @@ function editWidget(widget) {
 async function deleteWidget(widget) {
   try {
     await footerStore.deleteWidget(widget.id);
-    showSnackbar('Widget deleted successfully', 'success');
+    showSnackbar(t('settings.footerBuilder.widgetDeleted'), 'success');
     await loadSections();
   } catch (error) {
-    showSnackbar('Failed to delete widget', 'error');
+    showSnackbar(t('settings.footerBuilder.failedToDeleteWidget'), 'error');
   }
 }
 
@@ -429,11 +435,11 @@ async function onWidgetDragEnd() {
     // Wait for all updates to complete
     await Promise.all(updates);
 
-    showSnackbar('Widget positions updated', 'success');
+    showSnackbar(t('settings.footerBuilder.widgetPositionsUpdated'), 'success');
     await loadSections();
   } catch (error) {
     console.error('Failed to update widget positions:', error);
-    showSnackbar('Failed to update widget positions', 'error');
+    showSnackbar(t('settings.footerBuilder.failedToUpdateWidgetPositions'), 'error');
     await loadSections();
   }
 }
@@ -480,8 +486,10 @@ onMounted(async () => {
   color: rgba(var(--v-theme-on-surface), 0.38);
 }
 
-.widget-drop-zone-empty::before {
-  content: 'Drop widgets here';
+.drop-zone-placeholder {
+  color: rgba(var(--v-theme-on-surface), 0.38);
+  text-align: center;
+  padding: 8px;
 }
 
 .widget-card {

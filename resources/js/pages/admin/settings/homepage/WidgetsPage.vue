@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Widgets"
-        description="Configure homepage widgets"
+        :title="$t('settings.homepage.widgets.title')"
+        :description="$t('settings.homepage.widgets.description')"
         icon="mdi-widgets-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'homepage' } }"
@@ -11,14 +11,14 @@
         <div class="d-flex justify-space-between align-center mb-4">
             <div>
                 <v-btn color="primary" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">
-                    Add Widget
+                    {{ $t('settings.homepage.widgets.addWidget') }}
                 </v-btn>
                 <v-btn class="ml-2" prepend-icon="mdi-refresh" @click="loadWidgets" :loading="isLoading">
-                    Refresh
+                    {{ $t('settings.homepage.widgets.refresh') }}
                 </v-btn>
             </div>
             <v-chip v-if="hasChanges" color="warning">
-                Unsaved Changes
+                {{ $t('settings.homepage.widgets.unsavedChanges') }}
             </v-chip>
         </div>
 
@@ -28,7 +28,7 @@
                 <v-card>
                     <v-card-text class="text-center">
                         <div class="text-h4">{{ widgets.length }}</div>
-                        <div class="text-caption text-grey">Total Widgets</div>
+                        <div class="text-caption text-grey">{{ $t('settings.homepage.widgets.totalWidgets') }}</div>
                     </v-card-text>
                 </v-card>
             </v-col>
@@ -36,7 +36,7 @@
                 <v-card>
                     <v-card-text class="text-center">
                         <div class="text-h4 text-success">{{ enabledCount }}</div>
-                        <div class="text-caption text-grey">Enabled</div>
+                        <div class="text-caption text-grey">{{ $t('settings.homepage.widgets.enabled') }}</div>
                     </v-card-text>
                 </v-card>
             </v-col>
@@ -46,20 +46,20 @@
         <v-card>
             <v-card-title>
                 <v-icon class="mr-2">mdi-drag</v-icon>
-                Drag to Reorder Widgets
+                {{ $t('settings.homepage.widgets.dragToReorder') }}
             </v-card-title>
             <v-divider></v-divider>
 
             <v-card-text v-if="isLoading" class="text-center py-8">
                 <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                <div class="mt-2">Loading widgets...</div>
+                <div class="mt-2">{{ $t('settings.homepage.widgets.loadingWidgets') }}</div>
             </v-card-text>
 
             <v-card-text v-else-if="widgets.length === 0" class="text-center py-8">
                 <v-icon size="64" color="grey">mdi-widgets-outline</v-icon>
-                <div class="text-h6 mt-4">No widgets yet</div>
-                <div class="text-caption text-grey mb-4">Click "Add Widget" to get started</div>
-                <v-btn color="primary" @click="showWidgetLibrary = true">Add Your First Widget</v-btn>
+                <div class="text-h6 mt-4">{{ $t('settings.homepage.widgets.noWidgetsYet') }}</div>
+                <div class="text-caption text-grey mb-4">{{ $t('settings.homepage.widgets.clickAddWidget') }}</div>
+                <v-btn color="primary" @click="showWidgetLibrary = true">{{ $t('settings.homepage.widgets.addFirstWidget') }}</v-btn>
             </v-card-text>
 
             <draggable
@@ -91,7 +91,7 @@
                         </v-list-item-title>
 
                         <v-list-item-subtitle>
-                            Order: {{ widget.order }} | Anchor: {{ widget.anchor_id || 'None' }}
+                            {{ $t('settings.homepage.widgets.order') }}: {{ widget.order }} | {{ $t('settings.homepage.widgets.anchor') }}: {{ widget.anchor_id || $t('settings.homepage.widgets.none') }}
                         </v-list-item-subtitle>
 
                         <template #append>
@@ -110,7 +110,7 @@
                                     size="small"
                                     variant="text"
                                     @click="editWidget(widget)"
-                                    title="Edit Widget"
+                                    :title="$t('settings.homepage.widgets.editWidget')"
                                 ></v-btn>
 
                                 <v-btn
@@ -119,7 +119,7 @@
                                     variant="text"
                                     color="error"
                                     @click="confirmDelete(widget)"
-                                    title="Delete Widget"
+                                    :title="$t('settings.homepage.widgets.deleteWidget')"
                                 ></v-btn>
                             </div>
                         </template>
@@ -144,15 +144,14 @@
         <!-- Delete Confirmation Dialog -->
         <v-dialog v-model="showDeleteDialog" max-width="500">
             <v-card>
-                <v-card-title>Confirm Delete</v-card-title>
+                <v-card-title>{{ $t('settings.homepage.widgets.confirmDelete') }}</v-card-title>
                 <v-card-text>
-                    Are you sure you want to delete the widget "{{ widgetToDelete?.title || widgetToDelete?.type }}"?
-                    This action cannot be undone.
+                    {{ $t('settings.homepage.widgets.deleteConfirmText', { name: widgetToDelete?.title || widgetToDelete?.type }) }}
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer></v-spacer>
-                    <v-btn @click="showDeleteDialog = false">Cancel</v-btn>
-                    <v-btn color="error" @click="deleteWidget">Delete</v-btn>
+                    <v-btn @click="showDeleteDialog = false">{{ $t('settings.homepage.widgets.cancel') }}</v-btn>
+                    <v-btn color="error" @click="deleteWidget">{{ $t('settings.homepage.widgets.delete') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -166,12 +165,15 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useHomepageStore } from '@/store/homepageStore';
 import { getWidgetDefinition } from '@/configs/widgetTypes';
 import draggable from 'vuedraggable';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import WidgetEditor from '@/components/settings/homepage/WidgetEditor.vue';
 import WidgetLibrary from '@/components/settings/homepage/WidgetLibrary.vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
     settings: Object,
@@ -211,7 +213,7 @@ async function loadWidgets() {
         localWidgets.value = [...widgets.value];
         hasChanges.value = false;
     } catch (error) {
-        showSnackbar('Failed to load widgets', 'error');
+        showSnackbar(t('settings.homepage.widgets.failedToLoadWidgets'), 'error');
     } finally {
         isLoading.value = false;
     }
@@ -225,9 +227,9 @@ async function onDragEnd() {
         }));
         await homepageStore.reorderWidgets(newOrder);
         hasChanges.value = false;
-        showSnackbar('Widget order updated successfully', 'success');
+        showSnackbar(t('settings.homepage.widgets.widgetOrderUpdated'), 'success');
     } catch (error) {
-        showSnackbar('Failed to update widget order', 'error');
+        showSnackbar(t('settings.homepage.widgets.failedToUpdateWidgetOrder'), 'error');
         await loadWidgets();
     }
 }
@@ -240,11 +242,11 @@ function editWidget(widget) {
 async function saveWidget(updatedWidget) {
     try {
         await homepageStore.updateWidget(updatedWidget.id, updatedWidget);
-        showSnackbar('Widget updated successfully', 'success');
+        showSnackbar(t('settings.homepage.widgets.widgetUpdated'), 'success');
         showEditor.value = false;
         await loadWidgets();
     } catch (error) {
-        showSnackbar('Failed to update widget', 'error');
+        showSnackbar(t('settings.homepage.widgets.failedToUpdateWidget'), 'error');
     }
 }
 
@@ -262,20 +264,20 @@ async function addWidget(widgetType) {
         };
 
         await homepageStore.createWidget(newWidget);
-        showSnackbar('Widget added successfully', 'success');
+        showSnackbar(t('settings.homepage.widgets.widgetAdded'), 'success');
         showWidgetLibrary.value = false;
         await loadWidgets();
     } catch (error) {
-        showSnackbar('Failed to add widget', 'error');
+        showSnackbar(t('settings.homepage.widgets.failedToAddWidget'), 'error');
     }
 }
 
 async function toggleWidget(widget) {
     try {
         await homepageStore.toggleWidget(widget.id);
-        showSnackbar(`Widget ${widget.enabled ? 'enabled' : 'disabled'}`, 'success');
+        showSnackbar(widget.enabled ? t('settings.homepage.widgets.widgetEnabled') : t('settings.homepage.widgets.widgetDisabled'), 'success');
     } catch (error) {
-        showSnackbar('Failed to toggle widget', 'error');
+        showSnackbar(t('settings.homepage.widgets.failedToToggleWidget'), 'error');
         widget.enabled = !widget.enabled;
     }
 }
@@ -288,12 +290,12 @@ function confirmDelete(widget) {
 async function deleteWidget() {
     try {
         await homepageStore.deleteWidget(widgetToDelete.value.id);
-        showSnackbar('Widget deleted successfully', 'success');
+        showSnackbar(t('settings.homepage.widgets.widgetDeleted'), 'success');
         showDeleteDialog.value = false;
         widgetToDelete.value = null;
         await loadWidgets();
     } catch (error) {
-        showSnackbar('Failed to delete widget', 'error');
+        showSnackbar(t('settings.homepage.widgets.failedToDeleteWidget'), 'error');
     }
 }
 

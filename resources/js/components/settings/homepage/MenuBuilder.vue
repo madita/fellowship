@@ -1,17 +1,17 @@
 <template>
   <div>
     <v-alert type="info" variant="tonal" class="mb-4">
-      <div class="text-subtitle-1 font-weight-bold">Navigation Menu Builder</div>
-      <div>Create navigation links that scroll to different sections of your homepage. Menu items appear in the top navigation bar.</div>
+      <div class="text-subtitle-1 font-weight-bold">{{ $t('settings.menuBuilder.title') }}</div>
+      <div>{{ $t('settings.menuBuilder.description') }}</div>
     </v-alert>
 
     <!-- Action Buttons -->
     <div class="d-flex justify-space-between align-center mb-4">
       <v-btn color="primary" prepend-icon="mdi-plus" @click="showAddDialog = true">
-        Add Menu Item
+        {{ $t('settings.menuBuilder.addMenuItem') }}
       </v-btn>
       <v-btn prepend-icon="mdi-refresh" @click="loadMenuItems" :loading="isLoading">
-        Refresh
+        {{ $t('settings.menuBuilder.refresh') }}
       </v-btn>
     </div>
 
@@ -19,20 +19,20 @@
     <v-card>
       <v-card-title>
         <v-icon class="mr-2">mdi-drag</v-icon>
-        Drag to Reorder Menu Items
+        {{ $t('settings.menuBuilder.dragToReorder') }}
       </v-card-title>
       <v-divider></v-divider>
 
       <v-card-text v-if="isLoading" class="text-center py-8">
         <v-progress-circular indeterminate color="primary"></v-progress-circular>
-        <div class="mt-2">Loading menu items...</div>
+        <div class="mt-2">{{ $t('settings.menuBuilder.loadingMenuItems') }}</div>
       </v-card-text>
 
       <v-card-text v-else-if="menuItems.length === 0" class="text-center py-8">
         <v-icon size="64" color="grey">mdi-menu</v-icon>
-        <div class="text-h6 mt-4">No menu items yet</div>
-        <div class="text-caption text-grey mb-4">Add menu items to create navigation links</div>
-        <v-btn color="primary" @click="showAddDialog = true">Add Your First Menu Item</v-btn>
+        <div class="text-h6 mt-4">{{ $t('settings.menuBuilder.noMenuItemsYet') }}</div>
+        <div class="text-caption text-grey mb-4">{{ $t('settings.menuBuilder.addMenuItemsHint') }}</div>
+        <v-btn color="primary" @click="showAddDialog = true">{{ $t('settings.menuBuilder.addFirstMenuItem') }}</v-btn>
       </v-card-text>
 
       <draggable
@@ -61,7 +61,7 @@
             </v-list-item-title>
 
             <v-list-item-subtitle>
-              Target: {{ item.anchor_target }} | Order: {{ item.order }}
+              {{ $t('settings.menuBuilder.target') }}: {{ item.anchor_target }} | {{ $t('settings.menuBuilder.order') }}: {{ item.order }}
             </v-list-item-subtitle>
 
             <template #append>
@@ -80,7 +80,7 @@
                   size="small"
                   variant="text"
                   @click="editMenuItem(item)"
-                  title="Edit Menu Item"
+                  :title="$t('settings.menuBuilder.editMenuItem')"
                 ></v-btn>
 
                 <v-btn
@@ -89,7 +89,7 @@
                   variant="text"
                   color="error"
                   @click="confirmDelete(item)"
-                  title="Delete Menu Item"
+                  :title="$t('settings.menuBuilder.deleteMenuItem')"
                 ></v-btn>
               </div>
             </template>
@@ -101,21 +101,21 @@
     <!-- Add/Edit Dialog -->
     <v-dialog v-model="showAddDialog" max-width="600px">
       <v-card>
-        <v-card-title>{{ editingItem ? 'Edit' : 'Add' }} Menu Item</v-card-title>
+        <v-card-title>{{ editingItem ? $t('settings.menuBuilder.editMenuItem') : $t('settings.menuBuilder.addMenuItem') }}</v-card-title>
         <v-card-text>
           <v-text-field
             v-model="formData.label"
-            label="Menu Label"
-            hint="Text displayed in the navigation menu"
+            :label="$t('settings.menuBuilder.menuLabel')"
+            :hint="$t('settings.menuBuilder.menuLabelHint')"
             persistent-hint
             class="mb-4"
           ></v-text-field>
 
           <v-select
             v-model="formData.anchor_target"
-            label="Link Target"
+            :label="$t('settings.menuBuilder.linkTarget')"
             :items="anchorOptions"
-            hint="Select a homepage section or enter a custom anchor"
+            :hint="$t('settings.menuBuilder.linkTargetHint')"
             persistent-hint
             class="mb-4"
           >
@@ -127,8 +127,8 @@
           <v-text-field
             v-if="formData.anchor_target === 'custom'"
             v-model="customAnchor"
-            label="Custom Anchor ID"
-            hint="Enter the anchor ID without the # symbol"
+            :label="$t('settings.menuBuilder.customAnchorId')"
+            :hint="$t('settings.menuBuilder.customAnchorIdHint')"
             persistent-hint
             prefix="#"
           ></v-text-field>
@@ -136,8 +136,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="cancelEdit">Cancel</v-btn>
-          <v-btn color="primary" @click="saveMenuItem">{{ editingItem ? 'Update' : 'Add' }}</v-btn>
+          <v-btn @click="cancelEdit">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" @click="saveMenuItem">{{ editingItem ? $t('settings.menuBuilder.update') : $t('settings.menuBuilder.add') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -145,14 +145,14 @@
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="500">
       <v-card>
-        <v-card-title>Confirm Delete</v-card-title>
+        <v-card-title>{{ $t('settings.menuBuilder.confirmDelete') }}</v-card-title>
         <v-card-text>
-          Are you sure you want to delete the menu item "{{ itemToDelete?.label }}"?
+          {{ $t('settings.menuBuilder.deleteConfirmMessage', { label: itemToDelete?.label }) }}
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="showDeleteDialog = false">Cancel</v-btn>
-          <v-btn color="error" @click="deleteMenuItem">Delete</v-btn>
+          <v-btn @click="showDeleteDialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="error" @click="deleteMenuItem">{{ $t('common.delete') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -166,9 +166,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useHomepageStore } from '@/store/homepageStore';
 import draggable from 'vuedraggable';
 
+const { t } = useI18n();
 const homepageStore = useHomepageStore();
 const isLoading = ref(true);
 
@@ -186,9 +188,9 @@ const anchorOptions = computed(() => {
   const sections = homepageStore.sections.filter(s => s.anchor_id);
   const options = sections.map(s => ({
     value: s.anchor_id,
-    title: `${s.title || 'Section'} (#${s.anchor_id})`
+    title: `${s.title || t('settings.menuBuilder.section')} (#${s.anchor_id})`
   }));
-  options.push({ value: 'custom', title: 'Custom Anchor...' });
+  options.push({ value: 'custom', title: t('settings.menuBuilder.customAnchor') });
   return options;
 });
 
@@ -216,7 +218,7 @@ async function loadMenuItems() {
     await homepageStore.fetchSections();
     await homepageStore.fetchMenuItems();
   } catch (error) {
-    showSnackbar('Failed to load menu items', 'error');
+    showSnackbar(t('settings.menuBuilder.failedToLoadMenuItems'), 'error');
   } finally {
     isLoading.value = false;
   }
@@ -229,9 +231,9 @@ async function onDragEnd() {
       order: index + 1
     }));
     await homepageStore.reorderMenu(newOrder);
-    showSnackbar('Menu order updated successfully', 'success');
+    showSnackbar(t('settings.menuBuilder.menuOrderUpdated'), 'success');
   } catch (error) {
-    showSnackbar('Failed to update menu order', 'error');
+    showSnackbar(t('settings.menuBuilder.failedToUpdateMenuOrder'), 'error');
     await loadMenuItems();
   }
 }
@@ -250,7 +252,7 @@ async function saveMenuItem() {
   const finalAnchor = formData.value.anchor_target === 'custom' ? customAnchor.value : formData.value.anchor_target;
 
   if (!formData.value.label || !finalAnchor) {
-    showSnackbar('Please fill in all required fields', 'error');
+    showSnackbar(t('settings.menuBuilder.fillRequiredFields'), 'error');
     return;
   }
 
@@ -264,15 +266,15 @@ async function saveMenuItem() {
 
     if (editingItem.value) {
       await homepageStore.updateMenuItem(editingItem.value.id, menuData);
-      showSnackbar('Menu item updated successfully', 'success');
+      showSnackbar(t('settings.menuBuilder.menuItemUpdated'), 'success');
     } else {
       await homepageStore.createMenuItem(menuData);
-      showSnackbar('Menu item added successfully', 'success');
+      showSnackbar(t('settings.menuBuilder.menuItemAdded'), 'success');
     }
 
     cancelEdit();
   } catch (error) {
-    showSnackbar('Failed to save menu item', 'error');
+    showSnackbar(t('settings.menuBuilder.failedToSaveMenuItem'), 'error');
   }
 }
 
@@ -287,9 +289,9 @@ async function toggleMenuItem(item) {
   // The toggle happens in the UI, but we need to save it
   try {
     await homepageStore.updateMenuItem(item.id, item);
-    showSnackbar(`Menu item ${item.enabled ? 'enabled' : 'disabled'}`, 'success');
+    showSnackbar(item.enabled ? t('settings.menuBuilder.menuItemEnabled') : t('settings.menuBuilder.menuItemDisabled'), 'success');
   } catch (error) {
-    showSnackbar('Failed to toggle menu item', 'error');
+    showSnackbar(t('settings.menuBuilder.failedToToggleMenuItem'), 'error');
     item.enabled = !item.enabled;
   }
 }
@@ -302,11 +304,11 @@ function confirmDelete(item) {
 async function deleteMenuItem() {
   try {
     await homepageStore.deleteMenuItem(itemToDelete.value.id);
-    showSnackbar('Menu item deleted successfully', 'success');
+    showSnackbar(t('settings.menuBuilder.menuItemDeleted'), 'success');
     showDeleteDialog.value = false;
     itemToDelete.value = null;
   } catch (error) {
-    showSnackbar('Failed to delete menu item', 'error');
+    showSnackbar(t('settings.menuBuilder.failedToDeleteMenuItem'), 'error');
   }
 }
 

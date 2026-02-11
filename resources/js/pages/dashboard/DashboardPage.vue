@@ -6,10 +6,10 @@
             <v-row align="center" class="mb-4">
                 <v-col cols="12" md="6">
                     <h1 class="dashboard-title text-h3 font-weight-bold mb-2">
-                        Welcome back, {{ user?.username || 'User' }}! 👋
+                        {{ $t('dashboard.welcomeBack', { username: user?.username || 'User' }) }} 👋
                     </h1>
                     <p class="text-subtitle-1 text-medium-emphasis">
-                        Customize your dashboard by dragging widgets around
+                        {{ $t('dashboard.customizeDashboard') }}
                     </p>
                 </v-col>
                 <v-col cols="12" md="6" class="text-right">
@@ -20,7 +20,7 @@
                         @click="showWidgetPanel = true"
                         class="mr-3"
                     >
-                        Add Widgets
+                        {{ $t('dashboard.addWidgets') }}
                     </v-btn>
                     <v-btn
                         color="secondary"
@@ -28,7 +28,7 @@
                         prepend-icon="mdi-restore"
                         @click="resetLayout"
                     >
-                        Reset Layout
+                        {{ $t('dashboard.resetLayout') }}
                     </v-btn>
                 </v-col>
             </v-row>
@@ -88,17 +88,17 @@
                             <v-list density="compact">
                                 <v-list-item
                                     prepend-icon="mdi-refresh"
-                                    title="Refresh"
+                                    :title="$t('dashboard.refresh')"
                                     @click="refreshWidget(widget.id)"
                                 ></v-list-item>
                                 <v-list-item
                                     prepend-icon="mdi-cog"
-                                    title="Settings"
+                                    :title="$t('dashboard.settings')"
                                     @click="openWidgetSettings(widget.id)"
                                 ></v-list-item>
                                 <v-list-item
                                     prepend-icon="mdi-close"
-                                    title="Remove"
+                                    :title="$t('dashboard.remove')"
                                     @click="removeWidget(widget.id)"
                                 ></v-list-item>
                             </v-list>
@@ -140,7 +140,7 @@
             <v-card>
                 <v-card-title class="d-flex align-center pa-6">
                     <v-icon color="primary" class="mr-3">mdi-widgets</v-icon>
-                    <span class="text-h5">Available Widgets</span>
+                    <span class="text-h5">{{ $t('dashboard.availableWidgets') }}</span>
                 </v-card-title>
 
                 <v-card-text class="pa-6">
@@ -176,7 +176,7 @@
 
                 <v-card-actions class="pa-6 pt-0">
                     <v-spacer></v-spacer>
-                    <v-btn @click="showWidgetPanel = false">Close</v-btn>
+                    <v-btn @click="showWidgetPanel = false">{{ $t('common.close') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -185,14 +185,14 @@
         <v-dialog v-model="showWidgetSettings" max-width="600">
             <v-card v-if="selectedWidget">
                 <v-card-title class="pa-6">
-                    <span class="text-h5">Widget Settings: {{ selectedWidget.title }}</span>
+                    <span class="text-h5">{{ $t('dashboard.widgetSettings') }}: {{ selectedWidget.title }}</span>
                 </v-card-title>
 
                 <v-card-text class="pa-6">
                     <v-form>
                         <v-text-field
                             v-model="selectedWidget.title"
-                            label="Widget Title"
+                            :label="$t('dashboard.widgetTitle')"
                             variant="outlined"
                             class="mb-4"
                         ></v-text-field>
@@ -200,7 +200,7 @@
                         <v-select
                             v-model="selectedWidget.size"
                             :items="widgetSizes"
-                            label="Widget Size"
+                            :label="$t('dashboard.widgetSize')"
                             variant="outlined"
                             class="mb-4"
                         ></v-select>
@@ -215,8 +215,8 @@
 
                 <v-card-actions class="pa-6 pt-0">
                     <v-spacer></v-spacer>
-                    <v-btn @click="showWidgetSettings = false">Cancel</v-btn>
-                    <v-btn color="primary" @click="saveWidgetSettings">Save</v-btn>
+                    <v-btn @click="showWidgetSettings = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" @click="saveWidgetSettings">{{ $t('common.save') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>

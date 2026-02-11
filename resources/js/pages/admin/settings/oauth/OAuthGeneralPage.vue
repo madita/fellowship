@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="OAuth Settings"
-        description="Configure general OAuth registration and verification settings"
+        :title="$t('settings.oauth.general.title')"
+        :description="$t('settings.oauth.general.description')"
         icon="mdi-account-cog-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'oauth' } }"
@@ -11,17 +11,17 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-cog" title="General OAuth Settings">
+        <settings-card icon="mdi-cog" :title="$t('settings.oauth.general.cardTitle')">
             <v-alert type="info" variant="tonal" class="mb-4">
                 <div class="text-body-2">
-                    These settings apply to all OAuth providers and control how users can register and authenticate.
+                    {{ $t('settings.oauth.general.infoText') }}
                 </div>
             </v-alert>
 
             <v-checkbox
                 v-model="settings.oauth_allow_registration"
-                label="Allow new user registration via OAuth"
-                hint="When disabled, only existing users can link OAuth accounts"
+                :label="$t('settings.oauth.general.allowRegistration')"
+                :hint="$t('settings.oauth.general.allowRegistrationHint')"
                 persistent-hint
                 density="compact"
                 class="mb-3"
@@ -29,8 +29,8 @@
 
             <v-checkbox
                 v-model="settings.oauth_auto_verify_email"
-                label="Automatically verify email from OAuth providers"
-                hint="Trust OAuth providers' email verification status"
+                :label="$t('settings.oauth.general.autoVerifyEmail')"
+                :hint="$t('settings.oauth.general.autoVerifyEmailHint')"
                 persistent-hint
                 density="compact"
             ></v-checkbox>
@@ -45,7 +45,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

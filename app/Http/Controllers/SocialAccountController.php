@@ -56,7 +56,7 @@ class SocialAccountController extends Controller
     public function disconnect(Request $request, $provider): JsonResponse
     {
         if (!in_array($provider, self::PROVIDERS)) {
-            return response()->json(['error' => 'Invalid provider'], 400);
+            return response()->json(['error' => __('messages.oauth.invalid_provider')], 400);
         }
 
         $user = $request->user();
@@ -67,7 +67,7 @@ class SocialAccountController extends Controller
 
         if ($connectedAccounts === 1 && !$hasPassword) {
             return response()->json([
-                'error' => 'Cannot disconnect last authentication method. Please set a password first.',
+                'error' => __('messages.oauth.cannot_disconnect_last'),
             ], 422);
         }
 
@@ -75,11 +75,11 @@ class SocialAccountController extends Controller
         $deleted = $user->socialAccounts()->where('provider', $provider)->delete();
 
         if (!$deleted) {
-            return response()->json(['error' => 'Provider not connected'], 404);
+            return response()->json(['error' => __('messages.oauth.provider_not_connected')], 404);
         }
 
         return response()->json([
-            'message' => ucfirst($provider).' account disconnected successfully',
+            'message' => __('messages.oauth.disconnected', ['provider' => ucfirst($provider)]),
         ]);
     }
 

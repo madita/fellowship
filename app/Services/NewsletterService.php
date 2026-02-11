@@ -37,7 +37,7 @@ class NewsletterService
         if (!$this->enabled) {
             return [
                 'success' => false,
-                'message' => 'Newsletter is currently disabled',
+                'message' => __('messages.newsletter.disabled'),
             ];
         }
 
@@ -50,7 +50,7 @@ class NewsletterService
 
             return [
                 'success' => false,
-                'message' => 'Newsletter is not properly configured',
+                'message' => __('messages.newsletter.not_configured'),
             ];
         }
 
@@ -71,7 +71,7 @@ class NewsletterService
                 default:
                     return [
                         'success' => false,
-                        'message' => 'Unsupported newsletter provider',
+                        'message' => __('messages.newsletter.unsupported'),
                     ];
             }
         } catch (\Exception $e) {
@@ -83,7 +83,7 @@ class NewsletterService
 
             return [
                 'success' => false,
-                'message' => 'An error occurred while subscribing',
+                'message' => __('messages.newsletter.error_occurred'),
             ];
         }
     }
@@ -106,7 +106,7 @@ class NewsletterService
         if ($response->successful() || $response->status() === 400 && str_contains($response->json('title', ''), 'Member Exists')) {
             return [
                 'success' => true,
-                'message' => 'Successfully subscribed to newsletter!',
+                'message' => __('messages.newsletter.subscribed'),
             ];
         }
 
@@ -117,7 +117,7 @@ class NewsletterService
 
         return [
             'success' => false,
-            'message' => 'Failed to subscribe. Please try again.',
+            'message' => __('messages.newsletter.try_again'),
         ];
     }
 
@@ -137,13 +137,13 @@ class NewsletterService
         if ($response->successful() || $response->status() === 400 && str_contains($response->json('error.message', ''), 'already exists')) {
             return [
                 'success' => true,
-                'message' => 'Successfully subscribed to newsletter!',
+                'message' => __('messages.newsletter.subscribed'),
             ];
         }
 
         return [
             'success' => false,
-            'message' => 'Failed to subscribe. Please try again.',
+            'message' => __('messages.newsletter.try_again'),
         ];
     }
 
@@ -166,13 +166,13 @@ class NewsletterService
         if ($response->successful()) {
             return [
                 'success' => true,
-                'message' => 'Successfully subscribed to newsletter!',
+                'message' => __('messages.newsletter.subscribed'),
             ];
         }
 
         return [
             'success' => false,
-            'message' => 'Failed to subscribe. Please try again.',
+            'message' => __('messages.newsletter.try_again'),
         ];
     }
 
@@ -191,13 +191,13 @@ class NewsletterService
         if ($response->successful()) {
             return [
                 'success' => true,
-                'message' => 'Successfully subscribed to newsletter!',
+                'message' => __('messages.newsletter.subscribed'),
             ];
         }
 
         return [
             'success' => false,
-            'message' => 'Failed to subscribe. Please try again.',
+            'message' => __('messages.newsletter.try_again'),
         ];
     }
 
@@ -210,7 +210,7 @@ class NewsletterService
         // For now, return not implemented
         return [
             'success' => false,
-            'message' => 'ActiveCampaign integration coming soon',
+            'message' => __('messages.newsletter.coming_soon'),
         ];
     }
 
@@ -232,13 +232,13 @@ class NewsletterService
         if ($response->successful() || $response->status() === 400 && str_contains($response->json('message', ''), 'already exists')) {
             return [
                 'success' => true,
-                'message' => 'Successfully subscribed to newsletter!',
+                'message' => __('messages.newsletter.subscribed'),
             ];
         }
 
         return [
             'success' => false,
-            'message' => 'Failed to subscribe. Please try again.',
+            'message' => __('messages.newsletter.try_again'),
         ];
     }
 }

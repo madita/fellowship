@@ -96,7 +96,7 @@ class AccountDeletionController extends Controller
         }
 
         return response()->json([
-            'message' => 'Data export generated successfully',
+            'message' => __('messages.account.data_exported'),
             'data'    => $userData,
         ]);
     }
@@ -110,7 +110,7 @@ class AccountDeletionController extends Controller
         $enabled = (bool) Setting::get('right_to_be_forgotten_enabled', false);
         if (!$enabled) {
             return response()->json([
-                'message' => 'Account deletion is not enabled. Please contact support.',
+                'message' => __('messages.account.deletion_disabled'),
             ], 403);
         }
 
@@ -125,8 +125,8 @@ class AccountDeletionController extends Controller
         // Verify password
         if (!Hash::check($request->password, $user->password)) {
             return response()->json([
-                'message' => 'Incorrect password.',
-                'errors'  => ['password' => ['The password is incorrect.']],
+                'message' => __('messages.account.incorrect_password'),
+                'errors'  => ['password' => [__('messages.account.password_incorrect')]],
             ], 422);
         }
 
@@ -151,7 +151,7 @@ class AccountDeletionController extends Controller
                     'Requested at: '.now()->toISOString(),
                     function ($message) use ($adminEmail, $user) {
                         $message->to($adminEmail)
-                            ->subject('Account Deletion Request - '.$user->username);
+                            ->subject(__('messages.account.deletion_subject', ['username' => $user->username]));
                     }
                 );
             } catch (\Exception $e) {
@@ -165,7 +165,7 @@ class AccountDeletionController extends Controller
         $this->deleteUserData($user);
 
         return response()->json([
-            'message' => 'Your account and all associated data have been deleted.',
+            'message' => __('messages.account.deleted'),
         ]);
     }
 

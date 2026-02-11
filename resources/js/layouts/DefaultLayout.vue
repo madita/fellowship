@@ -10,7 +10,7 @@
             :dark="menuTheme === 'dark'"
         >
             <a class="skip-nav-link" href="#main-content">
-                skip navigation
+                {{ $t('layout.skipNavigation') }}
             </a>
             <!-- Navigation menu info -->
             <template v-slot:prepend>
@@ -56,7 +56,7 @@
                     <v-text-field
                         v-if="showSearch"
                         append-icon="mdi-close"
-                        placeholder="Search"
+                        :placeholder="$t('layout.search')"
                         prepend-inner-icon="mdi-magnify"
                         hide-details
                         solo
@@ -108,9 +108,9 @@
                         </template>
                         <template v-else>
                             <v-btn class="mx-1 d-none d-sm-flex" to="/auth/signin">
-                                Sign In
+                                {{ $t('layout.signIn') }}
                             </v-btn>
-                            <v-btn icon class="mx-1 d-flex d-sm-none" to="/auth/signin" :title="$t ? $t('auth.signin') : 'Sign In'">
+                            <v-btn icon class="mx-1 d-flex d-sm-none" to="/auth/signin" :title="$t('layout.signIn')">
                                 <v-icon>mdi-login</v-icon>
                             </v-btn>
                         </template>
@@ -133,8 +133,8 @@
                     <div class="d-flex align-center">
                         <v-icon class="mr-2">mdi-wrench</v-icon>
                         <div>
-                            <strong>Maintenance Mode Active</strong>
-                            <div class="text-caption">Non-admin users cannot access the site.</div>
+                            <strong>{{ $t('layout.maintenanceModeActive') }}</strong>
+                            <div class="text-caption">{{ $t('layout.nonAdminAccess') }}</div>
                         </div>
                     </div>
                     <v-btn
@@ -145,7 +145,7 @@
                         class="mt-2 mt-sm-0"
                     >
                         <v-icon class="mr-1" size="small">mdi-cog</v-icon>
-                        Manage Settings
+                        {{ $t('layout.manageSettings') }}
                     </v-btn>
                 </div>
             </v-alert>

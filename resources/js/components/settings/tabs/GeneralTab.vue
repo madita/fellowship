@@ -1,10 +1,10 @@
 <template>
     <div>
         <!-- Application Info -->
-        <settings-card icon="mdi-application" title="Application Info">
+        <settings-card icon="mdi-application" :title="$t('settings.general.appInfo')">
             <v-text-field
                 v-model="settings.app_name"
-                label="Application Name"
+                :label="$t('settings.general.appName')"
                 prepend-inner-icon="mdi-application"
                 variant="outlined"
                 class="mb-4"
@@ -13,56 +13,56 @@
 
             <v-text-field
                 v-model="settings.app_copyright"
-                label="Copyright Text"
+                :label="$t('settings.general.copyrightText')"
                 prepend-inner-icon="mdi-copyright"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.app_copyright"
-                hint="Text displayed in the footer (e.g., © Fellowship 2021)"
+                :hint="$t('settings.general.copyrightHint')"
                 persistent-hint
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.site_tagline"
-                label="Site Tagline"
+                :label="$t('settings.general.siteTagline')"
                 prepend-inner-icon="mdi-format-quote-close"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.site_tagline"
-                hint="A short tagline or slogan (e.g., 'Your Adventure Awaits')"
+                :hint="$t('settings.general.taglineHint')"
                 persistent-hint
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.site_url"
-                label="Site URL"
+                :label="$t('settings.general.siteUrl')"
                 prepend-inner-icon="mdi-link-variant"
                 variant="outlined"
                 :error-messages="errors.site_url"
-                hint="The base URL of your site (e.g., https://fellowship.com)"
+                :hint="$t('settings.general.siteUrlHint')"
                 persistent-hint
             ></v-text-field>
         </settings-card>
 
         <!-- Maintenance Mode -->
-        <settings-card icon="mdi-wrench" title="Maintenance Mode">
+        <settings-card icon="mdi-wrench" :title="$t('settings.general.maintenanceMode')">
             <v-alert
                 v-if="settings.maintenance_mode"
                 type="warning"
                 variant="tonal"
                 class="mb-4"
             >
-                <strong>Maintenance Mode is Active!</strong>
-                <div class="mt-1">Non-admin users will see the maintenance page and cannot access the site.</div>
+                <strong>{{ $t('settings.general.maintenanceActive') }}</strong>
+                <div class="mt-1">{{ $t('settings.general.maintenanceActiveDesc') }}</div>
             </v-alert>
 
             <v-switch
                 v-model="settings.maintenance_mode"
-                label="Enable Maintenance Mode"
+                :label="$t('settings.general.enableMaintenance')"
                 color="warning"
                 class="mb-4"
                 :error-messages="errors.maintenance_mode"
-                hint="When enabled, site will display maintenance message to visitors. Admins can still log in and access all pages."
+                :hint="$t('settings.general.maintenanceHint')"
                 persistent-hint
             ></v-switch>
 
@@ -73,20 +73,20 @@
                 class="mb-4"
             >
                 <div class="text-caption">
-                    <strong>Note:</strong> Login pages remain accessible so admins can sign in. After logging in as an admin, you'll have full access to the site.
+                    <strong>{{ $t('settings.general.note') }}:</strong> {{ $t('settings.general.maintenanceNote') }}
                 </div>
             </v-alert>
 
             <v-textarea
                 v-model="settings.maintenance_message"
-                label="Maintenance Message"
+                :label="$t('settings.general.maintenanceMessage')"
                 prepend-inner-icon="mdi-message-text"
                 variant="outlined"
                 rows="3"
                 :error-messages="errors.maintenance_message"
-                hint="Message shown to visitors when maintenance mode is active"
+                :hint="$t('settings.general.maintenanceMessageHint')"
                 persistent-hint
-                placeholder="We are currently performing scheduled maintenance. Please check back soon."
+                :placeholder="$t('settings.general.maintenancePlaceholder')"
             ></v-textarea>
 
             <v-alert
@@ -98,7 +98,7 @@
             >
                 <div class="text-caption">
                     <v-icon size="small" class="mr-1">mdi-information</v-icon>
-                    <strong>Tip:</strong> Reload this page to see the maintenance mode changes take effect.
+                    <strong>{{ $t('settings.general.tip') }}:</strong> {{ $t('settings.general.reloadTip') }}
                     <v-btn
                         size="x-small"
                         color="success"
@@ -106,123 +106,123 @@
                         class="ml-2"
                         @click="reloadPage"
                     >
-                        Reload Now
+                        {{ $t('settings.general.reloadNow') }}
                     </v-btn>
                 </div>
             </v-alert>
         </settings-card>
 
         <!-- Admin Contact -->
-        <settings-card icon="mdi-email-outline" title="Admin Contact">
+        <settings-card icon="mdi-email-outline" :title="$t('settings.general.adminContact')">
             <v-text-field
                 v-model="settings.admin_email"
-                label="Admin Email"
+                :label="$t('settings.general.adminEmail')"
                 prepend-inner-icon="mdi-shield-account"
                 variant="outlined"
                 type="email"
                 class="mb-4"
                 :error-messages="errors.admin_email"
-                hint="Primary admin email for system notifications"
+                :hint="$t('settings.general.adminEmailHint')"
                 persistent-hint
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.support_email"
-                label="Support Email"
+                :label="$t('settings.general.supportEmail')"
                 prepend-inner-icon="mdi-lifebuoy"
                 variant="outlined"
                 type="email"
                 :error-messages="errors.support_email"
-                hint="Support email shown to users for help requests"
+                :hint="$t('settings.general.supportEmailHint')"
                 persistent-hint
             ></v-text-field>
         </settings-card>
 
         <!-- Public Contact Information -->
-        <settings-card icon="mdi-card-account-details" title="Public Contact Information">
+        <settings-card icon="mdi-card-account-details" :title="$t('settings.general.publicContact')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
                 <div class="text-caption">
-                    This information is displayed publicly in your site footer and contact pages.
+                    {{ $t('settings.general.publicContactInfo') }}
                 </div>
             </v-alert>
 
             <v-text-field
                 v-model="settings.contact_email"
-                label="Contact Email"
+                :label="$t('settings.general.contactEmail')"
                 prepend-inner-icon="mdi-email"
                 variant="outlined"
                 type="email"
                 class="mb-4"
                 :error-messages="errors.contact_email"
-                hint="Public contact email shown in footer"
+                :hint="$t('settings.general.contactEmailHint')"
                 persistent-hint
                 placeholder="contact@example.com"
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.contact_phone"
-                label="Contact Phone"
+                :label="$t('settings.general.contactPhone')"
                 prepend-inner-icon="mdi-phone"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.contact_phone"
-                hint="Public phone number shown in footer"
+                :hint="$t('settings.general.contactPhoneHint')"
                 persistent-hint
                 placeholder="+1 (555) 123-4567"
             ></v-text-field>
 
             <v-textarea
                 v-model="settings.contact_address"
-                label="Contact Address"
+                :label="$t('settings.general.contactAddress')"
                 prepend-inner-icon="mdi-map-marker"
                 variant="outlined"
                 rows="2"
                 :error-messages="errors.contact_address"
-                hint="Physical address shown in footer"
+                :hint="$t('settings.general.contactAddressHint')"
                 persistent-hint
                 placeholder="123 Main Street, City, State 12345"
             ></v-textarea>
         </settings-card>
 
         <!-- Social Media Links -->
-        <settings-card icon="mdi-share-variant" title="Social Media Links">
+        <settings-card icon="mdi-share-variant" :title="$t('settings.general.socialMedia')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
                 <div class="text-caption">
-                    Add your social media profiles. These links will appear in your site footer.
+                    {{ $t('settings.general.socialMediaInfo') }}
                 </div>
             </v-alert>
 
             <v-text-field
                 v-model="settings.social_twitter"
-                label="Twitter / X URL"
+                :label="$t('settings.general.twitterUrl')"
                 prepend-inner-icon="mdi-twitter"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.social_twitter"
-                hint="Full URL to your Twitter/X profile"
+                :hint="$t('settings.general.twitterHint')"
                 persistent-hint
                 placeholder="https://twitter.com/yourusername"
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.social_facebook"
-                label="Facebook URL"
+                :label="$t('settings.general.facebookUrl')"
                 prepend-inner-icon="mdi-facebook"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.social_facebook"
-                hint="Full URL to your Facebook page"
+                :hint="$t('settings.general.facebookHint')"
                 persistent-hint
                 placeholder="https://facebook.com/yourpage"
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.social_instagram"
-                label="Instagram URL"
+                :label="$t('settings.general.instagramUrl')"
                 prepend-inner-icon="mdi-instagram"
                 variant="outlined"
                 :error-messages="errors.social_instagram"
-                hint="Full URL to your Instagram profile"
+                :hint="$t('settings.general.instagramHint')"
                 persistent-hint
                 placeholder="https://instagram.com/yourusername"
             ></v-text-field>
@@ -236,7 +236,7 @@
             @click="$emit('save')"
             prepend-icon="mdi-content-save"
         >
-            Save Settings
+            {{ $t('settings.general.saveSettings') }}
         </v-btn>
     </div>
 </template>

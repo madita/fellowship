@@ -1,9 +1,9 @@
 <template>
     <div class="my-2">
         <v-card>
-            <v-card-title>Connected Social Accounts</v-card-title>
+            <v-card-title>{{ $t('socialAccounts.title') }}</v-card-title>
             <v-card-subtitle>
-                Link your social media accounts for easier sign-in. You can login with any connected account.
+                {{ $t('socialAccounts.subtitle') }}
             </v-card-subtitle>
             <v-card-text>
                 <v-alert
@@ -12,8 +12,7 @@
                     variant="tonal"
                     class="mb-4"
                 >
-                    <strong>Warning:</strong> You must keep at least one authentication method.
-                    Please set a password before disconnecting your last social account.
+                    <strong>{{ $t('socialAccounts.warning') }}</strong> {{ $t('socialAccounts.keepAuthMethod') }}
                 </v-alert>
 
                 <!-- Loading State -->
@@ -47,7 +46,7 @@
 
                 <!-- Connected Accounts -->
                 <div v-if="!loading && connectedAccounts.length > 0">
-                    <div class="text-subtitle-2 font-weight-bold mb-3">Connected Accounts</div>
+                    <div class="text-subtitle-2 font-weight-bold mb-3">{{ $t('socialAccounts.connectedAccounts') }}</div>
                     <v-list lines="two">
                         <v-list-item
                             v-for="account in connectedAccounts"
@@ -64,7 +63,7 @@
                                 {{ getProviderLabel(account.provider) }}
                             </v-list-item-title>
                             <v-list-item-subtitle>
-                                Connected {{ account.connected_at }}
+                                {{ $t('socialAccounts.connected', { date: account.connected_at }) }}
                             </v-list-item-subtitle>
 
                             <template #append>
@@ -76,7 +75,7 @@
                                     :disabled="!canDisconnect"
                                     @click="disconnectProvider(account.provider)"
                                 >
-                                    Disconnect
+                                    {{ $t('socialAccounts.disconnect') }}
                                 </v-btn>
                             </template>
                         </v-list-item>
@@ -90,12 +89,12 @@
                     variant="tonal"
                     class="mb-4"
                 >
-                    You don't have any social accounts connected yet.
+                    {{ $t('socialAccounts.noAccountsConnected') }}
                 </v-alert>
 
                 <!-- Available Providers -->
                 <div v-if="!loading && availableProviders.length > 0" class="mt-6">
-                    <div class="text-subtitle-2 font-weight-bold mb-3">Available to Connect</div>
+                    <div class="text-subtitle-2 font-weight-bold mb-3">{{ $t('socialAccounts.availableToConnect') }}</div>
                     <v-row dense>
                         <v-col
                             v-for="provider in availableProviders"
@@ -111,7 +110,7 @@
                                 :loading="connecting === provider"
                                 @click="connectProvider(provider)"
                             >
-                                Connect {{ getProviderLabel(provider) }}
+                                {{ $t('socialAccounts.connect', { provider: getProviderLabel(provider) }) }}
                             </v-btn>
                         </v-col>
                     </v-row>
@@ -124,7 +123,7 @@
                     variant="tonal"
                     class="mt-4"
                 >
-                    All available social accounts are connected!
+                    {{ $t('socialAccounts.allConnected') }}
                 </v-alert>
             </v-card-text>
         </v-card>
@@ -132,15 +131,14 @@
         <!-- Confirmation Dialog -->
         <v-dialog v-model="confirmDialog" max-width="400">
             <v-card>
-                <v-card-title class="headline">Disconnect {{ getProviderLabel(providerToDisconnect) }}?</v-card-title>
+                <v-card-title class="headline">{{ $t('socialAccounts.disconnectConfirm', { provider: getProviderLabel(providerToDisconnect) }) }}</v-card-title>
                 <v-card-text>
-                    Are you sure you want to disconnect your {{ getProviderLabel(providerToDisconnect) }} account?
-                    You will no longer be able to sign in using {{ getProviderLabel(providerToDisconnect) }}.
+                    {{ $t('socialAccounts.disconnectMessage', { provider: getProviderLabel(providerToDisconnect) }) }}
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer></v-spacer>
-                    <v-btn @click="confirmDialog = false">Cancel</v-btn>
-                    <v-btn color="error" @click="confirmDisconnect">Disconnect</v-btn>
+                    <v-btn @click="confirmDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="error" @click="confirmDisconnect">{{ $t('socialAccounts.disconnect') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -149,6 +147,7 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 
 export default {
@@ -158,6 +157,8 @@ export default {
         },
     },
     setup(props) {
+        const { t } = useI18n();
+
         // State
         const loading = ref(false);
         const error = ref(null);
@@ -222,7 +223,7 @@ export default {
                 availableProviders.value = response.data.available || [];
                 hasPassword.value = response.data.has_password || false;
             } catch (err) {
-                error.value = 'Failed to load social accounts. Please try again.';
+                error.value = t('socialAccounts.loadFailed');
                 console.error('Error fetching social accounts:', err);
             } finally {
                 loading.value = false;
@@ -249,7 +250,7 @@ export default {
 
             try {
                 const response = await axios.delete(`/api/account/social-accounts/${provider}`);
-                successMessage.value = response.data.message || `${getProviderLabel(provider)} disconnected successfully`;
+                successMessage.value = response.data.message || t('socialAccounts.disconnectedSuccess', { provider: getProviderLabel(provider) });
 
                 // Refresh the list
                 await fetchSocialAccounts();
@@ -257,7 +258,7 @@ export default {
                 if (err.response?.data?.error) {
                     error.value = err.response.data.error;
                 } else {
-                    error.value = `Failed to disconnect ${getProviderLabel(provider)}. Please try again.`;
+                    error.value = t('socialAccounts.disconnectFailed', { provider: getProviderLabel(provider) });
                 }
                 console.error('Error disconnecting provider:', err);
             } finally {

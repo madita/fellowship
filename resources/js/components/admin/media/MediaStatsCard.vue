@@ -5,25 +5,25 @@
                 <v-col cols="12" sm="6" md="3">
                     <div class="text-center">
                         <div class="text-h4 font-weight-bold">{{ stats.total_count || 0 }}</div>
-                        <div class="text-caption text-grey">Total Files</div>
+                        <div class="text-caption text-grey">{{ $t('mediaCenter.totalFiles') }}</div>
                     </div>
                 </v-col>
                 <v-col cols="12" sm="6" md="3">
                     <div class="text-center">
                         <div class="text-h4 font-weight-bold">{{ stats.size_formatted || '0 B' }}</div>
-                        <div class="text-caption text-grey">Total Storage</div>
+                        <div class="text-caption text-grey">{{ $t('mediaCenter.totalStorage') }}</div>
                     </div>
                 </v-col>
                 <v-col cols="12" sm="6" md="3">
                     <div class="text-center">
                         <div class="text-h4 font-weight-bold">{{ imageCount }}</div>
-                        <div class="text-caption text-grey">Images</div>
+                        <div class="text-caption text-grey">{{ $t('mediaCenter.images') }}</div>
                     </div>
                 </v-col>
                 <v-col cols="12" sm="6" md="3">
                     <div class="text-center">
                         <div class="text-h4 font-weight-bold">{{ contextCount }}</div>
-                        <div class="text-caption text-grey">Contexts</div>
+                        <div class="text-caption text-grey">{{ $t('mediaCenter.contexts') }}</div>
                     </div>
                 </v-col>
             </v-row>
@@ -33,7 +33,7 @@
                     <v-divider class="my-4" />
                     <v-row>
                         <v-col cols="12" md="4">
-                            <div class="text-subtitle-2 mb-2">By Context</div>
+                            <div class="text-subtitle-2 mb-2">{{ $t('mediaCenter.byContext') }}</div>
                             <v-list density="compact">
                                 <v-list-item
                                     v-for="context in stats.by_context"
@@ -52,7 +52,7 @@
                             </v-list>
                         </v-col>
                         <v-col cols="12" md="4">
-                            <div class="text-subtitle-2 mb-2">By File Type</div>
+                            <div class="text-subtitle-2 mb-2">{{ $t('mediaCenter.byFileType') }}</div>
                             <v-list density="compact">
                                 <v-list-item
                                     v-for="type in stats.by_type"
@@ -71,7 +71,7 @@
                             </v-list>
                         </v-col>
                         <v-col cols="12" md="4">
-                            <div class="text-subtitle-2 mb-2">By Collection</div>
+                            <div class="text-subtitle-2 mb-2">{{ $t('mediaCenter.byCollection') }}</div>
                             <v-list density="compact">
                                 <v-list-item
                                     v-for="col in stats.by_collection"
@@ -100,7 +100,7 @@
                 size="small"
                 @click="expanded = !expanded"
             >
-                {{ expanded ? 'Show Less' : 'Show Details' }}
+                {{ expanded ? $t('common.showLess') : $t('common.showDetails') }}
                 <v-icon :icon="expanded ? 'mdi-chevron-up' : 'mdi-chevron-down'" end />
             </v-btn>
         </v-card-actions>
@@ -109,6 +109,9 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 const props = defineProps({
     stats: {

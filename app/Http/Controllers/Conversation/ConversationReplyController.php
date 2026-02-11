@@ -58,8 +58,8 @@ class ConversationReplyController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Failed to create reply',
-                'errors'  => ['body' => ['Unable to save reply. Please try again.']],
+                'message' => __('messages.conversations.reply_failed'),
+                'errors'  => ['body' => [__('messages.conversations.reply_error')]],
             ], 422);
         }
     }

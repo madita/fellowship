@@ -171,7 +171,7 @@ class EventController extends Controller
 
         return response()->json([
             'data' => [
-                'message' => 'Event created',
+                'message' => __('messages.events.created'),
                 'event'   => $event, ], ]);
     }
 
@@ -504,7 +504,7 @@ class EventController extends Controller
 
         // Then check authorization
         if ($event->user_id !== auth()->id() && !auth()->user()->can('manage-posts')) {
-            return response()->json(['message' => 'Unauthorized. Only event owners can approve guests.'], 403);
+            return response()->json(['message' => __('messages.events.unauthorized_approve')], 403);
         }
 
         // Find the guest record by user_id and event_id
@@ -514,7 +514,7 @@ class EventController extends Controller
 
         // If no guest is found, return a 404 error
         if (!$guest) {
-            return response()->json(['message' => 'Guest not found'], 404);
+            return response()->json(['message' => __('messages.events.guest_not_found')], 404);
         }
 
         if ($request->action === 'approve') {
@@ -525,6 +525,6 @@ class EventController extends Controller
 
         $guest->save();
 
-        return response()->json(['message' => 'Guest approval updated successfully']);
+        return response()->json(['message' => __('messages.events.guest_updated')]);
     }
 }

@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Navigation Menu"
-        description="Configure homepage navigation links"
+        :title="$t('settings.homepage.menu.title')"
+        :description="$t('settings.homepage.menu.description')"
         icon="mdi-menu"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'homepage' } }"

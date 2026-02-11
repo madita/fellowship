@@ -51,7 +51,10 @@ class WikiController extends Controller
         if ($query === null || $query === '') {
             $wikidata = Wiki::where('status', null)->orderBy('created_at', 'desc')->paginate($perPage);
         } else {
-            $wikidata = Wiki::where('title', 'LIKE', '%'.$query.'%')->where('status', null)->paginate($perPage);
+            // Search in translated title field
+            $wikidata = Wiki::whereTranslationLike('title', '%'.$query.'%')
+                ->where('status', null)
+                ->paginate($perPage);
         }
 
         $total = $wikidata->total();
@@ -145,7 +148,7 @@ class WikiController extends Controller
             $data = ['slug' => $slug, 'title' => Str::ucfirst($slug), 'content' => ''];
 
             //            return response()->json(['status' => 404, 'message' => 'Create Wiki page', 'page' => $data]);
-            return response(['status' => 404, 'message' => 'Create Wiki page', 'page' => $data], 404);
+            return response(['status' => 404, 'message' => __('messages.wiki.create_page'), 'page' => $data], 404);
         }
 
         $model = $wiki->wikiable_type;
@@ -236,7 +239,7 @@ class WikiController extends Controller
 
         $page->wikiable()->save($wiki);
 
-        return response()->json(['message' => 'success', 'page' => $page]);
+        return response()->json(['message' => __('messages.wiki.created'), 'page' => $page]);
     }
 
     public function update(Request $request, $slug)
@@ -314,7 +317,7 @@ class WikiController extends Controller
         //            $data->addCategories($request->get('terms'),'tags');
         //        }
 
-        return response()->json(['message' => 'success', $model => $data]);
+        return response()->json(['message' => __('messages.wiki.updated'), $model => $data]);
     }
 
     public function storeCategory(Request $request)
@@ -336,7 +339,7 @@ class WikiController extends Controller
         }
         $taxonomy->save();
 
-        return response()->json(['message' => 'success', 'taxonomy' => $taxonomy]);
+        return response()->json(['message' => __('messages.wiki.category_created'), 'taxonomy' => $taxonomy]);
     }
 
     public function updateCategory(Request $request, $slug)
@@ -371,6 +374,6 @@ class WikiController extends Controller
         $taxonomy->update();
 
 //        dd($taxonomy);
-        return response()->json(['message' => 'success', 'slugchange' => $term->title != $termOld['term']['title'], 'term'=> $term, 'taxonomy' => $taxonomy]);
+        return response()->json(['message' => __('messages.wiki.category_updated'), 'slugchange' => $term->title != $termOld['term']['title'], 'term'=> $term, 'taxonomy' => $taxonomy]);
     }
 }

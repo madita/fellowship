@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Light Theme Colors"
-        description="Configure the color palette for light theme mode"
+        :title="$t('settings.lightColors.title')"
+        :description="$t('settings.lightColors.description')"
         icon="mdi-white-balance-sunny"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'theme' } }"
@@ -15,8 +15,8 @@
         <v-alert type="info" variant="tonal" class="mb-4">
             <div class="d-flex align-center justify-space-between flex-wrap ga-2">
                 <div>
-                    <div class="text-subtitle-2 font-weight-bold mb-1">Reset Light Theme Colors</div>
-                    <div class="text-caption">Restore all light theme colors to their default values</div>
+                    <div class="text-subtitle-2 font-weight-bold mb-1">{{ $t('settings.lightColors.resetTitle') }}</div>
+                    <div class="text-caption">{{ $t('settings.lightColors.resetDescription') }}</div>
                 </div>
                 <v-btn
                     color="primary"
@@ -24,23 +24,23 @@
                     prepend-icon="mdi-restore"
                     @click="resetToDefaults"
                 >
-                    Reset to Defaults
+                    {{ $t('settings.colors.resetToDefaults') }}
                 </v-btn>
             </div>
         </v-alert>
 
-        <settings-card icon="mdi-white-balance-sunny" title="Light Theme Colors">
+        <settings-card icon="mdi-white-balance-sunny" :title="$t('settings.lightColors.cardTitle')">
             <v-row>
                 <v-col cols="12" md="6">
                     <v-slider
                         v-model="settings.background_opacity_light"
-                        label="Background Opacity"
+                        :label="$t('settings.colors.backgroundOpacity')"
                         prepend-icon="mdi-opacity"
                         :min="0"
                         :max="100"
                         :step="5"
                         thumb-label
-                        hint="Higher values = more opaque (less background image visible)"
+                        :hint="$t('settings.colors.backgroundOpacityHint')"
                         persistent-hint
                     >
                         <template v-slot:append>
@@ -60,13 +60,13 @@
                 <v-col cols="12" md="6">
                     <v-slider
                         v-model="settings.surface_opacity_light"
-                        label="Surface Opacity"
+                        :label="$t('settings.colors.surfaceOpacity')"
                         prepend-icon="mdi-texture-box"
                         :min="0"
                         :max="100"
                         :step="5"
                         thumb-label
-                        hint="Controls opacity of cards, sheets, and panels"
+                        :hint="$t('settings.colors.surfaceOpacityHint')"
                         persistent-hint
                     >
                         <template v-slot:append>
@@ -86,108 +86,108 @@
                 <v-col cols="12" md="4">
                     <v-text-field
                         v-model="settings.primary_color_light"
-                        label="Primary Color"
+                        :label="$t('settings.colors.primaryColor')"
                         prepend-inner-icon="mdi-palette"
                         variant="outlined"
                         type="color"
                         :error-messages="errors.primary_color_light"
-                        hint="Main brand color"
+                        :hint="$t('settings.colors.primaryColorHint')"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="12" md="4">
                     <v-text-field
                         v-model="settings.secondary_color_light"
-                        label="Secondary Color"
+                        :label="$t('settings.colors.secondaryColor')"
                         prepend-inner-icon="mdi-palette-outline"
                         variant="outlined"
                         type="color"
                         :error-messages="errors.secondary_color_light"
-                        hint="Secondary accent"
+                        :hint="$t('settings.colors.secondaryColorHint')"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="12" md="4">
                     <v-text-field
                         v-model="settings.accent_color_light"
-                        label="Accent Color"
+                        :label="$t('settings.colors.accentColor')"
                         prepend-inner-icon="mdi-invert-colors"
                         variant="outlined"
                         type="color"
                         :error-messages="errors.accent_color_light"
-                        hint="Accent highlights"
+                        :hint="$t('settings.colors.accentColorHint')"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="12" md="4">
                     <v-text-field
                         v-model="settings.background_color_light"
-                        label="Background Color"
+                        :label="$t('settings.colors.backgroundColor')"
                         prepend-inner-icon="mdi-format-color-fill"
                         variant="outlined"
                         type="color"
                         :error-messages="errors.background_color_light"
-                        hint="Main background"
+                        :hint="$t('settings.colors.backgroundColorHint')"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="12" md="4">
                     <v-text-field
                         v-model="settings.surface_color_light"
-                        label="Surface Color"
+                        :label="$t('settings.colors.surfaceColor')"
                         prepend-inner-icon="mdi-texture-box"
                         variant="outlined"
                         type="color"
                         :error-messages="errors.surface_color_light"
-                        hint="Cards, sheets"
+                        :hint="$t('settings.colors.surfaceColorHint')"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="12" md="4">
                     <v-text-field
                         v-model="settings.error_color_light"
-                        label="Error Color"
+                        :label="$t('settings.colors.errorColor')"
                         prepend-inner-icon="mdi-alert-circle"
                         variant="outlined"
                         type="color"
                         :error-messages="errors.error_color_light"
-                        hint="Error states"
+                        :hint="$t('settings.colors.errorColorHint')"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="12" md="4">
                     <v-text-field
                         v-model="settings.warning_color_light"
-                        label="Warning Color"
+                        :label="$t('settings.colors.warningColor')"
                         prepend-inner-icon="mdi-alert"
                         variant="outlined"
                         type="color"
                         :error-messages="errors.warning_color_light"
-                        hint="Warning states"
+                        :hint="$t('settings.colors.warningColorHint')"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="12" md="4">
                     <v-text-field
                         v-model="settings.info_color_light"
-                        label="Info Color"
+                        :label="$t('settings.colors.infoColor')"
                         prepend-inner-icon="mdi-information"
                         variant="outlined"
                         type="color"
                         :error-messages="errors.info_color_light"
-                        hint="Info states"
+                        :hint="$t('settings.colors.infoColorHint')"
                     ></v-text-field>
                 </v-col>
 
                 <v-col cols="12" md="4">
                     <v-text-field
                         v-model="settings.success_color_light"
-                        label="Success Color"
+                        :label="$t('settings.colors.successColor')"
                         prepend-inner-icon="mdi-check-circle"
                         variant="outlined"
                         type="color"
                         :error-messages="errors.success_color_light"
-                        hint="Success states"
+                        :hint="$t('settings.colors.successColorHint')"
                     ></v-text-field>
                 </v-col>
             </v-row>
@@ -202,15 +202,18 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
     settings: Object,
@@ -238,9 +241,9 @@ const defaultColors = {
 };
 
 function resetToDefaults() {
-    if (confirm('Are you sure you want to reset all light theme colors to their default values?')) {
+    if (confirm(t('settings.lightColors.confirmReset'))) {
         Object.assign(props.settings, defaultColors);
-        emit('message', { text: 'Light theme colors reset to defaults. Click "Save" to apply changes.', type: 'info' });
+        emit('message', { text: t('settings.lightColors.resetSuccess'), type: 'info' });
     }
 }
 </script>

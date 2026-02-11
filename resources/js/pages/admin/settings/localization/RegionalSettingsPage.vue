@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Regional Settings"
-        description="Configure language, timezone, and date/time formats"
+        :title="$t('settings.localization.regional.title')"
+        :description="$t('settings.localization.regional.description')"
         icon="mdi-map-clock-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'localization' } }"
@@ -11,10 +11,10 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-earth" title="Regional Settings">
+        <settings-card icon="mdi-earth" :title="$t('settings.localization.regional.cardTitle')">
             <v-select
                 v-model="settings.default_language"
-                label="Default Language"
+                :label="$t('settings.localization.regional.defaultLanguage')"
                 :items="languages"
                 item-title="name"
                 item-value="code"
@@ -26,7 +26,7 @@
 
             <v-autocomplete
                 v-model="settings.default_timezone"
-                label="Default Timezone"
+                :label="$t('settings.localization.regional.defaultTimezone')"
                 :items="timezones"
                 prepend-inner-icon="mdi-clock-outline"
                 variant="outlined"
@@ -36,7 +36,7 @@
 
             <v-select
                 v-model="settings.date_format"
-                label="Date Format"
+                :label="$t('settings.localization.regional.dateFormat')"
                 :items="dateFormats"
                 item-title="label"
                 item-value="value"
@@ -47,7 +47,7 @@
 
             <v-select
                 v-model="settings.time_format"
-                label="Time Format"
+                :label="$t('settings.localization.regional.timeFormat')"
                 :items="timeFormats"
                 item-title="label"
                 item-value="value"
@@ -65,7 +65,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

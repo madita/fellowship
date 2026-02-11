@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Logos & Icons"
-        description="Configure your site's logos, favicon, and app icon"
+        :title="$t('settings.branding.logosIcons.title')"
+        :description="$t('settings.branding.logosIcons.description')"
         icon="mdi-image-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'branding' } }"
@@ -11,13 +11,13 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-image-multiple" title="Logos & Icons">
+        <settings-card icon="mdi-image-multiple" :title="$t('settings.branding.logosIcons.cardTitle')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
                 <div class="text-caption">
-                    <strong>Logo Usage:</strong> The logo automatically switches based on theme.
+                    <strong>{{ $t('settings.branding.logosIcons.logoUsage') }}</strong> {{ $t('settings.branding.logosIcons.logoUsageDescription') }}
                     <ul class="mt-1 ml-4">
-                        <li><strong>Light Mode:</strong> Uses Logo (Light Theme)</li>
-                        <li><strong>Dark Mode:</strong> Uses Logo (Dark Theme) if available, otherwise Light Logo</li>
+                        <li><strong>{{ $t('settings.branding.logosIcons.lightMode') }}</strong> {{ $t('settings.branding.logosIcons.lightModeDescription') }}</li>
+                        <li><strong>{{ $t('settings.branding.logosIcons.darkMode') }}</strong> {{ $t('settings.branding.logosIcons.darkModeDescription') }}</li>
                     </ul>
                 </div>
             </v-alert>
@@ -26,17 +26,17 @@
                 <v-col cols="12" md="6">
                     <div class="text-subtitle-2 mb-2">
                         <v-icon size="small" class="mr-1">mdi-white-balance-sunny</v-icon>
-                        Logo (Light Theme)
+                        {{ $t('settings.branding.logosIcons.logoLight') }}
                     </div>
                     <image-upload
                         image-key="logo_light"
-                        label="Upload Light Logo"
+                        :label="$t('settings.branding.logosIcons.uploadLightLogo')"
                         :current-image="settings.logo_light"
                         :max-height="300"
                         :max-width="600"
                         placeholder-size="large"
                         image-class="bg-grey-lighten-4"
-                        hint="Displayed when light theme is active"
+                        :hint="$t('settings.branding.logosIcons.lightLogoHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
                         @error="handleImageError"
@@ -46,17 +46,17 @@
                 <v-col cols="12" md="6">
                     <div class="text-subtitle-2 mb-2">
                         <v-icon size="small" class="mr-1">mdi-weather-night</v-icon>
-                        Logo (Dark Theme)
+                        {{ $t('settings.branding.logosIcons.logoDark') }}
                     </div>
                     <image-upload
                         image-key="logo_dark"
-                        label="Upload Dark Logo"
+                        :label="$t('settings.branding.logosIcons.uploadDarkLogo')"
                         :current-image="settings.logo_dark"
                         :max-height="300"
                         :max-width="600"
                         placeholder-size="large"
                         image-class="bg-grey-darken-4"
-                        hint="Displayed when dark theme is active"
+                        :hint="$t('settings.branding.logosIcons.darkLogoHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
                         @error="handleImageError"
@@ -70,18 +70,18 @@
                 <v-col cols="12" md="6">
                     <div class="text-subtitle-2 mb-2">
                         <v-icon size="small" class="mr-1">mdi-star-circle</v-icon>
-                        Favicon
+                        {{ $t('settings.branding.logosIcons.favicon') }}
                     </div>
                     <image-upload
                         image-key="favicon"
-                        label="Upload Favicon"
+                        :label="$t('settings.branding.logosIcons.uploadFavicon')"
                         accept="image/*,.ico"
                         icon="mdi-star-circle"
                         :current-image="settings.favicon"
                         :max-height="120"
                         :max-width="120"
                         placeholder-size="small"
-                        hint="Browser tab icon (16x16 or 32x32 recommended)"
+                        :hint="$t('settings.branding.logosIcons.faviconHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
                         @error="handleImageError"
@@ -91,18 +91,18 @@
                 <v-col cols="12" md="6">
                     <div class="text-subtitle-2 mb-2">
                         <v-icon size="small" class="mr-1">mdi-cellphone</v-icon>
-                        App Icon (PWA)
+                        {{ $t('settings.branding.logosIcons.appIcon') }}
                     </div>
                     <image-upload
                         image-key="app_icon"
-                        label="Upload App Icon"
+                        :label="$t('settings.branding.logosIcons.uploadAppIcon')"
                         icon="mdi-cellphone"
                         accept="image/png,image/webp,image/svg+xml"
                         :current-image="settings.app_icon"
                         :max-height="200"
                         :max-width="200"
                         placeholder-size="small"
-                        hint="PWA icon: PNG/WebP/SVG only, 192x192+ pixels, square shape required"
+                        :hint="$t('settings.branding.logosIcons.appIconHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
                         @error="handleImageError"
@@ -120,16 +120,19 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
 import ImageUpload from '@/components/settings/ImageUpload.vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
     settings: Object,
@@ -146,12 +149,12 @@ const alertType = ref('success');
 
 function handleImageUploaded({ key, path }) {
     props.settings[key] = path;
-    emit('message', { text: `${key.replace(/_/g, ' ')} uploaded successfully`, type: 'success' });
+    emit('message', { text: t('settings.branding.logosIcons.uploadSuccess'), type: 'success' });
 }
 
 function handleImageDeleted(key) {
     props.settings[key] = null;
-    emit('message', { text: `${key.replace(/_/g, ' ')} deleted successfully`, type: 'success' });
+    emit('message', { text: t('settings.branding.logosIcons.deleteSuccess'), type: 'success' });
 }
 
 function handleImageError(errorMessage) {

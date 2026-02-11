@@ -7,8 +7,8 @@
                 :loading="loadingUsers"
                 :search="userSearch"
                 @update:search="handleUserSearch"
-                label="Select Recipients"
-                placeholder="Type to search for users..."
+                :label="$t('conversation.selectRecipients')"
+                :placeholder="$t('conversation.searchUsersPlaceholder')"
                 variant="outlined"
                 item-title="username"
                 item-value="id"
@@ -40,7 +40,7 @@
                 <template #no-data>
                     <v-list-item>
                         <v-list-item-title>
-                            {{ userSearch ? 'No users found' : 'Start typing to search for users' }}
+                            {{ userSearch ? $t('conversation.noUsersFound') : $t('conversation.startTypingToSearch') }}
                         </v-list-item-title>
                     </v-list-item>
                 </template>
@@ -55,7 +55,7 @@
             >
                 <v-icon>mdi-account-plus</v-icon>
                 <v-tooltip activator="parent" location="top">
-                    Add user to conversation
+                    {{ $t('conversation.addUserToConversation') }}
                 </v-tooltip>
             </v-btn>
         </div>
@@ -91,6 +91,7 @@
 
 <script>
 import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useConversationStore } from '@/store/conversationStore';
 import { useUsersStore } from '@/store/usersStore';
 import { useUserSearch } from '@/composables/conversation/useUserSearch';
@@ -98,6 +99,7 @@ import { useUserSearch } from '@/composables/conversation/useUserSearch';
 export default {
     name: "ConversationAddUserForm",
     setup() {
+        const { t } = useI18n();
         const conversationStore = useConversationStore();
         const usersStore = useUsersStore();
 
@@ -120,7 +122,7 @@ export default {
         });
 
         const rules = {
-            required: (value) => !!value || 'Please select a user to add'
+            required: (value) => !!value || t('conversation.pleaseSelectUser')
         };
 
         const defaultAvatar = (user) => {
@@ -135,7 +137,7 @@ export default {
             if (!valid) return;
 
             if (!currentConversation.value?.uuid) {
-                errorMessage.value = 'No conversation selected';
+                errorMessage.value = t('conversation.noConversationSelected');
                 return;
             }
 
@@ -150,13 +152,13 @@ export default {
                 );
 
                 const addedUser = "testuser"
-                successMessage.value = `${addedUser?.name || 'User'} has been added to the conversation`;
+                successMessage.value = t('conversation.userAddedSuccess', { name: addedUser?.name || 'User' });
 
                 selectedUser.value = null;
                 formRef.value.reset();
             } catch (error) {
                 console.error('Error adding user to conversation:', error);
-                errorMessage.value = error.message || 'Failed to add user to conversation';
+                errorMessage.value = error.message || t('conversation.failedToAddUser');
             } finally {
                 isSubmitting.value = false;
             }

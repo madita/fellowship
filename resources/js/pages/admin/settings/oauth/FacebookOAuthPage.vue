@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Facebook OAuth"
-        description="Configure Facebook sign-in for your application"
+        :title="$t('settings.oauth.facebook.title')"
+        :description="$t('settings.oauth.facebook.description')"
         icon="mdi-facebook"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'oauth' } }"
@@ -11,10 +11,10 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-facebook" title="Facebook OAuth">
+        <settings-card icon="mdi-facebook" :title="$t('settings.oauth.facebook.cardTitle')">
             <v-switch
                 v-model="settings.oauth_facebook_enabled"
-                label="Enable Facebook Login"
+                :label="$t('settings.oauth.facebook.enableLogin')"
                 color="primary"
                 density="compact"
                 class="mb-3"
@@ -22,16 +22,16 @@
 
             <v-alert v-if="settings.oauth_facebook_enabled" type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <strong>Setup:</strong> Create app at
+                    <strong>{{ $t('settings.oauth.common.setup') }}</strong> {{ $t('settings.oauth.facebook.setupText') }}
                     <a href="https://developers.facebook.com/apps/" target="_blank" class="text-primary">Facebook Developers</a><br>
-                    <strong>Redirect URI:</strong> <code>{{ redirectUrl }}</code>
+                    <strong>{{ $t('settings.oauth.common.redirectUri') }}</strong> <code>{{ redirectUrl }}</code>
                 </div>
             </v-alert>
 
             <v-text-field
                 v-if="settings.oauth_facebook_enabled"
                 v-model="settings.oauth_facebook_client_id"
-                label="App ID"
+                :label="$t('settings.oauth.facebook.appId')"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-key"
@@ -42,7 +42,7 @@
             <v-text-field
                 v-if="settings.oauth_facebook_enabled"
                 v-model="settings.oauth_facebook_client_secret"
-                label="App Secret"
+                :label="$t('settings.oauth.facebook.appSecret')"
                 variant="outlined"
                 density="compact"
                 type="password"
@@ -60,7 +60,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

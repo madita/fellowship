@@ -5,7 +5,7 @@
             <v-col cols="12" md="3" lg="2" class="sidebar-col">
                 <v-card class="sidebar-card fill-height" rounded="0" flat>
                     <v-card-title class="d-flex align-center justify-space-between py-3">
-                        <span>Media Library</span>
+                        <span>{{ t('mediaCenter.title') }}</span>
                         <v-btn
                             icon
                             size="small"
@@ -27,7 +27,7 @@
                         <template #prepend>
                             <v-icon icon="mdi-folder-home" />
                         </template>
-                        <v-list-item-title>All Media</v-list-item-title>
+                        <v-list-item-title>{{ t('mediaCenter.allMedia') }}</v-list-item-title>
                         <template #append>
                             <v-chip size="x-small" color="primary">{{ totalStats.count }}</v-chip>
                         </template>
@@ -80,7 +80,7 @@
                     <!-- Storage Info -->
                     <v-divider />
                     <div class="pa-3">
-                        <div class="text-caption text-grey">Storage Used</div>
+                        <div class="text-caption text-grey">{{ t('mediaCenter.storageUsed') }}</div>
                         <div class="text-body-2 font-weight-medium">{{ totalStats.size_formatted }}</div>
                     </div>
                 </v-card>
@@ -110,13 +110,13 @@
                                 @click="showUploadDialog = true"
                             >
                                 <v-icon icon="mdi-upload" start />
-                                Upload
+                                {{ t('mediaCenter.upload') }}
                             </v-btn>
 
                             <!-- Search -->
                             <v-text-field
                                 v-model="search"
-                                placeholder="Search files..."
+                                :placeholder="t('mediaCenter.searchPlaceholder')"
                                 prepend-inner-icon="mdi-magnify"
                                 variant="outlined"
                                 density="compact"
@@ -133,7 +133,7 @@
                                 :items="availableCollections"
                                 item-title="label"
                                 item-value="value"
-                                placeholder="All Collections"
+                                :placeholder="t('mediaCenter.allCollections')"
                                 prepend-inner-icon="mdi-filter-variant"
                                 variant="outlined"
                                 density="compact"
@@ -169,7 +169,7 @@
                                 @click="confirmBulkDelete"
                             >
                                 <v-icon icon="mdi-delete" start />
-                                Delete ({{ selectedIds.length }})
+                                {{ t('common.delete') }} ({{ selectedIds.length }})
                             </v-btn>
                         </div>
                     </div>
@@ -197,7 +197,7 @@
                                             {{ item.model_name }}
                                         </div>
                                         <div class="text-caption text-grey">
-                                            {{ item.count }} files - {{ item.size_formatted }}
+                                            {{ t('mediaCenter.filesCount', { count: item.count }) }} - {{ item.size_formatted }}
                                         </div>
                                     </v-card-text>
                                 </v-card>
@@ -206,7 +206,7 @@
 
                         <div v-if="modelItems.length === 0 && !loading" class="text-center pa-8">
                             <v-icon icon="mdi-folder-open-outline" size="64" color="grey" />
-                            <div class="text-h6 text-grey mt-4">No items found</div>
+                            <div class="text-h6 text-grey mt-4">{{ t('mediaCenter.noItemsFound') }}</div>
                         </div>
                     </div>
 
@@ -236,7 +236,7 @@
                         <v-card v-if="meta.total > 0" class="mt-4" flat>
                             <v-card-text class="d-flex align-center justify-space-between">
                                 <div class="text-body-2 text-grey">
-                                    Showing {{ meta.from }} - {{ meta.to }} of {{ meta.total }} files
+                                    {{ t('mediaCenter.showingRange', { from: meta.from, to: meta.to, total: meta.total }) }}
                                 </div>
                                 <v-pagination
                                     v-model="page"
@@ -262,22 +262,20 @@
         <v-dialog v-model="deleteConfirmDialog" max-width="400">
             <v-card>
                 <v-card-title>
-                    {{ bulkDeleteMode ? 'Delete Selected Media' : 'Delete Media' }}
+                    {{ bulkDeleteMode ? t('mediaCenter.deleteSelectedMedia') : t('mediaCenter.deleteMedia') }}
                 </v-card-title>
                 <v-card-text>
                     <template v-if="bulkDeleteMode">
-                        Are you sure you want to delete {{ selectedIds.length }} selected items?
-                        This action cannot be undone.
+                        {{ t('mediaCenter.confirmDeleteMultiple', { count: selectedIds.length }) }}
                     </template>
                     <template v-else>
-                        Are you sure you want to delete "{{ mediaToDelete?.file_name }}"?
-                        This action cannot be undone.
+                        {{ t('mediaCenter.confirmDeleteSingle', { filename: mediaToDelete?.file_name }) }}
                     </template>
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn variant="text" @click="cancelDelete">Cancel</v-btn>
-                    <v-btn color="error" :loading="deleting" @click="executeDelete">Delete</v-btn>
+                    <v-btn variant="text" @click="cancelDelete">{{ t('common.cancel') }}</v-btn>
+                    <v-btn color="error" :loading="deleting" @click="executeDelete">{{ t('common.delete') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -286,7 +284,7 @@
         <v-dialog v-model="showUploadDialog" max-width="600" persistent>
             <v-card>
                 <v-card-title class="d-flex align-center justify-space-between">
-                    <span>Upload Images</span>
+                    <span>{{ t('mediaCenter.uploadImages') }}</span>
                     <v-btn icon variant="text" @click="closeUploadDialog">
                         <v-icon icon="mdi-close" />
                     </v-btn>
@@ -295,7 +293,7 @@
                     <!-- Collection Selection -->
                     <v-select
                         v-model="uploadCollection"
-                        label="Collection"
+                        :label="t('mediaCenter.collection')"
                         :items="uploadCollectionOptions"
                         item-title="label"
                         item-value="value"
@@ -325,20 +323,20 @@
 
                         <template v-if="uploadFiles.length === 0">
                             <v-icon icon="mdi-cloud-upload" size="64" color="grey" />
-                            <div class="text-h6 mt-2">Drop files here or click to upload</div>
-                            <div class="text-caption text-grey">Supports: JPEG, PNG, GIF, WebP, SVG, PDF (max 10MB each)</div>
+                            <div class="text-h6 mt-2">{{ t('mediaCenter.dropFilesHere') }}</div>
+                            <div class="text-caption text-grey">{{ t('mediaCenter.supportedFormats', { size: '10MB' }) }}</div>
                         </template>
 
                         <template v-else>
                             <v-icon icon="mdi-check-circle" size="48" color="success" />
-                            <div class="text-h6 mt-2">{{ uploadFiles.length }} file(s) selected</div>
+                            <div class="text-h6 mt-2">{{ t('mediaCenter.filesSelected', { count: uploadFiles.length }) }}</div>
                             <v-btn
                                 variant="text"
                                 size="small"
                                 color="primary"
                                 @click.stop="triggerFileInput"
                             >
-                                Add more files
+                                {{ t('mediaCenter.addMoreFiles') }}
                             </v-btn>
                         </template>
                     </div>
@@ -387,7 +385,7 @@
                 <v-card-actions>
                     <v-spacer />
                     <v-btn variant="text" @click="closeUploadDialog" :disabled="uploading">
-                        Cancel
+                        {{ t('common.cancel') }}
                     </v-btn>
                     <v-btn
                         color="primary"
@@ -395,7 +393,7 @@
                         :loading="uploading"
                         @click="executeUpload"
                     >
-                        Upload {{ uploadFiles.length }} file(s)
+                        {{ t('mediaCenter.uploadCount', { count: uploadFiles.length }) }}
                     </v-btn>
                 </v-card-actions>
             </v-card>
@@ -410,11 +408,14 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { debounce } from 'lodash';
 import MediaGrid from '@/components/admin/media/MediaGrid.vue';
 import MediaList from '@/components/admin/media/MediaList.vue';
 import MediaDetailsDialog from '@/components/admin/media/MediaDetailsDialog.vue';
+
+const { t } = useI18n();
 
 // Navigation State
 const folders = ref([]);
@@ -473,10 +474,10 @@ const uploadCollection = ref('images');
 const isDragging = ref(false);
 const fileInputRef = ref(null);
 
-const uploadCollectionOptions = [
-    { label: 'Images (for pages)', value: 'images' },
-    { label: 'Documents', value: 'documents' },
-];
+const uploadCollectionOptions = computed(() => [
+    { label: t('mediaCenter.imagesForPages'), value: 'images' },
+    { label: t('mediaCenter.documents'), value: 'documents' },
+]);
 
 // Computed
 const availableCollections = computed(() => {
@@ -502,7 +503,7 @@ const availableCollections = computed(() => {
 const breadcrumbs = computed(() => {
     const items = [
         {
-            title: 'All Media',
+            title: t('mediaCenter.allMedia'),
             disabled: !currentContext.value,
             onClick: () => navigateToRoot(),
         },
@@ -546,7 +547,7 @@ const fetchFolders = async () => {
         totalStats.value = response.data.total;
     } catch (error) {
         console.error('Failed to fetch folders:', error);
-        showSnackbar('Failed to load folder structure', 'error');
+        showSnackbar(t('mediaCenter.loadFolderError'), 'error');
     }
 };
 
@@ -566,7 +567,7 @@ const fetchModelItems = async () => {
         modelItems.value = response.data.items;
     } catch (error) {
         console.error('Failed to fetch model items:', error);
-        showSnackbar('Failed to load items', 'error');
+        showSnackbar(t('mediaCenter.loadItemsError'), 'error');
     } finally {
         loading.value = false;
     }
@@ -603,7 +604,7 @@ const fetchMedia = async () => {
         Object.assign(meta, response.data.meta);
     } catch (error) {
         console.error('Failed to fetch media:', error);
-        showSnackbar('Failed to load media', 'error');
+        showSnackbar(t('mediaCenter.loadMediaError'), 'error');
     } finally {
         loading.value = false;
     }
@@ -673,7 +674,7 @@ const openDetails = async (item) => {
         detailsDialogOpen.value = true;
     } catch (error) {
         console.error('Failed to fetch media details:', error);
-        showSnackbar('Failed to load media details', 'error');
+        showSnackbar(t('mediaCenter.loadDetailsError'), 'error');
     }
 };
 
@@ -700,11 +701,11 @@ const executeDelete = async () => {
     try {
         if (bulkDeleteMode.value) {
             await axios.post('/api/admin/media/bulk-delete', { ids: selectedIds.value });
-            showSnackbar(`${selectedIds.value.length} items deleted successfully`);
+            showSnackbar(t('mediaCenter.itemsDeleted', { count: selectedIds.value.length }));
             selectedIds.value = [];
         } else {
             await axios.delete(`/api/admin/media/${mediaToDelete.value.id}`);
-            showSnackbar('Media deleted successfully');
+            showSnackbar(t('mediaCenter.deleteSuccess'));
         }
 
         deleteConfirmDialog.value = false;
@@ -715,7 +716,7 @@ const executeDelete = async () => {
         await Promise.all([fetchFolders(), currentModelId.value ? fetchMedia() : fetchModelItems()]);
     } catch (error) {
         console.error('Failed to delete media:', error);
-        showSnackbar('Failed to delete media', 'error');
+        showSnackbar(t('mediaCenter.deleteError'), 'error');
     } finally {
         deleting.value = false;
     }
@@ -725,12 +726,12 @@ const handleDelete = async (item) => {
     deleting.value = true;
     try {
         await axios.delete(`/api/admin/media/${item.id}`);
-        showSnackbar('Media deleted successfully');
+        showSnackbar(t('mediaCenter.deleteSuccess'));
         detailsDialogOpen.value = false;
         await Promise.all([fetchFolders(), currentModelId.value ? fetchMedia() : fetchModelItems()]);
     } catch (error) {
         console.error('Failed to delete media:', error);
-        showSnackbar('Failed to delete media', 'error');
+        showSnackbar(t('mediaCenter.deleteError'), 'error');
     } finally {
         deleting.value = false;
     }
@@ -767,11 +768,11 @@ const addFiles = (files) => {
 
     files.forEach(file => {
         if (!validTypes.includes(file.type)) {
-            showSnackbar(`Invalid file type: ${file.name}`, 'error');
+            showSnackbar(t('mediaCenter.invalidFileType', { name: file.name }), 'error');
             return;
         }
         if (file.size > maxSize) {
-            showSnackbar(`File too large: ${file.name} (max 10MB)`, 'error');
+            showSnackbar(t('mediaCenter.fileTooLarge', { name: file.name, size: '10MB' }), 'error');
             return;
         }
 
@@ -828,7 +829,7 @@ const executeUpload = async () => {
             },
         });
 
-        showSnackbar(`${uploadFiles.value.length} file(s) uploaded successfully`);
+        showSnackbar(t('mediaCenter.filesUploaded', { count: uploadFiles.value.length }));
         closeUploadDialog();
 
         // Refresh data
@@ -838,7 +839,7 @@ const executeUpload = async () => {
         }
     } catch (error) {
         console.error('Failed to upload files:', error);
-        showSnackbar(error.response?.data?.message || 'Failed to upload files', 'error');
+        showSnackbar(error.response?.data?.message || t('mediaCenter.uploadError'), 'error');
     } finally {
         uploading.value = false;
     }

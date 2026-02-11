@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Application Info"
-        description="Configure your application's basic information"
+        :title="$t('settings.appInfo.title')"
+        :description="$t('settings.appInfo.description')"
         icon="mdi-information-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'general' } }"
@@ -11,10 +11,10 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-application" title="Application Info">
+        <settings-card icon="mdi-application" :title="$t('settings.appInfo.cardTitle')">
             <v-text-field
                 v-model="settings.app_name"
-                label="Application Name"
+                :label="$t('settings.appInfo.appName')"
                 prepend-inner-icon="mdi-application"
                 variant="outlined"
                 class="mb-4"
@@ -23,33 +23,33 @@
 
             <v-text-field
                 v-model="settings.app_copyright"
-                label="Copyright Text"
+                :label="$t('settings.appInfo.copyright')"
                 prepend-inner-icon="mdi-copyright"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.app_copyright"
-                hint="Text displayed in the footer (e.g., © Fellowship 2021)"
+                :hint="$t('settings.appInfo.copyrightHint')"
                 persistent-hint
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.site_tagline"
-                label="Site Tagline"
+                :label="$t('settings.appInfo.tagline')"
                 prepend-inner-icon="mdi-format-quote-close"
                 variant="outlined"
                 class="mb-4"
                 :error-messages="errors.site_tagline"
-                hint="A short tagline or slogan (e.g., 'Your Adventure Awaits')"
+                :hint="$t('settings.appInfo.taglineHint')"
                 persistent-hint
             ></v-text-field>
 
             <v-text-field
                 v-model="settings.site_url"
-                label="Site URL"
+                :label="$t('settings.appInfo.siteUrl')"
                 prepend-inner-icon="mdi-link-variant"
                 variant="outlined"
                 :error-messages="errors.site_url"
-                hint="The base URL of your site (e.g., https://fellowship.com)"
+                :hint="$t('settings.appInfo.siteUrlHint')"
                 persistent-hint
             ></v-text-field>
         </settings-card>
@@ -63,7 +63,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

@@ -62,7 +62,7 @@ class PostController extends Controller
         $post->save();
 
         return response()->json([
-            'data' => 'succes',
+            'message' => __('messages.success.updated', ['item' => 'Post']),
         ]);
     }
 }

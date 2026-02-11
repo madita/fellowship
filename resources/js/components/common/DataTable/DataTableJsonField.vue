@@ -1,6 +1,9 @@
 <script setup>
 import {ref, watch, onMounted} from 'vue';
+import {useI18n} from 'vue-i18n';
 import DataTableJsonOption from "@/components/common/DataTable/DataTableJsonOption.vue";
+
+const {t} = useI18n();
 // Modal state for JSON key-value pairs
 const showModal = ref([]);
 
@@ -111,7 +114,7 @@ onMounted(() => {
         <v-col cols="12">
             <v-row>
 
-                <v-col class="ma-1"><h4>Form Fields</h4></v-col>
+                <v-col class="ma-1"><h4>{{ $t('formBuilder.formFields') }}</h4></v-col>
                 <v-col class="text-right">
                     <v-btn class="btn btn-secondary text-right" @click="addField" icon="mdi-plus"></v-btn>
                 </v-col>
@@ -125,7 +128,7 @@ onMounted(() => {
                         density="compact"
                         class="form-control"
                         v-model="field.label"
-                        label="Label">
+                        :label="$t('formBuilder.label')">
                     </v-text-field>
                 </v-col>
                 <v-col cols="3">
@@ -141,13 +144,13 @@ onMounted(() => {
                         density="compact"
                         class="form-control"
                         v-model="field.placeholder"
-                        label="Placeholder">
+                        :label="$t('formBuilder.placeholder')">
                     </v-text-field>
                 </v-col>
                 <v-col cols="3">
                     <v-select
                         density="compact"
-                        label="Type"
+                        :label="$t('formBuilder.type')"
                         :items="['select', 'text','taxonomy']"
                         v-model="field.type"
                         class="form-control v-col-5"
@@ -167,14 +170,14 @@ onMounted(() => {
 
                     </template>
                     <template class="form-control v-col-12" v-if="field.type==='taxonomy'">
-                        load taxonomies
+                        {{ $t('formBuilder.loadTaxonomies') }}
                         <v-select
                             clearable
                             v-model="fields[name].options"
                             item-title="name"
                             item-value="name"
                             :items="taxonomies"
-                            label="Taxonomy"
+                            :label="$t('formBuilder.taxonomy')"
 
                         ></v-select>
 

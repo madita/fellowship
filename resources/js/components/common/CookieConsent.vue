@@ -28,14 +28,14 @@
                         class="mb-0"
                     >
                         <template #text>
-                            This website requires cookies to function properly. Please accept cookies to continue.
+                            {{ $t('cookie.requiresCookies') }}
                             <a
                                 v-if="settings.cookie_policy_url"
                                 :href="settings.cookie_policy_url"
                                 target="_blank"
                                 class="text-primary ml-1"
                             >
-                                Learn more about our cookie policy.
+                                {{ $t('cookie.learnMore') }}
                             </a>
                         </template>
                     </v-alert>
@@ -49,7 +49,7 @@
                         @click="showDetails = true"
                     >
                         <v-icon start>mdi-cog</v-icon>
-                        Customize
+                        {{ $t('common.customize') }}
                     </v-btn>
 
                     <v-spacer />
@@ -59,7 +59,7 @@
                         class="mr-2"
                         @click="acceptNecessary"
                     >
-                        Necessary Only
+                        {{ $t('cookie.necessaryOnly') }}
                     </v-btn>
 
                     <v-btn
@@ -68,7 +68,7 @@
                         @click="acceptAll"
                     >
                         <v-icon start>mdi-check</v-icon>
-                        Accept All Cookies
+                        {{ $t('cookie.acceptAll') }}
                     </v-btn>
                 </v-card-actions>
             </template>
@@ -77,7 +77,7 @@
             <template v-else>
                 <v-card-title class="d-flex align-center pa-6 pb-4">
                     <v-icon size="large" color="primary" class="mr-3">mdi-cookie-cog</v-icon>
-                    <span class="text-h5 font-weight-bold">Cookie Preferences</span>
+                    <span class="text-h5 font-weight-bold">{{ $t('cookie.preferences') }}</span>
                     <v-spacer />
                     <v-btn
                         icon
@@ -101,11 +101,11 @@
                                 <v-icon color="success" class="mr-3">mdi-shield-check</v-icon>
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-center">
-                                        <span class="font-weight-medium">Necessary</span>
-                                        <v-chip size="x-small" color="success" class="ml-2">Always Active</v-chip>
+                                        <span class="font-weight-medium">{{ $t('cookie.necessary') }}</span>
+                                        <v-chip size="x-small" color="success" class="ml-2">{{ $t('cookie.alwaysActive') }}</v-chip>
                                     </div>
                                     <div class="text-body-2 text-medium-emphasis mt-1">
-                                        Essential cookies for the website to function properly.
+                                        {{ $t('cookie.necessaryDescription') }}
                                     </div>
                                 </div>
                             </v-card-text>
@@ -116,9 +116,9 @@
                             <v-card-text class="d-flex align-center py-3">
                                 <v-icon class="mr-3">mdi-chart-line</v-icon>
                                 <div class="flex-grow-1">
-                                    <div class="font-weight-medium">Analytics</div>
+                                    <div class="font-weight-medium">{{ $t('cookie.analytics') }}</div>
                                     <div class="text-body-2 text-medium-emphasis mt-1">
-                                        Help us understand how visitors interact with our website.
+                                        {{ $t('cookie.analyticsDescription') }}
                                     </div>
                                 </div>
                                 <v-switch
@@ -135,9 +135,9 @@
                             <v-card-text class="d-flex align-center py-3">
                                 <v-icon class="mr-3">mdi-bullhorn</v-icon>
                                 <div class="flex-grow-1">
-                                    <div class="font-weight-medium">Marketing</div>
+                                    <div class="font-weight-medium">{{ $t('cookie.marketing') }}</div>
                                     <div class="text-body-2 text-medium-emphasis mt-1">
-                                        Used to deliver personalized advertisements.
+                                        {{ $t('cookie.marketingDescription') }}
                                     </div>
                                 </div>
                                 <v-switch
@@ -154,9 +154,9 @@
                             <v-card-text class="d-flex align-center py-3">
                                 <v-icon class="mr-3">mdi-cog</v-icon>
                                 <div class="flex-grow-1">
-                                    <div class="font-weight-medium">Functional</div>
+                                    <div class="font-weight-medium">{{ $t('cookie.functional') }}</div>
                                     <div class="text-body-2 text-medium-emphasis mt-1">
-                                        Enable enhanced functionality and personalization.
+                                        {{ $t('cookie.functionalDescription') }}
                                     </div>
                                 </div>
                                 <v-switch
@@ -177,7 +177,7 @@
                         variant="outlined"
                         @click="acceptNecessary"
                     >
-                        Necessary Only
+                        {{ $t('cookie.necessaryOnly') }}
                     </v-btn>
 
                     <v-spacer />
@@ -188,7 +188,7 @@
                         class="mr-2"
                         @click="acceptAll"
                     >
-                        Accept All
+                        {{ $t('cookie.acceptAllShort') }}
                     </v-btn>
 
                     <v-btn
@@ -196,7 +196,7 @@
                         @click="savePreferences"
                     >
                         <v-icon start>mdi-check</v-icon>
-                        Save Preferences
+                        {{ $t('cookie.savePreferences') }}
                     </v-btn>
                 </v-card-actions>
             </template>
@@ -206,7 +206,10 @@
 
 <script setup>
 import { ref, reactive, onMounted, watch, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useSettingsStore } from '@/store/settingStore';
+
+const { t } = useI18n();
 
 const settingsStore = useSettingsStore();
 const settings = computed(() => settingsStore.appSettings);
@@ -226,21 +229,21 @@ const preferences = reactive({
     functional: false,
 });
 
-const defaultBannerTitle = 'Cookie Consent';
-const defaultBannerText = 'We use cookies to enhance your browsing experience, analyze site traffic, and personalize content. By clicking "Accept All", you consent to our use of cookies.';
-const defaultPreferencesText = 'Manage your cookie preferences below. You can enable or disable different types of cookies. Note that disabling some cookies may affect your browsing experience.';
+const defaultBannerTitle = computed(() => t('cookie.consentTitle'));
+const defaultBannerText = computed(() => t('cookie.defaultBannerText'));
+const defaultPreferencesText = computed(() => t('cookie.defaultPreferencesText'));
 
 // Computed properties for text - use settings if available, otherwise defaults
 const bannerTitle = computed(() => {
-    return settings.value?.cookie_banner_title || defaultBannerTitle;
+    return settings.value?.cookie_banner_title || defaultBannerTitle.value;
 });
 
 const bannerText = computed(() => {
-    return settings.value?.cookie_banner_text || defaultBannerText;
+    return settings.value?.cookie_banner_text || defaultBannerText.value;
 });
 
 const preferencesText = computed(() => {
-    return settings.value?.cookie_preferences_text || defaultPreferencesText;
+    return settings.value?.cookie_preferences_text || defaultPreferencesText.value;
 });
 
 const emit = defineEmits(['consent-updated']);

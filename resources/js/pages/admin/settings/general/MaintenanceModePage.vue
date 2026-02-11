@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Maintenance Mode"
-        description="Configure maintenance mode settings for your application"
+        :title="$t('settings.maintenance.title')"
+        :description="$t('settings.maintenance.description')"
         icon="mdi-wrench-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'general' } }"
@@ -11,24 +11,24 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-wrench" title="Maintenance Mode">
+        <settings-card icon="mdi-wrench" :title="$t('settings.maintenance.cardTitle')">
             <v-alert
                 v-if="settings.maintenance_mode"
                 type="warning"
                 variant="tonal"
                 class="mb-4"
             >
-                <strong>Maintenance Mode is Active!</strong>
-                <div class="mt-1">Non-admin users will see the maintenance page and cannot access the site.</div>
+                <strong>{{ $t('settings.maintenance.activeWarning') }}</strong>
+                <div class="mt-1">{{ $t('settings.maintenance.activeDescription') }}</div>
             </v-alert>
 
             <v-switch
                 v-model="settings.maintenance_mode"
-                label="Enable Maintenance Mode"
+                :label="$t('settings.maintenance.enableLabel')"
                 color="warning"
                 class="mb-4"
                 :error-messages="errors.maintenance_mode"
-                hint="When enabled, site will display maintenance message to visitors. Admins can still log in and access all pages."
+                :hint="$t('settings.maintenance.enableHint')"
                 persistent-hint
             ></v-switch>
 
@@ -39,20 +39,20 @@
                 class="mb-4"
             >
                 <div class="text-caption">
-                    <strong>Note:</strong> Login pages remain accessible so admins can sign in. After logging in as an admin, you'll have full access to the site.
+                    <strong>{{ $t('settings.maintenance.note') }}</strong> {{ $t('settings.maintenance.noteText') }}
                 </div>
             </v-alert>
 
             <v-textarea
                 v-model="settings.maintenance_message"
-                label="Maintenance Message"
+                :label="$t('settings.maintenance.messageLabel')"
                 prepend-inner-icon="mdi-message-text"
                 variant="outlined"
                 rows="3"
                 :error-messages="errors.maintenance_message"
-                hint="Message shown to visitors when maintenance mode is active"
+                :hint="$t('settings.maintenance.messageHint')"
                 persistent-hint
-                placeholder="We are currently performing scheduled maintenance. Please check back soon."
+                :placeholder="$t('settings.maintenance.messagePlaceholder')"
             ></v-textarea>
 
             <v-alert
@@ -64,7 +64,7 @@
             >
                 <div class="text-caption">
                     <v-icon size="small" class="mr-1">mdi-information</v-icon>
-                    <strong>Tip:</strong> Reload this page to see the maintenance mode changes take effect.
+                    <strong>{{ $t('settings.maintenance.tip') }}</strong> {{ $t('settings.maintenance.reloadTip') }}
                     <v-btn
                         size="x-small"
                         color="success"
@@ -72,7 +72,7 @@
                         class="ml-2"
                         @click="reloadPage"
                     >
-                        Reload Now
+                        {{ $t('settings.maintenance.reloadNow') }}
                     </v-btn>
                 </div>
             </v-alert>
@@ -87,7 +87,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

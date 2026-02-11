@@ -43,14 +43,14 @@
                         <div v-html="event.description"></div>
                     </v-col>
                     <v-col cols="4" class="align-content-end">
-                        <div>Are you coming?</div>
+                        <div>{{ $t('events.areYouComing') }}</div>
                         <v-btn
                             color="primary"
                             class="me-3"
                             :disabled="getIsGoing('going')"
                             @click="register('going')"
                         >
-                            Yes
+                            {{ $t('events.yes') }}
                         </v-btn>
                         <v-btn
                             variant="tonal"
@@ -59,7 +59,7 @@
                             :disabled="getIsGoing('notgoing')"
                             @click="register('notgoing')"
                         >
-                            No
+                            {{ $t('events.no') }}
                         </v-btn>
                         <v-btn
                             variant="outlined"
@@ -67,24 +67,24 @@
                             :disabled="getIsGoing('maybe')"
                             @click="register('maybe')"
                         >
-                            Maybe
+                            {{ $t('events.maybe') }}
                         </v-btn>
 
-                        <v-list-subheader>Is Going ({{ eventData?.going?.length || 0 }})</v-list-subheader>
+                        <v-list-subheader>{{ $t('events.isGoing') }} ({{ eventData?.going?.length || 0 }})</v-list-subheader>
                         <user-avatar
                             v-for="user in eventData?.going || []"
                             :key="`going-${user.id}`"
                             :user="user"
                         />
 
-                        <v-list-subheader>Maybe Going ({{ eventData?.maybe?.length || 0 }})</v-list-subheader>
+                        <v-list-subheader>{{ $t('events.maybeGoing') }} ({{ eventData?.maybe?.length || 0 }})</v-list-subheader>
                         <user-avatar
                             v-for="user in eventData?.maybe || []"
                             :key="`maybe-${user.id}`"
                             :user="user"
                         />
 
-                        <v-list-subheader>Not Going ({{ eventData?.notgoing?.length || 0 }})</v-list-subheader>
+                        <v-list-subheader>{{ $t('events.notGoing') }} ({{ eventData?.notgoing?.length || 0 }})</v-list-subheader>
                         <user-avatar
                             v-for="user in eventData?.notgoing || []"
                             :key="`notgoing-${user.id}`"
@@ -112,7 +112,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useDateFormat } from '@/plugins/formatDate.js' // Adjust path as needed
 import { useUserStore } from '@/store/userStore.js'
@@ -120,6 +121,8 @@ import { useSettingsStore } from '@/store/settingStore.js'
 //import EventDatePicker from './EventDatePicker.vue'
 import UserAvatar from '../common/UserAvatar.vue'
 import axios from 'axios'
+
+const { t } = useI18n()
 
 // Props (if any would be passed to this component)
 const props = defineProps({
@@ -179,7 +182,7 @@ const register = async (answer) => {
         eventData.value.notgoing = response.data.notgoing
         eventData.value.maybe = response.data.maybe
 
-        message.value = 'Answer saved'
+        message.value = t('events.answerSaved')
 
         // Clear message after 3 seconds
         setTimeout(() => {
@@ -202,12 +205,27 @@ const getIsGoing = (answer) => {
     return eventData.value.isGoing !== undefined && eventData.value.isGoing.type === answer
 }
 
+// Locale change handler
+function onLocaleChange() {
+    if (id.value) {
+        getEvent()
+    }
+}
+
 // Lifecycle
 onMounted(() => {
     if (route.params.id) {
         id.value = route.params.id
         getEvent()
     }
+
+    // Listen for locale changes to refetch content in new language
+    window.addEventListener('locale-changed', onLocaleChange)
+})
+
+onUnmounted(() => {
+    // Clean up locale change listener
+    window.removeEventListener('locale-changed', onLocaleChange)
 })
 </script>
 

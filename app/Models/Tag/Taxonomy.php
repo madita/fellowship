@@ -4,6 +4,8 @@ namespace App\Models\Tag;
 
 use App\Models\Page;
 use App\Traits\HasCache;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +18,7 @@ use Illuminate\Support\Str;
 
 //use Webpatser\Uuid\Uuid;
 
-class Taxonomy extends Model
+class Taxonomy extends Model implements TranslatableContract
 {
 //    protected $table = 'taxonomies';
     /**
@@ -24,6 +26,9 @@ class Taxonomy extends Model
      */
     use SoftDeletes;
     use HasCache;
+    use Translatable;
+
+    public $translatedAttributes = ['description', 'content', 'lead', 'meta_desc'];
 
     /** @inheritdoc */
     protected $fillable = [
@@ -31,11 +36,6 @@ class Taxonomy extends Model
         'alias_id',
         'term_id',
         'taxonomy',
-
-        'description',
-        'content',
-        'lead',
-        'meta_desc',
 
         'sort',
         'visible',

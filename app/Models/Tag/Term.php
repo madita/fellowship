@@ -3,6 +3,8 @@
 namespace App\Models\Tag;
 
 use App\Traits\HasCache;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -20,18 +22,18 @@ use Illuminate\Support\Str;
  * @property string|null           $lead
  * @property Collection|Taxonomy[] $taxonomies
  */
-class Term extends Model
+class Term extends Model implements TranslatableContract
 {
     use Sluggable;
     use SoftDeletes;
     use HasCache;
+    use Translatable;
+
+    public $translatedAttributes = ['title', 'content', 'lead'];
 
     /** @inheritdoc */
     protected $fillable = [
-        'title',
         'slug',
-        'content',
-        'lead',
     ];
 
     /** @inheritdoc */

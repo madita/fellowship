@@ -6,10 +6,10 @@
                 <v-row align="center" class="mb-6">
                     <v-col cols="12" md="8">
                         <h1 class="wiki-title text-h3 font-weight-bold mb-2">
-                            Knowledge Base
+                            {{ $t('wiki.title') }}
                         </h1>
                         <p class="text-subtitle-1 text-medium-emphasis">
-                            Discover and share knowledge with your community
+                            {{ $t('wiki.subtitle') }}
                         </p>
                     </v-col>
                     <v-col cols="12" md="4" class="text-right">
@@ -21,7 +21,7 @@
                             @click="createWikiPage"
                             class="create-btn"
                         >
-                            Create Page
+                            {{ $t('wiki.createPage') }}
                         </v-btn>
                     </v-col>
                 </v-row>
@@ -30,7 +30,7 @@
                 <div class="search-section mb-8">
                     <v-text-field
                         v-model="searchText"
-                        label="Search wiki pages..."
+                        :label="$t('wiki.searchPlaceholder')"
                         prepend-inner-icon="mdi-magnify"
                         variant="outlined"
                         density="comfortable"
@@ -66,7 +66,7 @@
                     size="small"
                     prepend-icon="mdi-file-document-multiple"
                 >
-                    {{ response.total }} pages found
+                    {{ $t('wiki.pagesFound', { count: response.total }) }}
                 </v-chip>
                 <v-chip
                     v-if="searchText"
@@ -75,7 +75,7 @@
                     size="small"
                     prepend-icon="mdi-magnify"
                 >
-                    Results for "{{ searchText }}"
+                    {{ $t('wiki.resultsFor', { query: searchText }) }}
                 </v-chip>
             </div>
 
@@ -121,17 +121,17 @@
                                         <v-list density="compact">
                                             <v-list-item
                                                 prepend-icon="mdi-pencil"
-                                                title="Edit"
+                                                :title="$t('wiki.edit')"
                                                 @click="editPage(item.slug)"
                                             />
                                             <v-list-item
                                                 prepend-icon="mdi-share"
-                                                title="Share"
+                                                :title="$t('wiki.share')"
                                                 @click="sharePage(item.slug)"
                                             />
                                             <v-list-item
                                                 prepend-icon="mdi-delete"
-                                                title="Delete"
+                                                :title="$t('common.delete')"
                                                 @click="deletePage(item.data.id)"
                                             />
                                         </v-list>
@@ -199,7 +199,7 @@
                                 />
 
                                 <div class="content-placeholder text-body-2 text-disabled" v-else>
-                                    No content available
+                                    {{ $t('wiki.noContent') }}
                                 </div>
                             </v-card-text>
 
@@ -211,7 +211,7 @@
                                             mdi-clock-outline
                                         </v-icon>
                                         <span class="text-caption text-medium-emphasis">
-                      {{ formatDate(item.data.updated_at || item.data.created_at) }} {{item.data.updated_at ? 'Updated' : 'Created'}}
+                      {{ formatDate(item.data.updated_at || item.data.created_at) }} {{ item.data.updated_at ? $t('wiki.updated') : $t('wiki.created') }}
                     </span>
                                     </div>
 
@@ -222,7 +222,7 @@
                                         append-icon="mdi-arrow-right"
                                         @click.stop="readMore(item.slug)"
                                     >
-                                        Read
+                                        {{ $t('wiki.read') }}
                                     </v-btn>
                                 </div>
                             </v-card-actions>
@@ -237,12 +237,12 @@
                     {{ searchText ? 'mdi-magnify' : 'mdi-file-document-plus' }}
                 </v-icon>
                 <h3 class="text-h5 font-weight-bold mb-2">
-                    {{ searchText ? 'No results found' : 'No wiki pages yet' }}
+                    {{ searchText ? $t('wiki.noResultsFound') : $t('wiki.noPagesYet') }}
                 </h3>
                 <p class="text-body-1 text-medium-emphasis mb-6">
                     {{ searchText
-                    ? `Try adjusting your search terms or browse all pages`
-                    : 'Start building your knowledge base by creating the first page'
+                    ? $t('wiki.tryAdjustingSearch')
+                    : $t('wiki.startBuildingKnowledgeBase')
                     }}
                 </p>
                 <v-btn
@@ -253,7 +253,7 @@
                     size="large"
                     @click="createWikiPage"
                 >
-                    Create First Page
+                    {{ $t('wiki.createFirstPage') }}
                 </v-btn>
                 <v-btn
                     v-else
@@ -262,7 +262,7 @@
                     prepend-icon="mdi-refresh"
                     @click="clearSearch"
                 >
-                    Clear Search
+                    {{ $t('wiki.clearSearch') }}
                 </v-btn>
             </div>
 
@@ -276,7 +276,7 @@
                     class="mb-4"
                 />
                 <p class="text-body-1 text-medium-emphasis">
-                    {{ searchText ? 'Searching...' : 'Loading wiki pages...' }}
+                    {{ searchText ? $t('wiki.searching') : $t('wiki.loadingPages') }}
                 </p>
             </div>
 
@@ -289,7 +289,7 @@
                     @click="loadMore"
                     size="large"
                 >
-                    Load More Pages
+                    {{ $t('wiki.loadMorePages') }}
                 </v-btn>
             </div>
         </v-container>
@@ -343,7 +343,7 @@ export default {
                 this.page++;
             } catch (error) {
                 console.error('Error loading wiki pages:', error);
-                this.$emit('error', 'Failed to load wiki pages');
+                this.$emit('error', this.$t('wiki.loadError'));
             } finally {
                 this.loading = false;
             }
@@ -434,19 +434,19 @@ export default {
         sharePage(slug) {
             const url = `${window.location.origin}${this.$route.path}/${slug}`;
             navigator.clipboard.writeText(url).then(() => {
-                this.$emit('success', 'Link copied to clipboard');
+                this.$emit('success', this.$t('wiki.linkCopied'));
             });
         },
 
         async deletePage(id) {
-            if (confirm('Are you sure you want to delete this page?')) {
+            if (confirm(this.$t('wiki.confirmDelete'))) {
                 try {
                     await axios.delete(`/api/wiki/${id}`);
                     this.wikiable = this.wikiable.filter(item => item.data.id !== id);
-                    this.$emit('success', 'Page deleted successfully');
+                    this.$emit('success', this.$t('wiki.pageDeleted'));
                 } catch (error) {
                     console.error('Error deleting page:', error);
-                    this.$emit('error', 'Failed to delete page');
+                    this.$emit('error', this.$t('wiki.deleteError'));
                 }
             }
         },
@@ -458,7 +458,7 @@ export default {
         },
 
         formatDate(dateString) {
-            if (!dateString) return 'Unknown';
+            if (!dateString) return this.$t('wiki.unknown');
             return formatDateUtil(dateString, 'M d, Y');
         }
     },
@@ -466,10 +466,24 @@ export default {
     mounted() {
         this.getWikiPages();
         window.addEventListener("scroll", this.handleScroll);
+
+        // Listen for locale changes to refetch content in new language
+        this.onLocaleChange = () => {
+            this.wikiable = [];
+            this.page = 1;
+            this.getWikiPages();
+        };
+        window.addEventListener('locale-changed', this.onLocaleChange);
     },
 
     beforeUnmount() {
         window.removeEventListener("scroll", this.handleScroll);
+
+        // Clean up locale change listener
+        if (this.onLocaleChange) {
+            window.removeEventListener('locale-changed', this.onLocaleChange);
+        }
+
         if (this.cancelToken) {
             this.cancelToken.cancel('Component unmounted');
         }

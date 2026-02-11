@@ -1,7 +1,7 @@
 <template>
     <settings-page-layout
-        title="Discord OAuth"
-        description="Configure Discord sign-in for your application"
+        :title="$t('settings.oauth.discord.title')"
+        :description="$t('settings.oauth.discord.description')"
         icon="mdi-discord"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'oauth' } }"
@@ -11,10 +11,10 @@
         @save="$emit('save')"
         @clear-message="message = ''"
     >
-        <settings-card icon="mdi-discord" title="Discord OAuth">
+        <settings-card icon="mdi-discord" :title="$t('settings.oauth.discord.cardTitle')">
             <v-switch
                 v-model="settings.oauth_discord_enabled"
-                label="Enable Discord Login"
+                :label="$t('settings.oauth.discord.enableLogin')"
                 color="primary"
                 density="compact"
                 class="mb-3"
@@ -22,16 +22,16 @@
 
             <v-alert v-if="settings.oauth_discord_enabled" type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
-                    <strong>Setup:</strong> Create application at
+                    <strong>{{ $t('settings.oauth.common.setup') }}</strong> {{ $t('settings.oauth.discord.setupText') }}
                     <a href="https://discord.com/developers/applications" target="_blank" class="text-primary">Discord Developer Portal</a><br>
-                    <strong>Redirect URI:</strong> <code>{{ redirectUrl }}</code>
+                    <strong>{{ $t('settings.oauth.common.redirectUri') }}</strong> <code>{{ redirectUrl }}</code>
                 </div>
             </v-alert>
 
             <v-text-field
                 v-if="settings.oauth_discord_enabled"
                 v-model="settings.oauth_discord_client_id"
-                label="Client ID"
+                :label="$t('settings.oauth.common.clientId')"
                 variant="outlined"
                 density="compact"
                 prepend-inner-icon="mdi-key"
@@ -42,7 +42,7 @@
             <v-text-field
                 v-if="settings.oauth_discord_enabled"
                 v-model="settings.oauth_discord_client_secret"
-                label="Client Secret"
+                :label="$t('settings.oauth.common.clientSecret')"
                 variant="outlined"
                 density="compact"
                 type="password"
@@ -60,7 +60,7 @@
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('settings.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

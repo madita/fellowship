@@ -6,7 +6,8 @@
                     <div class="d-flex align-center justify-space-between w-100">
                         <div class="d-flex align-center">
                             <v-icon class="mr-2 mr-sm-3" :size="$vuetify.display.mobile ? 24 : 28">mdi-cog</v-icon>
-                            <span class="d-none d-sm-inline">Application </span>Settings
+                            <span class="d-none d-sm-inline">{{ $t('settings.overview.applicationSettings') }}</span>
+                            <span class="d-sm-none">{{ $t('settings.overview.settings') }}</span>
                         </div>
                         <div class="d-flex align-center gap-2">
                             <!-- Save Button (Tab view only) -->
@@ -19,7 +20,7 @@
                                 prepend-icon="mdi-content-save"
                                 class="d-none d-sm-flex"
                             >
-                                Save
+                                {{ $t('common.save') }}
                             </v-btn>
                             <!-- View Toggle -->
                             <v-btn-toggle
@@ -32,11 +33,11 @@
                             >
                                 <v-btn value="overview" size="small">
                                     <v-icon size="18" :class="{ 'mr-1': !$vuetify.display.mobile }">mdi-view-grid-outline</v-icon>
-                                    <span class="d-none d-sm-inline">Overview</span>
+                                    <span class="d-none d-sm-inline">{{ $t('settings.overview.overview') }}</span>
                                 </v-btn>
                                 <v-btn value="tabs" size="small">
                                     <v-icon size="18" :class="{ 'mr-1': !$vuetify.display.mobile }">mdi-tab</v-icon>
-                                    <span class="d-none d-sm-inline">Tabs</span>
+                                    <span class="d-none d-sm-inline">{{ $t('settings.overview.tabs') }}</span>
                                 </v-btn>
                             </v-btn-toggle>
                         </div>
@@ -61,7 +62,7 @@
                     <v-text-field
                         v-model="searchQuery"
                         prepend-inner-icon="mdi-magnify"
-                        label="Search settings..."
+                        :label="$t('settings.overview.searchSettings')"
                         variant="outlined"
                         density="comfortable"
                         hide-details
@@ -77,7 +78,7 @@
                             <v-card variant="tonal" color="primary">
                                 <v-card-text class="text-center pa-3">
                                     <div class="text-h5 font-weight-bold">{{ categoriesCount }}</div>
-                                    <div class="text-caption">Categories</div>
+                                    <div class="text-caption">{{ $t('settings.overview.categories') }}</div>
                                 </v-card-text>
                             </v-card>
                         </v-col>
@@ -85,7 +86,7 @@
                             <v-card variant="tonal" color="success">
                                 <v-card-text class="text-center pa-3">
                                     <div class="text-h5 font-weight-bold">{{ totalSettings }}</div>
-                                    <div class="text-caption">Settings</div>
+                                    <div class="text-caption">{{ $t('settings.overview.settings') }}</div>
                                 </v-card-text>
                             </v-card>
                         </v-col>
@@ -93,7 +94,7 @@
                             <v-card variant="tonal" color="info">
                                 <v-card-text class="text-center pa-3">
                                     <div class="text-h5 font-weight-bold">{{ filteredSettingsCount }}</div>
-                                    <div class="text-caption">Results</div>
+                                    <div class="text-caption">{{ $t('settings.overview.results') }}</div>
                                 </v-card-text>
                             </v-card>
                         </v-col>
@@ -113,39 +114,39 @@
                     >
                         <v-tab value="general">
                             <v-icon class="mr-2" size="20">mdi-cog-outline</v-icon>
-                            <span class="d-none d-sm-inline">General</span>
+                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabGeneral') }}</span>
                         </v-tab>
                         <v-tab value="localization">
                             <v-icon class="mr-2" size="20">mdi-earth</v-icon>
-                            <span class="d-none d-sm-inline">Localization</span>
+                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabLocalization') }}</span>
                         </v-tab>
                         <v-tab value="branding">
                             <v-icon class="mr-2" size="20">mdi-palette-outline</v-icon>
-                            <span class="d-none d-sm-inline">Branding</span>
+                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabBranding') }}</span>
                         </v-tab>
                         <v-tab value="theme">
                             <v-icon class="mr-2" size="20">mdi-theme-light-dark</v-icon>
-                            <span class="d-none d-sm-inline">Theme</span>
+                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabTheme') }}</span>
                         </v-tab>
                         <v-tab value="oauth">
                             <v-icon class="mr-2" size="20">mdi-login-variant</v-icon>
-                            <span class="d-none d-sm-inline">OAuth</span>
+                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabOAuth') }}</span>
                         </v-tab>
                         <v-tab value="seo">
                             <v-icon class="mr-2" size="20">mdi-search-web</v-icon>
-                            <span class="d-none d-sm-inline">SEO</span>
+                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabSEO') }}</span>
                         </v-tab>
                         <v-tab value="homepage">
                             <v-icon class="mr-2" size="20">mdi-home-edit-outline</v-icon>
-                            <span class="d-none d-sm-inline">Homepage</span>
+                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabHomepage') }}</span>
                         </v-tab>
                         <v-tab value="footer">
                             <v-icon class="mr-2" size="20">mdi-page-layout-footer</v-icon>
-                            <span class="d-none d-sm-inline">Footer</span>
+                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabFooter') }}</span>
                         </v-tab>
                         <v-tab value="advanced">
                             <v-icon class="mr-2" size="20">mdi-cog-sync-outline</v-icon>
-                            <span class="d-none d-sm-inline">Advanced</span>
+                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabAdvanced') }}</span>
                         </v-tab>
                     </v-tabs>
 
@@ -237,7 +238,7 @@
                             prepend-icon="mdi-content-save"
                             class="d-sm-none mt-4"
                         >
-                            Save Settings
+                            {{ $t('settings.saveSettings') }}
                         </v-btn>
                     </v-card-text>
                 </template>
@@ -251,7 +252,7 @@
                         variant="tonal"
                         class="mb-4"
                     >
-                        No settings found matching "{{ searchQuery }}". Try a different search term.
+                        {{ $t('settings.overview.noResultsMessage', { query: searchQuery }) }}
                     </v-alert>
 
                     <!-- Settings grouped by category -->
@@ -301,9 +302,12 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { settingsCategories, getTotalSettingsCount } from '@/configs/settingsConfig';
 import { useSettings } from '@/composables/useSettings';
 import SettingsItemCard from '@/components/settings/SettingsItemCard.vue';
+
+const { t } = useI18n();
 
 // Tab Components
 import GeneralTab from '@/components/settings/tabs/GeneralTab.vue';
@@ -357,10 +361,10 @@ onMounted(() => {
 async function saveSettings() {
     try {
         await saveSettingsApi();
-        message.value = 'Settings saved successfully!';
+        message.value = t('settings.overview.saved');
         alertType.value = 'success';
     } catch (error) {
-        message.value = error.message || 'Failed to save settings';
+        message.value = error.message || t('settings.overview.saveError');
         alertType.value = 'error';
     }
 }

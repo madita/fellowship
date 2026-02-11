@@ -25,6 +25,7 @@ export default function permission({ to, next }) {
         "wiki-category-edit": "manage-page",
         "admin-media": "manage-page",
         "admin-migrations": "manage-page",
+        "admin-translations": "manage-page",
     };
 
     const requiredPermission = permissionsMap[to.name];

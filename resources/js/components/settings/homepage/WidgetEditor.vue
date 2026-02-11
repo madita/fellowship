@@ -3,7 +3,7 @@
     <v-card v-if="widget">
       <v-card-title class="d-flex align-center bg-primary text-white">
         <v-icon class="mr-2">{{ widgetIcon }}</v-icon>
-        Edit {{ widgetDefinition?.name || widget.type }}
+        {{ $t('settings.widgetEditor.edit') }} {{ widgetDefinition?.name || widget.type }}
         <v-spacer></v-spacer>
         <v-btn icon="mdi-close" variant="text" @click="cancel"></v-btn>
       </v-card-title>
@@ -16,15 +16,15 @@
           <v-col cols="12" md="7" class="pa-4" style="overflow-y: auto; height: 100%;">
             <v-text-field
               v-model="editedWidget.title"
-              label="Widget Title"
-              hint="Display name for this widget in admin"
+              :label="$t('settings.widgetEditor.widgetTitle')"
+              :hint="$t('settings.widgetEditor.widgetTitleHint')"
               persistent-hint
               class="mb-4"
             ></v-text-field>
 
             <v-divider class="my-4"></v-divider>
 
-            <div class="text-h6 mb-4">Widget Content</div>
+            <div class="text-h6 mb-4">{{ $t('settings.widgetEditor.widgetContent') }}</div>
 
             <!-- Dynamic form based on widget type -->
             <dynamic-widget-form
@@ -38,25 +38,25 @@
             <div class="sticky-top">
               <div class="text-subtitle-1 font-weight-bold mb-2">
                 <v-icon class="mr-1">mdi-eye</v-icon>
-                Preview
+                {{ $t('settings.widgetEditor.preview') }}
               </div>
               <v-divider class="mb-4"></v-divider>
 
               <v-sheet class="preview-container" elevation="2">
                 <div v-if="previewError" class="pa-8 text-center">
                   <v-icon size="48" color="error">mdi-alert-circle</v-icon>
-                  <p class="text-subtitle-1 mt-2 text-error">Preview Error</p>
+                  <p class="text-subtitle-1 mt-2 text-error">{{ $t('settings.widgetEditor.previewError') }}</p>
                   <p class="text-caption">{{ previewError }}</p>
-                  <v-btn size="small" class="mt-2" @click="previewError = null">Retry</v-btn>
+                  <v-btn size="small" class="mt-2" @click="previewError = null">{{ $t('settings.widgetEditor.retry') }}</v-btn>
                 </div>
                 <div v-else-if="!widgetComponent" class="pa-8 text-center text-grey">
                   <v-icon size="48" color="grey">mdi-alert-circle</v-icon>
-                  <p class="text-subtitle-1 mt-2">Preview not available</p>
-                  <p class="text-caption">Widget type: {{ widget?.type }}</p>
+                  <p class="text-subtitle-1 mt-2">{{ $t('settings.widgetEditor.previewNotAvailable') }}</p>
+                  <p class="text-caption">{{ $t('settings.widgetEditor.widgetType') }}: {{ widget?.type }}</p>
                 </div>
                 <div v-else-if="!editedWidget || !editedWidget.content" class="pa-8 text-center text-grey">
                   <v-progress-circular indeterminate></v-progress-circular>
-                  <p class="text-caption mt-2">Loading preview...</p>
+                  <p class="text-caption mt-2">{{ $t('settings.widgetEditor.loadingPreview') }}</p>
                 </div>
                 <component
                   v-else
@@ -68,7 +68,7 @@
 
               <v-alert type="info" variant="tonal" class="mt-4" density="compact">
                 <div class="text-caption">
-                  Changes are previewed in real-time. Click "Save" to apply them to your homepage.
+                  {{ $t('settings.widgetEditor.previewHint') }}
                 </div>
               </v-alert>
             </div>
@@ -79,11 +79,11 @@
       <v-divider></v-divider>
 
       <v-card-actions class="pa-4">
-        <v-btn @click="cancel">Cancel</v-btn>
+        <v-btn @click="cancel">{{ $t('common.cancel') }}</v-btn>
         <v-spacer></v-spacer>
         <v-btn color="primary" @click="save">
           <v-icon class="mr-1">mdi-content-save</v-icon>
-          Save Changes
+          {{ $t('settings.widgetEditor.saveChanges') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -92,9 +92,12 @@
 
 <script setup>
 import { ref, computed, watch, onErrorCaptured } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { getWidgetDefinition } from '@/configs/widgetTypes';
 import { getWidgetComponent } from '@/components/landing/widgets';
 import DynamicWidgetForm from './DynamicWidgetForm.vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
   modelValue: Boolean,

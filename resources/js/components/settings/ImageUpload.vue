@@ -40,7 +40,7 @@
                     :loading="uploading"
                     @click="handleUpload"
                 >
-                    Upload
+                    {{ $t('settings.imageUpload.upload') }}
                 </v-btn>
                 <v-btn
                     v-if="currentImage"
@@ -49,7 +49,7 @@
                     variant="outlined"
                     @click="handleDelete"
                 >
-                    Delete
+                    {{ $t('settings.imageUpload.delete') }}
                 </v-btn>
             </div>
         </div>
@@ -58,8 +58,10 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useApi } from '@/api/useAPI.js';
 
+const { t } = useI18n();
 const api = useApi('api');
 
 const props = defineProps({
@@ -154,7 +156,7 @@ function handleSelect() {
 async function handleUpload() {
     const selectedFile = Array.isArray(file.value) ? file.value[0] : file.value;
     if (!selectedFile) {
-        emit('error', `Please select a ${props.label.toLowerCase()}`);
+        emit('error', t('settings.imageUpload.pleaseSelect', { label: props.label.toLowerCase() }));
         return;
     }
 
@@ -172,14 +174,14 @@ async function handleUpload() {
         emit('uploaded', { key: props.imageKey, path: response.data.path, url: response.data.url });
     } catch (error) {
         console.error(`Failed to upload ${props.imageKey}:`, error);
-        emit('error', `Failed to upload ${props.imageKey}`);
+        emit('error', t('settings.imageUpload.uploadFailed', { key: props.imageKey }));
     } finally {
         uploading.value = false;
     }
 }
 
 async function handleDelete() {
-    if (!confirm(`Are you sure you want to delete the ${props.label.toLowerCase()}?`)) {
+    if (!confirm(t('settings.imageUpload.deleteConfirm', { label: props.label.toLowerCase() }))) {
         return;
     }
 
@@ -191,7 +193,7 @@ async function handleDelete() {
         emit('deleted', props.imageKey);
     } catch (error) {
         console.error(`Failed to delete ${props.imageKey}:`, error);
-        emit('error', `Failed to delete ${props.imageKey}`);
+        emit('error', t('settings.imageUpload.deleteFailed', { key: props.imageKey }));
     }
 }
 </script>
