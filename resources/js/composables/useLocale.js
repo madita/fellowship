@@ -1,18 +1,19 @@
 import { computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { localeMetadata } from '../configs/locales.js';
 
 /**
  * Composable for managing application locale.
  * Syncs with vue-i18n and persists to localStorage/cookie.
+ * 
+ * Note: Locale options are imported from configs/locales.js
+ * to maintain a single source of truth.
  */
 export function useLocale() {
     const { locale, availableLocales } = useI18n();
 
-    // Available locales with metadata
-    const localeOptions = [
-        { code: 'en', flag: 'us', label: 'English', nativeLabel: 'English' },
-        { code: 'de', flag: 'de', label: 'German', nativeLabel: 'Deutsch' },
-    ];
+    // Import locale options from single source of truth
+    const localeOptions = localeMetadata;
 
     const currentLocale = computed(() => locale.value);
 
