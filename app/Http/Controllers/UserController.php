@@ -51,7 +51,7 @@ class UserController extends Controller
         }
 
         return User::where('id', '!=', auth()->id())
-            ->where(DB::raw('LOWER(username)'), 'LIKE', '%'.Str::lower($q).'%')
+            ->whereRaw('LOWER(username) LIKE ?', ['%' . Str::lower($q) . '%'])
             ->get(['id', 'username', 'email'])
             ->map(function ($user) {
                 return [

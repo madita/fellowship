@@ -31,8 +31,10 @@ class ConversationController extends Controller
 
     public function show(Conversation $conversation, Request $request): JsonResponse
     {
-        // TODO: Add authorization
-        // $this->authorize('show', $conversation);
+        // Verify user is a participant in the conversation
+        if (!$conversation->users->contains(auth()->id())) {
+            abort(403, 'You are not authorized to view this conversation.');
+        }
 
         $conversation->load(['users', 'messages', 'messages.user']);
         $conversation->loadCount('messages');
@@ -56,6 +58,11 @@ class ConversationController extends Controller
      */
     public function markAsRead(Conversation $conversation): JsonResponse
     {
+        // Verify user is a participant in the conversation
+        if (!$conversation->users->contains(auth()->id())) {
+            abort(403, 'You are not authorized to access this conversation.');
+        }
+
         auth()->user()->conversations()->updateExistingPivot($conversation->id, [
             'read_at' => now(),
         ]);
