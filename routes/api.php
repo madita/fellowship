@@ -23,6 +23,29 @@ Route::middleware(['cache.control'])->group(function () {
     Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
 });
 
+// Forum Routes (public read, auth for write)
+Route::get('/forums', 'App\Http\Controllers\ForumController@index');
+Route::get('/forums/{slug}', 'App\Http\Controllers\ForumController@show');
+Route::get('/forums/{forumSlug}/threads/{threadSlug}', 'App\Http\Controllers\ForumThreadController@show');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Forum management (admin only)
+    Route::post('/forums', 'App\Http\Controllers\ForumController@store');
+    Route::patch('/forums/{forum}', 'App\Http\Controllers\ForumController@update');
+    Route::delete('/forums/{forum}', 'App\Http\Controllers\ForumController@destroy');
+
+    // Thread management
+    Route::post('/forums/{forum}/threads', 'App\Http\Controllers\ForumThreadController@store');
+    Route::patch('/threads/{thread}', 'App\Http\Controllers\ForumThreadController@update');
+    Route::delete('/threads/{thread}', 'App\Http\Controllers\ForumThreadController@destroy');
+
+    // Post management
+    Route::post('/threads/{thread}/posts', 'App\Http\Controllers\ForumPostController@store');
+    Route::patch('/posts/{post}', 'App\Http\Controllers\ForumPostController@update');
+    Route::delete('/posts/{post}', 'App\Http\Controllers\ForumPostController@destroy');
+    Route::post('/posts/{post}/mark-as-solution', 'App\Http\Controllers\ForumPostController@markAsSolution');
+});
+
 // Wiki write operations (not cached)
 Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['store', 'update', 'destroy']);
 Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
