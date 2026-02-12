@@ -67,6 +67,26 @@ Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function (
     Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
 });
 
+
+// Ticket System Routes
+Route::get('/ticket-types', 'App\Http\Controllers\TicketController@types');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Tickets
+    Route::get('/tickets', 'App\Http\Controllers\TicketController@index');
+    Route::get('/tickets/{ticket}', 'App\Http\Controllers\TicketController@show');
+    Route::post('/tickets', 'App\Http\Controllers\TicketController@store');
+    Route::patch('/tickets/{ticket}', 'App\Http\Controllers\TicketController@update');
+    Route::delete('/tickets/{ticket}', 'App\Http\Controllers\TicketController@destroy');
+    Route::post('/tickets/{ticket}/assign', 'App\Http\Controllers\TicketController@assign');
+    Route::post('/tickets/{ticket}/unassign', 'App\Http\Controllers\TicketController@unassign');
+
+    // Ticket Comments
+    Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\TicketCommentController@store');
+    Route::patch('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@update');
+    Route::delete('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@destroy');
+});
+
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
 Route::get('/tag/terms/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTerms');
 Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
