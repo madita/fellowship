@@ -1,39 +1,6 @@
 <template>
     <v-container fluid class="pa-5">
-        <!--        <v-row>-->
-        <!--            <v-col cols="12">-->
-        <!--                <v-select-->
-        <!--                    v-model="selectedTaxonomy"-->
-        <!--                    :items="taxonomies"-->
-        <!--                    item-text="description"-->
-        <!--                    item-value="id"-->
-        <!--                    label="Select Taxonomy"-->
-        <!--                    outlined-->
-        <!--                />-->
-        <!--            </v-col>-->
-
-        <!--            <v-col cols="12">-->
-        <!--                <v-text-field-->
-        <!--                    v-model="newCollection.name"-->
-        <!--                    label="Collection Name"-->
-        <!--                    outlined-->
-        <!--                />-->
-        <!--                <v-btn @click="createCollection" color="primary" class="ma-2">Create Collection</v-btn>-->
-        <!--            </v-col>-->
-        <!--        </v-row>-->
-
-<!--        <v-row v-if="collections.length" class="ma-4">-->
-<!--            <v-col v-for="collection in collections" :key="collection.id" cols="12" md="6" lg="4">-->
-
-
-<!--                <v-card outlined @click="openAlbum(collection.slug)">-->
-<!--                    <v-img :src="collection.coverImage" height="200"></v-img>-->
-<!--                    <v-card-title>{{ collection.name }}</v-card-title>-->
-<!--                    <v-card-subtitle v-if="collection.taxonomy">{{ collection.taxonomy.name }}</v-card-subtitle>-->
-<!--                </v-card>-->
-<!--            </v-col>-->
-<!--        </v-row>-->
-
+        <!-- Gallery Collections -->
         <v-row justify="end" class="mt-5">
             <v-col cols="12" v-if="collections.length">
                 <v-row>
@@ -45,20 +12,6 @@
                             link
                             :class="`v-theme--ORANGE_THEME`"
                         >
-<!--                            <v-progress-linear-->
-<!--                                indeterminate-->
-<!--                                class="v-theme&#45;&#45;ORANGE_THEME"-->
-<!--                                height="2"-->
-<!--                                color="orange"-->
-<!--                            />-->
-<!--                            <v-avatar-->
-<!--                                flat-->
-<!--                                width="220"-->
-<!--                                height="220"-->
-<!--                                :class="`v-theme&#45;&#45;ORANGE_THEME w-100`"-->
-<!--                            >-->
-<!--                                <img :src="collection.coverImage" :alt="collection.name" width="450" />-->
-<!--                            </v-avatar>-->
                             <v-img :src="collection.coverImage" height="200"></v-img>
                             <v-card-text>
                                 <div class="d-flex align-center gap-3">

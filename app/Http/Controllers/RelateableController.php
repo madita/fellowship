@@ -35,11 +35,9 @@ class RelateableController extends Controller
 
     public function getModelItems(Request $request)
     {
-        $post = Event::find(2);
-
-        $collection = Collection::find(4);
-
-        $post->relate($collection);
+        $request->validate([
+            'model' => 'required|string',
+        ]);
 
         $model = $request->input('model');
 
@@ -48,7 +46,13 @@ class RelateableController extends Controller
 
     public function relateModels(Request $request)
     {
-//        dd($request->get('data'));
+        $request->validate([
+            'data' => 'required|array',
+            'data.sourceType' => 'required|string',
+            'data.sourceId' => 'required|integer',
+            'data.relatedType' => 'required|string',
+            'data.relatedId' => 'required|integer',
+        ]);
 
         $data = $request->get('data');
 
@@ -60,7 +64,37 @@ class RelateableController extends Controller
 
         $sourceItem->relate($relatedItem);
 
-        return response()->json(['message' => 'Item related']);
+        return response()->json(['message' => 'Item related successfully']);
+    }
+
+    /**
+     * Unrelate two models (remove relationship).
+     */
+    public function unrelateModels(Request $request)
+    {
+        $request->validate([
+            'data' => 'required|array',
+            'data.sourceType' => 'required|string',
+            'data.sourceId' => 'required|integer',
+            'data.relatedType' => 'required|string',
+            'data.relatedId' => 'required|integer',
+        ]);
+
+        $data = $request->get('data');
+
+        $source = $data['sourceType'];
+        $sourceItem = $source::where('id', $data['sourceId'])->first();
+
+        $related = $data['relatedType'];
+        $relatedItem = $related::where('id', $data['relatedId'])->first();
+
+        if (!$sourceItem || !$relatedItem) {
+            return response()->json(['message' => 'Source or related item not found'], 404);
+        }
+
+        $sourceItem->unrelate($relatedItem);
+
+        return response()->json(['message' => 'Item unrelated successfully']);
     }
 
     public function getRelatedItems(Request $request)

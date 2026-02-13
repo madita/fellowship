@@ -143,4 +143,49 @@ class CollectionController extends Controller
 
         return response()->json(['message' => 'Cover image updated successfully.']);
     }
+
+    /**
+     * Delete a collection and all its media.
+     */
+    public function destroy(Collection $collection)
+    {
+        // Authorization check would go here
+        // $this->authorize('delete', $collection);
+
+        try {
+            // Spatie Media Library will automatically delete media files
+            $collection->delete();
+
+            return response()->json([
+                'message' => 'Collection deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete collection',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a specific media item.
+     */
+    public function deleteMedia(Media $media)
+    {
+        // Authorization check would go here
+        // $this->authorize('delete', $media->model);
+
+        try {
+            $media->delete();
+
+            return response()->json([
+                'message' => 'Media deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete media',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

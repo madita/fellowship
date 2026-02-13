@@ -79,12 +79,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('events/{event}/approve-guest', ['as' => 'event.approve', 'uses' => "\App\Http\Controllers\EventController@approveGuest"]);
 });
 
+// Collections (Photo Gallery)
 Route::get('/collections', [App\Http\Controllers\CollectionController::class, 'index']); // Fetch all collections
 Route::get('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'show']); // Fetch media for a specific collection
 Route::post('/collections', [App\Http\Controllers\CollectionController::class, 'store']); // Create a new collection
 Route::post('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'uploadMedia']); // Upload media to collection
 Route::patch('/media/{media}/caption', [App\Http\Controllers\CollectionController::class, 'updateMediaCaption']); // Update caption for a media item
-Route::delete('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'delete']); // Delete collection
+Route::delete('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'destroy']); // Delete collection (fixed method name)
 Route::delete('/media/{media}', [App\Http\Controllers\CollectionController::class, 'deleteMedia']); // Delete a media item
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -108,8 +109,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']);
 Route::get('/source-models', [App\Http\Controllers\RelateableController::class, 'getSourceModels']);
 Route::get('/model-items', [App\Http\Controllers\RelateableController::class, 'getModelItems']);
-Route::post('/relate-models', [App\Http\Controllers\RelateableController::class, 'relateModels']);
-Route::post('/related-items', [App\Http\Controllers\RelateableController::class, 'getRelatedItems']);
+// Relateable System (Link any content to any content)
+Route::get('/source-models', [App\Http\Controllers\RelateableController::class, 'getSourceModels']); // Get models that can be sources
+Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']); // Get all relateable models
+Route::get('/model-items', [App\Http\Controllers\RelateableController::class, 'getModelItems']); // Get items of a specific model
+Route::post('/relate-models', [App\Http\Controllers\RelateableController::class, 'relateModels']); // Create relationship
+Route::delete('/unrelate-models', [App\Http\Controllers\RelateableController::class, 'unrelateModels']); // Remove relationship
+Route::post('/related-items', [App\Http\Controllers\RelateableController::class, 'getRelatedItems']); // Get related items for a model
 
 Route::get('/common/items', [App\Http\Controllers\CommonController::class, 'getItems']);
 
