@@ -3,12 +3,12 @@
 return [
     // Common success messages
     'success' => [
-        'created'  => ':item erfolgreich erstellt',
-        'updated'  => ':item erfolgreich aktualisiert',
-        'deleted'  => ':item erfolgreich gelöscht',
-        'saved'    => ':item erfolgreich gespeichert',
-        'uploaded' => ':item erfolgreich hochgeladen',
-        'toggled'  => ':item erfolgreich umgeschaltet',
+        'created'   => ':item erfolgreich erstellt',
+        'updated'   => ':item erfolgreich aktualisiert',
+        'deleted'   => ':item erfolgreich gelöscht',
+        'saved'     => ':item erfolgreich gespeichert',
+        'uploaded'  => ':item erfolgreich hochgeladen',
+        'toggled'   => ':item erfolgreich umgeschaltet',
         'reordered' => ':items erfolgreich neu geordnet',
     ],
 
@@ -62,18 +62,18 @@ return [
 
     // API Keys
     'api_keys' => [
-        'created'            => 'API-Schlüssel erfolgreich erstellt. Speichern Sie das Geheimnis - es wird nicht erneut angezeigt!',
-        'updated'            => 'API-Schlüssel erfolgreich aktualisiert',
-        'deleted'            => 'API-Schlüssel erfolgreich gelöscht',
-        'regenerated'        => 'API-Schlüssel erfolgreich neu generiert. Speichern Sie das neue Geheimnis - es wird nicht erneut angezeigt!',
-        'disabled'           => 'API-Schlüssel-Funktion ist nicht aktiviert.',
-        'max_reached'        => 'Sie können nur bis zu :max API-Schlüssel haben.',
-        'auth_disabled'      => 'API-Schlüssel-Authentifizierung ist nicht aktiviert.',
-        'auth_required'      => 'API-Schlüssel-Authentifizierung erforderlich.',
-        'invalid_key'        => 'Ungültiger API-Schlüssel.',
-        'invalid_secret'     => 'Ungültiges API-Geheimnis.',
+        'created'             => 'API-Schlüssel erfolgreich erstellt. Speichern Sie das Geheimnis - es wird nicht erneut angezeigt!',
+        'updated'             => 'API-Schlüssel erfolgreich aktualisiert',
+        'deleted'             => 'API-Schlüssel erfolgreich gelöscht',
+        'regenerated'         => 'API-Schlüssel erfolgreich neu generiert. Speichern Sie das neue Geheimnis - es wird nicht erneut angezeigt!',
+        'disabled'            => 'API-Schlüssel-Funktion ist nicht aktiviert.',
+        'max_reached'         => 'Sie können nur bis zu :max API-Schlüssel haben.',
+        'auth_disabled'       => 'API-Schlüssel-Authentifizierung ist nicht aktiviert.',
+        'auth_required'       => 'API-Schlüssel-Authentifizierung erforderlich.',
+        'invalid_key'         => 'Ungültiger API-Schlüssel.',
+        'invalid_secret'      => 'Ungültiges API-Geheimnis.',
         'inactive_or_expired' => 'API-Schlüssel ist inaktiv oder abgelaufen.',
-        'missing_ability'    => 'API-Schlüssel hat nicht die erforderliche Berechtigung: :ability',
+        'missing_ability'     => 'API-Schlüssel hat nicht die erforderliche Berechtigung: :ability',
     ],
 
     // Account
@@ -102,13 +102,13 @@ return [
 
     // Translations
     'translations' => [
-        'updated'              => 'Übersetzungen erfolgreich aktualisiert',
-        'locale_created'       => 'Sprache erfolgreich erstellt',
-        'key_added'            => 'Übersetzungsschlüssel erfolgreich hinzugefügt',
-        'key_deleted'          => 'Übersetzungsschlüssel erfolgreich gelöscht',
-        'locale_not_found'     => 'Sprache nicht gefunden',
-        'file_not_found'       => 'Übersetzungsdatei nicht gefunden',
-        'save_failed'          => 'Speichern der Übersetzungen fehlgeschlagen',
+        'updated'               => 'Übersetzungen erfolgreich aktualisiert',
+        'locale_created'        => 'Sprache erfolgreich erstellt',
+        'key_added'             => 'Übersetzungsschlüssel erfolgreich hinzugefügt',
+        'key_deleted'           => 'Übersetzungsschlüssel erfolgreich gelöscht',
+        'locale_not_found'      => 'Sprache nicht gefunden',
+        'file_not_found'        => 'Übersetzungsdatei nicht gefunden',
+        'save_failed'           => 'Speichern der Übersetzungen fehlgeschlagen',
         'base_locale_not_found' => 'Basissprache nicht gefunden',
     ],
 
@@ -142,23 +142,23 @@ return [
 
     // Settings
     'settings' => [
-        'updated'            => 'Einstellungen erfolgreich aktualisiert',
-        'logo_uploaded'      => 'Logo erfolgreich hochgeladen',
-        'logo_deleted'       => 'Logo erfolgreich gelöscht',
-        'logo_upload_failed' => 'Logo-Upload fehlgeschlagen',
-        'logo_delete_failed' => 'Logo-Löschung fehlgeschlagen',
-        'image_uploaded'     => 'Bild erfolgreich hochgeladen',
-        'image_upload_failed' => 'Bild-Upload fehlgeschlagen',
-        'image_deleted'      => 'Bild erfolgreich gelöscht',
-        'image_delete_failed' => 'Bild-Löschung fehlgeschlagen',
-        'test_email_sent'          => 'Test-E-Mail erfolgreich gesendet an :recipient',
-        'test_email_failed'        => 'Test-E-Mail konnte nicht gesendet werden',
-        'cache_cleared'            => 'Cache erfolgreich geleert',
-        'cache_clear_failed'       => 'Cache konnte nicht geleert werden',
-        'pwa_icon_format'          => 'PWA-App-Symbol muss im PNG-, WebP- oder SVG-Format sein. JPEG wird nicht unterstützt.',
+        'updated'                   => 'Einstellungen erfolgreich aktualisiert',
+        'logo_uploaded'             => 'Logo erfolgreich hochgeladen',
+        'logo_deleted'              => 'Logo erfolgreich gelöscht',
+        'logo_upload_failed'        => 'Logo-Upload fehlgeschlagen',
+        'logo_delete_failed'        => 'Logo-Löschung fehlgeschlagen',
+        'image_uploaded'            => 'Bild erfolgreich hochgeladen',
+        'image_upload_failed'       => 'Bild-Upload fehlgeschlagen',
+        'image_deleted'             => 'Bild erfolgreich gelöscht',
+        'image_delete_failed'       => 'Bild-Löschung fehlgeschlagen',
+        'test_email_sent'           => 'Test-E-Mail erfolgreich gesendet an :recipient',
+        'test_email_failed'         => 'Test-E-Mail konnte nicht gesendet werden',
+        'cache_cleared'             => 'Cache erfolgreich geleert',
+        'cache_clear_failed'        => 'Cache konnte nicht geleert werden',
+        'pwa_icon_format'           => 'PWA-App-Symbol muss im PNG-, WebP- oder SVG-Format sein. JPEG wird nicht unterstützt.',
         'pwa_icon_dimensions_error' => 'Bildabmessungen konnten nicht gelesen werden.',
-        'pwa_icon_min_size'        => 'PWA-App-Symbol muss mindestens 144×144 Pixel groß sein. Ihr Bild ist :size.',
-        'pwa_icon_square'          => 'PWA-App-Symbol sollte quadratisch sein. Ihr Bild ist :size. Bitte laden Sie ein quadratisches Bild hoch.',
+        'pwa_icon_min_size'         => 'PWA-App-Symbol muss mindestens 144×144 Pixel groß sein. Ihr Bild ist :size.',
+        'pwa_icon_square'           => 'PWA-App-Symbol sollte quadratisch sein. Ihr Bild ist :size. Bitte laden Sie ein quadratisches Bild hoch.',
     ],
 
     // Homepage Menu
@@ -181,14 +181,14 @@ return [
 
     // Migrations
     'migrations' => [
-        'unknown'        => 'Unbekannte Migration: :key',
-        'queued'         => 'Migration in Warteschlange',
-        'queued_all'     => 'Migrationen erfolgreich in Warteschlange',
+        'unknown'         => 'Unbekannte Migration: :key',
+        'queued'          => 'Migration in Warteschlange',
+        'queued_all'      => 'Migrationen erfolgreich in Warteschlange',
         'batch_not_found' => 'Stapel nicht gefunden',
-        'log_not_found'  => 'Migrationsprotokoll nicht gefunden',
-        'cancelled'      => 'Vom Benutzer abgebrochen',
+        'log_not_found'   => 'Migrationsprotokoll nicht gefunden',
+        'cancelled'       => 'Vom Benutzer abgebrochen',
         'cancelled_count' => ':count ausstehende Migrationen abgebrochen',
-        'deleted_count'  => ':count alte Migrationsprotokolle gelöscht',
+        'deleted_count'   => ':count alte Migrationsprotokolle gelöscht',
     ],
 
     // SPA
@@ -198,12 +198,12 @@ return [
 
     // Homepage
     'homepage' => [
-        'section_deleted'    => 'Abschnitt erfolgreich gelöscht',
-        'sections_reordered' => 'Abschnitte erfolgreich neu geordnet',
-        'image_deleted'      => 'Bild erfolgreich gelöscht',
+        'section_deleted'     => 'Abschnitt erfolgreich gelöscht',
+        'sections_reordered'  => 'Abschnitte erfolgreich neu geordnet',
+        'image_deleted'       => 'Bild erfolgreich gelöscht',
         'image_upload_failed' => 'Bild-Upload fehlgeschlagen: :error',
         'image_delete_failed' => 'Bild-Löschung fehlgeschlagen: :error',
-        'no_image'           => 'Kein Bild zum Löschen',
+        'no_image'            => 'Kein Bild zum Löschen',
     ],
 
     // Events
@@ -228,9 +228,9 @@ return [
 
     // DataTable
     'datatable' => [
-        'no_builder' => 'Keine Entity-Builder-Methode definiert.',
+        'no_builder'      => 'Keine Entity-Builder-Methode definiert.',
         'invalid_builder' => 'Entity-Builder ist keine Instanz von Builder.',
-        'actions' => 'Aktionen',
+        'actions'         => 'Aktionen',
     ],
 
     // Taxonomy

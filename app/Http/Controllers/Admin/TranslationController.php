@@ -5,11 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\File;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use RegexIterator;
 
 class TranslationController extends Controller
 {
@@ -58,7 +57,7 @@ class TranslationController extends Controller
      */
     public function getJsTranslations(string $locale): JsonResponse
     {
-        $filePath = $this->jsTranslationsPath . '/' . $locale . '.js';
+        $filePath = $this->jsTranslationsPath.'/'.$locale.'.js';
 
         if (!File::exists($filePath)) {
             return response()->json(['error' => __('messages.translations.locale_not_found')], 404);
@@ -87,7 +86,7 @@ class TranslationController extends Controller
             'translations' => 'required|array',
         ]);
 
-        $filePath = $this->jsTranslationsPath . '/' . $locale . '.js';
+        $filePath = $this->jsTranslationsPath.'/'.$locale.'.js';
         $translations = $request->input('translations');
 
         // Unflatten the array back to nested structure
@@ -115,9 +114,9 @@ class TranslationController extends Controller
     /**
      * Get PHP translations for a specific locale and file.
      */
-    public function getPhpTranslations(string $locale, string $file = null): JsonResponse
+    public function getPhpTranslations(string $locale, ?string $file = null): JsonResponse
     {
-        $localePath = $this->phpTranslationsPath . '/' . $locale;
+        $localePath = $this->phpTranslationsPath.'/'.$locale;
 
         if (!File::isDirectory($localePath)) {
             return response()->json(['error' => __('messages.translations.locale_not_found')], 404);
@@ -125,7 +124,7 @@ class TranslationController extends Controller
 
         if ($file) {
             // Get specific file
-            $filePath = $localePath . '/' . $file . '.php';
+            $filePath = $localePath.'/'.$file.'.php';
             if (!File::exists($filePath)) {
                 return response()->json(['error' => __('messages.translations.file_not_found')], 404);
             }
@@ -173,14 +172,14 @@ class TranslationController extends Controller
             'translations' => 'required|array',
         ]);
 
-        $localePath = $this->phpTranslationsPath . '/' . $locale;
+        $localePath = $this->phpTranslationsPath.'/'.$locale;
 
         // Create locale directory if it doesn't exist
         if (!File::isDirectory($localePath)) {
             File::makeDirectory($localePath, 0755, true);
         }
 
-        $filePath = $localePath . '/' . $file . '.php';
+        $filePath = $localePath.'/'.$file.'.php';
         $translations = $request->input('translations');
 
         // Unflatten the array back to nested structure
@@ -227,8 +226,8 @@ class TranslationController extends Controller
 
         // Create JS translation file
         if ($createJs) {
-            $sourceJsPath = $this->jsTranslationsPath . '/' . $copyFrom . '.js';
-            $targetJsPath = $this->jsTranslationsPath . '/' . $code . '.js';
+            $sourceJsPath = $this->jsTranslationsPath.'/'.$copyFrom.'.js';
+            $targetJsPath = $this->jsTranslationsPath.'/'.$code.'.js';
 
             if (File::exists($sourceJsPath) && !File::exists($targetJsPath)) {
                 File::copy($sourceJsPath, $targetJsPath);
@@ -238,8 +237,8 @@ class TranslationController extends Controller
 
         // Create PHP translation directory and files
         if ($createPhp) {
-            $sourcePhpPath = $this->phpTranslationsPath . '/' . $copyFrom;
-            $targetPhpPath = $this->phpTranslationsPath . '/' . $code;
+            $sourcePhpPath = $this->phpTranslationsPath.'/'.$copyFrom;
+            $targetPhpPath = $this->phpTranslationsPath.'/'.$code;
 
             if (File::isDirectory($sourcePhpPath) && !File::isDirectory($targetPhpPath)) {
                 File::copyDirectory($sourcePhpPath, $targetPhpPath);
@@ -275,7 +274,7 @@ class TranslationController extends Controller
 
         foreach ($values as $locale => $value) {
             if ($type === 'js') {
-                $filePath = $this->jsTranslationsPath . '/' . $locale . '.js';
+                $filePath = $this->jsTranslationsPath.'/'.$locale.'.js';
                 if (File::exists($filePath)) {
                     $content = File::get($filePath);
                     $translations = $this->parseJsTranslations($content);
@@ -284,7 +283,7 @@ class TranslationController extends Controller
                     $updated[] = $locale;
                 }
             } else {
-                $filePath = $this->phpTranslationsPath . '/' . $locale . '/' . $file . '.php';
+                $filePath = $this->phpTranslationsPath.'/'.$locale.'/'.$file.'.php';
                 if (File::exists($filePath)) {
                     $translations = include $filePath;
                     Arr::set($translations, $key, $value);
@@ -322,7 +321,7 @@ class TranslationController extends Controller
 
         foreach ($locales as $locale) {
             if ($type === 'js') {
-                $filePath = $this->jsTranslationsPath . '/' . $locale . '.js';
+                $filePath = $this->jsTranslationsPath.'/'.$locale.'.js';
                 if (File::exists($filePath)) {
                     $content = File::get($filePath);
                     $translations = $this->parseJsTranslations($content);
@@ -331,7 +330,7 @@ class TranslationController extends Controller
                     $deleted[] = $locale;
                 }
             } else {
-                $filePath = $this->phpTranslationsPath . '/' . $locale . '/' . $file . '.php';
+                $filePath = $this->phpTranslationsPath.'/'.$locale.'/'.$file.'.php';
                 if (File::exists($filePath)) {
                     $translations = include $filePath;
                     Arr::forget($translations, $key);
@@ -387,7 +386,7 @@ class TranslationController extends Controller
         $comparison = [];
 
         if ($type === 'js') {
-            $baseFile = $this->jsTranslationsPath . '/' . $baseLocale . '.js';
+            $baseFile = $this->jsTranslationsPath.'/'.$baseLocale.'.js';
             if (!File::exists($baseFile)) {
                 return response()->json(['error' => __('messages.translations.base_locale_not_found')], 404);
             }
@@ -398,9 +397,11 @@ class TranslationController extends Controller
             $baseKeys = array_keys($baseTranslations);
 
             foreach ($this->getJsLocales() as $locale => $info) {
-                if ($locale === $baseLocale) continue;
+                if ($locale === $baseLocale) {
+                    continue;
+                }
 
-                $localeFile = $this->jsTranslationsPath . '/' . $locale . '.js';
+                $localeFile = $this->jsTranslationsPath.'/'.$locale.'.js';
                 $localeTranslations = $this->flattenArray(
                     $this->parseJsTranslations(File::get($localeFile))
                 );
@@ -419,23 +420,27 @@ class TranslationController extends Controller
             }
         } else {
             // PHP comparison
-            $basePhpPath = $this->phpTranslationsPath . '/' . $baseLocale;
+            $basePhpPath = $this->phpTranslationsPath.'/'.$baseLocale;
             if (!File::isDirectory($basePhpPath)) {
                 return response()->json(['error' => __('messages.translations.base_locale_not_found')], 404);
             }
 
             foreach ($this->getPhpLocales() as $locale => $info) {
-                if ($locale === $baseLocale) continue;
+                if ($locale === $baseLocale) {
+                    continue;
+                }
 
                 $comparison[$locale] = [
                     'files' => [],
                 ];
 
                 foreach ($info['files'] as $file) {
-                    $baseFilePath = $basePhpPath . '/' . $file . '.php';
-                    $localeFilePath = $this->phpTranslationsPath . '/' . $locale . '/' . $file . '.php';
+                    $baseFilePath = $basePhpPath.'/'.$file.'.php';
+                    $localeFilePath = $this->phpTranslationsPath.'/'.$locale.'/'.$file.'.php';
 
-                    if (!File::exists($baseFilePath)) continue;
+                    if (!File::exists($baseFilePath)) {
+                        continue;
+                    }
 
                     $baseTranslations = $this->flattenArray(include $baseFilePath);
                     $baseKeys = array_keys($baseTranslations);
@@ -553,7 +558,8 @@ class TranslationController extends Controller
             function ($matches) {
                 // Escape any double quotes inside the single-quoted string
                 $inner = str_replace('"', '\\"', $matches[1]);
-                return '"' . $inner . '"';
+
+                return '"'.$inner.'"';
             },
             $content
         );
@@ -567,12 +573,15 @@ class TranslationController extends Controller
         try {
             $result = json_decode($content, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                \Log::warning('JSON parse error in translations: ' . json_last_error_msg() . ' - Content sample: ' . substr($content, 0, 500));
+                \Log::warning('JSON parse error in translations: '.json_last_error_msg().' - Content sample: '.substr($content, 0, 500));
+
                 return [];
             }
+
             return $result ?? [];
         } catch (\Exception $e) {
-            \Log::warning('Exception parsing translations: ' . $e->getMessage());
+            \Log::warning('Exception parsing translations: '.$e->getMessage());
+
             return [];
         }
     }
@@ -587,7 +596,7 @@ class TranslationController extends Controller
         // Convert to JS object syntax (unquoted keys)
         $js = preg_replace('/"([a-zA-Z_][a-zA-Z0-9_]*)"(\s*:)/', '$1$2', $json);
 
-        return "export default " . $js . ";\n";
+        return 'export default '.$js.";\n";
     }
 
     /**
@@ -603,7 +612,7 @@ class TranslationController extends Controller
         $export = preg_replace('/\)(\s*,)/', ']$1', $export);
         $export = preg_replace('/=> \[/', '=> [', $export);
 
-        return "<?php\n\nreturn " . $export . ";\n";
+        return "<?php\n\nreturn ".$export.";\n";
     }
 
     /**
@@ -614,7 +623,7 @@ class TranslationController extends Controller
         $result = [];
 
         foreach ($array as $key => $value) {
-            $newKey = $prefix ? $prefix . '.' . $key : $key;
+            $newKey = $prefix ? $prefix.'.'.$key : $key;
 
             if (is_array($value) && !empty($value)) {
                 $result = array_merge($result, $this->flattenArray($value, $newKey));
@@ -694,9 +703,9 @@ class TranslationController extends Controller
             'format'       => $format,
             'files'        => [],
             'summary'      => [
-                'total_files_scanned'    => 0,
-                'files_with_hardcoded'   => 0,
-                'total_hardcoded_strings' => 0,
+                'total_files_scanned'      => 0,
+                'files_with_hardcoded'     => 0,
+                'total_hardcoded_strings'  => 0,
                 'missing_translation_keys' => 0,
             ],
             'suggested_translations' => [],
@@ -815,7 +824,7 @@ class TranslationController extends Controller
         foreach ($vueFiles as $filePath) {
             $content = File::get($filePath);
             $lines = explode("\n", $content);
-            $relativePath = str_replace(resource_path('js') . DIRECTORY_SEPARATOR, '', $filePath);
+            $relativePath = str_replace(resource_path('js').DIRECTORY_SEPARATOR, '', $filePath);
             $relativePath = str_replace('\\', '/', $relativePath);
 
             $fileHardcoded = [];
@@ -900,7 +909,7 @@ class TranslationController extends Controller
         }
 
         // Load English translations
-        $enFile = $this->jsTranslationsPath . '/en.js';
+        $enFile = $this->jsTranslationsPath.'/en.js';
         $enTranslations = [];
         if (File::exists($enFile)) {
             $enTranslations = $this->flattenArray(
@@ -990,7 +999,7 @@ class TranslationController extends Controller
         foreach ($allFiles as $filePath) {
             $content = File::get($filePath);
             $lines = explode("\n", $content);
-            $relativePath = str_replace(base_path() . DIRECTORY_SEPARATOR, '', $filePath);
+            $relativePath = str_replace(base_path().DIRECTORY_SEPARATOR, '', $filePath);
             $relativePath = str_replace('\\', '/', $relativePath);
 
             $fileHardcoded = [];
@@ -1046,7 +1055,7 @@ class TranslationController extends Controller
                                 'line'           => $lineNumber,
                                 'original'       => trim($line),
                                 'text'           => $text,
-                                'suggested_key'  => 'messages.' . $suggestedKey,
+                                'suggested_key'  => 'messages.'.$suggestedKey,
                                 'suggested_fix'  => str_replace("'{$text}'", "__('messages.{$suggestedKey}')", trim($line)),
                                 'type'           => 'php',
                             ];
@@ -1069,7 +1078,7 @@ class TranslationController extends Controller
         }
 
         // Load English translations
-        $enPath = $this->phpTranslationsPath . '/en';
+        $enPath = $this->phpTranslationsPath.'/en';
         $enTranslations = [];
         if (File::isDirectory($enPath)) {
             foreach (File::files($enPath) as $file) {
@@ -1077,7 +1086,7 @@ class TranslationController extends Controller
                     $fileName = $file->getFilenameWithoutExtension();
                     $translations = include $file->getPathname();
                     foreach ($this->flattenArray($translations) as $key => $value) {
-                        $enTranslations[$fileName . '.' . $key] = $value;
+                        $enTranslations[$fileName.'.'.$key] = $value;
                     }
                 }
             }
@@ -1206,7 +1215,7 @@ class TranslationController extends Controller
             default         => '',
         };
 
-        return $prefix . '.' . $fileName . '.' . $key . $typeSuffix;
+        return $prefix.'.'.$fileName.'.'.$key.$typeSuffix;
     }
 
     /**
@@ -1219,11 +1228,11 @@ class TranslationController extends Controller
         $fileName = pathinfo(end($pathParts), PATHINFO_FILENAME);
 
         $prefix = match ($type) {
-            'response_message' => 'success',
-            'exception_message' => 'error',
+            'response_message'   => 'success',
+            'exception_message'  => 'error',
             'validation_message' => 'validation',
-            'flash_message' => 'flash',
-            default => 'general',
+            'flash_message'      => 'flash',
+            default              => 'general',
         };
 
         $key = strtolower($text);
@@ -1232,7 +1241,7 @@ class TranslationController extends Controller
         $key = substr($key, 0, 30);
         $key = rtrim($key, '_');
 
-        return $prefix . '.' . $key;
+        return $prefix.'.'.$key;
     }
 
     /**
@@ -1244,23 +1253,23 @@ class TranslationController extends Controller
 
         return match ($type) {
             'vue_attribute' => preg_replace(
-                '/="' . $escapedText . '"/',
-                '="\$t(\'' . $suggestedKey . '\')"',
+                '/="'.$escapedText.'"/',
+                '="\$t(\''.$suggestedKey.'\')"',
                 $line
             ),
             'button_text', 'card_title', 'heading', 'vue_content' => preg_replace(
-                '/>' . $escapedText . '</',
-                '>{{ $t(\'' . $suggestedKey . '\') }}<',
+                '/>'.$escapedText.'</',
+                '>{{ $t(\''.$suggestedKey.'\') }}<',
                 $line
             ),
             'js_property' => preg_replace(
-                '/:\s*[\'"]' . $escapedText . '[\'"]/',
-                ': t(\'' . $suggestedKey . '\')',
+                '/:\s*[\'"]'.$escapedText.'[\'"]/',
+                ': t(\''.$suggestedKey.'\')',
                 $line
             ),
             'message_call' => preg_replace(
-                '/\([\'"]' . $escapedText . '[\'"]\)/',
-                '(t(\'' . $suggestedKey . '\'))',
+                '/\([\'"]'.$escapedText.'[\'"]\)/',
+                '(t(\''.$suggestedKey.'\'))',
                 $line
             ),
             default => $line,
@@ -1343,7 +1352,7 @@ class TranslationController extends Controller
 
         foreach ($vueFiles as $file) {
             $content = File::get($file);
-            $relativePath = str_replace(resource_path('js') . DIRECTORY_SEPARATOR, '', $file);
+            $relativePath = str_replace(resource_path('js').DIRECTORY_SEPARATOR, '', $file);
 
             // Find used translation keys
             foreach ($translationPatterns as $pattern) {
@@ -1374,7 +1383,7 @@ class TranslationController extends Controller
         }
 
         // Load English translations as reference
-        $enFile = $this->jsTranslationsPath . '/en.js';
+        $enFile = $this->jsTranslationsPath.'/en.js';
         $enTranslations = [];
         if (File::exists($enFile)) {
             $enTranslations = $this->flattenArray(
@@ -1420,7 +1429,7 @@ class TranslationController extends Controller
 
         foreach ($allFiles as $file) {
             $content = File::get($file);
-            $relativePath = str_replace(base_path() . DIRECTORY_SEPARATOR, '', $file);
+            $relativePath = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file);
 
             foreach ($translationPatterns as $pattern) {
                 preg_match_all($pattern, $content, $matches);
@@ -1434,7 +1443,7 @@ class TranslationController extends Controller
         }
 
         // Load English translations as reference
-        $enPath = $this->phpTranslationsPath . '/en';
+        $enPath = $this->phpTranslationsPath.'/en';
         $enTranslations = [];
         if (File::isDirectory($enPath)) {
             foreach (File::files($enPath) as $file) {
@@ -1442,7 +1451,7 @@ class TranslationController extends Controller
                     $fileName = $file->getFilenameWithoutExtension();
                     $translations = include $file->getPathname();
                     foreach ($this->flattenArray($translations) as $key => $value) {
-                        $enTranslations[$fileName . '.' . $key] = $value;
+                        $enTranslations[$fileName.'.'.$key] = $value;
                     }
                 }
             }
