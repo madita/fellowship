@@ -173,6 +173,20 @@ export const admin = [{
             ]
         },
         component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/pages/admin/settings/SettingsPage.vue')
+    }, {
+        path: '/admin/menus',
+        name: 'admin-menus',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-menus" */ '@/pages/admin/MenuManager.vue')
     }]
 
 export default admin
+},{
+    path: '/admin/menus',
+    name: 'admin-menus',
+    meta: { middleware: [auth, admin] },
+    component: () => import('@/pages/admin/MenuManager.vue')
