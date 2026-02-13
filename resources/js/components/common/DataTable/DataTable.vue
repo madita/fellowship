@@ -590,13 +590,16 @@ export default {
             getRecords()
         }
 
-        watch(() => state.page, (value) => {
-            const pagination = {
-                itemsLength: 10,
-                itemsPerPage: 10,
-                page: value,
+        watch(() => state.page, (value, oldValue) => {
+            // Only trigger if page actually changed (not on initial mount)
+            if (oldValue !== undefined && value !== oldValue) {
+                const pagination = {
+                    itemsLength: 10,
+                    itemsPerPage: 10,
+                    page: value,
+                }
+                paginationChange(pagination)
             }
-            paginationChange(pagination)
         })
 
         onMounted(() => {
