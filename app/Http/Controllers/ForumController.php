@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Forum\Forum;
+use App\Models\Forum\ForumThread;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,8 +31,9 @@ class ForumController extends Controller
 
     /**
      * Get a specific forum with its threads.
+     * Supports ?filter=popular|unanswered|mine|solved and ?sort=latest|oldest|most_views
      */
-    public function show(string $slug): JsonResponse
+    public function show(string $slug, Request $request): JsonResponse
     {
         $user = Auth::user();
 
@@ -43,10 +45,46 @@ class ForumController extends Controller
             abort(403, 'You do not have permission to access this forum.');
         }
 
-        // Get threads with pagination
-        $threads = $forum->threads()
-            ->with(['author', 'lastPostUser'])
-            ->paginate(20);
+        // Build threads query with filter/sort
+        $query = ForumThread::where('forum_id', $forum->id)
+            ->with(['author', 'lastPostUser']);
+
+        $filter = $request->query('filter');
+        switch ($filter) {
+            case 'popular':
+                $query->orderByDesc('reply_count');
+                break;
+            case 'unanswered':
+                $query->where('reply_count', 0);
+                break;
+            case 'mine':
+                if ($user) {
+                    $query->where('user_id', $user->id);
+                }
+                break;
+            case 'solved':
+                $query->whereHas('posts', function ($q) {
+                    $q->where('is_solution', true);
+                });
+                break;
+        }
+
+        $sort = $request->query('sort', 'latest');
+        switch ($sort) {
+            case 'oldest':
+                $query->orderBy('created_at');
+                break;
+            case 'most_views':
+                $query->orderByDesc('view_count');
+                break;
+            default: // 'latest'
+                if ($filter !== 'popular') {
+                    $query->orderByDesc('is_pinned')->orderByDesc('last_post_at');
+                }
+                break;
+        }
+
+        $threads = $query->paginate(20);
 
         return response()->json([
             'forum' => $forum,
