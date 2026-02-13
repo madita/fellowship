@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Forum\Forum;
+use App\Models\Forum\ForumPostLike;
 use App\Models\Forum\ForumThread;
+use App\Services\SpamDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,20 +40,51 @@ class ForumThreadController extends Controller
             ->whereNull('parent_id') // Only top-level posts
             ->paginate(20);
 
+        // Batch query liked post IDs for the authenticated user
+        $likedPostIds = [];
+        if ($user) {
+            $postIds = collect($posts->items())->pluck('id');
+            // Also include nested reply IDs
+            foreach ($posts->items() as $post) {
+                if ($post->replies) {
+                    $postIds = $postIds->merge($post->replies->pluck('id'));
+                }
+            }
+            $likedPostIds = ForumPostLike::where('user_id', $user->id)
+                ->whereIn('post_id', $postIds)
+                ->pluck('post_id')
+                ->toArray();
+        }
+
+        // Add is_liked to each post
+        $postsData = $posts->toArray();
+        foreach ($postsData['data'] as &$postData) {
+            $postData['is_liked'] = in_array($postData['id'], $likedPostIds);
+            if (!empty($postData['replies'])) {
+                foreach ($postData['replies'] as &$reply) {
+                    $reply['is_liked'] = in_array($reply['id'], $likedPostIds);
+                }
+            }
+        }
+
         return response()->json([
             'thread' => $thread,
-            'posts' => $posts,
+            'posts' => $postsData,
             'can_reply' => $thread->canReply($user),
             'can_edit' => $thread->canEdit($user),
             'can_delete' => $thread->canDelete($user),
+            'is_subscribed' => $thread->isSubscribedBy($user),
         ]);
     }
 
     /**
      * Create a new thread.
      */
-    public function store(Request $request, Forum $forum): JsonResponse
-    {
+    public function store(
+        Request $request,
+        Forum $forum,
+        SpamDetectionService $spamService
+    ): JsonResponse {
         $user = Auth::user();
 
         if (!$user) {
@@ -71,11 +104,28 @@ class ForumThreadController extends Controller
             'body' => 'required|string',
         ]);
 
+        // Spam check
+        $spamResult = $spamService->checkThreadCreation($user, $validated['body']);
+        if ($spamResult) {
+            abort($spamResult['status'], $spamResult['message']);
+        }
+
         $thread = $forum->threads()->create([
             'user_id' => $user->id,
             'title' => $validated['title'],
             'body' => $validated['body'],
         ]);
+
+        // Auto-subscribe thread author
+        $thread->subscribe($user);
+
+        // Record activity
+        activity('forum')
+            ->performedOn($thread)
+            ->causedBy($user)
+            ->withProperties(['thread_title' => $thread->title, 'forum_name' => $forum->name])
+            ->event('thread_created')
+            ->log('created a new thread');
 
         return response()->json($thread->load('author'), 201);
     }

@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
+use App\Notifications\ForumMentionNotification;
+use App\Notifications\ForumReplyNotification;
+use App\Services\MentionService;
+use App\Services\SpamDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,8 +17,12 @@ class ForumPostController extends Controller
     /**
      * Create a new post (reply to thread).
      */
-    public function store(Request $request, ForumThread $thread): JsonResponse
-    {
+    public function store(
+        Request $request,
+        ForumThread $thread,
+        SpamDetectionService $spamService,
+        MentionService $mentionService
+    ): JsonResponse {
         $user = Auth::user();
 
         if (!$user) {
@@ -38,11 +46,48 @@ class ForumPostController extends Controller
             }
         }
 
+        // Spam check
+        $spamResult = $spamService->checkPostCreation($user, $validated['body']);
+        if ($spamResult) {
+            abort($spamResult['status'], $spamResult['message']);
+        }
+
         $post = $thread->posts()->create([
             'user_id' => $user->id,
             'body' => $validated['body'],
             'parent_id' => $validated['parent_id'] ?? null,
         ]);
+
+        // Auto-subscribe the replier
+        $thread->subscribe($user);
+
+        // Record activity
+        activity('forum')
+            ->performedOn($post)
+            ->causedBy($user)
+            ->withProperties(['thread_title' => $thread->title])
+            ->event('post_created')
+            ->log('replied in a thread');
+
+        // Notify all subscribers except the post author
+        $thread->load('subscriptions');
+        $subscriberIds = $thread->subscriptions
+            ->pluck('user_id')
+            ->filter(fn ($id) => $id !== $user->id);
+
+        $subscribers = \App\Models\User::whereIn('id', $subscriberIds)->get();
+        foreach ($subscribers as $subscriber) {
+            $subscriber->notify(new ForumReplyNotification($thread, $post));
+        }
+
+        // Parse @mentions and notify
+        $mentionedUsers = $mentionService->parseMentions($validated['body']);
+        foreach ($mentionedUsers as $mentionedUser) {
+            // Don't notify the post author or already-notified subscribers
+            if ($mentionedUser->id !== $user->id && !$subscriberIds->contains($mentionedUser->id)) {
+                $mentionedUser->notify(new ForumMentionNotification($thread, $post));
+            }
+        }
 
         return response()->json($post->load('author'), 201);
     }
@@ -102,6 +147,14 @@ class ForumPostController extends Controller
         }
 
         $post->markAsSolution();
+
+        // Record activity
+        activity('forum')
+            ->performedOn($post)
+            ->causedBy($user)
+            ->withProperties(['thread_title' => $thread->title])
+            ->event('solution_marked')
+            ->log('marked a post as helpful');
 
         return response()->json([
             'message' => 'Post marked as solution',

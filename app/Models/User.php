@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Models\Chat\Message;
 use App\Models\Conversation\Conversation;
 use App\Models\Event\Event;
+use App\Models\Forum\ForumPostLike;
+use App\Models\Forum\ThreadSubscription;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -330,5 +332,15 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function apiKeys()
     {
         return $this->hasMany(ApiKey::class);
+    }
+
+    public function forumSubscriptions()
+    {
+        return $this->hasMany(ThreadSubscription::class);
+    }
+
+    public function forumPostLikes()
+    {
+        return $this->hasMany(ForumPostLike::class);
     }
 }
