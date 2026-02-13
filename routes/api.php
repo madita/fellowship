@@ -67,6 +67,27 @@ Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function (
     Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
 });
 
+
+// Status Timeline Routes
+Route::get('/statuses', 'App\Http\Controllers\StatusController@index');
+Route::get('/statuses/{status}', 'App\Http\Controllers\StatusController@show');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Status CRUD
+    Route::post('/statuses', 'App\Http\Controllers\StatusController@store');
+    Route::patch('/statuses/{status}', 'App\Http\Controllers\StatusController@update');
+    Route::delete('/statuses/{status}', 'App\Http\Controllers\StatusController@destroy');
+    
+    // Likes
+    Route::post('/statuses/{status}/like', 'App\Http\Controllers\StatusController@toggleLike');
+    Route::get('/statuses/{status}/likes', 'App\Http\Controllers\StatusController@likes');
+    
+    // Comments
+    Route::post('/statuses/{status}/comments', 'App\Http\Controllers\StatusController@addComment');
+    Route::patch('/status-comments/{comment}', 'App\Http\Controllers\StatusCommentController@update');
+    Route::delete('/status-comments/{comment}', 'App\Http\Controllers\StatusCommentController@destroy');
+});
+
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
 Route::get('/tag/terms/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTerms');
 Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
