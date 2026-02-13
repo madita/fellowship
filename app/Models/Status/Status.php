@@ -16,7 +16,6 @@ class Status extends Model
     protected $fillable = [
         'user_id',
         'content',
-        'visibility',
         'media',
         'likes_count',
         'comments_count',
@@ -159,14 +158,6 @@ class Status extends Model
         }
 
         return $user->id === $this->user_id || $user->isAdmin();
-    }
-
-    /**
-     * Scope: Public statuses only.
-     */
-    public function scopePublic($query)
-    {
-        return $query->where('visibility', 'public');
     }
 
     /**

@@ -13,15 +13,8 @@ const userStore = useUserStore();
 const user = computed(() => userStore.user || { id: null });
 
 const content = ref('');
-const visibility = ref('public');
 const posting = ref(false);
 const expanded = ref(false);
-
-const visibilityOptions = [
-    { value: 'public', label: 'Public', icon: 'mdi-earth' },
-    { value: 'friends', label: 'Friends', icon: 'mdi-account-group' },
-    { value: 'private', label: 'Only Me', icon: 'mdi-lock' },
-];
 
 const postStatus = async () => {
     if (!content.value.trim()) return;
@@ -30,7 +23,6 @@ const postStatus = async () => {
     try {
         const response = await axios.post('/api/statuses', {
             content: content.value,
-            visibility: visibility.value,
         });
 
         content.value = '';
@@ -78,32 +70,7 @@ const cancel = () => {
                             class="mb-3"
                         />
 
-                        <div class="d-flex align-center justify-space-between">
-                            <!-- Visibility Selector -->
-                            <v-select
-                                v-model="visibility"
-                                :items="visibilityOptions"
-                                item-title="label"
-                                item-value="value"
-                                density="compact"
-                                variant="outlined"
-                                hide-details
-                                style="max-width: 150px"
-                            >
-                                <template #selection="{ item }">
-                                    <v-icon size="small" class="mr-1">{{ item.raw.icon }}</v-icon>
-                                    <span class="text-caption">{{ item.raw.label }}</span>
-                                </template>
-
-                                <template #item="{ item, props: itemProps }">
-                                    <v-list-item v-bind="itemProps">
-                                        <template #prepend>
-                                            <v-icon>{{ item.raw.icon }}</v-icon>
-                                        </template>
-                                    </v-list-item>
-                                </template>
-                            </v-select>
-
+                        <div class="d-flex align-center justify-end">
                             <!-- Action Buttons -->
                             <div>
                                 <v-btn

@@ -10,12 +10,11 @@ use Illuminate\Support\Facades\Auth;
 class StatusController extends Controller
 {
     /**
-     * Get timeline/feed (all public statuses or user's feed).
+     * Get timeline/feed (all statuses or user's feed).
      */
     public function index(Request $request): JsonResponse
     {
         $query = Status::with(['user', 'likes', 'comments.user', 'comments.replies.user'])
-            ->public()
             ->recent();
 
         // Filter by user if specified
@@ -35,11 +34,6 @@ class StatusController extends Controller
     {
         $status->load(['user', 'likes.user', 'allComments.user', 'allComments.replies.user']);
 
-        // Check visibility
-        if ($status->visibility !== 'public' && (!Auth::check() || $status->user_id !== Auth::id())) {
-            abort(403, 'You do not have permission to view this status.');
-        }
-
         return response()->json($status);
     }
 
@@ -56,7 +50,6 @@ class StatusController extends Controller
 
         $validated = $request->validate([
             'content' => 'required|string|max:5000',
-            'visibility' => 'in:public,friends,private',
             'media' => 'array',
             'media.*' => 'url',
         ]);
@@ -81,7 +74,6 @@ class StatusController extends Controller
 
         $validated = $request->validate([
             'content' => 'string|max:5000',
-            'visibility' => 'in:public,friends,private',
         ]);
 
         $status->update($validated);
