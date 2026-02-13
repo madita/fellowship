@@ -185,8 +185,3 @@ export const admin = [{
     }]
 
 export default admin
-},{
-    path: '/admin/menus',
-    name: 'admin-menus',
-    meta: { middleware: [auth, admin] },
-    component: () => import('@/pages/admin/MenuManager.vue')
