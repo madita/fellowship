@@ -3,12 +3,12 @@
 return [
     // Common success messages
     'success' => [
-        'created'  => ':item created successfully',
-        'updated'  => ':item updated successfully',
-        'deleted'  => ':item deleted successfully',
-        'saved'    => ':item saved successfully',
-        'uploaded' => ':item uploaded successfully',
-        'toggled'  => ':item toggled successfully',
+        'created'   => ':item created successfully',
+        'updated'   => ':item updated successfully',
+        'deleted'   => ':item deleted successfully',
+        'saved'     => ':item saved successfully',
+        'uploaded'  => ':item uploaded successfully',
+        'toggled'   => ':item toggled successfully',
         'reordered' => ':items reordered successfully',
     ],
 
@@ -49,12 +49,12 @@ return [
 
     // Homepage
     'homepage' => [
-        'section_deleted'    => 'Section deleted successfully',
-        'sections_reordered' => 'Sections reordered successfully',
-        'image_deleted'      => 'Image deleted successfully',
+        'section_deleted'     => 'Section deleted successfully',
+        'sections_reordered'  => 'Sections reordered successfully',
+        'image_deleted'       => 'Image deleted successfully',
         'image_upload_failed' => 'Failed to upload image: :error',
         'image_delete_failed' => 'Failed to delete image: :error',
-        'no_image'           => 'No image to delete',
+        'no_image'            => 'No image to delete',
     ],
 
     // Events
@@ -80,18 +80,18 @@ return [
 
     // API Keys
     'api_keys' => [
-        'created'            => 'API key created successfully. Save the secret - it will not be shown again!',
-        'updated'            => 'API key updated successfully',
-        'deleted'            => 'API key deleted successfully',
-        'regenerated'        => 'API key regenerated successfully. Save the new secret - it will not be shown again!',
-        'disabled'           => 'API keys feature is not enabled.',
-        'max_reached'        => 'You can only have up to :max API keys.',
-        'auth_disabled'      => 'API key authentication is not enabled.',
-        'auth_required'      => 'API key authentication required.',
-        'invalid_key'        => 'Invalid API key.',
-        'invalid_secret'     => 'Invalid API secret.',
+        'created'             => 'API key created successfully. Save the secret - it will not be shown again!',
+        'updated'             => 'API key updated successfully',
+        'deleted'             => 'API key deleted successfully',
+        'regenerated'         => 'API key regenerated successfully. Save the new secret - it will not be shown again!',
+        'disabled'            => 'API keys feature is not enabled.',
+        'max_reached'         => 'You can only have up to :max API keys.',
+        'auth_disabled'       => 'API key authentication is not enabled.',
+        'auth_required'       => 'API key authentication required.',
+        'invalid_key'         => 'Invalid API key.',
+        'invalid_secret'      => 'Invalid API secret.',
         'inactive_or_expired' => 'API key is inactive or expired.',
-        'missing_ability'    => 'API key does not have the required ability: :ability',
+        'missing_ability'     => 'API key does not have the required ability: :ability',
     ],
 
     // Account
@@ -132,9 +132,9 @@ return [
 
     // DataTable
     'datatable' => [
-        'no_builder' => 'No entity builder method defined.',
+        'no_builder'      => 'No entity builder method defined.',
         'invalid_builder' => 'Entity builder not instance of Builder.',
-        'actions' => 'Actions',
+        'actions'         => 'Actions',
     ],
 
     // Taxonomy
@@ -144,13 +144,13 @@ return [
 
     // Translations
     'translations' => [
-        'updated'              => 'Translations updated successfully',
-        'locale_created'       => 'Locale created successfully',
-        'key_added'            => 'Translation key added successfully',
-        'key_deleted'          => 'Translation key deleted successfully',
-        'locale_not_found'     => 'Locale not found',
-        'file_not_found'       => 'Translation file not found',
-        'save_failed'          => 'Failed to save translations',
+        'updated'               => 'Translations updated successfully',
+        'locale_created'        => 'Locale created successfully',
+        'key_added'             => 'Translation key added successfully',
+        'key_deleted'           => 'Translation key deleted successfully',
+        'locale_not_found'      => 'Locale not found',
+        'file_not_found'        => 'Translation file not found',
+        'save_failed'           => 'Failed to save translations',
         'base_locale_not_found' => 'Base locale not found',
     ],
 
@@ -184,23 +184,23 @@ return [
 
     // Settings
     'settings' => [
-        'updated'            => 'Settings updated successfully',
-        'logo_uploaded'      => 'Logo uploaded successfully',
-        'logo_deleted'       => 'Logo deleted successfully',
-        'logo_upload_failed' => 'Failed to upload logo',
-        'logo_delete_failed' => 'Failed to delete logo',
-        'image_uploaded'     => 'Image uploaded successfully',
-        'image_upload_failed' => 'Failed to upload image',
-        'image_deleted'      => 'Image deleted successfully',
-        'image_delete_failed' => 'Failed to delete image',
-        'test_email_sent'          => 'Test email sent successfully to :recipient',
-        'test_email_failed'        => 'Failed to send test email',
-        'cache_cleared'            => 'Cache cleared successfully',
-        'cache_clear_failed'       => 'Failed to clear cache',
-        'pwa_icon_format'          => 'PWA app icon must be PNG, WebP, or SVG format. JPEG is not supported.',
+        'updated'                   => 'Settings updated successfully',
+        'logo_uploaded'             => 'Logo uploaded successfully',
+        'logo_deleted'              => 'Logo deleted successfully',
+        'logo_upload_failed'        => 'Failed to upload logo',
+        'logo_delete_failed'        => 'Failed to delete logo',
+        'image_uploaded'            => 'Image uploaded successfully',
+        'image_upload_failed'       => 'Failed to upload image',
+        'image_deleted'             => 'Image deleted successfully',
+        'image_delete_failed'       => 'Failed to delete image',
+        'test_email_sent'           => 'Test email sent successfully to :recipient',
+        'test_email_failed'         => 'Failed to send test email',
+        'cache_cleared'             => 'Cache cleared successfully',
+        'cache_clear_failed'        => 'Failed to clear cache',
+        'pwa_icon_format'           => 'PWA app icon must be PNG, WebP, or SVG format. JPEG is not supported.',
         'pwa_icon_dimensions_error' => 'Unable to read image dimensions.',
-        'pwa_icon_min_size'        => 'PWA app icon must be at least 144×144 pixels. Your image is :size.',
-        'pwa_icon_square'          => 'PWA app icon should be square. Your image is :size. Please upload a square image.',
+        'pwa_icon_min_size'         => 'PWA app icon must be at least 144×144 pixels. Your image is :size.',
+        'pwa_icon_square'           => 'PWA app icon should be square. Your image is :size. Please upload a square image.',
     ],
 
     // Homepage Menu
@@ -223,14 +223,14 @@ return [
 
     // Migrations
     'migrations' => [
-        'unknown'        => 'Unknown migration: :key',
-        'queued'         => 'Migration queued',
-        'queued_all'     => 'Migrations queued successfully',
+        'unknown'         => 'Unknown migration: :key',
+        'queued'          => 'Migration queued',
+        'queued_all'      => 'Migrations queued successfully',
         'batch_not_found' => 'Batch not found',
-        'log_not_found'  => 'Migration log not found',
-        'cancelled'      => 'Cancelled by user',
+        'log_not_found'   => 'Migration log not found',
+        'cancelled'       => 'Cancelled by user',
         'cancelled_count' => 'Cancelled :count pending migrations',
-        'deleted_count'  => 'Deleted :count old migration logs',
+        'deleted_count'   => 'Deleted :count old migration logs',
     ],
 
     // SPA
