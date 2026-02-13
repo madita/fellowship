@@ -22,6 +22,7 @@
         "pusher/pusher-php-server": "^7.0",
         "socialiteproviders/discord": "^4.2",
         "spatie/image": "^3.8.3",
+        "spatie/laravel-activitylog": "^4.11",
         "spatie/laravel-medialibrary": "^11.13.0",
         "spatie/laravel-permission": "^6.18",
         "stevebauman/purify": "^6.3.1"

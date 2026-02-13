@@ -27,6 +27,7 @@ Route::middleware(['cache.control'])->group(function () {
 Route::get('/forums', 'App\Http\Controllers\ForumController@index');
 Route::get('/forums/{slug}', 'App\Http\Controllers\ForumController@show');
 Route::get('/forums/{forumSlug}/threads/{threadSlug}', 'App\Http\Controllers\ForumThreadController@show');
+Route::get('/activity', 'App\Http\Controllers\ActivityController@index');
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
     // Forum management (admin only)
@@ -44,6 +45,14 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::patch('/posts/{post}', 'App\Http\Controllers\ForumPostController@update');
     Route::delete('/posts/{post}', 'App\Http\Controllers\ForumPostController@destroy');
     Route::post('/posts/{post}/mark-as-solution', 'App\Http\Controllers\ForumPostController@markAsSolution');
+
+    // Thread subscriptions
+    Route::post('/threads/{thread}/subscribe', 'App\Http\Controllers\ForumSubscriptionController@store');
+    Route::delete('/threads/{thread}/subscribe', 'App\Http\Controllers\ForumSubscriptionController@destroy');
+
+    // Post likes
+    Route::post('/posts/{post}/like', 'App\Http\Controllers\ForumPostLikeController@store');
+    Route::delete('/posts/{post}/like', 'App\Http\Controllers\ForumPostLikeController@destroy');
 });
 
 // Wiki write operations (not cached)

@@ -10,6 +10,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+/**
+ * @property int $id
+ * @property int $forum_id
+ * @property int $user_id
+ * @property string $title
+ * @property string $slug
+ * @property string $body
+ */
+
 class ForumThread extends Model
 {
     use HasFactory, SoftDeletes;
@@ -163,6 +172,42 @@ class ForumThread extends Model
         }
 
         return $user->id === $this->user_id || $user->isAdmin();
+    }
+
+    /**
+     * Get subscriptions for this thread.
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(ThreadSubscription::class, 'thread_id');
+    }
+
+    /**
+     * Check if a user is subscribed to this thread.
+     */
+    public function isSubscribedBy(?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return $this->subscriptions()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Subscribe a user to this thread.
+     */
+    public function subscribe(User $user): void
+    {
+        $this->subscriptions()->firstOrCreate(['user_id' => $user->id]);
+    }
+
+    /**
+     * Unsubscribe a user from this thread.
+     */
+    public function unsubscribe(User $user): void
+    {
+        $this->subscriptions()->where('user_id', $user->id)->delete();
     }
 
     /**

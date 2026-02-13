@@ -107,6 +107,48 @@ class ForumPost extends Model
     }
 
     /**
+     * Get likes for this post.
+     */
+    public function likes(): HasMany
+    {
+        return $this->hasMany(ForumPostLike::class, 'post_id');
+    }
+
+    /**
+     * Check if a user has liked this post.
+     */
+    public function isLikedBy(?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return $this->likes()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Like this post as a user.
+     */
+    public function like(User $user): void
+    {
+        if (!$this->isLikedBy($user)) {
+            $this->likes()->create(['user_id' => $user->id]);
+            $this->increment('like_count');
+        }
+    }
+
+    /**
+     * Unlike this post as a user.
+     */
+    public function unlike(User $user): void
+    {
+        $deleted = $this->likes()->where('user_id', $user->id)->delete();
+        if ($deleted) {
+            $this->decrement('like_count');
+        }
+    }
+
+    /**
      * Mark this post as the solution.
      */
     public function markAsSolution(): void
