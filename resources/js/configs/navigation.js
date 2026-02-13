@@ -11,6 +11,15 @@ export default {
                 { icon: 'mdi-message-text-outline', key: 'menu.chat', text: 'Chat', link: '/chat' },
                 { icon: 'mdi-calendar', key: 'menu.events', text: 'Events', link: '/events' },
                 { icon: 'mdi-file-outline', key: 'menu.wiki', text: 'Wiki', link: '/wiki' },
+                {
+                    icon: 'mdi-forum-outline',
+                    key: 'menu.feedback',
+                    text: 'Feedback',
+                    items: [
+                        { icon: 'mdi-bug', key: 'menu.feedbackBugs', text: 'Bug Reports', link: '/feedback/bugs' },
+                        { icon: 'mdi-lightbulb', key: 'menu.feedbackFeatures', text: 'Feature Requests', link: '/feedback/features' }
+                    ]
+                },
                 { icon: 'mdi-file-outline', key: 'menu.blank', text: 'Blank Page', link: '/blank' }
             ]
         },

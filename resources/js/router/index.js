@@ -16,6 +16,7 @@ import UsersRoutes from './users.routes'
 import LandingRoutes from './landing.routes'
 import WikiRoutes from './wiki.routes'
 import AdminRoutes from './admin.routes'
+import FeedbackRoutes from './feedback.routes'
 //import permission from "@/router/middleware/permission.js";
 
 //Vue.use(Router)
@@ -36,6 +37,7 @@ export const routes = [{
     ...LandingRoutes,
     ...WikiRoutes,
     ...AdminRoutes,
+    ...FeedbackRoutes,
     {
         path: '/blank',
         name: 'blank',

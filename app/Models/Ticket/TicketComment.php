@@ -17,10 +17,12 @@ class TicketComment extends Model
         'user_id',
         'comment',
         'is_internal',
+        'is_official',
     ];
 
     protected $casts = [
         'is_internal' => 'boolean',
+        'is_official' => 'boolean',
     ];
 
     protected $with = ['user'];
@@ -65,5 +67,29 @@ class TicketComment extends Model
         }
 
         return $user->id === $this->user_id || $user->isAdmin();
+    }
+
+    /**
+     * Check if this is an official developer response.
+     */
+    public function isOfficial(): bool
+    {
+        return $this->is_official === true;
+    }
+
+    /**
+     * Mark comment as official developer response.
+     */
+    public function markAsOfficial(): void
+    {
+        $this->update(['is_official' => true]);
+    }
+
+    /**
+     * Scope: Official comments only.
+     */
+    public function scopeOfficial($query)
+    {
+        return $query->where('is_official', true);
     }
 }

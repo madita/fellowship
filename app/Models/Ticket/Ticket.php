@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -23,11 +24,17 @@ class Ticket extends Model
         'title',
         'description',
         'status',
+        'bga_status',
         'priority',
         'due_date',
         'resolved_at',
         'closed_at',
         'metadata',
+        'duplicate_of_ticket_id',
+        'is_public',
+        'votes_count',
+        'watchers_count',
+        'fixed_in_version',
     ];
 
     protected $casts = [
@@ -35,9 +42,12 @@ class Ticket extends Model
         'due_date' => 'datetime',
         'resolved_at' => 'datetime',
         'closed_at' => 'datetime',
+        'is_public' => 'boolean',
+        'votes_count' => 'integer',
+        'watchers_count' => 'integer',
     ];
 
-    protected $appends = ['status_label', 'priority_label'];
+    protected $appends = ['status_label', 'priority_label', 'bga_status_label'];
 
     /**
      * Get the ticket type.
@@ -232,5 +242,202 @@ class Ticket extends Model
         return $query->whereHas('ticketType', function ($q) use ($typeSlug) {
             $q->where('slug', $typeSlug);
         });
+    }
+
+    // ==================== BGA-style Features ====================
+
+    /**
+     * Get all votes for this ticket.
+     */
+    public function votes(): HasMany
+    {
+        return $this->hasMany(TicketVote::class);
+    }
+
+    /**
+     * Get all watchers for this ticket.
+     */
+    public function watchers(): HasMany
+    {
+        return $this->hasMany(TicketWatcher::class);
+    }
+
+    /**
+     * Get tags for this ticket.
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(TicketTag::class, 'ticket_tag_pivot')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get the original ticket if this is a duplicate.
+     */
+    public function duplicateOf(): BelongsTo
+    {
+        return $this->belongsTo(Ticket::class, 'duplicate_of_ticket_id');
+    }
+
+    /**
+     * Get tickets that are duplicates of this one.
+     */
+    public function duplicates(): HasMany
+    {
+        return $this->hasMany(Ticket::class, 'duplicate_of_ticket_id');
+    }
+
+    /**
+     * Check if user has voted on this ticket.
+     */
+    public function hasVotedBy(User $user): bool
+    {
+        return $this->votes()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Get user's vote on this ticket.
+     */
+    public function userVote(User $user): ?TicketVote
+    {
+        return $this->votes()->where('user_id', $user->id)->first();
+    }
+
+    /**
+     * Toggle user's upvote.
+     */
+    public function toggleVote(User $user): bool
+    {
+        $existingVote = $this->userVote($user);
+
+        if ($existingVote) {
+            $existingVote->delete();
+            $this->decrement('votes_count');
+            return false; // Removed vote
+        }
+
+        $this->votes()->create([
+            'user_id' => $user->id,
+            'vote' => 1,
+        ]);
+        $this->increment('votes_count');
+        return true; // Added vote
+    }
+
+    /**
+     * Check if user is watching this ticket.
+     */
+    public function isWatchedBy(User $user): bool
+    {
+        return $this->watchers()->where('user_id', $user->id)->exists();
+    }
+
+    /**
+     * Toggle user watching this ticket.
+     */
+    public function toggleWatch(User $user, bool $notifyComments = true, bool $notifyStatusChange = true): bool
+    {
+        $existingWatch = $this->watchers()->where('user_id', $user->id)->first();
+
+        if ($existingWatch) {
+            $existingWatch->delete();
+            $this->decrement('watchers_count');
+            return false; // Unwatched
+        }
+
+        $this->watchers()->create([
+            'user_id' => $user->id,
+            'notify_comments' => $notifyComments,
+            'notify_status_change' => $notifyStatusChange,
+        ]);
+        $this->increment('watchers_count');
+        return true; // Watching
+    }
+
+    /**
+     * Mark as duplicate of another ticket.
+     */
+    public function markAsDuplicateOf(Ticket $original): void
+    {
+        $this->update([
+            'duplicate_of_ticket_id' => $original->id,
+            'bga_status' => 'duplicate',
+            'status' => 'closed',
+            'closed_at' => now(),
+        ]);
+    }
+
+    /**
+     * Get BGA status label.
+     */
+    public function getBgaStatusLabelAttribute(): string
+    {
+        return match($this->bga_status) {
+            'reported' => 'Reported',
+            'confirmed' => 'Confirmed',
+            'investigating' => 'Investigating',
+            'planned' => 'Planned',
+            'in_progress' => 'In Progress',
+            'completed' => 'Completed',
+            'wontfix' => "Won't Fix",
+            'duplicate' => 'Duplicate',
+            default => ucfirst(str_replace('_', ' ', $this->bga_status)),
+        };
+    }
+
+    /**
+     * Check if ticket is a duplicate.
+     */
+    public function isDuplicate(): bool
+    {
+        return $this->duplicate_of_ticket_id !== null;
+    }
+
+    /**
+     * Check if ticket is public.
+     */
+    public function isPublic(): bool
+    {
+        return $this->is_public;
+    }
+
+    /**
+     * Scope: Public tickets only.
+     */
+    public function scopePublic($query)
+    {
+        return $query->where('is_public', true);
+    }
+
+    /**
+     * Scope: By BGA status.
+     */
+    public function scopeBgaStatus($query, string $status)
+    {
+        return $query->where('bga_status', $status);
+    }
+
+    /**
+     * Scope: Order by popularity (votes).
+     */
+    public function scopePopular($query)
+    {
+        return $query->orderBy('votes_count', 'desc');
+    }
+
+    /**
+     * Scope: Bugs only.
+     */
+    public function scopeBugs($query)
+    {
+        return $query->ofType('bug');
+    }
+
+    /**
+     * Scope: Feature requests only.
+     */
+    public function scopeFeatures($query)
+    {
+        return $query->ofType('feature');
     }
 }

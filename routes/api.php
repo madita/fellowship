@@ -128,6 +128,25 @@ Route::patch('/media/{media}/caption', [App\Http\Controllers\CollectionControlle
 Route::delete('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'delete']); // Delete collection
 Route::delete('/media/{media}', [App\Http\Controllers\CollectionController::class, 'deleteMedia']); // Delete a media item
 
+// Public Feedback System (BGA-style)
+Route::prefix('feedback')->group(function () {
+    // Public endpoints (no auth required to view)
+    Route::get('/bugs', 'App\Http\Controllers\FeedbackController@bugs');
+    Route::get('/features', 'App\Http\Controllers\FeedbackController@features');
+    Route::get('/tickets/{ticket}', 'App\Http\Controllers\FeedbackController@show');
+    Route::get('/tags', 'App\Http\Controllers\FeedbackController@tags');
+    Route::get('/stats', 'App\Http\Controllers\FeedbackController@stats');
+
+    // Authenticated endpoints
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/bugs', 'App\Http\Controllers\FeedbackController@createBug');
+        Route::post('/features', 'App\Http\Controllers\FeedbackController@createFeature');
+        Route::post('/tickets/{ticket}/vote', 'App\Http\Controllers\FeedbackController@toggleVote');
+        Route::post('/tickets/{ticket}/watch', 'App\Http\Controllers\FeedbackController@toggleWatch');
+        Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\FeedbackController@addComment');
+    });
+});
+
 Route::group(['middleware' => ['auth:sanctum']], function () {
     //Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
     Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');
