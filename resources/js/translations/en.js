@@ -4374,6 +4374,15 @@ export default {
         'activityThreadCreated': 'created a new thread "{title}"',
         'activityPostCreated': 'replied in "{title}"',
         'activityPostLiked': 'liked a post in "{title}"',
-        'activitySolutionMarked': 'marked a post as helpful in "{title}"'
+        'activitySolutionMarked': 'marked a post as helpful in "{title}"',
+        'searchPlaceholder': 'Search threads and posts...',
+        'searchResults': 'Search Results',
+        'searchResultsFor': 'Results for "{query}"',
+        'searchResultsCount': '{count} result found | {count} results found',
+        'searching': 'Searching...',
+        'noThreadResults': 'No threads match your search.',
+        'noPostResults': 'No posts match your search.',
+        'noSearchResults': 'No results found',
+        'replyIn': 'replied in'
     }
 }

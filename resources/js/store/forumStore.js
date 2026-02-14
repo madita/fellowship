@@ -20,14 +20,24 @@ export const useForumStore = defineStore('forum', {
         activitiesPagination: {},
         loading: false,
         submitting: false,
-        error: null
+        error: null,
+        searchQuery: '',
+        searchResults: { threads: null, posts: null },
+        searchLoading: false,
+        searchType: 'all'
     }),
 
     getters: {
         pinnedThreads: (state) => state.threads.filter(t => t.is_pinned),
         regularThreads: (state) => state.threads.filter(t => !t.is_pinned),
         topLevelPosts: (state) => state.posts.filter(p => !p.parent_id),
-        isForumLocked: (state) => state.currentForum?.is_locked ?? false
+        isForumLocked: (state) => state.currentForum?.is_locked ?? false,
+        totalSearchResults: (state) => {
+            return (state.searchResults.threads?.total || 0) + (state.searchResults.posts?.total || 0)
+        },
+        hasSearchResults: (state) => {
+            return (state.searchResults.threads?.data?.length > 0) || (state.searchResults.posts?.data?.length > 0)
+        }
     },
 
     actions: {
@@ -327,6 +337,34 @@ export const useForumStore = defineStore('forum', {
             } catch (error) {
                 console.error('Failed to load activities:', error)
             }
+        },
+
+        async searchForum(query, { type = 'all', page = 1 } = {}) {
+            this.searchLoading = true
+            this.searchQuery = query
+            this.searchType = type
+            this.error = null
+            try {
+                const response = await axios.get('/api/forums/search', {
+                    params: { q: query, type, page }
+                })
+                this.searchResults = {
+                    threads: response.data.threads,
+                    posts: response.data.posts
+                }
+            } catch (error) {
+                this.error = error.response?.data?.message || 'Search failed'
+                throw error
+            } finally {
+                this.searchLoading = false
+            }
+        },
+
+        clearSearch() {
+            this.searchQuery = ''
+            this.searchResults = { threads: null, posts: null }
+            this.searchLoading = false
+            this.searchType = 'all'
         }
     }
 })

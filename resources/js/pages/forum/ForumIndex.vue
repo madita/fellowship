@@ -11,6 +11,19 @@
                         <p class="text-subtitle-1 text-medium-emphasis">
                             {{ $t('forum.subtitle') }}
                         </p>
+                        <v-text-field
+                            v-model="searchQuery"
+                            :placeholder="$t('forum.searchPlaceholder')"
+                            prepend-inner-icon="mdi-magnify"
+                            variant="outlined"
+                            density="comfortable"
+                            hide-details
+                            clearable
+                            class="mt-4"
+                            style="max-width: 500px;"
+                            @keydown.enter="goToSearch"
+                            @click:clear="searchQuery = ''"
+                        />
                     </v-col>
                 </v-row>
             </v-container>
@@ -162,6 +175,11 @@ export default {
         const userStore = useUserStore()
         return { forumStore, userStore }
     },
+    data() {
+        return {
+            searchQuery: ''
+        }
+    },
     mounted() {
         this.forumStore.fetchForums()
         this.forumStore.fetchActivities()
@@ -169,6 +187,11 @@ export default {
     methods: {
         goToForum(forum) {
             this.$router.push({ name: 'forum-category', params: { slug: forum.slug } })
+        },
+        goToSearch() {
+            if (this.searchQuery && this.searchQuery.trim().length >= 2) {
+                this.$router.push({ name: 'forum-search', query: { q: this.searchQuery.trim() } })
+            }
         },
         formatDateDistance(date) {
             if (!date) return ''

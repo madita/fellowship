@@ -24,35 +24,36 @@ Route::middleware(['cache.control'])->group(function () {
 });
 
 // Forum Routes (public read, auth for write)
-Route::get('/forums', 'App\Http\Controllers\ForumController@index');
-Route::get('/forums/{slug}', 'App\Http\Controllers\ForumController@show');
-Route::get('/forums/{forumSlug}/threads/{threadSlug}', 'App\Http\Controllers\ForumThreadController@show');
+Route::get('/forums', 'App\Http\Controllers\Forum\ForumController@index');
+Route::get('/forums/search', 'App\Http\Controllers\Forum\ForumSearchController@search');
+Route::get('/forums/{slug}', 'App\Http\Controllers\Forum\ForumController@show');
+Route::get('/forums/{forumSlug}/threads/{threadSlug}', 'App\Http\Controllers\Forum\ForumThreadController@show');
 Route::get('/activity', 'App\Http\Controllers\ActivityController@index');
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
     // Forum management (admin only)
-    Route::post('/forums', 'App\Http\Controllers\ForumController@store');
-    Route::patch('/forums/{id}', 'App\Http\Controllers\ForumController@update');
-    Route::delete('/forums/{id}', 'App\Http\Controllers\ForumController@destroy');
+    Route::post('/forums', 'App\Http\Controllers\Forum\ForumController@store');
+    Route::patch('/forums/{id}', 'App\Http\Controllers\Forum\ForumController@update');
+    Route::delete('/forums/{id}', 'App\Http\Controllers\Forum\ForumController@destroy');
 
     // Thread management
-    Route::post('/forums/{id}/threads', 'App\Http\Controllers\ForumThreadController@store');
-    Route::patch('/threads/{thread}', 'App\Http\Controllers\ForumThreadController@update');
-    Route::delete('/threads/{thread}', 'App\Http\Controllers\ForumThreadController@destroy');
+    Route::post('/forums/{id}/threads', 'App\Http\Controllers\Forum\ForumThreadController@store');
+    Route::patch('/threads/{thread}', 'App\Http\Controllers\Forum\ForumThreadController@update');
+    Route::delete('/threads/{thread}', 'App\Http\Controllers\Forum\ForumThreadController@destroy');
 
     // Post management
-    Route::post('/threads/{thread}/posts', 'App\Http\Controllers\ForumPostController@store');
-    Route::patch('/posts/{post}', 'App\Http\Controllers\ForumPostController@update');
-    Route::delete('/posts/{post}', 'App\Http\Controllers\ForumPostController@destroy');
-    Route::post('/posts/{post}/mark-as-solution', 'App\Http\Controllers\ForumPostController@markAsSolution');
+    Route::post('/threads/{thread}/posts', 'App\Http\Controllers\Forum\ForumPostController@store');
+    Route::patch('/posts/{post}', 'App\Http\Controllers\Forum\ForumPostController@update');
+    Route::delete('/posts/{post}', 'App\Http\Controllers\Forum\ForumPostController@destroy');
+    Route::post('/posts/{post}/mark-as-solution', 'App\Http\Controllers\Forum\ForumPostController@markAsSolution');
 
     // Thread subscriptions
-    Route::post('/threads/{thread}/subscribe', 'App\Http\Controllers\ForumSubscriptionController@store');
-    Route::delete('/threads/{thread}/subscribe', 'App\Http\Controllers\ForumSubscriptionController@destroy');
+    Route::post('/threads/{thread}/subscribe', 'App\Http\Controllers\Forum\ForumSubscriptionController@store');
+    Route::delete('/threads/{thread}/subscribe', 'App\Http\Controllers\Forum\ForumSubscriptionController@destroy');
 
     // Post likes
-    Route::post('/posts/{post}/like', 'App\Http\Controllers\ForumPostLikeController@store');
-    Route::delete('/posts/{post}/like', 'App\Http\Controllers\ForumPostLikeController@destroy');
+    Route::post('/posts/{post}/like', 'App\Http\Controllers\Forum\ForumPostLikeController@store');
+    Route::delete('/posts/{post}/like', 'App\Http\Controllers\Forum\ForumPostLikeController@destroy');
 });
 
 // Wiki write operations (not cached)

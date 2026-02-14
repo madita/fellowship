@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Forum;
 
+use App\Http\Controllers\Controller;
 use App\Models\Forum\ForumThread;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;

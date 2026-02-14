@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Forum;
 
+use App\Http\Controllers\Controller;
 use App\Models\Forum\ForumPost;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;

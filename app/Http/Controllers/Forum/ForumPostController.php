@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Forum;
 
+use App\Http\Controllers\Controller;
 use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
 use App\Notifications\ForumMentionNotification;

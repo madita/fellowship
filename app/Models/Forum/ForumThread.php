@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Laravel\Scout\Searchable;
 
 /**
  * @property int $id
@@ -22,7 +23,7 @@ use Illuminate\Support\Str;
 
 class ForumThread extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Searchable;
 
     protected $fillable = [
         'taxonomy_id',
@@ -212,5 +213,35 @@ class ForumThread extends Model
             'last_post_user_id' => $post->user_id,
             'last_post_at' => $post->created_at,
         ]);
+    }
+
+    public function searchableAs(): string
+    {
+        return 'forum_threads';
+    }
+
+    public function toSearchableArray(): array
+    {
+        $this->loadMissing(['author', 'category.term']);
+
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'body' => strip_tags($this->body),
+            'slug' => $this->slug,
+            'author_name' => $this->author?->username ?? '',
+            'category_name' => $this->category?->term?->title ?? '',
+            'category_slug' => $this->category?->term?->slug ?? '',
+            'taxonomy_id' => $this->taxonomy_id,
+            'is_pinned' => $this->is_pinned,
+            'reply_count' => $this->reply_count ?? 0,
+            'view_count' => $this->view_count ?? 0,
+            'created_at' => $this->created_at?->timestamp,
+        ];
+    }
+
+    public function shouldBeSearchable(): bool
+    {
+        return !$this->trashed();
     }
 }

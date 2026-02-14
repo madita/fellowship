@@ -19,6 +19,7 @@ const NewsletterWidget = defineAsyncComponent(() => import('./NewsletterWidget.v
 const TimelineWidget = defineAsyncComponent(() => import('./TimelineWidget.vue'));
 const ClientsWidget = defineAsyncComponent(() => import('./ClientsWidget.vue'));
 const CustomHtmlWidget = defineAsyncComponent(() => import('./CustomHtmlWidget.vue'));
+const ForumWidget = defineAsyncComponent(() => import('./ForumWidget.vue'));
 
 // Widget component mapping
 const widgetComponents = {
@@ -40,6 +41,7 @@ const widgetComponents = {
     timeline: TimelineWidget,
     clients: ClientsWidget,
     custom_html: CustomHtmlWidget,
+    forum: ForumWidget,
 };
 
 /**

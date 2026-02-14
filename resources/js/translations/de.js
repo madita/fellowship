@@ -4558,6 +4558,15 @@ export default {
         'activityThreadCreated': 'hat ein neues Thema erstellt: „{title}"',
         'activityPostCreated': 'hat in „{title}" geantwortet',
         'activityPostLiked': 'hat einen Beitrag in „{title}" geliked',
-        'activitySolutionMarked': 'hat einen Beitrag in „{title}" als hilfreich markiert'
+        'activitySolutionMarked': 'hat einen Beitrag in „{title}" als hilfreich markiert',
+        'searchPlaceholder': 'Themen und Beiträge durchsuchen...',
+        'searchResults': 'Suchergebnisse',
+        'searchResultsFor': 'Ergebnisse für „{query}"',
+        'searchResultsCount': '{count} Ergebnis gefunden | {count} Ergebnisse gefunden',
+        'searching': 'Suche läuft...',
+        'noThreadResults': 'Keine Themen gefunden.',
+        'noPostResults': 'Keine Beiträge gefunden.',
+        'noSearchResults': 'Keine Ergebnisse gefunden',
+        'replyIn': 'antwortete in'
     }
 }
