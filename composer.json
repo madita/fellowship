@@ -68,6 +68,15 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi"
+        ],
+        "style:check": [
+            "styleci analyse --verbose"
+        ],
+        "style:fix": [
+            "styleci fix --verbose"
+        ],
+        "pre-commit": [
+            "@style:check"
         ]
     }
 }
