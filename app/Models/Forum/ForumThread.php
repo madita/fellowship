@@ -2,6 +2,7 @@
 
 namespace App\Models\Forum;
 
+use App\Models\Tag\Taxonomy;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,7 @@ use Illuminate\Support\Str;
 
 /**
  * @property int $id
- * @property int $forum_id
+ * @property int $taxonomy_id
  * @property int $user_id
  * @property string $title
  * @property string $slug
@@ -24,7 +25,7 @@ class ForumThread extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'forum_id',
+        'taxonomy_id',
         'user_id',
         'title',
         'slug',
@@ -60,7 +61,7 @@ class ForumThread extends Model
         static::creating(function ($thread) {
             if (empty($thread->slug)) {
                 $thread->slug = Str::slug($thread->title);
-                
+
                 // Ensure slug is unique
                 $count = 1;
                 while (static::where('slug', $thread->slug)->exists()) {
@@ -70,24 +71,14 @@ class ForumThread extends Model
 
             $thread->last_post_at = now();
         });
-
-        static::created(function ($thread) {
-            $thread->forum->incrementThreadCount();
-            $thread->forum->updateStatistics();
-        });
-
-        static::deleted(function ($thread) {
-            $thread->forum->decrementThreadCount();
-            $thread->forum->updateStatistics();
-        });
     }
 
     /**
-     * Get the forum this thread belongs to.
+     * Get the category (taxonomy) this thread belongs to.
      */
-    public function forum(): BelongsTo
+    public function category(): BelongsTo
     {
-        return $this->belongsTo(Forum::class);
+        return $this->belongsTo(Taxonomy::class, 'taxonomy_id');
     }
 
     /**
@@ -127,7 +118,7 @@ class ForumThread extends Model
      */
     public function getUrlAttribute(): string
     {
-        return "/forum/{$this->forum->slug}/{$this->slug}";
+        return "/forum/{$this->category->term->slug}/{$this->slug}";
     }
 
     /**
@@ -221,7 +212,5 @@ class ForumThread extends Model
             'last_post_user_id' => $post->user_id,
             'last_post_at' => $post->created_at,
         ]);
-
-        $this->forum->updateStatistics();
     }
 }

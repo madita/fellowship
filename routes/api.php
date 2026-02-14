@@ -32,11 +32,11 @@ Route::get('/activity', 'App\Http\Controllers\ActivityController@index');
 Route::group(['middleware' => ['auth:sanctum']], function () {
     // Forum management (admin only)
     Route::post('/forums', 'App\Http\Controllers\ForumController@store');
-    Route::patch('/forums/{forum}', 'App\Http\Controllers\ForumController@update');
-    Route::delete('/forums/{forum}', 'App\Http\Controllers\ForumController@destroy');
+    Route::patch('/forums/{id}', 'App\Http\Controllers\ForumController@update');
+    Route::delete('/forums/{id}', 'App\Http\Controllers\ForumController@destroy');
 
     // Thread management
-    Route::post('/forums/{forum}/threads', 'App\Http\Controllers\ForumThreadController@store');
+    Route::post('/forums/{id}/threads', 'App\Http\Controllers\ForumThreadController@store');
     Route::patch('/threads/{thread}', 'App\Http\Controllers\ForumThreadController@update');
     Route::delete('/threads/{thread}', 'App\Http\Controllers\ForumThreadController@destroy');
 

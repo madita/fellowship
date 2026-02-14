@@ -44,7 +44,6 @@ class ForumPost extends Model
             $post->thread->update([
                 'reply_count' => $post->thread->posts()->count(),
             ]);
-            $post->thread->forum->updateStatistics();
         });
     }
 

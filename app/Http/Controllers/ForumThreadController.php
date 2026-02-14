@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Forum\Forum;
 use App\Models\Forum\ForumPostLike;
 use App\Models\Forum\ForumThread;
+use App\Models\Tag\Taxonomy;
 use App\Services\SpamDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,10 +20,12 @@ class ForumThreadController extends Controller
         $user = Auth::user();
 
         $thread = ForumThread::where('slug', $threadSlug)
-            ->with(['forum', 'author'])
+            ->with(['category.term', 'author'])
             ->firstOrFail();
 
-        if (!$thread->forum->canAccess($user)) {
+        // Check access via category properties
+        $category = $thread->category;
+        if (($category->properties['is_private'] ?? false) && (!$user || !$user->isAdmin())) {
             abort(403, 'You do not have permission to access this thread.');
         }
 
@@ -82,7 +84,7 @@ class ForumThreadController extends Controller
      */
     public function store(
         Request $request,
-        Forum $forum,
+        int $id,
         SpamDetectionService $spamService
     ): JsonResponse {
         $user = Auth::user();
@@ -91,11 +93,14 @@ class ForumThreadController extends Controller
             abort(401, 'You must be logged in to create a thread.');
         }
 
-        if (!$forum->canAccess($user)) {
+        $category = Taxonomy::taxonomy('forum_cat')->findOrFail($id);
+
+        // Check access
+        if (($category->properties['is_private'] ?? false) && !$user->isAdmin()) {
             abort(403, 'You do not have permission to post in this forum.');
         }
 
-        if ($forum->is_locked && !$user->isAdmin()) {
+        if (($category->properties['is_locked'] ?? false) && !$user->isAdmin()) {
             abort(403, 'This forum is locked.');
         }
 
@@ -110,7 +115,7 @@ class ForumThreadController extends Controller
             abort($spamResult['status'], $spamResult['message']);
         }
 
-        $thread = $forum->threads()->create([
+        $thread = $category->forumThreads()->create([
             'user_id' => $user->id,
             'title' => $validated['title'],
             'body' => $validated['body'],
@@ -123,7 +128,7 @@ class ForumThreadController extends Controller
         activity('forum')
             ->performedOn($thread)
             ->causedBy($user)
-            ->withProperties(['thread_title' => $thread->title, 'forum_name' => $forum->name])
+            ->withProperties(['thread_title' => $thread->title, 'forum_name' => $category->term->title])
             ->event('thread_created')
             ->log('created a new thread');
 

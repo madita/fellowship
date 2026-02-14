@@ -55,8 +55,16 @@ export const useForumStore = defineStore('forum', {
 
                 const response = await axios.get(`/api/forums/${slug}`, { params })
                 this.currentForum = response.data.forum
-                this.threads = response.data.threads.data
-                this.threadsPagination = response.data.threads.meta || {}
+                const threadsResponse = response.data.threads
+                this.threads = threadsResponse.data || []
+                this.threadsPagination = {
+                    current_page: threadsResponse.current_page,
+                    last_page: threadsResponse.last_page,
+                    per_page: threadsResponse.per_page,
+                    total: threadsResponse.total,
+                    from: threadsResponse.from,
+                    to: threadsResponse.to,
+                }
             } catch (error) {
                 this.error = error.response?.data?.message || 'Failed to load forum'
                 throw error
@@ -73,8 +81,16 @@ export const useForumStore = defineStore('forum', {
                     params: { page }
                 })
                 this.currentThread = response.data.thread
-                this.posts = response.data.posts.data
-                this.postsPagination = response.data.posts.meta || {}
+                const postsResponse = response.data.posts
+                this.posts = postsResponse.data || []
+                this.postsPagination = {
+                    current_page: postsResponse.current_page,
+                    last_page: postsResponse.last_page,
+                    per_page: postsResponse.per_page,
+                    total: postsResponse.total,
+                    from: postsResponse.from,
+                    to: postsResponse.to,
+                }
                 this.threadPermissions = {
                     can_reply: response.data.can_reply ?? false,
                     can_edit: response.data.can_edit ?? false,
@@ -302,8 +318,12 @@ export const useForumStore = defineStore('forum', {
         async fetchActivities(page = 1) {
             try {
                 const response = await axios.get('/api/activity', { params: { page, log: 'forum' } })
-                this.activities = response.data.data
-                this.activitiesPagination = response.data.meta || {}
+                this.activities = response.data.data || []
+                this.activitiesPagination = {
+                    current_page: response.data.current_page,
+                    last_page: response.data.last_page,
+                    total: response.data.total,
+                }
             } catch (error) {
                 console.error('Failed to load activities:', error)
             }
