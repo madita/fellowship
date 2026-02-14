@@ -192,14 +192,14 @@ class EventController extends Controller
             $guestRecord = $event->allUsers()
                 ->where('user_id', $user->id)
                 ->first();
-            
+
             if ($guestRecord !== null) {
-                $isGoing = (object)[
-                    'id' => $guestRecord->pivot->id ?? null,
-                    'event_id' => $guestRecord->pivot->event_id ?? $event->id,
-                    'user_id' => $user->id,
-                    'type' => $guestRecord->pivot->type ?? null,
-                    'profile' => json_decode($guestRecord->pivot->profile ?? '{}'),
+                $isGoing = (object) [
+                    'id'         => $guestRecord->pivot->id ?? null,
+                    'event_id'   => $guestRecord->pivot->event_id ?? $event->id,
+                    'user_id'    => $user->id,
+                    'type'       => $guestRecord->pivot->type ?? null,
+                    'profile'    => json_decode($guestRecord->pivot->profile ?? '{}'),
                     'created_at' => $guestRecord->pivot->created_at ?? null,
                     'updated_at' => $guestRecord->pivot->updated_at ?? null,
                 ];

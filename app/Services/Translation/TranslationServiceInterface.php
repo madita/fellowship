@@ -11,9 +11,9 @@ interface TranslationServiceInterface
      * @param string $targetLocale The locale to translate to (e.g., 'de', 'fr')
      * @param string $sourceLocale The source locale (default: 'en')
      *
-     * @return string The translated text
-     *
      * @throws \App\Exceptions\TranslationException
+     *
+     * @return string The translated text
      */
     public function translate(string $text, string $targetLocale, string $sourceLocale = 'en'): string;
 
@@ -24,9 +24,9 @@ interface TranslationServiceInterface
      * @param string $targetLocale The locale to translate to
      * @param string $sourceLocale The source locale (default: 'en')
      *
-     * @return array Array of translated texts in the same order
-     *
      * @throws \App\Exceptions\TranslationException
+     *
+     * @return array Array of translated texts in the same order
      */
     public function translateBatch(array $texts, string $targetLocale, string $sourceLocale = 'en'): array;
 

@@ -175,6 +175,7 @@ class ModelTranslationController extends Controller
         $translations = $request->input('translations', []);
 
         DB::beginTransaction();
+
         try {
             foreach ($translations as $locale => $fields) {
                 if (!in_array($locale, $this->getLocales())) {
@@ -461,6 +462,7 @@ class ModelTranslationController extends Controller
         $errors = [];
 
         DB::beginTransaction();
+
         try {
             foreach ($items as $itemData) {
                 $item = $modelClass::withoutGlobalScopes()->find($itemData['id']);
