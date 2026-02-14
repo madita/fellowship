@@ -15,7 +15,6 @@ use DateTime;
 //use Lecturize\Taxonomies\Models\Term;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class EventController extends Controller
 {
@@ -189,9 +188,21 @@ class EventController extends Controller
         if (auth()->user()) {
             /** @var User $user */
             $user = auth()->user();
-            $isGoing = DB::table('event_guests')->where('event_id', '=', $event->id)->where('user_id', '=', $user->id)->first();
-            if ($isGoing !== null) {
-                $isGoing->profile = json_decode($isGoing->profile);
+            // Use Eloquent relationship instead of raw DB query
+            $guestRecord = $event->allUsers()
+                ->where('user_id', $user->id)
+                ->first();
+
+            if ($guestRecord !== null) {
+                $isGoing = (object) [
+                    'id'         => $guestRecord->pivot->id ?? null,
+                    'event_id'   => $guestRecord->pivot->event_id ?? $event->id,
+                    'user_id'    => $user->id,
+                    'type'       => $guestRecord->pivot->type ?? null,
+                    'profile'    => json_decode($guestRecord->pivot->profile ?? '{}'),
+                    'created_at' => $guestRecord->pivot->created_at ?? null,
+                    'updated_at' => $guestRecord->pivot->updated_at ?? null,
+                ];
             }
         }
 
