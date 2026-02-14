@@ -33,6 +33,13 @@ class ForumController extends Controller
             ])
             ->orderBy('sort')
             ->get()
+            ->each(function ($cat) {
+                $latestThread = $cat->forumThreads()
+                    ->orderByDesc('last_post_at')
+                    ->with('lastPostUser')
+                    ->first();
+                $cat->setRelation('latestThread', $latestThread);
+            })
             ->filter(function ($cat) use ($user) {
                 if ($cat->properties['is_private'] ?? false) {
                     return $user && $user->isAdmin();
@@ -251,6 +258,15 @@ class ForumController extends Controller
             'threads_count' => $cat->forum_threads_count ?? 0,
             'posts_count'   => $cat->forum_posts_count ?? 0,
             'last_post_at'  => $cat->latest_post_at ?? null,
+            'lastPost'      => $cat->relationLoaded('latestThread') && $cat->latestThread
+                ? [
+                    'author' => $cat->latestThread->lastPostUser ? [
+                        'id'       => $cat->latestThread->lastPostUser->id,
+                        'username' => $cat->latestThread->lastPostUser->username,
+                        'avatar'   => $cat->latestThread->lastPostUser->avatar ?? null,
+                    ] : null,
+                ]
+                : null,
             'children'      => $cat->relationLoaded('children')
                 ? $cat->children->map(fn($c) => $this->transformCategory($c))->values()
                 : [],
