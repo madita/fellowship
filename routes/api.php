@@ -332,3 +332,26 @@ Route::post('/login', function (Request $request) {
 
     return response($response, 201);
 });
+
+
+// IRC Client Routes
+Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {
+    // Connections
+    Route::get('/connections', 'App\Http\Controllers\IrcController@getConnections');
+    Route::post('/connections', 'App\Http\Controllers\IrcController@createConnection');
+    Route::patch('/connections/{connection}', 'App\Http\Controllers\IrcController@updateConnection');
+    Route::delete('/connections/{connection}', 'App\Http\Controllers\IrcController@deleteConnection');
+    Route::post('/connections/{connection}/connect', 'App\Http\Controllers\IrcController@connect');
+    Route::post('/connections/{connection}/disconnect', 'App\Http\Controllers\IrcController@disconnect');
+    
+    // Channels
+    Route::get('/connections/{connection}/channels', 'App\Http\Controllers\IrcController@getServerChannels');
+    Route::post('/connections/{connection}/join', 'App\Http\Controllers\IrcController@joinChannel');
+    Route::post('/channels/{channel}/part', 'App\Http\Controllers\IrcController@partChannel');
+    Route::post('/channels/{channel}/favorite', 'App\Http\Controllers\IrcController@toggleFavorite');
+    
+    // Messages
+    Route::get('/channels/{channel}/messages', 'App\Http\Controllers\IrcController@getChannelMessages');
+    Route::post('/channels/{channel}/messages', 'App\Http\Controllers\IrcController@sendMessage');
+    Route::get('/connections/{connection}/unread', 'App\Http\Controllers\IrcController@getUnreadCount');
+});
