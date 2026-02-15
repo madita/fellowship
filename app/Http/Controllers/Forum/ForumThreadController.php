@@ -37,22 +37,16 @@ class ForumThreadController extends Controller
             session()->put($viewedKey, true);
         }
 
-        // Get posts with pagination
+        // Get all posts flat, ordered by creation date
         $posts = $thread->posts()
-            ->with(['author', 'replies.author'])
-            ->whereNull('parent_id') // Only top-level posts
+            ->with(['author'])
+            ->orderBy('created_at')
             ->paginate(20);
 
         // Batch query liked post IDs for the authenticated user
         $likedPostIds = [];
         if ($user) {
             $postIds = collect($posts->items())->pluck('id');
-            // Also include nested reply IDs
-            foreach ($posts->items() as $post) {
-                if ($post->replies) {
-                    $postIds = $postIds->merge($post->replies->pluck('id'));
-                }
-            }
             $likedPostIds = ForumPostLike::where('user_id', $user->id)
                 ->whereIn('post_id', $postIds)
                 ->pluck('post_id')
@@ -63,11 +57,6 @@ class ForumThreadController extends Controller
         $postsData = $posts->toArray();
         foreach ($postsData['data'] as &$postData) {
             $postData['is_liked'] = in_array($postData['id'], $likedPostIds);
-            if (!empty($postData['replies'])) {
-                foreach ($postData['replies'] as &$reply) {
-                    $reply['is_liked'] = in_array($reply['id'], $likedPostIds);
-                }
-            }
         }
 
         return response()->json([

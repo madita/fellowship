@@ -4568,6 +4568,8 @@ export default {
         'noThreadResults': 'Keine Themen gefunden.',
         'noPostResults': 'Keine Beiträge gefunden.',
         'noSearchResults': 'Keine Ergebnisse gefunden',
-        'replyIn': 'antwortete in'
+        'replyIn': 'antwortete in',
+        'viewChronological': 'Chronologisch',
+        'viewThreaded': 'Verschachtelt'
     }
 }

@@ -129,10 +129,22 @@
                     </v-card-text>
                 </v-card>
 
+                <!-- Post View Toggle -->
+                <div class="d-flex align-center mb-4">
+                    <v-btn-toggle v-model="postViewMode" mandatory density="compact" variant="outlined" color="primary">
+                        <v-btn value="chronological" prepend-icon="mdi-sort-clock-ascending-outline" size="small">
+                            {{ $t('forum.viewChronological') }}
+                        </v-btn>
+                        <v-btn value="threaded" prepend-icon="mdi-file-tree-outline" size="small">
+                            {{ $t('forum.viewThreaded') }}
+                        </v-btn>
+                    </v-btn-toggle>
+                </div>
+
                 <!-- Posts -->
-                <div v-if="forumStore.posts.length > 0" class="mb-6">
+                <div v-if="displayPosts.length > 0" class="mb-6">
                     <ForumPostItem
-                        v-for="post in forumStore.topLevelPosts"
+                        v-for="post in displayPosts"
                         :key="post.id"
                         :post="post"
                         :thread="forumStore.currentThread"
@@ -141,7 +153,7 @@
                         :thread-locked="forumStore.currentThread.is_locked"
                         @mark-solution="onMarkSolution"
                         @delete-post="onDeletePost"
-                        @create-reply="onCreateReply"
+                        @quote-reply="onQuoteReply"
                         @update-post="onUpdatePost"
                         @toggle-like="onToggleLike"
                     />
@@ -166,6 +178,7 @@
                 <!-- Reply Form -->
                 <v-card
                     v-if="forumStore.threadPermissions.can_reply && !forumStore.currentThread.is_locked"
+                    ref="replyCard"
                     class="reply-card"
                     variant="elevated"
                 >
@@ -253,6 +266,8 @@ export default {
         return {
             currentPage: 1,
             replyBody: '',
+            replyParentId: null,
+            postViewMode: 'chronological',
             editingThread: false,
             editThreadTitle: '',
             editThreadBody: '',
@@ -262,6 +277,35 @@ export default {
     computed: {
         currentUser() {
             return this.userStore.user
+        },
+        displayPosts() {
+            if (this.postViewMode === 'threaded') {
+                return this.threadedPosts
+            }
+            return this.forumStore.posts
+        },
+        threadedPosts() {
+            const posts = this.forumStore.posts
+            if (!posts || !posts.length) return []
+
+            const map = {}
+            const roots = []
+
+            // Index all posts by id
+            for (const post of posts) {
+                map[post.id] = { ...post, children: [] }
+            }
+
+            // Build the tree
+            for (const post of posts) {
+                if (post.parent_id && map[post.parent_id]) {
+                    map[post.parent_id].children.push(map[post.id])
+                } else {
+                    roots.push(map[post.id])
+                }
+            }
+
+            return roots
         }
     },
     watch: {
@@ -291,19 +335,31 @@ export default {
             try {
                 await this.forumStore.createPost(this.forumStore.currentThread.id, {
                     body: this.replyBody,
-                    parent_id: null
+                    parent_id: this.replyParentId
                 })
                 this.replyBody = ''
+                this.replyParentId = null
             } catch (error) {
                 console.error('Failed to submit reply:', error)
             }
         },
-        async onCreateReply({ body, parent_id }) {
-            try {
-                await this.forumStore.createPost(this.forumStore.currentThread.id, { body, parent_id })
-            } catch (error) {
-                console.error('Failed to create reply:', error)
-            }
+        onQuoteReply({ postId, username, body }) {
+            this.replyParentId = postId
+
+            // Strip HTML to get plain text for the quote, then truncate
+            const tmp = document.createElement('div')
+            tmp.innerHTML = body
+            const plainText = tmp.textContent || tmp.innerText || ''
+            const snippet = plainText.length > 200 ? plainText.substring(0, 200) + '...' : plainText
+
+            const quote = `<blockquote><div class="quote-author">@${username}</div><p>${snippet}</p></blockquote><p></p>`
+            this.replyBody = quote
+
+            this.$nextTick(() => {
+                if (this.$refs.replyCard?.$el) {
+                    this.$refs.replyCard.$el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }
+            })
         },
         async onUpdatePost({ postId, body }) {
             try {

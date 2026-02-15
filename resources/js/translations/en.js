@@ -4384,6 +4384,8 @@ export default {
         'noThreadResults': 'No threads match your search.',
         'noPostResults': 'No posts match your search.',
         'noSearchResults': 'No results found',
-        'replyIn': 'replied in'
+        'replyIn': 'replied in',
+        'viewChronological': 'Chronological',
+        'viewThreaded': 'Threaded'
     }
 }

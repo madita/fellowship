@@ -169,25 +169,7 @@ export const useForumStore = defineStore('forum', {
             try {
                 const response = await axios.post(`/api/threads/${threadId}/posts`, { body, parent_id })
                 const newPost = response.data
-
-                if (parent_id) {
-                    // Add as nested reply
-                    const addReply = (posts) => {
-                        for (const post of posts) {
-                            if (post.id === parent_id) {
-                                if (!post.replies) post.replies = []
-                                post.replies.push(newPost)
-                                return true
-                            }
-                            if (post.replies && addReply(post.replies)) return true
-                        }
-                        return false
-                    }
-                    addReply(this.posts)
-                } else {
-                    this.posts.push(newPost)
-                }
-
+                this.posts.push(newPost)
                 return newPost
             } catch (error) {
                 this.error = error.response?.data?.message || 'Failed to create post'
@@ -204,17 +186,10 @@ export const useForumStore = defineStore('forum', {
                 const response = await axios.patch(`/api/posts/${postId}`, { body })
                 const updated = response.data
 
-                const updateInList = (posts) => {
-                    for (let i = 0; i < posts.length; i++) {
-                        if (posts[i].id === postId) {
-                            posts[i] = { ...posts[i], ...updated }
-                            return true
-                        }
-                        if (posts[i].replies && updateInList(posts[i].replies)) return true
-                    }
-                    return false
+                const idx = this.posts.findIndex(p => p.id === postId)
+                if (idx !== -1) {
+                    this.posts[idx] = { ...this.posts[idx], ...updated }
                 }
-                updateInList(this.posts)
 
                 return updated
             } catch (error) {
@@ -230,18 +205,7 @@ export const useForumStore = defineStore('forum', {
             this.error = null
             try {
                 await axios.delete(`/api/posts/${postId}`)
-
-                const removeFromList = (posts) => {
-                    for (let i = 0; i < posts.length; i++) {
-                        if (posts[i].id === postId) {
-                            posts.splice(i, 1)
-                            return true
-                        }
-                        if (posts[i].replies && removeFromList(posts[i].replies)) return true
-                    }
-                    return false
-                }
-                removeFromList(this.posts)
+                this.posts = this.posts.filter(p => p.id !== postId)
             } catch (error) {
                 this.error = error.response?.data?.message || 'Failed to delete post'
                 throw error
@@ -258,17 +222,9 @@ export const useForumStore = defineStore('forum', {
                 const updatedPost = response.data.post
 
                 // Clear previous solution and set new one
-                const updateSolution = (posts) => {
-                    for (const post of posts) {
-                        if (post.id === updatedPost.id) {
-                            post.is_solution = updatedPost.is_solution
-                        } else {
-                            post.is_solution = false
-                        }
-                        if (post.replies) updateSolution(post.replies)
-                    }
+                for (const post of this.posts) {
+                    post.is_solution = post.id === updatedPost.id ? updatedPost.is_solution : false
                 }
-                updateSolution(this.posts)
 
                 return updatedPost
             } catch (error) {
@@ -299,18 +255,7 @@ export const useForumStore = defineStore('forum', {
         },
 
         async toggleLike(postId) {
-            const findPost = (posts) => {
-                for (const post of posts) {
-                    if (post.id === postId) return post
-                    if (post.replies) {
-                        const found = findPost(post.replies)
-                        if (found) return found
-                    }
-                }
-                return null
-            }
-
-            const post = findPost(this.posts)
+            const post = this.posts.find(p => p.id === postId)
             if (!post) return
 
             try {

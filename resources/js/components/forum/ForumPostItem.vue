@@ -64,7 +64,7 @@
                     size="small"
                     variant="text"
                     prepend-icon="mdi-reply"
-                    @click="toggleReplyForm"
+                    @click="onReplyClick"
                 >
                     {{ $t('forum.reply') }}
                 </v-btn>
@@ -101,35 +101,12 @@
             </v-card-actions>
         </v-card>
 
-        <!-- Inline Reply Form -->
-        <div v-if="showReplyForm" class="reply-form ml-6 mb-3">
-            <Tiptap v-model="replyBody" type="simple" />
-            <div class="d-flex gap-2 mt-2">
-                <v-btn
-                    color="primary"
-                    size="small"
-                    :loading="submitting"
-                    :disabled="!replyBody?.trim()"
-                    @click="submitReply"
-                >
-                    {{ $t('forum.reply') }}
-                </v-btn>
-                <v-btn
-                    variant="text"
-                    size="small"
-                    @click="showReplyForm = false; replyBody = ''"
-                >
-                    {{ $t('forum.cancel') }}
-                </v-btn>
-            </div>
-        </div>
-
-        <!-- Nested Replies -->
-        <div v-if="post.replies && post.replies.length && depth < 3" class="nested-replies" style="margin-left: 24px;">
+        <!-- Nested Replies (threaded mode only) -->
+        <div v-if="post.children && post.children.length" class="nested-replies" :style="{ marginLeft: depth < 4 ? '24px' : '0' }">
             <ForumPostItem
-                v-for="reply in post.replies"
-                :key="reply.id"
-                :post="reply"
+                v-for="child in post.children"
+                :key="child.id"
+                :post="child"
                 :thread="thread"
                 :current-user="currentUser"
                 :can-reply="canReply"
@@ -137,26 +114,7 @@
                 :depth="depth + 1"
                 @mark-solution="$emit('mark-solution', $event)"
                 @delete-post="$emit('delete-post', $event)"
-                @create-reply="$emit('create-reply', $event)"
-                @update-post="$emit('update-post', $event)"
-                @toggle-like="$emit('toggle-like', $event)"
-            />
-        </div>
-
-        <!-- Flat nested replies at max depth -->
-        <div v-else-if="post.replies && post.replies.length && depth >= 3" class="nested-replies" style="margin-left: 24px;">
-            <ForumPostItem
-                v-for="reply in post.replies"
-                :key="reply.id"
-                :post="reply"
-                :thread="thread"
-                :current-user="currentUser"
-                :can-reply="canReply"
-                :thread-locked="threadLocked"
-                :depth="depth"
-                @mark-solution="$emit('mark-solution', $event)"
-                @delete-post="$emit('delete-post', $event)"
-                @create-reply="$emit('create-reply', $event)"
+                @quote-reply="$emit('quote-reply', $event)"
                 @update-post="$emit('update-post', $event)"
                 @toggle-like="$emit('toggle-like', $event)"
             />
@@ -188,11 +146,9 @@ export default {
         threadLocked: { type: Boolean, default: false },
         depth: { type: Number, default: 0 }
     },
-    emits: ['mark-solution', 'delete-post', 'create-reply', 'update-post', 'toggle-like'],
+    emits: ['mark-solution', 'delete-post', 'quote-reply', 'update-post', 'toggle-like'],
     data() {
         return {
-            showReplyForm: false,
-            replyBody: '',
             editing: false,
             editBody: '',
             showDeleteDialog: false,
@@ -212,7 +168,6 @@ export default {
         canEdit() {
             if (this.isAdmin) return true
             if (!this.isAuthor) return false
-            // Authors can edit within 1 hour
             const created = new Date(this.post.created_at)
             const hourAgo = new Date(Date.now() - 60 * 60 * 1000)
             return created > hourAgo
@@ -228,25 +183,12 @@ export default {
         formatDateDistance(date) {
             return formatDateDistanceToNow(date)
         },
-        toggleReplyForm() {
-            this.showReplyForm = !this.showReplyForm
-            if (this.showReplyForm) {
-                this.replyBody = ''
-            }
-        },
-        async submitReply() {
-            if (!this.replyBody?.trim()) return
-            this.submitting = true
-            try {
-                this.$emit('create-reply', {
-                    body: this.replyBody,
-                    parent_id: this.post.id
-                })
-                this.showReplyForm = false
-                this.replyBody = ''
-            } finally {
-                this.submitting = false
-            }
+        onReplyClick() {
+            this.$emit('quote-reply', {
+                postId: this.post.id,
+                username: this.post.author?.username || '',
+                body: this.post.body
+            })
         },
         startEdit() {
             this.editing = true
@@ -296,8 +238,19 @@ export default {
     height: auto;
 }
 
-.reply-form {
-    padding: 8px 0;
+.post-body :deep(blockquote) {
+    border-left: 3px solid rgba(var(--v-theme-primary), 0.5);
+    padding: 8px 16px;
+    margin: 8px 0;
+    background: rgba(var(--v-theme-primary), 0.05);
+    border-radius: 0 8px 8px 0;
+}
+
+.post-body :deep(blockquote .quote-author) {
+    font-weight: 600;
+    font-size: 0.85em;
+    margin-bottom: 4px;
+    color: rgb(var(--v-theme-primary));
 }
 
 .gap-2 {
