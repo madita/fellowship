@@ -26,6 +26,7 @@ Route::middleware(['cache.control'])->group(function () {
 // Forum Routes (public read, auth for write)
 Route::get('/forums', 'App\Http\Controllers\Forum\ForumController@index');
 Route::get('/forums/search', 'App\Http\Controllers\Forum\ForumSearchController@search');
+Route::get('/forums/recent-threads', 'App\Http\Controllers\Forum\ForumController@recentThreads');
 Route::get('/forums/{slug}', 'App\Http\Controllers\Forum\ForumController@show');
 Route::get('/forums/{forumSlug}/threads/{threadSlug}', 'App\Http\Controllers\Forum\ForumThreadController@show');
 Route::get('/activity', 'App\Http\Controllers\ActivityController@index');

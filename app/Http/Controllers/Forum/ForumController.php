@@ -242,6 +242,73 @@ class ForumController extends Controller
     }
 
     /**
+     * Get the newest threads across all categories (including child categories).
+     * Supports ?filter=popular|unanswered|mine
+     */
+    public function recentThreads(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        // Exclude private categories and their children for non-admins
+        $excludeIds = [];
+        if (!$user || !$user->isAdmin()) {
+            $privateCats = Taxonomy::taxonomy('forum_cat')
+                ->get()
+                ->filter(fn($cat) => $cat->properties['is_private'] ?? false);
+
+            foreach ($privateCats as $cat) {
+                $excludeIds[] = $cat->id;
+                // Also exclude child categories of private parents
+                $childIds = Taxonomy::taxonomy('forum_cat')
+                    ->where('parent_id', $cat->id)
+                    ->pluck('id')
+                    ->all();
+                $excludeIds = array_merge($excludeIds, $childIds);
+            }
+        }
+
+        $query = ForumThread::with(['author', 'category.term', 'lastPostUser'])
+            ->withCount('posts');
+
+        if (!empty($excludeIds)) {
+            $query->whereNotIn('taxonomy_id', $excludeIds);
+        }
+
+        // Apply filter
+        $filter = $request->query('filter');
+        switch ($filter) {
+            case 'popular':
+                $query->orderByDesc('reply_count');
+                break;
+            case 'unanswered':
+                $query->where('reply_count', 0);
+                break;
+            case 'mine':
+                if ($user) {
+                    $query->where('user_id', $user->id);
+                }
+                break;
+        }
+
+        // Default sort by newest unless popular filter already sorts
+        if ($filter !== 'popular') {
+            $query->orderByDesc('created_at');
+        }
+
+        $threads = $query->paginate(15);
+
+        // Transform to include category color
+        $threads->getCollection()->transform(function ($thread) {
+            $thread->category_name = $thread->category?->term?->title;
+            $thread->category_slug = $thread->category?->term?->slug;
+            $thread->category_color = $thread->category?->color;
+            return $thread;
+        });
+
+        return response()->json($threads);
+    }
+
+    /**
      * Transform a Taxonomy into the forum category API shape.
      */
     private function transformCategory(Taxonomy $cat): array
@@ -253,6 +320,7 @@ class ForumController extends Controller
             'description'   => $cat->description,
             'parent_id'     => $cat->parent_id,
             'position'      => $cat->sort,
+            'color'         => $cat->color,
             'is_private'    => $cat->properties['is_private'] ?? false,
             'is_locked'     => $cat->properties['is_locked'] ?? false,
             'threads_count' => $cat->forum_threads_count ?? 0,

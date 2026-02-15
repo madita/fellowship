@@ -31,8 +31,20 @@
 
         <!-- Content Section -->
         <v-container>
+            <!-- View Toggle -->
+            <div class="d-flex align-center mb-4">
+                <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" color="primary">
+                    <v-btn value="categories" prepend-icon="mdi-forum">
+                        {{ $t('forum.forums') }}
+                    </v-btn>
+                    <v-btn value="threads" prepend-icon="mdi-message-text-outline">
+                        {{ $t('forum.recentThreadsLabel') }}
+                    </v-btn>
+                </v-btn-toggle>
+            </div>
+
             <!-- Loading State -->
-            <div v-if="forumStore.loading" class="text-center py-12">
+            <div v-if="isLoading" class="text-center py-12">
                 <v-progress-circular
                     size="64"
                     width="4"
@@ -41,107 +53,215 @@
                     class="mb-4"
                 />
                 <p class="text-body-1 text-medium-emphasis">
-                    {{ $t('forum.loadingForums') }}
+                    {{ viewMode === 'categories' ? $t('forum.loadingForums') : $t('forum.loadingThreads') }}
                 </p>
             </div>
 
-            <!-- Forum List -->
-            <div v-else-if="forumStore.forums.length > 0">
-                <v-card
-                    v-for="forum in forumStore.forums"
-                    :key="forum.id"
-                    class="forum-card mb-4"
-                    variant="elevated"
-                    @click="goToForum(forum)"
-                >
-                    <v-card-text>
-                        <v-row align="center">
-                            <v-col cols="12" md="6">
-                                <div class="d-flex align-center">
-                                    <v-avatar color="primary" size="48" class="mr-4">
-                                        <v-icon color="white" size="24">mdi-forum</v-icon>
-                                    </v-avatar>
-                                    <div>
-                                        <div class="d-flex align-center gap-2 mb-1">
-                                            <h3 class="text-h6 font-weight-bold">{{ forum.name }}</h3>
-                                            <v-chip
-                                                v-if="forum.is_locked"
-                                                size="x-small"
-                                                color="warning"
-                                                prepend-icon="mdi-lock"
-                                            >
-                                                {{ $t('forum.locked') }}
-                                            </v-chip>
-                                            <v-chip
-                                                v-if="forum.is_private"
-                                                size="x-small"
-                                                color="info"
-                                                prepend-icon="mdi-lock-outline"
-                                            >
-                                                {{ $t('forum.private') }}
-                                            </v-chip>
-                                        </div>
-                                        <p v-if="forum.description" class="text-body-2 text-medium-emphasis mb-0">
-                                            {{ forum.description }}
-                                        </p>
-                                        <!-- Sub-forums -->
-                                        <div v-if="forum.children && forum.children.length" class="mt-2">
-                                            <v-chip
-                                                v-for="child in forum.children"
-                                                :key="child.id"
-                                                size="small"
-                                                variant="tonal"
-                                                class="mr-1 mb-1"
-                                                @click.stop="goToForum(child)"
-                                            >
-                                                {{ child.name }}
-                                            </v-chip>
-                                        </div>
-                                    </div>
-                                </div>
-                            </v-col>
-
-                            <!-- Stats -->
-                            <v-col cols="6" md="2" class="text-center">
-                                <div class="text-h6 font-weight-bold">{{ forum.threads_count || 0 }}</div>
-                                <div class="text-caption text-medium-emphasis">{{ $t('forum.threads') }}</div>
-                            </v-col>
-                            <v-col cols="6" md="2" class="text-center">
-                                <div class="text-h6 font-weight-bold">{{ forum.posts_count || 0 }}</div>
-                                <div class="text-caption text-medium-emphasis">{{ $t('forum.posts') }}</div>
-                            </v-col>
-
-                            <!-- Last Post Info -->
-                            <v-col cols="12" md="2">
-                                <div v-if="forum.lastPost" class="d-flex align-center">
-                                    <UserAvatar v-if="forum.lastPost.author" :user="forum.lastPost.author" />
-                                    <div class="ml-2">
-                                        <div class="text-caption font-weight-medium">
-                                            {{ forum.lastPost.author?.username }}
-                                        </div>
-                                        <div class="text-caption text-medium-emphasis">
-                                            {{ formatDateDistance(forum.last_post_at) }}
+            <!-- ========== CATEGORIES VIEW ========== -->
+            <template v-if="viewMode === 'categories' && !isLoading">
+                <div v-if="forumStore.forums.length > 0">
+                    <v-card
+                        v-for="forum in forumStore.forums"
+                        :key="forum.id"
+                        class="forum-card mb-4"
+                        variant="elevated"
+                        @click="goToForum(forum)"
+                    >
+                        <v-card-text>
+                            <v-row align="center">
+                                <v-col cols="12" md="6">
+                                    <div class="d-flex align-center">
+                                        <v-avatar :color="forum.color || 'primary'" size="48" class="mr-4">
+                                            <v-icon color="white" size="24">mdi-forum</v-icon>
+                                        </v-avatar>
+                                        <div>
+                                            <div class="d-flex align-center gap-2 mb-1">
+                                                <h3 class="text-h6 font-weight-bold">{{ forum.name }}</h3>
+                                                <v-chip
+                                                    v-if="forum.is_locked"
+                                                    size="x-small"
+                                                    color="warning"
+                                                    prepend-icon="mdi-lock"
+                                                >
+                                                    {{ $t('forum.locked') }}
+                                                </v-chip>
+                                                <v-chip
+                                                    v-if="forum.is_private"
+                                                    size="x-small"
+                                                    color="info"
+                                                    prepend-icon="mdi-lock-outline"
+                                                >
+                                                    {{ $t('forum.private') }}
+                                                </v-chip>
+                                            </div>
+                                            <p v-if="forum.description" class="text-body-2 text-medium-emphasis mb-0">
+                                                {{ forum.description }}
+                                            </p>
+                                            <!-- Sub-forums -->
+                                            <div v-if="forum.children && forum.children.length" class="mt-2">
+                                                <v-chip
+                                                    v-for="child in forum.children"
+                                                    :key="child.id"
+                                                    size="small"
+                                                    variant="tonal"
+                                                    class="mr-1 mb-1"
+                                                    @click.stop="goToForum(child)"
+                                                >
+                                                    {{ child.name }}
+                                                </v-chip>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div v-else class="text-caption text-medium-emphasis">
-                                    {{ $t('forum.noThreads') }}
-                                </div>
-                            </v-col>
-                        </v-row>
-                    </v-card-text>
-                </v-card>
-            </div>
+                                </v-col>
 
-            <!-- Empty State -->
-            <div v-else class="empty-state text-center py-12">
-                <v-icon size="120" color="disabled" class="mb-4">mdi-forum-outline</v-icon>
-                <h3 class="text-h5 font-weight-bold mb-2">{{ $t('forum.noForums') }}</h3>
-                <p class="text-body-1 text-medium-emphasis">{{ $t('forum.noForumsDescription') }}</p>
-            </div>
+                                <!-- Stats -->
+                                <v-col cols="6" md="2" class="text-center">
+                                    <div class="text-h6 font-weight-bold">{{ forum.threads_count || 0 }}</div>
+                                    <div class="text-caption text-medium-emphasis">{{ $t('forum.threads') }}</div>
+                                </v-col>
+                                <v-col cols="6" md="2" class="text-center">
+                                    <div class="text-h6 font-weight-bold">{{ forum.posts_count || 0 }}</div>
+                                    <div class="text-caption text-medium-emphasis">{{ $t('forum.posts') }}</div>
+                                </v-col>
+
+                                <!-- Last Post Info -->
+                                <v-col cols="12" md="2">
+                                    <div v-if="forum.lastPost" class="d-flex align-center">
+                                        <UserAvatar v-if="forum.lastPost.author" :user="forum.lastPost.author" />
+                                        <div class="ml-2">
+                                            <div class="text-caption font-weight-medium">
+                                                {{ forum.lastPost.author?.username }}
+                                            </div>
+                                            <div class="text-caption text-medium-emphasis">
+                                                {{ formatDateDistance(forum.last_post_at) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-else class="text-caption text-medium-emphasis">
+                                        {{ $t('forum.noThreads') }}
+                                    </div>
+                                </v-col>
+                            </v-row>
+                        </v-card-text>
+                    </v-card>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else class="empty-state text-center py-12">
+                    <v-icon size="120" color="disabled" class="mb-4">mdi-forum-outline</v-icon>
+                    <h3 class="text-h5 font-weight-bold mb-2">{{ $t('forum.noForums') }}</h3>
+                    <p class="text-body-1 text-medium-emphasis">{{ $t('forum.noForumsDescription') }}</p>
+                </div>
+            </template>
+
+            <!-- ========== RECENT THREADS VIEW ========== -->
+            <template v-if="viewMode === 'threads' && !isLoading">
+                <!-- Filter Chips -->
+                <div class="d-flex flex-wrap align-center gap-2 mb-4">
+                    <v-chip
+                        v-for="f in threadFilters"
+                        :key="f.value"
+                        :variant="activeThreadFilter === f.value ? 'elevated' : 'outlined'"
+                        :color="activeThreadFilter === f.value ? 'primary' : undefined"
+                        size="small"
+                        @click="setThreadFilter(f.value)"
+                    >
+                        {{ f.label }}
+                    </v-chip>
+                </div>
+
+                <div v-if="forumStore.recentThreads.length > 0">
+                    <v-card
+                        v-for="thread in forumStore.recentThreads"
+                        :key="thread.id"
+                        class="thread-card mb-2"
+                        variant="elevated"
+                        @click="goToThread(thread)"
+                    >
+                        <v-card-text class="py-3">
+                            <v-row align="center" no-gutters>
+                                <v-col cols="12" md="5">
+                                    <div class="d-flex align-center">
+                                        <UserAvatar v-if="thread.author" :user="thread.author" />
+                                        <div class="ml-3">
+                                            <div class="d-flex align-center gap-2 mb-1">
+                                                <v-icon v-if="thread.is_pinned" size="16" color="primary">mdi-pin</v-icon>
+                                                <span class="font-weight-bold">{{ thread.title }}</span>
+                                                <v-chip v-if="thread.is_locked" size="x-small" color="warning" prepend-icon="mdi-lock">
+                                                    {{ $t('forum.locked') }}
+                                                </v-chip>
+                                            </div>
+                                            <div class="text-caption text-medium-emphasis">
+                                                {{ $t('forum.startedBy') }} {{ thread.author?.username }}
+                                                &middot; {{ formatDateDistance(thread.created_at) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </v-col>
+                                <!-- Category -->
+                                <v-col cols="12" md="2" class="text-center">
+                                    <v-chip
+                                        size="small"
+                                        variant="tonal"
+                                        :color="thread.category_color || 'primary'"
+                                        @click.stop="goToForum({ slug: thread.category_slug })"
+                                    >
+                                        {{ thread.category_name }}
+                                    </v-chip>
+                                </v-col>
+                                <!-- Posts count -->
+                                <v-col cols="4" md="1" class="text-center">
+                                    <div class="text-body-2 font-weight-medium">{{ thread.posts_count || 0 }}</div>
+                                    <div class="text-caption text-medium-emphasis">{{ $t('forum.posts') }}</div>
+                                </v-col>
+                                <!-- Replies count -->
+                                <v-col cols="4" md="1" class="text-center">
+                                    <div class="text-body-2 font-weight-medium">{{ thread.reply_count || 0 }}</div>
+                                    <div class="text-caption text-medium-emphasis">{{ $t('forum.replies') }}</div>
+                                </v-col>
+                                <!-- Views -->
+                                <v-col cols="4" md="1" class="text-center">
+                                    <div class="text-body-2 font-weight-medium">{{ thread.view_count || 0 }}</div>
+                                    <div class="text-caption text-medium-emphasis">{{ $t('forum.views') }}</div>
+                                </v-col>
+                                <!-- Last post user -->
+                                <v-col cols="12" md="2">
+                                    <div v-if="thread.last_post_user" class="d-flex align-center">
+                                        <UserAvatar :user="thread.last_post_user" />
+                                        <div class="ml-2">
+                                            <div class="text-caption font-weight-medium">{{ thread.last_post_user.username }}</div>
+                                            <div class="text-caption text-medium-emphasis">{{ formatDateDistance(thread.last_post_at) }}</div>
+                                        </div>
+                                    </div>
+                                    <div v-else class="text-caption text-medium-emphasis">
+                                        {{ formatDateDistance(thread.created_at) }}
+                                    </div>
+                                </v-col>
+                            </v-row>
+                        </v-card-text>
+                    </v-card>
+
+                    <!-- Pagination -->
+                    <div v-if="forumStore.recentThreadsPagination.last_page > 1" class="d-flex justify-center mt-6">
+                        <v-pagination
+                            v-model="recentThreadsPage"
+                            :length="forumStore.recentThreadsPagination.last_page"
+                            :total-visible="7"
+                            @update:model-value="onRecentThreadsPageChange"
+                        />
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div v-else class="empty-state text-center py-12">
+                    <v-icon size="120" color="disabled" class="mb-4">mdi-message-text-outline</v-icon>
+                    <h3 class="text-h5 font-weight-bold mb-2">{{ $t('forum.noThreads') }}</h3>
+                    <p class="text-body-1 text-medium-emphasis">{{ $t('forum.noThreadsDescription') }}</p>
+                </div>
+            </template>
 
             <!-- Activity Feed -->
-            <div v-if="forumStore.activities.length > 0" class="mt-6">
+            <div v-if="forumStore.activities.length > 0 && viewMode === 'categories'" class="mt-6">
                 <ForumActivityFeed :activities="forumStore.activities" />
             </div>
 
@@ -177,7 +297,30 @@ export default {
     },
     data() {
         return {
-            searchQuery: ''
+            searchQuery: '',
+            viewMode: 'categories',
+            recentThreadsPage: 1,
+            activeThreadFilter: null
+        }
+    },
+    computed: {
+        isLoading() {
+            return this.viewMode === 'categories' ? this.forumStore.loading : this.forumStore.recentThreadsLoading
+        },
+        threadFilters() {
+            return [
+                { value: null, label: this.$t('forum.allThreads') },
+                { value: 'popular', label: this.$t('forum.popular') },
+                { value: 'unanswered', label: this.$t('forum.unanswered') },
+                { value: 'mine', label: this.$t('forum.myThreads') }
+            ]
+        }
+    },
+    watch: {
+        viewMode(newVal) {
+            if (newVal === 'threads' && this.forumStore.recentThreads.length === 0) {
+                this.loadRecentThreads()
+            }
         }
     },
     mounted() {
@@ -188,10 +331,32 @@ export default {
         goToForum(forum) {
             this.$router.push({ name: 'forum-category', params: { slug: forum.slug } })
         },
+        goToThread(thread) {
+            this.$router.push({
+                name: 'forum-thread',
+                params: {
+                    forumSlug: thread.category_slug,
+                    threadSlug: thread.slug
+                }
+            })
+        },
         goToSearch() {
             if (this.searchQuery && this.searchQuery.trim().length >= 2) {
                 this.$router.push({ name: 'forum-search', query: { q: this.searchQuery.trim() } })
             }
+        },
+        loadRecentThreads() {
+            this.forumStore.fetchRecentThreads(this.recentThreadsPage, { filter: this.activeThreadFilter })
+        },
+        setThreadFilter(value) {
+            this.activeThreadFilter = value
+            this.recentThreadsPage = 1
+            this.loadRecentThreads()
+        },
+        onRecentThreadsPageChange(page) {
+            this.recentThreadsPage = page
+            this.loadRecentThreads()
+            window.scrollTo({ top: 0, behavior: 'smooth' })
         },
         formatDateDistance(date) {
             if (!date) return ''
@@ -237,6 +402,17 @@ export default {
 .forum-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(var(--v-theme-on-surface), 0.12) !important;
+}
+
+.thread-card {
+    border-radius: 12px !important;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.thread-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(var(--v-theme-on-surface), 0.1) !important;
 }
 
 .gap-2 {

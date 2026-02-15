@@ -4559,6 +4559,7 @@ export default {
         'activityPostCreated': 'hat in „{title}" geantwortet',
         'activityPostLiked': 'hat einen Beitrag in „{title}" geliked',
         'activitySolutionMarked': 'hat einen Beitrag in „{title}" als hilfreich markiert',
+        'recentThreadsLabel': 'Neueste Themen',
         'searchPlaceholder': 'Themen und Beiträge durchsuchen...',
         'searchResults': 'Suchergebnisse',
         'searchResultsFor': 'Ergebnisse für „{query}"',

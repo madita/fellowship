@@ -4375,6 +4375,7 @@ export default {
         'activityPostCreated': 'replied in "{title}"',
         'activityPostLiked': 'liked a post in "{title}"',
         'activitySolutionMarked': 'marked a post as helpful in "{title}"',
+        'recentThreadsLabel': 'Recent Threads',
         'searchPlaceholder': 'Search threads and posts...',
         'searchResults': 'Search Results',
         'searchResultsFor': 'Results for "{query}"',

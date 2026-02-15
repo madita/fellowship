@@ -24,7 +24,10 @@ export const useForumStore = defineStore('forum', {
         searchQuery: '',
         searchResults: { threads: null, posts: null },
         searchLoading: false,
-        searchType: 'all'
+        searchType: 'all',
+        recentThreads: [],
+        recentThreadsPagination: {},
+        recentThreadsLoading: false
     }),
 
     getters: {
@@ -322,6 +325,27 @@ export const useForumStore = defineStore('forum', {
             } catch (error) {
                 this.error = error.response?.data?.message || 'Failed to update like'
                 throw error
+            }
+        },
+
+        async fetchRecentThreads(page = 1, { filter } = {}) {
+            this.recentThreadsLoading = true
+            try {
+                const params = { page }
+                if (filter) params.filter = filter
+                const response = await axios.get('/api/forums/recent-threads', { params })
+                this.recentThreads = response.data.data || []
+                this.recentThreadsPagination = {
+                    current_page: response.data.current_page,
+                    last_page: response.data.last_page,
+                    per_page: response.data.per_page,
+                    total: response.data.total,
+                }
+            } catch (error) {
+                this.error = error.response?.data?.message || 'Failed to load recent threads'
+                throw error
+            } finally {
+                this.recentThreadsLoading = false
             }
         },
 
