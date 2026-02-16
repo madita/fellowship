@@ -357,6 +357,12 @@ Route::post('/login', function (Request $request) {
         ], 404);
     }
 
+    $user->update([
+        'previous_login_at' => $user->last_login_at,
+        'last_login_at' => now()->toDateTimeString(),
+        'last_login_ip' => $request->getClientIp(),
+    ]);
+
     $token = $user->createToken('my-app-token')->plainTextToken;
 
     $response = [

@@ -93,6 +93,14 @@
                                                 >
                                                     {{ $t('forum.private') }}
                                                 </v-chip>
+                                                <v-chip
+                                                    v-if="forum.has_unread"
+                                                    size="x-small"
+                                                    color="success"
+                                                    variant="elevated"
+                                                >
+                                                    {{ $t('forum.new') }}
+                                                </v-chip>
                                             </div>
                                             <p v-if="forum.description" class="text-body-2 text-medium-emphasis mb-0">
                                                 {{ forum.description }}
@@ -189,6 +197,9 @@
                                                 <span class="font-weight-bold">{{ thread.title }}</span>
                                                 <v-chip v-if="thread.is_locked" size="x-small" color="warning" prepend-icon="mdi-lock">
                                                     {{ $t('forum.locked') }}
+                                                </v-chip>
+                                                <v-chip v-if="isNewThread(thread)" size="x-small" color="success" variant="elevated">
+                                                    {{ $t('forum.new') }}
                                                 </v-chip>
                                             </div>
                                             <div class="text-caption text-medium-emphasis">
@@ -357,6 +368,10 @@ export default {
             this.recentThreadsPage = page
             this.loadRecentThreads()
             window.scrollTo({ top: 0, behavior: 'smooth' })
+        },
+        isNewThread(thread) {
+            if (!this.userStore.user) return false
+            return thread.is_read === false
         },
         formatDateDistance(date) {
             if (!date) return ''

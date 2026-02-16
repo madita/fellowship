@@ -71,6 +71,7 @@ class ForumThread extends Model
             }
 
             $thread->last_post_at = now();
+            $thread->last_post_user_id = $thread->user_id;
         });
     }
 
@@ -169,6 +170,14 @@ class ForumThread extends Model
     /**
      * Get subscriptions for this thread.
      */
+    /**
+     * Get read records for this thread.
+     */
+    public function reads(): HasMany
+    {
+        return $this->hasMany(ForumThreadRead::class, 'thread_id');
+    }
+
     public function subscriptions(): HasMany
     {
         return $this->hasMany(ThreadSubscription::class, 'thread_id');

@@ -4386,6 +4386,7 @@ export default {
         'noSearchResults': 'No results found',
         'replyIn': 'replied in',
         'viewChronological': 'Chronological',
-        'viewThreaded': 'Threaded'
+        'viewThreaded': 'Threaded',
+        'new': 'NEW'
     }
 }

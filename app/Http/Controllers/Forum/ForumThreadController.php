@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Forum;
 use App\Http\Controllers\Controller;
 use App\Models\Forum\ForumPostLike;
 use App\Models\Forum\ForumThread;
+use App\Models\Forum\ForumThreadRead;
 use App\Models\Tag\Taxonomy;
 use App\Services\SpamDetectionService;
 use Illuminate\Http\JsonResponse;
@@ -35,6 +36,14 @@ class ForumThreadController extends Controller
         if (!session()->has($viewedKey)) {
             $thread->incrementViews();
             session()->put($viewedKey, true);
+        }
+
+        // Mark thread as read for authenticated user
+        if ($user) {
+            ForumThreadRead::updateOrCreate(
+                ['user_id' => $user->id, 'thread_id' => $thread->id],
+                ['read_at' => now()]
+            );
         }
 
         // Get all posts flat, ordered by creation date

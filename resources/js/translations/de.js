@@ -4570,6 +4570,7 @@ export default {
         'noSearchResults': 'Keine Ergebnisse gefunden',
         'replyIn': 'antwortete in',
         'viewChronological': 'Chronologisch',
-        'viewThreaded': 'Verschachtelt'
+        'viewThreaded': 'Verschachtelt',
+        'new': 'NEU'
     }
 }

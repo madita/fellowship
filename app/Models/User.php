@@ -37,6 +37,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'username',
         'email',
         'password',
+        'previous_login_at',
         'last_login_at',
         'last_login_ip',
         'timezone',

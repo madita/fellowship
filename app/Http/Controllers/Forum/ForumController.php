@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Forum;
 
 use App\Http\Controllers\Controller;
+use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
+use App\Models\Forum\ForumThreadRead;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use Illuminate\Http\JsonResponse;
@@ -26,19 +28,28 @@ class ForumController extends Controller
                 'children' => fn($q) => $q->with('term')->withCount('forumThreads')->orderBy('sort'),
             ])
             ->withCount(['forumThreads', 'forumPosts'])
-            ->addSelect(['latest_post_at' => ForumThread::select('last_post_at')
-                ->whereColumn('taxonomy_id', 'taxonomies.id')
-                ->orderByDesc('last_post_at')
-                ->limit(1),
-            ])
             ->orderBy('sort')
             ->get()
             ->each(function ($cat) {
-                $latestThread = $cat->forumThreads()
-                    ->orderByDesc('last_post_at')
-                    ->with('lastPostUser')
+                // Query the actual latest ForumPost across all threads in this category
+                $latestPost = ForumPost::whereIn(
+                        'thread_id',
+                        $cat->forumThreads()->select('id')
+                    )
+                    ->with('author')
+                    ->orderByDesc('created_at')
                     ->first();
-                $cat->setRelation('latestThread', $latestThread);
+
+                $cat->setAttribute('latestPost', $latestPost);
+
+                // Fall back to thread author if no replies exist yet
+                if (!$latestPost) {
+                    $latestThread = $cat->forumThreads()
+                        ->with('author')
+                        ->orderByDesc('created_at')
+                        ->first();
+                    $cat->setRelation('latestThread', $latestThread);
+                }
             })
             ->filter(function ($cat) use ($user) {
                 if ($cat->properties['is_private'] ?? false) {
@@ -46,10 +57,54 @@ class ForumController extends Controller
                 }
                 return true;
             })
-            ->values()
-            ->map(fn($cat) => $this->transformCategory($cat));
+            ->values();
 
-        return response()->json($categories);
+        // Compute has_unread per category for authenticated users
+        $categoryUnread = [];
+        if ($user) {
+            $catIds = $categories->pluck('id')->all();
+            $childIds = $categories->flatMap(fn($cat) => $cat->children->pluck('id'))->all();
+            $allCatIds = array_merge($catIds, $childIds);
+
+            // Get threads with activity since previous_login_at (new threads OR new replies)
+            // Exclude threads where the current user made the last post
+            $threadsQuery = ForumThread::whereIn('taxonomy_id', $allCatIds)
+                ->where('last_post_user_id', '!=', $user->id);
+            if ($user->previous_login_at) {
+                $threadsQuery->where('last_post_at', '>', $user->previous_login_at);
+            }
+            $threadRows = $threadsQuery->select('id', 'taxonomy_id', 'last_post_at')->get();
+
+            // Get user's read records for these threads (keyed by thread_id)
+            $readRecords = ForumThreadRead::where('user_id', $user->id)
+                ->whereIn('thread_id', $threadRows->pluck('id'))
+                ->pluck('read_at', 'thread_id');
+
+            // Build unread set per parent category
+            foreach ($categories as $cat) {
+                $ownAndChildIds = collect([$cat->id])
+                    ->merge($cat->children->pluck('id'))
+                    ->all();
+
+                $unread = $threadRows
+                    ->whereIn('taxonomy_id', $ownAndChildIds)
+                    ->contains(function ($thread) use ($readRecords) {
+                        $readAt = $readRecords[$thread->id] ?? null;
+                        // Unread if never opened, or if new posts since last read
+                        return !$readAt || $thread->last_post_at > $readAt;
+                    });
+
+                $categoryUnread[$cat->id] = $unread;
+            }
+        }
+
+        $result = $categories->map(function ($cat) use ($categoryUnread) {
+            $data = $this->transformCategory($cat);
+            $data['has_unread'] = $categoryUnread[$cat->id] ?? false;
+            return $data;
+        });
+
+        return response()->json($result);
     }
 
     /**
@@ -110,6 +165,30 @@ class ForumController extends Controller
         }
 
         $threads = $query->paginate(20);
+
+        // Add is_read flag for authenticated users
+        if ($user) {
+            $threadIds = $threads->pluck('id');
+            $readRecords = ForumThreadRead::where('user_id', $user->id)
+                ->whereIn('thread_id', $threadIds)
+                ->pluck('read_at', 'thread_id');
+
+            $threads->getCollection()->transform(function ($thread) use ($readRecords, $user) {
+                // If the user made the last post, they already know about it
+                if ($thread->last_post_user_id === $user->id) {
+                    $thread->is_read = true;
+                    return $thread;
+                }
+
+                $readAt = $readRecords[$thread->id] ?? null;
+                if ($readAt) {
+                    $thread->is_read = $readAt >= $thread->last_post_at;
+                } else {
+                    $thread->is_read = $user->previous_login_at && $thread->last_post_at <= $user->previous_login_at;
+                }
+                return $thread;
+            });
+        }
 
         return response()->json([
             'forum' => $this->transformCategory($taxonomy),
@@ -297,11 +376,35 @@ class ForumController extends Controller
 
         $threads = $query->paginate(15);
 
-        // Transform to include category color
-        $threads->getCollection()->transform(function ($thread) {
+        // Build read records for authenticated user
+        $readRecords = collect();
+        if ($user) {
+            $threadIds = $threads->pluck('id');
+            $readRecords = ForumThreadRead::where('user_id', $user->id)
+                ->whereIn('thread_id', $threadIds)
+                ->pluck('read_at', 'thread_id');
+        }
+
+        // Transform to include category color and is_read flag
+        $threads->getCollection()->transform(function ($thread) use ($user, $readRecords) {
             $thread->category_name = $thread->category?->term?->title;
             $thread->category_slug = $thread->category?->term?->slug;
             $thread->category_color = $thread->category?->color;
+
+            if ($user) {
+                if ($thread->last_post_user_id === $user->id) {
+                    $thread->is_read = true;
+                    return $thread;
+                }
+
+                $readAt = $readRecords[$thread->id] ?? null;
+                if ($readAt) {
+                    $thread->is_read = $readAt >= $thread->last_post_at;
+                } else {
+                    $thread->is_read = $user->previous_login_at && $thread->last_post_at <= $user->previous_login_at;
+                }
+            }
+
             return $thread;
         });
 
@@ -325,16 +428,28 @@ class ForumController extends Controller
             'is_locked'     => $cat->properties['is_locked'] ?? false,
             'threads_count' => $cat->forum_threads_count ?? 0,
             'posts_count'   => $cat->forum_posts_count ?? 0,
-            'last_post_at'  => $cat->latest_post_at ?? null,
-            'lastPost'      => $cat->relationLoaded('latestThread') && $cat->latestThread
+            'last_post_at'  => $cat->latestPost
+                ? $cat->latestPost->created_at
+                : ($cat->relationLoaded('latestThread') && $cat->latestThread
+                    ? $cat->latestThread->created_at
+                    : null),
+            'lastPost'      => $cat->latestPost
                 ? [
-                    'author' => $cat->latestThread->lastPostUser ? [
-                        'id'       => $cat->latestThread->lastPostUser->id,
-                        'username' => $cat->latestThread->lastPostUser->username,
-                        'avatar'   => $cat->latestThread->lastPostUser->avatar ?? null,
+                    'author' => $cat->latestPost->author ? [
+                        'id'       => $cat->latestPost->author->id,
+                        'username' => $cat->latestPost->author->username,
+                        'avatar'   => $cat->latestPost->author->avatar ?? null,
                     ] : null,
                 ]
-                : null,
+                : ($cat->relationLoaded('latestThread') && $cat->latestThread
+                    ? [
+                        'author' => $cat->latestThread->author ? [
+                            'id'       => $cat->latestThread->author->id,
+                            'username' => $cat->latestThread->author->username,
+                            'avatar'   => $cat->latestThread->author->avatar ?? null,
+                        ] : null,
+                    ]
+                    : null),
             'children'      => $cat->relationLoaded('children')
                 ? $cat->children->map(fn($c) => $this->transformCategory($c))->values()
                 : [],

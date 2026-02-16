@@ -111,6 +111,7 @@ class SocialLoginController extends Controller
 
             // Update last login info
             $user->update([
+                'previous_login_at' => $user->last_login_at,
                 'last_login_at' => Carbon::now()->toDateTimeString(),
                 'last_login_ip' => request()->getClientIp(),
             ]);

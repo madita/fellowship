@@ -159,6 +159,9 @@
                                                 <v-chip v-if="thread.is_locked" size="x-small" color="warning" prepend-icon="mdi-lock">
                                                     {{ $t('forum.locked') }}
                                                 </v-chip>
+                                                <v-chip v-if="isNewThread(thread)" size="x-small" color="success" variant="elevated">
+                                                    {{ $t('forum.new') }}
+                                                </v-chip>
                                             </div>
                                             <div class="text-caption text-medium-emphasis">
                                                 {{ $t('forum.startedBy') }} {{ thread.author?.username }}
@@ -207,6 +210,9 @@
                                             <span class="font-weight-bold">{{ thread.title }}</span>
                                             <v-chip v-if="thread.is_locked" size="x-small" color="warning" prepend-icon="mdi-lock">
                                                 {{ $t('forum.locked') }}
+                                            </v-chip>
+                                            <v-chip v-if="isNewThread(thread)" size="x-small" color="success" variant="elevated">
+                                                {{ $t('forum.new') }}
                                             </v-chip>
                                         </div>
                                         <div class="text-caption text-medium-emphasis">
@@ -367,6 +373,10 @@ export default {
             this.currentPage = page
             this.loadForum()
             window.scrollTo({ top: 0, behavior: 'smooth' })
+        },
+        isNewThread(thread) {
+            if (!this.userStore.user) return false
+            return thread.is_read === false
         },
         formatDateDistance(date) {
             if (!date) return ''
