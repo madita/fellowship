@@ -488,7 +488,17 @@ export default {
             'forumCreated': 'Forum created successfully',
             'forumUpdated': 'Forum updated successfully',
             'forumDeleted': 'Forum deleted successfully',
-            'confirmDelete': 'Are you sure you want to delete "{name}"? All threads and posts in this forum will also be deleted.'
+            'confirmDelete': 'Are you sure you want to delete "{name}"? All threads and posts in this forum will also be deleted.',
+            'allowedRoles': 'Allowed Roles',
+            'allowedRolesHint': 'Roles that can view this forum when private is enabled',
+            'postRoles': 'Posting Roles',
+            'postRolesHint': 'Roles that can create threads when locked is enabled',
+            'rolePermissions': 'Role Permissions',
+            'moderationSettings': 'Moderation Settings',
+            'moderateRoles': 'Moderator Roles',
+            'moderateRolesHint': 'Roles that can edit all posts and threads in this forum',
+            'deleteRoles': 'Delete Roles',
+            'deleteRolesHint': 'Roles that can delete all posts and threads in this forum'
         },
         'media': {
             'title': 'Media Library',

@@ -8,6 +8,7 @@ use App\Models\Forum\ForumThread;
 use App\Models\Forum\ForumThreadRead;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -51,12 +52,7 @@ class ForumController extends Controller
                     $cat->setRelation('latestThread', $latestThread);
                 }
             })
-            ->filter(function ($cat) use ($user) {
-                if ($cat->properties['is_private'] ?? false) {
-                    return $user && $user->isAdmin();
-                }
-                return true;
-            })
+            ->filter(fn($cat) => $this->canAccessForum($cat, $user))
             ->values();
 
         // Compute has_unread per category for authenticated users
@@ -121,7 +117,7 @@ class ForumController extends Controller
             ->withCount('forumThreads')
             ->firstOrFail();
 
-        if (($taxonomy->properties['is_private'] ?? false) && (!$user || !$user->isAdmin())) {
+        if (!$this->canAccessForum($taxonomy, $user)) {
             abort(403, 'You do not have permission to access this forum.');
         }
 
@@ -193,6 +189,7 @@ class ForumController extends Controller
         return response()->json([
             'forum' => $this->transformCategory($taxonomy),
             'threads' => $threads,
+            'can_create_thread' => $this->canPostInForum($taxonomy, $user) && ($user !== null),
         ]);
     }
 
@@ -210,6 +207,14 @@ class ForumController extends Controller
             'position' => 'nullable|integer',
             'is_private' => 'boolean',
             'is_locked' => 'boolean',
+            'allowed_roles' => 'nullable|array',
+            'allowed_roles.*' => 'string',
+            'post_roles' => 'nullable|array',
+            'post_roles.*' => 'string',
+            'moderate_roles' => 'nullable|array',
+            'moderate_roles.*' => 'string',
+            'delete_roles' => 'nullable|array',
+            'delete_roles.*' => 'string',
         ]);
 
         // Resolve parent: if parent_id is given, find the taxonomy
@@ -229,8 +234,12 @@ class ForumController extends Controller
             'visible'    => true,
             'searchable' => true,
             'properties' => [
-                'is_private' => $validated['is_private'] ?? false,
-                'is_locked'  => $validated['is_locked'] ?? false,
+                'is_private'    => $validated['is_private'] ?? false,
+                'is_locked'     => $validated['is_locked'] ?? false,
+                'allowed_roles'  => $validated['allowed_roles'] ?? [],
+                'post_roles'     => $validated['post_roles'] ?? [],
+                'moderate_roles' => $validated['moderate_roles'] ?? [],
+                'delete_roles'   => $validated['delete_roles'] ?? [],
             ],
         ]);
 
@@ -261,6 +270,14 @@ class ForumController extends Controller
             'position' => 'integer',
             'is_private' => 'boolean',
             'is_locked' => 'boolean',
+            'allowed_roles' => 'nullable|array',
+            'allowed_roles.*' => 'string',
+            'post_roles' => 'nullable|array',
+            'post_roles.*' => 'string',
+            'moderate_roles' => 'nullable|array',
+            'moderate_roles.*' => 'string',
+            'delete_roles' => 'nullable|array',
+            'delete_roles.*' => 'string',
         ]);
 
         // Update term title if name changed
@@ -297,6 +314,18 @@ class ForumController extends Controller
         if (isset($validated['is_locked'])) {
             $properties['is_locked'] = $validated['is_locked'];
         }
+        if (array_key_exists('allowed_roles', $validated)) {
+            $properties['allowed_roles'] = $validated['allowed_roles'] ?? [];
+        }
+        if (array_key_exists('post_roles', $validated)) {
+            $properties['post_roles'] = $validated['post_roles'] ?? [];
+        }
+        if (array_key_exists('moderate_roles', $validated)) {
+            $properties['moderate_roles'] = $validated['moderate_roles'] ?? [];
+        }
+        if (array_key_exists('delete_roles', $validated)) {
+            $properties['delete_roles'] = $validated['delete_roles'] ?? [];
+        }
         $taxonomy->properties = $properties;
 
         $taxonomy->save();
@@ -328,22 +357,20 @@ class ForumController extends Controller
     {
         $user = Auth::user();
 
-        // Exclude private categories and their children for non-admins
+        // Exclude private categories the user can't access (and their children)
         $excludeIds = [];
-        if (!$user || !$user->isAdmin()) {
-            $privateCats = Taxonomy::taxonomy('forum_cat')
-                ->get()
-                ->filter(fn($cat) => $cat->properties['is_private'] ?? false);
+        $privateCats = Taxonomy::taxonomy('forum_cat')
+            ->get()
+            ->filter(fn($cat) => ($cat->properties['is_private'] ?? false) && !$this->canAccessForum($cat, $user));
 
-            foreach ($privateCats as $cat) {
-                $excludeIds[] = $cat->id;
-                // Also exclude child categories of private parents
-                $childIds = Taxonomy::taxonomy('forum_cat')
-                    ->where('parent_id', $cat->id)
-                    ->pluck('id')
-                    ->all();
-                $excludeIds = array_merge($excludeIds, $childIds);
-            }
+        foreach ($privateCats as $cat) {
+            $excludeIds[] = $cat->id;
+            // Also exclude child categories of private parents
+            $childIds = Taxonomy::taxonomy('forum_cat')
+                ->where('parent_id', $cat->id)
+                ->pluck('id')
+                ->all();
+            $excludeIds = array_merge($excludeIds, $childIds);
         }
 
         $query = ForumThread::with(['author', 'category.term', 'lastPostUser'])
@@ -412,6 +439,58 @@ class ForumController extends Controller
     }
 
     /**
+     * Check if a user can access (view) a forum category.
+     */
+    private function canAccessForum(Taxonomy $cat, ?User $user): bool
+    {
+        if (!($cat->properties['is_private'] ?? false)) {
+            return true;
+        }
+
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        $allowedRoles = $cat->properties['allowed_roles'] ?? [];
+
+        if (empty($allowedRoles)) {
+            return false;
+        }
+
+        return $user->hasAnyRole($allowedRoles);
+    }
+
+    /**
+     * Check if a user can create threads in a forum category.
+     */
+    private function canPostInForum(Taxonomy $cat, ?User $user): bool
+    {
+        if (!($cat->properties['is_locked'] ?? false)) {
+            return true;
+        }
+
+        if (!$user) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        $postRoles = $cat->properties['post_roles'] ?? [];
+
+        if (empty($postRoles)) {
+            return false;
+        }
+
+        return $user->hasAnyRole($postRoles);
+    }
+
+    /**
      * Transform a Taxonomy into the forum category API shape.
      */
     private function transformCategory(Taxonomy $cat): array
@@ -426,6 +505,10 @@ class ForumController extends Controller
             'color'         => $cat->color,
             'is_private'    => $cat->properties['is_private'] ?? false,
             'is_locked'     => $cat->properties['is_locked'] ?? false,
+            'allowed_roles'  => $cat->properties['allowed_roles'] ?? [],
+            'post_roles'     => $cat->properties['post_roles'] ?? [],
+            'moderate_roles' => $cat->properties['moderate_roles'] ?? [],
+            'delete_roles'   => $cat->properties['delete_roles'] ?? [],
             'threads_count' => $cat->forum_threads_count ?? 0,
             'posts_count'   => $cat->forum_posts_count ?? 0,
             'last_post_at'  => $cat->latestPost

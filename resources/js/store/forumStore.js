@@ -13,7 +13,9 @@ export const useForumStore = defineStore('forum', {
         threadPermissions: {
             can_reply: false,
             can_edit: false,
-            can_delete: false
+            can_delete: false,
+            can_moderate: false,
+            can_delete_others: false
         },
         isSubscribed: false,
         activities: [],
@@ -68,6 +70,7 @@ export const useForumStore = defineStore('forum', {
 
                 const response = await axios.get(`/api/forums/${slug}`, { params })
                 this.currentForum = response.data.forum
+                this.currentForum.can_create_thread = response.data.can_create_thread ?? false
                 const threadsResponse = response.data.threads
                 this.threads = threadsResponse.data || []
                 this.threadsPagination = {
@@ -107,7 +110,9 @@ export const useForumStore = defineStore('forum', {
                 this.threadPermissions = {
                     can_reply: response.data.can_reply ?? false,
                     can_edit: response.data.can_edit ?? false,
-                    can_delete: response.data.can_delete ?? false
+                    can_delete: response.data.can_delete ?? false,
+                    can_moderate: response.data.can_moderate ?? false,
+                    can_delete_others: response.data.can_delete_others ?? false
                 }
                 this.isSubscribed = response.data.is_subscribed ?? false
             } catch (error) {

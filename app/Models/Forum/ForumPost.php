@@ -89,9 +89,20 @@ class ForumPost extends Model
             return false;
         }
 
-        // Allow editing within 1 hour or if admin
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        // Allow editing within 1 hour for the author
         $editWindow = now()->subHour();
-        return ($user->id === $this->user_id && $this->created_at->gt($editWindow)) || $user->isAdmin();
+        if ($user->id === $this->user_id && $this->created_at->gt($editWindow)) {
+            return true;
+        }
+
+        // Check forum-level moderate roles
+        $moderateRoles = $this->thread->category->properties['moderate_roles'] ?? [];
+
+        return !empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
     }
 
     /**
@@ -103,7 +114,14 @@ class ForumPost extends Model
             return false;
         }
 
-        return $user->id === $this->user_id || $user->isAdmin();
+        if ($user->id === $this->user_id || $user->isAdmin()) {
+            return true;
+        }
+
+        // Check forum-level delete roles
+        $deleteRoles = $this->thread->category->properties['delete_roles'] ?? [];
+
+        return !empty($deleteRoles) && $user->hasAnyRole($deleteRoles);
     }
 
     /**

@@ -111,6 +111,8 @@
                 :current-user="currentUser"
                 :can-reply="canReply"
                 :thread-locked="threadLocked"
+                :can-moderate="canModerate"
+                :can-delete-others="canDeleteOthers"
                 :depth="depth + 1"
                 @mark-solution="$emit('mark-solution', $event)"
                 @delete-post="$emit('delete-post', $event)"
@@ -144,6 +146,8 @@ export default {
         currentUser: { type: Object, default: null },
         canReply: { type: Boolean, default: false },
         threadLocked: { type: Boolean, default: false },
+        canModerate: { type: Boolean, default: false },
+        canDeleteOthers: { type: Boolean, default: false },
         depth: { type: Number, default: 0 }
     },
     emits: ['mark-solution', 'delete-post', 'quote-reply', 'update-post', 'toggle-like'],
@@ -166,17 +170,17 @@ export default {
             return this.currentUser?.isAdmin || false
         },
         canEdit() {
-            if (this.isAdmin) return true
+            if (this.isAdmin || this.canModerate) return true
             if (!this.isAuthor) return false
             const created = new Date(this.post.created_at)
             const hourAgo = new Date(Date.now() - 60 * 60 * 1000)
             return created > hourAgo
         },
         canDelete() {
-            return this.isAuthor || this.isAdmin
+            return this.isAuthor || this.isAdmin || this.canDeleteOthers
         },
         canMarkSolution() {
-            return (this.isThreadAuthor || this.isAdmin) && !this.threadLocked
+            return (this.isThreadAuthor || this.isAdmin || this.canModerate) && !this.threadLocked
         }
     },
     methods: {

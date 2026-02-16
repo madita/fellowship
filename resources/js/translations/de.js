@@ -488,7 +488,17 @@ export default {
             'forumCreated': 'Forum erfolgreich erstellt',
             'forumUpdated': 'Forum erfolgreich aktualisiert',
             'forumDeleted': 'Forum erfolgreich gelöscht',
-            'confirmDelete': 'Bist du sicher, dass du "{name}" löschen möchtest? Alle Themen und Beiträge in diesem Forum werden ebenfalls gelöscht.'
+            'confirmDelete': 'Bist du sicher, dass du "{name}" löschen möchtest? Alle Themen und Beiträge in diesem Forum werden ebenfalls gelöscht.',
+            'allowedRoles': 'Zugelassene Rollen',
+            'allowedRolesHint': 'Rollen, die dieses Forum sehen können wenn Privat aktiviert ist',
+            'postRoles': 'Beitragsrollen',
+            'postRolesHint': 'Rollen, die Themen erstellen können wenn Gesperrt aktiviert ist',
+            'rolePermissions': 'Rollenberechtigungen',
+            'moderationSettings': 'Moderationseinstellungen',
+            'moderateRoles': 'Moderator-Rollen',
+            'moderateRolesHint': 'Rollen, die alle Beiträge und Themen in diesem Forum bearbeiten können',
+            'deleteRoles': 'Lösch-Rollen',
+            'deleteRolesHint': 'Rollen, die alle Beiträge und Themen in diesem Forum löschen können'
         },
         'media': {
             'title': 'Medienbibliothek',

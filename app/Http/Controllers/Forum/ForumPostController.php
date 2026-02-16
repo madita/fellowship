@@ -142,9 +142,14 @@ class ForumPostController extends Controller
 
         $thread = $post->thread;
 
-        // Only thread author or admin can mark solutions
-        if ($user->id !== $thread->user_id && !$user->isAdmin()) {
-            abort(403, 'Only the thread author or an admin can mark a solution.');
+        // Only thread author, admin, or users with moderate roles can mark solutions
+        $canMark = $user->id === $thread->user_id || $user->isAdmin();
+        if (!$canMark) {
+            $moderateRoles = $thread->category->properties['moderate_roles'] ?? [];
+            $canMark = !empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
+        }
+        if (!$canMark) {
+            abort(403, 'Only the thread author or a moderator can mark a solution.');
         }
 
         $post->markAsSolution();

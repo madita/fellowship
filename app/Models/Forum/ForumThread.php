@@ -152,7 +152,13 @@ class ForumThread extends Model
             return false;
         }
 
-        return $user->id === $this->user_id || $user->isAdmin();
+        if ($user->id === $this->user_id || $user->isAdmin()) {
+            return true;
+        }
+
+        $moderateRoles = $this->category->properties['moderate_roles'] ?? [];
+
+        return !empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
     }
 
     /**
@@ -164,7 +170,13 @@ class ForumThread extends Model
             return false;
         }
 
-        return $user->id === $this->user_id || $user->isAdmin();
+        if ($user->id === $this->user_id || $user->isAdmin()) {
+            return true;
+        }
+
+        $deleteRoles = $this->category->properties['delete_roles'] ?? [];
+
+        return !empty($deleteRoles) && $user->hasAnyRole($deleteRoles);
     }
 
     /**

@@ -179,6 +179,59 @@
                             />
                         </v-col>
                     </v-row>
+                    <v-divider class="mt-4 mb-2" />
+                    <div class="text-subtitle-2 text-medium-emphasis mb-2">{{ $t('admin.forums.rolePermissions') }}</div>
+                    <v-select
+                        v-model="dialog.form.allowed_roles"
+                        :items="roles"
+                        :label="$t('admin.forums.allowedRoles')"
+                        :hint="$t('admin.forums.allowedRolesHint')"
+                        variant="outlined"
+                        density="comfortable"
+                        multiple
+                        chips
+                        closable-chips
+                        persistent-hint
+                        class="mb-3"
+                    />
+                    <v-select
+                        v-model="dialog.form.post_roles"
+                        :items="roles"
+                        :label="$t('admin.forums.postRoles')"
+                        :hint="$t('admin.forums.postRolesHint')"
+                        variant="outlined"
+                        density="comfortable"
+                        multiple
+                        chips
+                        closable-chips
+                        persistent-hint
+                        class="mb-3"
+                    />
+                    <v-select
+                        v-model="dialog.form.moderate_roles"
+                        :items="roles"
+                        :label="$t('admin.forums.moderateRoles')"
+                        :hint="$t('admin.forums.moderateRolesHint')"
+                        variant="outlined"
+                        density="comfortable"
+                        multiple
+                        chips
+                        closable-chips
+                        persistent-hint
+                        class="mb-3"
+                    />
+                    <v-select
+                        v-model="dialog.form.delete_roles"
+                        :items="roles"
+                        :label="$t('admin.forums.deleteRoles')"
+                        :hint="$t('admin.forums.deleteRolesHint')"
+                        variant="outlined"
+                        density="comfortable"
+                        multiple
+                        chips
+                        closable-chips
+                        persistent-hint
+                    />
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
@@ -210,6 +263,7 @@ export default {
         return {
             loading: false,
             forums: [],
+            roles: [],
             alert: {
                 show: false,
                 type: 'success',
@@ -226,7 +280,11 @@ export default {
                     parent_id: null,
                     position: 0,
                     is_private: false,
-                    is_locked: false
+                    is_locked: false,
+                    allowed_roles: [],
+                    post_roles: [],
+                    moderate_roles: [],
+                    delete_roles: []
                 },
                 errors: {}
             },
@@ -246,6 +304,7 @@ export default {
     },
     mounted() {
         this.fetchForums()
+        this.fetchRoles()
     },
     methods: {
         async fetchForums() {
@@ -260,6 +319,16 @@ export default {
             }
         },
 
+        async fetchRoles() {
+            try {
+                const response = await axios.get('/api/datatable/roles')
+                const records = response.data?.data?.records || []
+                this.roles = records.map(r => r.name)
+            } catch (error) {
+                console.error('Failed to load roles', error)
+            }
+        },
+
         openCreateDialog(parentId = null) {
             this.dialog.editing = false
             this.dialog.editId = null
@@ -269,7 +338,11 @@ export default {
                 parent_id: parentId,
                 position: 0,
                 is_private: false,
-                is_locked: false
+                is_locked: false,
+                allowed_roles: [],
+                post_roles: [],
+                moderate_roles: [],
+                delete_roles: []
             }
             this.dialog.errors = {}
             this.dialog.show = true
@@ -284,7 +357,11 @@ export default {
                 parent_id: forum.parent_id,
                 position: forum.position,
                 is_private: forum.is_private,
-                is_locked: forum.is_locked
+                is_locked: forum.is_locked,
+                allowed_roles: forum.allowed_roles || [],
+                post_roles: forum.post_roles || [],
+                moderate_roles: forum.moderate_roles || [],
+                delete_roles: forum.delete_roles || []
             }
             this.dialog.errors = {}
             this.dialog.show = true

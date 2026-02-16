@@ -311,7 +311,7 @@ export default {
     },
     computed: {
         canCreateThread() {
-            return this.authStore.isAuthenticated && !this.forumStore.isForumLocked
+            return this.authStore.isAuthenticated && (this.forumStore.currentForum?.can_create_thread ?? false)
         },
         filters() {
             return [

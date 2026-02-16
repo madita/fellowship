@@ -151,6 +151,8 @@
                         :current-user="currentUser"
                         :can-reply="forumStore.threadPermissions.can_reply"
                         :thread-locked="forumStore.currentThread.is_locked"
+                        :can-moderate="forumStore.threadPermissions.can_moderate"
+                        :can-delete-others="forumStore.threadPermissions.can_delete_others"
                         @mark-solution="onMarkSolution"
                         @delete-post="onDeletePost"
                         @quote-reply="onQuoteReply"
