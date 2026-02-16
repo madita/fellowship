@@ -238,6 +238,9 @@ class IrcController extends Controller
 
         $request->validate([
             'message' => 'required|string',
+            'emotion' => 'nullable|string',
+            'gesture' => 'nullable|string',
+            'bubble_type' => 'nullable|string',
         ]);
 
         $message = IrcMessage::create([
@@ -246,6 +249,9 @@ class IrcController extends Controller
             'type' => 'message',
             'from_nick' => $channel->connection->nickname,
             'message' => $request->message,
+            'emotion' => $request->emotion ?? 'normal',
+            'gesture' => $request->gesture ?? 'none',
+            'bubble_type' => $request->bubble_type ?? 'speech',
             'sent_at' => now(),
         ]);
 

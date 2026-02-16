@@ -44,6 +44,9 @@
                         <v-list-item-title>Join Channel</v-list-item-title>
                       </v-list-item>
                       <v-divider />
+                      <v-list-item @click="showCharacterSelector(connection)">
+                        <v-list-item-title>Choose Character</v-list-item-title>
+                      </v-list-item>
                       <v-list-item @click="editConnection(connection)">
                         <v-list-item-title>Edit</v-list-item-title>
                       </v-list-item>
@@ -121,15 +124,38 @@
                 {{ activeChannel.topic }}
               </span>
             </div>
-            <v-btn icon @click="partChannel(activeChannel)">
-              <v-icon>mdi-close</v-icon>
-            </v-btn>
+            <div class="d-flex gap-2">
+              <!-- View Mode Toggle -->
+              <v-btn-toggle v-model="viewMode" mandatory density="compact">
+                <v-btn value="classic" size="small">
+                  <v-icon>mdi-format-align-left</v-icon>
+                  <v-tooltip activator="parent" location="bottom">
+                    Classic IRC View
+                  </v-tooltip>
+                </v-btn>
+                <v-btn value="comic" size="small">
+                  <v-icon>mdi-book-open-variant</v-icon>
+                  <v-tooltip activator="parent" location="bottom">
+                    Comic Chat View
+                  </v-tooltip>
+                </v-btn>
+              </v-btn-toggle>
+
+              <v-btn icon @click="partChannel(activeChannel)">
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </div>
           </v-card-title>
 
           <v-divider />
 
-          <!-- Messages -->
-          <v-card-text ref="messagesContainer" class="messages-container flex-grow-1" style="overflow-y: auto;">
+          <!-- Classic IRC View -->
+          <v-card-text
+            v-if="viewMode === 'classic'"
+            ref="messagesContainer"
+            class="messages-container flex-grow-1"
+            style="overflow-y: auto;"
+          >
             <div v-for="message in messages" :key="message.id" :class="getMessageClass(message)">
               <div class="message-line">
                 <span class="timestamp text-caption text-grey">
@@ -150,30 +176,72 @@
             </div>
           </v-card-text>
 
+          <!-- Comic Chat View -->
+          <comic-chat-view
+            v-else
+            ref="comicView"
+            :messages="messages"
+            :character="currentConnection?.comic_character || 'cat'"
+            :background="comicBackground"
+            :show-timestamps="true"
+            :show-emotion-bar="true"
+            @emotion-selected="onEmotionSelected"
+            @gesture-selected="onGestureSelected"
+            class="flex-grow-1"
+          />
+
           <!-- Message Input -->
           <v-divider />
           <v-card-actions class="pa-2">
-            <v-text-field
-              v-model="newMessage"
-              placeholder="Type a message..."
-              variant="outlined"
-              density="compact"
-              hide-details
-              @keydown.enter="sendMessage"
-              autofocus
-            >
-              <template #append-inner>
-                <v-btn
-                  icon
-                  size="small"
-                  color="primary"
-                  :disabled="!newMessage.trim()"
-                  @click="sendMessage"
+            <v-row dense>
+              <!-- Emotion/Gesture Bar (Comic Mode Only) -->
+              <v-col v-if="viewMode === 'comic'" cols="12">
+                <div class="d-flex gap-2 flex-wrap">
+                  <v-chip-group v-model="selectedEmotion" mandatory>
+                    <v-chip size="small" value="normal">😐 Normal</v-chip>
+                    <v-chip size="small" value="happy">😊 Happy</v-chip>
+                    <v-chip size="small" value="sad">😢 Sad</v-chip>
+                    <v-chip size="small" value="angry">😠 Angry</v-chip>
+                    <v-chip size="small" value="surprised">😲 Surprised</v-chip>
+                    <v-chip size="small" value="confused">😕 Confused</v-chip>
+                  </v-chip-group>
+                  <v-divider vertical />
+                  <v-chip-group v-model="selectedGesture">
+                    <v-chip size="small" value="none">None</v-chip>
+                    <v-chip size="small" value="wave">👋 Wave</v-chip>
+                    <v-chip size="small" value="laugh">😂 Laugh</v-chip>
+                    <v-chip size="small" value="think">💭 Think</v-chip>
+                    <v-chip size="small" value="shout">📢 Shout</v-chip>
+                    <v-chip size="small" value="whisper">🤫 Whisper</v-chip>
+                  </v-chip-group>
+                </div>
+              </v-col>
+
+              <!-- Message Input -->
+              <v-col cols="12">
+                <v-text-field
+                  v-model="newMessage"
+                  placeholder="Type a message..."
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  @keydown.enter="sendMessage"
+                  autofocus
                 >
-                  <v-icon>mdi-send</v-icon>
-                </v-btn>
-              </template>
-            </v-text-field>
+                  <template #append-inner>
+                    <v-btn
+                      icon
+                      size="small"
+                      color="primary"
+                      :disabled="!newMessage.trim()"
+                      @click="sendMessage"
+                    >
+                      <v-icon>mdi-send</v-icon>
+                    </v-btn>
+                  </template>
+                </v-text-field>
+              </v-col>
+            </v-row>
           </v-card-actions>
         </v-card>
 
@@ -201,6 +269,14 @@
       :connection="joiningConnection"
       @joined="onChannelJoined"
     />
+
+    <!-- Character Selector Dialog -->
+    <comic-character-selector
+      v-model="showCharacterDialog"
+      :current-character="editingConnectionForCharacter?.comic_character"
+      :current-background="comicBackground"
+      @saved="onCharacterSaved"
+    />
   </v-container>
 </template>
 
@@ -208,12 +284,16 @@
 import axios from 'axios';
 import IrcConnectionDialog from './IrcConnectionDialog.vue';
 import IrcJoinDialog from './IrcJoinDialog.vue';
+import ComicChatView from './ComicChatView.vue';
+import ComicCharacterSelector from './ComicCharacterSelector.vue';
 
 export default {
   name: 'IrcClient',
   components: {
     IrcConnectionDialog,
     IrcJoinDialog,
+    ComicChatView,
+    ComicCharacterSelector,
   },
   data() {
     return {
@@ -224,10 +304,22 @@ export default {
       newMessage: '',
       showConnectionDialog: false,
       showJoinChannelDialog: false,
+      showCharacterDialog: false,
       editingConnection: null,
       joiningConnection: null,
+      editingConnectionForCharacter: null,
       messagePolling: null,
+      viewMode: 'classic', // classic or comic
+      selectedEmotion: 'normal',
+      selectedGesture: 'none',
+      comicBackground: 'room',
     };
+  },
+  computed: {
+    currentConnection() {
+      if (!this.activeChannel) return null;
+      return this.connections.find(c => c.id === this.activeChannel.irc_connection_id);
+    },
   },
   mounted() {
     this.fetchServers();
@@ -311,14 +403,35 @@ export default {
       if (!this.newMessage.trim() || !this.activeChannel) return;
 
       try {
-        await axios.post(`/api/irc/channels/${this.activeChannel.id}/messages`, {
+        const payload = {
           message: this.newMessage,
-        });
+        };
+
+        // Add comic chat metadata if in comic mode
+        if (this.viewMode === 'comic') {
+          payload.emotion = this.selectedEmotion;
+          payload.gesture = this.selectedGesture;
+          payload.bubble_type = this.getBubbleType();
+        }
+
+        await axios.post(`/api/irc/channels/${this.activeChannel.id}/messages`, payload);
         this.newMessage = '';
         await this.fetchMessages(this.activeChannel);
       } catch (error) {
         console.error('Error sending message:', error);
       }
+    },
+    getBubbleType() {
+      if (this.selectedGesture === 'whisper') return 'whisper';
+      if (this.selectedGesture === 'shout') return 'shout';
+      if (this.selectedGesture === 'think') return 'thought';
+      return 'speech';
+    },
+    onEmotionSelected(emotion) {
+      this.selectedEmotion = emotion;
+    },
+    onGestureSelected(gesture) {
+      this.selectedGesture = gesture;
     },
     async partChannel(channel) {
       try {
@@ -403,6 +516,23 @@ export default {
     },
   },
 };
+    showCharacterSelector(connection) {
+      this.editingConnectionForCharacter = connection;
+      this.showCharacterDialog = true;
+    },
+    async onCharacterSaved(data) {
+      if (!this.editingConnectionForCharacter) return;
+      try {
+        await axios.patch(`/api/irc/connections/${this.editingConnectionForCharacter.id}`, {
+          comic_character: data.character,
+        });
+        this.comicBackground = data.background;
+        this.fetchConnections();
+        this.editingConnectionForCharacter = null;
+      } catch (error) {
+        console.error("Error saving character:", error);
+      }
+    },
 </script>
 
 <style scoped>
