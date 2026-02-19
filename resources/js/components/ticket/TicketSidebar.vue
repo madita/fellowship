@@ -7,6 +7,7 @@ import axios from "axios";
 import ConfirmDialog from '../common/ConfirmDialog.vue';
 import { useUserStore } from "@/store/userStore.js";
 import { useDateFormat } from '@/plugins/formatDate.js';
+import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
 
 const props = defineProps({
     isDrawerOpen: Boolean,
@@ -25,6 +26,17 @@ const emit = defineEmits([
 const { t } = useI18n();
 const userStore = useUserStore();
 const { formatDate: formatDateUtil } = useDateFormat();
+const {
+    statusOptions,
+    priorityOptions,
+    getStatusColor,
+    getPriorityColor,
+    getPriorityIcon,
+    getStatusLabel,
+    getPriorityLabel,
+    statusFilterOptions,
+    priorityFilterOptions,
+} = useTicketHelpers();
 
 const showConfirmationDialog = ref(false);
 const localEditMode = ref(props.editMode);
@@ -37,23 +49,6 @@ const ticketComments = ref([]);
 const newComment = ref('');
 const isInternalComment = ref(false);
 const assignableUsers = ref([]);
-
-// Status options
-const statusOptions = [
-    { value: 'open', label: 'Open', color: 'info' },
-    { value: 'in_progress', label: 'In Progress', color: 'warning' },
-    { value: 'pending', label: 'Pending', color: 'orange' },
-    { value: 'resolved', label: 'Resolved', color: 'success' },
-    { value: 'closed', label: 'Closed', color: 'grey' },
-];
-
-// Priority options
-const priorityOptions = [
-    { value: 'low', label: 'Low', color: 'grey', icon: 'mdi-arrow-down' },
-    { value: 'normal', label: 'Normal', color: 'info', icon: 'mdi-minus' },
-    { value: 'high', label: 'High', color: 'warning', icon: 'mdi-arrow-up' },
-    { value: 'urgent', label: 'Urgent', color: 'error', icon: 'mdi-alert' },
-];
 
 const user = computed(() => userStore.user || { id: null });
 
@@ -69,17 +64,8 @@ const canComment = computed(() => {
     return isAdmin.value || localTicket.value.created_by_user_id === user.value.id;
 });
 
-const getStatusColor = (status) => {
-    return statusOptions.find(s => s.value === status)?.color || 'grey';
-};
-
-const getPriorityColor = (priority) => {
-    return priorityOptions.find(p => p.value === priority)?.color || 'grey';
-};
-
-const getPriorityIcon = (priority) => {
-    return priorityOptions.find(p => p.value === priority)?.icon || 'mdi-minus';
-};
+const statusSelectOptions = computed(() => statusFilterOptions(false));
+const prioritySelectOptions = computed(() => priorityFilterOptions(false));
 
 watch(
     () => props.ticket,
@@ -120,12 +106,36 @@ const loadTicketTypes = async () => {
 
 const loadAssignableUsers = async () => {
     try {
-        // This endpoint would need to be created to list users who can be assigned
-        // For now, we'll leave it empty or you can implement it
-        assignableUsers.value = [];
+        const response = await axios.post('/api/users/search', { query: '' });
+        const records = Array.isArray(response.data) ? response.data : [];
+        const mapped = records.map(u => ({
+            id: u.id,
+            name: u.username,
+            username: u.username,
+            avatar: u.avatar,
+            initials: u.initials,
+        }));
+
+        // The search endpoint excludes the current user, so add them back
+        if (user.value?.id) {
+            mapped.unshift({
+                id: user.value.id,
+                name: user.value.username || user.value.name,
+                username: user.value.username || user.value.name,
+                avatar: user.value.avatar,
+                initials: user.value.initials,
+            });
+        }
+
+        assignableUsers.value = mapped;
     } catch (err) {
         console.error('Failed to load assignable users:', err);
     }
+};
+
+const assignToMe = async () => {
+    if (!localTicket.value?.id || !user.value?.id) return;
+    await handleAssigneeChange(user.value.id);
 };
 
 const removeTicket = () => {
@@ -150,7 +160,7 @@ const handleSubmit = async () => {
 
 const handleStatusChange = async (newStatus) => {
     if (!localTicket.value?.id) return;
-    
+
     try {
         const response = await axios.patch(`/api/tickets/${localTicket.value.id}`, {
             status: newStatus
@@ -164,7 +174,7 @@ const handleStatusChange = async (newStatus) => {
 
 const handlePriorityChange = async (newPriority) => {
     if (!localTicket.value?.id) return;
-    
+
     try {
         const response = await axios.patch(`/api/tickets/${localTicket.value.id}`, {
             priority: newPriority
@@ -178,7 +188,7 @@ const handlePriorityChange = async (newPriority) => {
 
 const handleAssigneeChange = async (userId) => {
     if (!localTicket.value?.id || !isAdmin.value) return;
-    
+
     try {
         if (userId) {
             await axios.post(`/api/tickets/${localTicket.value.id}/assign`, {
@@ -202,7 +212,7 @@ const addComment = async () => {
             comment: newComment.value,
             is_internal: isInternalComment.value
         });
-        
+
         ticketComments.value.push(response.data);
         newComment.value = '';
         isInternalComment.value = false;
@@ -235,8 +245,8 @@ const handleConfirmation = (isConfirmed) => {
 };
 
 const rules = {
-    title: [v => !!v || 'Title is required'],
-    ticket_type_id: [v => !!v || 'Type is required'],
+    title: [v => !!v || t('tickets.validation.titleRequired')],
+    ticket_type_id: [v => !!v || t('tickets.validation.typeRequired')],
 };
 
 onMounted(() => {
@@ -258,7 +268,7 @@ onMounted(() => {
         <div class="ticket-drawer-header" :class="{ 'edit-mode': localEditMode }">
             <div v-if="localEditMode" class="d-flex align-center py-3 px-4">
                 <h5 class="text-h5 font-weight-medium">
-                    {{ localTicket?.id ? 'Edit Ticket' : 'Create Ticket' }}
+                    {{ localTicket?.id ? t('tickets.editTicket') : t('tickets.createTicket') }}
                 </h5>
                 <VSpacer/>
                 <VBtn
@@ -268,7 +278,7 @@ onMounted(() => {
                     class="me-2"
                     @click="localEditMode = !localEditMode"
                 >
-                    {{ localEditMode ? 'View' : 'Edit' }}
+                    {{ localEditMode ? t('tickets.view') : t('tickets.edit') }}
                 </VBtn>
             </div>
 
@@ -305,7 +315,7 @@ onMounted(() => {
                         density="comfortable"
                         class="action-btn"
                         @click="localEditMode = true"
-                        title="Edit"
+                        :title="t('tickets.edit')"
                     />
 
                     <v-btn
@@ -316,7 +326,7 @@ onMounted(() => {
                         density="comfortable"
                         class="action-btn"
                         @click="showConfirmationDialog = true"
-                        title="Delete"
+                        :title="t('tickets.delete')"
                     />
 
                     <v-btn
@@ -325,7 +335,7 @@ onMounted(() => {
                         density="comfortable"
                         class="action-btn"
                         @click="dialogModelValueUpdate(false)"
-                        title="Close"
+                        :title="t('tickets.close')"
                     />
                 </div>
             </div>
@@ -342,7 +352,7 @@ onMounted(() => {
                             <VCol cols="12">
                                 <VSelect
                                     v-model="localTicket.ticket_type_id"
-                                    label="Ticket Type"
+                                    :label="t('tickets.fields.ticketType')"
                                     :items="ticketTypes"
                                     item-title="name"
                                     item-value="id"
@@ -372,7 +382,7 @@ onMounted(() => {
                             <VCol cols="12">
                                 <VTextField
                                     v-model="localTicket.title"
-                                    label="Title"
+                                    :label="t('tickets.fields.title')"
                                     :rules="rules.title"
                                     variant="outlined"
                                     density="comfortable"
@@ -383,7 +393,7 @@ onMounted(() => {
                             <VCol cols="12">
                                 <VTextarea
                                     v-model="localTicket.description"
-                                    label="Description"
+                                    :label="t('tickets.fields.description')"
                                     variant="outlined"
                                     density="comfortable"
                                     rows="4"
@@ -394,8 +404,8 @@ onMounted(() => {
                             <VCol cols="12">
                                 <VSelect
                                     v-model="localTicket.priority"
-                                    label="Priority"
-                                    :items="priorityOptions"
+                                    :label="t('tickets.fields.priority')"
+                                    :items="prioritySelectOptions"
                                     item-title="label"
                                     item-value="value"
                                     variant="outlined"
@@ -426,14 +436,14 @@ onMounted(() => {
                                     color="primary"
                                     class="me-3"
                                 >
-                                    {{ localTicket?.id ? 'Update' : 'Create' }}
+                                    {{ localTicket?.id ? t('tickets.update') : t('tickets.create') }}
                                 </VBtn>
                                 <VBtn
                                     variant="outlined"
                                     color="secondary"
                                     @click="onCancel"
                                 >
-                                    Cancel
+                                    {{ t('tickets.cancel') }}
                                 </VBtn>
                             </VCol>
                         </VRow>
@@ -448,12 +458,12 @@ onMounted(() => {
                     <v-card-text>
                         <!-- Priority -->
                         <div class="property-item mb-3">
-                            <div class="property-label">Priority</div>
+                            <div class="property-label">{{ t('tickets.fields.priority') }}</div>
                             <v-select
                                 v-if="isAdmin"
                                 :model-value="localTicket?.priority"
                                 @update:model-value="handlePriorityChange"
-                                :items="priorityOptions"
+                                :items="prioritySelectOptions"
                                 item-title="label"
                                 item-value="value"
                                 density="compact"
@@ -475,12 +485,12 @@ onMounted(() => {
 
                         <!-- Status -->
                         <div class="property-item mb-3">
-                            <div class="property-label">Status</div>
+                            <div class="property-label">{{ t('tickets.fields.status') }}</div>
                             <v-select
                                 v-if="isAdmin"
                                 :model-value="localTicket?.status"
                                 @update:model-value="handleStatusChange"
-                                :items="statusOptions"
+                                :items="statusSelectOptions"
                                 item-title="label"
                                 item-value="value"
                                 density="compact"
@@ -500,29 +510,61 @@ onMounted(() => {
 
                         <!-- Assignee -->
                         <div class="property-item mb-3" v-if="isAdmin">
-                            <div class="property-label">Assignee</div>
-                            <div class="d-flex align-center">
-                                <UserAvatar
-                                    v-if="localTicket?.assignee"
-                                    :user="localTicket.assignee"
-                                    size="32"
-                                    class="mr-2"
-                                />
-                                <span v-if="localTicket?.assignee">{{ localTicket.assignee.name }}</span>
+                            <div class="d-flex align-center justify-space-between">
+                                <div class="property-label">{{ t('tickets.fields.assignee') }}</div>
                                 <v-btn
-                                    v-else
-                                    variant="outlined"
+                                    v-if="localTicket?.assigned_to_user_id !== user.id"
+                                    variant="text"
+                                    density="compact"
                                     size="small"
-                                    prepend-icon="mdi-account-plus"
+                                    color="primary"
+                                    class="text-caption pa-0"
+                                    style="min-width: auto; text-transform: none;"
+                                    @click="assignToMe"
                                 >
-                                    Assign
+                                    {{ t('tickets.assignToMe') }}
                                 </v-btn>
                             </div>
+                            <v-select
+                                :model-value="localTicket?.assigned_to_user_id"
+                                @update:model-value="handleAssigneeChange"
+                                :items="assignableUsers"
+                                item-title="name"
+                                item-value="id"
+                                density="compact"
+                                variant="outlined"
+                                hide-details
+                                clearable
+                                :placeholder="t('tickets.assign')"
+                            >
+                                <template #selection="{ item }">
+                                    <div class="d-flex align-center">
+                                        <UserAvatar
+                                            :user="item.raw"
+                                            size="24"
+                                            class="mr-2"
+                                        />
+                                        <span>{{ item.raw.name }}</span>
+                                    </div>
+                                </template>
+
+                                <template #item="{ item, props: itemProps }">
+                                    <VListItem v-bind="itemProps">
+                                        <template #prepend>
+                                            <UserAvatar
+                                                :user="item.raw"
+                                                size="28"
+                                                class="mr-2"
+                                            />
+                                        </template>
+                                    </VListItem>
+                                </template>
+                            </v-select>
                         </div>
 
                         <!-- Creator -->
                         <div class="property-item mb-3">
-                            <div class="property-label">Reporter</div>
+                            <div class="property-label">{{ t('tickets.fields.reporter') }}</div>
                             <div class="d-flex align-center">
                                 <UserAvatar
                                     v-if="localTicket?.creator"
@@ -530,13 +572,13 @@ onMounted(() => {
                                     size="32"
                                     class="mr-2"
                                 />
-                                <span>{{ localTicket?.creator?.name || 'Unknown' }}</span>
+                                <span>{{ localTicket?.creator?.name || t('tickets.unknown') }}</span>
                             </div>
                         </div>
 
                         <!-- Created Date -->
                         <div class="property-item">
-                            <div class="property-label">Created</div>
+                            <div class="property-label">{{ t('tickets.fields.created') }}</div>
                             <div class="property-value">
                                 {{ formatDateUtil(localTicket?.created_at) }}
                             </div>
@@ -547,7 +589,7 @@ onMounted(() => {
                 <!-- Description -->
                 <v-card flat class="description-card mb-4" v-if="localTicket?.description">
                     <v-card-text>
-                        <h3 class="text-subtitle-1 font-weight-medium mb-2">Description</h3>
+                        <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.fields.description') }}</h3>
                         <div class="description-content">{{ localTicket.description }}</div>
                     </v-card-text>
                 </v-card>
@@ -555,7 +597,7 @@ onMounted(() => {
                 <!-- Related Content (Ticketable) -->
                 <v-card flat class="related-card mb-4" v-if="localTicket?.ticketable">
                     <v-card-text>
-                        <h3 class="text-subtitle-1 font-weight-medium mb-2">Related To</h3>
+                        <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.sidebar.relatedTo') }}</h3>
                         <div class="d-flex align-center">
                             <v-icon class="mr-2">mdi-link-variant</v-icon>
                             <span>{{ localTicket.ticketable_type }} #{{ localTicket.ticketable_id }}</span>
@@ -567,7 +609,7 @@ onMounted(() => {
                 <v-card flat class="comments-card">
                     <v-card-text>
                         <h3 class="text-subtitle-1 font-weight-medium mb-3">
-                            Activity ({{ ticketComments.length }})
+                            {{ t('tickets.sidebar.activity', { count: ticketComments.length }) }}
                         </h3>
 
                         <!-- Comment List -->
@@ -597,7 +639,7 @@ onMounted(() => {
                                                     color="warning"
                                                     class="ml-2"
                                                 >
-                                                    Internal
+                                                    {{ t('tickets.internal') }}
                                                 </v-chip>
                                             </div>
                                             <v-btn
@@ -614,7 +656,7 @@ onMounted(() => {
                             </div>
 
                             <div v-if="ticketComments.length === 0" class="text-center text-medium-emphasis py-4">
-                                No comments yet
+                                {{ t('tickets.noComments') }}
                             </div>
                         </div>
 
@@ -622,7 +664,7 @@ onMounted(() => {
                         <div v-if="canComment" class="add-comment">
                             <VTextarea
                                 v-model="newComment"
-                                placeholder="Add a comment..."
+                                :placeholder="t('tickets.sidebar.addComment')"
                                 variant="outlined"
                                 density="compact"
                                 rows="3"
@@ -633,7 +675,7 @@ onMounted(() => {
                                 <v-checkbox
                                     v-if="isAdmin"
                                     v-model="isInternalComment"
-                                    label="Internal note"
+                                    :label="t('tickets.sidebar.internalNote')"
                                     density="compact"
                                     hide-details
                                 />
@@ -644,7 +686,7 @@ onMounted(() => {
                                     @click="addComment"
                                     :disabled="!newComment.trim()"
                                 >
-                                    Comment
+                                    {{ t('tickets.comment') }}
                                 </VBtn>
                             </div>
                         </div>
@@ -657,10 +699,10 @@ onMounted(() => {
     <!-- Confirm Delete Dialog -->
     <ConfirmDialog
         v-model="showConfirmationDialog"
-        title="Delete Ticket"
-        content="Are you sure you want to delete this ticket? This action cannot be undone."
-        confirmationText="Delete"
-        cancellationText="Cancel"
+        :title="t('tickets.confirm.deleteTitle')"
+        :content="t('tickets.confirm.deleteMessage')"
+        :confirmationText="t('tickets.confirm.deleteConfirm')"
+        :cancellationText="t('tickets.confirm.deleteCancel')"
         :resolve="handleConfirmation"
     />
 </template>

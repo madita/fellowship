@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -10,7 +12,63 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $types = [
+        Schema::create('ticket_types', function (Blueprint $table) {
+            $table->id();
+            $table->string('name'); // Support, Wiki Approval, Story Submission, etc.
+            $table->string('slug')->unique();
+            $table->text('description')->nullable();
+            $table->string('icon')->nullable(); // Icon identifier for UI
+            $table->string('color')->nullable(); // Color code for UI
+            $table->json('config')->nullable(); // Type-specific configuration
+            $table->boolean('is_active')->default(true);
+            $table->boolean('auto_create')->default(false); // Auto-create on trigger
+            $table->integer('position')->default(0);
+            $table->timestamps();
+        });
+
+        Schema::create('tickets', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('ticket_type_id')->constrained('ticket_types')->onDelete('cascade');
+
+            // Polymorphic relation - what this ticket is about
+            $table->morphs('ticketable'); // ticketable_type, ticketable_id
+
+            $table->foreignId('created_by_user_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('assigned_to_user_id')->nullable()->constrained('users')->onDelete('set null');
+
+            $table->string('title');
+            $table->text('description')->nullable();
+
+            $table->enum('status', ['open', 'in_progress', 'pending', 'resolved', 'closed'])->default('open');
+            $table->enum('priority', ['low', 'normal', 'high', 'urgent'])->default('normal');
+
+            $table->timestamp('due_date')->nullable();
+            $table->timestamp('resolved_at')->nullable();
+            $table->timestamp('closed_at')->nullable();
+
+            $table->json('metadata')->nullable(); // Type-specific data
+
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->index(['status', 'priority', 'created_at']);
+            $table->index(['assigned_to_user_id', 'status']);
+        });
+
+        Schema::create('ticket_comments', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('ticket_id')->constrained('tickets')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->text('comment');
+            $table->boolean('is_internal')->default(false); // Internal notes vs public comments
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->index(['ticket_id', 'created_at']);
+        });
+
+        // Seed default ticket types
+        DB::table('ticket_types')->insert([
             [
                 'name' => 'Support Request',
                 'slug' => 'support',
@@ -83,9 +141,7 @@ return new class extends Migration
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-        ];
-
-        DB::table('ticket_types')->insert($types);
+        ]);
     }
 
     /**
@@ -93,13 +149,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::table('ticket_types')->whereIn('slug', [
-            'support',
-            'bug',
-            'wiki_approval',
-            'story_submission',
-            'feature',
-            'moderation',
-        ])->delete();
+        Schema::dropIfExists('ticket_comments');
+        Schema::dropIfExists('tickets');
+        Schema::dropIfExists('ticket_types');
     }
 };

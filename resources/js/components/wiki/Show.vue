@@ -44,10 +44,45 @@
                                 </v-alert>
                             </div>
 
+                            <!-- Pending Approval Banner (admin only) -->
+                            <v-alert
+                                v-if="isAdmin && !isApproved"
+                                type="warning"
+                                variant="tonal"
+                                class="mb-4"
+                            >
+                                <template v-slot:prepend>
+                                    <v-icon>mdi-clock-alert-outline</v-icon>
+                                </template>
+                                <div class="d-flex align-center justify-space-between">
+                                    <span>{{ $t('wiki.pendingApproval') }}</span>
+                                    <v-btn
+                                        color="success"
+                                        variant="elevated"
+                                        size="small"
+                                        :loading="approving"
+                                        prepend-icon="mdi-check"
+                                        class="ml-3"
+                                        @click="approveWiki"
+                                    >
+                                        {{ $t('wiki.approve') }}
+                                    </v-btn>
+                                </div>
+                            </v-alert>
+
                             <!-- Page Title -->
                             <div class="page-title-section">
                                 <h1 class="page-title text-h3 font-weight-bold mb-2">
                                     {{ wikipage.title || $t('wiki.untitledPage') }}
+                                    <v-chip
+                                        v-if="isAdmin"
+                                        :color="isApproved ? 'success' : 'warning'"
+                                        size="small"
+                                        variant="tonal"
+                                        class="ml-2"
+                                    >
+                                        {{ isApproved ? $t('wiki.approved') : $t('wiki.pendingApproval') }}
+                                    </v-chip>
                                 </h1>
 
                                 <!-- Status Message -->
@@ -207,6 +242,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/store/authStore.js'
+import { useUserStore } from '@/store/userStore.js'
 import { useDateFormat } from '@/plugins/formatDate.js' // Adjust path as needed
 import axios from 'axios'
 
@@ -221,6 +257,7 @@ const props = defineProps({
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const userStore = useUserStore()
 const { formatDate } = useDateFormat()
 
 // Reactive state
@@ -235,10 +272,13 @@ const terms = ref([])
 const tags = ref([])
 const wikiuser = ref({})
 const slug = ref('')
+const isApproved = ref(true)
+const approving = ref(false)
 
 // Computed properties
 const authenticated = computed(() => authStore.isLoggedIn)
 const user = computed(() => authStore.user)
+const isAdmin = computed(() => userStore.user?.isAdmin || false)
 
 // Methods
 const getWikiPage = async () => {
@@ -260,6 +300,7 @@ const getWikiPage = async () => {
         terms.value = response.data.terms || []
         tags.value = response.data.tags || []
         wikiuser.value = response.data.user || {}
+        isApproved.value = response.data.is_approved ?? true
         mode.value = 'edit'
         loading.value = false
 
@@ -278,6 +319,30 @@ const getWikiPage = async () => {
 
 const goTo = (slugParam, type) => {
     router.push({ name: type, params: { slug: slugParam } })
+}
+
+const approveWiki = async () => {
+    try {
+        approving.value = true
+        await axios.post(`/api/wiki/${slug.value}/approve`)
+        isApproved.value = true
+    } catch (error) {
+        console.error('Error approving wiki page:', error)
+    } finally {
+        approving.value = false
+    }
+}
+
+const unapproveWiki = async () => {
+    try {
+        approving.value = true
+        await axios.post(`/api/wiki/${slug.value}/unapprove`)
+        isApproved.value = false
+    } catch (error) {
+        console.error('Error unapproving wiki page:', error)
+    } finally {
+        approving.value = false
+    }
 }
 
 // Locale change handler

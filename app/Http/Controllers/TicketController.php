@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Concerns\Approvable;
 use App\Models\Ticket\Ticket;
 use App\Models\Ticket\TicketType;
 use Illuminate\Http\JsonResponse;
@@ -51,6 +52,15 @@ class TicketController extends Controller
         // Filter by priority
         if ($request->has('priority')) {
             $query->where('priority', $request->priority);
+        }
+
+        // Search by title or description
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
         }
 
         // Sort
@@ -161,6 +171,18 @@ class TicketController extends Controller
         }
 
         $ticket->update($validated);
+
+        // Auto-approve/unapprove linked model when ticket status changes
+        if (isset($validated['status']) && $ticket->ticketable) {
+            $ticketable = $ticket->ticketable;
+            if (in_array(Approvable::class, class_uses_recursive($ticketable))) {
+                if (in_array($validated['status'], ['resolved', 'closed'])) {
+                    $ticketable->approve($user);
+                } elseif (in_array($validated['status'], ['open', 'in_progress', 'pending'])) {
+                    $ticketable->unapprove();
+                }
+            }
+        }
 
         return response()->json($ticket->load(['ticketType', 'creator', 'assignee']));
     }

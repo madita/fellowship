@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Approvable;
 use App\Models\Concerns\HasTickets;
 use App\Traits\HasCache;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
@@ -15,6 +16,7 @@ class Wiki extends Model implements TranslatableContract
     use HasCache;
     use Translatable;
     use HasTickets;
+    use Approvable;
 
     protected $table = 'wikiables';
     protected $cacheTag = 'wikiables';

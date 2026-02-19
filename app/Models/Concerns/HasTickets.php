@@ -37,6 +37,7 @@ trait HasTickets
 
         $defaultData = [
             'ticket_type_id' => $ticketType->id,
+            'created_by_user_id' => $data['created_by_user_id'] ?? auth()->id(),
             'title' => $data['title'] ?? $this->getTicketTitle(),
             'description' => $data['description'] ?? $this->getTicketDescription(),
             'status' => 'open',

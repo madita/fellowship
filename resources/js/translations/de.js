@@ -1641,7 +1641,7 @@ export default {
                 'cardTitle': 'Twitter Card Einstellungen',
                 'cardType': 'Twitter Card Typ',
                 'siteHandle': 'Twitter Site Handle',
-                'siteHandleHint': 'Ihr Twitter-Benutzername (z.B. @ihrname)'
+                'siteHandleHint': "Ihr Twitter-Benutzername (z.B. {'@'}ihrname)"
             }
         },
         'oauth': {
@@ -2383,7 +2383,7 @@ export default {
             'twitterCard': 'Twitter Card-Einstellungen',
             'twitterCardType': 'Twitter Card-Typ',
             'twitterSiteHandle': 'Twitter-Site-Handle',
-            'twitterSiteHint': 'Ihr Twitter-Benutzername (z.B. @ihrname)',
+            'twitterSiteHint': "Ihr Twitter-Benutzername (z.B. {'@'}ihrname)",
             'searchEngineSettings': 'Suchmaschinen-Einstellungen',
             'canonicalUrl': 'Kanonische URL',
             'canonicalUrlHint': 'Bevorzugte vollständige URL für Suchmaschinen (z.B. https://example.com)',
@@ -4166,7 +4166,13 @@ export default {
         'pageUpdatedSuccessfully': 'Wiki-Seite erfolgreich aktualisiert!',
         'errorUpdatingPage': 'Beim Aktualisieren der Seite ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.',
         'editPlaceholder': 'Bearbeiten Sie Ihren Wiki-Seiteninhalt...',
-        'createPlaceholder': 'Beginnen Sie hier mit dem Schreiben Ihres Wiki-Seiteninhalts... Verwenden Sie @ um auf andere Seiten zu verlinken, # für Überschriften und * für Listen.'
+        'createPlaceholder': "Beginnen Sie hier mit dem Schreiben Ihres Wiki-Seiteninhalts... Verwenden Sie {'@'} um auf andere Seiten zu verlinken, # für Überschriften und * für Listen.",
+        'pendingApproval': 'Genehmigung ausstehend',
+        'approved': 'Genehmigt',
+        'approve': 'Genehmigen',
+        'unapprove': 'Genehmigung widerrufen',
+        'approveSuccess': 'Wiki-Seite erfolgreich genehmigt',
+        'unapproveSuccess': 'Wiki-Seitengenehmigung widerrufen',
     },
     'map': {
         'title': 'Kartentitel',
@@ -4299,7 +4305,7 @@ export default {
         },
         'general': {
             'maintenanceMessage': 'Wir führen derzeit geplante Wartungsarbeiten durch. Bitte versuchen Sie es später erneut.',
-            'emailPlaceholder': 'kontakt@beispiel.de',
+            'emailPlaceholder': "kontakt{'@'}beispiel.de",
             'phonePlaceholder': '+49 123 456 789',
             'addressPlaceholder': 'Musterstraße 123, Stadt, Land'
         },
@@ -4387,6 +4393,81 @@ export default {
             'connectionSuccess': 'Verbindung erfolgreich',
             'connectionError': 'Verbindung fehlgeschlagen'
         }
+    },
+    'tickets': {
+        'title': 'Tickets',
+        'subtitle': 'Supportanfragen, Fehler und Inhaltsgenehmigungen verwalten',
+        'createTicket': 'Ticket erstellen',
+        'editTicket': 'Ticket bearbeiten',
+        'deleteTicket': 'Ticket löschen',
+        'noTickets': 'Keine Tickets gefunden',
+        'noTicketsFilterHint': 'Versuchen Sie, Ihre Filter anzupassen',
+        'noTicketsCreateHint': 'Erstellen Sie Ihr erstes Ticket, um loszulegen',
+        'noComments': 'Noch keine Kommentare',
+        'unassigned': 'Nicht zugewiesen',
+        'unknown': 'Unbekannt',
+        'internal': 'Intern',
+        'assign': 'Zuweisen',
+        'assignToMe': 'Mir zuweisen',
+        'view': 'Ansehen',
+        'edit': 'Bearbeiten',
+        'close': 'Schließen',
+        'update': 'Aktualisieren',
+        'create': 'Erstellen',
+        'cancel': 'Abbrechen',
+        'reset': 'Zurücksetzen',
+        'comment': 'Kommentieren',
+        'delete': 'Löschen',
+        'status': {
+            'open': 'Offen',
+            'in_progress': 'In Bearbeitung',
+            'pending': 'Ausstehend',
+            'resolved': 'Gelöst',
+            'closed': 'Geschlossen',
+        },
+        'priority': {
+            'low': 'Niedrig',
+            'normal': 'Normal',
+            'high': 'Hoch',
+            'urgent': 'Dringend',
+        },
+        'filters': {
+            'allStatuses': 'Alle Status',
+            'allPriorities': 'Alle Prioritäten',
+            'allTypes': 'Alle Typen',
+            'allAssignees': 'Alle Zugewiesenen',
+            'assignedToMe': 'Mir zugewiesen',
+            'unassigned': 'Nicht zugewiesen',
+            'searchPlaceholder': 'Tickets durchsuchen...',
+        },
+        'fields': {
+            'id': 'ID',
+            'type': 'Typ',
+            'ticketType': 'Ticket-Typ',
+            'title': 'Titel',
+            'description': 'Beschreibung',
+            'status': 'Status',
+            'priority': 'Priorität',
+            'reporter': 'Ersteller',
+            'assignee': 'Zugewiesener',
+            'created': 'Erstellt',
+        },
+        'sidebar': {
+            'activity': 'Aktivität ({count})',
+            'relatedTo': 'Verknüpft mit',
+            'addComment': 'Kommentar hinzufügen...',
+            'internalNote': 'Interne Notiz',
+        },
+        'confirm': {
+            'deleteTitle': 'Ticket löschen',
+            'deleteMessage': 'Sind Sie sicher, dass Sie dieses Ticket löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
+            'deleteConfirm': 'Löschen',
+            'deleteCancel': 'Abbrechen',
+        },
+        'validation': {
+            'titleRequired': 'Titel ist erforderlich',
+            'typeRequired': 'Typ ist erforderlich',
+        },
     },
     'commonComponents': {
         'copy': {

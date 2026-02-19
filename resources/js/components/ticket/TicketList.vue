@@ -6,10 +6,18 @@ import TicketSidebar from './TicketSidebar.vue';
 import UserAvatar from '../common/UserAvatar.vue';
 import { useUserStore } from '@/store/userStore.js';
 import { useDateFormat } from '@/plugins/formatDate.js';
+import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
 
 const { t } = useI18n();
 const userStore = useUserStore();
 const { formatDate: formatDateUtil } = useDateFormat();
+const {
+    getStatusColor,
+    getPriorityColor,
+    getPriorityIcon,
+    statusFilterOptions,
+    priorityFilterOptions,
+} = useTicketHelpers();
 
 const tickets = ref([]);
 const ticketTypes = ref([]);
@@ -37,73 +45,22 @@ const pagination = ref({
 const user = computed(() => userStore.user || { id: null });
 const isAdmin = computed(() => user.value?.isAdmin || false);
 
-// Status options for filter
-const statusFilterOptions = [
-    { value: null, label: 'All Statuses' },
-    { value: 'open', label: 'Open' },
-    { value: 'in_progress', label: 'In Progress' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'resolved', label: 'Resolved' },
-    { value: 'closed', label: 'Closed' },
-];
-
-// Priority options for filter
-const priorityFilterOptions = [
-    { value: null, label: 'All Priorities' },
-    { value: 'low', label: 'Low' },
-    { value: 'normal', label: 'Normal' },
-    { value: 'high', label: 'High' },
-    { value: 'urgent', label: 'Urgent' },
-];
-
-// Assignee filter options
-const assigneeFilterOptions = ref([
-    { value: null, label: 'All Assignees' },
-    { value: 'me', label: 'Assigned to Me' },
-    { value: 'unassigned', label: 'Unassigned' },
+const assigneeFilterOptions = computed(() => [
+    { value: null, label: t('tickets.filters.allAssignees') },
+    { value: 'me', label: t('tickets.filters.assignedToMe') },
+    { value: 'unassigned', label: t('tickets.filters.unassigned') },
 ]);
 
-const headers = [
-    { text: 'ID', value: 'id', width: '80px' },
-    { text: 'Type', value: 'ticket_type', width: '150px' },
-    { text: 'Title', value: 'title', sortable: true },
-    { text: 'Status', value: 'status', width: '120px' },
-    { text: 'Priority', value: 'priority', width: '120px' },
-    { text: 'Reporter', value: 'creator', width: '150px' },
-    { text: 'Assignee', value: 'assignee', width: '150px' },
-    { text: 'Created', value: 'created_at', width: '150px', sortable: true },
-];
-
-const getStatusColor = (status) => {
-    const colors = {
-        open: 'info',
-        in_progress: 'warning',
-        pending: 'orange',
-        resolved: 'success',
-        closed: 'grey',
-    };
-    return colors[status] || 'grey';
-};
-
-const getPriorityColor = (priority) => {
-    const colors = {
-        low: 'grey',
-        normal: 'info',
-        high: 'warning',
-        urgent: 'error',
-    };
-    return colors[priority] || 'grey';
-};
-
-const getPriorityIcon = (priority) => {
-    const icons = {
-        low: 'mdi-arrow-down',
-        normal: 'mdi-minus',
-        high: 'mdi-arrow-up',
-        urgent: 'mdi-alert',
-    };
-    return icons[priority] || 'mdi-minus';
-};
+const headers = computed(() => [
+    { text: t('tickets.fields.id'), value: 'id', width: '80px' },
+    { text: t('tickets.fields.type'), value: 'ticket_type', width: '150px' },
+    { text: t('tickets.fields.title'), value: 'title', sortable: true },
+    { text: t('tickets.fields.status'), value: 'status', width: '120px' },
+    { text: t('tickets.fields.priority'), value: 'priority', width: '120px' },
+    { text: t('tickets.fields.reporter'), value: 'creator', width: '150px' },
+    { text: t('tickets.fields.assignee'), value: 'assignee', width: '150px' },
+    { text: t('tickets.fields.created'), value: 'created_at', width: '150px', sortable: true },
+]);
 
 const loadTickets = async () => {
     loading.value = true;
@@ -140,7 +97,7 @@ const loadTicketTypes = async () => {
     try {
         const response = await axios.get('/api/ticket-types');
         ticketTypes.value = [
-            { id: null, name: 'All Types' },
+            { id: null, name: t('tickets.filters.allTypes'), slug: null },
             ...response.data
         ];
     } catch (err) {
@@ -148,8 +105,8 @@ const loadTicketTypes = async () => {
     }
 };
 
-const openTicket = (ticket) => {
-    selectedTicket.value = ticket;
+const openTicket = (event, { item }) => {
+    selectedTicket.value = item;
     editMode.value = false;
     isDrawerOpen.value = true;
 };
@@ -233,9 +190,9 @@ onMounted(() => {
         <div class="ticket-list-header pa-4">
             <div class="d-flex align-center justify-space-between mb-4">
                 <div>
-                    <h1 class="text-h4 font-weight-bold">Tickets</h1>
+                    <h1 class="text-h4 font-weight-bold">{{ t('tickets.title') }}</h1>
                     <p class="text-subtitle-1 text-medium-emphasis">
-                        Manage support requests, bugs, and content approvals
+                        {{ t('tickets.subtitle') }}
                     </p>
                 </div>
                 <v-btn
@@ -244,7 +201,7 @@ onMounted(() => {
                     size="large"
                     @click="createNewTicket"
                 >
-                    Create Ticket
+                    {{ t('tickets.createTicket') }}
                 </v-btn>
             </div>
 
@@ -255,7 +212,7 @@ onMounted(() => {
                         <v-col cols="12" md="3">
                             <v-text-field
                                 v-model="filters.search"
-                                placeholder="Search tickets..."
+                                :placeholder="t('tickets.filters.searchPlaceholder')"
                                 prepend-inner-icon="mdi-magnify"
                                 variant="outlined"
                                 density="compact"
@@ -268,10 +225,10 @@ onMounted(() => {
                         <v-col cols="12" md="2">
                             <v-select
                                 v-model="filters.status"
-                                :items="statusFilterOptions"
+                                :items="statusFilterOptions()"
                                 item-title="label"
                                 item-value="value"
-                                label="Status"
+                                :label="t('tickets.fields.status')"
                                 variant="outlined"
                                 density="compact"
                                 hide-details
@@ -285,7 +242,7 @@ onMounted(() => {
                                 :items="ticketTypes"
                                 item-title="name"
                                 item-value="slug"
-                                label="Type"
+                                :label="t('tickets.fields.type')"
                                 variant="outlined"
                                 density="compact"
                                 hide-details
@@ -296,10 +253,10 @@ onMounted(() => {
                         <v-col cols="12" md="2">
                             <v-select
                                 v-model="filters.priority"
-                                :items="priorityFilterOptions"
+                                :items="priorityFilterOptions()"
                                 item-title="label"
                                 item-value="value"
-                                label="Priority"
+                                :label="t('tickets.fields.priority')"
                                 variant="outlined"
                                 density="compact"
                                 hide-details
@@ -313,7 +270,7 @@ onMounted(() => {
                                 :items="assigneeFilterOptions"
                                 item-title="label"
                                 item-value="value"
-                                label="Assignee"
+                                :label="t('tickets.fields.assignee')"
                                 variant="outlined"
                                 density="compact"
                                 hide-details
@@ -328,7 +285,7 @@ onMounted(() => {
                                 block
                                 @click="resetFilters"
                             >
-                                Reset
+                                {{ t('tickets.reset') }}
                             </v-btn>
                         </v-col>
                     </v-row>
@@ -410,7 +367,7 @@ onMounted(() => {
                         />
                         <span class="text-caption">{{ item.assignee.name }}</span>
                     </div>
-                    <span v-else class="text-caption text-medium-emphasis">Unassigned</span>
+                    <span v-else class="text-caption text-medium-emphasis">{{ t('tickets.unassigned') }}</span>
                 </template>
 
                 <template #item.created_at="{ item }">
@@ -422,16 +379,16 @@ onMounted(() => {
                         <v-icon size="64" color="grey-lighten-2" class="mb-4">
                             mdi-ticket-outline
                         </v-icon>
-                        <h3 class="text-h6 mb-2">No tickets found</h3>
+                        <h3 class="text-h6 mb-2">{{ t('tickets.noTickets') }}</h3>
                         <p class="text-body-2 text-medium-emphasis mb-4">
-                            {{ filters.status ? 'Try adjusting your filters' : 'Create your first ticket to get started' }}
+                            {{ filters.status ? t('tickets.noTicketsFilterHint') : t('tickets.noTicketsCreateHint') }}
                         </p>
                         <v-btn
                             color="primary"
                             prepend-icon="mdi-plus"
                             @click="createNewTicket"
                         >
-                            Create Ticket
+                            {{ t('tickets.createTicket') }}
                         </v-btn>
                     </div>
                 </template>

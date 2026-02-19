@@ -28,6 +28,12 @@ Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['store', 
 Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
 Route::patch('wiki/category/{slug}', "\App\Http\Controllers\WikiController@updateCategory");
 
+// Wiki approval (admin only, requires auth)
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::post('wiki/{slug}/approve', "\App\Http\Controllers\WikiController@approve");
+    Route::post('wiki/{slug}/unapprove', "\App\Http\Controllers\WikiController@unapprove");
+});
+
 // Public OAuth Providers endpoint (for login page)
 Route::get('/settings/oauth-providers', 'App\Http\Controllers\Admin\SettingsController@getEnabledOAuthProviders');
 
