@@ -7,7 +7,10 @@ import axios from "axios";
 import ConfirmDialog from '../common/ConfirmDialog.vue';
 import { useUserStore } from "@/store/userStore.js";
 import { useDateFormat } from '@/plugins/formatDate.js';
+import { useRouter } from 'vue-router';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
+
+const router = useRouter();
 
 const props = defineProps({
     isDrawerOpen: Boolean,
@@ -66,6 +69,22 @@ const canComment = computed(() => {
 
 const statusSelectOptions = computed(() => statusFilterOptions(false));
 const prioritySelectOptions = computed(() => priorityFilterOptions(false));
+
+const ticketableLink = computed(() => {
+    const t = localTicket.value?.ticketable;
+    if (!t) return null;
+    const type = localTicket.value.ticketable_type;
+
+    if (type === 'App\\Models\\Wiki') {
+        return { label: t.title || t.slug, icon: 'mdi-book-open-variant', to: `/wiki/${t.slug}` };
+    }
+    if (type === 'App\\Models\\Page') {
+        return { label: t.title || t.slug, icon: 'mdi-file-document-outline', to: `/pages/${t.slug}` };
+    }
+    // Fallback for unknown types
+    const modelName = type ? type.split('\\').pop() : 'Item';
+    return { label: `${modelName} #${localTicket.value.ticketable_id}`, icon: 'mdi-link-variant', to: null };
+});
 
 watch(
     () => props.ticket,
@@ -595,12 +614,21 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Related Content (Ticketable) -->
-                <v-card flat class="related-card mb-4" v-if="localTicket?.ticketable">
+                <v-card flat class="related-card mb-4" v-if="localTicket?.ticketable && ticketableLink">
                     <v-card-text>
                         <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.sidebar.relatedTo') }}</h3>
-                        <div class="d-flex align-center">
-                            <v-icon class="mr-2">mdi-link-variant</v-icon>
-                            <span>{{ localTicket.ticketable_type }} #{{ localTicket.ticketable_id }}</span>
+                        <router-link
+                            v-if="ticketableLink.to"
+                            :to="ticketableLink.to"
+                            class="d-flex align-center text-decoration-none related-link"
+                        >
+                            <v-icon class="mr-2" color="primary">{{ ticketableLink.icon }}</v-icon>
+                            <span class="text-primary">{{ ticketableLink.label }}</span>
+                            <v-icon size="small" class="ml-1" color="primary">mdi-open-in-new</v-icon>
+                        </router-link>
+                        <div v-else class="d-flex align-center">
+                            <v-icon class="mr-2">{{ ticketableLink.icon }}</v-icon>
+                            <span>{{ ticketableLink.label }}</span>
                         </div>
                     </v-card-text>
                 </v-card>
@@ -795,5 +823,15 @@ onMounted(() => {
 .add-comment {
     border-top: 1px solid rgba(0, 0, 0, 0.08);
     padding-top: 16px;
+}
+
+.related-link {
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.related-link:hover {
+    background-color: rgba(var(--v-theme-primary), 0.08);
 }
 </style>

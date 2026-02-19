@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import axios from 'axios';
 import TicketSidebar from './TicketSidebar.vue';
 import UserAvatar from '../common/UserAvatar.vue';
@@ -9,6 +10,7 @@ import { useDateFormat } from '@/plugins/formatDate.js';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
 
 const { t } = useI18n();
+const route = useRoute();
 const userStore = useUserStore();
 const { formatDate: formatDateUtil } = useDateFormat();
 const {
@@ -44,6 +46,10 @@ const pagination = ref({
 
 const user = computed(() => userStore.user || { id: null });
 const isAdmin = computed(() => user.value?.isAdmin || false);
+const isUserView = computed(() => route.path === '/account/tickets');
+
+const pageTitle = computed(() => isUserView.value ? t('tickets.myTickets') : t('tickets.title'));
+const pageSubtitle = computed(() => isUserView.value ? t('tickets.myTicketsSubtitle') : t('tickets.subtitle'));
 
 const assigneeFilterOptions = computed(() => [
     { value: null, label: t('tickets.filters.allAssignees') },
@@ -190,12 +196,13 @@ onMounted(() => {
         <div class="ticket-list-header pa-4">
             <div class="d-flex align-center justify-space-between mb-4">
                 <div>
-                    <h1 class="text-h4 font-weight-bold">{{ t('tickets.title') }}</h1>
+                    <h1 class="text-h4 font-weight-bold">{{ pageTitle }}</h1>
                     <p class="text-subtitle-1 text-medium-emphasis">
-                        {{ t('tickets.subtitle') }}
+                        {{ pageSubtitle }}
                     </p>
                 </div>
                 <v-btn
+                    v-if="isAdmin"
                     color="primary"
                     prepend-icon="mdi-plus"
                     size="large"
@@ -384,6 +391,7 @@ onMounted(() => {
                             {{ filters.status ? t('tickets.noTicketsFilterHint') : t('tickets.noTicketsCreateHint') }}
                         </p>
                         <v-btn
+                            v-if="isAdmin"
                             color="primary"
                             prepend-icon="mdi-plus"
                             @click="createNewTicket"

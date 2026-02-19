@@ -465,7 +465,9 @@ export default {
         'adminEventsTypes': 'Types',
         'adminEventsProfiles': 'Profiles',
         'adminMedia': 'Media Center',
-        'adminTranslations': 'Translations'
+        'adminTickets': 'Tickets',
+        'adminTranslations': 'Translations',
+        'myTickets': 'My Tickets'
     },
     'admin': {
         'media': {
@@ -4213,6 +4215,9 @@ export default {
     'tickets': {
         'title': 'Tickets',
         'subtitle': 'Manage support requests, bugs, and content approvals',
+        'myTickets': 'My Tickets',
+        'myTicketsSubtitle': 'View tickets you have created',
+        'viewRelated': 'View related content',
         'createTicket': 'Create Ticket',
         'editTicket': 'Edit Ticket',
         'deleteTicket': 'Delete Ticket',

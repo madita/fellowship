@@ -18,11 +18,16 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || !$user->isAdmin()) {
-            abort(403, 'Only admins can view tickets.');
+        if (!$user) {
+            abort(401);
         }
 
         $query = Ticket::with(['ticketType', 'creator', 'assignee', 'ticketable']);
+
+        // Non-admins can only see their own tickets
+        if (!$user->isAdmin()) {
+            $query->where('created_by_user_id', $user->id);
+        }
 
         // Filter by status
         if ($request->has('status')) {
