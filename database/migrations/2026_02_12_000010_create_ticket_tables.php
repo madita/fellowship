@@ -31,7 +31,7 @@ return new class extends Migration
             $table->foreignId('ticket_type_id')->constrained('ticket_types')->onDelete('cascade');
 
             // Polymorphic relation - what this ticket is about
-            $table->morphs('ticketable'); // ticketable_type, ticketable_id
+            $table->nullableMorphs('ticketable'); // ticketable_type, ticketable_id
 
             $table->foreignId('created_by_user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->foreignId('assigned_to_user_id')->nullable()->constrained('users')->onDelete('set null');

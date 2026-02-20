@@ -86,6 +86,19 @@ const ticketableLink = computed(() => {
     return { label: `${modelName} #${localTicket.value.ticketable_id}`, icon: 'mdi-link-variant', to: null };
 });
 
+const getTicketDetails = async (ticketId) => {
+    try {
+        loadingTicketDetails.value = true;
+        const response = await axios.get(`/api/tickets/${ticketId}`);
+        localTicket.value = response.data;
+        ticketComments.value = response.data.comments || [];
+    } catch (err) {
+        console.error('Failed to load ticket details:', err);
+    } finally {
+        loadingTicketDetails.value = false;
+    }
+};
+
 watch(
     () => props.ticket,
     (newTicket) => {
@@ -100,19 +113,6 @@ watch(
 watch(() => props.editMode, () => {
     localEditMode.value = props.editMode;
 });
-
-const getTicketDetails = async (ticketId) => {
-    try {
-        loadingTicketDetails.value = true;
-        const response = await axios.get(`/api/tickets/${ticketId}`);
-        localTicket.value = response.data;
-        ticketComments.value = response.data.comments || [];
-    } catch (err) {
-        console.error('Failed to load ticket details:', err);
-    } finally {
-        loadingTicketDetails.value = false;
-    }
-};
 
 const loadTicketTypes = async () => {
     try {

@@ -4,7 +4,6 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import TicketSidebar from './TicketSidebar.vue';
-import UserAvatar from '../common/UserAvatar.vue';
 import { useUserStore } from '@/store/userStore.js';
 import { useDateFormat } from '@/plugins/formatDate.js';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
@@ -18,15 +17,18 @@ const {
     getPriorityColor,
     getPriorityIcon,
     statusFilterOptions,
-    priorityFilterOptions,
 } = useTicketHelpers();
 
 const tickets = ref([]);
-const ticketTypes = ref([]);
 const loading = ref(false);
 const selectedTicket = ref(null);
 const isDrawerOpen = ref(false);
 const editMode = ref(false);
+
+// Related content
+const relatedContent = ref(null);
+const relatedContentLoading = ref(false);
+const relatedContentType = ref(null); // 'wiki' | 'page' | null
 
 // Filters
 const filters = ref({
@@ -50,23 +52,6 @@ const isUserView = computed(() => route.path === '/account/tickets');
 
 const pageTitle = computed(() => isUserView.value ? t('tickets.myTickets') : t('tickets.title'));
 const pageSubtitle = computed(() => isUserView.value ? t('tickets.myTicketsSubtitle') : t('tickets.subtitle'));
-
-const assigneeFilterOptions = computed(() => [
-    { value: null, label: t('tickets.filters.allAssignees') },
-    { value: 'me', label: t('tickets.filters.assignedToMe') },
-    { value: 'unassigned', label: t('tickets.filters.unassigned') },
-]);
-
-const headers = computed(() => [
-    { text: t('tickets.fields.id'), value: 'id', width: '80px' },
-    { text: t('tickets.fields.type'), value: 'ticket_type', width: '150px' },
-    { text: t('tickets.fields.title'), value: 'title', sortable: true },
-    { text: t('tickets.fields.status'), value: 'status', width: '120px' },
-    { text: t('tickets.fields.priority'), value: 'priority', width: '120px' },
-    { text: t('tickets.fields.reporter'), value: 'creator', width: '150px' },
-    { text: t('tickets.fields.assignee'), value: 'assignee', width: '150px' },
-    { text: t('tickets.fields.created'), value: 'created_at', width: '150px', sortable: true },
-]);
 
 const loadTickets = async () => {
     loading.value = true;
@@ -99,22 +84,58 @@ const loadTickets = async () => {
     }
 };
 
-const loadTicketTypes = async () => {
+const loadRelatedContent = async (ticket) => {
+    relatedContent.value = null;
+    relatedContentType.value = null;
+
+    if (!ticket?.ticketable || !ticket?.ticketable_type) return;
+
+    const ticketable = ticket.ticketable;
+    const type = ticket.ticketable_type;
+
+    relatedContentLoading.value = true;
     try {
-        const response = await axios.get('/api/ticket-types');
-        ticketTypes.value = [
-            { id: null, name: t('tickets.filters.allTypes'), slug: null },
-            ...response.data
-        ];
+        if (type === 'App\\Models\\Wiki') {
+            const response = await axios.get(`/api/wiki/${ticketable.slug}`);
+            relatedContent.value = response.data.page || response.data;
+            relatedContentType.value = 'wiki';
+        } else if (type === 'App\\Models\\Page') {
+            const response = await axios.get(`/api/pages/${ticketable.slug}`);
+            relatedContent.value = response.data.page || response.data;
+            relatedContentType.value = 'page';
+        }
     } catch (err) {
-        console.error('Failed to load ticket types:', err);
+        console.error('Failed to load related content:', err);
+    } finally {
+        relatedContentLoading.value = false;
     }
 };
 
-const openTicket = (event, { item }) => {
-    selectedTicket.value = item;
+const relatedContentHtml = computed(() => {
+    if (!relatedContent.value) return null;
+    if (relatedContentType.value === 'wiki') {
+        return relatedContent.value.content || null;
+    }
+    if (relatedContentType.value === 'page') {
+        return relatedContent.value.body || relatedContent.value.content || null;
+    }
+    return null;
+});
+
+const relatedContentTitle = computed(() => {
+    if (!relatedContent.value) return null;
+    return relatedContent.value.title || null;
+});
+
+const selectTicket = (ticket) => {
+    selectedTicket.value = ticket;
     editMode.value = false;
+    loadRelatedContent(ticket);
+};
+
+const openDrawer = () => {
     isDrawerOpen.value = true;
+    editMode.value = false;
 };
 
 const createNewTicket = () => {
@@ -133,6 +154,8 @@ const handleAddTicket = async (ticketData) => {
         const response = await axios.post('/api/tickets', ticketData);
         tickets.value.unshift(response.data);
         pagination.value.total++;
+        selectedTicket.value = response.data;
+        loadRelatedContent(response.data);
     } catch (err) {
         console.error('Failed to create ticket:', err);
     }
@@ -145,6 +168,7 @@ const handleUpdateTicket = async (ticketData) => {
         if (index !== -1) {
             tickets.value[index] = response.data;
         }
+        selectedTicket.value = response.data;
     } catch (err) {
         console.error('Failed to update ticket:', err);
     }
@@ -155,6 +179,9 @@ const handleRemoveTicket = async (ticketId) => {
         await axios.delete(`/api/tickets/${ticketId}`);
         tickets.value = tickets.value.filter(t => t.id !== parseInt(ticketId));
         pagination.value.total--;
+        selectedTicket.value = null;
+        relatedContent.value = null;
+        relatedContentType.value = null;
     } catch (err) {
         console.error('Failed to delete ticket:', err);
     }
@@ -169,251 +196,259 @@ const applyFilters = () => {
     loadTickets();
 };
 
-const resetFilters = () => {
-    filters.value = {
-        status: 'open',
-        type: null,
-        assigned_to: null,
-        priority: null,
-        search: '',
-    };
-    applyFilters();
-};
-
 watch(() => pagination.value.page, () => {
     loadTickets();
 });
 
 onMounted(() => {
     loadTickets();
-    loadTicketTypes();
 });
 </script>
 
 <template>
-    <div class="ticket-list-container">
-        <!-- Header -->
-        <div class="ticket-list-header pa-4">
-            <div class="d-flex align-center justify-space-between mb-4">
-                <div>
-                    <h1 class="text-h4 font-weight-bold">{{ pageTitle }}</h1>
-                    <p class="text-subtitle-1 text-medium-emphasis">
-                        {{ pageSubtitle }}
-                    </p>
-                </div>
-                <v-btn
-                    v-if="isAdmin"
-                    color="primary"
-                    prepend-icon="mdi-plus"
-                    size="large"
-                    @click="createNewTicket"
-                >
-                    {{ t('tickets.createTicket') }}
-                </v-btn>
-            </div>
-
-            <!-- Filters -->
-            <v-card flat class="filter-card">
-                <v-card-text>
-                    <v-row dense>
-                        <v-col cols="12" md="3">
-                            <v-text-field
-                                v-model="filters.search"
-                                :placeholder="t('tickets.filters.searchPlaceholder')"
-                                prepend-inner-icon="mdi-magnify"
-                                variant="outlined"
-                                density="compact"
-                                hide-details
-                                clearable
-                                @update:model-value="applyFilters"
-                            />
-                        </v-col>
-
-                        <v-col cols="12" md="2">
-                            <v-select
-                                v-model="filters.status"
-                                :items="statusFilterOptions()"
-                                item-title="label"
-                                item-value="value"
-                                :label="t('tickets.fields.status')"
-                                variant="outlined"
-                                density="compact"
-                                hide-details
-                                @update:model-value="applyFilters"
-                            />
-                        </v-col>
-
-                        <v-col cols="12" md="2">
-                            <v-select
-                                v-model="filters.type"
-                                :items="ticketTypes"
-                                item-title="name"
-                                item-value="slug"
-                                :label="t('tickets.fields.type')"
-                                variant="outlined"
-                                density="compact"
-                                hide-details
-                                @update:model-value="applyFilters"
-                            />
-                        </v-col>
-
-                        <v-col cols="12" md="2">
-                            <v-select
-                                v-model="filters.priority"
-                                :items="priorityFilterOptions()"
-                                item-title="label"
-                                item-value="value"
-                                :label="t('tickets.fields.priority')"
-                                variant="outlined"
-                                density="compact"
-                                hide-details
-                                @update:model-value="applyFilters"
-                            />
-                        </v-col>
-
-                        <v-col cols="12" md="2" v-if="isAdmin">
-                            <v-select
-                                v-model="filters.assigned_to"
-                                :items="assigneeFilterOptions"
-                                item-title="label"
-                                item-value="value"
-                                :label="t('tickets.fields.assignee')"
-                                variant="outlined"
-                                density="compact"
-                                hide-details
-                                @update:model-value="applyFilters"
-                            />
-                        </v-col>
-
-                        <v-col cols="12" md="1">
-                            <v-btn
-                                variant="outlined"
-                                color="secondary"
-                                block
-                                @click="resetFilters"
-                            >
-                                {{ t('tickets.reset') }}
-                            </v-btn>
-                        </v-col>
-                    </v-row>
-                </v-card-text>
-            </v-card>
-        </div>
-
-        <!-- Tickets Table -->
-        <v-card flat>
-            <v-data-table
-                :headers="headers"
-                :items="tickets"
-                :loading="loading"
-                :items-per-page="pagination.per_page"
-                hide-default-footer
-                class="tickets-table"
-                @click:row="openTicket"
-            >
-                <template #item.id="{ item }">
-                    <span class="text-caption font-weight-medium">#{{ item.id }}</span>
-                </template>
-
-                <template #item.ticket_type="{ item }">
-                    <v-chip
-                        v-if="item.ticket_type"
-                        size="small"
-                        :color="item.ticket_type.color"
-                    >
-                        <v-icon start size="small">{{ item.ticket_type.icon }}</v-icon>
-                        {{ item.ticket_type.name }}
-                    </v-chip>
-                </template>
-
-                <template #item.title="{ item }">
-                    <div class="ticket-title">
-                        <div class="font-weight-medium">{{ item.title }}</div>
-                        <div v-if="item.description" class="text-caption text-medium-emphasis text-truncate">
-                            {{ item.description.substring(0, 60) }}...
+    <v-container fluid class="ticket-layout pa-0">
+        <v-row no-gutters class="fill-height">
+            <!-- Left Panel - Ticket List -->
+            <v-col cols="12" md="4" lg="3" class="left-panel d-flex flex-column">
+                <!-- Header -->
+                <div class="left-panel-header pa-4">
+                    <div class="d-flex align-center justify-space-between mb-2">
+                        <div>
+                            <h3 class="text-h6 font-weight-bold">{{ pageTitle }}</h3>
+                            <p class="text-caption text-medium-emphasis mb-0">{{ pageSubtitle }}</p>
                         </div>
-                    </div>
-                </template>
-
-                <template #item.status="{ item }">
-                    <v-chip
-                        size="small"
-                        :color="getStatusColor(item.status)"
-                    >
-                        {{ item.status_label }}
-                    </v-chip>
-                </template>
-
-                <template #item.priority="{ item }">
-                    <v-chip
-                        size="small"
-                        :color="getPriorityColor(item.priority)"
-                    >
-                        <v-icon start size="x-small">{{ getPriorityIcon(item.priority) }}</v-icon>
-                        {{ item.priority_label }}
-                    </v-chip>
-                </template>
-
-                <template #item.creator="{ item }">
-                    <div class="d-flex align-center" v-if="item.creator">
-                        <UserAvatar
-                            :user="item.creator"
-                            size="28"
-                            class="mr-2"
+                        <v-btn
+                            v-if="isAdmin"
+                            icon="mdi-plus"
+                            variant="tonal"
+                            color="primary"
+                            size="small"
+                            @click="createNewTicket"
+                            :title="t('tickets.createTicket')"
                         />
-                        <span class="text-caption">{{ item.creator.name }}</span>
                     </div>
-                </template>
 
-                <template #item.assignee="{ item }">
-                    <div class="d-flex align-center" v-if="item.assignee">
-                        <UserAvatar
-                            :user="item.assignee"
-                            size="28"
-                            class="mr-2"
-                        />
-                        <span class="text-caption">{{ item.assignee.name }}</span>
-                    </div>
-                    <span v-else class="text-caption text-medium-emphasis">{{ t('tickets.unassigned') }}</span>
-                </template>
+                    <!-- Compact Filters -->
+                    <v-text-field
+                        v-model="filters.search"
+                        :placeholder="t('tickets.filters.searchPlaceholder')"
+                        prepend-inner-icon="mdi-magnify"
+                        variant="outlined"
+                        density="compact"
+                        hide-details
+                        clearable
+                        class="mb-2"
+                        @update:model-value="applyFilters"
+                    />
+                    <v-select
+                        v-model="filters.status"
+                        :items="statusFilterOptions()"
+                        item-title="label"
+                        item-value="value"
+                        variant="outlined"
+                        density="compact"
+                        hide-details
+                        @update:model-value="applyFilters"
+                    />
+                </div>
 
-                <template #item.created_at="{ item }">
-                    <span class="text-caption">{{ formatDateUtil(item.created_at) }}</span>
-                </template>
+                <v-divider />
 
-                <template #no-data>
-                    <div class="text-center pa-8">
-                        <v-icon size="64" color="grey-lighten-2" class="mb-4">
+                <!-- Ticket List -->
+                <div class="ticket-list-items flex-grow-1 overflow-y-auto">
+                    <v-progress-linear v-if="loading" indeterminate color="primary" />
+
+                    <v-list v-if="tickets.length > 0" class="pa-0" density="compact">
+                        <v-list-item
+                            v-for="ticket in tickets"
+                            :key="ticket.id"
+                            :active="selectedTicket?.id === ticket.id"
+                            class="ticket-list-item"
+                            @click="selectTicket(ticket)"
+                        >
+                            <template #prepend>
+                                <v-icon
+                                    :color="getPriorityColor(ticket.priority)"
+                                    size="small"
+                                    class="mr-1"
+                                >
+                                    {{ getPriorityIcon(ticket.priority) }}
+                                </v-icon>
+                            </template>
+
+                            <v-list-item-title class="text-body-2 font-weight-medium">
+                                {{ ticket.title }}
+                            </v-list-item-title>
+
+                            <v-list-item-subtitle class="d-flex align-center ga-2 mt-1">
+                                <v-chip
+                                    size="x-small"
+                                    :color="getStatusColor(ticket.status)"
+                                >
+                                    {{ ticket.status_label }}
+                                </v-chip>
+                                <v-chip
+                                    v-if="ticket.ticket_type"
+                                    size="x-small"
+                                    :color="ticket.ticket_type.color"
+                                    variant="outlined"
+                                >
+                                    {{ ticket.ticket_type.name }}
+                                </v-chip>
+                                <span class="text-caption text-medium-emphasis">#{{ ticket.id }}</span>
+                            </v-list-item-subtitle>
+                        </v-list-item>
+                    </v-list>
+
+                    <!-- Empty State -->
+                    <div v-else-if="!loading" class="text-center pa-8">
+                        <v-icon size="48" color="medium-emphasis" class="mb-3">
                             mdi-ticket-outline
                         </v-icon>
-                        <h3 class="text-h6 mb-2">{{ t('tickets.noTickets') }}</h3>
-                        <p class="text-body-2 text-medium-emphasis mb-4">
+                        <h4 class="text-subtitle-1 mb-1">{{ t('tickets.noTickets') }}</h4>
+                        <p class="text-caption text-medium-emphasis mb-3">
                             {{ filters.status ? t('tickets.noTicketsFilterHint') : t('tickets.noTicketsCreateHint') }}
                         </p>
                         <v-btn
                             v-if="isAdmin"
                             color="primary"
+                            size="small"
                             prepend-icon="mdi-plus"
                             @click="createNewTicket"
                         >
                             {{ t('tickets.createTicket') }}
                         </v-btn>
                     </div>
+                </div>
+
+                <!-- Pagination -->
+                <div v-if="pagination.total > pagination.per_page" class="pa-2 border-t">
+                    <v-pagination
+                        v-model="pagination.page"
+                        :length="pagination.last_page"
+                        :total-visible="5"
+                        density="compact"
+                        rounded="circle"
+                    />
+                </div>
+            </v-col>
+
+            <!-- Right Panel - Related Content -->
+            <v-col cols="12" md="8" lg="9" class="right-panel d-flex flex-column">
+                <template v-if="selectedTicket?.id">
+                    <!-- Content Header Bar -->
+                    <div class="content-header pa-4 d-flex align-center">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-center ga-2 mb-1">
+                                <v-chip
+                                    v-if="selectedTicket.ticket_type"
+                                    size="small"
+                                    :color="selectedTicket.ticket_type.color"
+                                >
+                                    <v-icon start size="small">{{ selectedTicket.ticket_type.icon }}</v-icon>
+                                    {{ selectedTicket.ticket_type.name }}
+                                </v-chip>
+                                <v-chip size="small" :color="getStatusColor(selectedTicket.status)">
+                                    {{ selectedTicket.status_label }}
+                                </v-chip>
+                                <v-chip size="small" :color="getPriorityColor(selectedTicket.priority)">
+                                    <v-icon start size="x-small">{{ getPriorityIcon(selectedTicket.priority) }}</v-icon>
+                                    {{ selectedTicket.priority_label }}
+                                </v-chip>
+                                <span class="text-caption text-medium-emphasis">#{{ selectedTicket.id }}</span>
+                            </div>
+                            <h2 class="text-h6 font-weight-medium">{{ selectedTicket.title }}</h2>
+                        </div>
+                        <v-btn
+                            color="primary"
+                            variant="tonal"
+                            prepend-icon="mdi-information-outline"
+                            @click="openDrawer"
+                        >
+                            {{ t('tickets.details') }}
+                        </v-btn>
+                    </div>
+
+                    <v-divider />
+
+                    <!-- Related Content Area -->
+                    <div class="content-area flex-grow-1 overflow-y-auto pa-6">
+                        <!-- Ticket Description -->
+                        <div v-if="selectedTicket.description" class="mb-6">
+                            <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.fields.description') }}</h3>
+                            <div class="description-content">{{ selectedTicket.description }}</div>
+                        </div>
+
+                        <!-- Related Model Content -->
+                        <template v-if="selectedTicket.ticketable">
+                            <v-divider v-if="selectedTicket.description" class="mb-6" />
+
+                            <div class="d-flex align-center mb-4">
+                                <v-icon class="mr-2" color="primary">
+                                    {{ selectedTicket.ticketable_type === 'App\\Models\\Wiki' ? 'mdi-book-open-variant' : 'mdi-file-document-outline' }}
+                                </v-icon>
+                                <h3 class="text-subtitle-1 font-weight-medium">
+                                    {{ t('tickets.sidebar.relatedTo') }}: {{ relatedContentTitle || selectedTicket.ticketable.title || selectedTicket.ticketable.slug }}
+                                </h3>
+                                <v-spacer />
+                                <v-btn
+                                    v-if="selectedTicket.ticketable_type === 'App\\Models\\Wiki'"
+                                    :to="`/wiki/${selectedTicket.ticketable.slug}`"
+                                    variant="text"
+                                    size="small"
+                                    color="primary"
+                                    prepend-icon="mdi-open-in-new"
+                                >
+                                    {{ t('tickets.viewRelated') }}
+                                </v-btn>
+                                <v-btn
+                                    v-else-if="selectedTicket.ticketable_type === 'App\\Models\\Page'"
+                                    :to="`/pages/${selectedTicket.ticketable.slug}`"
+                                    variant="text"
+                                    size="small"
+                                    color="primary"
+                                    prepend-icon="mdi-open-in-new"
+                                >
+                                    {{ t('tickets.viewRelated') }}
+                                </v-btn>
+                            </div>
+
+                            <!-- Loading State -->
+                            <div v-if="relatedContentLoading" class="text-center py-8">
+                                <v-progress-circular indeterminate color="primary" />
+                            </div>
+
+                            <!-- Content -->
+                            <v-card v-else-if="relatedContentHtml" flat class="related-content-card">
+                                <v-card-text>
+                                    <div class="wiki-content-body" v-html="relatedContentHtml" />
+                                </v-card-text>
+                            </v-card>
+
+                            <!-- No Content -->
+                            <div v-else-if="!relatedContentLoading" class="text-medium-emphasis text-center py-4">
+                                {{ t('tickets.noRelatedContent') }}
+                            </div>
+                        </template>
+                    </div>
                 </template>
-            </v-data-table>
 
-            <!-- Pagination -->
-            <v-card-actions class="justify-center pa-4" v-if="pagination.total > pagination.per_page">
-                <v-pagination
-                    v-model="pagination.page"
-                    :length="pagination.last_page"
-                    :total-visible="7"
-                    rounded="circle"
-                />
-            </v-card-actions>
-        </v-card>
+                <!-- Empty State (no ticket selected) -->
+                <div v-else class="d-flex align-center justify-center fill-height">
+                    <div class="text-center">
+                        <v-icon size="64" color="medium-emphasis" class="mb-4">
+                            mdi-ticket-outline
+                        </v-icon>
+                        <h3 class="text-h5 mb-2">{{ t('tickets.selectTicket') }}</h3>
+                        <p class="text-body-1 text-medium-emphasis">
+                            {{ t('tickets.selectTicketHint') }}
+                        </p>
+                    </div>
+                </div>
+            </v-col>
+        </v-row>
 
-        <!-- Ticket Sidebar -->
+        <!-- Ticket Detail Drawer -->
         <TicketSidebar
             v-model:is-drawer-open="isDrawerOpen"
             :edit-mode="editMode"
@@ -423,39 +458,66 @@ onMounted(() => {
             @remove-ticket="handleRemoveTicket"
             @ticket-updated="handleTicketUpdated"
         />
-    </div>
+    </v-container>
 </template>
 
 <style scoped>
-.ticket-list-container {
+.ticket-layout {
     height: 100%;
-    overflow-y: auto;
 }
 
-.ticket-list-header {
-    background-color: rgb(var(--v-theme-surface));
-    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+.ticket-layout :deep(.v-row) {
+    height: 100%;
 }
 
-.filter-card {
-    border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-    border-radius: 12px;
+.left-panel {
+    border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+    height: 100%;
+    overflow: hidden;
 }
 
-.tickets-table :deep(tbody tr) {
+.left-panel-header {
+    flex-shrink: 0;
+}
+
+.ticket-list-items {
+    min-height: 0;
+}
+
+.ticket-list-item {
+    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
     cursor: pointer;
     transition: background-color 0.2s;
 }
 
-.tickets-table :deep(tbody tr:hover) {
+.ticket-list-item:hover {
     background-color: rgba(var(--v-theme-primary), 0.04);
 }
 
-.ticket-title {
-    max-width: 300px;
+.right-panel {
+    height: 100%;
+    overflow: hidden;
 }
 
-.ticket-title .text-truncate {
-    max-width: 100%;
+.content-header {
+    flex-shrink: 0;
+    border-bottom: none;
+}
+
+.content-area {
+    min-height: 0;
+}
+
+.description-content {
+    white-space: pre-line;
+    line-height: 1.6;
+}
+
+.related-content-card {
+    border-radius: 12px;
+}
+
+.border-t {
+    border-top: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 }
 </style>
