@@ -111,6 +111,9 @@ const componentMap = {
     'footer/FooterWidgetsPage': () => import('@/pages/admin/settings/footer/FooterWidgetsPage.vue'),
     'footer/CustomHtmlPage': () => import('@/pages/admin/settings/footer/CustomHtmlPage.vue'),
 
+    // Moderation
+    'moderation/AutoApprovalPage': () => import('@/pages/admin/settings/moderation/AutoApprovalPage.vue'),
+
     // Advanced
     'advanced/CachingPage': () => import('@/pages/admin/settings/advanced/CachingPage.vue'),
     'advanced/PwaPage': () => import('@/pages/admin/settings/advanced/PwaPage.vue'),

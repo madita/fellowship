@@ -106,6 +106,16 @@ export const settingsCategories = [
         ]
     },
     {
+        id: 'moderation',
+        title: 'Moderation',
+        description: 'Content approval and moderation settings',
+        icon: 'mdi-shield-check-outline',
+        color: 'deep-purple',
+        settings: [
+            { id: 'auto-approval', title: 'Content Auto-Approval', description: 'Configure role-based automatic content approval', icon: 'mdi-shield-check', component: 'AutoApprovalPage' },
+        ]
+    },
+    {
         id: 'advanced',
         title: 'Advanced',
         description: 'Caching, PWA, API, and developer settings',

@@ -1903,6 +1903,7 @@ export default {
             'tabSEO': 'SEO',
             'tabHomepage': 'Homepage',
             'tabFooter': 'Footer',
+            'tabModeration': 'Moderation',
             'tabAdvanced': 'Advanced'
         },
         'category': {
@@ -2588,6 +2589,14 @@ export default {
             'ageConfirmationHint': 'Users must confirm their age',
             'minimumAge': 'Minimum Age',
             'minimumAgeHint': 'Minimum age required to use the site',
+            'saveSettings': 'Save Settings'
+        },
+        'moderation': {
+            'contentAutoApproval': 'Content Auto-Approval',
+            'autoApprovalDesc': 'Configure which roles can bypass the approval process when creating content. Users with selected roles will have their content automatically approved without creating a review ticket.',
+            'autoApproveRolesWiki': 'Auto-approve roles for Wiki pages',
+            'autoApproveRolesWikiHint': 'Users with any of these roles will have their wiki pages automatically approved upon creation.',
+            'noRolesSelected': 'All wiki pages require manual approval',
             'saveSettings': 'Save Settings'
         }
     },

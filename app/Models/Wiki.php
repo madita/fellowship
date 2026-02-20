@@ -42,7 +42,13 @@ class Wiki extends Model implements TranslatableContract
         parent::boot();
 
         static::created(function ($wiki) {
-            // Auto-create ticket for wiki approval
+            // If creator has an auto-approve role, approve immediately (skip ticket)
+            if ($wiki->shouldAutoApprove()) {
+                $wiki->approve(auth()->user());
+                return;
+            }
+
+            // Otherwise create approval ticket as before
             $wiki->autoCreateTicket('wiki_approval', [
                 'title' => "New Wiki Page: {$wiki->title}",
                 'description' => "A new wiki page has been created and needs review.",

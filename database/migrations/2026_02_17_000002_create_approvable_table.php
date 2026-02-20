@@ -20,7 +20,7 @@ return new class extends Migration
         });
 
         // Backfill: auto-approve all existing wiki pages so they remain visible
-       /* $wikis = DB::table('wikiables')->select('id')->get();
+        $wikis = DB::table('wikiables')->select('id')->get();
         $now = now();
         foreach ($wikis as $wiki) {
             DB::table('approvables')->insert([
@@ -30,7 +30,7 @@ return new class extends Migration
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
-        }*/
+        }
     }
 
     public function down(): void

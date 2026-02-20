@@ -1903,6 +1903,7 @@ export default {
             'tabSEO': 'SEO',
             'tabHomepage': 'Homepage',
             'tabFooter': 'Fußzeile',
+            'tabModeration': 'Moderation',
             'tabAdvanced': 'Erweitert'
         },
         'category': {
@@ -2757,6 +2758,14 @@ export default {
                 'swNotRegistered': 'Service Worker ist nicht registriert. Er wird beim Laden der Seite registriert.',
                 'swNotSupported': 'Service Worker werden in diesem Browser nicht unterstützt.'
             }
+        },
+        'moderation': {
+            'contentAutoApproval': 'Automatische Inhaltsfreigabe',
+            'autoApprovalDesc': 'Konfigurieren Sie, welche Rollen den Genehmigungsprozess beim Erstellen von Inhalten umgehen können. Benutzer mit ausgewählten Rollen erhalten eine automatische Freigabe ohne ein Prüfungsticket.',
+            'autoApproveRolesWiki': 'Auto-Freigabe-Rollen für Wiki-Seiten',
+            'autoApproveRolesWikiHint': 'Benutzer mit einer dieser Rollen erhalten bei der Erstellung automatisch eine Freigabe ihrer Wiki-Seiten.',
+            'noRolesSelected': 'Alle Wiki-Seiten erfordern manuelle Freigabe',
+            'saveSettings': 'Einstellungen speichern'
         }
     },
     'widgets': {
