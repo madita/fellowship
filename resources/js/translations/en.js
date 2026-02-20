@@ -4228,6 +4228,8 @@ export default {
         'selectTicketHint': 'Choose a ticket from the list to view details',
         'noRelatedContent': 'No content available for this item',
         'details': 'Details',
+        'listView': 'List view',
+        'kanbanView': 'Kanban board',
         'noComments': 'No comments yet',
         'unassigned': 'Unassigned',
         'unknown': 'Unknown',

@@ -4412,6 +4412,8 @@ export default {
         'selectTicketHint': 'Wählen Sie ein Ticket aus der Liste, um Details anzuzeigen',
         'noRelatedContent': 'Kein Inhalt für dieses Element verfügbar',
         'details': 'Details',
+        'listView': 'Listenansicht',
+        'kanbanView': 'Kanban-Board',
         'noComments': 'Noch keine Kommentare',
         'unassigned': 'Nicht zugewiesen',
         'unknown': 'Unbekannt',
