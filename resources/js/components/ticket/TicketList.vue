@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import TicketSidebar from './TicketSidebar.vue';
+import TicketKanban from './TicketKanban.vue';
 import { useUserStore } from '@/store/userStore.js';
 import { useDateFormat } from '@/plugins/formatDate.js';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
@@ -17,13 +18,18 @@ const {
     getPriorityColor,
     getPriorityIcon,
     statusFilterOptions,
+    priorityFilterOptions,
 } = useTicketHelpers();
 
 const tickets = ref([]);
+const ticketTypes = ref([]);
 const loading = ref(false);
+const showFilters = ref(false);
 const selectedTicket = ref(null);
 const isDrawerOpen = ref(false);
 const editMode = ref(false);
+const viewMode = ref('list'); // 'list' | 'kanban'
+const kanbanRef = ref(null);
 
 // Related content
 const relatedContent = ref(null);
@@ -52,6 +58,20 @@ const isUserView = computed(() => route.path === '/account/tickets');
 
 const pageTitle = computed(() => isUserView.value ? t('tickets.myTickets') : t('tickets.title'));
 const pageSubtitle = computed(() => isUserView.value ? t('tickets.myTicketsSubtitle') : t('tickets.subtitle'));
+
+const assigneeFilterOptions = computed(() => [
+    { value: null, label: t('tickets.filters.allAssignees') },
+    { value: 'me', label: t('tickets.filters.assignedToMe') },
+    { value: 'unassigned', label: t('tickets.filters.unassigned') },
+]);
+
+const activeFilterCount = computed(() => {
+    let count = 0;
+    if (filters.value.priority) count++;
+    if (filters.value.type) count++;
+    if (filters.value.assigned_to) count++;
+    return count;
+});
 
 const loadTickets = async () => {
     loading.value = true;
@@ -189,11 +209,47 @@ const handleRemoveTicket = async (ticketId) => {
 
 const handleTicketUpdated = () => {
     loadTickets();
+    if (kanbanRef.value) {
+        kanbanRef.value.loadTickets();
+    }
+};
+
+const handleKanbanOpenTicket = (ticket) => {
+    selectedTicket.value = ticket;
+    editMode.value = false;
+    isDrawerOpen.value = true;
+};
+
+const handleKanbanTicketUpdated = () => {
+    loadTickets();
+};
+
+const loadTicketTypes = async () => {
+    try {
+        const response = await axios.get('/api/ticket-types');
+        ticketTypes.value = [
+            { id: null, name: t('tickets.filters.allTypes'), slug: null },
+            ...response.data
+        ];
+    } catch (err) {
+        console.error('Failed to load ticket types:', err);
+    }
 };
 
 const applyFilters = () => {
     pagination.value.page = 1;
     loadTickets();
+};
+
+const resetFilters = () => {
+    filters.value = {
+        status: 'open',
+        type: null,
+        assigned_to: null,
+        priority: null,
+        search: '',
+    };
+    applyFilters();
 };
 
 watch(() => pagination.value.page, () => {
@@ -202,12 +258,54 @@ watch(() => pagination.value.page, () => {
 
 onMounted(() => {
     loadTickets();
+    loadTicketTypes();
 });
 </script>
 
 <template>
     <v-container fluid class="ticket-layout pa-0">
-        <v-row no-gutters class="fill-height">
+        <!-- Kanban View -->
+        <template v-if="viewMode === 'kanban'">
+            <div class="kanban-wrapper d-flex flex-column fill-height">
+                <!-- Kanban Header -->
+                <div class="kanban-header pa-4 d-flex align-center">
+                    <div class="flex-grow-1">
+                        <h3 class="text-h6 font-weight-bold">{{ pageTitle }}</h3>
+                        <p class="text-caption text-medium-emphasis mb-0">{{ pageSubtitle }}</p>
+                    </div>
+                    <v-btn-toggle v-model="viewMode" mandatory density="compact" class="mr-2">
+                        <v-btn value="list" size="small" :title="t('tickets.listView')">
+                            <v-icon>mdi-view-list</v-icon>
+                        </v-btn>
+                        <v-btn value="kanban" size="small" :title="t('tickets.kanbanView')">
+                            <v-icon>mdi-view-column</v-icon>
+                        </v-btn>
+                    </v-btn-toggle>
+                    <v-btn
+                        v-if="isAdmin"
+                        icon="mdi-plus"
+                        variant="tonal"
+                        color="primary"
+                        size="small"
+                        @click="createNewTicket"
+                        :title="t('tickets.createTicket')"
+                    />
+                </div>
+
+                <v-divider />
+
+                <!-- Kanban Board -->
+                <TicketKanban
+                    ref="kanbanRef"
+                    class="flex-grow-1"
+                    @open-ticket="handleKanbanOpenTicket"
+                    @ticket-updated="handleKanbanTicketUpdated"
+                />
+            </div>
+        </template>
+
+        <!-- List View -->
+        <v-row v-else no-gutters class="fill-height">
             <!-- Left Panel - Ticket List -->
             <v-col cols="12" md="4" lg="3" class="left-panel d-flex flex-column">
                 <!-- Header -->
@@ -217,18 +315,28 @@ onMounted(() => {
                             <h3 class="text-h6 font-weight-bold">{{ pageTitle }}</h3>
                             <p class="text-caption text-medium-emphasis mb-0">{{ pageSubtitle }}</p>
                         </div>
-                        <v-btn
-                            v-if="isAdmin"
-                            icon="mdi-plus"
-                            variant="tonal"
-                            color="primary"
-                            size="small"
-                            @click="createNewTicket"
-                            :title="t('tickets.createTicket')"
-                        />
+                        <div class="d-flex align-center ga-1">
+                            <v-btn-toggle v-model="viewMode" mandatory density="compact">
+                                <v-btn value="list" size="small" :title="t('tickets.listView')">
+                                    <v-icon>mdi-view-list</v-icon>
+                                </v-btn>
+                                <v-btn value="kanban" size="small" :title="t('tickets.kanbanView')">
+                                    <v-icon>mdi-view-column</v-icon>
+                                </v-btn>
+                            </v-btn-toggle>
+                            <v-btn
+                                v-if="isAdmin"
+                                icon="mdi-plus"
+                                variant="tonal"
+                                color="primary"
+                                size="small"
+                                @click="createNewTicket"
+                                :title="t('tickets.createTicket')"
+                            />
+                        </div>
                     </div>
 
-                    <!-- Compact Filters -->
+                    <!-- Search -->
                     <v-text-field
                         v-model="filters.search"
                         :placeholder="t('tickets.filters.searchPlaceholder')"
@@ -240,16 +348,89 @@ onMounted(() => {
                         class="mb-2"
                         @update:model-value="applyFilters"
                     />
-                    <v-select
-                        v-model="filters.status"
-                        :items="statusFilterOptions()"
-                        item-title="label"
-                        item-value="value"
-                        variant="outlined"
-                        density="compact"
-                        hide-details
-                        @update:model-value="applyFilters"
-                    />
+
+                    <!-- Status + Filter toggle row -->
+                    <div class="d-flex align-center ga-2">
+                        <v-select
+                            v-model="filters.status"
+                            :items="statusFilterOptions()"
+                            item-title="label"
+                            item-value="value"
+                            variant="outlined"
+                            density="compact"
+                            hide-details
+                            class="flex-grow-1"
+                            @update:model-value="applyFilters"
+                        />
+                        <v-btn
+                            :icon="showFilters ? 'mdi-filter-off' : 'mdi-filter-variant'"
+                            variant="text"
+                            density="compact"
+                            size="small"
+                            @click="showFilters = !showFilters"
+                        >
+                            <v-icon>{{ showFilters ? 'mdi-filter-off' : 'mdi-filter-variant' }}</v-icon>
+                            <v-badge
+                                v-if="activeFilterCount > 0 && !showFilters"
+                                :content="activeFilterCount"
+                                color="primary"
+                                floating
+                            />
+                        </v-btn>
+                    </div>
+
+                    <!-- Expandable Filters -->
+                    <v-expand-transition>
+                        <div v-if="showFilters" class="mt-2">
+                            <v-select
+                                v-model="filters.priority"
+                                :items="priorityFilterOptions()"
+                                item-title="label"
+                                item-value="value"
+                                :label="t('tickets.fields.priority')"
+                                variant="outlined"
+                                density="compact"
+                                hide-details
+                                class="mb-2"
+                                @update:model-value="applyFilters"
+                            />
+                            <v-select
+                                v-model="filters.type"
+                                :items="ticketTypes"
+                                item-title="name"
+                                item-value="slug"
+                                :label="t('tickets.fields.type')"
+                                variant="outlined"
+                                density="compact"
+                                hide-details
+                                class="mb-2"
+                                @update:model-value="applyFilters"
+                            />
+                            <v-select
+                                v-if="isAdmin"
+                                v-model="filters.assigned_to"
+                                :items="assigneeFilterOptions"
+                                item-title="label"
+                                item-value="value"
+                                :label="t('tickets.fields.assignee')"
+                                variant="outlined"
+                                density="compact"
+                                hide-details
+                                class="mb-2"
+                                @update:model-value="applyFilters"
+                            />
+                            <v-btn
+                                variant="text"
+                                density="compact"
+                                size="small"
+                                color="secondary"
+                                block
+                                @click="resetFilters"
+                            >
+                                {{ t('tickets.reset') }}
+                            </v-btn>
+                        </div>
+                    </v-expand-transition>
                 </div>
 
                 <v-divider />
@@ -519,5 +700,14 @@ onMounted(() => {
 
 .border-t {
     border-top: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+}
+
+.kanban-wrapper {
+    height: 100%;
+    overflow: hidden;
+}
+
+.kanban-header {
+    flex-shrink: 0;
 }
 </style>
