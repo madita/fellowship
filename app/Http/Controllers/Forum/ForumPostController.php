@@ -36,12 +36,15 @@ class ForumPostController extends Controller
 
         $validated = $request->validate([
             'body' => 'required|string',
-            'parent_id' => 'nullable|exists:forum_posts,id',
+            'parent_id' => 'nullable|exists:forum_posts,id,deleted_at,NULL',
         ]);
 
         // Verify parent_id belongs to this thread if provided
         if (!empty($validated['parent_id'])) {
             $parentPost = ForumPost::find($validated['parent_id']);
+            if (!$parentPost) {
+                abort(400, 'Parent post not found.');
+            }
             if ($parentPost->thread_id !== $thread->id) {
                 abort(400, 'Invalid parent post.');
             }

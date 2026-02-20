@@ -8,19 +8,19 @@
                     <v-breadcrumbs-item :to="{ name: 'forum-index' }">
                         {{ $t('forum.home') }}
                     </v-breadcrumbs-item>
-                    <v-breadcrumbs-divider />
+                    <v-breadcrumbs-divider/>
                     <v-breadcrumbs-item :to="{ name: 'forum-index' }">
                         {{ $t('forum.forums') }}
                     </v-breadcrumbs-item>
                     <template v-if="forumStore.currentThread?.forum">
-                        <v-breadcrumbs-divider />
+                        <v-breadcrumbs-divider/>
                         <v-breadcrumbs-item
                             :to="{ name: 'forum-category', params: { slug: forumStore.currentThread.forum.slug } }"
                         >
                             {{ forumStore.currentThread.forum.name }}
                         </v-breadcrumbs-item>
                     </template>
-                    <v-breadcrumbs-divider />
+                    <v-breadcrumbs-divider/>
                     <v-breadcrumbs-item disabled>
                         {{ forumStore.currentThread?.title }}
                     </v-breadcrumbs-item>
@@ -31,7 +31,7 @@
         <v-container>
             <!-- Loading State -->
             <div v-if="forumStore.loading" class="text-center py-12">
-                <v-progress-circular size="64" width="4" color="primary" indeterminate class="mb-4" />
+                <v-progress-circular size="64" width="4" color="primary" indeterminate class="mb-4"/>
                 <p class="text-body-1 text-medium-emphasis">{{ $t('forum.loadingThread') }}</p>
             </div>
 
@@ -42,17 +42,20 @@
                         <div class="d-flex align-center justify-space-between mb-4">
                             <div class="d-flex align-center gap-2">
                                 <h1 class="text-h4 font-weight-bold">{{ forumStore.currentThread.title }}</h1>
-                                <v-chip v-if="forumStore.currentThread.is_pinned" size="small" color="primary" prepend-icon="mdi-pin">
+                                <v-chip v-if="forumStore.currentThread.is_pinned" size="small" color="primary"
+                                        prepend-icon="mdi-pin">
                                     {{ $t('forum.pinned') }}
                                 </v-chip>
-                                <v-chip v-if="forumStore.currentThread.is_locked" size="small" color="warning" prepend-icon="mdi-lock">
+                                <v-chip v-if="forumStore.currentThread.is_locked" size="small" color="warning"
+                                        prepend-icon="mdi-lock">
                                     {{ $t('forum.locked') }}
                                 </v-chip>
                             </div>
-                            <div v-if="forumStore.threadPermissions.can_edit || forumStore.threadPermissions.can_delete">
+                            <div
+                                v-if="forumStore.threadPermissions.can_edit || forumStore.threadPermissions.can_delete">
                                 <v-menu>
                                     <template v-slot:activator="{ props }">
-                                        <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props" />
+                                        <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props"/>
                                     </template>
                                     <v-list density="compact">
                                         <v-list-item
@@ -75,14 +78,14 @@
 
                         <!-- Thread Author + Stats -->
                         <div class="d-flex align-center mb-4">
-                            <UserAvatar v-if="forumStore.currentThread.author" :user="forumStore.currentThread.author" />
+                            <UserAvatar v-if="forumStore.currentThread.author" :user="forumStore.currentThread.author"/>
                             <div class="ml-3">
                                 <span class="font-weight-medium">{{ forumStore.currentThread.author?.username }}</span>
                                 <div class="text-caption text-medium-emphasis">
                                     {{ formatDateDistance(forumStore.currentThread.created_at) }}
                                 </div>
                             </div>
-                            <v-spacer />
+                            <v-spacer/>
                             <div class="d-flex align-center gap-4">
                                 <v-btn
                                     v-if="authStore.isAuthenticated"
@@ -118,7 +121,7 @@
                                 density="comfortable"
                                 class="mb-3"
                             />
-                            <Tiptap v-model="editThreadBody" type="full" />
+                            <Tiptap v-model="editThreadBody" type="full"/>
                             <div class="d-flex gap-2 mt-3">
                                 <v-btn color="primary" :loading="forumStore.submitting" @click="saveEditThread">
                                     {{ $t('forum.save') }}
@@ -186,10 +189,10 @@
                 >
                     <v-card-title class="text-h6">{{ $t('forum.reply') }}</v-card-title>
                     <v-card-text>
-                        <Tiptap v-model="replyBody" type="simple" />
+                        <Tiptap v-model="replyBody" type="simple"/>
                     </v-card-text>
                     <v-card-actions class="px-4 pb-4">
-                        <v-spacer />
+                        <v-spacer/>
                         <v-btn
                             color="primary"
                             variant="elevated"
@@ -246,10 +249,10 @@
 </template>
 
 <script>
-import { useForumStore } from '@/store/forumStore.js'
-import { useUserStore } from '@/store/userStore.js'
-import { useAuthStore } from '@/store/authStore.js'
-import { formatDateDistanceToNow } from '@/plugins/formatDate.js'
+import {useForumStore} from '@/store/forumStore.js'
+import {useUserStore} from '@/store/userStore.js'
+import {useAuthStore} from '@/store/authStore.js'
+import {formatDateDistanceToNow} from '@/plugins/formatDate.js'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -257,12 +260,12 @@ import ForumPostItem from '@/components/forum/ForumPostItem.vue'
 
 export default {
     name: 'ForumThread',
-    components: { UserAvatar, Tiptap, ConfirmDialog, ForumPostItem },
+    components: {UserAvatar, Tiptap, ConfirmDialog, ForumPostItem},
     setup() {
         const forumStore = useForumStore()
         const userStore = useUserStore()
         const authStore = useAuthStore()
-        return { forumStore, userStore, authStore }
+        return {forumStore, userStore, authStore}
     },
     data() {
         return {
@@ -295,7 +298,7 @@ export default {
 
             // Index all posts by id
             for (const post of posts) {
-                map[post.id] = { ...post, children: [] }
+                map[post.id] = {...post, children: []}
             }
 
             // Build the tree
@@ -323,14 +326,14 @@ export default {
     },
     methods: {
         loadThread() {
-            const { forumSlug, threadSlug } = this.$route.params
+            const {forumSlug, threadSlug} = this.$route.params
             this.forumStore.fetchThread(forumSlug, threadSlug, this.currentPage)
         },
         onPageChange(page) {
             this.currentPage = page
-            const { forumSlug, threadSlug } = this.$route.params
+            const {forumSlug, threadSlug} = this.$route.params
             this.forumStore.fetchThread(forumSlug, threadSlug, page)
-            window.scrollTo({ top: 0, behavior: 'smooth' })
+            window.scrollTo({top: 0, behavior: 'smooth'})
         },
         async submitReply() {
             if (!this.replyBody?.trim()) return
@@ -345,7 +348,12 @@ export default {
                 console.error('Failed to submit reply:', error)
             }
         },
-        onQuoteReply({ postId, username, body }) {
+        escapeHtml(str) {
+            const div = document.createElement('div')
+            div.appendChild(document.createTextNode(str))
+            return div.innerHTML
+        },
+        onQuoteReply({postId, username, body}) {
             this.replyParentId = postId
 
             // Strip HTML to get plain text for the quote, then truncate
@@ -354,18 +362,18 @@ export default {
             const plainText = tmp.textContent || tmp.innerText || ''
             const snippet = plainText.length > 200 ? plainText.substring(0, 200) + '...' : plainText
 
-            const quote = `<blockquote><div class="quote-author">@${username}</div><p>${snippet}</p></blockquote><p></p>`
+            const quote = `<blockquote><div class="quote-author">@${this.escapeHtml(username)}</div><p>${this.escapeHtml(snippet)}</p></blockquote><p></p>`
             this.replyBody = quote
 
             this.$nextTick(() => {
                 if (this.$refs.replyCard?.$el) {
-                    this.$refs.replyCard.$el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    this.$refs.replyCard.$el.scrollIntoView({behavior: 'smooth', block: 'center'})
                 }
             })
         },
-        async onUpdatePost({ postId, body }) {
+        async onUpdatePost({postId, body}) {
             try {
-                await this.forumStore.updatePost(postId, { body })
+                await this.forumStore.updatePost(postId, {body})
             } catch (error) {
                 console.error('Failed to update post:', error)
             }
@@ -424,7 +432,7 @@ export default {
             try {
                 const forumSlug = this.forumStore.currentThread.forum?.slug || this.$route.params.forumSlug
                 await this.forumStore.deleteThread(this.forumStore.currentThread.id)
-                this.$router.push({ name: 'forum-category', params: { slug: forumSlug } })
+                this.$router.push({name: 'forum-category', params: {slug: forumSlug}})
             } catch (error) {
                 console.error('Failed to delete thread:', error)
             }
