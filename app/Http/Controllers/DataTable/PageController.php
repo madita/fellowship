@@ -18,7 +18,13 @@ class PageController extends DataTableController
     public function store(Request $request)
     {
         //        dd($request);
-        $page = auth()->user()->pages()->create($request->only($this->getUpdatableColumns()));
+
+        $data = $request->only($this->getUpdatableColumns());
+        $data['published'] = $data['published'] === null ? 0 : 1;
+        $data['sign_in_only'] = $data['sign_in_only'] === null ? 0 : 1;
+
+
+        $page = auth()->user()->pages()->create($data);
 
         if ($request->get('parent')) {
             $parent = $request->get('parent');
