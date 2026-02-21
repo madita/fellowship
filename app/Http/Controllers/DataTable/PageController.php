@@ -12,7 +12,14 @@ class PageController extends DataTableController
 
     public function builder()
     {
-        return Page::query();
+        $query = Page::query();
+
+        // Filter out pages that have a wiki entry
+        if (request()->boolean('exclude_wiki')) {
+            $query->whereDoesntHave('wikiable');
+        }
+
+        return $query;
     }
 
     public function store(Request $request)
@@ -90,6 +97,13 @@ class PageController extends DataTableController
             'content'      => 'wysiwyg',
             'published'    => 'checkbox',
             'sign_in_only' => 'checkbox', ];
+    }
+
+    public function getToggleFilters()
+    {
+        return [
+            ['key' => 'exclude_wiki', 'label' => 'Exclude Wiki Pages', 'icon' => 'mdi-book-remove-outline'],
+        ];
     }
 
     public function getDisplayableColumns()

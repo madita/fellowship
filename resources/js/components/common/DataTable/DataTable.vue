@@ -77,6 +77,30 @@
                     </v-row>
 
 
+                <!-- Toggle Filters -->
+                <v-row
+                    v-if="state.response.toggle_filters && state.response.toggle_filters.length"
+                    dense
+                    class="pa-2"
+                >
+                    <v-col cols="12">
+                        <div class="d-flex align-center gap-2 flex-wrap">
+                            <span class="text-caption text-medium-emphasis mr-1">{{ $t('dataTable.filters') }}:</span>
+                            <v-chip
+                                v-for="filter in state.response.toggle_filters"
+                                :key="filter.key"
+                                :prepend-icon="filter.icon"
+                                :color="state.activeFilters[filter.key] ? 'primary' : undefined"
+                                :variant="state.activeFilters[filter.key] ? 'elevated' : 'outlined'"
+                                size="small"
+                                @click="toggleFilter(filter.key)"
+                            >
+                                {{ filter.label }}
+                            </v-chip>
+                        </div>
+                    </v-col>
+                </v-row>
+
                 <v-row class="pa-2 align-center">
                     <AppDataTable
                         v-model="state.page"
@@ -356,6 +380,7 @@ export default {
                 headers: [],
                 column_fields: {}
             },
+            activeFilters: {},
             selected: [],
             rules: {
                 required: value => !!value || t('dataTable.required'),
@@ -451,9 +476,16 @@ export default {
         }
 
         const getQueryParameters = () => {
+            // Collect active toggle filters (only send keys that are true)
+            const filterParams = {}
+            Object.entries(state.activeFilters).forEach(([key, active]) => {
+                if (active) filterParams[key] = 1
+            })
+
             return buildQueryString({
                 ...state.search,
-                ...state.pagination
+                ...state.pagination,
+                ...filterParams
             })
         }
 
@@ -579,6 +611,11 @@ export default {
             return state.response.updatable.includes(column)
         }
 
+        const toggleFilter = (key) => {
+            state.activeFilters[key] = !state.activeFilters[key]
+            getRecords()
+        }
+
         const resetRecords = () => {
             state.search.value = ''
             state.quickSearchQuery = ''
@@ -632,7 +669,8 @@ export default {
             resetRecords,
             paginationChange,
             isSidebarActive,
-            buildQueryString
+            buildQueryString,
+            toggleFilter
         }
     }
 }
