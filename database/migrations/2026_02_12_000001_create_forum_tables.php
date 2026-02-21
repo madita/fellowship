@@ -30,11 +30,9 @@ return new class extends Migration
 
         Schema::create('forum_threads', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('taxonomy_id')->on('taxonomies')->onDelete('cascade');
-            //$table->unsignedInteger('taxonomy_id')->nullable(false)->change();
-            //$table->foreign('taxonomy_id')->references('id')->on('taxonomies')->onDelete('cascade');
+            $table->unsignedInteger('taxonomy_id');
+            $table->foreign('taxonomy_id')->references('id')->on('taxonomies')->onDelete('cascade');
 
-            //$table->foreignId('forum_id')->constrained('forums')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('title');
             $table->string('slug')->unique();
