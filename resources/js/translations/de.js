@@ -6,6 +6,8 @@ export default {
         'delete': 'Löschen',
         'title': 'Titel',
         'save': 'Speichern',
+        'create': 'Erstellen',
+        'update': 'Aktualisieren',
         'faq': 'FAQ',
         'contact': 'Kontaktieren Sie uns',
         'tos': 'Nutzungsbedingungen',
@@ -3939,7 +3941,14 @@ export default {
         'publish': 'Veröffentlichen',
         'preview': 'Vorschau',
         'savedSuccess': 'Seite erfolgreich gespeichert',
-        'publishedSuccess': 'Seite erfolgreich veröffentlicht'
+        'publishedSuccess': 'Seite erfolgreich veröffentlicht',
+        'parentPageHint': 'Übergeordnete Seite für Verschachtelung wählen',
+        'typeToSearchCategories': 'Suchen oder Kategorien erstellen',
+        'categoriesHint': 'Bestehende Kategorien wählen oder neue erstellen',
+        'newCategoryName': 'Name der neuen Kategorie',
+        'typeToSearchTags': 'Suchen oder Tags erstellen',
+        'tagsHint': 'Tags hinzufügen um die Seite zu organisieren',
+        'settings': 'Einstellungen'
     },
     'mediaFilters': {
         'searchByFilename': 'Nach Dateiname suchen',

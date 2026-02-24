@@ -7,6 +7,7 @@ import axios from "axios";
 import Tiptap from "@/components/common/tiptap/Tiptap.vue";
 import DataTableJson from "@/components/common/DataTable/DataTableJson.vue";
 import DataTableModel from "@/components/common/DataTable/DataTableModel.vue";
+import DataTableTaxonomy from "@/components/common/DataTable/DataTableTaxonomy.vue";
 
 const { t } = useI18n();
 
@@ -231,6 +232,17 @@ watch(() => props.isDrawerOpen, (isOpen) => {
         if (!item.value.id) {
             localEditMode.value = true;
         }
+
+        // If editing existing item, fetch full data including taxonomies
+        if (props.item?.id && props.endpoint) {
+            try {
+                const { data } = axios.get(`/api${props.endpoint}/${props.item.id}`);
+                if (data.categories) editedItem.value.categories = data.categories;
+                if (data.terms) editedItem.value.terms = data.terms;
+            } catch (e) {
+                console.error('Error fetching item details:', e);
+            }
+        }
     }
 });
 
@@ -407,6 +419,25 @@ onMounted(() => {
                                             density="compact"
                                         />
                                     </template>
+                                </div>
+                            </VCol>
+                        </VRow>
+
+                        <!-- Taxonomy Fields -->
+                        <VRow
+                            v-for="(config, key) in response.taxonomy_fields"
+                            :key="`taxonomy-${key}`"
+                        >
+                            <VCol cols="12">
+                                <div class="field-container">
+                                    <div class="text-caption text-medium-emphasis mb-1">
+                                        {{ config.label }}
+                                    </div>
+                                    <DataTableTaxonomy
+                                        :config="config"
+                                        v-model="editedItem[key]"
+                                        :readonly="!localEditMode"
+                                    />
                                 </div>
                             </VCol>
                         </VRow>

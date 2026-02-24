@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Models\Page;
-//use App\Models\Tag\Taxonomy;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PageController extends DataTableController
@@ -27,8 +27,8 @@ class PageController extends DataTableController
         //        dd($request);
 
         $data = $request->only($this->getUpdatableColumns());
-        $data['published'] = $data['published'] === null ? 0 : 1;
-        $data['sign_in_only'] = $data['sign_in_only'] === null ? 0 : 1;
+        $data['published'] = !empty($data['published']) ? 1 : 0;
+        $data['sign_in_only'] = !empty($data['sign_in_only']) ? 1 : 0;
 
 
         $page = auth()->user()->pages()->create($data);
@@ -40,11 +40,10 @@ class PageController extends DataTableController
             $page->save();
         }
 
-        if ($request->get('taxonomy') && $request->get('categories')) {
+        if ($request->get('categories')) {
             $taxonomy = $request->get('taxonomy');
-            $taxonomy = $taxonomy['taxonomy'];
-            //            dd('hm');
-            $page->addCategories($request->get('categories'), $taxonomy);
+            $taxonomyName = is_array($taxonomy) ? ($taxonomy['taxonomy'] ?? 'category') : ($taxonomy ?? 'category');
+            $page->addCategories($request->get('categories'), $taxonomyName);
         }
 
         if ($request->get('terms')) {
@@ -68,18 +67,44 @@ class PageController extends DataTableController
 
         $page->detachCategories();
 
-        if ($request->get('taxonomy') && $request->get('categories')) {
+        if ($request->get('categories')) {
             $taxonomy = $request->get('taxonomy');
-            if (!is_string($taxonomy)) {
-                $taxonomy = $taxonomy['taxonomy'];
-            }
-
-            $page->addCategories($request->get('categories'), $taxonomy);
+            $taxonomyName = is_array($taxonomy) ? ($taxonomy['taxonomy'] ?? 'category') : ($taxonomy ?? 'category');
+            $page->addCategories($request->get('categories'), $taxonomyName);
         }
 
         if ($request->get('terms')) {
             $page->addCategories($request->get('terms'), 'tags');
         }
+    }
+
+    public function getTaxonomyFields()
+    {
+        return [
+            'categories' => [
+                'taxonomy' => 'category',
+                'label' => 'Categories',
+                'multiple' => true,
+                'endpoint' => '/api/tag/terms/category',
+            ],
+            'terms' => [
+                'taxonomy' => 'tags',
+                'label' => 'Tags',
+                'multiple' => true,
+                'endpoint' => '/api/tag/terms/tags',
+            ],
+        ];
+    }
+
+    public function show($id, Request $request): JsonResponse
+    {
+        $page = Page::find($id);
+        $data = $page->toArray();
+
+        $data['categories'] = $page->getCategories('category')->pluck('title')->toArray();
+        $data['terms'] = $page->getCategories('tags')->pluck('title')->toArray();
+
+        return response()->json($data);
     }
 
     public function getUpdatableColumns()

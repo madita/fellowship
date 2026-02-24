@@ -6,6 +6,8 @@ export default {
         'delete': 'Delete',
         'title': 'Title',
         'save': 'Save',
+        'create': 'Create',
+        'update': 'Update',
         'faq': 'FAQ',
         'contact': 'Contact Us',
         'tos': 'Terms of Service',
@@ -3771,7 +3773,14 @@ export default {
         'publish': 'Publish',
         'preview': 'Preview',
         'savedSuccess': 'Page saved successfully',
-        'publishedSuccess': 'Page published successfully'
+        'publishedSuccess': 'Page published successfully',
+        'parentPageHint': 'Select a parent page for nesting',
+        'typeToSearchCategories': 'Type to search or create categories',
+        'categoriesHint': 'Select existing categories or type to create new ones',
+        'newCategoryName': 'New category name',
+        'typeToSearchTags': 'Type to search or create tags',
+        'tagsHint': 'Add tags to help organize this page',
+        'settings': 'Settings'
     },
     'mediaFilters': {
         'searchByFilename': 'Search by filename',
