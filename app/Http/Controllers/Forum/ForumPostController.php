@@ -12,6 +12,7 @@ use App\Services\SpamDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Stevebauman\Purify\Facades\Purify;
 
 class ForumPostController extends Controller
 {
@@ -58,7 +59,7 @@ class ForumPostController extends Controller
 
         $post = $thread->posts()->create([
             'user_id' => $user->id,
-            'body' => $validated['body'],
+            'body' => Purify::clean($validated['body']),
             'parent_id' => $validated['parent_id'] ?? null,
         ]);
 
@@ -111,6 +112,7 @@ class ForumPostController extends Controller
             'body' => 'required|string',
         ]);
 
+        $validated['body'] = Purify::clean($validated['body']);
         $post->update($validated);
 
         return response()->json($post->load('author'));

@@ -26,6 +26,7 @@ export const useForumStore = defineStore('forum', {
         searchQuery: '',
         searchResults: { threads: null, posts: null },
         searchLoading: false,
+        searchDegraded: false,
         searchType: 'all',
         recentThreads: [],
         recentThreadsPagination: {},
@@ -326,6 +327,7 @@ export const useForumStore = defineStore('forum', {
                     threads: response.data.threads,
                     posts: response.data.posts
                 }
+                this.searchDegraded = response.data.search_degraded || false
             } catch (error) {
                 this.error = error.response?.data?.message || 'Search failed'
                 throw error
@@ -338,6 +340,7 @@ export const useForumStore = defineStore('forum', {
             this.searchQuery = ''
             this.searchResults = { threads: null, posts: null }
             this.searchLoading = false
+            this.searchDegraded = false
             this.searchType = 'all'
         }
     }

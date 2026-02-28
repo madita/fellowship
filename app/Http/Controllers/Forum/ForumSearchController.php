@@ -9,9 +9,12 @@ use App\Models\Tag\Taxonomy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ForumSearchController extends Controller
 {
+    private bool $searchDegraded = false;
+
     public function search(Request $request): JsonResponse
     {
         $request->validate([
@@ -43,10 +46,43 @@ class ForumSearchController extends Controller
             'query' => $query,
             'threads' => $threads,
             'posts' => $posts,
+            'search_degraded' => $this->searchDegraded,
         ]);
     }
 
     private function searchThreads(string $query, ?string $filter, int $page, int $perPage): array
+    {
+        try {
+            return $this->searchThreadsViaMeilisearch($query, $filter, $page, $perPage);
+        } catch (\Exception $e) {
+            if ($this->isMeilisearchError($e)) {
+                Log::warning('Meilisearch unavailable for thread search, falling back to database: ' . $e->getMessage());
+                $this->searchDegraded = true;
+
+                return $this->searchThreadsViaDatabase($query, $page, $perPage);
+            }
+
+            throw $e;
+        }
+    }
+
+    private function searchPosts(string $query, ?string $filter, int $page, int $perPage): array
+    {
+        try {
+            return $this->searchPostsViaMeilisearch($query, $filter, $page, $perPage);
+        } catch (\Exception $e) {
+            if ($this->isMeilisearchError($e)) {
+                Log::warning('Meilisearch unavailable for post search, falling back to database: ' . $e->getMessage());
+                $this->searchDegraded = true;
+
+                return $this->searchPostsViaDatabase($query, $page, $perPage);
+            }
+
+            throw $e;
+        }
+    }
+
+    private function searchThreadsViaMeilisearch(string $query, ?string $filter, int $page, int $perPage): array
     {
         $scoutBuilder = ForumThread::search($query);
 
@@ -75,7 +111,7 @@ class ForumSearchController extends Controller
         ];
     }
 
-    private function searchPosts(string $query, ?string $filter, int $page, int $perPage): array
+    private function searchPostsViaMeilisearch(string $query, ?string $filter, int $page, int $perPage): array
     {
         $scoutBuilder = ForumPost::search($query);
 
@@ -104,6 +140,57 @@ class ForumSearchController extends Controller
         ];
     }
 
+    private function searchThreadsViaDatabase(string $query, int $page, int $perPage): array
+    {
+        $privateIds = $this->getPrivateCategoryIds();
+
+        $builder = ForumThread::query()
+            ->where(function ($q) use ($query) {
+                $q->where('title', 'LIKE', "%{$query}%")
+                    ->orWhere('body', 'LIKE', "%{$query}%");
+            });
+
+        if (!empty($privateIds)) {
+            $builder->whereNotIn('taxonomy_id', $privateIds);
+        }
+
+        $results = $builder->with(['author', 'category.term', 'lastPostUser'])
+            ->orderByDesc('last_post_at')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return [
+            'data' => $results->getCollection()->map(fn($thread) => $this->transformThread($thread)),
+            'total' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'last_page' => $results->lastPage(),
+        ];
+    }
+
+    private function searchPostsViaDatabase(string $query, int $page, int $perPage): array
+    {
+        $privateIds = $this->getPrivateCategoryIds();
+
+        $builder = ForumPost::query()
+            ->where('body', 'LIKE', "%{$query}%");
+
+        if (!empty($privateIds)) {
+            $builder->whereHas('thread', function ($q) use ($privateIds) {
+                $q->whereNotIn('taxonomy_id', $privateIds);
+            });
+        }
+
+        $results = $builder->with(['author', 'thread.category.term'])
+            ->orderByDesc('created_at')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return [
+            'data' => $results->getCollection()->map(fn($post) => $this->transformPost($post)),
+            'total' => $results->total(),
+            'current_page' => $results->currentPage(),
+            'last_page' => $results->lastPage(),
+        ];
+    }
+
     private function buildPrivateCategoryFilter(): ?string
     {
         $user = Auth::user();
@@ -112,11 +199,7 @@ class ForumSearchController extends Controller
             return null;
         }
 
-        $privateIds = Taxonomy::taxonomy('forum_cat')
-            ->get()
-            ->filter(fn($cat) => $cat->properties['is_private'] ?? false)
-            ->pluck('id')
-            ->all();
+        $privateIds = $this->getPrivateCategoryIds();
 
         if (empty($privateIds)) {
             return null;
@@ -126,6 +209,39 @@ class ForumSearchController extends Controller
         $filters = array_map(fn($id) => "taxonomy_id != {$id}", $privateIds);
 
         return implode(' AND ', $filters);
+    }
+
+    private function getPrivateCategoryIds(): array
+    {
+        $user = Auth::user();
+
+        if ($user && $user->isAdmin()) {
+            return [];
+        }
+
+        return Taxonomy::taxonomy('forum_cat')
+            ->get()
+            ->filter(fn($cat) => $cat->properties['is_private'] ?? false)
+            ->pluck('id')
+            ->all();
+    }
+
+    private function isMeilisearchError(\Exception $e): bool
+    {
+        if ($e instanceof \Meilisearch\Exceptions\CommunicationException) {
+            return true;
+        }
+
+        $previous = $e->getPrevious();
+        if ($previous instanceof \Meilisearch\Exceptions\CommunicationException) {
+            return true;
+        }
+
+        $message = strtolower($e->getMessage());
+
+        return str_contains($message, 'meilisearch')
+            || str_contains($message, 'connection refused')
+            || str_contains($message, 'could not resolve host');
     }
 
     private function transformThread(ForumThread $thread): array

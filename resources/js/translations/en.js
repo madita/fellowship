@@ -4394,6 +4394,7 @@ export default {
         'noThreadResults': 'No threads match your search.',
         'noPostResults': 'No posts match your search.',
         'noSearchResults': 'No results found',
+        'searchDegradedWarning': 'Full-text search is temporarily unavailable. Showing basic search results instead.',
         'replyIn': 'replied in',
         'viewChronological': 'Chronological',
         'viewThreaded': 'Threaded',

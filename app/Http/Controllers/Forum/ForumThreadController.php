@@ -11,6 +11,7 @@ use App\Services\SpamDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Stevebauman\Purify\Facades\Purify;
 
 class ForumThreadController extends Controller
 {
@@ -150,7 +151,7 @@ class ForumThreadController extends Controller
         $thread = $category->forumThreads()->create([
             'user_id' => $user->id,
             'title' => $validated['title'],
-            'body' => $validated['body'],
+            'body' => Purify::clean($validated['body']),
         ]);
 
         // Auto-subscribe thread author
@@ -188,6 +189,10 @@ class ForumThreadController extends Controller
         // Only admins can pin/lock
         if (isset($validated['is_pinned']) || isset($validated['is_locked'])) {
             $this->authorize('admin');
+        }
+
+        if (isset($validated['body'])) {
+            $validated['body'] = Purify::clean($validated['body']);
         }
 
         $thread->update($validated);

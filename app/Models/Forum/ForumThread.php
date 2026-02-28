@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-use Laravel\Scout\Searchable;
+use App\Models\Concerns\SafeSearchable;
 
 /**
  * @property int $id
@@ -23,7 +23,7 @@ use Laravel\Scout\Searchable;
 
 class ForumThread extends Model
 {
-    use HasFactory, SoftDeletes, Searchable;
+    use HasFactory, SoftDeletes, SafeSearchable;
 
     protected $fillable = [
         'taxonomy_id',

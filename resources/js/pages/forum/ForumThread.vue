@@ -6,10 +6,6 @@
                 <!-- Breadcrumbs -->
                 <v-breadcrumbs class="px-0 mb-4">
                     <v-breadcrumbs-item :to="{ name: 'forum-index' }">
-                        {{ $t('forum.home') }}
-                    </v-breadcrumbs-item>
-                    <v-breadcrumbs-divider/>
-                    <v-breadcrumbs-item :to="{ name: 'forum-index' }">
                         {{ $t('forum.forums') }}
                     </v-breadcrumbs-item>
                     <template v-if="forumStore.currentThread?.forum">
@@ -197,7 +193,7 @@
                             color="primary"
                             variant="elevated"
                             :loading="forumStore.submitting"
-                            :disabled="!replyBody?.trim()"
+                            :disabled="isReplyBodyEmpty"
                             @click="submitReply"
                         >
                             {{ $t('forum.submit') }}
@@ -283,6 +279,12 @@ export default {
         currentUser() {
             return this.userStore.user
         },
+        isReplyBodyEmpty() {
+            if (!this.replyBody) return true
+            const tmp = document.createElement('div')
+            tmp.innerHTML = this.replyBody
+            return !tmp.textContent.trim() && !tmp.querySelector('img')
+        },
         displayPosts() {
             if (this.postViewMode === 'threaded') {
                 return this.threadedPosts
@@ -336,7 +338,7 @@ export default {
             window.scrollTo({top: 0, behavior: 'smooth'})
         },
         async submitReply() {
-            if (!this.replyBody?.trim()) return
+            if (this.isReplyBodyEmpty) return
             try {
                 await this.forumStore.createPost(this.forumStore.currentThread.id, {
                     body: this.replyBody,

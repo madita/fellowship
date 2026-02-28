@@ -42,6 +42,17 @@
         </div>
 
         <v-container>
+            <!-- Search Degraded Warning -->
+            <v-alert
+                v-if="forumStore.searchDegraded"
+                type="warning"
+                variant="tonal"
+                class="mb-4"
+                closable
+            >
+                {{ $t('forum.searchDegradedWarning') }}
+            </v-alert>
+
             <!-- Loading State -->
             <div v-if="forumStore.searchLoading" class="text-center py-12">
                 <v-progress-circular size="64" width="4" color="primary" indeterminate class="mb-4" />

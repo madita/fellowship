@@ -4578,6 +4578,7 @@ export default {
         'noThreadResults': 'Keine Themen gefunden.',
         'noPostResults': 'Keine Beiträge gefunden.',
         'noSearchResults': 'Keine Ergebnisse gefunden',
+        'searchDegradedWarning': 'Die Volltextsuche ist vorübergehend nicht verfügbar. Es werden stattdessen einfache Suchergebnisse angezeigt.',
         'replyIn': 'antwortete in',
         'viewChronological': 'Chronologisch',
         'viewThreaded': 'Verschachtelt',
