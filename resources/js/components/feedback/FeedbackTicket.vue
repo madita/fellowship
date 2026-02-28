@@ -141,7 +141,7 @@
               </div>
 
               <!-- Add Comment Form -->
-              <div v-if="$store.state.auth.user" class="mt-6">
+              <div v-if="isLoggedIn" class="mt-6">
                 <v-divider class="mb-4" />
                 <v-textarea
                   v-model="newComment"
@@ -186,7 +186,7 @@
               :variant="ticket.user_has_voted ? 'elevated' : 'outlined'"
               class="mb-3"
               @click="toggleVote"
-              :disabled="!$store.state.auth.user"
+              :disabled="!isLoggedIn"
             >
               <v-icon left>mdi-arrow-up-bold</v-icon>
               {{ ticket.user_has_voted ? 'Voted' : 'Vote' }} ({{ ticket.votes_count }})
@@ -198,7 +198,7 @@
               :color="ticket.user_is_watching ? 'secondary' : 'default'"
               :variant="ticket.user_is_watching ? 'elevated' : 'outlined'"
               @click="toggleWatch"
-              :disabled="!$store.state.auth.user"
+              :disabled="!isLoggedIn"
             >
               <v-icon left>{{ ticket.user_is_watching ? 'mdi-eye-check' : 'mdi-eye' }}</v-icon>
               {{ ticket.user_is_watching ? 'Watching' : 'Watch' }}
@@ -240,6 +240,7 @@
 
 <script>
 import axios from 'axios';
+import { useAuthStore } from '@/store/authStore.js';
 
 export default {
   name: 'FeedbackTicket',
@@ -250,6 +251,12 @@ export default {
       newComment: '',
       submittingComment: false,
     };
+  },
+  computed: {
+    isLoggedIn() {
+      const authStore = useAuthStore();
+      return authStore.isLoggedIn;
+    },
   },
   mounted() {
     this.fetchTicket();
@@ -268,7 +275,7 @@ export default {
       }
     },
     async toggleVote() {
-      if (!this.$store.state.auth.user) return;
+      if (!this.isLoggedIn) return;
 
       try {
         const { data } = await axios.post(`/api/feedback/tickets/${this.ticket.id}/vote`);
@@ -279,7 +286,7 @@ export default {
       }
     },
     async toggleWatch() {
-      if (!this.$store.state.auth.user) return;
+      if (!this.isLoggedIn) return;
 
       try {
         const { data } = await axios.post(`/api/feedback/tickets/${this.ticket.id}/watch`);

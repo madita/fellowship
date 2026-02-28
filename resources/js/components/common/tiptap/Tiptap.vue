@@ -1,7 +1,7 @@
 <template>
     <div class="tiptap-editor">
         <!-- Toolbar -->
-        <div v-if="editor && type === 'full'" class="editor-toolbar">
+        <div v-if="editorReady && editor && type === 'full'" class="editor-toolbar">
             <!-- Text Formatting Group -->
             <div class="toolbar-group">
                 <v-tooltip :text="$t('editor.bold')" location="bottom">
@@ -421,7 +421,7 @@
         <bubble-menu
             :editor="editor"
             :tippy-options="{ duration: 100, placement: 'top' }"
-            v-if="editor"
+            v-if="editorReady && editor"
             class="bubble-menu"
         >
             <v-card class="bubble-menu-content" elevation="8">
@@ -468,7 +468,7 @@
 
         <!-- Character Count -->
         <div
-            v-if="editor && limit"
+            v-if="editorReady && editor && limit"
             :class="[
         'character-count',
         { 'character-count--warning': editor.storage.characterCount.characters() >= limit * 0.9 },
@@ -564,9 +564,13 @@ const { t } = useI18n();
 const showLinkDialog = ref(false);
 const showMediaPicker = ref(false);
 const linkUrl = ref('');
+const editorReady = ref(false);
 
 const editor = useEditor({
     content: props.modelValue,
+    onCreate: () => {
+        editorReady.value = true;
+    },
     extensions: [
         StarterKit,
         Table.configure({

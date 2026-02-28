@@ -9,7 +9,7 @@
             <p class="text-subtitle-1 text-medium-emphasis">{{ subtitle }}</p>
           </div>
           <v-btn
-            v-if="$store.state.auth.user"
+            v-if="isLoggedIn"
             color="primary"
             size="large"
             @click="showComposer = true"
@@ -78,7 +78,7 @@
                       variant="text"
                       :color="ticket.user_has_voted ? 'primary' : 'default'"
                       @click="toggleVote(ticket)"
-                      :disabled="!$store.state.auth.user"
+                      :disabled="!isLoggedIn"
                     >
                       <v-icon>mdi-arrow-up-bold</v-icon>
                     </v-btn>
@@ -162,6 +162,7 @@
 <script>
 import axios from 'axios';
 import FeedbackComposer from './FeedbackComposer.vue';
+import { useAuthStore } from '@/store/authStore.js';
 
 export default {
   name: 'FeedbackList',
@@ -204,6 +205,10 @@ export default {
     };
   },
   computed: {
+    isLoggedIn() {
+      const authStore = useAuthStore();
+      return authStore.isLoggedIn;
+    },
     title() {
       return this.type === 'bug' ? 'Bug Reports' : 'Feature Requests';
     },
@@ -264,7 +269,7 @@ export default {
       }
     },
     async toggleVote(ticket) {
-      if (!this.$store.state.auth.user) return;
+      if (!this.isLoggedIn) return;
 
       try {
         const { data } = await axios.post(`/api/feedback/tickets/${ticket.id}/vote`);
