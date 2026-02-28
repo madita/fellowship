@@ -492,7 +492,7 @@ export default {
             'allowedRoles': 'Allowed Roles',
             'allowedRolesHint': 'Roles that can view this forum when private is enabled',
             'postRoles': 'Posting Roles',
-            'postRolesHint': 'Roles that can create threads when locked is enabled',
+            'postRolesHint': 'Roles that can create threads when locked is disabled',
             'rolePermissions': 'Role Permissions',
             'moderationSettings': 'Moderation Settings',
             'moderateRoles': 'Moderator Roles',
