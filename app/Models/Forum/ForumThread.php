@@ -120,7 +120,8 @@ class ForumThread extends Model
      */
     public function getUrlAttribute(): string
     {
-        return "/forum/{$this->category->term->slug}/{$this->slug}";
+        $categorySlug = $this->category?->term?->slug ?? 'unknown';
+        return "/forum/{$categorySlug}/{$this->slug}";
     }
 
     /**
