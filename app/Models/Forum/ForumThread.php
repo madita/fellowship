@@ -180,9 +180,6 @@ class ForumThread extends Model
     }
 
     /**
-     * Get subscriptions for this thread.
-     */
-    /**
      * Get read records for this thread.
      */
     public function reads(): HasMany
