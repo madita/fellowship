@@ -116,7 +116,17 @@ class TicketController extends Controller
             'comments.user',
         ]);
 
-        return response()->json($ticket);
+        $data = $ticket->toArray();
+
+        if ($ticket->ticketable && in_array(Approvable::class, class_uses_recursive($ticket->ticketable))) {
+            $data['is_approvable'] = true;
+            $data['is_approved'] = $ticket->ticketable->isApproved();
+        } else {
+            $data['is_approvable'] = false;
+            $data['is_approved'] = false;
+        }
+
+        return response()->json($data);
     }
 
     /**
@@ -233,6 +243,75 @@ class TicketController extends Controller
         $ticket->assignTo($assignee);
 
         return response()->json($ticket->fresh(['assignee']));
+    }
+
+    /**
+     * Approve linked approvable content.
+     */
+    public function approve(Ticket $ticket): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user || !$user->isAdmin()) {
+            abort(403, 'Only admins can approve content.');
+        }
+
+        $ticketable = $ticket->ticketable;
+
+        if (!$ticketable || !in_array(Approvable::class, class_uses_recursive($ticketable))) {
+            abort(422, 'This ticket is not linked to approvable content.');
+        }
+
+        $ticketable->approve($user);
+
+        // Resolve the ticket
+        $ticket->update([
+            'status' => 'resolved',
+            'resolved_at' => $ticket->resolved_at ?? now(),
+        ]);
+
+        $ticket->load(['ticketType', 'creator', 'assignee', 'ticketable']);
+
+        $data = $ticket->toArray();
+        $data['is_approvable'] = true;
+        $data['is_approved'] = true;
+
+        return response()->json($data);
+    }
+
+    /**
+     * Reject linked approvable content.
+     */
+    public function reject(Ticket $ticket): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user || !$user->isAdmin()) {
+            abort(403, 'Only admins can reject content.');
+        }
+
+        $ticketable = $ticket->ticketable;
+
+        if (!$ticketable || !in_array(Approvable::class, class_uses_recursive($ticketable))) {
+            abort(422, 'This ticket is not linked to approvable content.');
+        }
+
+        $ticketable->unapprove();
+
+        // Reopen the ticket
+        $ticket->update([
+            'status' => 'open',
+            'resolved_at' => null,
+            'closed_at' => null,
+        ]);
+
+        $ticket->load(['ticketType', 'creator', 'assignee', 'ticketable']);
+
+        $data = $ticket->toArray();
+        $data['is_approvable'] = true;
+        $data['is_approved'] = false;
+
+        return response()->json($data);
     }
 
     /**

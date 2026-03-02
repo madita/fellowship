@@ -52,6 +52,9 @@ const ticketComments = ref([]);
 const newComment = ref('');
 const isInternalComment = ref(false);
 const assignableUsers = ref([]);
+const isApprovable = ref(false);
+const isApproved = ref(false);
+const approving = ref(false);
 
 const user = computed(() => userStore.user || { id: null });
 
@@ -92,6 +95,8 @@ const getTicketDetails = async (ticketId) => {
         const response = await axios.get(`/api/tickets/${ticketId}`);
         localTicket.value = response.data;
         ticketComments.value = response.data.comments || [];
+        isApprovable.value = response.data.is_approvable || false;
+        isApproved.value = response.data.is_approved || false;
     } catch (err) {
         console.error('Failed to load ticket details:', err);
     } finally {
@@ -220,6 +225,38 @@ const handleAssigneeChange = async (userId) => {
         emit('ticketUpdated');
     } catch (err) {
         console.error('Failed to update assignee:', err);
+    }
+};
+
+const approveTicket = async () => {
+    if (!localTicket.value?.id) return;
+    try {
+        approving.value = true;
+        const response = await axios.post(`/api/tickets/${localTicket.value.id}/approve`);
+        localTicket.value = { ...localTicket.value, ...response.data };
+        isApproved.value = true;
+        ticketComments.value = response.data.comments || ticketComments.value;
+        emit('ticketUpdated', response.data);
+    } catch (err) {
+        console.error('Failed to approve:', err);
+    } finally {
+        approving.value = false;
+    }
+};
+
+const rejectTicket = async () => {
+    if (!localTicket.value?.id) return;
+    try {
+        approving.value = true;
+        const response = await axios.post(`/api/tickets/${localTicket.value.id}/reject`);
+        localTicket.value = { ...localTicket.value, ...response.data };
+        isApproved.value = false;
+        ticketComments.value = response.data.comments || ticketComments.value;
+        emit('ticketUpdated', response.data);
+    } catch (err) {
+        console.error('Failed to reject:', err);
+    } finally {
+        approving.value = false;
     }
 };
 
@@ -633,6 +670,66 @@ onMounted(() => {
                     </v-card-text>
                 </v-card>
 
+                <!-- Approval Section -->
+                <v-card flat class="approval-card mb-4" v-if="isApprovable && isAdmin">
+                    <v-card-text>
+                        <v-alert
+                            v-if="!isApproved"
+                            type="warning"
+                            variant="tonal"
+                            density="compact"
+                            class="mb-3"
+                        >
+                            {{ t('tickets.sidebar.pendingApproval') }}
+                        </v-alert>
+                        <v-alert
+                            v-else
+                            type="success"
+                            variant="tonal"
+                            density="compact"
+                            class="mb-3"
+                        >
+                            {{ t('tickets.sidebar.approved') }}
+                        </v-alert>
+
+                        <div class="d-flex ga-2">
+                            <template v-if="!isApproved">
+                                <v-btn
+                                    color="success"
+                                    variant="flat"
+                                    size="small"
+                                    :loading="approving"
+                                    @click="approveTicket"
+                                >
+                                    <v-icon start>mdi-check</v-icon>
+                                    {{ t('tickets.sidebar.approve') }}
+                                </v-btn>
+                                <v-btn
+                                    color="error"
+                                    variant="outlined"
+                                    size="small"
+                                    :loading="approving"
+                                    @click="rejectTicket"
+                                >
+                                    <v-icon start>mdi-close</v-icon>
+                                    {{ t('tickets.sidebar.reject') }}
+                                </v-btn>
+                            </template>
+                            <v-btn
+                                v-else
+                                color="warning"
+                                variant="outlined"
+                                size="small"
+                                :loading="approving"
+                                @click="rejectTicket"
+                            >
+                                <v-icon start>mdi-undo</v-icon>
+                                {{ t('tickets.sidebar.revokeApproval') }}
+                            </v-btn>
+                        </div>
+                    </v-card-text>
+                </v-card>
+
                 <!-- Comments Section -->
                 <v-card flat class="comments-card">
                     <v-card-text>
@@ -767,6 +864,7 @@ onMounted(() => {
 .ticket-info-card,
 .description-card,
 .related-card,
+.approval-card,
 .comments-card {
     border-radius: 12px;
     overflow: hidden;

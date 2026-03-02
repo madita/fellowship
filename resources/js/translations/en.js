@@ -4293,6 +4293,11 @@ export default {
             'relatedTo': 'Related To',
             'addComment': 'Add a comment...',
             'internalNote': 'Internal note',
+            'pendingApproval': 'This content is pending approval.',
+            'approved': 'Approved',
+            'approve': 'Approve',
+            'reject': 'Reject',
+            'revokeApproval': 'Revoke Approval',
         },
         'confirm': {
             'deleteTitle': 'Delete Ticket',

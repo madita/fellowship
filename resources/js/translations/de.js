@@ -4477,6 +4477,11 @@ export default {
             'relatedTo': 'Verknüpft mit',
             'addComment': 'Kommentar hinzufügen...',
             'internalNote': 'Interne Notiz',
+            'pendingApproval': 'Dieser Inhalt wartet auf Genehmigung.',
+            'approved': 'Genehmigt',
+            'approve': 'Genehmigen',
+            'reject': 'Ablehnen',
+            'revokeApproval': 'Genehmigung widerrufen',
         },
         'confirm': {
             'deleteTitle': 'Ticket löschen',

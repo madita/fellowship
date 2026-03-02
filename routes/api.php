@@ -86,6 +86,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/tickets/{ticket}', 'App\Http\Controllers\TicketController@destroy');
     Route::post('/tickets/{ticket}/assign', 'App\Http\Controllers\TicketController@assign');
     Route::post('/tickets/{ticket}/unassign', 'App\Http\Controllers\TicketController@unassign');
+    Route::post('/tickets/{ticket}/approve', 'App\Http\Controllers\TicketController@approve');
+    Route::post('/tickets/{ticket}/reject', 'App\Http\Controllers\TicketController@reject');
 
     // Ticket Comments
     Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\TicketCommentController@store');
