@@ -69,8 +69,11 @@ class TicketController extends Controller
         }
 
         // Sort
-        $sortField = $request->get('sort', 'created_at');
-        $sortDirection = $request->get('direction', 'desc');
+        $allowedSorts = ['created_at', 'updated_at', 'title', 'status', 'priority', 'due_date'];
+        $sortField = in_array($request->get('sort'), $allowedSorts)
+            ? $request->get('sort')
+            : 'created_at';
+        $sortDirection = $request->get('direction') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sortField, $sortDirection);
 
         $tickets = $query->paginate($request->get('per_page', 20));
