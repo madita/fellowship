@@ -76,7 +76,8 @@ class TicketController extends Controller
         $sortDirection = $request->get('direction') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sortField, $sortDirection);
 
-        $tickets = $query->paginate($request->get('per_page', 20));
+        $perPage = min((int) $request->get('per_page', 20), 100);
+        $tickets = $query->paginate($perPage);
 
         return response()->json($tickets);
     }
