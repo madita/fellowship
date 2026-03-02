@@ -52,7 +52,7 @@ class TicketComment extends Model
 
         // Allow editing within 15 minutes or if admin
         $editWindow = now()->subMinutes(15);
-        return ($user->id === $this->user_id && $this->created_at->gt($editWindow)) || $user->isAdmin();
+        return ((int) $user->id === (int) $this->user_id && $this->created_at->gt($editWindow)) || $user->isAdmin();
     }
 
     /**
