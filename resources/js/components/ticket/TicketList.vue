@@ -237,8 +237,11 @@ const loadTicketTypes = async () => {
 };
 
 const applyFilters = () => {
-    pagination.value.page = 1;
-    loadTickets();
+    if (pagination.value.page === 1) {
+        loadTickets();
+    } else {
+        pagination.value.page = 1;
+    }
 };
 
 const resetFilters = () => {
