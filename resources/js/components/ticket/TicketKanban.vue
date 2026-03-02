@@ -37,17 +37,25 @@ const initColumns = () => {
 const loadTickets = async () => {
     loading.value = true;
     try {
-        const response = await axios.get('/api/tickets', {
-            params: { per_page: 200 }
-        });
-
         initColumns();
-        for (const ticket of response.data.data) {
-            const col = columns.value.find(c => c.status === ticket.status);
-            if (col) {
-                col.tickets.push(ticket);
+        let page = 1;
+        let lastPage = 1;
+
+        do {
+            const response = await axios.get('/api/tickets', {
+                params: { per_page: 200, page }
+            });
+
+            for (const ticket of response.data.data) {
+                const col = columns.value.find(c => c.status === ticket.status);
+                if (col) {
+                    col.tickets.push(ticket);
+                }
             }
-        }
+
+            lastPage = response.data.last_page ?? 1;
+            page++;
+        } while (page <= lastPage);
     } catch (err) {
         console.error('Failed to load tickets:', err);
     } finally {

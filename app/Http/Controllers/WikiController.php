@@ -63,7 +63,7 @@ class WikiController extends Controller
             $wikiQuery->whereTranslationLike('title', '%'.$query.'%');
         }
 
-        $wikidata = $wikiQuery->orderBy('created_at', 'desc')->paginate($perPage);
+        $wikidata = $wikiQuery->with('approval')->orderBy('created_at', 'desc')->paginate($perPage);
 
         $total = $wikidata->total();
         $offset = ($page - 1) * $perPage;

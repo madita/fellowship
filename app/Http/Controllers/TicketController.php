@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Concerns\Approvable;
 use App\Models\Ticket\Ticket;
 use App\Models\Ticket\TicketType;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
 {
@@ -133,7 +135,7 @@ class TicketController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'priority' => 'in:low,normal,high,urgent',
-            'ticketable_type' => 'nullable|string',
+            'ticketable_type' => ['nullable', 'string', Rule::in(Relation::morphMap() ? array_keys(Relation::morphMap()) : [])],
             'ticketable_id' => 'nullable|integer',
         ]);
 
