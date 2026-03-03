@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
+import { useDebounceFn } from '@vueuse/core';
 import axios from 'axios';
 import TicketSidebar from './TicketSidebar.vue';
 import TicketKanban from './TicketKanban.vue';
@@ -244,6 +245,8 @@ const applyFilters = () => {
     }
 };
 
+const debouncedApplyFilters = useDebounceFn(applyFilters, 300);
+
 const resetFilters = () => {
     filters.value = {
         status: 'open',
@@ -349,7 +352,7 @@ onMounted(() => {
                         hide-details
                         clearable
                         class="mb-2"
-                        @update:model-value="applyFilters"
+                        @update:model-value="debouncedApplyFilters"
                     />
 
                     <!-- Status + Filter toggle row -->
