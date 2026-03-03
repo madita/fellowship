@@ -56,6 +56,8 @@ const isApprovable = ref(false);
 const isApproved = ref(false);
 const approving = ref(false);
 
+const latestTicketRequestId = ref(0);
+
 const user = computed(() => userStore.user || { id: null });
 
 const isAdmin = computed(() => user.value?.isAdmin || false);
@@ -90,9 +92,11 @@ const ticketableLink = computed(() => {
 });
 
 const getTicketDetails = async (ticketId) => {
+    const requestId = ++latestTicketRequestId.value;
     try {
         loadingTicketDetails.value = true;
         const response = await axios.get(`/api/tickets/${ticketId}`);
+        if (requestId !== latestTicketRequestId.value) return;
         localTicket.value = response.data;
         ticketComments.value = response.data.comments || [];
         isApprovable.value = response.data.is_approvable || false;
