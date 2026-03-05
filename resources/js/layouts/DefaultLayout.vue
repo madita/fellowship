@@ -88,6 +88,7 @@
                             <v-icon>mdi-magnify</v-icon>
                         </v-btn>
                         <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-block"/>
+                        <mega-menu />
 
 <!--                                                <toolbar-apps/>-->
 
@@ -205,6 +206,7 @@ import { useMagicKeys, whenever } from '@vueuse/core'
 import config from '../configs'
 
 import MainMenu from '../components/navigation/MainMenu.vue'
+import MegaMenu from '../components/navigation/MegaMenu.vue'
 import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
 import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
@@ -220,6 +222,7 @@ import { useConversationStore } from '@/store/conversationStore.js'
 export default {
     components: {
         MainMenu,
+        MegaMenu,
         ToolbarUser,
         ToolbarApps,
         ToolbarLanguage,

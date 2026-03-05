@@ -3598,6 +3598,14 @@ export default {
         'settings': 'Settings',
         'logout': 'Logout'
     },
+    'megaMenu': {
+        'menuTitle': 'Navigation',
+        'loading': 'Loading menu...',
+        'noItems': 'No menu items available',
+        'openMenu': 'Open navigation menu',
+        'closeMenu': 'Close navigation menu',
+        'externalLink': 'Opens in a new tab',
+    },
     'settingsPage': {
         'title': 'Application Settings',
         'maintenanceAlert': 'Maintenance Mode is Currently Active!',

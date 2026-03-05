@@ -3766,6 +3766,14 @@ export default {
         'settings': 'Einstellungen',
         'logout': 'Abmelden'
     },
+    'megaMenu': {
+        'menuTitle': 'Navigation',
+        'loading': 'Menü wird geladen...',
+        'noItems': 'Keine Menüpunkte verfügbar',
+        'openMenu': 'Navigationsmenü öffnen',
+        'closeMenu': 'Navigationsmenü schließen',
+        'externalLink': 'Öffnet in einem neuen Tab',
+    },
     'settingsPage': {
         'title': 'Anwendungseinstellungen',
         'maintenanceAlert': 'Wartungsmodus ist derzeit aktiv!',
