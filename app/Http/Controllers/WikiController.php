@@ -60,7 +60,6 @@ class WikiController extends Controller
         $total = $wikidata->total();
         $offset = ($page - 1) * $perPage;
 
-        //dd($wikidata->toSql());
 
         $wiki = $wikidata->getCollection()->map(function (Wiki $wiki) {
             $model = $wiki->wikiable_type;
@@ -140,7 +139,6 @@ class WikiController extends Controller
 
     public function show($slug)
     {
-        //        dd($slug);
 
         $wiki = Wiki::where('slug', '=', $slug)->first();
 
@@ -195,7 +193,6 @@ class WikiController extends Controller
 
     public function store(Request $request)
     {
-        //        dd($request->all());
         $parent = $request->get('parent_id');
         $parent_id = $parent['id'] ?? 0;
 
@@ -205,12 +202,10 @@ class WikiController extends Controller
             'sign_in_only' => 0,
             'published'    => 1]);
 
-//        dd($parent_id);
 
         if ($request->get('categories')) {
             //            $taxonomy = $request->get('taxonomy');
             //            $taxonomy = $taxonomy['taxonomy'];
-            //            //            dd('hm');
             //            $page->addCategories($request->get('categories'), $taxonomy);
 
             foreach ($request->get('categories') as $term) {
@@ -244,7 +239,6 @@ class WikiController extends Controller
 
     public function update(Request $request, $slug)
     {
-//                dd('update', $request->all(), $slug);
 
         //
         //        $wiki = $request->all();
@@ -322,13 +316,11 @@ class WikiController extends Controller
 
     public function storeCategory(Request $request)
     {
-        // dd($request);
 
         $term = Term::firstOrCreate(['title' => $request->get('term')]);
 
         $taxonomy = Taxonomy::firstOrNew(['taxonomy' => 'wiki', 'term_id' => $term->id]);
         $parent = $request->get('parent');
-//        dd($parent);
 
         if ($parent['parent_id']) {
             $taxonomy->parent_id = $parent['parent_id'];
@@ -344,14 +336,12 @@ class WikiController extends Controller
 
     public function updateCategory(Request $request, $slug)
     {
-//         dd($request);
 
         $termNew = $request->get('category');
         $termOld = $request->get('old');
         $parent = $request->get('parent');
         $title = $request->get('term');
 
-//        dd($parent);
 
         $term = Term::find($termNew['term']['id']);
         if ($term->title != $termOld['term']['title']) {
@@ -362,7 +352,6 @@ class WikiController extends Controller
 
         $taxonomy = Taxonomy::where('term_id', $term->id)->where('taxonomy', 'wiki')->first();
 //        $parent = $termNew['parent'];
-        //        dd($parent);
 
         if ($parent['parent_id']) {
             $taxonomy->parent_id = $parent['parent_id'];
@@ -373,7 +362,6 @@ class WikiController extends Controller
         }
         $taxonomy->update();
 
-//        dd($taxonomy);
         return response()->json(['message' => __('messages.wiki.category_updated'), 'slugchange' => $term->title != $termOld['term']['title'], 'term'=> $term, 'taxonomy' => $taxonomy]);
     }
 }

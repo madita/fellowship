@@ -17,7 +17,6 @@ class PageController extends DataTableController
 
     public function store(Request $request)
     {
-        //        dd($request);
         $page = auth()->user()->pages()->create($request->only($this->getUpdatableColumns()));
 
         if ($request->get('parent')) {
@@ -30,7 +29,6 @@ class PageController extends DataTableController
         if ($request->get('taxonomy') && $request->get('categories')) {
             $taxonomy = $request->get('taxonomy');
             $taxonomy = $taxonomy['taxonomy'];
-            //            dd('hm');
             $page->addCategories($request->get('categories'), $taxonomy);
         }
 
@@ -41,7 +39,6 @@ class PageController extends DataTableController
 
     public function update($id, Request $request)
     {
-        //            dd($id, $request);
         $page = Page::find($id);
         $page->update($request->only($this->getUpdatableColumns()));
 

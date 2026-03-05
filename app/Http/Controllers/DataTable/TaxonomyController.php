@@ -21,7 +21,6 @@ class TaxonomyController extends DataTableController
 
     public function update($id, Request $request)
     {
-        //dd($id, $request);
 
         $taxonomy = Taxonomy::find($id);
 

@@ -37,7 +37,6 @@ class EventController extends Controller
     {
         $events = Event::all();
 //        $events = DB::select('select * from events');
-//        dd($events);
         $eventTypes = EventType::all()->keyBy('id');
         $eventsMapped = $events->map(function ($event) use ($eventTypes) {
             if ($event->endDate === null) {
@@ -71,7 +70,6 @@ class EventController extends Controller
 //            ];
 
 //            $eventType = $event->type()->first();
-//            dd($eventTypes[$event->type_id]['color']);
 
             $originDate = [
                 'startDate' => $event->startDate,
@@ -100,7 +98,6 @@ class EventController extends Controller
 //                'colorName'       => $eventTypes[$event->type_id]['color']];
         });
 
-        //dd($eventsMapped);
         return response()->json([
             'data' => [
                 'types'  => $eventTypes,
@@ -109,13 +106,10 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
-//                dd($request->all());
-//        dd(request()->get('extendedProps'));
         $this->validate($request, [
             'title' => 'required', //            'email'      => 'required|unique:users,email,'.$id.'|email',
         ]);
 
-        //        dd($request->all());
 
         $event = new Event();
         $event->title = request()->get('title');
@@ -135,7 +129,6 @@ class EventController extends Controller
 //        $event->type = request()->get('type');
 
         if (request()->get('start')) {
-            //dd($date);
             $event->startDate = date('Y-m-d', strtotime(request()->get('start')));
             $event->endDate = date('Y-m-d', strtotime(request()->get('end')));
 
@@ -154,7 +147,6 @@ class EventController extends Controller
         }
 
         if ($date = request()->get('date')) {
-            //dd($date);
             $event->startDate = date('Y-m-d', strtotime($date['date'][0]));
             $event->endDate = date('Y-m-d', strtotime($date['date'][1]));
 
@@ -249,7 +241,6 @@ class EventController extends Controller
         $options = json_decode($eventType->options);
         $answers = [];
         foreach ($options->answers as $value => $answer) {
-//            dd($answer);
             $answers[$answer->key] = $event->answer($answer->key)->get(['username']);
 
 //            $approved[$value] = $event->;
@@ -295,14 +286,12 @@ class EventController extends Controller
         $event->user_id = $user->id;
 
         if ($extendedProps = request()->get('extendedProps')) {
-//            dd($extendedProps);
             $event->event_type_id = $extendedProps['event_type_id'];
         }
 
 //        $event->type = request()->get('type');
 
         if (request()->get('start')) {
-            //dd($date);
             $event->startDate = date('Y-m-d', strtotime(request()->get('start')));
             $event->endDate = date('Y-m-d', strtotime(request()->get('end')));
 
@@ -317,7 +306,6 @@ class EventController extends Controller
         }
 
         if ($date = request()->get('date')) {
-            //dd($date);
             $event->startDate = date('Y-m-d', strtotime($date['date'][0]));
             $event->endDate = date('Y-m-d', strtotime($date['date'][1]));
 
@@ -488,7 +476,6 @@ class EventController extends Controller
 
             return $modified;
         });
-//        dd($eventTypes);
 
         return response()->json([
             'data' => $eventTypeCollection, ]);

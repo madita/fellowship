@@ -17,7 +17,6 @@ class EventController extends DataTableController
 
     public function store(Request $request)
     {
-//                dd($request);
         $event = auth()->user()->events()->create($request->only($this->getUpdatableColumns()));
 
         if ($request->get('parent')) {
@@ -30,7 +29,6 @@ class EventController extends DataTableController
         if ($request->get('taxonomy') && $request->get('categories')) {
             $taxonomy = $request->get('taxonomy');
             $taxonomy = $taxonomy['taxonomy'];
-            //            dd('hm');
             $event->addCategories($request->get('categories'), $taxonomy);
         }
 
@@ -41,7 +39,6 @@ class EventController extends DataTableController
 
     public function update($id, Request $request)
     {
-        //            dd($id, $request);
         $event = Event::find($id);
         $event->update($request->only($this->getUpdatableColumns()));
 
