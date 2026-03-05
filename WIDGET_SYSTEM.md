@@ -2,9 +2,94 @@
 
 ## Overview
 
-Four new versatile widgets that can be used in homepage, footer, or dashboard contexts.
+Five new versatile widgets that can be used in homepage, footer, or dashboard contexts.
 
-## 1. Quick Links Widget
+## 1. Poll Widget
+
+**File:** `PollWidget.vue`
+
+Displays polls from the poll system anywhere on your site.
+
+### Use Cases
+- **Homepage:** Featured community polls
+- **Dashboard:** User voting section
+- **Sidebar:** Quick polls
+
+### Features
+- List or grid display modes
+- Filter by type, ID, or specific polls
+- Auto-refresh results option
+- Show/hide closed polls
+- "View All" link
+- Empty state handling
+
+### Configuration
+
+```javascript
+{
+  content: {
+    title: "Community Polls",
+    subtitle: "Have your say",
+    emptyText: "No polls available",
+    viewAllUrl: "/polls",
+    viewAllLabel: "View All Polls",
+    viewAllInternal: true,
+    pollableType: null,       // Optional: filter by type
+    pollableId: null,          // Optional: filter by ID
+    specificPollIds: [],       // Optional: show specific polls
+    showClosed: false          // Include closed polls
+  },
+  config: {
+    style: "list",             // 'list' or 'grid'
+    cols: 12,
+    sm: 12,
+    md: 6,
+    lg: 4,
+    maxPolls: 3,               // Maximum polls to show
+    autoRefresh: false,        // Auto-refresh results
+    refreshInterval: 30000,    // Refresh interval (ms)
+    viewAllColor: "primary",
+    viewAllOutlined: false,
+    containerClass: "py-4"
+  }
+}
+```
+
+### Example Configurations
+
+**Homepage Featured Polls:**
+```javascript
+{
+  style: "grid",
+  md: 6,
+  maxPolls: 2,
+  autoRefresh: true,
+  refreshInterval: 60000
+}
+```
+
+**Dashboard Sidebar:**
+```javascript
+{
+  style: "list",
+  maxPolls: 1,
+  autoRefresh: false
+}
+```
+
+**Specific Polls:**
+```javascript
+{
+  content: {
+    specificPollIds: [1, 5, 12],
+    showClosed: false
+  },
+  style: "grid",
+  md: 4
+}
+```
+
+## 2. Quick Links Widget
 
 **File:** `QuickLinksWidget.vue`
 
