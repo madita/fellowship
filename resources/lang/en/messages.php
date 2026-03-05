@@ -60,6 +60,8 @@ return [
     // Events
     'events' => [
         'created'              => 'Event created',
+        'deleted'              => 'Event deleted successfully',
+        'unauthorized'         => 'Unauthorized. You do not have permission to modify this event.',
         'unauthorized_approve' => 'Unauthorized. Only event owners can approve guests.',
         'guest_not_found'      => 'Guest not found',
         'guest_updated'        => 'Guest approval updated successfully',

@@ -109,13 +109,14 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
-//                dd($request->all());
-//        dd(request()->get('extendedProps'));
         $this->validate($request, [
-            'title' => 'required', //            'email'      => 'required|unique:users,email,'.$id.'|email',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string|max:10000',
+            'event_type_id' => 'nullable|integer|exists:event_types,id',
+            'start' => 'nullable|date',
+            'end' => 'nullable|date|after_or_equal:start',
+            'image' => 'nullable|string|max:500',
         ]);
-
-        //        dd($request->all());
 
         $event = new Event();
         $event->title = request()->get('title');
@@ -206,19 +207,18 @@ class EventController extends Controller
             }
         }
 
-        $eventGuests = EventGuest::where('event_id', '=', $event->id)->get();
-        $eventGuests = collect($eventGuests)->map(function (EventGuest $guest) {
-//            $data=array_merge($details, json_decode($guest->profile));
-            $data = json_decode($guest->profile, true);
-//            array_unshift($data, $user);
-            ////            $data->user = $guest->user()->get([ 'id', 'username']);
+        // Eager load users to prevent N+1 query problem
+        $eventGuests = EventGuest::with('user:id,username')
+            ->where('event_id', '=', $event->id)
+            ->get();
+        $eventGuests = $eventGuests->map(function (EventGuest $guest) {
+            $data = json_decode($guest->profile, true) ?? [];
             $data['type'] = $guest->type;
             $data['id'] = $guest->id;
+            // Use eager-loaded user instead of querying each time
+            $data = ['user' => $guest->user ? [['id' => $guest->user->id, 'username' => $guest->user->username]] : []] + $data;
 
-            $data = ['user'=>$guest->user()->get(['id', 'username'])] + $data;
-            $guest = $data;
-
-            return $guest;
+            return $data;
         });
 
         if ($event->startTime !== null) {
@@ -274,11 +274,20 @@ class EventController extends Controller
 
     public function update(Request $request, Event $event)
     {
-        $this->validate($request, [
-            'title' => 'required', //            'email'      => 'required|unique:users,email,'.$id.'|email',
-        ]);
+        // Authorization check - only owner or admin can update
+        /** @var User $user */
+        $user = auth()->user();
+        if ($event->user_id !== $user->id && !$user->can('manage-posts')) {
+            return response()->json(['message' => __('messages.events.unauthorized')], 403);
+        }
 
-        //        $event->update($request->fill());
+        $this->validate($request, [
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string|max:10000',
+            'event_type_id' => 'nullable|integer|exists:event_types,id',
+            'start' => 'nullable|date',
+            'end' => 'nullable|date|after_or_equal:start',
+        ]);
 
         $event->title = request()->get('title');
         $event->description = request()->get('description');
@@ -346,11 +355,16 @@ class EventController extends Controller
      */
     public function destroy(Event $event)
     {
-        if ($event) {
-            $event->delete();
+        // Authorization check - only owner or admin can delete
+        /** @var User $user */
+        $user = auth()->user();
+        if ($event->user_id !== $user->id && !$user->can('manage-posts')) {
+            return response()->json(['message' => __('messages.events.unauthorized')], 403);
         }
 
-        return response()->json(['deleted']);
+        $event->delete();
+
+        return response()->json(['message' => __('messages.events.deleted')]);
     }
 
     public function isGoing(Event $event, $answer)

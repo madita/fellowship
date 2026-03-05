@@ -209,6 +209,8 @@ return [
     // Events
     'events' => [
         'created'              => 'Event erstellt',
+        'deleted'              => 'Event erfolgreich gelöscht',
+        'unauthorized'         => 'Nicht autorisiert. Du hast keine Berechtigung, dieses Event zu ändern.',
         'unauthorized_approve' => 'Nicht autorisiert. Nur Event-Besitzer können Gäste genehmigen.',
         'guest_not_found'      => 'Gast nicht gefunden',
         'guest_updated'        => 'Gästegenehmigung erfolgreich aktualisiert',
