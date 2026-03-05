@@ -119,11 +119,12 @@ DELETE /api/polls/{poll}/vote
 
 ### Components
 
-Three Vue components are provided:
+Four Vue components are provided:
 
 1. **PollCard** - Main poll display with voting UI
 2. **PollResults** - Results visualization
 3. **PollCreator** - Dialog for creating/editing polls
+4. **PollWidget** - Widget for homepage/footer/dashboard integration
 
 ### Basic Integration
 
@@ -194,6 +195,105 @@ export default {
   }
 }
 </script>
+```
+
+### Using the Poll Widget
+
+The **PollWidget** component integrates with the existing widget system to display polls anywhere on your site.
+
+```vue
+<poll-widget
+  :content="{
+    title: 'Community Polls',
+    subtitle: 'Have your say',
+    emptyText: 'No polls available',
+    viewAllUrl: '/polls',
+    viewAllLabel: 'View All Polls',
+    viewAllInternal: true,
+    pollableType: null,        // Optional: filter by type
+    pollableId: null,           // Optional: filter by ID
+    specificPollIds: [],        // Optional: show specific polls
+    showClosed: false           // Include closed polls
+  }"
+  :config="{
+    style: 'list',              // 'list' or 'grid'
+    cols: 12,
+    sm: 12,
+    md: 6,
+    lg: 4,
+    maxPolls: 3,                // Maximum polls to show
+    autoRefresh: false,         // Auto-refresh results
+    refreshInterval: 30000,     // Refresh interval (ms)
+    viewAllColor: 'primary',
+    viewAllOutlined: false,
+    containerClass: 'py-4'
+  }"
+  :current-user="currentUser"
+/>
+```
+
+#### Widget Database Entry
+
+```php
+Widget::create([
+    'location' => 'home',
+    'type' => 'PollWidget',
+    'enabled' => true,
+    'order' => 1,
+    'config' => [
+        'style' => 'grid',
+        'md' => 6,
+        'maxPolls' => 2,
+        'autoRefresh' => true,
+        'refreshInterval' => 60000
+    ],
+    'en' => [
+        'title' => 'Featured Polls',
+        'content' => json_encode([
+            'subtitle' => 'Vote on important community decisions',
+            'viewAllUrl' => '/polls',
+            'viewAllLabel' => 'See All Polls',
+            'viewAllInternal' => true,
+            'showClosed' => false
+        ])
+    ]
+]);
+```
+
+#### Display Modes
+
+**List Mode** (default):
+- Stacked polls, full width
+- Best for sidebars and narrow spaces
+- Shows all poll details
+
+**Grid Mode**:
+- Responsive grid layout
+- Configurable columns (cols, sm, md, lg)
+- Great for homepage sections
+
+#### Filtering Options
+
+**Show specific polls:**
+```javascript
+content: {
+  specificPollIds: [1, 5, 12]
+}
+```
+
+**Filter by model:**
+```javascript
+content: {
+  pollableType: 'App\\Models\\Forum',
+  pollableId: 42
+}
+```
+
+**Include closed polls:**
+```javascript
+content: {
+  showClosed: true
+}
 ```
 
 ## Integration Examples
