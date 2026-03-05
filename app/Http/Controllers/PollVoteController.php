@@ -7,6 +7,7 @@ use App\Models\Poll\PollVote;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PollVoteController extends Controller
 {
@@ -20,7 +21,7 @@ class PollVoteController extends Controller
         }
 
         $validated = $request->validate([
-            'option_ids' => 'required|array',
+            'option_ids' => 'required|array|min:1',
             'option_ids.*' => 'integer|exists:poll_options,id',
         ]);
 
@@ -30,7 +31,7 @@ class PollVoteController extends Controller
         $validOptions = $poll->options()->whereIn('id', $validated['option_ids'])->pluck('id')->toArray();
         if (count($validOptions) !== count($validated['option_ids'])) {
             return response()->json([
-                'message' => 'Invalid option IDs',
+                'message' => 'Invalid option IDs - options must belong to this poll',
             ], 422);
         }
 
@@ -75,15 +76,26 @@ class PollVoteController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'message' => 'Failed to record vote',
+            Log::error('Failed to record vote', [
+                'poll_id' => $poll->id,
+                'user_id' => $user->id,
                 'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'message' => 'Failed to record vote. Please try again.',
             ], 500);
         }
     }
 
     public function unvote(Request $request, Poll $poll): JsonResponse
     {
+        // Check if poll is still open for unvoting
+        if (!$poll->is_open) {
+            return response()->json([
+                'message' => 'Cannot remove vote from a closed poll',
+            ], 422);
+        }
+
         $user = $request->user();
 
         $deletedCount = PollVote::where('poll_id', $poll->id)

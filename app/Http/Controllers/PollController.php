@@ -6,26 +6,53 @@ use App\Models\Poll\Poll;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class PollController extends Controller
 {
+    /**
+     * Allowed pollable model types.
+     * Add new pollable models here as they're created.
+     */
+    protected array $allowedPollableTypes = [
+        'App\\Models\\Page',
+        'App\\Models\\Forum\\Forum',
+        'App\\Models\\Forum\\ForumThread',
+        'App\\Models\\Ticket\\Ticket',
+        // Add more as needed
+    ];
+
     public function index(Request $request): JsonResponse
     {
         $query = Poll::with(['creator', 'options', 'votes']);
 
         // Filter by pollable type and ID if provided
         if ($request->has('pollable_type') && $request->has('pollable_id')) {
+            // Validate pollable_type is in allowed list
+            if (!in_array($request->pollable_type, $this->allowedPollableTypes)) {
+                return response()->json([
+                    'message' => 'Invalid pollable type',
+                ], 422);
+            }
+
             $query->where('pollable_type', $request->pollable_type)
                 ->where('pollable_id', $request->pollable_id);
         }
 
-        $polls = $query->latest()->get();
+        // Add pagination for better performance
+        $polls = $query->latest()->paginate($request->get('per_page', 15));
 
         return response()->json([
-            'polls' => $polls->map(function ($poll) use ($request) {
+            'polls' => $polls->getCollection()->map(function ($poll) use ($request) {
                 return $this->formatPoll($poll, $request->user());
             }),
+            'meta' => [
+                'current_page' => $polls->currentPage(),
+                'last_page' => $polls->lastPage(),
+                'per_page' => $polls->perPage(),
+                'total' => $polls->total(),
+            ],
         ]);
     }
 
@@ -41,16 +68,24 @@ class PollController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'pollable_type' => 'required|string',
+            'pollable_type' => ['required', 'string', Rule::in($this->allowedPollableTypes)],
             'pollable_id' => 'required|integer',
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:1000',
             'type' => ['required', Rule::in(['single', 'multiple'])],
             'anonymous' => 'boolean',
             'closes_at' => 'nullable|date|after:now',
-            'options' => 'required|array|min:2',
+            'options' => 'required|array|min:2|max:20',
             'options.*.option_text' => 'required|string|max:255',
         ]);
+
+        // Verify the pollable model exists
+        $pollableClass = $validated['pollable_type'];
+        if (!class_exists($pollableClass) || !$pollableClass::find($validated['pollable_id'])) {
+            return response()->json([
+                'message' => 'The specified model does not exist',
+            ], 422);
+        }
 
         DB::beginTransaction();
 
@@ -83,17 +118,20 @@ class PollController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'message' => 'Failed to create poll',
+            Log::error('Failed to create poll', [
+                'user_id' => $request->user()->id,
                 'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'message' => 'Failed to create poll. Please try again.',
             ], 500);
         }
     }
 
     public function update(Request $request, Poll $poll): JsonResponse
     {
-        // Only creator can update
-        if ($poll->created_by !== $request->user()->id) {
+        // Only creator can update (or admin)
+        if ($poll->created_by !== $request->user()->id && !$request->user()->hasRole('admin')) {
             return response()->json([
                 'message' => 'You do not have permission to update this poll',
             ], 403);
@@ -108,11 +146,11 @@ class PollController extends Controller
 
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
+            'description' => 'nullable|string|max:1000',
             'type' => ['sometimes', Rule::in(['single', 'multiple'])],
             'anonymous' => 'sometimes|boolean',
             'closes_at' => 'nullable|date|after:now',
-            'options' => 'sometimes|array|min:2',
+            'options' => 'sometimes|array|min:2|max:20',
             'options.*.option_text' => 'required_with:options|string|max:255',
         ]);
 
@@ -141,17 +179,21 @@ class PollController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'message' => 'Failed to update poll',
+            Log::error('Failed to update poll', [
+                'poll_id' => $poll->id,
+                'user_id' => $request->user()->id,
                 'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'message' => 'Failed to update poll. Please try again.',
             ], 500);
         }
     }
 
     public function destroy(Request $request, Poll $poll): JsonResponse
     {
-        // Only creator can delete
-        if ($poll->created_by !== $request->user()->id) {
+        // Only creator can delete (or admin)
+        if ($poll->created_by !== $request->user()->id && !$request->user()->hasRole('admin')) {
             return response()->json([
                 'message' => 'You do not have permission to delete this poll',
             ], 403);
