@@ -220,6 +220,7 @@ return [
         'invalid_foreign_key'  => 'Ungültiges Fremdschlüsselfeld',
         'model_not_found'      => 'Zugehöriges Modell nicht gefunden',
         'invalid_model_type'   => 'Ungültiger Modelltyp.',
+        'item_not_found'       => 'Element nicht gefunden.',
         'fetch_error'          => 'Fehler beim Abrufen der Elemente: :error',
         'item_related'         => 'Element verknüpft',
         'no_data'              => 'Keine Daten gefunden',

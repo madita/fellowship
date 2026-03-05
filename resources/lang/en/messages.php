@@ -124,6 +124,7 @@ return [
         'invalid_foreign_key'  => 'Invalid foreign key field',
         'model_not_found'      => 'Related model not found',
         'invalid_model_type'   => 'Invalid model type.',
+        'item_not_found'       => 'Item not found.',
         'fetch_error'          => 'An error occurred while fetching the items: :error',
         'item_related'         => 'Item related',
         'no_data'              => 'No data found',
