@@ -7,6 +7,7 @@ use App\Models\Poll\PollVote;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PollVoteController extends Controller
 {
@@ -20,7 +21,7 @@ class PollVoteController extends Controller
         }
 
         $validated = $request->validate([
-            'option_ids' => 'required|array',
+            'option_ids' => 'required|array|min:1|max:50',
             'option_ids.*' => 'integer|exists:poll_options,id',
         ]);
 
@@ -75,15 +76,21 @@ class PollVoteController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Failed to record vote', ['poll_id' => $poll->id, 'error' => $e->getMessage()]);
             return response()->json([
                 'message' => 'Failed to record vote',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
     public function unvote(Request $request, Poll $poll): JsonResponse
     {
+        if (!$poll->is_open) {
+            return response()->json([
+                'message' => 'This poll is closed',
+            ], 422);
+        }
+
         $user = $request->user();
 
         $deletedCount = PollVote::where('poll_id', $poll->id)
