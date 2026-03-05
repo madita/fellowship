@@ -136,6 +136,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/conversations/{conversation}/mark-as-read', 'App\Http\Controllers\Conversation\ConversationController@markAsRead');
 });
 
+// Poll System Routes
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::resource('polls', 'App\Http\Controllers\PollController');
+    Route::post('/polls/{poll}/vote', 'App\Http\Controllers\PollVoteController@vote');
+    Route::delete('/polls/{poll}/vote', 'App\Http\Controllers\PollVoteController@unvote');
+});
+
 Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']);
 Route::get('/source-models', [App\Http\Controllers\RelateableController::class, 'getSourceModels']);
 Route::get('/model-items', [App\Http\Controllers\RelateableController::class, 'getModelItems']);
