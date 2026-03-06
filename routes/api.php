@@ -23,6 +23,40 @@ Route::middleware(['cache.control'])->group(function () {
     Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
 });
 
+// Forum Routes (public read, auth for write)
+Route::get('/forums', 'App\Http\Controllers\Forum\ForumController@index');
+Route::get('/forums/search', 'App\Http\Controllers\Forum\ForumSearchController@search');
+Route::get('/forums/recent-threads', 'App\Http\Controllers\Forum\ForumController@recentThreads');
+Route::get('/forums/{slug}', 'App\Http\Controllers\Forum\ForumController@show');
+Route::get('/forums/{forumSlug}/threads/{threadSlug}', 'App\Http\Controllers\Forum\ForumThreadController@show');
+Route::get('/activity', 'App\Http\Controllers\ActivityController@index');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Forum management (admin only)
+    Route::post('/forums', 'App\Http\Controllers\Forum\ForumController@store');
+    Route::patch('/forums/{id}', 'App\Http\Controllers\Forum\ForumController@update');
+    Route::delete('/forums/{id}', 'App\Http\Controllers\Forum\ForumController@destroy');
+
+    // Thread management
+    Route::post('/forums/{id}/threads', 'App\Http\Controllers\Forum\ForumThreadController@store');
+    Route::patch('/threads/{thread}', 'App\Http\Controllers\Forum\ForumThreadController@update');
+    Route::delete('/threads/{thread}', 'App\Http\Controllers\Forum\ForumThreadController@destroy');
+
+    // Post management
+    Route::post('/threads/{thread}/posts', 'App\Http\Controllers\Forum\ForumPostController@store');
+    Route::patch('/posts/{post}', 'App\Http\Controllers\Forum\ForumPostController@update');
+    Route::delete('/posts/{post}', 'App\Http\Controllers\Forum\ForumPostController@destroy');
+    Route::post('/posts/{post}/mark-as-solution', 'App\Http\Controllers\Forum\ForumPostController@markAsSolution');
+
+    // Thread subscriptions
+    Route::post('/threads/{thread}/subscribe', 'App\Http\Controllers\Forum\ForumSubscriptionController@store');
+    Route::delete('/threads/{thread}/subscribe', 'App\Http\Controllers\Forum\ForumSubscriptionController@destroy');
+
+    // Post likes
+    Route::post('/posts/{post}/like', 'App\Http\Controllers\Forum\ForumPostLikeController@store');
+    Route::delete('/posts/{post}/like', 'App\Http\Controllers\Forum\ForumPostLikeController@destroy');
+});
+
 // Wiki write operations (not cached)
 Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['store', 'update', 'destroy']);
 Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
@@ -343,6 +377,12 @@ Route::post('/login', function (Request $request) {
             'message' => ['These credentials do not match our records.'],
         ], 404);
     }
+
+    $user->update([
+        'previous_login_at' => $user->last_login_at,
+        'last_login_at' => now()->toDateTimeString(),
+        'last_login_ip' => $request->getClientIp(),
+    ]);
 
     $token = $user->createToken('my-app-token')->plainTextToken;
 

@@ -134,6 +134,15 @@ export const admin = [{
         },
         component: () => import(/* webpackChunkName: "admin-permissions" */ '@/pages/admin/Terms.vue')
     }, {
+        path: '/admin/forums',
+        name: 'admin-forums',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-forums" */ '@/pages/admin/ForumManager.vue')
+    }, {
         path: '/admin/announcements',
         name: 'admin-announcements',
         meta: {

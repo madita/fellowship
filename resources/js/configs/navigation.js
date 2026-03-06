@@ -12,6 +12,7 @@ export default {
                 { icon: 'mdi-message-text-outline', key: 'menu.chat', text: 'Chat', link: '/chat' },
                 { icon: 'mdi-calendar', key: 'menu.events', text: 'Events', link: '/events' },
                 { icon: 'mdi-file-outline', key: 'menu.wiki', text: 'Wiki', link: '/wiki' },
+                { icon: 'mdi-forum', key: 'menu.forum', text: 'Forum', link: '/forum' },
                 { icon: 'mdi-file-outline', key: 'menu.blank', text: 'Blank Page', link: '/blank' }
             ]
         },
@@ -25,6 +26,7 @@ export default {
                 {icon: 'mdi-account-group-outline', key: 'menu.adminUsers', text: 'Users', link: '/admin/users'},
                 {icon: 'mdi-file-document-outline', key: 'menu.adminPages', text: 'Pages', link: '/admin/pages'},
                 {icon: 'mdi-post-outline', key: 'menu.adminPosts', text: 'Posts', link: '/admin/posts'},
+                {icon: 'mdi-forum-outline', key: 'menu.adminForums', text: 'Forums', link: '/admin/forums'},
                 {
                     icon: 'mdi-calendar-text',
                     key: 'menu.adminEvents',
