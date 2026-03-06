@@ -120,6 +120,21 @@ return [
         'marked_read' => 'Benachrichtigung wurde als gelesen markiert.',
     ],
 
+    // Sandbox (Kollaborativer Editor)
+    'sandbox' => [
+        'created'              => 'Sandbox erfolgreich erstellt',
+        'updated'              => 'Sandbox erfolgreich aktualisiert',
+        'deleted'              => 'Sandbox erfolgreich gelöscht',
+        'saved'                => 'Änderungen gespeichert',
+        'unauthorized'         => 'Du hast keine Berechtigung, auf diese Sandbox zuzugreifen',
+        'collaborator_added'   => 'Mitarbeiter erfolgreich hinzugefügt',
+        'collaborator_removed' => 'Mitarbeiter erfolgreich entfernt',
+        'cannot_add_owner'     => 'Eigentümer kann nicht als Mitarbeiter hinzugefügt werden',
+        'no_invite'            => 'Keine ausstehende Einladung gefunden',
+        'invite_accepted'      => 'Einladung angenommen',
+        'version_restored'     => 'Version erfolgreich wiederhergestellt',
+    ],
+
     // Wiki
     'wiki' => [
         'created'          => 'Wiki-Seite erfolgreich erstellt',

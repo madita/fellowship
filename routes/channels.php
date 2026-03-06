@@ -38,10 +38,23 @@ Broadcast::channel('chat', function ($user) {
 });
 
 Broadcast::channel('conversations.{conversationId}', function ($user, $conversationId) {
-    //dd($conversationId);
     $conversation = Conversation::where('uuid', $conversationId)->first();
 
-    //return $user->isInConversation(\App\Models\Conversation\Conversation::find($conversationId));
-    //return $user->inConversation($conversation->id);
     return $conversation && $user->inConversation($conversation->id);
+});
+
+// Sandbox collaboration presence channel
+Broadcast::channel('sandbox.{sandboxId}', function ($user, $sandboxId) {
+    $sandbox = \App\Models\Sandbox\Sandbox::find($sandboxId);
+
+    if (!$sandbox || !$sandbox->canView($user)) {
+        return false;
+    }
+
+    return [
+        'id' => $user->id,
+        'username' => $user->username,
+        'role' => $sandbox->getUserRole($user),
+        'canEdit' => $sandbox->canEdit($user),
+    ];
 });

@@ -1,0 +1,322 @@
+<?php
+
+namespace App\Http\Controllers\Sandbox;
+
+use App\Http\Controllers\Controller;
+use App\Models\Sandbox\Sandbox;
+use App\Models\Sandbox\SandboxVersion;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
+class SandboxController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth')->except(['show']);
+    }
+
+    /**
+     * List sandboxes accessible by the current user.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+
+        $sandboxes = Sandbox::accessibleBy($user)
+            ->with(['owner:id,username', 'lastEditor:id,username'])
+            ->withCount('collaborators')
+            ->orderBy('last_edited_at', 'desc')
+            ->paginate(20);
+
+        return response()->json($sandboxes);
+    }
+
+    /**
+     * Create a new sandbox.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'visibility' => 'nullable|in:private,members,public',
+        ]);
+
+        $sandbox = Sandbox::create([
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? null,
+            'user_id' => auth()->id(),
+            'visibility' => $validated['visibility'] ?? 'private',
+            'settings' => [
+                'allowComments' => true,
+                'showCursors' => true,
+                'autoSave' => true,
+            ],
+        ]);
+
+        $sandbox->load('owner:id,username');
+
+        return response()->json([
+            'message' => __('messages.sandbox.created'),
+            'sandbox' => $sandbox,
+        ], 201);
+    }
+
+    /**
+     * Show a sandbox (with collaboration state).
+     */
+    public function show(Request $request, string $slug): JsonResponse
+    {
+        $sandbox = Sandbox::where('slug', $slug)
+            ->with(['owner:id,username', 'collaborators:id,username'])
+            ->firstOrFail();
+
+        $user = auth()->user();
+
+        // Check access
+        if ($sandbox->visibility === 'private') {
+            if (!$user || !$sandbox->canView($user)) {
+                return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+            }
+        }
+
+        $response = [
+            'sandbox' => $sandbox,
+            'canEdit' => $user ? $sandbox->canEdit($user) : false,
+            'canManage' => $user ? $sandbox->canManage($user) : false,
+            'role' => $user ? $sandbox->getUserRole($user) : 'guest',
+        ];
+
+        return response()->json($response);
+    }
+
+    /**
+     * Update sandbox metadata.
+     */
+    public function update(Request $request, Sandbox $sandbox): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$sandbox->canManage($user)) {
+            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        $validated = $request->validate([
+            'title' => 'sometimes|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'visibility' => 'sometimes|in:private,members,public',
+            'settings' => 'sometimes|array',
+        ]);
+
+        $sandbox->update($validated);
+
+        return response()->json([
+            'message' => __('messages.sandbox.updated'),
+            'sandbox' => $sandbox->fresh(['owner:id,username']),
+        ]);
+    }
+
+    /**
+     * Delete a sandbox.
+     */
+    public function destroy(Sandbox $sandbox): JsonResponse
+    {
+        $user = auth()->user();
+
+        if ($sandbox->user_id !== $user->id) {
+            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        $sandbox->delete();
+
+        return response()->json(['message' => __('messages.sandbox.deleted')]);
+    }
+
+    /**
+     * Get Y.js document state for syncing.
+     */
+    public function getState(Sandbox $sandbox): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$sandbox->canView($user)) {
+            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        return response()->json([
+            'state' => $sandbox->yjs_state ? base64_encode($sandbox->yjs_state) : null,
+            'lastEditedAt' => $sandbox->last_edited_at,
+            'lastEditedBy' => $sandbox->lastEditor?->username,
+        ]);
+    }
+
+    /**
+     * Save Y.js document state.
+     */
+    public function saveState(Request $request, Sandbox $sandbox): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$sandbox->canEdit($user)) {
+            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        $validated = $request->validate([
+            'state' => 'required|string', // Base64 encoded Y.js state
+            'createVersion' => 'sometimes|boolean',
+            'versionTitle' => 'sometimes|string|max:255',
+        ]);
+
+        $state = base64_decode($validated['state']);
+
+        // Create version snapshot if requested
+        if ($request->boolean('createVersion')) {
+            SandboxVersion::create([
+                'sandbox_id' => $sandbox->id,
+                'user_id' => $user->id,
+                'title' => $validated['versionTitle'] ?? 'Auto-save',
+                'yjs_state' => $sandbox->yjs_state, // Save previous state
+            ]);
+        }
+
+        $sandbox->update([
+            'yjs_state' => $state,
+            'last_edited_at' => now(),
+            'last_edited_by' => $user->id,
+        ]);
+
+        Log::info('Sandbox state saved', [
+            'sandbox_id' => $sandbox->id,
+            'user_id' => $user->id,
+            'state_size' => strlen($state),
+        ]);
+
+        return response()->json(['message' => __('messages.sandbox.saved')]);
+    }
+
+    /**
+     * Add a collaborator.
+     */
+    public function addCollaborator(Request $request, Sandbox $sandbox): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$sandbox->canManage($user)) {
+            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'role' => 'sometimes|in:viewer,editor,admin',
+        ]);
+
+        if ($validated['user_id'] == $sandbox->user_id) {
+            return response()->json(['error' => __('messages.sandbox.cannot_add_owner')], 400);
+        }
+
+        $sandbox->collaborators()->syncWithoutDetaching([
+            $validated['user_id'] => [
+                'role' => $validated['role'] ?? 'editor',
+                'invited_at' => now(),
+            ],
+        ]);
+
+        return response()->json([
+            'message' => __('messages.sandbox.collaborator_added'),
+            'collaborators' => $sandbox->collaborators()->get(['id', 'username']),
+        ]);
+    }
+
+    /**
+     * Remove a collaborator.
+     */
+    public function removeCollaborator(Sandbox $sandbox, User $collaborator): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$sandbox->canManage($user) && $user->id !== $collaborator->id) {
+            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        $sandbox->collaborators()->detach($collaborator->id);
+
+        return response()->json([
+            'message' => __('messages.sandbox.collaborator_removed'),
+        ]);
+    }
+
+    /**
+     * Accept collaboration invite.
+     */
+    public function acceptInvite(Sandbox $sandbox): JsonResponse
+    {
+        $user = auth()->user();
+
+        $collaborator = $sandbox->collaborators()
+            ->where('user_id', $user->id)
+            ->whereNull('accepted_at')
+            ->first();
+
+        if (!$collaborator) {
+            return response()->json(['error' => __('messages.sandbox.no_invite')], 404);
+        }
+
+        $sandbox->collaborators()->updateExistingPivot($user->id, [
+            'accepted_at' => now(),
+        ]);
+
+        return response()->json(['message' => __('messages.sandbox.invite_accepted')]);
+    }
+
+    /**
+     * Get version history.
+     */
+    public function versions(Sandbox $sandbox): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$sandbox->canView($user)) {
+            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        $versions = $sandbox->versions()
+            ->with('user:id,username')
+            ->paginate(20);
+
+        return response()->json($versions);
+    }
+
+    /**
+     * Restore a version.
+     */
+    public function restoreVersion(Sandbox $sandbox, SandboxVersion $version): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$sandbox->canEdit($user)) {
+            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        // Save current state as a version first
+        SandboxVersion::create([
+            'sandbox_id' => $sandbox->id,
+            'user_id' => $user->id,
+            'title' => 'Before restore',
+            'yjs_state' => $sandbox->yjs_state,
+        ]);
+
+        // Restore the selected version
+        $sandbox->update([
+            'yjs_state' => $version->yjs_state,
+            'last_edited_at' => now(),
+            'last_edited_by' => $user->id,
+        ]);
+
+        return response()->json([
+            'message' => __('messages.sandbox.version_restored'),
+            'state' => base64_encode($version->yjs_state),
+        ]);
+    }
+}

@@ -16,6 +16,7 @@ import UsersRoutes from './users.routes'
 import LandingRoutes from './landing.routes'
 import WikiRoutes from './wiki.routes'
 import ForumRoutes from './forum.routes'
+import SandboxRoutes from './sandbox.routes'
 import AdminRoutes from './admin.routes'
 //import permission from "@/router/middleware/permission.js";
 
@@ -37,6 +38,7 @@ export const routes = [{
     ...LandingRoutes,
     ...WikiRoutes,
     ...ForumRoutes,
+    ...SandboxRoutes,
     ...AdminRoutes,
     {
         path: '/blank',

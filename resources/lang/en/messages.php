@@ -162,6 +162,21 @@ return [
         'marked_read' => 'Notification was marked as read.',
     ],
 
+    // Sandbox (Collaborative Editor)
+    'sandbox' => [
+        'created'              => 'Sandbox created successfully',
+        'updated'              => 'Sandbox updated successfully',
+        'deleted'              => 'Sandbox deleted successfully',
+        'saved'                => 'Changes saved',
+        'unauthorized'         => 'You do not have permission to access this sandbox',
+        'collaborator_added'   => 'Collaborator added successfully',
+        'collaborator_removed' => 'Collaborator removed successfully',
+        'cannot_add_owner'     => 'Cannot add owner as a collaborator',
+        'no_invite'            => 'No pending invite found',
+        'invite_accepted'      => 'Invitation accepted',
+        'version_restored'     => 'Version restored successfully',
+    ],
+
     // Wiki
     'wiki' => [
         'created'          => 'Wiki page created successfully',
