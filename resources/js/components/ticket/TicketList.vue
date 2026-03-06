@@ -9,6 +9,7 @@ import TicketKanban from './TicketKanban.vue';
 import { useUserStore } from '@/store/userStore.js';
 import { useDateFormat } from '@/plugins/formatDate.js';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
+import { sanitizeHtml } from '@/utils/sanitize.js';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -134,13 +135,14 @@ const loadRelatedContent = async (ticket) => {
 
 const relatedContentHtml = computed(() => {
     if (!relatedContent.value) return null;
+    let content = null;
     if (relatedContentType.value === 'wiki') {
-        return relatedContent.value.content || null;
+        content = relatedContent.value.content || null;
+    } else if (relatedContentType.value === 'page') {
+        content = relatedContent.value.body || relatedContent.value.content || null;
     }
-    if (relatedContentType.value === 'page') {
-        return relatedContent.value.body || relatedContent.value.content || null;
-    }
-    return null;
+    // Sanitize HTML to prevent XSS attacks
+    return content ? sanitizeHtml(content) : null;
 });
 
 const relatedContentTitle = computed(() => {
