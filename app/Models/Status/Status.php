@@ -17,16 +17,15 @@ class Status extends Model
         'user_id',
         'content',
         'media',
+        'feeling',
         'likes_count',
         'comments_count',
-        'shares_count',
     ];
 
     protected $casts = [
         'media' => 'array',
         'likes_count' => 'integer',
         'comments_count' => 'integer',
-        'shares_count' => 'integer',
     ];
 
     protected $with = ['user'];

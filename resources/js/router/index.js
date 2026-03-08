@@ -98,6 +98,15 @@ export const routes = [{
         meta: {
             layout: 'error'
         }
+    },{
+        path: '/timeline',
+        name: 'timeline',
+        meta: {
+            middleware: [
+                auth, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "timeline" */ '@/components/status/StatusTimeline.vue')
     },
     {
         path: '/:catchAll(.*)',
@@ -178,13 +187,3 @@ router.beforeEach(async (to, from, next) => {
 })
 
 export default router
-,{
-    path: '/timeline',
-    name: 'timeline',
-    meta: {
-        middleware: [
-            auth, verified
-        ]
-    },
-    component: () => import(/* webpackChunkName: "timeline" */ '@/components/status/StatusTimeline.vue')
-}

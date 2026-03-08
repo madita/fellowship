@@ -6,6 +6,8 @@ use App\Models\Status\Status;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class StatusController extends Controller
 {
@@ -50,13 +52,33 @@ class StatusController extends Controller
 
         $validated = $request->validate([
             'content' => 'required|string|max:5000',
-            'media' => 'array',
-            'media.*' => 'url',
+            'images' => 'array|max:4',
+            'images.*' => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+            'feeling' => 'nullable|string|max:50',
         ]);
 
-        $validated['user_id'] = $user->id;
+        $mediaPaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $extension = $image->getClientOriginalExtension();
+                $filename = Str::uuid() . '.' . $extension;
+                $path = 'statuses/' . $filename;
 
-        $status = Status::create($validated);
+                Storage::disk('public')->put(
+                    $path,
+                    file_get_contents($image->getRealPath() ?: $image->getPathname())
+                );
+
+                $mediaPaths[] = '/storage/' . $path;
+            }
+        }
+
+        $status = Status::create([
+            'user_id' => $user->id,
+            'content' => $validated['content'],
+            'media' => !empty($mediaPaths) ? $mediaPaths : null,
+            'feeling' => $validated['feeling'] ?? null,
+        ]);
 
         return response()->json($status->load('user'), 201);
     }

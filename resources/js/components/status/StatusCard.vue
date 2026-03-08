@@ -30,6 +30,23 @@ const newComment = ref('');
 const loadingComments = ref(false);
 const addingComment = ref(false);
 
+const feelingMap = {
+    happy: '\u{1F60A}',
+    excited: '\u{1F389}',
+    loved: '\u{2764}\u{FE0F}',
+    thoughtful: '\u{1F914}',
+    sad: '\u{1F622}',
+    angry: '\u{1F621}',
+    surprised: '\u{1F62E}',
+    grateful: '\u{1F64F}',
+    tired: '\u{1F634}',
+    amused: '\u{1F602}',
+    proud: '\u{1F4AA}',
+    relaxed: '\u{1F60C}',
+};
+
+const replyingTo = ref(null);
+
 const showActions = ref(false);
 const editMode = ref(false);
 const editedContent = ref(props.status.content);
@@ -75,18 +92,45 @@ const loadComments = async () => {
     }
 };
 
+const startReply = (comment) => {
+    replyingTo.value = comment;
+    newComment.value = '';
+};
+
+const cancelReply = () => {
+    replyingTo.value = null;
+    newComment.value = '';
+};
+
 const addComment = async () => {
     if (!newComment.value.trim()) return;
 
     addingComment.value = true;
     try {
-        const response = await axios.post(`/api/statuses/${props.status.id}/comments`, {
+        const payload = {
             content: newComment.value,
-        });
+        };
 
-        comments.value.push(response.data);
+        if (replyingTo.value) {
+            payload.parent_id = replyingTo.value.id;
+        }
+
+        const response = await axios.post(`/api/statuses/${props.status.id}/comments`, payload);
+
+        if (replyingTo.value) {
+            // Add reply nested under the parent comment
+            const parent = comments.value.find(c => c.id === replyingTo.value.id);
+            if (parent) {
+                if (!parent.replies) parent.replies = [];
+                parent.replies.push(response.data);
+            }
+        } else {
+            comments.value.push(response.data);
+        }
+
         commentsCount.value++;
         newComment.value = '';
+        replyingTo.value = null;
     } catch (error) {
         console.error('Failed to add comment:', error);
     } finally {
@@ -152,9 +196,14 @@ const deleteStatus = async () => {
             <div class="d-flex align-center mb-3">
                 <UserAvatar :user="status.user" size="48" class="mr-3" />
                 <div class="flex-grow-1">
-                    <div class="d-flex align-center">
+                    <div class="d-flex align-center flex-wrap">
                         <span class="font-weight-medium text-subtitle-1">{{ status.user.name }}</span>
-                        <span class="text-caption text-medium-emphasis mx-2">·</span>
+                        <template v-if="status.feeling && feelingMap[status.feeling]">
+                            <span class="text-caption text-medium-emphasis ml-1">
+                                is feeling {{ feelingMap[status.feeling] }} {{ status.feeling }}
+                            </span>
+                        </template>
+                        <span class="text-caption text-medium-emphasis mx-2">&middot;</span>
                         <span class="text-caption text-medium-emphasis">{{ status.time_ago }}</span>
                     </div>
                     <div class="text-caption text-medium-emphasis" v-if="status.user.username">
@@ -229,14 +278,15 @@ const deleteStatus = async () => {
 
             <!-- Media (if exists) -->
             <div v-if="status.media && status.media.length > 0" class="status-media mb-3">
-                <v-img
-                    v-for="(media, index) in status.media"
-                    :key="index"
-                    :src="media"
-                    max-height="400"
-                    cover
-                    class="rounded mb-2"
-                />
+                <div class="media-grid" :class="`media-grid-${Math.min(status.media.length, 4)}`">
+                    <v-img
+                        v-for="(media, index) in status.media"
+                        :key="index"
+                        :src="media"
+                        cover
+                        class="rounded media-item"
+                    />
+                </div>
             </div>
 
             <v-divider class="my-3" />
@@ -276,13 +326,6 @@ const deleteStatus = async () => {
                     Comment
                 </v-btn>
 
-                <v-btn
-                    variant="text"
-                    class="flex-grow-1"
-                >
-                    <v-icon start>mdi-share-variant</v-icon>
-                    Share
-                </v-btn>
             </div>
 
             <!-- Comments Section -->
@@ -315,10 +358,37 @@ const deleteStatus = async () => {
                                 </v-card>
                                 <div class="d-flex align-center mt-1 text-caption text-medium-emphasis ml-2">
                                     <span>{{ comment.time_ago }}</span>
-                                    <span class="mx-2">·</span>
+                                    <span class="mx-2">&middot;</span>
                                     <span class="cursor-pointer">Like</span>
-                                    <span class="mx-2">·</span>
-                                    <span class="cursor-pointer">Reply</span>
+                                    <span class="mx-2">&middot;</span>
+                                    <span class="cursor-pointer" @click="startReply(comment)">Reply</span>
+                                </div>
+
+                                <!-- Replies -->
+                                <div v-if="comment.replies && comment.replies.length > 0" class="replies-list mt-2 ml-2">
+                                    <div v-for="reply in comment.replies" :key="reply.id" class="reply-item mb-2">
+                                        <div class="d-flex">
+                                            <UserAvatar :user="reply.user" size="24" class="mr-2" />
+                                            <div class="flex-grow-1">
+                                                <v-card variant="flat" color="grey-lighten-4" class="pa-2" rounded="lg">
+                                                    <div class="d-flex align-center justify-space-between">
+                                                        <span class="font-weight-medium text-caption">{{ reply.user.name }}</span>
+                                                        <v-btn
+                                                            v-if="user.id === reply.user_id"
+                                                            icon="mdi-delete"
+                                                            size="x-small"
+                                                            variant="text"
+                                                            @click="deleteComment(reply.id)"
+                                                        />
+                                                    </div>
+                                                    <p class="text-body-2 mb-0" style="white-space: pre-line">{{ reply.content }}</p>
+                                                </v-card>
+                                                <div class="d-flex align-center mt-1 text-caption text-medium-emphasis ml-2">
+                                                    <span>{{ reply.time_ago }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -332,11 +402,25 @@ const deleteStatus = async () => {
 
                 <!-- Add Comment -->
                 <div class="add-comment mt-3">
+                    <!-- Reply indicator -->
+                    <div v-if="replyingTo" class="d-flex align-center mb-2 text-caption text-medium-emphasis">
+                        <v-icon size="14" class="mr-1">mdi-reply</v-icon>
+                        Replying to <span class="font-weight-medium ml-1">{{ replyingTo.user.name }}</span>
+                        <v-btn
+                            icon="mdi-close"
+                            size="x-small"
+                            variant="text"
+                            density="compact"
+                            class="ml-1"
+                            @click="cancelReply"
+                        />
+                    </div>
+
                     <div class="d-flex">
                         <UserAvatar :user="user" size="32" class="mr-2" />
                         <v-textarea
                             v-model="newComment"
-                            placeholder="Write a comment..."
+                            :placeholder="replyingTo ? `Reply to ${replyingTo.user.name}...` : 'Write a comment...'"
                             variant="outlined"
                             density="compact"
                             rows="2"
@@ -348,13 +432,22 @@ const deleteStatus = async () => {
                     </div>
                     <div class="d-flex justify-end mt-2">
                         <v-btn
+                            v-if="replyingTo"
+                            size="small"
+                            variant="text"
+                            class="mr-2"
+                            @click="cancelReply"
+                        >
+                            Cancel
+                        </v-btn>
+                        <v-btn
                             size="small"
                             color="primary"
                             @click="addComment"
                             :loading="addingComment"
                             :disabled="!newComment.trim()"
                         >
-                            Post Comment
+                            {{ replyingTo ? 'Reply' : 'Post Comment' }}
                         </v-btn>
                     </div>
                 </div>
@@ -389,7 +482,54 @@ const deleteStatus = async () => {
     position: relative;
 }
 
-.status-media .v-img {
+.replies-list {
+    border-left: 2px solid rgba(var(--v-theme-on-surface), 0.12);
+    padding-left: 12px;
+}
+
+.media-grid {
+    display: grid;
+    gap: 4px;
     border-radius: 12px;
+    overflow: hidden;
+}
+
+.media-grid-1 {
+    grid-template-columns: 1fr;
+}
+
+.media-grid-1 .media-item {
+    max-height: 400px;
+}
+
+.media-grid-2 {
+    grid-template-columns: 1fr 1fr;
+}
+
+.media-grid-2 .media-item {
+    height: 250px;
+}
+
+.media-grid-3 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+.media-grid-3 .media-item:first-child {
+    grid-row: 1 / 3;
+    height: 100%;
+}
+
+.media-grid-3 .media-item {
+    height: 150px;
+}
+
+.media-grid-4 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+.media-grid-4 .media-item {
+    height: 180px;
 }
 </style>

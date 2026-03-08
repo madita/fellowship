@@ -45,13 +45,13 @@ class CreateSystemTables extends Migration
         /**
          *  Misc.
          */
-        Schema::create('statuses', function (Blueprint $table) {
+        /*Schema::create('statuses', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('user_id');
             $table->integer('parent_id')->nullable();
             $table->text('content');
             $table->timestamps();
-        });
+        });*/
 
         Schema::create('likeable', function (Blueprint $table) {
             $table->increments('id');
