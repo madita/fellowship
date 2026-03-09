@@ -200,7 +200,7 @@ const deleteStatus = async () => {
                         <span class="font-weight-medium text-subtitle-1">{{ status.user.name }}</span>
                         <template v-if="status.feeling && feelingMap[status.feeling]">
                             <span class="text-caption text-medium-emphasis ml-1">
-                                is feeling {{ feelingMap[status.feeling] }} {{ status.feeling }}
+                                {{ t('timeline.isFeeling') }} {{ feelingMap[status.feeling] }} {{ t('timeline.feelings.' + status.feeling) }}
                             </span>
                         </template>
                         <span class="text-caption text-medium-emphasis mx-2">&middot;</span>
@@ -277,12 +277,12 @@ const deleteStatus = async () => {
             </div>
 
             <!-- Media (if exists) -->
-            <div v-if="status.media && status.media.length > 0" class="status-media mb-3">
-                <div class="media-grid" :class="`media-grid-${Math.min(status.media.length, 4)}`">
+            <div v-if="status.media_urls && status.media_urls.length > 0" class="status-media mb-3">
+                <div class="media-grid" :class="`media-grid-${Math.min(status.media_urls.length, 4)}`">
                     <v-img
-                        v-for="(media, index) in status.media"
+                        v-for="(url, index) in status.media_urls"
                         :key="index"
-                        :src="media"
+                        :src="url"
                         cover
                         class="rounded media-item"
                     />

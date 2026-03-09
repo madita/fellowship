@@ -6,7 +6,6 @@ use App\Models\Status\Status;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class StatusController extends Controller
@@ -57,30 +56,23 @@ class StatusController extends Controller
             'feeling' => 'nullable|string|max:50',
         ]);
 
-        $mediaPaths = [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $extension = $image->getClientOriginalExtension();
-                $filename = Str::uuid() . '.' . $extension;
-                $path = 'statuses/' . $filename;
-
-                Storage::disk('public')->put(
-                    $path,
-                    file_get_contents($image->getRealPath() ?: $image->getPathname())
-                );
-
-                $mediaPaths[] = '/storage/' . $path;
-            }
-        }
-
         $status = Status::create([
             'user_id' => $user->id,
             'content' => $validated['content'],
-            'media' => !empty($mediaPaths) ? $mediaPaths : null,
             'feeling' => $validated['feeling'] ?? null,
         ]);
 
-        return response()->json($status->load('user'), 201);
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
+
+                $status->addMedia($image)
+                    ->usingFileName($filename)
+                    ->toMediaCollection('images');
+            }
+        }
+
+        return response()->json($status->load('user', 'media'), 201);
     }
 
     /**

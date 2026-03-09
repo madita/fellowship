@@ -27,19 +27,19 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const selectedFeeling = ref(null);
 const showFeelingMenu = ref(false);
 
-const feelings = [
-    { key: 'happy', emoji: '\u{1F60A}', label: 'happy' },
-    { key: 'excited', emoji: '\u{1F389}', label: 'excited' },
-    { key: 'loved', emoji: '\u{2764}\u{FE0F}', label: 'loved' },
-    { key: 'thoughtful', emoji: '\u{1F914}', label: 'thoughtful' },
-    { key: 'sad', emoji: '\u{1F622}', label: 'sad' },
-    { key: 'angry', emoji: '\u{1F621}', label: 'angry' },
-    { key: 'surprised', emoji: '\u{1F62E}', label: 'surprised' },
-    { key: 'grateful', emoji: '\u{1F64F}', label: 'grateful' },
-    { key: 'tired', emoji: '\u{1F634}', label: 'tired' },
-    { key: 'amused', emoji: '\u{1F602}', label: 'amused' },
-    { key: 'proud', emoji: '\u{1F4AA}', label: 'proud' },
-    { key: 'relaxed', emoji: '\u{1F60C}', label: 'relaxed' },
+const feelingOptions = [
+    { key: 'happy', emoji: '\u{1F60A}' },
+    { key: 'excited', emoji: '\u{1F389}' },
+    { key: 'loved', emoji: '\u{2764}\u{FE0F}' },
+    { key: 'thoughtful', emoji: '\u{1F914}' },
+    { key: 'sad', emoji: '\u{1F622}' },
+    { key: 'angry', emoji: '\u{1F621}' },
+    { key: 'surprised', emoji: '\u{1F62E}' },
+    { key: 'grateful', emoji: '\u{1F64F}' },
+    { key: 'tired', emoji: '\u{1F634}' },
+    { key: 'amused', emoji: '\u{1F602}' },
+    { key: 'proud', emoji: '\u{1F4AA}' },
+    { key: 'relaxed', emoji: '\u{1F60C}' },
 ];
 
 const canPost = computed(() => {
@@ -146,7 +146,7 @@ onBeforeUnmount(() => {
                     <v-textarea
                         v-if="!expanded"
                         v-model="content"
-                        placeholder="What's on your mind?"
+                        :placeholder="t('timeline.whatsOnYourMind')"
                         variant="outlined"
                         rows="1"
                         hide-details
@@ -157,7 +157,7 @@ onBeforeUnmount(() => {
                     <div v-else>
                         <v-textarea
                             v-model="content"
-                            placeholder="What's on your mind?"
+                            :placeholder="t('timeline.whatsOnYourMind')"
                             variant="outlined"
                             rows="3"
                             auto-grow
@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
                             class="mb-3"
                             @click:close="removeFeeling"
                         >
-                            {{ selectedFeeling.emoji }} feeling {{ selectedFeeling.label }}
+                            {{ selectedFeeling.emoji }} {{ t('timeline.feeling') }} {{ t('timeline.feelings.' + selectedFeeling.key) }}
                         </v-chip>
 
                         <!-- Image Previews -->
@@ -207,7 +207,7 @@ onBeforeUnmount(() => {
                                     @click="cancel"
                                     :disabled="posting"
                                 >
-                                    Cancel
+                                    {{ t('timeline.cancel') }}
                                 </v-btn>
                                 <v-btn
                                     color="primary"
@@ -215,7 +215,7 @@ onBeforeUnmount(() => {
                                     :loading="posting"
                                     :disabled="!canPost"
                                 >
-                                    Post
+                                    {{ t('timeline.post') }}
                                 </v-btn>
                             </div>
                         </div>
@@ -229,7 +229,7 @@ onBeforeUnmount(() => {
                                 @click="triggerFileInput"
                                 :disabled="selectedFiles.length >= MAX_IMAGES"
                             >
-                                Photo
+                                {{ t('timeline.photo') }}
                                 <span v-if="selectedFiles.length > 0" class="ml-1 text-caption">
                                     ({{ selectedFiles.length }}/{{ MAX_IMAGES }})
                                 </span>
@@ -244,16 +244,16 @@ onBeforeUnmount(() => {
                                         class="ml-2"
                                         v-bind="menuProps"
                                     >
-                                        Feeling
+                                        {{ t('timeline.feeling') }}
                                     </v-btn>
                                 </template>
 
                                 <v-card min-width="280" max-width="320">
-                                    <v-card-title class="text-subtitle-2 pb-1">How are you feeling?</v-card-title>
+                                    <v-card-title class="text-subtitle-2 pb-1">{{ t('timeline.howAreYouFeeling') }}</v-card-title>
                                     <v-card-text class="pt-1">
                                         <div class="feeling-grid">
                                             <v-btn
-                                                v-for="feeling in feelings"
+                                                v-for="feeling in feelingOptions"
                                                 :key="feeling.key"
                                                 variant="text"
                                                 size="small"
@@ -262,7 +262,7 @@ onBeforeUnmount(() => {
                                                 @click="selectFeeling(feeling)"
                                             >
                                                 <span class="feeling-emoji">{{ feeling.emoji }}</span>
-                                                <span class="text-caption ml-1">{{ feeling.label }}</span>
+                                                <span class="text-caption ml-1">{{ t('timeline.feelings.' + feeling.key) }}</span>
                                             </v-btn>
                                         </div>
                                     </v-card-text>
@@ -270,7 +270,7 @@ onBeforeUnmount(() => {
                             </v-menu>
 
                             <v-btn variant="text" size="small" prepend-icon="mdi-map-marker-outline" class="ml-2">
-                                Location
+                                {{ t('timeline.location') }}
                             </v-btn>
                         </div>
                     </div>

@@ -8,28 +8,44 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Status extends Model
+class Status extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, InteractsWithMedia;
 
     protected $fillable = [
         'user_id',
         'content',
-        'media',
         'feeling',
         'likes_count',
         'comments_count',
     ];
 
     protected $casts = [
-        'media' => 'array',
         'likes_count' => 'integer',
         'comments_count' => 'integer',
     ];
 
-    protected $with = ['user'];
-    protected $appends = ['is_liked_by_me', 'time_ago'];
+    protected $with = ['user', 'media'];
+    protected $appends = ['is_liked_by_me', 'time_ago', 'media_urls'];
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')
+            ->width(400)
+            ->height(400);
+    }
+
+    /**
+     * Get array of media URLs for the frontend.
+     */
+    public function getMediaUrlsAttribute(): array
+    {
+        return $this->getMedia('images')->map(fn ($media) => $media->getUrl())->toArray();
+    }
 
     /**
      * Boot the model.

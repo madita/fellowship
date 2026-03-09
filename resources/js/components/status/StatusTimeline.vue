@@ -4,7 +4,6 @@ import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import StatusComposer from './StatusComposer.vue';
 import StatusCard from './StatusCard.vue';
-import UserAvatar from '../common/UserAvatar.vue';
 import { useUserStore } from '@/store/userStore.js';
 
 const { t } = useI18n();
@@ -85,86 +84,62 @@ onMounted(() => {
     <div class="status-timeline-container">
         <!-- Page Header -->
         <div class="timeline-header pa-4">
-            <h1 class="text-h4 font-weight-bold mb-2">Timeline</h1>
+            <h1 class="text-h4 font-weight-bold mb-2">{{ t('timeline.title') }}</h1>
             <p class="text-subtitle-1 text-medium-emphasis">
-                Share your thoughts with the community
+                {{ t('timeline.subtitle') }}
             </p>
         </div>
 
         <v-container class="py-4" fluid>
-            <v-row>
-                <!-- Main Feed Column -->
-                <v-col cols="12" md="8" lg="9">
-                    <!-- Status Composer -->
-                    <StatusComposer @status-posted="handleStatusPosted" />
+            <!-- Status Composer -->
+            <StatusComposer @status-posted="handleStatusPosted" />
 
-                    <!-- Loading Initial -->
-                    <div v-if="loading" class="text-center py-8">
-                        <v-progress-circular indeterminate color="primary" size="48" />
-                    </div>
+            <!-- Loading Initial -->
+            <div v-if="loading" class="text-center py-8">
+                <v-progress-circular indeterminate color="primary" size="48" />
+            </div>
 
-                    <!-- Timeline Feed -->
-                    <div v-else>
-                        <!-- Status Cards -->
-                        <StatusCard
-                            v-for="status in statuses"
-                            :key="status.id"
-                            :status="status"
-                            @updated="handleStatusUpdated"
-                            @deleted="handleStatusDeleted"
-                        />
+            <!-- Timeline Feed -->
+            <div v-else>
+                <!-- Status Cards -->
+                <StatusCard
+                    v-for="status in statuses"
+                    :key="status.id"
+                    :status="status"
+                    @updated="handleStatusUpdated"
+                    @deleted="handleStatusDeleted"
+                />
 
-                        <!-- Load More Button -->
-                        <div v-if="hasMore" class="text-center py-4">
-                            <v-btn
-                                variant="outlined"
-                                color="primary"
-                                @click="loadMore"
-                                :loading="loadingMore"
-                                prepend-icon="mdi-refresh"
-                            >
-                                Load More
-                            </v-btn>
-                        </div>
+                <!-- Load More Button -->
+                <div v-if="hasMore" class="text-center py-4">
+                    <v-btn
+                        variant="outlined"
+                        color="primary"
+                        @click="loadMore"
+                        :loading="loadingMore"
+                        prepend-icon="mdi-refresh"
+                    >
+                        {{ t('timeline.loadMore') }}
+                    </v-btn>
+                </div>
 
-                        <!-- End of Feed -->
-                        <div v-else-if="statuses.length > 0" class="text-center py-4 text-medium-emphasis">
-                            <v-icon size="32" class="mb-2">mdi-check-circle-outline</v-icon>
-                            <p class="text-caption">You're all caught up!</p>
-                        </div>
+                <!-- End of Feed -->
+                <div v-else-if="statuses.length > 0" class="text-center py-4 text-medium-emphasis">
+                    <v-icon size="32" class="mb-2">mdi-check-circle-outline</v-icon>
+                    <p class="text-caption">{{ t('timeline.allCaughtUp') }}</p>
+                </div>
 
-                        <!-- Empty State -->
-                        <v-card v-if="statuses.length === 0" flat class="text-center pa-8">
-                            <v-icon size="64" color="grey-lighten-2" class="mb-4">
-                                mdi-timeline-text-outline
-                            </v-icon>
-                            <h3 class="text-h6 mb-2">No status updates yet</h3>
-                            <p class="text-body-2 text-medium-emphasis mb-4">
-                                Be the first to share something!
-                            </p>
-                        </v-card>
-                    </div>
-                </v-col>
-
-                <!-- Sidebar Column -->
-                <v-col cols="12" md="4" lg="3" class="d-none d-md-block">
-                    <v-card elevation="2" rounded="lg" class="pa-4">
-                        <div class="d-flex align-center mb-3">
-                            <UserAvatar :user="user" size="48" class="mr-3" />
-                            <div>
-                                <div class="font-weight-medium">{{ user.name }}</div>
-                                <div v-if="user.username" class="text-caption text-medium-emphasis">
-                                    @{{ user.username }}
-                                </div>
-                            </div>
-                        </div>
-                        <v-divider class="mb-3" />
-                        <div class="text-caption text-medium-emphasis">
-                            Welcome to the timeline. Share your thoughts with the community!
-                        </div>
-                    </v-card>
-                </v-col>
-            </v-row>
+                <!-- Empty State -->
+                <v-card v-if="statuses.length === 0" flat class="text-center pa-8">
+                    <v-icon size="64" color="grey-lighten-2" class="mb-4">
+                        mdi-timeline-text-outline
+                    </v-icon>
+                    <h3 class="text-h6 mb-2">{{ t('timeline.noStatusYet') }}</h3>
+                    <p class="text-body-2 text-medium-emphasis mb-4">
+                        {{ t('timeline.beFirst') }}
+                    </p>
+                </v-card>
+            </div>
         </v-container>
     </div>
 </template>
