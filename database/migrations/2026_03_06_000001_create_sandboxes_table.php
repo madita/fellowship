@@ -15,6 +15,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Owner
             $table->enum('visibility', ['private', 'members', 'public'])->default('private');
+            $table->longText('content')->nullable();
             $table->binary('yjs_state')->nullable(); // Y.js document state for persistence
             $table->json('settings')->nullable(); // Editor settings, permissions, etc.
             $table->timestamp('last_edited_at')->nullable();
@@ -44,6 +45,7 @@ return new class extends Migration
             $table->foreignId('sandbox_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('title')->nullable(); // Version name/description
+            $table->longText('content')->nullable()
             $table->binary('yjs_state'); // Snapshot of Y.js state
             $table->timestamps();
 

@@ -114,10 +114,6 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Editor, EditorContent, BubbleMenu } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
-import Collaboration from '@tiptap/extension-collaboration'
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
-import * as Y from 'yjs'
-import { WebsocketProvider } from 'y-websocket'
 import axios from 'axios'
 import SandboxSettings from './SandboxSettings.vue'
 import SandboxCollaborators from './SandboxCollaborators.vue'
@@ -154,8 +150,7 @@ export default {
     const route = useRoute()
     const sandbox = ref(null)
     const editor = ref(null)
-    const ydoc = ref(null)
-    const provider = ref(null)
+    const echoChannel = ref(null)
     const connected = ref(false)
     const saving = ref(false)
     const canEdit = ref(false)
@@ -168,6 +163,9 @@ export default {
     const editableTitle = ref('')
     const userColor = getRandomColor()
     const currentUser = ref(null)
+    let autoSaveInterval = null
+    let broadcastTimeout = null
+    let isRemoteUpdate = false
 
     // Load sandbox data
     const loadSandbox = async () => {
@@ -176,9 +174,9 @@ export default {
         sandbox.value = response.data.sandbox
         canEdit.value = response.data.canEdit
         canManage.value = response.data.canManage
-        
-        // Initialize Y.js and editor after loading sandbox
-        initializeCollaboration()
+
+        initializeEditor()
+        initializeEcho()
       } catch (error) {
         console.error('Failed to load sandbox:', error)
       }
@@ -190,107 +188,101 @@ export default {
         const response = await axios.get('/api/user')
         currentUser.value = response.data
       } catch (error) {
-        // Not logged in
         currentUser.value = null
       }
     }
 
-    // Initialize Y.js collaboration
-    const initializeCollaboration = async () => {
-      // Create Y.js document
-      ydoc.value = new Y.Doc()
-
-      // Load existing state if available
-      try {
-        const stateResponse = await axios.get(`/api/sandbox/${sandbox.value.id}/state`)
-        if (stateResponse.data.state) {
-          const state = Uint8Array.from(atob(stateResponse.data.state), c => c.charCodeAt(0))
-          Y.applyUpdate(ydoc.value, state)
-        }
-      } catch (error) {
-        console.error('Failed to load state:', error)
-      }
-
-      // Connect to WebSocket provider
-      // Using y-websocket with a public demo server for now
-      // In production, you'd use your own server or Hocuspocus
-      const wsUrl = import.meta.env.VITE_COLLAB_WS_URL || 'wss://demos.yjs.dev'
-      provider.value = new WebsocketProvider(
-        wsUrl,
-        `sandbox-${sandbox.value.id}`,
-        ydoc.value
-      )
-
-      // Track connection status
-      provider.value.on('status', ({ status }) => {
-        connected.value = status === 'connected'
-      })
-
-      // Track awareness (active users)
-      const awareness = provider.value.awareness
-      
-      awareness.setLocalStateField('user', {
-        id: currentUser.value?.id || 'guest-' + Math.random().toString(36).substr(2, 9),
-        username: currentUser.value?.username || 'Guest',
-        color: userColor,
-      })
-
-      awareness.on('change', () => {
-        const states = Array.from(awareness.getStates().values())
-        activeUsers.value = states
-          .filter(state => state.user)
-          .map(state => state.user)
-      })
-
-      // Initialize Tiptap editor with collaboration
+    // Initialize Tiptap editor
+    const initializeEditor = () => {
       editor.value = new Editor({
         editable: canEdit.value,
+        content: sandbox.value.content || '',
         extensions: [
-          StarterKit.configure({
-            history: false, // Disable default history, Y.js handles this
-          }),
-          Collaboration.configure({
-            document: ydoc.value,
-          }),
-          CollaborationCursor.configure({
-            provider: provider.value,
-            user: {
-              name: currentUser.value?.username || 'Guest',
-              color: userColor,
-            },
-          }),
+          StarterKit,
         ],
+        onUpdate: ({ editor: ed }) => {
+          if (isRemoteUpdate) return
+
+          // Debounce broadcast to avoid flooding the server
+          clearTimeout(broadcastTimeout)
+          broadcastTimeout = setTimeout(() => {
+            if (sandbox.value && canEdit.value) {
+              axios.post(`/api/sandbox/${sandbox.value.id}/broadcast`, {
+                content: ed.getHTML(),
+              }).catch(err => console.error('Broadcast failed:', err))
+            }
+          }, 500)
+        },
       })
 
       // Auto-save periodically
       if (canEdit.value) {
-        setInterval(() => {
-          saveState(false)
-        }, 30000) // Every 30 seconds
+        autoSaveInterval = setInterval(() => {
+          saveContent(false)
+        }, 30000)
       }
     }
 
-    // Save Y.js state to server
-    const saveState = async (createVersion = false) => {
-      if (!canEdit.value || !ydoc.value) return
+    // Initialize Laravel Echo presence channel
+    const initializeEcho = () => {
+      if (!window.Echo) return
+
+      const channelName = `sandbox.${sandbox.value.id}`
+
+      echoChannel.value = window.Echo.join(channelName)
+        .here((users) => {
+          activeUsers.value = users.map(u => ({
+            id: u.id,
+            username: u.username || u.name,
+            color: getRandomColor(),
+          }))
+          connected.value = true
+        })
+        .joining((user) => {
+          activeUsers.value.push({
+            id: user.id,
+            username: user.username || user.name,
+            color: getRandomColor(),
+          })
+        })
+        .leaving((user) => {
+          activeUsers.value = activeUsers.value.filter(u => u.id !== user.id)
+        })
+        .listen('.content-updated', (e) => {
+          if (e.userId === currentUser.value?.id) return
+          if (!editor.value) return
+
+          isRemoteUpdate = true
+          const { from, to } = editor.value.state.selection
+          editor.value.commands.setContent(e.content, false)
+          // Try to restore cursor position
+          try {
+            editor.value.commands.setTextSelection({ from, to })
+          } catch {
+            // Selection may be out of range after remote update
+          }
+          isRemoteUpdate = false
+        })
+    }
+
+    // Save content to server
+    const saveContent = async (createVersion = false) => {
+      if (!canEdit.value || !editor.value) return
 
       saving.value = true
       try {
-        const state = Y.encodeStateAsUpdate(ydoc.value)
-        const base64State = btoa(String.fromCharCode.apply(null, state))
-        
         await axios.post(`/api/sandbox/${sandbox.value.id}/state`, {
-          state: base64State,
+          content: editor.value.getHTML(),
           createVersion,
         })
       } catch (error) {
-        console.error('Failed to save state:', error)
+        console.error('Failed to save content:', error)
       } finally {
         saving.value = false
       }
     }
 
-    const saveVersion = () => saveState(true)
+    const saveVersion = () => saveContent(true)
 
     // Title editing
     const startEditTitle = () => {
@@ -320,10 +312,9 @@ export default {
     }
 
     // Version restore
-    const onVersionRestore = (state) => {
-      if (ydoc.value) {
-        const stateArray = Uint8Array.from(atob(state), c => c.charCodeAt(0))
-        Y.applyUpdate(ydoc.value, stateArray)
+    const onVersionRestore = (content) => {
+      if (editor.value) {
+        editor.value.commands.setContent(content, false)
       }
       showVersions.value = false
     }
@@ -336,17 +327,17 @@ export default {
 
     onUnmounted(() => {
       // Save before leaving
-      saveState(false)
-      
+      saveContent(false)
+
       // Cleanup
+      if (autoSaveInterval) {
+        clearInterval(autoSaveInterval)
+      }
       if (editor.value) {
         editor.value.destroy()
       }
-      if (provider.value) {
-        provider.value.disconnect()
-      }
-      if (ydoc.value) {
-        ydoc.value.destroy()
+      if (echoChannel.value && sandbox.value) {
+        window.Echo.leave(`sandbox.${sandbox.value.id}`)
       }
     })
 

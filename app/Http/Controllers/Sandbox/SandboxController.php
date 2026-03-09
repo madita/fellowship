@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Sandbox;
 
+use App\Events\Sandbox\SandboxContentUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Sandbox\Sandbox;
 use App\Models\Sandbox\SandboxVersion;
@@ -70,7 +71,7 @@ class SandboxController extends Controller
     public function show(Request $request, string $slug): JsonResponse
     {
         $sandbox = Sandbox::where('slug', $slug)
-            ->with(['owner:id,username', 'collaborators:id,username'])
+            ->with(['owner:id,username', 'collaborators:users.id,username'])
             ->firstOrFail();
 
         $user = auth()->user();
@@ -135,7 +136,7 @@ class SandboxController extends Controller
     }
 
     /**
-     * Get Y.js document state for syncing.
+     * Get sandbox content.
      */
     public function getState(Sandbox $sandbox): JsonResponse
     {
@@ -146,14 +147,14 @@ class SandboxController extends Controller
         }
 
         return response()->json([
-            'state' => $sandbox->yjs_state ? base64_encode($sandbox->yjs_state) : null,
+            'content' => $sandbox->content,
             'lastEditedAt' => $sandbox->last_edited_at,
             'lastEditedBy' => $sandbox->lastEditor?->username,
         ]);
     }
 
     /**
-     * Save Y.js document state.
+     * Save sandbox content.
      */
     public function saveState(Request $request, Sandbox $sandbox): JsonResponse
     {
@@ -164,12 +165,10 @@ class SandboxController extends Controller
         }
 
         $validated = $request->validate([
-            'state' => 'required|string', // Base64 encoded Y.js state
+            'content' => 'required|string',
             'createVersion' => 'sometimes|boolean',
             'versionTitle' => 'sometimes|string|max:255',
         ]);
-
-        $state = base64_decode($validated['state']);
 
         // Create version snapshot if requested
         if ($request->boolean('createVersion')) {
@@ -177,20 +176,14 @@ class SandboxController extends Controller
                 'sandbox_id' => $sandbox->id,
                 'user_id' => $user->id,
                 'title' => $validated['versionTitle'] ?? 'Auto-save',
-                'yjs_state' => $sandbox->yjs_state, // Save previous state
+                'content' => $sandbox->content,
             ]);
         }
 
         $sandbox->update([
-            'yjs_state' => $state,
+            'content' => $validated['content'],
             'last_edited_at' => now(),
             'last_edited_by' => $user->id,
-        ]);
-
-        Log::info('Sandbox state saved', [
-            'sandbox_id' => $sandbox->id,
-            'user_id' => $user->id,
-            'state_size' => strlen($state),
         ]);
 
         return response()->json(['message' => __('messages.sandbox.saved')]);
@@ -199,6 +192,30 @@ class SandboxController extends Controller
     /**
      * Add a collaborator.
      */
+    /**
+     * Broadcast content update to other collaborators.
+     */
+    public function broadcastContent(Request $request, Sandbox $sandbox): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$sandbox->canEdit($user)) {
+            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        $validated = $request->validate([
+            'content' => 'required|string',
+        ]);
+
+        broadcast(new SandboxContentUpdated(
+            $sandbox->id,
+            $validated['content'],
+            $user->id
+        ))->toOthers();
+
+        return response()->json(['status' => 'ok']);
+    }
+
     public function addCollaborator(Request $request, Sandbox $sandbox): JsonResponse
     {
         $user = auth()->user();
@@ -220,12 +237,13 @@ class SandboxController extends Controller
             $validated['user_id'] => [
                 'role' => $validated['role'] ?? 'editor',
                 'invited_at' => now(),
+                'accepted_at' => now(),
             ],
         ]);
 
         return response()->json([
             'message' => __('messages.sandbox.collaborator_added'),
-            'collaborators' => $sandbox->collaborators()->get(['id', 'username']),
+            'collaborators' => $sandbox->collaborators()->get(['users.id', 'username']),
         ]);
     }
 
@@ -304,19 +322,19 @@ class SandboxController extends Controller
             'sandbox_id' => $sandbox->id,
             'user_id' => $user->id,
             'title' => 'Before restore',
-            'yjs_state' => $sandbox->yjs_state,
+            'content' => $sandbox->content,
         ]);
 
         // Restore the selected version
         $sandbox->update([
-            'yjs_state' => $version->yjs_state,
+            'content' => $version->content,
             'last_edited_at' => now(),
             'last_edited_by' => $user->id,
         ]);
 
         return response()->json([
             'message' => __('messages.sandbox.version_restored'),
-            'state' => base64_encode($version->yjs_state),
+            'content' => $version->content,
         ]);
     }
 }

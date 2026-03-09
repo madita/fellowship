@@ -169,8 +169,8 @@ export default {
 
       searchTimeout = setTimeout(async () => {
         try {
-          const response = await axios.get('/api/users/search', {
-            params: { q: searchQuery.value, limit: 5 }
+          const response = await axios.post('/api/users/search', {
+            query: searchQuery.value,
           })
           // Filter out existing collaborators and owner
           const existingIds = [

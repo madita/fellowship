@@ -12,11 +12,7 @@ class SandboxVersion extends Model
         'sandbox_id',
         'user_id',
         'title',
-        'yjs_state',
-    ];
-
-    protected $hidden = [
-        'yjs_state',
+        'content',
     ];
 
     public function sandbox(): BelongsTo

@@ -23,6 +23,7 @@ class Sandbox extends Model
         'description',
         'user_id',
         'visibility',
+        'content',
         'yjs_state',
         'settings',
         'last_edited_at',
