@@ -2,42 +2,44 @@
   <div :class="['sandbox-list-page', { 'compact-mode': compact }]">
     <div class="page-header">
       <div v-if="!compact">
-        <h1>Sandboxes</h1>
-        <p class="subtitle">Collaborate in real-time with others</p>
+        <h1 class="text-h4 font-weight-bold">Sandboxes</h1>
+        <p class="text-body-2 text-medium-emphasis">Collaborate in real-time with others</p>
       </div>
-      <h3 v-else class="compact-title">Sandboxes</h3>
-      <button @click="showCreateModal = true" class="btn btn-primary" :class="{ 'btn-sm': compact }">
-        <i class="fas fa-plus"></i>
+      <h3 v-else class="text-subtitle-1 font-weight-bold">Sandboxes</h3>
+      <v-btn color="primary" :size="compact ? 'small' : 'default'" @click="showCreateModal = true">
+        <v-icon start>mdi-plus</v-icon>
         <span v-if="!compact">New Sandbox</span>
-      </button>
+      </v-btn>
     </div>
 
     <!-- Filters -->
     <div class="filters">
-      <button
+      <v-chip
         v-for="filter in filters"
         :key="filter.value"
+        :color="activeFilter === filter.value ? 'primary' : undefined"
+        :variant="activeFilter === filter.value ? 'elevated' : 'tonal'"
+        :size="compact ? 'x-small' : 'small'"
         @click="activeFilter = filter.value"
-        :class="['filter-btn', { active: activeFilter === filter.value, 'filter-chip': compact }]"
       >
         {{ filter.label }}
-      </button>
+      </v-chip>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
-      <i class="fas fa-spinner fa-spin"></i>
-      <span v-if="!compact">Loading sandboxes...</span>
+      <v-progress-circular indeterminate color="primary" :size="compact ? 24 : 40" />
+      <span v-if="!compact" class="text-body-2 text-medium-emphasis ml-3">Loading sandboxes...</span>
     </div>
 
     <!-- Empty State -->
     <div v-else-if="filteredSandboxes.length === 0" class="empty-state">
-      <i class="fas fa-file-alt"></i>
-      <h3>No sandboxes found</h3>
-      <p v-if="!compact">Create your first sandbox to start collaborating!</p>
-      <button @click="showCreateModal = true" class="btn btn-primary btn-sm">
+      <v-icon :size="compact ? 40 : 64" color="medium-emphasis" class="mb-3">mdi-file-document-outline</v-icon>
+      <h3 class="text-subtitle-1 font-weight-medium mb-1">No sandboxes found</h3>
+      <p v-if="!compact" class="text-body-2 text-medium-emphasis mb-3">Create your first sandbox to start collaborating!</p>
+      <v-btn color="primary" size="small" @click="showCreateModal = true">
         Create Sandbox
-      </button>
+      </v-btn>
     </div>
 
     <!-- Compact: Vertical list -->
@@ -49,130 +51,143 @@
         @click="selectSandbox(sandbox)"
       >
         <div class="item-top">
-          <span class="item-title">{{ sandbox.title }}</span>
-          <span class="visibility-icon" :class="sandbox.visibility">
-            <i :class="getVisibilityIcon(sandbox.visibility)"></i>
-          </span>
+          <span class="item-title text-body-2 font-weight-medium">{{ sandbox.title }}</span>
+          <v-icon :color="getVisibilityColor(sandbox.visibility)" size="14">
+            {{ getVisibilityIcon(sandbox.visibility) }}
+          </v-icon>
         </div>
         <div class="item-meta">
-          <span class="owner-name">{{ sandbox.owner?.username }}</span>
-          <span v-if="sandbox.last_edited_at" class="last-edited">{{ formatDate(sandbox.last_edited_at) }}</span>
+          <span class="text-caption text-disabled">{{ sandbox.owner?.username }}</span>
+          <span v-if="sandbox.last_edited_at" class="text-caption text-disabled">{{ formatDate(sandbox.last_edited_at) }}</span>
         </div>
       </div>
     </div>
 
     <!-- Full: Grid layout -->
     <div v-else class="sandbox-grid">
-      <div
+      <v-card
         v-for="sandbox in filteredSandboxes"
         :key="sandbox.id"
+        variant="outlined"
         class="sandbox-card"
         @click="openSandbox(sandbox)"
       >
-        <div class="card-header">
-          <span class="visibility-badge" :class="sandbox.visibility">
-            <i :class="getVisibilityIcon(sandbox.visibility)"></i>
-          </span>
-          <span v-if="sandbox.user_id === currentUserId" class="owner-badge">
-            Owner
-          </span>
-        </div>
-
-        <h3 class="card-title">{{ sandbox.title }}</h3>
-        <p class="card-description">{{ sandbox.description || 'No description' }}</p>
-
-        <div class="card-meta">
-          <span class="collaborators">
-            <i class="fas fa-users"></i>
-            {{ sandbox.collaborators_count || 0 }}
-          </span>
-          <span class="last-edited" v-if="sandbox.last_edited_at">
-            {{ formatDate(sandbox.last_edited_at) }}
-          </span>
-        </div>
-
-        <div class="card-footer">
-          <div class="owner-info">
-            <span class="avatar">{{ sandbox.owner?.username?.charAt(0).toUpperCase() }}</span>
-            <span class="owner-name">{{ sandbox.owner?.username }}</span>
+        <v-card-text>
+          <div class="card-header mb-3">
+            <v-chip
+              :color="getVisibilityColor(sandbox.visibility)"
+              variant="tonal"
+              size="x-small"
+              :prepend-icon="getVisibilityIcon(sandbox.visibility)"
+            >
+              {{ sandbox.visibility }}
+            </v-chip>
+            <v-chip
+              v-if="sandbox.user_id === currentUserId"
+              color="primary"
+              variant="tonal"
+              size="x-small"
+            >
+              Owner
+            </v-chip>
           </div>
-        </div>
-      </div>
+
+          <h3 class="text-subtitle-1 font-weight-bold mb-1">{{ sandbox.title }}</h3>
+          <p class="text-body-2 text-medium-emphasis card-description mb-3">{{ sandbox.description || 'No description' }}</p>
+
+          <div class="card-meta mb-3">
+            <span class="text-caption text-disabled d-flex align-center ga-1">
+              <v-icon size="14">mdi-account-group-outline</v-icon>
+              {{ sandbox.collaborators_count || 0 }}
+            </span>
+            <span v-if="sandbox.last_edited_at" class="text-caption text-disabled">
+              {{ formatDate(sandbox.last_edited_at) }}
+            </span>
+          </div>
+
+          <v-divider class="mb-3" />
+
+          <div class="d-flex align-center ga-2">
+            <UserAvatar v-if="sandbox.owner" :user="sandbox.owner" size="24" />
+            <span class="text-body-2">{{ sandbox.owner?.username }}</span>
+          </div>
+        </v-card-text>
+      </v-card>
     </div>
 
     <!-- Pagination (full mode only) -->
     <div v-if="!compact && totalPages > 1" class="pagination">
-      <button
-        @click="loadPage(currentPage - 1)"
+      <v-btn
+        icon
+        variant="outlined"
+        size="small"
         :disabled="currentPage <= 1"
-        class="page-btn"
+        @click="loadPage(currentPage - 1)"
       >
-        <i class="fas fa-chevron-left"></i>
-      </button>
-      <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
-      <button
-        @click="loadPage(currentPage + 1)"
+        <v-icon>mdi-chevron-left</v-icon>
+      </v-btn>
+      <span class="text-body-2 text-medium-emphasis">Page {{ currentPage }} of {{ totalPages }}</span>
+      <v-btn
+        icon
+        variant="outlined"
+        size="small"
         :disabled="currentPage >= totalPages"
-        class="page-btn"
+        @click="loadPage(currentPage + 1)"
       >
-        <i class="fas fa-chevron-right"></i>
-      </button>
+        <v-icon>mdi-chevron-right</v-icon>
+      </v-btn>
     </div>
 
     <!-- Create Modal -->
-    <div v-if="showCreateModal" class="modal-overlay" @click.self="showCreateModal = false">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Create New Sandbox</h2>
-          <button @click="showCreateModal = false" class="close-btn">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
+    <v-dialog v-model="showCreateModal" max-width="480" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center justify-space-between">
+          <span>Create New Sandbox</span>
+          <v-btn icon variant="text" size="small" @click="showCreateModal = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
 
-        <form @submit.prevent="createSandbox" class="modal-body">
-          <div class="form-group">
-            <label for="title">Title *</label>
-            <input
-              id="title"
-              v-model="newSandbox.title"
-              type="text"
-              class="form-control"
-              required
-              autofocus
-            />
-          </div>
+        <v-card-text>
+          <v-text-field
+            v-model="newSandbox.title"
+            label="Title *"
+            variant="outlined"
+            density="compact"
+            autofocus
+            class="mb-3"
+          />
 
-          <div class="form-group">
-            <label for="description">Description</label>
-            <textarea
-              id="description"
-              v-model="newSandbox.description"
-              class="form-control"
-              rows="3"
-              placeholder="What's this sandbox about?"
-            ></textarea>
-          </div>
+          <v-textarea
+            v-model="newSandbox.description"
+            label="Description"
+            variant="outlined"
+            density="compact"
+            rows="3"
+            placeholder="What's this sandbox about?"
+            class="mb-3"
+          />
 
-          <div class="form-group">
-            <label for="visibility">Visibility</label>
-            <select id="visibility" v-model="newSandbox.visibility" class="form-control">
-              <option value="private">Private - Only you and collaborators</option>
-              <option value="members">Members - All site members can view</option>
-              <option value="public">Public - Anyone can view</option>
-            </select>
-          </div>
-        </form>
+          <v-select
+            v-model="newSandbox.visibility"
+            label="Visibility"
+            variant="outlined"
+            density="compact"
+            :items="visibilityOptions"
+            item-title="text"
+            item-value="value"
+          />
+        </v-card-text>
 
-        <div class="modal-footer">
-          <button type="button" @click="showCreateModal = false" class="btn btn-secondary">
-            Cancel
-          </button>
-          <button type="button" @click="createSandbox" class="btn btn-primary" :disabled="creating">
-            {{ creating ? 'Creating...' : 'Create Sandbox' }}
-          </button>
-        </div>
-      </div>
-    </div>
+        <v-card-actions class="px-4 pb-4">
+          <v-spacer />
+          <v-btn variant="text" @click="showCreateModal = false">Cancel</v-btn>
+          <v-btn color="primary" :loading="creating" :disabled="!newSandbox.title.trim()" @click="createSandbox">
+            Create Sandbox
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -180,9 +195,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import UserAvatar from '../common/UserAvatar.vue'
 
 export default {
   name: 'SandboxList',
+
+  components: {
+    UserAvatar,
+  },
 
   props: {
     compact: {
@@ -212,6 +232,12 @@ export default {
       { value: 'all', label: 'All' },
       { value: 'owned', label: 'My Sandboxes' },
       { value: 'shared', label: 'Shared with me' },
+    ]
+
+    const visibilityOptions = [
+      { value: 'private', text: 'Private - Only you and collaborators' },
+      { value: 'members', text: 'Members - All site members can view' },
+      { value: 'public', text: 'Public - Anyone can view' },
     ]
 
     const newSandbox = ref({
@@ -300,11 +326,20 @@ export default {
 
     const getVisibilityIcon = (visibility) => {
       const icons = {
-        private: 'fas fa-lock',
-        members: 'fas fa-users',
-        public: 'fas fa-globe',
+        private: 'mdi-lock',
+        members: 'mdi-account-group',
+        public: 'mdi-earth',
       }
-      return icons[visibility] || 'fas fa-file'
+      return icons[visibility] || 'mdi-file'
+    }
+
+    const getVisibilityColor = (visibility) => {
+      const colors = {
+        private: 'error',
+        members: 'warning',
+        public: 'success',
+      }
+      return colors[visibility] || 'default'
     }
 
     const formatDate = (dateStr) => {
@@ -337,6 +372,7 @@ export default {
       totalPages,
       activeFilter,
       filters,
+      visibilityOptions,
       filteredSandboxes,
       newSandbox,
       currentUserId,
@@ -345,6 +381,7 @@ export default {
       selectSandbox,
       openSandbox,
       getVisibilityIcon,
+      getVisibilityColor,
       formatDate,
     }
   },
@@ -367,30 +404,14 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 2rem;
-
-  h1 {
-    margin: 0 0 0.25rem;
-    font-size: 2rem;
-  }
-
-  .subtitle {
-    margin: 0;
-    color: #6b7280;
-  }
+  margin-bottom: 1.5rem;
 
   .compact-mode & {
     align-items: center;
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     margin-bottom: 0;
-    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    border-bottom: 1px solid rgb(var(--v-border-color));
   }
-}
-
-.compact-title {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
 }
 
 .filters {
@@ -399,62 +420,29 @@ export default {
   margin-bottom: 1.5rem;
 
   .compact-mode & {
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 1rem;
     margin-bottom: 0;
-    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    border-bottom: 1px solid rgb(var(--v-border-color));
   }
 }
 
-.filter-btn {
-  padding: 0.5rem 1rem;
-  background: #f3f4f6;
-  border: none;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.15s;
-
-  &:hover {
-    background: #e5e7eb;
-  }
-
-  &.active {
-    background: #3b82f6;
-    color: white;
-  }
-
-  &.filter-chip {
-    padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
-  }
-}
-
-.loading-state,
-.empty-state {
-  text-align: center;
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 4rem 2rem;
-  color: #6b7280;
 
   .compact-mode & {
     padding: 2rem 1rem;
   }
+}
 
-  i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
 
-    .compact-mode & {
-      font-size: 2rem;
-    }
-  }
-
-  h3 {
-    margin: 0 0 0.5rem;
-    color: #374151;
-  }
-
-  p {
-    margin: 0 0 1.5rem;
+  .compact-mode & {
+    padding: 2rem 1rem;
   }
 }
 
@@ -466,16 +454,16 @@ export default {
 .sandbox-item {
   padding: 0.75rem 1rem;
   cursor: pointer;
-  border-bottom: 1px solid var(--border-color, #f3f4f6);
+  border-bottom: 1px solid rgb(var(--v-border-color));
   transition: background 0.15s;
 
   &:hover {
-    background: var(--bg-hover, #f9fafb);
+    background: rgba(var(--v-theme-on-surface), 0.04);
   }
 
   &.selected {
-    background: var(--bg-selected, #eff6ff);
-    border-left: 3px solid var(--primary-color, #3b82f6);
+    background: rgba(var(--v-theme-primary), 0.08);
+    border-left: 3px solid rgb(var(--v-theme-primary));
     padding-left: calc(1rem - 3px);
   }
 }
@@ -488,27 +476,14 @@ export default {
 }
 
 .item-title {
-  font-weight: 500;
-  font-size: 0.9rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.visibility-icon {
-  flex-shrink: 0;
-  font-size: 0.7rem;
-
-  &.private { color: #dc2626; }
-  &.members { color: #d97706; }
-  &.public { color: #059669; }
-}
-
 .item-meta {
   display: flex;
   justify-content: space-between;
-  font-size: 0.75rem;
-  color: #9ca3af;
   margin-top: 0.25rem;
 }
 
@@ -520,58 +495,21 @@ export default {
 }
 
 .sandbox-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
-  padding: 1.25rem;
   cursor: pointer;
   transition: all 0.15s;
 
   &:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border-color: rgb(var(--v-theme-primary));
   }
 }
 
 .card-header {
   display: flex;
-  justify-content: space-between;
+  gap: 0.5rem;
   align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.visibility-badge {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-
-  &.private { background: #fecaca; color: #dc2626; }
-  &.members { background: #fef3c7; color: #d97706; }
-  &.public { background: #d1fae5; color: #059669; }
-}
-
-.owner-badge {
-  font-size: 0.75rem;
-  padding: 0.125rem 0.5rem;
-  background: #dbeafe;
-  color: #2563eb;
-  border-radius: 9999px;
-}
-
-.card-title {
-  margin: 0 0 0.5rem;
-  font-size: 1.125rem;
-  font-weight: 600;
 }
 
 .card-description {
-  margin: 0 0 1rem;
-  font-size: 0.875rem;
-  color: #6b7280;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -581,42 +519,6 @@ export default {
 .card-meta {
   display: flex;
   gap: 1rem;
-  font-size: 0.75rem;
-  color: #9ca3af;
-  margin-bottom: 1rem;
-
-  i {
-    margin-right: 0.25rem;
-  }
-}
-
-.card-footer {
-  padding-top: 0.75rem;
-  border-top: 1px solid #f3f4f6;
-}
-
-.owner-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  .avatar {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #3b82f6;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .owner-name {
-    font-size: 0.875rem;
-    color: #374151;
-  }
 }
 
 .pagination {
@@ -625,139 +527,5 @@ export default {
   align-items: center;
   gap: 1rem;
   margin-top: 2rem;
-
-  .page-btn {
-    padding: 0.5rem 0.75rem;
-    background: white;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    cursor: pointer;
-
-    &:hover:not(:disabled) {
-      background: #f9fafb;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-
-  .page-info {
-    font-size: 0.875rem;
-    color: #6b7280;
-  }
-}
-
-// Modal styles
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 0.75rem;
-  width: 100%;
-  max-width: 480px;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-
-  h2 {
-    margin: 0;
-    font-size: 1.25rem;
-  }
-
-  .close-btn {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    cursor: pointer;
-    color: #6b7280;
-  }
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.form-group {
-  margin-bottom: 1.25rem;
-
-  label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-  }
-}
-
-.form-control {
-  width: 100%;
-  padding: 0.625rem 0.875rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-  }
-}
-
-.btn {
-  padding: 0.625rem 1.25rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  &.btn-sm {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.875rem;
-  }
-
-  &.btn-primary {
-    background: #3b82f6;
-    color: white;
-
-    &:hover:not(:disabled) {
-      background: #2563eb;
-    }
-  }
-
-  &.btn-secondary {
-    background: #e5e7eb;
-    color: #374151;
-
-    &:hover:not(:disabled) {
-      background: #d1d5db;
-    }
-  }
 }
 </style>

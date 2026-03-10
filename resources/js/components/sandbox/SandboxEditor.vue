@@ -3,99 +3,243 @@
     <!-- Header -->
     <div class="sandbox-header">
       <div class="sandbox-info">
-        <button
+        <v-btn
           v-if="isFullscreen"
-          class="btn btn-back"
+          variant="tonal"
+          size="small"
           @click="$emit('toggle-fullscreen')"
-          title="Back to list"
         >
-          <i class="fas fa-arrow-left"></i>
+          <v-icon start>mdi-arrow-left</v-icon>
           Back
-        </button>
-        <button
+        </v-btn>
+        <v-btn
           v-else
-          class="btn btn-icon"
+          icon
+          variant="text"
+          size="small"
           @click="$emit('toggle-fullscreen')"
-          title="Fullscreen"
         >
-          <i class="fas fa-expand"></i>
-        </button>
-        <input
+          <v-icon>mdi-fullscreen</v-icon>
+          <v-tooltip activator="parent" location="bottom">Fullscreen</v-tooltip>
+        </v-btn>
+
+        <v-text-field
           v-if="canEdit && isEditingTitle"
           v-model="editableTitle"
+          variant="underlined"
+          density="compact"
+          hide-details
+          autofocus
+          class="title-input"
           @blur="saveTitle"
           @keyup.enter="saveTitle"
-          class="title-input"
-          autofocus
         />
-        <h1 v-else @click="startEditTitle" :class="{ editable: canEdit }">
+        <h2 v-else @click="startEditTitle" :class="['sandbox-title', { editable: canEdit }]">
           {{ sandbox?.title || 'Untitled' }}
-        </h1>
-        <span class="visibility-badge" :class="sandbox?.visibility">
+        </h2>
+
+        <v-chip
+          :color="visibilityColor"
+          variant="tonal"
+          size="small"
+          :prepend-icon="visibilityIcon"
+        >
           {{ sandbox?.visibility }}
-        </span>
+        </v-chip>
       </div>
 
       <div class="sandbox-actions">
         <!-- Collaborators avatars -->
-        <div class="collaborators">
+        <div v-if="activeUsers.length" class="collaborators">
           <div
             v-for="u in activeUsers"
             :key="u.id"
             class="collaborator-wrapper"
           >
-            <UserAvatar :user="u" size="36" />
+            <UserAvatar :user="u" size="32" />
           </div>
         </div>
 
+        <!-- Comments toggle -->
+        <v-badge
+          :content="threadCount"
+          :model-value="threadCount > 0"
+          color="primary"
+          offset-x="2"
+          offset-y="2"
+        >
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            :color="showComments ? 'primary' : undefined"
+            @click="toggleComments"
+          >
+            <v-icon>mdi-comment-text-multiple-outline</v-icon>
+            <v-tooltip activator="parent" location="bottom">Comments</v-tooltip>
+          </v-btn>
+        </v-badge>
+
         <!-- Action buttons -->
-        <button v-if="canEdit" @click="saveVersion" class="btn btn-secondary" :disabled="saving">
-          <i class="fas fa-save"></i>
+        <v-btn
+          v-if="canEdit"
+          variant="tonal"
+          size="small"
+          :loading="saving"
+          @click="saveVersion"
+        >
+          <v-icon start>mdi-content-save-outline</v-icon>
           Save Version
-        </button>
-        <button v-if="canManage" @click="showSettings = true" class="btn btn-secondary">
-          <i class="fas fa-cog"></i>
-        </button>
-        <button v-if="canManage" @click="showCollaborators = true" class="btn btn-primary">
-          <i class="fas fa-users"></i>
+        </v-btn>
+
+        <v-btn
+          v-if="canManage"
+          icon
+          variant="text"
+          size="small"
+          @click="showSettings = true"
+        >
+          <v-icon>mdi-cog-outline</v-icon>
+          <v-tooltip activator="parent" location="bottom">Settings</v-tooltip>
+        </v-btn>
+
+        <v-btn
+          v-if="canManage"
+          color="primary"
+          variant="tonal"
+          size="small"
+          @click="showCollaborators = true"
+        >
+          <v-icon start>mdi-share-variant-outline</v-icon>
           Share
-        </button>
+        </v-btn>
       </div>
     </div>
 
     <!-- Connection status -->
-    <div v-if="!connected" class="connection-status">
-      <i class="fas fa-circle-notch fa-spin"></i>
-      Connecting...
-    </div>
+    <v-banner
+      v-if="!connected"
+      color="warning"
+      density="compact"
+      icon="mdi-loading mdi-spin"
+      class="connection-banner"
+    >
+      Connecting to collaboration server...
+    </v-banner>
 
-    <!-- Editor -->
-    <div class="editor-container" :class="{ readonly: !canEdit }">
-      <editor-content :editor="editor" class="editor-content" />
+    <!-- Editor area with comments panel -->
+    <div class="editor-area">
+      <!-- Editor -->
+      <div class="editor-container" :class="{ readonly: !canEdit }">
+        <editor-content :editor="editor" class="editor-content" />
+      </div>
+
+      <!-- Comments Panel -->
+      <SandboxComments
+        ref="commentsPanel"
+        :visible="showComments"
+        :sandbox="sandbox"
+        :editor="editor"
+        :can-edit="canEdit"
+        :current-user-id="currentUser?.user?.id || currentUser?.id"
+        @close="showComments = false"
+        @thread-created="onThreadCreated"
+        @thread-deleted="onThreadDeleted"
+      />
     </div>
 
     <!-- Floating menu for formatting -->
     <bubble-menu
       v-if="editor && canEdit"
       :editor="editor"
-      :tippy-options="{ duration: 100 }"
-      class="bubble-menu"
+      :tippy-options="{ duration: 150, maxWidth: 'none' }"
+      class="sandbox-bubble-menu"
     >
-      <button @click="editor.chain().focus().toggleBold().run()" :class="{ active: editor.isActive('bold') }">
-        <i class="fas fa-bold"></i>
-      </button>
-      <button @click="editor.chain().focus().toggleItalic().run()" :class="{ active: editor.isActive('italic') }">
-        <i class="fas fa-italic"></i>
-      </button>
-      <button @click="editor.chain().focus().toggleHeading({ level: 2 }).run()" :class="{ active: editor.isActive('heading', { level: 2 }) }">
-        <i class="fas fa-heading"></i>
-      </button>
-      <button @click="editor.chain().focus().toggleBulletList().run()" :class="{ active: editor.isActive('bulletList') }">
-        <i class="fas fa-list-ul"></i>
-      </button>
-      <button @click="editor.chain().focus().toggleCodeBlock().run()" :class="{ active: editor.isActive('codeBlock') }">
-        <i class="fas fa-code"></i>
-      </button>
+      <v-btn-group density="compact" variant="flat" color="grey-darken-4" rounded="lg">
+        <v-btn
+          size="small"
+          :variant="editor.isActive('bold') ? 'elevated' : 'flat'"
+          :color="editor.isActive('bold') ? 'white' : 'grey-darken-4'"
+          @click="editor.chain().focus().toggleBold().run()"
+        >
+          <v-icon size="18">mdi-format-bold</v-icon>
+          <v-tooltip activator="parent" location="bottom">Bold</v-tooltip>
+        </v-btn>
+        <v-btn
+          size="small"
+          :variant="editor.isActive('italic') ? 'elevated' : 'flat'"
+          :color="editor.isActive('italic') ? 'white' : 'grey-darken-4'"
+          @click="editor.chain().focus().toggleItalic().run()"
+        >
+          <v-icon size="18">mdi-format-italic</v-icon>
+          <v-tooltip activator="parent" location="bottom">Italic</v-tooltip>
+        </v-btn>
+        <v-btn
+          size="small"
+          :variant="editor.isActive('strike') ? 'elevated' : 'flat'"
+          :color="editor.isActive('strike') ? 'white' : 'grey-darken-4'"
+          @click="editor.chain().focus().toggleStrike().run()"
+        >
+          <v-icon size="18">mdi-format-strikethrough</v-icon>
+          <v-tooltip activator="parent" location="bottom">Strikethrough</v-tooltip>
+        </v-btn>
+        <v-btn
+          size="small"
+          :variant="editor.isActive('heading', { level: 2 }) ? 'elevated' : 'flat'"
+          :color="editor.isActive('heading', { level: 2 }) ? 'white' : 'grey-darken-4'"
+          @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
+        >
+          <v-icon size="18">mdi-format-header-2</v-icon>
+          <v-tooltip activator="parent" location="bottom">Heading</v-tooltip>
+        </v-btn>
+        <v-btn
+          size="small"
+          :variant="editor.isActive('bulletList') ? 'elevated' : 'flat'"
+          :color="editor.isActive('bulletList') ? 'white' : 'grey-darken-4'"
+          @click="editor.chain().focus().toggleBulletList().run()"
+        >
+          <v-icon size="18">mdi-format-list-bulleted</v-icon>
+          <v-tooltip activator="parent" location="bottom">Bullet list</v-tooltip>
+        </v-btn>
+        <v-btn
+          size="small"
+          :variant="editor.isActive('orderedList') ? 'elevated' : 'flat'"
+          :color="editor.isActive('orderedList') ? 'white' : 'grey-darken-4'"
+          @click="editor.chain().focus().toggleOrderedList().run()"
+        >
+          <v-icon size="18">mdi-format-list-numbered</v-icon>
+          <v-tooltip activator="parent" location="bottom">Numbered list</v-tooltip>
+        </v-btn>
+        <v-btn
+          size="small"
+          :variant="editor.isActive('blockquote') ? 'elevated' : 'flat'"
+          :color="editor.isActive('blockquote') ? 'white' : 'grey-darken-4'"
+          @click="editor.chain().focus().toggleBlockquote().run()"
+        >
+          <v-icon size="18">mdi-format-quote-close</v-icon>
+          <v-tooltip activator="parent" location="bottom">Quote</v-tooltip>
+        </v-btn>
+        <v-btn
+          size="small"
+          :variant="editor.isActive('codeBlock') ? 'elevated' : 'flat'"
+          :color="editor.isActive('codeBlock') ? 'white' : 'grey-darken-4'"
+          @click="editor.chain().focus().toggleCodeBlock().run()"
+        >
+          <v-icon size="18">mdi-code-tags</v-icon>
+          <v-tooltip activator="parent" location="bottom">Code block</v-tooltip>
+        </v-btn>
+
+        <v-divider vertical class="mx-1 my-1" />
+
+        <v-btn
+          size="small"
+          color="grey-darken-4"
+          @click="addComment"
+        >
+          <v-icon size="18">mdi-comment-plus-outline</v-icon>
+          <v-tooltip activator="parent" location="bottom">Add comment</v-tooltip>
+        </v-btn>
+      </v-btn-group>
     </bubble-menu>
 
     <!-- Settings Modal -->
@@ -125,7 +269,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Editor, EditorContent, BubbleMenu } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Collaboration from '@tiptap/extension-collaboration'
@@ -133,9 +277,11 @@ import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
 import axios from 'axios'
+import CommentMark from './extensions/CommentMark.js'
 import SandboxSettings from './SandboxSettings.vue'
 import SandboxCollaborators from './SandboxCollaborators.vue'
 import SandboxVersions from './SandboxVersions.vue'
+import SandboxComments from './SandboxComments.vue'
 import UserAvatar from '../common/UserAvatar.vue'
 
 const USER_COLORS = [
@@ -157,6 +303,7 @@ export default {
     SandboxSettings,
     SandboxCollaborators,
     SandboxVersions,
+    SandboxComments,
     UserAvatar,
   },
 
@@ -184,16 +331,28 @@ export default {
     const showSettings = ref(false)
     const showCollaborators = ref(false)
     const showVersions = ref(false)
+    const showComments = ref(false)
     const isEditingTitle = ref(false)
     const editableTitle = ref('')
     const currentUser = ref(null)
+    const commentsPanel = ref(null)
+    const threadCount = ref(0)
 
     let ydoc = null
     let provider = null
     let echoChannel = null
     let autoSaveInterval = null
 
-    // Load current user
+    const visibilityColor = computed(() => {
+      const map = { private: 'error', members: 'warning', public: 'success' }
+      return map[sandbox.value?.visibility] || 'default'
+    })
+
+    const visibilityIcon = computed(() => {
+      const map = { private: 'mdi-lock', members: 'mdi-account-group', public: 'mdi-earth' }
+      return map[sandbox.value?.visibility] || 'mdi-file'
+    })
+
     const loadCurrentUser = async () => {
       try {
         const response = await axios.get('/api/user')
@@ -203,7 +362,6 @@ export default {
       }
     }
 
-    // Load sandbox data
     const loadSandbox = async () => {
       try {
         const response = await axios.get(`/api/sandbox/${props.uuid}`)
@@ -213,12 +371,21 @@ export default {
 
         initializeEditor()
         initializeEcho()
+        loadThreadCount()
       } catch (error) {
         console.error('Failed to load sandbox:', error)
       }
     }
 
-    // Initialize Tiptap editor with Yjs collaboration
+    const loadThreadCount = async () => {
+      try {
+        const response = await axios.get(`/api/sandbox/${sandbox.value.uuid}/threads`)
+        threadCount.value = response.data.threads.filter(t => !t.resolved_at).length
+      } catch (error) {
+        // Ignore
+      }
+    }
+
     const initializeEditor = () => {
       ydoc = new Y.Doc()
 
@@ -236,7 +403,7 @@ export default {
         editable: canEdit.value,
         extensions: [
           StarterKit.configure({
-            history: false, // Collaboration has its own undo/redo
+            history: false,
           }),
           Collaboration.configure({
             document: ydoc,
@@ -248,15 +415,14 @@ export default {
               color: getUserColor(userId),
             },
           }),
+          CommentMark,
         ],
       })
 
-      // When synced with server, seed content if Yjs doc is empty
       provider.on('synced', ({ synced }) => {
         if (synced) {
           connected.value = true
 
-          // If Yjs doc is empty but sandbox has HTML content, seed it
           const yXmlFragment = ydoc.getXmlFragment('default')
           if (yXmlFragment.length === 0 && sandbox.value.content) {
             editor.value.commands.setContent(sandbox.value.content)
@@ -268,7 +434,6 @@ export default {
         connected.value = status === 'connected'
       })
 
-      // Auto-save HTML to DB every 30s for persistence
       if (canEdit.value) {
         autoSaveInterval = setInterval(() => {
           saveContent(false)
@@ -276,7 +441,6 @@ export default {
       }
     }
 
-    // Initialize Laravel Echo presence channel (for header avatars only)
     const initializeEcho = () => {
       if (!window.Echo) return
 
@@ -316,7 +480,6 @@ export default {
         })
     }
 
-    // Save content to server
     const saveContent = async (createVersion = false) => {
       if (!canEdit.value || !editor.value) return
 
@@ -335,7 +498,6 @@ export default {
 
     const saveVersion = () => saveContent(true)
 
-    // Title editing
     const startEditTitle = () => {
       if (!canEdit.value) return
       isEditingTitle.value = true
@@ -356,63 +518,61 @@ export default {
       isEditingTitle.value = false
     }
 
-    // Settings updated
+    const toggleComments = () => {
+      showComments.value = !showComments.value
+    }
+
+    const addComment = () => {
+      if (!editor.value) return
+      const { from, to } = editor.value.state.selection
+      if (from === to) return
+
+      const quote = editor.value.state.doc.textBetween(from, to, ' ')
+      editor.value.commands.setComment('pending')
+
+      showComments.value = true
+      setTimeout(() => {
+        commentsPanel.value?.startNewThread(quote)
+      }, 100)
+    }
+
+    const onThreadCreated = (thread) => {
+      threadCount.value++
+    }
+
+    const onThreadDeleted = (thread) => {
+      if (!thread.resolved_at) {
+        threadCount.value = Math.max(0, threadCount.value - 1)
+      }
+    }
+
     const onSettingsUpdated = (updatedSandbox) => {
       sandbox.value = { ...sandbox.value, ...updatedSandbox }
       showSettings.value = false
     }
 
-    // Version restore — reinitialize Yjs doc so it picks up new content
     const onVersionRestore = async (content) => {
-      // Destroy current provider and ydoc
-      if (provider) {
-        provider.destroy()
-        provider = null
-      }
-      if (ydoc) {
-        ydoc.destroy()
-        ydoc = null
-      }
-      if (editor.value) {
-        editor.value.destroy()
-        editor.value = null
-      }
+      if (provider) { provider.destroy(); provider = null }
+      if (ydoc) { ydoc.destroy(); ydoc = null }
+      if (editor.value) { editor.value.destroy(); editor.value = null }
 
-      // Update local sandbox content
       sandbox.value.content = content
-
-      // Reinitialize editor (Yjs doc resets, will seed from restored content)
       initializeEditor()
-
       showVersions.value = false
     }
 
-    // Lifecycle
     onMounted(async () => {
       await loadCurrentUser()
       await loadSandbox()
     })
 
     onUnmounted(() => {
-      // Save before leaving
       saveContent(false)
-
-      // Cleanup
-      if (autoSaveInterval) {
-        clearInterval(autoSaveInterval)
-      }
-      if (provider) {
-        provider.destroy()
-      }
-      if (ydoc) {
-        ydoc.destroy()
-      }
-      if (editor.value) {
-        editor.value.destroy()
-      }
-      if (echoChannel && sandbox.value) {
-        window.Echo.leave(`sandbox.${sandbox.value.id}`)
-      }
+      if (autoSaveInterval) clearInterval(autoSaveInterval)
+      if (provider) provider.destroy()
+      if (ydoc) ydoc.destroy()
+      if (editor.value) editor.value.destroy()
+      if (echoChannel && sandbox.value) window.Echo.leave(`sandbox.${sandbox.value.id}`)
     })
 
     return {
@@ -426,12 +586,22 @@ export default {
       showSettings,
       showCollaborators,
       showVersions,
+      showComments,
       isEditingTitle,
       editableTitle,
+      currentUser,
+      commentsPanel,
+      threadCount,
+      visibilityColor,
+      visibilityIcon,
       loadSandbox,
       saveVersion,
       startEditTitle,
       saveTitle,
+      toggleComments,
+      addComment,
+      onThreadCreated,
+      onThreadDeleted,
       onSettingsUpdated,
       onVersionRestore,
     }
@@ -444,103 +614,59 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--bg-primary, #fff);
+  background: rgb(var(--v-theme-background));
 }
 
 .sandbox-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid var(--border-color, #e5e7eb);
-  background: var(--bg-secondary, #f9fafb);
-
-  .sandbox-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-
-    h1 {
-      margin: 0;
-      font-size: 1.5rem;
-      font-weight: 600;
-
-      &.editable {
-        cursor: pointer;
-        &:hover {
-          color: var(--primary-color, #3b82f6);
-        }
-      }
-    }
-
-    .title-input {
-      font-size: 1.5rem;
-      font-weight: 600;
-      border: none;
-      border-bottom: 2px solid var(--primary-color, #3b82f6);
-      background: transparent;
-      outline: none;
-      padding: 0;
-    }
-
-    .visibility-badge {
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      text-transform: uppercase;
-
-      &.private { background: #fecaca; color: #dc2626; }
-      &.members { background: #fef3c7; color: #d97706; }
-      &.public { background: #d1fae5; color: #059669; }
-    }
-  }
-
-  .sandbox-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgb(var(--v-border-color));
+  background: rgb(var(--v-theme-surface));
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.btn-icon {
-  background: none;
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 0.375rem;
-  padding: 0.4rem 0.6rem;
-  cursor: pointer;
-  color: var(--text-secondary, #6b7280);
-  transition: all 0.15s;
-
-  &:hover {
-    background: var(--bg-tertiary, #f3f4f6);
-    color: var(--text-primary, #374151);
-  }
-}
-
-.btn-back {
-  background: none;
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 0.375rem;
-  padding: 0.4rem 0.75rem;
-  cursor: pointer;
-  color: var(--text-secondary, #6b7280);
-  font-size: 0.875rem;
-  display: inline-flex;
+.sandbox-info {
+  display: flex;
   align-items: center;
-  gap: 0.4rem;
-  transition: all 0.15s;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
 
-  &:hover {
-    background: var(--bg-tertiary, #f3f4f6);
-    color: var(--text-primary, #374151);
+.sandbox-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &.editable {
+    cursor: pointer;
+    &:hover {
+      color: rgb(var(--v-theme-primary));
+    }
   }
+}
+
+.title-input {
+  max-width: 300px;
+}
+
+.sandbox-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .collaborators {
   display: flex;
   align-items: center;
-  margin-right: 1rem;
+  margin-right: 0.25rem;
 
   .collaborator-wrapper {
     position: relative;
@@ -552,16 +678,15 @@ export default {
   }
 }
 
-.connection-status {
-  padding: 0.5rem 1rem;
-  background: #fef3c7;
-  color: #d97706;
-  text-align: center;
-  font-size: 0.875rem;
+.connection-banner {
+  flex-shrink: 0;
+}
 
-  i {
-    margin-right: 0.5rem;
-  }
+.editor-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
 }
 
 .editor-container {
@@ -570,6 +695,7 @@ export default {
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
+  overflow-y: auto;
 
   &.readonly {
     .editor-content {
@@ -594,22 +720,44 @@ export default {
     }
 
     code {
-      background-color: rgba(97, 97, 97, 0.1);
-      color: #616161;
+      background-color: rgba(var(--v-theme-on-surface), 0.08);
+      color: rgb(var(--v-theme-on-surface));
       padding: 0.2em 0.4em;
-      border-radius: 3px;
+      border-radius: 4px;
+      font-size: 0.9em;
     }
 
     pre {
-      background: #0d0d0d;
-      color: #fff;
+      background: #1e1e1e;
+      color: #d4d4d4;
       padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
+      border-radius: 8px;
+      overflow-x: auto;
 
       code {
         color: inherit;
         padding: 0;
         background: none;
+        font-size: inherit;
+      }
+    }
+
+    blockquote {
+      border-left: 3px solid rgb(var(--v-theme-primary));
+      padding-left: 1rem;
+      color: rgba(var(--v-theme-on-surface), 0.7);
+    }
+
+    // Comment highlight mark
+    .comment-highlight {
+      background-color: rgba(255, 212, 0, 0.2);
+      border-bottom: 2px solid rgba(255, 212, 0, 0.5);
+      cursor: pointer;
+      transition: background-color 0.15s;
+      padding: 1px 0;
+
+      &:hover {
+        background-color: rgba(255, 212, 0, 0.4);
       }
     }
 
@@ -640,64 +788,13 @@ export default {
     }
   }
 }
+</style>
 
-.bubble-menu {
-  display: flex;
-  background-color: #0d0d0d;
-  padding: 0.2rem;
-  border-radius: 0.5rem;
-
-  button {
-    border: none;
-    background: none;
-    color: #fff;
-    font-size: 0.85rem;
-    padding: 0.2rem 0.4rem;
-    border-radius: 0.25rem;
-    cursor: pointer;
-
-    &:hover {
-      background-color: #303030;
-    }
-
-    &.active {
-      background-color: #fff;
-      color: #0d0d0d;
-    }
-  }
-}
-
-.btn {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  &.btn-primary {
-    background: var(--primary-color, #3b82f6);
-    color: white;
-
-    &:hover:not(:disabled) {
-      background: var(--primary-hover, #2563eb);
-    }
-  }
-
-  &.btn-secondary {
-    background: var(--bg-tertiary, #e5e7eb);
-    color: var(--text-primary, #374151);
-
-    &:hover:not(:disabled) {
-      background: var(--bg-quaternary, #d1d5db);
-    }
+<!-- Non-scoped styles for the bubble menu (teleported to document.body by Tippy.js) -->
+<style lang="scss">
+.sandbox-bubble-menu {
+  .v-btn-group {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.24);
   }
 }
 </style>

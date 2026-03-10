@@ -102,6 +102,14 @@ class Sandbox extends Model
     }
 
     /**
+     * Comment threads.
+     */
+    public function threads(): HasMany
+    {
+        return $this->hasMany(SandboxThread::class)->orderBy('created_at', 'desc');
+    }
+
+    /**
      * Check if user can view this sandbox.
      */
     public function canView(User $user): bool

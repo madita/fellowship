@@ -52,10 +52,34 @@ return new class extends Migration
 
             $table->index(['sandbox_id', 'created_at']);
         });
+
+        Schema::create('sandbox_comment_threads', function (Blueprint $table) {
+            $table->id();
+            $table->uuid('uuid')->unique();
+            $table->foreignId('sandbox_id')->constrained('sandboxes')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users');
+            $table->text('quote')->nullable();
+            $table->timestamp('resolved_at')->nullable();
+            $table->timestamps();
+
+            $table->index(['sandbox_id', 'created_at']);
+        });
+
+        Schema::create('sandbox_thread_comments', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('thread_id')->constrained('sandbox_comment_threads')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users');
+            $table->text('content');
+            $table->timestamps();
+
+            $table->index(['thread_id', 'created_at']);
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('sandbox_thread_comments');
+        Schema::dropIfExists('sandbox_comment_threads');
         Schema::dropIfExists('sandbox_versions');
         Schema::dropIfExists('sandbox_collaborators');
         Schema::dropIfExists('sandboxes');
