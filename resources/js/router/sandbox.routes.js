@@ -9,7 +9,7 @@ const SandboxRoutes = [
     },
   },
   {
-    path: '/sandbox/:slug',
+    path: '/sandbox/:uuid',
     name: 'sandbox.show',
     component: () => import('../components/sandbox/SandboxEditor.vue'),
     props: true,

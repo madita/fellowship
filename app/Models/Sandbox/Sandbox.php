@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Sandbox extends Model
 {
@@ -20,6 +21,7 @@ class Sandbox extends Model
     protected $fillable = [
         'title',
         'slug',
+        'uuid',
         'description',
         'user_id',
         'visibility',
@@ -29,6 +31,23 @@ class Sandbox extends Model
         'last_edited_at',
         'last_edited_by',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Sandbox $sandbox) {
+            if (empty($sandbox->uuid)) {
+                $sandbox->uuid = (string) Str::uuid();
+            }
+        });
+    }
+
+    /**
+     * Use uuid for route model binding.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 
     protected $casts = [
         'settings' => 'array',

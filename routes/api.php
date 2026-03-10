@@ -174,7 +174,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 Route::prefix('sandbox')->group(function () {
     Route::get('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'index'])->middleware('auth:sanctum');
     Route::post('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'store'])->middleware('auth:sanctum');
-    Route::get('/{slug}', [App\Http\Controllers\Sandbox\SandboxController::class, 'show']); // Public for public sandboxes
+    Route::get('/{uuid}', [App\Http\Controllers\Sandbox\SandboxController::class, 'show']); // Public for public sandboxes
     
     Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'update']);

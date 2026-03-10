@@ -75,7 +75,7 @@ export default {
     const loadVersions = async () => {
       loading.value = true
       try {
-        const response = await axios.get(`/api/sandbox/${props.sandbox.id}/versions`, {
+        const response = await axios.get(`/api/sandbox/${props.sandbox.uuid}/versions`, {
           params: { page: page.value }
         })
         versions.value = response.data.data
@@ -91,7 +91,7 @@ export default {
       loadingMore.value = true
       page.value++
       try {
-        const response = await axios.get(`/api/sandbox/${props.sandbox.id}/versions`, {
+        const response = await axios.get(`/api/sandbox/${props.sandbox.uuid}/versions`, {
           params: { page: page.value }
         })
         versions.value = [...versions.value, ...response.data.data]
@@ -111,7 +111,7 @@ export default {
       restoring.value = version.id
       try {
         const response = await axios.post(
-          `/api/sandbox/${props.sandbox.id}/versions/${version.id}/restore`
+          `/api/sandbox/${props.sandbox.uuid}/versions/${version.id}/restore`
         )
         emit('restore', response.data.state)
       } catch (error) {

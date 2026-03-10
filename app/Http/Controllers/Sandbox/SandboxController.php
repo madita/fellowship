@@ -67,9 +67,9 @@ class SandboxController extends Controller
     /**
      * Show a sandbox (with collaboration state).
      */
-    public function show(Request $request, string $slug): JsonResponse
+    public function show(Request $request, string $uuid): JsonResponse
     {
-        $sandbox = Sandbox::where('slug', $slug)
+        $sandbox = Sandbox::where('uuid', $uuid)
             ->with(['owner:id,username', 'collaborators:users.id,username'])
             ->firstOrFail();
 

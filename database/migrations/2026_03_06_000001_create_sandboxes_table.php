@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('sandboxes', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique();
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('description')->nullable();

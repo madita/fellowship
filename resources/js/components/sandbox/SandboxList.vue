@@ -230,7 +230,7 @@ export default {
       try {
         const response = await axios.post('/api/sandbox', newSandbox.value)
         showCreateModal.value = false
-        router.push(`/sandbox/${response.data.sandbox.slug}`)
+        router.push(`/sandbox/${response.data.sandbox.uuid}`)
       } catch (error) {
         console.error('Failed to create sandbox:', error)
         alert(error.response?.data?.message || 'Failed to create sandbox')
@@ -240,7 +240,7 @@ export default {
     }
 
     const openSandbox = (sandbox) => {
-      router.push(`/sandbox/${sandbox.slug}`)
+      router.push(`/sandbox/${sandbox.uuid}`)
     }
 
     const getVisibilityIcon = (visibility) => {

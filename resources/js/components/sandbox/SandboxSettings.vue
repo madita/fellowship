@@ -117,7 +117,7 @@ export default {
     const saveSettings = async () => {
       saving.value = true
       try {
-        const response = await axios.put(`/api/sandbox/${props.sandbox.id}`, form)
+        const response = await axios.put(`/api/sandbox/${props.sandbox.uuid}`, form)
         emit('updated', response.data.sandbox)
       } catch (error) {
         console.error('Failed to save settings:', error)
@@ -130,7 +130,7 @@ export default {
     const confirmDelete = async () => {
       if (confirm('Are you sure you want to delete this sandbox? This action cannot be undone.')) {
         try {
-          await axios.delete(`/api/sandbox/${props.sandbox.id}`)
+          await axios.delete(`/api/sandbox/${props.sandbox.uuid}`)
           window.location.href = '/sandbox'
         } catch (error) {
           console.error('Failed to delete:', error)

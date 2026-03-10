@@ -144,7 +144,7 @@ export default {
   },
 
   props: {
-    slug: {
+    uuid: {
       type: String,
       required: true,
     },
@@ -183,7 +183,7 @@ export default {
     // Load sandbox data
     const loadSandbox = async () => {
       try {
-        const response = await axios.get(`/api/sandbox/${props.slug}`)
+        const response = await axios.get(`/api/sandbox/${props.uuid}`)
         sandbox.value = response.data.sandbox
         canEdit.value = response.data.canEdit
         canManage.value = response.data.canManage
@@ -299,7 +299,7 @@ export default {
 
       saving.value = true
       try {
-        await axios.post(`/api/sandbox/${sandbox.value.id}/state`, {
+        await axios.post(`/api/sandbox/${sandbox.value.uuid}/state`, {
           content: editor.value.getHTML(),
           createVersion,
         })
@@ -322,7 +322,7 @@ export default {
     const saveTitle = async () => {
       if (editableTitle.value !== sandbox.value.title) {
         try {
-          await axios.put(`/api/sandbox/${sandbox.value.id}`, {
+          await axios.put(`/api/sandbox/${sandbox.value.uuid}`, {
             title: editableTitle.value,
           })
           sandbox.value.title = editableTitle.value

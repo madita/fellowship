@@ -189,7 +189,7 @@ export default {
     const addCollaborator = async (user) => {
       try {
         const response = await axios.post(
-          `/api/sandbox/${props.sandbox.id}/collaborators`,
+          `/api/sandbox/${props.sandbox.uuid}/collaborators`,
           { user_id: user.id, role: 'editor' }
         )
         collaborators.value = response.data.collaborators
@@ -204,7 +204,7 @@ export default {
 
     const updateRole = async (collab) => {
       try {
-        await axios.post(`/api/sandbox/${props.sandbox.id}/collaborators`, {
+        await axios.post(`/api/sandbox/${props.sandbox.uuid}/collaborators`, {
           user_id: collab.id,
           role: collab.pivot.role,
         })
@@ -218,7 +218,7 @@ export default {
 
       try {
         await axios.delete(
-          `/api/sandbox/${props.sandbox.id}/collaborators/${collab.id}`
+          `/api/sandbox/${props.sandbox.uuid}/collaborators/${collab.id}`
         )
         collaborators.value = collaborators.value.filter(c => c.id !== collab.id)
         emit('updated')
