@@ -11,7 +11,8 @@
         "production": "vite build",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
-        "audit:repo": "node tools/dependency-audit.js"
+        "audit:repo": "node tools/dependency-audit.js",
+        "yjs-server": "node tools/yjs-server.mjs"
     },
     "dependencies": {
         "@ably/laravel-echo": "^1.0.6",
@@ -80,6 +81,7 @@
         "vuedraggable": "^4.1.0",
         "vuetify": "^3.5.13",
         "vuex-persistedstate": "^4.1.0",
+        "y-websocket": "^3.0.0",
         "yjs": "^13.6.29"
     },
     "devDependencies": {

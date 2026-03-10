@@ -45,8 +45,8 @@ return new class extends Migration
             $table->foreignId('sandbox_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('title')->nullable(); // Version name/description
-            $table->longText('content')->nullable()
-            $table->binary('yjs_state'); // Snapshot of Y.js state
+            $table->longText('content')->nullable();
+            $table->binary('yjs_state')->nullable(); // Snapshot of Y.js state
             $table->timestamps();
 
             $table->index(['sandbox_id', 'created_at']);

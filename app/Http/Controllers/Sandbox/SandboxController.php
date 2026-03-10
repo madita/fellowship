@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers\Sandbox;
 
-use App\Events\Sandbox\SandboxContentUpdated;
-use App\Events\Sandbox\SandboxCursorUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Sandbox\Sandbox;
 use App\Models\Sandbox\SandboxVersion;
@@ -193,59 +191,6 @@ class SandboxController extends Controller
     /**
      * Add a collaborator.
      */
-    /**
-     * Broadcast content update to other collaborators.
-     */
-    public function broadcastContent(Request $request, Sandbox $sandbox): JsonResponse
-    {
-        $user = auth()->user();
-
-        if (!$sandbox->canEdit($user)) {
-            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
-        }
-
-        $validated = $request->validate([
-            'content' => 'required|string',
-        ]);
-
-        broadcast(new SandboxContentUpdated(
-            $sandbox->id,
-            $validated['content'],
-            $user->id
-        ))->toOthers();
-
-        return response()->json(['status' => 'ok']);
-    }
-
-    /**
-     * Broadcast cursor position to other collaborators.
-     */
-    public function broadcastCursor(Request $request, Sandbox $sandbox): JsonResponse
-    {
-        $user = auth()->user();
-
-        if (!$sandbox->canView($user)) {
-            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
-        }
-
-        $validated = $request->validate([
-            'from' => 'nullable|integer',
-            'to' => 'nullable|integer',
-            'color' => 'required|string|max:20',
-        ]);
-
-        broadcast(new SandboxCursorUpdated(
-            $sandbox->id,
-            $user->id,
-            $user->username,
-            $validated['color'],
-            $validated['from'],
-            $validated['to']
-        ))->toOthers();
-
-        return response()->json(['status' => 'ok']);
-    }
-
     public function addCollaborator(Request $request, Sandbox $sandbox): JsonResponse
     {
         $user = auth()->user();
@@ -355,9 +300,10 @@ class SandboxController extends Controller
             'content' => $sandbox->content,
         ]);
 
-        // Restore the selected version
+        // Restore the selected version (clear yjs_state so Yjs doc reinitializes from HTML)
         $sandbox->update([
             'content' => $version->content,
+            'yjs_state' => null,
             'last_edited_at' => now(),
             'last_edited_by' => $user->id,
         ]);

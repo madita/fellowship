@@ -26,10 +26,8 @@
             v-for="u in activeUsers"
             :key="u.id"
             class="collaborator-wrapper"
-            :class="{ 'is-typing': u.isTyping }"
           >
             <UserAvatar :user="u" size="36" />
-            <span v-if="u.isTyping" class="typing-dot"></span>
           </div>
         </div>
 
@@ -110,15 +108,28 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { Editor, EditorContent, BubbleMenu } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
+import Collaboration from '@tiptap/extension-collaboration'
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
+import * as Y from 'yjs'
+import { WebsocketProvider } from 'y-websocket'
 import axios from 'axios'
 import SandboxSettings from './SandboxSettings.vue'
 import SandboxCollaborators from './SandboxCollaborators.vue'
 import SandboxVersions from './SandboxVersions.vue'
 import UserAvatar from '../common/UserAvatar.vue'
+
+const USER_COLORS = [
+  '#958DF1', '#F98181', '#FBBC88', '#FAF594',
+  '#70CFF8', '#94FADB', '#B9F18D', '#C3E2C2',
+  '#EAADCB', '#E8A87C', '#D6A2E8', '#63CDDA',
+]
+
+function getUserColor(userId) {
+  return USER_COLORS[userId % USER_COLORS.length]
+}
 
 export default {
   name: 'SandboxEditor',
@@ -140,10 +151,8 @@ export default {
   },
 
   setup(props) {
-    const route = useRoute()
     const sandbox = ref(null)
     const editor = ref(null)
-    const echoChannel = ref(null)
     const connected = ref(false)
     const saving = ref(false)
     const canEdit = ref(false)
@@ -155,11 +164,21 @@ export default {
     const isEditingTitle = ref(false)
     const editableTitle = ref('')
     const currentUser = ref(null)
+
+    let ydoc = null
+    let provider = null
+    let echoChannel = null
     let autoSaveInterval = null
-    let typingTimeout = null
-    let isRemoteUpdate = false
-    let broadcastDebounce = null
-    let saveDebounce = null
+
+    // Load current user
+    const loadCurrentUser = async () => {
+      try {
+        const response = await axios.get('/api/user')
+        currentUser.value = response.data
+      } catch (error) {
+        currentUser.value = null
+      }
+    }
 
     // Load sandbox data
     const loadSandbox = async () => {
@@ -176,52 +195,57 @@ export default {
       }
     }
 
-    // Get current user
-    const loadCurrentUser = async () => {
-      try {
-        const response = await axios.get('/api/user')
-        currentUser.value = response.data
-      } catch (error) {
-        currentUser.value = null
-      }
-    }
-
-    // Initialize Tiptap editor
+    // Initialize Tiptap editor with Yjs collaboration
     const initializeEditor = () => {
+      ydoc = new Y.Doc()
+
+      const wsUrl = import.meta.env.VITE_YJS_WS_URL || 'ws://localhost:1234'
+      const roomName = `sandbox-${sandbox.value.id}`
+
+      provider = new WebsocketProvider(wsUrl, roomName, ydoc)
+
+      const userName = currentUser.value?.user?.name
+        || currentUser.value?.user?.username
+        || 'Anonymous'
+      const userId = currentUser.value?.user?.id || 0
+
       editor.value = new Editor({
         editable: canEdit.value,
-        content: sandbox.value.content || '',
         extensions: [
-          StarterKit,
+          StarterKit.configure({
+            history: false, // Collaboration has its own undo/redo
+          }),
+          Collaboration.configure({
+            document: ydoc,
+          }),
+          CollaborationCursor.configure({
+            provider,
+            user: {
+              name: userName,
+              color: getUserColor(userId),
+            },
+          }),
         ],
-        onUpdate: ({ editor: ed }) => {
-          if (isRemoteUpdate) return
-
-          const html = ed.getHTML()
-
-          // Broadcast content to other collaborators via server (debounced 300ms to batch keystrokes)
-          if (sandbox.value && canEdit.value) {
-            clearTimeout(broadcastDebounce)
-            broadcastDebounce = setTimeout(() => {
-              axios.post(`/api/sandbox/${sandbox.value.id}/broadcast`, {
-                content: html,
-              }).catch(err => console.error('Broadcast failed:', err))
-            }, 300)
-          }
-
-          // Save to server (debounced 2s to avoid flooding DB)
-          if (sandbox.value && canEdit.value) {
-            clearTimeout(saveDebounce)
-            saveDebounce = setTimeout(() => {
-              axios.post(`/api/sandbox/${sandbox.value.id}/state`, {
-                content: html,
-              }).catch(err => console.error('Save failed:', err))
-            }, 2000)
-          }
-        },
       })
 
-      // Auto-save periodically
+      // When synced with server, seed content if Yjs doc is empty
+      provider.on('synced', ({ synced }) => {
+        if (synced) {
+          connected.value = true
+
+          // If Yjs doc is empty but sandbox has HTML content, seed it
+          const yXmlFragment = ydoc.getXmlFragment('default')
+          if (yXmlFragment.length === 0 && sandbox.value.content) {
+            editor.value.commands.setContent(sandbox.value.content)
+          }
+        }
+      })
+
+      provider.on('status', ({ status }) => {
+        connected.value = status === 'connected'
+      })
+
+      // Auto-save HTML to DB every 30s for persistence
       if (canEdit.value) {
         autoSaveInterval = setInterval(() => {
           saveContent(false)
@@ -229,19 +253,18 @@ export default {
       }
     }
 
-    // Initialize Laravel Echo presence channel
+    // Initialize Laravel Echo presence channel (for header avatars only)
     const initializeEcho = () => {
       if (!window.Echo) return
 
       const channelName = `sandbox.${sandbox.value.id}`
 
-      echoChannel.value = window.Echo.join(channelName)
+      echoChannel = window.Echo.join(channelName)
         .here((users) => {
-          // Deduplicate by user id, exclude self
           const seen = new Set()
           activeUsers.value = users
             .filter(u => {
-              if (u.id === currentUser.value?.id) return false
+              if (u.id === currentUser.value?.user?.id) return false
               if (seen.has(u.id)) return false
               seen.add(u.id)
               return true
@@ -252,12 +275,10 @@ export default {
               name: u.name,
               avatar: u.avatar,
               initials: u.initials,
-              isTyping: false,
             }))
-          connected.value = true
         })
         .joining((user) => {
-          if (user.id === currentUser.value?.id) return
+          if (user.id === currentUser.value?.user?.id) return
           if (activeUsers.value.some(u => u.id === user.id)) return
           activeUsers.value.push({
             id: user.id,
@@ -265,36 +286,10 @@ export default {
             name: user.name,
             avatar: user.avatar,
             initials: user.initials,
-            isTyping: false,
           })
         })
         .leaving((user) => {
           activeUsers.value = activeUsers.value.filter(u => u.id !== user.id)
-        })
-        .listen('.content-updated', (e) => {
-          if (e.userId === currentUser.value?.id) return
-          if (!editor.value) return
-
-          // Show typing indicator on user avatar
-          const typingUser = activeUsers.value.find(u => u.id === e.userId)
-          if (typingUser) {
-            typingUser.isTyping = true
-            clearTimeout(typingTimeout)
-            typingTimeout = setTimeout(() => {
-              typingUser.isTyping = false
-            }, 2000)
-          }
-
-          // Apply remote content
-          isRemoteUpdate = true
-          const { from, to } = editor.value.state.selection
-          editor.value.commands.setContent(e.content, false)
-          try {
-            editor.value.commands.setTextSelection({ from, to })
-          } catch {
-            // Selection may be out of range after remote update
-          }
-          isRemoteUpdate = false
         })
     }
 
@@ -344,11 +339,28 @@ export default {
       showSettings.value = false
     }
 
-    // Version restore
-    const onVersionRestore = (content) => {
-      if (editor.value) {
-        editor.value.commands.setContent(content, false)
+    // Version restore — reinitialize Yjs doc so it picks up new content
+    const onVersionRestore = async (content) => {
+      // Destroy current provider and ydoc
+      if (provider) {
+        provider.destroy()
+        provider = null
       }
+      if (ydoc) {
+        ydoc.destroy()
+        ydoc = null
+      }
+      if (editor.value) {
+        editor.value.destroy()
+        editor.value = null
+      }
+
+      // Update local sandbox content
+      sandbox.value.content = content
+
+      // Reinitialize editor (Yjs doc resets, will seed from restored content)
+      initializeEditor()
+
       showVersions.value = false
     }
 
@@ -366,10 +378,16 @@ export default {
       if (autoSaveInterval) {
         clearInterval(autoSaveInterval)
       }
+      if (provider) {
+        provider.destroy()
+      }
+      if (ydoc) {
+        ydoc.destroy()
+      }
       if (editor.value) {
         editor.value.destroy()
       }
-      if (echoChannel.value && sandbox.value) {
+      if (echoChannel && sandbox.value) {
         window.Echo.leave(`sandbox.${sandbox.value.id}`)
       }
     })
@@ -475,30 +493,7 @@ export default {
     &:first-child {
       margin-left: 0;
     }
-
-    .typing-dot {
-      position: absolute;
-      bottom: -2px;
-      right: -2px;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #22c55e;
-      border: 2px solid white;
-      animation: pulse-typing 1s infinite;
-    }
-
-    &.is-typing {
-      outline: 2px solid #22c55e;
-      outline-offset: 1px;
-      border-radius: 50%;
-    }
   }
-}
-
-@keyframes pulse-typing {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(0.8); }
 }
 
 .connection-status {
@@ -649,6 +644,4 @@ export default {
     }
   }
 }
-
-
 </style>
