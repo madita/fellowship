@@ -2,7 +2,7 @@ const SandboxRoutes = [
   {
     path: '/sandbox',
     name: 'sandbox.index',
-    component: () => import('../components/sandbox/SandboxList.vue'),
+    component: () => import('../components/sandbox/SandboxDashboard.vue'),
     meta: {
       title: 'Sandboxes',
       requiresAuth: true,
@@ -11,11 +11,10 @@ const SandboxRoutes = [
   {
     path: '/sandbox/:uuid',
     name: 'sandbox.show',
-    component: () => import('../components/sandbox/SandboxEditor.vue'),
+    component: () => import('../components/sandbox/SandboxDashboard.vue'),
     props: true,
     meta: {
       title: 'Sandbox',
-      layout: 'minimal', // Full-screen editor layout
     },
   },
 ]

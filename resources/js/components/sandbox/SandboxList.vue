@@ -1,13 +1,14 @@
 <template>
-  <div class="sandbox-list-page">
+  <div :class="['sandbox-list-page', { 'compact-mode': compact }]">
     <div class="page-header">
-      <div>
+      <div v-if="!compact">
         <h1>Sandboxes</h1>
         <p class="subtitle">Collaborate in real-time with others</p>
       </div>
-      <button @click="showCreateModal = true" class="btn btn-primary">
+      <h3 v-else class="compact-title">Sandboxes</h3>
+      <button @click="showCreateModal = true" class="btn btn-primary" :class="{ 'btn-sm': compact }">
         <i class="fas fa-plus"></i>
-        New Sandbox
+        <span v-if="!compact">New Sandbox</span>
       </button>
     </div>
 
@@ -17,27 +18,50 @@
         v-for="filter in filters"
         :key="filter.value"
         @click="activeFilter = filter.value"
-        :class="['filter-btn', { active: activeFilter === filter.value }]"
+        :class="['filter-btn', { active: activeFilter === filter.value, 'filter-chip': compact }]"
       >
         {{ filter.label }}
       </button>
     </div>
 
-    <!-- Sandbox grid -->
+    <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <i class="fas fa-spinner fa-spin"></i>
-      Loading sandboxes...
+      <span v-if="!compact">Loading sandboxes...</span>
     </div>
 
+    <!-- Empty State -->
     <div v-else-if="filteredSandboxes.length === 0" class="empty-state">
       <i class="fas fa-file-alt"></i>
       <h3>No sandboxes found</h3>
-      <p>Create your first sandbox to start collaborating!</p>
-      <button @click="showCreateModal = true" class="btn btn-primary">
+      <p v-if="!compact">Create your first sandbox to start collaborating!</p>
+      <button @click="showCreateModal = true" class="btn btn-primary btn-sm">
         Create Sandbox
       </button>
     </div>
 
+    <!-- Compact: Vertical list -->
+    <div v-else-if="compact" class="sandbox-compact-list">
+      <div
+        v-for="sandbox in filteredSandboxes"
+        :key="sandbox.id"
+        :class="['sandbox-item', { selected: selectedUuid === sandbox.uuid }]"
+        @click="selectSandbox(sandbox)"
+      >
+        <div class="item-top">
+          <span class="item-title">{{ sandbox.title }}</span>
+          <span class="visibility-icon" :class="sandbox.visibility">
+            <i :class="getVisibilityIcon(sandbox.visibility)"></i>
+          </span>
+        </div>
+        <div class="item-meta">
+          <span class="owner-name">{{ sandbox.owner?.username }}</span>
+          <span v-if="sandbox.last_edited_at" class="last-edited">{{ formatDate(sandbox.last_edited_at) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full: Grid layout -->
     <div v-else class="sandbox-grid">
       <div
         v-for="sandbox in filteredSandboxes"
@@ -76,8 +100,8 @@
       </div>
     </div>
 
-    <!-- Pagination -->
-    <div v-if="totalPages > 1" class="pagination">
+    <!-- Pagination (full mode only) -->
+    <div v-if="!compact && totalPages > 1" class="pagination">
       <button
         @click="loadPage(currentPage - 1)"
         :disabled="currentPage <= 1"
@@ -160,7 +184,20 @@ import axios from 'axios'
 export default {
   name: 'SandboxList',
 
-  setup() {
+  props: {
+    compact: {
+      type: Boolean,
+      default: false,
+    },
+    selectedUuid: {
+      type: String,
+      default: null,
+    },
+  },
+
+  emits: ['select', 'created'],
+
+  setup(props, { emit }) {
     const router = useRouter()
     const sandboxes = ref([])
     const loading = ref(true)
@@ -229,8 +266,18 @@ export default {
       creating.value = true
       try {
         const response = await axios.post('/api/sandbox', newSandbox.value)
+        const sandbox = response.data.sandbox
         showCreateModal.value = false
-        router.push(`/sandbox/${response.data.sandbox.uuid}`)
+        newSandbox.value = { title: '', description: '', visibility: 'private' }
+
+        // Re-fetch list so it shows the new sandbox
+        await loadSandboxes(1)
+
+        if (props.compact) {
+          emit('created', sandbox)
+        } else {
+          router.push(`/sandbox/${sandbox.uuid}`)
+        }
       } catch (error) {
         console.error('Failed to create sandbox:', error)
         alert(error.response?.data?.message || 'Failed to create sandbox')
@@ -239,8 +286,16 @@ export default {
       }
     }
 
+    const selectSandbox = (sandbox) => {
+      emit('select', sandbox.uuid)
+    }
+
     const openSandbox = (sandbox) => {
-      router.push(`/sandbox/${sandbox.uuid}`)
+      if (props.compact) {
+        emit('select', sandbox.uuid)
+      } else {
+        router.push(`/sandbox/${sandbox.uuid}`)
+      }
     }
 
     const getVisibilityIcon = (visibility) => {
@@ -287,6 +342,7 @@ export default {
       currentUserId,
       loadPage,
       createSandbox,
+      selectSandbox,
       openSandbox,
       getVisibilityIcon,
       formatDate,
@@ -300,6 +356,11 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+
+  &.compact-mode {
+    max-width: none;
+    padding: 0;
+  }
 }
 
 .page-header {
@@ -317,12 +378,31 @@ export default {
     margin: 0;
     color: #6b7280;
   }
+
+  .compact-mode & {
+    align-items: center;
+    padding: 1rem;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+  }
+}
+
+.compact-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .filters {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
+
+  .compact-mode & {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+  }
 }
 
 .filter-btn {
@@ -342,6 +422,11 @@ export default {
     background: #3b82f6;
     color: white;
   }
+
+  &.filter-chip {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+  }
 }
 
 .loading-state,
@@ -350,9 +435,17 @@ export default {
   padding: 4rem 2rem;
   color: #6b7280;
 
+  .compact-mode & {
+    padding: 2rem 1rem;
+  }
+
   i {
     font-size: 3rem;
     margin-bottom: 1rem;
+
+    .compact-mode & {
+      font-size: 2rem;
+    }
   }
 
   h3 {
@@ -365,6 +458,61 @@ export default {
   }
 }
 
+// Compact list styles
+.sandbox-compact-list {
+  overflow-y: auto;
+}
+
+.sandbox-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color, #f3f4f6);
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--bg-hover, #f9fafb);
+  }
+
+  &.selected {
+    background: var(--bg-selected, #eff6ff);
+    border-left: 3px solid var(--primary-color, #3b82f6);
+    padding-left: calc(1rem - 3px);
+  }
+}
+
+.item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.item-title {
+  font-weight: 500;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.visibility-icon {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+
+  &.private { color: #dc2626; }
+  &.members { color: #d97706; }
+  &.public { color: #059669; }
+}
+
+.item-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 0.25rem;
+}
+
+// Grid styles (full mode)
 .sandbox-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -587,6 +735,11 @@ export default {
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  &.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
   }
 
   &.btn-primary {

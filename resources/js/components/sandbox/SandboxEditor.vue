@@ -3,6 +3,23 @@
     <!-- Header -->
     <div class="sandbox-header">
       <div class="sandbox-info">
+        <button
+          v-if="isFullscreen"
+          class="btn btn-back"
+          @click="$emit('toggle-fullscreen')"
+          title="Back to list"
+        >
+          <i class="fas fa-arrow-left"></i>
+          Back
+        </button>
+        <button
+          v-else
+          class="btn btn-icon"
+          @click="$emit('toggle-fullscreen')"
+          title="Fullscreen"
+        >
+          <i class="fas fa-expand"></i>
+        </button>
         <input
           v-if="canEdit && isEditingTitle"
           v-model="editableTitle"
@@ -148,7 +165,13 @@ export default {
       type: String,
       required: true,
     },
+    isFullscreen: {
+      type: Boolean,
+      default: false,
+    },
   },
+
+  emits: ['toggle-fullscreen'],
 
   setup(props) {
     const sandbox = ref(null)
@@ -421,7 +444,6 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100%;
-  min-height: 100vh;
   background: var(--bg-primary, #fff);
 }
 
@@ -478,6 +500,40 @@ export default {
     display: flex;
     align-items: center;
     gap: 1rem;
+  }
+}
+
+.btn-icon {
+  background: none;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  color: var(--text-secondary, #6b7280);
+  transition: all 0.15s;
+
+  &:hover {
+    background: var(--bg-tertiary, #f3f4f6);
+    color: var(--text-primary, #374151);
+  }
+}
+
+.btn-back {
+  background: none;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.15s;
+
+  &:hover {
+    background: var(--bg-tertiary, #f3f4f6);
+    color: var(--text-primary, #374151);
   }
 }
 
