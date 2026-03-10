@@ -184,6 +184,7 @@ Route::prefix('sandbox')->group(function () {
         Route::get('/{sandbox}/state', [App\Http\Controllers\Sandbox\SandboxController::class, 'getState']);
         Route::post('/{sandbox}/state', [App\Http\Controllers\Sandbox\SandboxController::class, 'saveState']);
         Route::post('/{sandbox}/broadcast', [App\Http\Controllers\Sandbox\SandboxController::class, 'broadcastContent']);
+        Route::post('/{sandbox}/cursor', [App\Http\Controllers\Sandbox\SandboxController::class, 'broadcastCursor']);
         
         // Collaborators
         Route::post('/{sandbox}/collaborators', [App\Http\Controllers\Sandbox\SandboxController::class, 'addCollaborator']);

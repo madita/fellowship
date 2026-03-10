@@ -54,6 +54,9 @@ Broadcast::channel('sandbox.{sandboxId}', function ($user, $sandboxId) {
     return [
         'id' => $user->id,
         'username' => $user->username,
+        'name' => $user->name,
+        'avatar' => $user->avatar,
+        'initials' => $user->initials,
         'role' => $sandbox->getUserRole($user),
         'canEdit' => $sandbox->canEdit($user),
     ];

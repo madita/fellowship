@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Sandbox;
 
 use App\Events\Sandbox\SandboxContentUpdated;
+use App\Events\Sandbox\SandboxCursorUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Sandbox\Sandbox;
 use App\Models\Sandbox\SandboxVersion;
@@ -211,6 +212,35 @@ class SandboxController extends Controller
             $sandbox->id,
             $validated['content'],
             $user->id
+        ))->toOthers();
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    /**
+     * Broadcast cursor position to other collaborators.
+     */
+    public function broadcastCursor(Request $request, Sandbox $sandbox): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$sandbox->canView($user)) {
+            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        $validated = $request->validate([
+            'from' => 'nullable|integer',
+            'to' => 'nullable|integer',
+            'color' => 'required|string|max:20',
+        ]);
+
+        broadcast(new SandboxCursorUpdated(
+            $sandbox->id,
+            $user->id,
+            $user->username,
+            $validated['color'],
+            $validated['from'],
+            $validated['to']
         ))->toOthers();
 
         return response()->json(['status' => 'ok']);

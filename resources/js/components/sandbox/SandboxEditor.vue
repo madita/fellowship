@@ -23,13 +23,13 @@
         <!-- Collaborators avatars -->
         <div class="collaborators">
           <div
-            v-for="user in activeUsers"
-            :key="user.id"
-            class="collaborator-avatar"
-            :style="{ backgroundColor: user.color }"
-            :title="user.username"
+            v-for="u in activeUsers"
+            :key="u.id"
+            class="collaborator-wrapper"
+            :class="{ 'is-typing': u.isTyping }"
           >
-            {{ user.username?.charAt(0).toUpperCase() }}
+            <UserAvatar :user="u" size="36" />
+            <span v-if="u.isTyping" class="typing-dot"></span>
           </div>
         </div>
 
@@ -118,15 +118,7 @@ import axios from 'axios'
 import SandboxSettings from './SandboxSettings.vue'
 import SandboxCollaborators from './SandboxCollaborators.vue'
 import SandboxVersions from './SandboxVersions.vue'
-
-// Generate random color for cursor
-const getRandomColor = () => {
-  const colors = [
-    '#958DF1', '#F98181', '#FBBC88', '#FAF594', '#70CFF8',
-    '#94FADB', '#B9F18D', '#C3E2C2', '#EAECCC', '#AFC8AD'
-  ]
-  return colors[Math.floor(Math.random() * colors.length)]
-}
+import UserAvatar from '../common/UserAvatar.vue'
 
 export default {
   name: 'SandboxEditor',
@@ -137,6 +129,7 @@ export default {
     SandboxSettings,
     SandboxCollaborators,
     SandboxVersions,
+    UserAvatar,
   },
 
   props: {
@@ -161,11 +154,12 @@ export default {
     const showVersions = ref(false)
     const isEditingTitle = ref(false)
     const editableTitle = ref('')
-    const userColor = getRandomColor()
     const currentUser = ref(null)
     let autoSaveInterval = null
-    let broadcastTimeout = null
+    let typingTimeout = null
     let isRemoteUpdate = false
+    let broadcastDebounce = null
+    let saveDebounce = null
 
     // Load sandbox data
     const loadSandbox = async () => {
@@ -203,15 +197,27 @@ export default {
         onUpdate: ({ editor: ed }) => {
           if (isRemoteUpdate) return
 
-          // Debounce broadcast to avoid flooding the server
-          clearTimeout(broadcastTimeout)
-          broadcastTimeout = setTimeout(() => {
-            if (sandbox.value && canEdit.value) {
+          const html = ed.getHTML()
+
+          // Broadcast content to other collaborators via server (debounced 300ms to batch keystrokes)
+          if (sandbox.value && canEdit.value) {
+            clearTimeout(broadcastDebounce)
+            broadcastDebounce = setTimeout(() => {
               axios.post(`/api/sandbox/${sandbox.value.id}/broadcast`, {
-                content: ed.getHTML(),
+                content: html,
               }).catch(err => console.error('Broadcast failed:', err))
-            }
-          }, 500)
+            }, 300)
+          }
+
+          // Save to server (debounced 2s to avoid flooding DB)
+          if (sandbox.value && canEdit.value) {
+            clearTimeout(saveDebounce)
+            saveDebounce = setTimeout(() => {
+              axios.post(`/api/sandbox/${sandbox.value.id}/state`, {
+                content: html,
+              }).catch(err => console.error('Save failed:', err))
+            }, 2000)
+          }
         },
       })
 
@@ -231,18 +237,35 @@ export default {
 
       echoChannel.value = window.Echo.join(channelName)
         .here((users) => {
-          activeUsers.value = users.map(u => ({
-            id: u.id,
-            username: u.username || u.name,
-            color: getRandomColor(),
-          }))
+          // Deduplicate by user id, exclude self
+          const seen = new Set()
+          activeUsers.value = users
+            .filter(u => {
+              if (u.id === currentUser.value?.id) return false
+              if (seen.has(u.id)) return false
+              seen.add(u.id)
+              return true
+            })
+            .map(u => ({
+              id: u.id,
+              username: u.username || u.name,
+              name: u.name,
+              avatar: u.avatar,
+              initials: u.initials,
+              isTyping: false,
+            }))
           connected.value = true
         })
         .joining((user) => {
+          if (user.id === currentUser.value?.id) return
+          if (activeUsers.value.some(u => u.id === user.id)) return
           activeUsers.value.push({
             id: user.id,
             username: user.username || user.name,
-            color: getRandomColor(),
+            name: user.name,
+            avatar: user.avatar,
+            initials: user.initials,
+            isTyping: false,
           })
         })
         .leaving((user) => {
@@ -252,10 +275,20 @@ export default {
           if (e.userId === currentUser.value?.id) return
           if (!editor.value) return
 
+          // Show typing indicator on user avatar
+          const typingUser = activeUsers.value.find(u => u.id === e.userId)
+          if (typingUser) {
+            typingUser.isTyping = true
+            clearTimeout(typingTimeout)
+            typingTimeout = setTimeout(() => {
+              typingUser.isTyping = false
+            }, 2000)
+          }
+
+          // Apply remote content
           isRemoteUpdate = true
           const { from, to } = editor.value.state.selection
           editor.value.commands.setContent(e.content, false)
-          // Try to restore cursor position
           try {
             editor.value.commands.setTextSelection({ from, to })
           } catch {
@@ -432,26 +465,40 @@ export default {
 
 .collaborators {
   display: flex;
+  align-items: center;
   margin-right: 1rem;
 
-  .collaborator-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-    font-size: 0.875rem;
+  .collaborator-wrapper {
+    position: relative;
     margin-left: -8px;
-    border: 2px solid white;
-    cursor: default;
 
     &:first-child {
       margin-left: 0;
     }
+
+    .typing-dot {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #22c55e;
+      border: 2px solid white;
+      animation: pulse-typing 1s infinite;
+    }
+
+    &.is-typing {
+      outline: 2px solid #22c55e;
+      outline-offset: 1px;
+      border-radius: 50%;
+    }
   }
+}
+
+@keyframes pulse-typing {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.8); }
 }
 
 .connection-status {
@@ -602,4 +649,6 @@ export default {
     }
   }
 }
+
+
 </style>
