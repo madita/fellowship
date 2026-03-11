@@ -94,6 +94,16 @@
         </v-btn>
 
         <v-btn
+          icon
+          variant="text"
+          size="small"
+          @click="showVersions = true"
+        >
+          <v-icon>mdi-history</v-icon>
+          <v-tooltip activator="parent" location="bottom">History</v-tooltip>
+        </v-btn>
+
+        <v-btn
           v-if="canManage"
           icon
           variant="text"
@@ -263,6 +273,7 @@
     <SandboxVersions
       v-if="showVersions"
       :sandbox="sandbox"
+      :current-content="editor ? editor.getHTML() : ''"
       @close="showVersions = false"
       @restore="onVersionRestore"
     />
@@ -284,15 +295,12 @@ import SandboxCollaborators from './SandboxCollaborators.vue'
 import SandboxVersions from './SandboxVersions.vue'
 import SandboxComments from './SandboxComments.vue'
 import UserAvatar from '../common/UserAvatar.vue'
+import colourHelper from '@/helpers/colour.js'
 
-const USER_COLORS = [
-  '#958DF1', '#F98181', '#FBBC88', '#FAF594',
-  '#70CFF8', '#94FADB', '#B9F18D', '#C3E2C2',
-  '#EAADCB', '#E8A87C', '#D6A2E8', '#63CDDA',
-]
-
-function getUserColor(userId) {
-  return USER_COLORS[userId % USER_COLORS.length]
+function getUserColor(user) {
+  if (user?.colour) return user.colour
+  const seed = user?.username?.length || user?.id || 0
+  return colourHelper.randomBackgroundColor(seed, null)
 }
 
 export default {
@@ -395,10 +403,9 @@ export default {
 
       provider = new WebsocketProvider(wsUrl, roomName, ydoc)
 
-      const userName = currentUser.value?.user?.name
-        || currentUser.value?.user?.username
-        || 'Anonymous'
-      const userId = currentUser.value?.user?.id || 0
+      const userObj = currentUser.value?.user || currentUser.value || {}
+      const userName = userObj.name || userObj.username || 'Anonymous'
+      const cursorColor = getUserColor(userObj)
 
       editor.value = new Editor({
         editable: canEdit.value,
@@ -413,7 +420,7 @@ export default {
             provider,
             user: {
               name: userName,
-              color: getUserColor(userId),
+              color: cursorColor,
             },
           }),
           CommentMark,

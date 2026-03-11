@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Sandbox;
 
 use App\Http\Controllers\Controller;
+use App\Models\Revision;
 use App\Models\Sandbox\Sandbox;
 use App\Models\Sandbox\SandboxVersion;
 use App\Models\User;
@@ -331,5 +332,54 @@ class SandboxController extends Controller
             'message' => __('messages.sandbox.version_restored'),
             'content' => $version->content,
         ]);
+    }
+
+    /**
+     * Get a single version's content for preview.
+     */
+    public function showVersion(Sandbox $sandbox, SandboxVersion $version): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$sandbox->canView($user)) {
+            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        return response()->json([
+            'version' => $version->load('user:id,username'),
+        ]);
+    }
+
+    /**
+     * Get revision history (field-level change log).
+     */
+    public function history(Sandbox $sandbox): JsonResponse
+    {
+        $user = auth()->user();
+
+        if (!$sandbox->canView($user)) {
+            return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        $revisions = $sandbox->revisions()
+            ->with('executor:id,username')
+            ->paginate(30);
+
+        // Map revisions with diff data
+        $data = $revisions->through(function ($revision) {
+            $diff = $revision->getDiff();
+            // Don't send full content blobs in the diff for performance
+            unset($diff['content']);
+
+            return [
+                'id' => $revision->id,
+                'action' => $revision->action,
+                'executor' => $revision->executor,
+                'diff' => $diff,
+                'created_at' => $revision->created_at,
+            ];
+        });
+
+        return response()->json($data);
     }
 }

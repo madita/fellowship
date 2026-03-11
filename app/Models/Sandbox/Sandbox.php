@@ -3,6 +3,7 @@
 namespace App\Models\Sandbox;
 
 use App\Models\User;
+use App\Traits\Revisionable;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,15 @@ class Sandbox extends Model
     use HasFactory;
     use Sluggable;
     use SoftDeletes;
+    use Revisionable;
+
+    protected $revisionable = [
+        'title',
+        'description',
+        'visibility',
+        'settings',
+        'content',
+    ];
 
     protected $fillable = [
         'title',
