@@ -351,6 +351,7 @@ export default {
     let provider = null
     let echoChannel = null
     let autoSaveInterval = null
+    let pendingRestoreContent = null
 
     const visibilityColor = computed(() => {
       const map = { private: 'error', members: 'warning', public: 'success' }
@@ -431,9 +432,17 @@ export default {
         if (synced) {
           connected.value = true
 
-          const yXmlFragment = ydoc.getXmlFragment('default')
-          if (yXmlFragment.length === 0 && sandbox.value.content) {
-            editor.value.commands.setContent(sandbox.value.content)
+          if (pendingRestoreContent) {
+            // Force-set restored content, clearing whatever the Yjs server had cached
+            editor.value.commands.setContent(pendingRestoreContent)
+            pendingRestoreContent = null
+            // Persist immediately so autosave doesn't overwrite with stale data
+            saveContent(false)
+          } else {
+            const yXmlFragment = ydoc.getXmlFragment('default')
+            if (yXmlFragment.length === 0 && sandbox.value.content) {
+              editor.value.commands.setContent(sandbox.value.content)
+            }
           }
         }
       })
@@ -560,11 +569,14 @@ export default {
     }
 
     const onVersionRestore = async (content) => {
+      // Stop autosave before tearing down
+      if (autoSaveInterval) { clearInterval(autoSaveInterval); autoSaveInterval = null }
       if (provider) { provider.destroy(); provider = null }
       if (ydoc) { ydoc.destroy(); ydoc = null }
       if (editor.value) { editor.value.destroy(); editor.value = null }
 
       sandbox.value.content = content
+      pendingRestoreContent = content
       initializeEditor()
       showVersions.value = false
     }

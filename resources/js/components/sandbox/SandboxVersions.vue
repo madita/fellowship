@@ -236,6 +236,19 @@
         </v-card-text>
       </v-card>
     </v-dialog>
+    <!-- Confirm Restore Dialog -->
+    <ConfirmDialog
+      v-model="confirmDialog"
+      title="Restore Version"
+      :content="confirmMessage"
+      confirmation-text="Restore"
+      :resolve="onConfirmResolve"
+    />
+
+    <!-- Error Snackbar -->
+    <v-snackbar v-model="errorSnackbar" color="error" :timeout="4000">
+      {{ errorMessage }}
+    </v-snackbar>
   </v-navigation-drawer>
 </template>
 
@@ -243,6 +256,7 @@
 import { ref, watch, onMounted } from 'vue'
 import axios from 'axios'
 import UserAvatar from '../common/UserAvatar.vue'
+import ConfirmDialog from '../common/ConfirmDialog.vue'
 
 /**
  * Convert HTML to plain text, preserving line breaks from block elements.
@@ -411,6 +425,7 @@ export default {
 
   components: {
     UserAvatar,
+    ConfirmDialog,
   },
 
   props: {
@@ -451,6 +466,15 @@ export default {
     const previewLoading = ref(false)
     const diffHtml = ref('')
 
+    // Confirm dialog state
+    const confirmDialog = ref(false)
+    const confirmMessage = ref('')
+    const pendingRestoreVersion = ref(null)
+
+    // Error snackbar
+    const errorSnackbar = ref(false)
+    const errorMessage = ref('')
+
     // --- Versions ---
     const loadVersions = async () => {
       versionsLoading.value = true
@@ -483,8 +507,17 @@ export default {
       }
     }
 
-    const restoreVersion = async (version) => {
-      if (!confirm('Restore this version? Current state will be saved first.')) return
+    const restoreVersion = (version) => {
+      pendingRestoreVersion.value = version
+      confirmMessage.value = `Restore "${version.title || 'Untitled version'}"? The current state will be saved as a version first.`
+      confirmDialog.value = true
+    }
+
+    const onConfirmResolve = async (confirmed) => {
+      confirmDialog.value = false
+      if (!confirmed || !pendingRestoreVersion.value) return
+
+      const version = pendingRestoreVersion.value
       restoring.value = version.id
       try {
         const response = await axios.post(
@@ -494,9 +527,11 @@ export default {
         emit('restore', response.data.content)
       } catch (error) {
         console.error('Failed to restore version:', error)
-        alert('Failed to restore version')
+        errorMessage.value = 'Failed to restore version. Please try again.'
+        errorSnackbar.value = true
       } finally {
         restoring.value = null
+        pendingRestoreVersion.value = null
       }
     }
 
@@ -617,6 +652,11 @@ export default {
       previewData,
       previewLoading,
       diffHtml,
+      confirmDialog,
+      confirmMessage,
+      onConfirmResolve,
+      errorSnackbar,
+      errorMessage,
       loadMoreVersions,
       restoreVersion,
       previewVersion,

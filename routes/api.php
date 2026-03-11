@@ -174,8 +174,15 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 Route::prefix('sandbox')->group(function () {
     Route::get('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'index'])->middleware('auth:sanctum');
     Route::post('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'store'])->middleware('auth:sanctum');
+
+    // Status (must be before {uuid} wildcard)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/status', [App\Http\Controllers\Sandbox\SandboxStatusController::class, 'status']);
+        Route::get('/status/websocket', [App\Http\Controllers\Sandbox\SandboxStatusController::class, 'websocketStatus']);
+    });
+
     Route::get('/{uuid}', [App\Http\Controllers\Sandbox\SandboxController::class, 'show']); // Public for public sandboxes
-    
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'update']);
         Route::delete('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'destroy']);
