@@ -52,12 +52,31 @@
       >
         <div class="item-top">
           <span class="item-title text-body-2 font-weight-medium">{{ sandbox.title }}</span>
-          <v-icon :color="getVisibilityColor(sandbox.visibility)" size="14">
-            {{ getVisibilityIcon(sandbox.visibility) }}
-          </v-icon>
+          <div class="d-flex align-center ga-1">
+            <v-chip
+              v-if="sandbox.relationship === 'owner'"
+              color="primary"
+              variant="tonal"
+              size="x-small"
+              label
+            >Mine</v-chip>
+            <v-chip
+              v-else-if="sandbox.relationship === 'shared'"
+              color="info"
+              variant="tonal"
+              size="x-small"
+              label
+            >Shared</v-chip>
+            <v-icon :color="getVisibilityColor(sandbox.visibility)" size="14">
+              {{ getVisibilityIcon(sandbox.visibility) }}
+            </v-icon>
+          </div>
         </div>
         <div class="item-meta">
-          <span class="text-caption text-disabled">{{ sandbox.owner?.username }}</span>
+          <span class="text-caption text-disabled">
+            <template v-if="sandbox.relationship !== 'owner'">{{ sandbox.owner?.username }}</template>
+            <template v-else>by you</template>
+          </span>
           <span v-if="sandbox.last_edited_at" class="text-caption text-disabled">{{ formatDate(sandbox.last_edited_at) }}</span>
         </div>
       </div>
@@ -83,12 +102,22 @@
               {{ sandbox.visibility }}
             </v-chip>
             <v-chip
-              v-if="sandbox.user_id === currentUserId"
+              v-if="sandbox.relationship === 'owner'"
               color="primary"
               variant="tonal"
               size="x-small"
+              prepend-icon="mdi-account"
             >
-              Owner
+              Mine
+            </v-chip>
+            <v-chip
+              v-else-if="sandbox.relationship === 'shared'"
+              color="info"
+              variant="tonal"
+              size="x-small"
+              prepend-icon="mdi-account-multiple"
+            >
+              Shared with me
             </v-chip>
           </div>
 
@@ -188,11 +217,19 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Error snackbar -->
+    <v-snackbar v-model="errorSnackbar" color="error" :timeout="4000" location="bottom">
+      {{ errorMessage }}
+      <template #actions>
+        <v-btn variant="text" @click="errorSnackbar = false">Close</v-btn>
+      </template>
+    </v-snackbar>
   </div>
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import UserAvatar from '../common/UserAvatar.vue'
@@ -223,6 +260,8 @@ export default {
     const loading = ref(true)
     const creating = ref(false)
     const showCreateModal = ref(false)
+    const errorSnackbar = ref(false)
+    const errorMessage = ref('')
     const currentPage = ref(1)
     const totalPages = ref(1)
     const activeFilter = ref('all')
@@ -246,21 +285,16 @@ export default {
       visibility: 'private',
     })
 
-    const filteredSandboxes = computed(() => {
-      if (activeFilter.value === 'all') return sandboxes.value
-      if (activeFilter.value === 'owned') {
-        return sandboxes.value.filter(s => s.user_id === currentUserId.value)
-      }
-      if (activeFilter.value === 'shared') {
-        return sandboxes.value.filter(s => s.user_id !== currentUserId.value)
-      }
-      return sandboxes.value
-    })
+    const filteredSandboxes = computed(() => sandboxes.value)
 
     const loadSandboxes = async (page = 1) => {
       loading.value = true
       try {
-        const response = await axios.get('/api/sandbox', { params: { page } })
+        const params = { page }
+        if (activeFilter.value !== 'all') {
+          params.filter = activeFilter.value
+        }
+        const response = await axios.get('/api/sandbox', { params })
         sandboxes.value = response.data.data
         currentPage.value = response.data.current_page
         totalPages.value = response.data.last_page
@@ -278,6 +312,7 @@ export default {
     }
 
     const loadCurrentUser = async () => {
+      // User ID is still useful for other logic if needed
       try {
         const response = await axios.get('/api/user')
         currentUserId.value = response.data.id
@@ -306,7 +341,8 @@ export default {
         }
       } catch (error) {
         console.error('Failed to create sandbox:', error)
-        alert(error.response?.data?.message || 'Failed to create sandbox')
+        errorMessage.value = error.response?.data?.message || 'Failed to create sandbox'
+        errorSnackbar.value = true
       } finally {
         creating.value = false
       }
@@ -358,6 +394,10 @@ export default {
       return date.toLocaleDateString()
     }
 
+    watch(activeFilter, () => {
+      loadSandboxes(1)
+    })
+
     onMounted(async () => {
       await loadCurrentUser()
       await loadSandboxes()
@@ -376,6 +416,8 @@ export default {
       filteredSandboxes,
       newSandbox,
       currentUserId,
+      errorSnackbar,
+      errorMessage,
       loadPage,
       createSandbox,
       selectSandbox,

@@ -26,11 +26,47 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        $sandboxes = Sandbox::accessibleBy($user)
-            ->with(['owner:id,username', 'lastEditor:id,username'])
-            ->withCount('collaborators')
-            ->orderBy('last_edited_at', 'desc')
+        $filter = $request->query('filter', 'all');
+
+        $query = Sandbox::with(['owner:id,username', 'lastEditor:id,username'])
+            ->withCount('collaborators');
+
+        // Apply filter at the query level for efficiency
+        switch ($filter) {
+            case 'owned':
+                $query->where('user_id', $user->id);
+                break;
+            case 'shared':
+                $query->where('user_id', '!=', $user->id)
+                    ->whereHas('collaborators', function ($q) use ($user) {
+                        $q->where('user_id', $user->id)
+                            ->whereNotNull('accepted_at');
+                    });
+                break;
+            default: // 'all'
+                $query->accessibleBy($user);
+                break;
+        }
+
+        $sandboxes = $query->orderBy('last_edited_at', 'desc')
             ->paginate(20);
+
+        // Add relationship info to each sandbox
+        $collaboratorSandboxIds = $user->belongsToMany(Sandbox::class, 'sandbox_collaborators')
+            ->whereNotNull('accepted_at')
+            ->pluck('sandboxes.id')
+            ->toArray();
+
+        $sandboxes->through(function ($sandbox) use ($user, $collaboratorSandboxIds) {
+            if ($sandbox->user_id === $user->id) {
+                $sandbox->relationship = 'owner';
+            } elseif (in_array($sandbox->id, $collaboratorSandboxIds)) {
+                $sandbox->relationship = 'shared';
+            } else {
+                $sandbox->relationship = $sandbox->visibility; // 'public' or 'members'
+            }
+            return $sandbox;
+        });
 
         return response()->json($sandboxes);
     }

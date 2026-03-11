@@ -196,8 +196,10 @@ class Sandbox extends Model
         return $query->where(function ($q) use ($user) {
             $q->where('user_id', $user->id)
                 ->orWhere('visibility', 'public')
+                ->orWhere('visibility', 'members')
                 ->orWhereHas('collaborators', function ($q) use ($user) {
-                    $q->where('user_id', $user->id);
+                    $q->where('user_id', $user->id)
+                        ->whereNotNull('accepted_at');
                 });
         });
     }

@@ -11,7 +11,8 @@
           @click="$emit('toggle-fullscreen')"
         >
           <v-icon start>mdi-fullscreen-exit</v-icon>
-          Exit Fullscreen
+          Exit
+          <v-tooltip activator="parent" location="bottom">Exit fullscreen (Esc)</v-tooltip>
         </v-btn>
         <v-btn
           v-else
@@ -21,7 +22,7 @@
           @click="$emit('toggle-fullscreen')"
         >
           <v-icon>mdi-fullscreen</v-icon>
-          <v-tooltip activator="parent" location="bottom">Fullscreen</v-tooltip>
+          <v-tooltip activator="parent" location="bottom">Focus mode</v-tooltip>
         </v-btn>
 
         <v-text-field

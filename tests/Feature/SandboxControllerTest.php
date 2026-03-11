@@ -95,6 +95,88 @@ class SandboxControllerTest extends TestCase
         $this->assertTrue($uuids->contains($this->sandbox->uuid));
     }
 
+    public function test_index_includes_relationship_field()
+    {
+        $this->actingAs($this->owner, 'sanctum');
+
+        $response = $this->getJson('/api/sandbox');
+        $data = collect($response->json('data'));
+        $sandbox = $data->firstWhere('uuid', $this->sandbox->uuid);
+
+        $this->assertEquals('owner', $sandbox['relationship']);
+    }
+
+    public function test_index_shows_shared_relationship_for_collaborator()
+    {
+        $this->actingAs($this->editor, 'sanctum');
+
+        $response = $this->getJson('/api/sandbox');
+        $data = collect($response->json('data'));
+        $sandbox = $data->firstWhere('uuid', $this->sandbox->uuid);
+
+        $this->assertEquals('shared', $sandbox['relationship']);
+    }
+
+    public function test_filter_owned_returns_only_own_sandboxes()
+    {
+        // Create an extra sandbox owned by editor
+        Sandbox::factory()->ownedBy($this->editor)->create();
+
+        $this->actingAs($this->owner, 'sanctum');
+
+        $response = $this->getJson('/api/sandbox?filter=owned');
+        $data = collect($response->json('data'));
+
+        // All returned sandboxes should be owned by the current user
+        $data->each(function ($sandbox) {
+            $this->assertEquals($this->owner->id, $sandbox['user_id']);
+        });
+    }
+
+    public function test_filter_shared_returns_only_shared_sandboxes()
+    {
+        $this->actingAs($this->editor, 'sanctum');
+
+        $response = $this->getJson('/api/sandbox?filter=shared');
+        $data = collect($response->json('data'));
+
+        // All returned sandboxes should NOT be owned by the editor
+        $data->each(function ($sandbox) {
+            $this->assertNotEquals($this->editor->id, $sandbox['user_id']);
+            $this->assertEquals('shared', $sandbox['relationship']);
+        });
+    }
+
+    public function test_filter_shared_excludes_public_sandboxes_without_collaboration()
+    {
+        $publicSandbox = Sandbox::factory()->public()->create();
+
+        $this->actingAs($this->editor, 'sanctum');
+
+        $response = $this->getJson('/api/sandbox?filter=shared');
+        $uuids = collect($response->json('data'))->pluck('uuid');
+
+        // Public sandbox where editor is NOT a collaborator should NOT appear in "shared"
+        $this->assertFalse($uuids->contains($publicSandbox->uuid));
+    }
+
+    public function test_unaccepted_invite_excluded_from_shared_filter()
+    {
+        $pending = User::factory()->create();
+        $this->sandbox->collaborators()->attach($pending->id, [
+            'role' => 'editor',
+            'invited_at' => now(),
+            'accepted_at' => null,
+        ]);
+
+        $this->actingAs($pending, 'sanctum');
+
+        $response = $this->getJson('/api/sandbox?filter=shared');
+        $uuids = collect($response->json('data'))->pluck('uuid');
+
+        $this->assertFalse($uuids->contains($this->sandbox->uuid));
+    }
+
     // ── Store ────────────────────────────────────────────
 
     public function test_user_can_create_sandbox()
