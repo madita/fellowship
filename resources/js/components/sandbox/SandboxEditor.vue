@@ -6,11 +6,12 @@
         <v-btn
           v-if="isFullscreen"
           variant="tonal"
+          color="primary"
           size="small"
           @click="$emit('toggle-fullscreen')"
         >
-          <v-icon start>mdi-arrow-left</v-icon>
-          Back
+          <v-icon start>mdi-fullscreen-exit</v-icon>
+          Exit Fullscreen
         </v-btn>
         <v-btn
           v-else

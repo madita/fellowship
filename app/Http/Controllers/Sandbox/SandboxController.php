@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Sandbox\Sandbox;
 use App\Models\Sandbox\SandboxVersion;
 use App\Models\User;
+use App\Notifications\SandboxNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -208,13 +209,23 @@ class SandboxController extends Controller
             return response()->json(['error' => __('messages.sandbox.cannot_add_owner')], 400);
         }
 
+        $role = $validated['role'] ?? 'editor';
+
         $sandbox->collaborators()->syncWithoutDetaching([
             $validated['user_id'] => [
-                'role' => $validated['role'] ?? 'editor',
+                'role' => $role,
                 'invited_at' => now(),
                 'accepted_at' => now(),
             ],
         ]);
+
+        // Notify the invited user
+        $invitedUser = User::find($validated['user_id']);
+        if ($invitedUser) {
+            $invitedUser->notify(new SandboxNotification($sandbox, 'shared', $user, [
+                'role' => $role,
+            ]));
+        }
 
         return response()->json([
             'message' => __('messages.sandbox.collaborator_added'),
@@ -234,6 +245,11 @@ class SandboxController extends Controller
         }
 
         $sandbox->collaborators()->detach($collaborator->id);
+
+        // Notify the removed user (unless they removed themselves)
+        if ($collaborator->id !== $user->id) {
+            $collaborator->notify(new SandboxNotification($sandbox, 'removed', $user));
+        }
 
         return response()->json([
             'message' => __('messages.sandbox.collaborator_removed'),
@@ -259,6 +275,9 @@ class SandboxController extends Controller
         $sandbox->collaborators()->updateExistingPivot($user->id, [
             'accepted_at' => now(),
         ]);
+
+        // Notify the sandbox owner
+        $sandbox->owner->notify(new SandboxNotification($sandbox, 'invite_accepted', $user));
 
         return response()->json(['message' => __('messages.sandbox.invite_accepted')]);
     }

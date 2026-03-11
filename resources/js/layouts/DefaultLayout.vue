@@ -96,6 +96,9 @@
                                 <toolbar-notifications/>
                             </div>
                             <div class="mr-1">
+                                <sandbox-notifications/>
+                            </div>
+                            <div class="mr-1">
                                 <conversations-notification/>
                             </div>
                             <v-btn icon variant="text" class="mx-1 d-none d-md-flex" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
@@ -210,6 +213,7 @@ import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
 import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue'
 import ConversationsNotification from '../components/conversation/ConversationsNotification.vue'
+import SandboxNotifications from '../components/sandbox/SandboxNotifications.vue'
 import ConversationBox from '../components/conversation/ConversationBox.vue'
 import ConversationBoxManager from '../components/conversation/ConversationBoxManager.vue'
 import SidebarUsers from '../components/conversation/SidebarUsers.vue'
@@ -228,7 +232,8 @@ export default {
         ConversationBoxManager,
         SidebarUsers,
         UserSettingsSidebar,
-        ConversationsNotification
+        ConversationsNotification,
+        SandboxNotifications,
     },
     setup() {
         const drawer = ref(true)
