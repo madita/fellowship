@@ -67,6 +67,9 @@ class CollectionController extends Controller
     // Upload media to a collection
     public function uploadMedia(Request $request, Collection $collection)
     {
+        // Authorization check - only owner or admin can upload
+        $this->authorize('uploadMedia', $collection);
+
         $request->validate([
             'files'      => 'required|array', // Ensure files is an array
             'files.*'    => 'file|mimes:jpg,jpeg,png,gif|max:2048', // Validate each file
@@ -115,8 +118,13 @@ class CollectionController extends Controller
             'caption' => 'required|string|max:255',
         ]);
 
-        // Find the media item and update its caption
+        // Find the media item
         $media = Media::findOrFail($mediaId);
+
+        // Get the collection that owns this media and check authorization
+        $collection = Collection::findOrFail($media->model_id);
+        $this->authorize('update', $collection);
+
         $media->setCustomProperty('caption', $request->input('caption'));
         $media->save();
 
