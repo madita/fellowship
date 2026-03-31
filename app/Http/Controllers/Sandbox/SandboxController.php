@@ -491,6 +491,10 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
+        if ($version->sandbox_id !== $sandbox->id) {
+            return response()->json(['error' => __('messages.sandbox.not_found')], 404);
+        }
+
         if (!$sandbox->canView($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
