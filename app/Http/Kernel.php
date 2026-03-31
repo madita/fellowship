@@ -103,5 +103,6 @@ class Kernel extends HttpKernel
         'api.key'            => \App\Http\Middleware\AuthenticateApiKey::class,
         'api.rate'           => \App\Http\Middleware\DynamicRateLimit::class,
         'lazy.loading'       => \App\Http\Middleware\LazyLoadingMiddleware::class,
+        'sandbox.enabled'    => \App\Http\Middleware\EnsureSandboxEnabled::class,
     ];
 }

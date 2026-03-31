@@ -111,6 +111,12 @@ const componentMap = {
     'footer/FooterWidgetsPage': () => import('@/pages/admin/settings/footer/FooterWidgetsPage.vue'),
     'footer/CustomHtmlPage': () => import('@/pages/admin/settings/footer/CustomHtmlPage.vue'),
 
+    // Sandbox
+    'sandbox/ServerStatusPage': () => import('@/pages/admin/settings/sandbox/ServerStatusPage.vue'),
+    'sandbox/FeatureSettingsPage': () => import('@/pages/admin/settings/sandbox/FeatureSettingsPage.vue'),
+    'sandbox/LimitsPage': () => import('@/pages/admin/settings/sandbox/LimitsPage.vue'),
+    'sandbox/StatisticsPage': () => import('@/pages/admin/settings/sandbox/StatisticsPage.vue'),
+
     // Advanced
     'advanced/CachingPage': () => import('@/pages/admin/settings/advanced/CachingPage.vue'),
     'advanced/PwaPage': () => import('@/pages/admin/settings/advanced/PwaPage.vue'),

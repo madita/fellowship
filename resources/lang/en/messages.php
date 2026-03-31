@@ -175,6 +175,9 @@ return [
         'no_invite'            => 'No pending invite found',
         'invite_accepted'      => 'Invitation accepted',
         'version_restored'     => 'Version restored successfully',
+        'limit_reached'        => 'You have reached your sandbox limit (:limit). Please delete an existing sandbox first.',
+        'collaborator_limit_reached' => 'This sandbox has reached the collaborator limit (:limit).',
+        'version_limit_reached' => 'This sandbox has reached the version limit (:limit). Please delete older versions first.',
     ],
 
     // Wiki

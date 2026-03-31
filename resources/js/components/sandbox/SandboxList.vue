@@ -232,6 +232,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { useSettingsStore } from '@/store/settingStore.js'
 import UserAvatar from '../common/UserAvatar.vue'
 
 export default {
@@ -273,11 +274,18 @@ export default {
       { value: 'shared', label: 'Shared with me' },
     ]
 
-    const visibilityOptions = [
-      { value: 'private', text: 'Private - Only you and collaborators' },
-      { value: 'members', text: 'Members - All site members can view' },
-      { value: 'public', text: 'Public - Anyone can view' },
-    ]
+    const settingsStore = useSettingsStore()
+
+    const visibilityOptions = computed(() => {
+      const options = [
+        { value: 'private', text: 'Private - Only you and collaborators' },
+        { value: 'members', text: 'Members - All site members can view' },
+      ]
+      if (settingsStore.sandboxPublicEnabled) {
+        options.push({ value: 'public', text: 'Public - Anyone can view' })
+      }
+      return options
+    })
 
     const newSandbox = ref({
       title: '',

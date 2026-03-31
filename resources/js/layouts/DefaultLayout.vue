@@ -95,7 +95,7 @@
                             <div class="mr-1">
                                 <toolbar-notifications/>
                             </div>
-                            <div class="mr-1">
+                            <div v-if="sandboxEnabled" class="mr-1">
                                 <sandbox-notifications/>
                             </div>
                             <div class="mr-1">
@@ -262,6 +262,7 @@ export default {
         const user = computed(() => userStore.user)
         const languageChangeEnabled = computed(() => settingsStore.languageChangeEnabled)
         const maintenanceMode = computed(() => settingsStore.maintenanceMode)
+        const sandboxEnabled = computed(() => settingsStore.sandboxEnabled)
 
         const keys = useMagicKeys()
 
@@ -416,6 +417,7 @@ export default {
             user,
             languageChangeEnabled,
             maintenanceMode,
+            sandboxEnabled,
             signOut,
             routeHome,
             applyThemeSettings

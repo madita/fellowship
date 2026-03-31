@@ -155,6 +155,11 @@ router.beforeEach(async (to, from, next) => {
         return next(false)
     }
 
+    // Check if sandbox feature is disabled
+    if (to.path.startsWith('/sandbox') && !settingsStore.sandboxEnabled) {
+        return next({ name: 'access-denied' })
+    }
+
     // Continue with route-specific middleware
     if (!to.meta.middleware) {
         return next()

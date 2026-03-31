@@ -35,7 +35,7 @@
           <select id="visibility" v-model="form.visibility" class="form-control">
             <option value="private">Private - Only you and collaborators</option>
             <option value="members">Members - All site members can view</option>
-            <option value="public">Public - Anyone can view</option>
+            <option v-if="publicEnabled" value="public">Public - Anyone can view</option>
           </select>
         </div>
 
@@ -79,8 +79,9 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import axios from 'axios'
+import { useSettingsStore } from '@/store/settingStore.js'
 
 export default {
   name: 'SandboxSettings',
@@ -95,6 +96,8 @@ export default {
   emits: ['close', 'updated'],
 
   setup(props, { emit }) {
+    const settingsStore = useSettingsStore()
+    const publicEnabled = computed(() => settingsStore.sandboxPublicEnabled)
     const saving = ref(false)
     const form = reactive({
       title: '',
@@ -142,6 +145,7 @@ export default {
     return {
       form,
       saving,
+      publicEnabled,
       saveSettings,
       confirmDelete,
     }

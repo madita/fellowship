@@ -59,7 +59,7 @@
 
                     <template v-else>
                             <toolbar-notifications/>
-                            <sandbox-notifications/>
+                            <sandbox-notifications v-if="sandboxEnabled"/>
                             <conversations-notification/>
                             <v-btn icon variant="text" size="small" class="d-none d-md-flex" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
                                 <v-icon>mdi-account-group</v-icon>
@@ -330,6 +330,10 @@ export default {
         maintenanceMode() {
             const settingsStore = useSettingsStore();
             return settingsStore.maintenanceMode;
+        },
+        sandboxEnabled() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.sandboxEnabled;
         },
         isAdmin() {
             const userStore = useUserStore();

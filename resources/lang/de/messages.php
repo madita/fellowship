@@ -133,6 +133,9 @@ return [
         'no_invite'            => 'Keine ausstehende Einladung gefunden',
         'invite_accepted'      => 'Einladung angenommen',
         'version_restored'     => 'Version erfolgreich wiederhergestellt',
+        'limit_reached'        => 'Du hast dein Sandbox-Limit (:limit) erreicht. Bitte lösche zuerst eine bestehende Sandbox.',
+        'collaborator_limit_reached' => 'Diese Sandbox hat das Mitarbeiter-Limit (:limit) erreicht.',
+        'version_limit_reached' => 'Diese Sandbox hat das Versions-Limit (:limit) erreicht. Bitte lösche zuerst ältere Versionen.',
     ],
 
     // Wiki

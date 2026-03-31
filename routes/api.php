@@ -172,18 +172,20 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 // Collaborative Sandbox
 Route::prefix('sandbox')->group(function () {
-    Route::get('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'index'])->middleware('auth:sanctum');
-    Route::post('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'store'])->middleware('auth:sanctum');
-
-    // Status (must be before {uuid} wildcard)
+    // Status endpoints are exempt from sandbox.enabled check (needed by admin settings)
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/status', [App\Http\Controllers\Sandbox\SandboxStatusController::class, 'status']);
         Route::get('/status/websocket', [App\Http\Controllers\Sandbox\SandboxStatusController::class, 'websocketStatus']);
     });
 
-    Route::get('/{uuid}', [App\Http\Controllers\Sandbox\SandboxController::class, 'show']); // Public for public sandboxes
+    // All other sandbox routes require the feature to be enabled
+    Route::middleware('sandbox.enabled')->group(function () {
+        Route::get('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'index'])->middleware('auth:sanctum');
+        Route::post('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'store'])->middleware('auth:sanctum');
 
-    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/{uuid}', [App\Http\Controllers\Sandbox\SandboxController::class, 'show']); // Public for public sandboxes
+
+        Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'update']);
         Route::delete('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'destroy']);
         
@@ -213,6 +215,7 @@ Route::prefix('sandbox')->group(function () {
         Route::put('/{sandbox}/threads/{thread}/comments/{comment}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'updateComment']);
         Route::delete('/{sandbox}/threads/{thread}/comments/{comment}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'destroyComment']);
     });
+    }); // sandbox.enabled
 });
 
 Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']);

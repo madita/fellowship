@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Revision;
 use App\Models\Sandbox\Sandbox;
 use App\Models\Sandbox\SandboxVersion;
+use App\Models\Setting;
 use App\Models\User;
 use App\Notifications\SandboxNotification;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +18,60 @@ class SandboxController extends Controller
     public function __construct()
     {
         $this->middleware('auth')->except(['show']);
+    }
+
+    /**
+     * Get the sandbox limits for a user based on their highest role.
+     */
+    protected function getUserLimits(User $user): array
+    {
+        $defaults = ['max_sandboxes' => 0, 'max_collaborators' => 0, 'max_versions' => 0];
+        $keys = ['max_sandboxes', 'max_collaborators', 'max_versions'];
+
+        $roleLimits = Setting::get('sandbox_role_limits', '{}');
+        if (is_string($roleLimits)) {
+            $roleLimits = json_decode($roleLimits, true) ?: [];
+        }
+
+        $userRoles = $user->getRoleNames()->toArray();
+        $matchedRoles = array_intersect($userRoles, array_keys($roleLimits));
+
+        // If user has no roles with configured limits, use config defaults
+        if (empty($matchedRoles)) {
+            $configDefaults = config('sandbox.default_role_limits.user', $defaults);
+            return array_merge($defaults, $configDefaults);
+        }
+
+        // Start with null (unresolved) and merge across matched roles
+        // picking the most permissive value (0 = unlimited wins over any number)
+        $resolved = ['max_sandboxes' => null, 'max_collaborators' => null, 'max_versions' => null];
+
+        foreach ($matchedRoles as $role) {
+            foreach ($keys as $key) {
+                $roleValue = (int) ($roleLimits[$role][$key] ?? 0);
+                $currentValue = $resolved[$key];
+
+                if ($currentValue === null) {
+                    // First matched role — take its value directly
+                    $resolved[$key] = $roleValue;
+                } elseif ($roleValue === 0 || $currentValue === 0) {
+                    // 0 means unlimited — most permissive wins
+                    $resolved[$key] = 0;
+                } else {
+                    // Both are limited — take the higher (more permissive) value
+                    $resolved[$key] = max($currentValue, $roleValue);
+                }
+            }
+        }
+
+        // Replace any still-null values with defaults (shouldn't happen, but safety)
+        foreach ($keys as $key) {
+            if ($resolved[$key] === null) {
+                $resolved[$key] = 0;
+            }
+        }
+
+        return $resolved;
     }
 
     /**
@@ -82,11 +137,31 @@ class SandboxController extends Controller
             'visibility' => 'nullable|in:private,members,public',
         ]);
 
+        $user = auth()->user();
+        $limits = $this->getUserLimits($user);
+
+        // Enforce max_sandboxes limit
+        if ($limits['max_sandboxes'] > 0) {
+            $currentCount = Sandbox::where('user_id', $user->id)->count();
+            if ($currentCount >= $limits['max_sandboxes']) {
+                return response()->json([
+                    'message' => __('messages.sandbox.limit_reached', ['limit' => $limits['max_sandboxes']]),
+                ], 403);
+            }
+        }
+
+        $visibility = $validated['visibility'] ?? 'private';
+
+        // Enforce public sandbox setting
+        if ($visibility === 'public' && !filter_var(Setting::get('sandbox_public_enabled', true), FILTER_VALIDATE_BOOLEAN)) {
+            $visibility = 'private';
+        }
+
         $sandbox = Sandbox::create([
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'user_id' => auth()->id(),
-            'visibility' => $validated['visibility'] ?? 'private',
+            'visibility' => $visibility,
             'settings' => [
                 'allowComments' => true,
                 'showCursors' => true,
@@ -147,6 +222,12 @@ class SandboxController extends Controller
             'visibility' => 'sometimes|in:private,members,public',
             'settings' => 'sometimes|array',
         ]);
+
+        // Enforce public sandbox setting
+        if (isset($validated['visibility']) && $validated['visibility'] === 'public'
+            && !filter_var(Setting::get('sandbox_public_enabled', true), FILTER_VALIDATE_BOOLEAN)) {
+            $validated['visibility'] = 'private';
+        }
 
         $sandbox->update($validated);
 
@@ -209,6 +290,17 @@ class SandboxController extends Controller
 
         // Create version snapshot if requested
         if ($request->boolean('createVersion')) {
+            // Enforce max_versions limit
+            $limits = $this->getUserLimits($user);
+            if ($limits['max_versions'] > 0) {
+                $currentVersions = $sandbox->versions()->count();
+                if ($currentVersions >= $limits['max_versions']) {
+                    return response()->json([
+                        'message' => __('messages.sandbox.version_limit_reached', ['limit' => $limits['max_versions']]),
+                    ], 403);
+                }
+            }
+
             SandboxVersion::create([
                 'sandbox_id' => $sandbox->id,
                 'user_id' => $user->id,
@@ -244,6 +336,17 @@ class SandboxController extends Controller
 
         if ($validated['user_id'] == $sandbox->user_id) {
             return response()->json(['error' => __('messages.sandbox.cannot_add_owner')], 400);
+        }
+
+        // Enforce max_collaborators limit
+        $limits = $this->getUserLimits($user);
+        if ($limits['max_collaborators'] > 0) {
+            $currentCollaborators = $sandbox->collaborators()->count();
+            if ($currentCollaborators >= $limits['max_collaborators']) {
+                return response()->json([
+                    'message' => __('messages.sandbox.collaborator_limit_reached', ['limit' => $limits['max_collaborators']]),
+                ], 403);
+            }
         }
 
         $role = $validated['role'] ?? 'editor';
@@ -346,6 +449,17 @@ class SandboxController extends Controller
 
         if (!$sandbox->canEdit($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
+        }
+
+        // Enforce max_versions limit before creating backup version
+        $limits = $this->getUserLimits($user);
+        if ($limits['max_versions'] > 0) {
+            $currentVersions = $sandbox->versions()->count();
+            if ($currentVersions >= $limits['max_versions']) {
+                return response()->json([
+                    'message' => __('messages.sandbox.version_limit_reached', ['limit' => $limits['max_versions']]),
+                ], 403);
+            }
         }
 
         // Save current state as a version first
