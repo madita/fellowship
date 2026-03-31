@@ -364,8 +364,13 @@ class SettingsController extends Controller
                 'cache_lifetime_minutes', 'api_rate_limit_per_minute', 'smtp_port', 'age_minimum',
                 'sandbox_autosave_interval',
             ])) {
-                if (!is_numeric($value) || $value < 0) {
+                if ($key === 'sandbox_autosave_interval') {
+                    if (!ctype_digit((string) $value) || (int) $value < 5 || (int) $value > 3600) {
+                        $valueErrors["settings.{$index}.value"] = ["The {$key} must be an integer between 5 and 3600."];
+                    }
+                } elseif (!is_numeric($value) || $value < 0) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a positive number."];
+                }
                 }
             }
         }
