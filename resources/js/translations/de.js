@@ -4461,7 +4461,7 @@ export default {
         'internal': 'Intern',
         'assign': 'Zuweisen',
         'assignToMe': 'Mir zuweisen',
-        'view': 'Ansehen',
+        'view': 'Anzeigen',
         'edit': 'Bearbeiten',
         'close': 'Schließen',
         'update': 'Aktualisieren',
