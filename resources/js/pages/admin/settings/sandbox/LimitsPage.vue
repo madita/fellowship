@@ -126,15 +126,15 @@ const roles = ref([]);
 const defaultLimits = { max_sandboxes: 0, max_collaborators: 0, max_versions: 0 };
 
 function ensureRoleLimits() {
-    if (!props.settings.sandbox_role_limits || typeof props.settings.sandbox_role_limits !== 'object') {
-        props.settings.sandbox_role_limits = {};
-    }
     if (typeof props.settings.sandbox_role_limits === 'string') {
         try {
             props.settings.sandbox_role_limits = JSON.parse(props.settings.sandbox_role_limits);
         } catch {
             props.settings.sandbox_role_limits = {};
         }
+    }
+    if (!props.settings.sandbox_role_limits || typeof props.settings.sandbox_role_limits !== 'object' || Array.isArray(props.settings.sandbox_role_limits)) {
+        props.settings.sandbox_role_limits = {};
     }
     for (const role of roles.value) {
         if (!props.settings.sandbox_role_limits[role]) {
