@@ -188,8 +188,8 @@ class SandboxController extends Controller
 
         $user = auth()->user();
 
-        // Check access
-        if ($sandbox->visibility === 'private') {
+        // Public sandboxes can be viewed anonymously; everything else must pass canView()
+        if ($sandbox->visibility !== 'public') {
             if (!$user || !$sandbox->canView($user)) {
                 return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
             }
