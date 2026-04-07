@@ -12,6 +12,7 @@ use App\Notifications\SandboxNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Stevebauman\Purify\Facades\Purify;
 
 class SandboxController extends Controller
 {
@@ -48,7 +49,7 @@ class SandboxController extends Controller
 
         foreach ($matchedRoles as $role) {
             foreach ($keys as $key) {
-                $roleValue = (int) ($roleLimits[$role][$key] ?? 0);
+                $roleValue = (int)($roleLimits[$role][$key] ?? 0);
                 $currentValue = $resolved[$key];
 
                 if ($currentValue === null) {
@@ -305,12 +306,12 @@ class SandboxController extends Controller
                 'sandbox_id' => $sandbox->id,
                 'user_id' => $user->id,
                 'title' => $validated['versionTitle'] ?? 'Auto-save',
-                'content' => $sandbox->content,
+                'content' => Purify::config('sandbox')->clean($sandbox->content ?? ''),
             ]);
         }
 
         $sandbox->update([
-            'content' => $validated['content'],
+            'content' => Purify::config('sandbox')->clean($validated['content']),
             'last_edited_at' => now(),
             'last_edited_by' => $user->id,
         ]);
@@ -384,6 +385,10 @@ class SandboxController extends Controller
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
+        if (!$sandbox->collaborators()->where('users.id', $collaborator->id)->exists()) {
+            return response()->json(['error' => __('messages.sandbox.not_a_collaborator')], 404);
+        }
+
         $sandbox->collaborators()->detach($collaborator->id);
 
         // Notify the removed user (unless they removed themselves)
@@ -447,6 +452,11 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
+        // Verify version belongs to this sandbox
+        if ($version->sandbox_id !== $sandbox->id) {
+            return response()->json(['error' => __('messages.sandbox.not_found')], 404);
+        }
+
         if (!$sandbox->canEdit($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
@@ -467,12 +477,12 @@ class SandboxController extends Controller
             'sandbox_id' => $sandbox->id,
             'user_id' => $user->id,
             'title' => 'Before restore',
-            'content' => $sandbox->content,
+            'content' => Purify::config('sandbox')->clean($sandbox->content ?? ''),
         ]);
 
         // Restore the selected version (clear yjs_state so Yjs doc reinitializes from HTML)
         $sandbox->update([
-            'content' => $version->content,
+            'content' => Purify::config('sandbox')->clean($version->content),
             'yjs_state' => null,
             'last_edited_at' => now(),
             'last_edited_by' => $user->id,
@@ -480,7 +490,7 @@ class SandboxController extends Controller
 
         return response()->json([
             'message' => __('messages.sandbox.version_restored'),
-            'content' => $version->content,
+            'content' => $sandbox->content,
         ]);
     }
 

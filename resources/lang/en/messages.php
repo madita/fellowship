@@ -171,6 +171,7 @@ return [
         'unauthorized'         => 'You do not have permission to access this sandbox',
         'collaborator_added'   => 'Collaborator added successfully',
         'collaborator_removed' => 'Collaborator removed successfully',
+        'not_a_collaborator'   => 'This user is not a collaborator on this sandbox',
         'cannot_add_owner'     => 'Cannot add owner as a collaborator',
         'no_invite'            => 'No pending invite found',
         'invite_accepted'      => 'Invitation accepted',

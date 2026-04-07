@@ -129,6 +129,7 @@ return [
         'unauthorized'         => 'Du hast keine Berechtigung, auf diese Sandbox zuzugreifen',
         'collaborator_added'   => 'Mitarbeiter erfolgreich hinzugefügt',
         'collaborator_removed' => 'Mitarbeiter erfolgreich entfernt',
+        'not_a_collaborator'   => 'Dieser Benutzer ist kein Mitarbeiter dieser Sandbox',
         'cannot_add_owner'     => 'Eigentümer kann nicht als Mitarbeiter hinzugefügt werden',
         'no_invite'            => 'Keine ausstehende Einladung gefunden',
         'invite_accepted'      => 'Einladung angenommen',
