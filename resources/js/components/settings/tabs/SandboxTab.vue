@@ -357,7 +357,6 @@ function ensureRoleLimits() {
     if (!props.settings.sandbox_role_limits || typeof props.settings.sandbox_role_limits !== 'object' || Array.isArray(props.settings.sandbox_role_limits)) {
         props.settings.sandbox_role_limits = {};
     }
-}
     for (const role of roles.value) {
         if (!props.settings.sandbox_role_limits[role]) {
             props.settings.sandbox_role_limits[role] = { ...defaultLimits };
