@@ -220,6 +220,7 @@ const handleTicketUpdated = () => {
 const handleKanbanOpenTicket = (ticket) => {
     selectedTicket.value = ticket;
     editMode.value = false;
+    loadRelatedContent(ticket);
     isDrawerOpen.value = true;
 };
 
