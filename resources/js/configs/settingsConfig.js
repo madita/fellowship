@@ -113,6 +113,16 @@ export const settingsCategories = [
         color: 'deep-purple',
         settings: [
             { id: 'auto-approval', title: 'Content Auto-Approval', description: 'Configure role-based automatic content approval', icon: 'mdi-shield-check', component: 'AutoApprovalPage' },
+        id: 'sandbox',
+        title: 'Sandbox',
+        description: 'Collaborative sandbox and Yjs WebSocket settings',
+        icon: 'mdi-notebook-edit-outline',
+        color: 'deep-purple',
+        settings: [
+            { id: 'server-status', title: 'WebSocket Server', description: 'Yjs server status and connection info', icon: 'mdi-server-network', component: 'ServerStatusPage' },
+            { id: 'feature-settings', title: 'Feature Settings', description: 'Enable/disable sandbox and collaboration', icon: 'mdi-toggle-switch-outline', component: 'FeatureSettingsPage' },
+            { id: 'limits', title: 'Limits & Quotas', description: 'Max sandboxes, collaborators, versions', icon: 'mdi-numeric', component: 'LimitsPage' },
+            { id: 'statistics', title: 'Statistics', description: 'Sandbox usage and activity stats', icon: 'mdi-chart-bar', component: 'StatisticsPage' },
         ]
     },
     {

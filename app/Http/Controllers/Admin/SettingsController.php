@@ -171,6 +171,13 @@ class SettingsController extends Controller
             // Performance
             'lazy_loading_enabled',
             'image_optimization_enabled',
+
+            // Sandbox
+            'sandbox_enabled',
+            'sandbox_public_enabled',
+            'sandbox_collaboration_enabled',
+            'sandbox_autosave_interval',
+            'sandbox_role_limits',
         ];
 
         $settings = [];
@@ -251,12 +258,24 @@ class SettingsController extends Controller
             'api_keys_enabled', 'background_jobs_enabled', 'custom_footer_enabled',
             'oauth_google_enabled', 'oauth_discord_enabled', 'oauth_github_enabled',
             'oauth_facebook_enabled', 'oauth_allow_registration', 'oauth_auto_verify_email',
+            'sandbox_enabled', 'sandbox_public_enabled', 'sandbox_collaboration_enabled',
         ];
 
         foreach ($booleanKeys as $key) {
             if (isset($settings[$key])) {
                 // Convert to actual boolean
                 $settings[$key] = (bool) filter_var($settings[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            }
+        }
+
+        // Known JSON settings
+        $jsonKeys = ['sandbox_role_limits'];
+        foreach ($jsonKeys as $key) {
+            if (isset($settings[$key]) && is_string($settings[$key])) {
+                $decoded = json_decode($settings[$key], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $settings[$key] = $decoded;
+                }
             }
         }
 
@@ -343,8 +362,13 @@ class SettingsController extends Controller
                 'posts_per_page', 'media_max_upload_size', 'password_min_length',
                 'session_timeout_minutes', 'login_rate_limit_attempts', 'login_rate_limit_minutes',
                 'cache_lifetime_minutes', 'api_rate_limit_per_minute', 'smtp_port', 'age_minimum',
+                'sandbox_autosave_interval',
             ])) {
-                if (!is_numeric($value) || $value < 0) {
+                if ($key === 'sandbox_autosave_interval') {
+                    if (!ctype_digit((string) $value) || (int) $value < 5 || (int) $value > 3600) {
+                        $valueErrors["settings.{$index}.value"] = ["The {$key} must be an integer between 5 and 3600."];
+                    }
+                } elseif (!is_numeric($value) || $value < 0) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a positive number."];
                 }
             }
