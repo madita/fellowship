@@ -190,6 +190,13 @@ export function useSettings() {
         age_confirmation_required: false,
         age_minimum: 13,
 
+        // Sandbox Settings
+        sandbox_enabled: false,
+        sandbox_public_enabled: false,
+        sandbox_collaboration_enabled: false,
+        sandbox_autosave_interval: 30,
+        sandbox_role_limits: null,
+
         // Advanced / Developer Settings
         environment: 'production',
         api_rate_limit_per_minute: 60,

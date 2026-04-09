@@ -170,6 +170,54 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/conversations/{conversation}/mark-as-read', 'App\Http\Controllers\Conversation\ConversationController@markAsRead');
 });
 
+// Collaborative Sandbox
+Route::prefix('sandbox')->group(function () {
+    // Status endpoints are exempt from sandbox.enabled check (needed by admin settings)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/status', [App\Http\Controllers\Sandbox\SandboxStatusController::class, 'status']);
+        Route::get('/status/websocket', [App\Http\Controllers\Sandbox\SandboxStatusController::class, 'websocketStatus']);
+    });
+
+    // All other sandbox routes require the feature to be enabled
+    Route::middleware('sandbox.enabled')->group(function () {
+        Route::get('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'index'])->middleware('auth:sanctum');
+        Route::post('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'store'])->middleware('auth:sanctum');
+
+        Route::get('/{uuid}', [App\Http\Controllers\Sandbox\SandboxController::class, 'show']); // Public for public sandboxes
+
+        Route::middleware('auth:sanctum')->group(function () {
+        Route::put('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'update']);
+        Route::delete('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'destroy']);
+        
+        // Collaboration state
+        Route::get('/{sandbox}/state', [App\Http\Controllers\Sandbox\SandboxController::class, 'getState']);
+        Route::post('/{sandbox}/state', [App\Http\Controllers\Sandbox\SandboxController::class, 'saveState']);
+        
+        // Collaborators
+        Route::post('/{sandbox}/collaborators', [App\Http\Controllers\Sandbox\SandboxController::class, 'addCollaborator']);
+        Route::delete('/{sandbox}/collaborators/{collaborator}', [App\Http\Controllers\Sandbox\SandboxController::class, 'removeCollaborator']);
+        Route::post('/{sandbox}/accept-invite', [App\Http\Controllers\Sandbox\SandboxController::class, 'acceptInvite']);
+        
+        // Version history
+        Route::get('/{sandbox}/versions', [App\Http\Controllers\Sandbox\SandboxController::class, 'versions']);
+        Route::get('/{sandbox}/versions/{version}', [App\Http\Controllers\Sandbox\SandboxController::class, 'showVersion']);
+        Route::post('/{sandbox}/versions/{version}/restore', [App\Http\Controllers\Sandbox\SandboxController::class, 'restoreVersion']);
+
+        // Revision history (field-level changes)
+        Route::get('/{sandbox}/history', [App\Http\Controllers\Sandbox\SandboxController::class, 'history']);
+
+        // Comment threads
+        Route::get('/{sandbox}/threads', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'index']);
+        Route::post('/{sandbox}/threads', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'storeThread']);
+        Route::put('/{sandbox}/threads/{thread}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'updateThread']);
+        Route::delete('/{sandbox}/threads/{thread}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'destroyThread']);
+        Route::post('/{sandbox}/threads/{thread}/comments', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'storeComment']);
+        Route::put('/{sandbox}/threads/{thread}/comments/{comment}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'updateComment']);
+        Route::delete('/{sandbox}/threads/{thread}/comments/{comment}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'destroyComment']);
+    });
+    }); // sandbox.enabled
+});
+
 Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']);
 Route::get('/source-models', [App\Http\Controllers\RelateableController::class, 'getSourceModels']);
 Route::get('/model-items', [App\Http\Controllers\RelateableController::class, 'getModelItems']);

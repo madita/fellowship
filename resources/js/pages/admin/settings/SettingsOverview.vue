@@ -144,6 +144,10 @@
                             <v-icon class="mr-2" size="20">mdi-page-layout-footer</v-icon>
                             <span class="d-none d-sm-inline">{{ $t('settings.overview.tabFooter') }}</span>
                         </v-tab>
+                        <v-tab value="sandbox">
+                            <v-icon class="mr-2" size="20">mdi-notebook-edit-outline</v-icon>
+                            <span class="d-none d-sm-inline">Sandbox</span>
+                        </v-tab>
                         <v-tab value="advanced">
                             <v-icon class="mr-2" size="20">mdi-cog-sync-outline</v-icon>
                             <span class="d-none d-sm-inline">{{ $t('settings.overview.tabAdvanced') }}</span>
@@ -212,6 +216,14 @@
                             </v-window-item>
                             <v-window-item value="footer">
                                 <footer-tab
+                                    :settings="settings"
+                                    :errors="errors"
+                                    :is-saving="isSaving"
+                                    @save="saveSettings"
+                                />
+                            </v-window-item>
+                            <v-window-item value="sandbox">
+                                <sandbox-tab
                                     :settings="settings"
                                     :errors="errors"
                                     :is-saving="isSaving"
@@ -318,6 +330,7 @@ import OAuthTab from '@/components/settings/tabs/OAuthTab.vue';
 import SeoTab from '@/components/settings/tabs/SeoTab.vue';
 import HomepageTab from '@/components/settings/tabs/HomepageTab.vue';
 import FooterTab from '@/components/settings/tabs/FooterTab.vue';
+import SandboxTab from '@/components/settings/tabs/SandboxTab.vue';
 import AdvancedTab from '@/components/settings/tabs/AdvancedTab.vue';
 
 const router = useRouter();
