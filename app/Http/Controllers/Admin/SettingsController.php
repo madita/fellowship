@@ -371,7 +371,6 @@ class SettingsController extends Controller
                 } elseif (!is_numeric($value) || $value < 0) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a positive number."];
                 }
-                }
             }
         }
 

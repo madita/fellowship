@@ -128,9 +128,9 @@
       </div>
     </div>
 
-    <!-- Connection status -->
+    <!-- Connection status (only when collaboration is active) -->
     <v-banner
-      v-if="!connected"
+      v-if="collaborationActive && !connected"
       color="warning"
       density="compact"
       icon="mdi-loading mdi-spin"
@@ -148,6 +148,7 @@
 
       <!-- Comments Panel -->
       <SandboxComments
+        v-if="sandbox"
         ref="commentsPanel"
         :visible="showComments"
         :sandbox="sandbox"
@@ -297,6 +298,7 @@ import SandboxVersions from './SandboxVersions.vue'
 import SandboxComments from './SandboxComments.vue'
 import UserAvatar from '../common/UserAvatar.vue'
 import colourHelper from '@/helpers/colour.js'
+import { useSettingsStore } from '@/store/settingStore.js'
 
 function getUserColor(user) {
   if (user?.colour) return user.colour
@@ -331,6 +333,7 @@ export default {
   emits: ['toggle-fullscreen'],
 
   setup(props) {
+    const settingsStore = useSettingsStore()
     const sandbox = ref(null)
     const editor = ref(null)
     const connected = ref(false)
@@ -347,6 +350,7 @@ export default {
     const currentUser = ref(null)
     const commentsPanel = ref(null)
     const threadCount = ref(0)
+    const collaborationActive = ref(false)
 
     let ydoc = null
     let provider = null
@@ -397,17 +401,52 @@ export default {
       }
     }
 
+    const initializeEditorWithoutCollaboration = () => {
+      collaborationActive.value = false
+      connected.value = true
+
+      editor.value = new Editor({
+        editable: canEdit.value,
+        content: pendingRestoreContent || sandbox.value.content || '',
+        extensions: [
+          StarterKit,
+          CommentMark,
+        ],
+      })
+
+      pendingRestoreContent = null
+
+      if (canEdit.value) {
+        autoSaveInterval = setInterval(() => {
+          saveContent(false)
+        }, 30000)
+      }
+    }
+
     const initializeEditor = () => {
+      const collaborationEnabled = settingsStore.sandboxCollaborationEnabled
+
+      if (!collaborationEnabled) {
+        initializeEditorWithoutCollaboration()
+        return
+      }
+
+      // Try collaborative mode with WebSocket fallback
       ydoc = new Y.Doc()
 
       const wsUrl = import.meta.env.VITE_YJS_WS_URL || 'ws://localhost:1234'
       const roomName = `sandbox-${sandbox.value.id}`
 
-      provider = new WebsocketProvider(wsUrl, roomName, ydoc)
+      provider = new WebsocketProvider(wsUrl, roomName, ydoc, {
+        connect: true,
+        maxBackoffTime: 2500,
+      })
 
       const userObj = currentUser.value?.user || currentUser.value || {}
       const userName = userObj.name || userObj.username || 'Anonymous'
       const cursorColor = getUserColor(userObj)
+
+      collaborationActive.value = true
 
       editor.value = new Editor({
         editable: canEdit.value,
@@ -429,15 +468,37 @@ export default {
         ],
       })
 
-      provider.on('synced', ({ synced }) => {
-        if (synced) {
-          connected.value = true
+      // Track whether WS actually connected at least once
+      let wsEverConnected = false
 
+      // Fall back to non-collaborative mode if WS never connects
+      let wsConnectionTimeout = setTimeout(() => {
+        if (!wsEverConnected) {
+          console.warn('[Sandbox] Yjs WebSocket never connected, falling back to local editing')
+          if (provider) { provider.destroy(); provider = null }
+          if (ydoc) { ydoc.destroy(); ydoc = null }
+          if (editor.value) { editor.value.destroy(); editor.value = null }
+          initializeEditorWithoutCollaboration()
+        }
+      }, 5000)
+
+      provider.on('status', ({ status }) => {
+        if (status === 'connected') {
+          wsEverConnected = true
+          connected.value = true
+          clearTimeout(wsConnectionTimeout)
+        } else {
+          connected.value = false
+        }
+      })
+
+      provider.on('synced', (isSynced) => {
+        // y-websocket v3 emits (boolean), not ({ synced })
+        const synced = typeof isSynced === 'boolean' ? isSynced : isSynced?.synced ?? isSynced
+        if (synced) {
           if (pendingRestoreContent) {
-            // Force-set restored content, clearing whatever the Yjs server had cached
             editor.value.commands.setContent(pendingRestoreContent)
             pendingRestoreContent = null
-            // Persist immediately so autosave doesn't overwrite with stale data
             saveContent(false)
           } else {
             const yXmlFragment = ydoc.getXmlFragment('default')
@@ -446,10 +507,6 @@ export default {
             }
           }
         }
-      })
-
-      provider.on('status', ({ status }) => {
-        connected.value = status === 'connected'
       })
 
       if (canEdit.value) {
@@ -584,6 +641,10 @@ export default {
 
     onMounted(async () => {
       await loadCurrentUser()
+      // Ensure app settings are loaded before initializing (collaboration check depends on it)
+      if (!settingsStore.settingsLoaded) {
+        await settingsStore.fetchAppSettings()
+      }
       await loadSandbox()
     })
 
@@ -613,6 +674,7 @@ export default {
       currentUser,
       commentsPanel,
       threadCount,
+      collaborationActive,
       visibilityColor,
       visibilityIcon,
       loadSandbox,
