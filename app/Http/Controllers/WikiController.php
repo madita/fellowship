@@ -66,7 +66,6 @@ class WikiController extends Controller
         $wikidata = $wikiQuery->with('approval')->orderBy('created_at', 'desc')->paginate($perPage);
 
         $total = $wikidata->total();
-        $offset = ($page - 1) * $perPage;
 
         $wiki = $wikidata->getCollection()->map(function (Wiki $wiki) use ($isAdmin) {
             $model = $wiki->wikiable_type;
