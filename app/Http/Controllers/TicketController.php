@@ -241,7 +241,7 @@ class TicketController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $assignee = \App\Models\User::find($validated['user_id']);
+        $assignee = \App\Models\User::findOrFail($validated['user_id']);
         $ticket->assignTo($assignee);
 
         return response()->json($ticket->fresh(['assignee']));
