@@ -191,19 +191,21 @@ class TicketController extends Controller
             }
         }
 
-        $ticket->update($validated);
+        DB::transaction(function () use ($ticket, $validated, $user): void {
+            $ticket->update($validated);
 
-        // Auto-approve/unapprove linked model when ticket status changes
-        if (isset($validated['status']) && $ticket->ticketable) {
-            $ticketable = $ticket->ticketable;
-            if (in_array(Approvable::class, class_uses_recursive($ticketable))) {
-                if (in_array($validated['status'], ['resolved', 'closed'])) {
-                    $ticketable->approve($user);
-                } elseif (in_array($validated['status'], ['open', 'in_progress', 'pending'])) {
-                    $ticketable->unapprove();
+            // Auto-approve/unapprove linked model when ticket status changes
+            if (isset($validated['status']) && $ticket->ticketable) {
+                $ticketable = $ticket->ticketable;
+                if (in_array(Approvable::class, class_uses_recursive($ticketable))) {
+                    if (in_array($validated['status'], ['resolved', 'closed'])) {
+                        $ticketable->approve($user);
+                    } elseif (in_array($validated['status'], ['open', 'in_progress', 'pending'])) {
+                        $ticketable->unapprove();
+                    }
                 }
             }
-        }
+        });
 
         return response()->json($ticket->load(['ticketType', 'creator', 'assignee']));
     }
