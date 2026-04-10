@@ -35,7 +35,7 @@ const fetchItems = async () => {
         // if (!response.ok) throw new Error('Failed to fetch items');
 
         const data = await response.json();
-        console.log('Fetched items:', data);
+        // console.log('Fetched items:', data);
 
         items.value = props.column === 'parent_id' ? data.data.records : data;
     } catch (err) {
@@ -48,7 +48,7 @@ const fetchItems = async () => {
 
 // Compute item title dynamically
 const itemTitle = computed(() => {
-    console.log(items.value)
+    // console.log(items.value)
     if (items.value.length > 0) {
         const possibleKeys = ['name', 'title', 'label','taxonomy', 'description'];
         return possibleKeys.find((key) => key in items.value[0]) || '';

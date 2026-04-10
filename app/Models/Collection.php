@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Tag\Taxonomy;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,11 +12,14 @@ use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Collection extends Model implements HasMedia
+class Collection extends Model implements HasMedia, TranslatableContract
 {
     use HasFactory;
     use InteractsWithMedia;
     use Sluggable;
+    use Translatable;
+
+    public $translatedAttributes = ['name'];
 
     public function sluggable(): array
     {
@@ -25,7 +30,7 @@ class Collection extends Model implements HasMedia
         ];
     }
 
-    protected $fillable = ['name', 'taxonomy_id', 'user_id'];
+    protected $fillable = ['taxonomy_id', 'user_id'];
 
     public function taxonomy()
     {

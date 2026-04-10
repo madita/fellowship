@@ -7,6 +7,7 @@ import { middlewarePipeline } from './middlewarePipeline.js';
 
 import auth from './middleware/auth'
 import verified from './middleware/verified'
+import maintenance from './middleware/maintenance'
 
 // Routes
 import ComponentsRoutes from './components.routes'
@@ -14,6 +15,8 @@ import PagesRoutes from './pages.routes'
 import UsersRoutes from './users.routes'
 import LandingRoutes from './landing.routes'
 import WikiRoutes from './wiki.routes'
+import ForumRoutes from './forum.routes'
+import SandboxRoutes from './sandbox.routes'
 import AdminRoutes from './admin.routes'
 //import permission from "@/router/middleware/permission.js";
 
@@ -34,6 +37,8 @@ export const routes = [{
     ...UsersRoutes,
     ...LandingRoutes,
     ...WikiRoutes,
+    ...ForumRoutes,
+    ...SandboxRoutes,
     ...AdminRoutes,
     {
         path: '/blank',
@@ -106,7 +111,7 @@ export const routes = [{
     }]
 
 const router = createRouter({
-    history: createWebHistory(import.meta.env.BASE_URL),
+    history: createWebHistory('/'),  // Explicitly set to '/' instead of using BASE_URL
     scrollBehavior(to, from, savedPosition) {
         if (savedPosition) return savedPosition
 
@@ -120,9 +125,42 @@ let lastLink = null;
 /**
  * Before each route update
  */
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
     lastLink = from.fullPath; // Store the last visited link
-    console.log('to middleware',to)
+
+    // Ensure settings are loaded before checking maintenance mode
+    const { useSettingsStore } = await import('@/store/settingStore.js')
+    const settingsStore = useSettingsStore()
+
+    if (!settingsStore.settingsLoaded) {
+        await settingsStore.fetchAppSettings()
+    }
+
+    // Check maintenance mode first (global middleware)
+    const maintenanceResult = await new Promise((resolve) => {
+        maintenance({
+            to,
+            from,
+            next: (result) => resolve(result)
+        })
+    })
+
+    // If maintenance middleware redirected, handle it
+    if (maintenanceResult && typeof maintenanceResult === 'object' && maintenanceResult.name) {
+        return next(maintenanceResult)
+    }
+
+    // If maintenance middleware returned false or stopped the flow
+    if (maintenanceResult === false) {
+        return next(false)
+    }
+
+    // Check if sandbox feature is disabled
+    if (to.path.startsWith('/sandbox') && !settingsStore.sandboxEnabled) {
+        return next({ name: 'access-denied' })
+    }
+
+    // Continue with route-specific middleware
     if (!to.meta.middleware) {
         return next()
     }

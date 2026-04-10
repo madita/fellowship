@@ -6,11 +6,13 @@ use App\Helpers\TaxonomyHelper;
 use App\Models\Tag\Taxable;
 //use App\Models\Tag\Taxonomy;
 
-use Illuminate\Http\Request;
+use App\Models\Tag\Taxonomy;
 //use App\Models\Tag\Term;
+use App\Models\Tag\Term;
+//use Lecturize\Taxonomies\Models\Taxonomy;
+//use Lecturize\Taxonomies\Models\Term;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Lecturize\Taxonomies\Models\Taxonomy;
-use Lecturize\Taxonomies\Models\Term;
 
 class TaxonomyController extends Controller
 {
@@ -58,15 +60,13 @@ class TaxonomyController extends Controller
     public function getTaxables(Request $request)
     {
         $params = $request->all();
-        //        dd($params);
         $term = Term::where('slug', $params['term'])->first();
 
         if (!isset($term->id)) {
-            return response()->json(['message' => 'No data found', 'data' => null, 'category' => null]);
+            return response()->json(['message' => __('messages.common.no_data'), 'data' => null, 'category' => null]);
         }
 
         $taxonomy = Taxonomy::where('term_id', $term->id);
-//        dd($taxonomy->get());
 
 //        $taxonomy = Taxonomy::where('taxonomy', 'tags');
 
@@ -76,8 +76,6 @@ class TaxonomyController extends Controller
 //        }
 
         $taxables = Taxable::whereIn('taxonomy_id', $taxonomy->pluck('id'));
-//        dd($taxonomy->pluck('id'));
-//        dd($taxables->get());
 
         if ($params['model'] != null) {
             $taxables = $taxables->where('taxable_type', 'like', '%'.$params['model']);
@@ -86,7 +84,6 @@ class TaxonomyController extends Controller
         $taxableCollection = collect($taxables->orderBy('taxable_type')->orderBy('taxable_id')->get())->map(function (Taxable $taxable) use ($taxonomy) {
             $model = app($taxable->taxable_type);
             $data = $model::where('id', $taxable->taxable_id)->first();
-//            dd($data);
 
             return [
                 'type'              => Str::lower(Str::afterLast($taxable->taxable_type, '\\')),
@@ -110,14 +107,12 @@ class TaxonomyController extends Controller
             ],
         ];
 
-        //        dd($taxableCollection->groupBy('type'));
 
         return response()->json($data);
     }
 
     public function saveTerms(Request $request)
     {
-//        dd($request);
 
         $term = $request->get('term');
         $taxonomy = $request->get('taxonomy');
@@ -128,7 +123,6 @@ class TaxonomyController extends Controller
             $parent_id = isset($parent['parent_id']) ? $parent['parent_id'] : 0;
         }
 
-//        dd($parent_id);
         $tax = isset($taxonomy['taxonomy']) ? $taxonomy['taxonomy'] : $taxonomy;
 
         TaxonomyHelper::createTaxables($term, $tax, $parent_id);

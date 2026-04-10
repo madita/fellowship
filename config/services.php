@@ -30,4 +30,56 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | OAuth Social Login Providers
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for OAuth authentication providers. Each provider requires
+    | a client ID, client secret, and redirect URI.
+    |
+    */
+
+    'google' => [
+        'client_id'     => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect'      => env('GOOGLE_REDIRECT_URI', env('APP_URL').'/auth/google/callback'),
+    ],
+
+    'discord' => [
+        'client_id'     => env('DISCORD_CLIENT_ID'),
+        'client_secret' => env('DISCORD_CLIENT_SECRET'),
+        'redirect'      => env('DISCORD_REDIRECT_URI', env('APP_URL').'/auth/discord/callback'),
+    ],
+
+    'github' => [
+        'client_id'     => env('GITHUB_CLIENT_ID'),
+        'client_secret' => env('GITHUB_CLIENT_SECRET'),
+        'redirect'      => env('GITHUB_REDIRECT_URI', env('APP_URL').'/auth/github/callback'),
+    ],
+
+    'facebook' => [
+        'client_id'     => env('FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
+        'redirect'      => env('FACEBOOK_REDIRECT_URI', env('APP_URL').'/auth/facebook/callback'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Translation API Service
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for automatic translation services like Google Translate
+    | or DeepL. Set the provider and API key to enable machine translation.
+    |
+    | Supported providers: 'google', 'deepl' (future)
+    |
+    */
+
+    'translation' => [
+        'enabled'  => env('TRANSLATION_API_ENABLED', false),
+        'provider' => env('TRANSLATION_API_PROVIDER', 'google'),
+        'api_key'  => env('TRANSLATION_API_KEY'),
+    ],
+
 ];

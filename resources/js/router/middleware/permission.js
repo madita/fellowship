@@ -10,6 +10,9 @@ export default function permission({ to, next }) {
         "admin-pages-form": "manage-page",
         "admin-posts": "manage-post",
         "admin-events": "manage-post",
+        "admin-settings": "manage-post",
+        "admin-settings-category": "manage-post",
+        "admin-settings-page": "manage-post",
         "admin-events-types": "manage-post",
         "admin-events-profiles": "manage-post",
         "admin-gallery": "manage-post",
@@ -20,6 +23,11 @@ export default function permission({ to, next }) {
         "wiki-edit": "manage-page",
         "wiki-category-create": "manage-page",
         "wiki-category-edit": "manage-page",
+        "admin-media": "manage-page",
+        "admin-migrations": "manage-page",
+        "admin-translations": "manage-page",
+        "admin-tickets": "manage-page",
+        "admin-forums": "manage-page",
     };
 
     const requiredPermission = permissionsMap[to.name];

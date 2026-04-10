@@ -7,7 +7,7 @@
                     :items="taxonomies"
                     item-text="description"
                     item-value="id"
-                    label="Select Taxonomy"
+                    :label="$t('gallery.selectTaxonomy')"
                     outlined
                 />
             </v-col>
@@ -15,10 +15,10 @@
             <v-col cols="12">
                 <v-text-field
                     v-model="newCollection.name"
-                    label="Collection Name"
+                    :label="$t('gallery.collectionName')"
                     outlined
                 />
-                <v-btn @click="createCollection" color="primary" class="ma-2">Create Collection</v-btn>
+                <v-btn @click="createCollection" color="primary" class="ma-2">{{ $t('gallery.createCollection') }}</v-btn>
             </v-col>
         </v-row>
 
@@ -34,20 +34,20 @@
                                 <v-img :src="media.url" :alt="media.file_name" height="150"></v-img>
                                 <v-text-field
                                     v-model="media.newCaption"
-                                    :label="media.caption ? 'Edit Caption' : 'Add Caption'"
+                                    :label="media.caption ? $t('gallery.editCaption') : $t('gallery.addCaption')"
                                     outlined
                                     dense
                                 />
-                                <v-btn @click="updateMediaCaption(media.id, media.newCaption)" color="success" small>Update Caption</v-btn>
-                                <v-btn @click="deleteMedia(media.id)" color="error" small>Delete</v-btn>
+                                <v-btn @click="updateMediaCaption(media.id, media.newCaption)" color="success" small>{{ $t('gallery.updateCaption') }}</v-btn>
+                                <v-btn @click="deleteMedia(media.id)" color="error" small>{{ $t('common.delete') }}</v-btn>
                             </v-col>
                         </v-row>
                     </v-card-text>
 
                     <v-card-actions>
-                        <v-file-input @change="onFileChange(collection.id, $event)" label="Select File" outlined dense></v-file-input>
-                        <v-text-field v-model="newCaption" label="Add Caption" outlined dense></v-text-field>
-                        <v-btn @click="uploadMedia(collection.id)" color="primary">Upload to Collection</v-btn>
+                        <v-file-input @change="onFileChange(collection.id, $event)" :label="$t('gallery.selectFile')" outlined dense></v-file-input>
+                        <v-text-field v-model="newCaption" :label="$t('gallery.addCaption')" outlined dense></v-text-field>
+                        <v-btn @click="uploadMedia(collection.id)" color="primary">{{ $t('gallery.uploadToCollection') }}</v-btn>
                     </v-card-actions>
                 </v-card>
             </v-col>
@@ -57,7 +57,10 @@
 
 <script setup>
 import {ref, onMounted, watch} from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+
+const { t } = useI18n();
 
 const taxonomies = ref([]);
 const collections = ref([]);
@@ -111,7 +114,7 @@ const onFileChange = (collectionId, event) => {
 
 const uploadMedia = async (collectionId) => {
     if (!selectedFile.value) {
-        alert('Please select a file first');
+        alert(t('gallery.pleaseSelectFile'));
         return;
     }
 

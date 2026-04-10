@@ -1,19 +1,19 @@
 <template>
-    <v-container fluid>
+    <v-container fluid class="chat-container">
         <v-row>
             <div class="left-part" v-if="1">
-                <!-- <perfect-scrollbar style="height: calc(100vh - 290px)"> -->
+                 <perfect-scrollbar style="height: calc(100vh - 290px)">
 <!--                <slot name="leftpart"></slot>-->
-                <!-- </perfect-scrollbar> -->
+                 </perfect-scrollbar>
 
             </div>
             <div class="right-part">
 
                 <div class="d-flex">
                     <div class="w-100">
-<!--                        <perfect-scrollbar ref="" style="height: calc(100vh - 290px)">-->
+                        <perfect-scrollbar ref="" style="height: calc(100vh - 290px)">
                             <ChatMessages></ChatMessages>
-<!--                        </perfect-scrollbar>-->
+                        </perfect-scrollbar>
 
                     </div>
                     <div class="right-sidebar">
@@ -34,7 +34,7 @@
                     color="primary"
                     class="shadow-none"
                     density="compact"
-                    placeholder="Type a Message"
+                    :placeholder="$t('chat.typeMessage')"
                 ></v-text-field>
                 <v-btn icon variant="text" type="submit" class="text-medium-emphasis" :disabled="!body">
                     <v-icon small>mdi-send</v-icon>
@@ -107,7 +107,7 @@ export default {
 
 
         const handleMessageInput = () => {
-            console.log('addmessage')
+            // console.log('addmessage')
             bodyBackedUp.value = body.value;
 
 
@@ -122,7 +122,7 @@ export default {
             return {
                 id: tempId,
                 body: body.value,
-                created_at: moment().utc(0).format('YYYY-MM-DD HH:mm:ss'),
+                // created_at: moment().utc(0).format('YYYY-MM-DD HH:mm:ss'),
                 selfOwned: true,
                 user: {
                     username: userStore.user.username
@@ -138,7 +138,7 @@ export default {
             axios.post('/api/chat/messages', {
                 body: body.value.trim()
             }).then((response) => {
-                console.log(response)
+                // console.log(response)
 
                 chatStore.addMessage(response.data);
                 }
@@ -161,13 +161,13 @@ export default {
                     onlineUsersStore.addUser(user)
                 })
                 .leaving((user) => {
-                    console.log('leaving', user)
+                    // console.log('leaving', user)
                     onlineUsersStore.removeUser(user)
                     //emit('chatUsers.left', user)
                 })
                 .listen('.message-created', (e) => {
                     //emit('message.added', e.message)
-                    console.log('LISTEnnewmessage', e.message)
+                    // console.log('LISTEnnewmessage', e.message)
                     chatStore.addMessage(e.message);
                 })
         })
@@ -184,6 +184,11 @@ export default {
 
 <style lang="scss">
 /* Styles for chat layout */
+.chat-container {
+    background: rgb(var(--v-theme-surface)) !important;
+    min-height: calc(100vh - 64px);
+}
+
 .mainbox {
     position: relative;
     overflow: hidden;
@@ -194,11 +199,13 @@ left-part {
     min-height: 500px;
     transition: 0.1s ease-in;
     flex-shrink: 0;
+    background: rgb(var(--v-theme-surface)) !important;
 }
 .right-part {
     width: 100%;
     min-height: 500px;
     position: relative;
+    background: rgb(var(--v-theme-surface)) !important;
 }
 .rightpartHeight {
     height: 530px;
@@ -213,6 +220,7 @@ left-part {
     border-left: 1px solid rgb(var(--v-theme-borderColor));
     transition: 0.1s ease-in;
     flex-shrink: 0;
+    background: rgb(var(--v-theme-surface)) !important;
 }
 
 .shadow-none .v-field--no-label {

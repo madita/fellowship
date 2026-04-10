@@ -19,6 +19,10 @@ class DatabaseSeeder extends Seeder
             UsersTableSeeder::class,
             EventProfileTableSeeder::class,
             EventTypeTableSeeder::class,
+            SettingsSeeder::class,
+            HomepageSeeder::class,
+            FooterSeeder::class,
+            ForumSeeder::class,
         ]);
     }
 }

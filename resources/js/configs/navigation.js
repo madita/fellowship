@@ -11,6 +11,7 @@ export default {
                 { icon: 'mdi-message-text-outline', key: 'menu.chat', text: 'Chat', link: '/chat' },
                 { icon: 'mdi-calendar', key: 'menu.events', text: 'Events', link: '/events' },
                 { icon: 'mdi-file-outline', key: 'menu.wiki', text: 'Wiki', link: '/wiki' },
+                { icon: 'mdi-forum', key: 'menu.forum', text: 'Forum', link: '/forum' },
                 { icon: 'mdi-file-outline', key: 'menu.blank', text: 'Blank Page', link: '/blank' }
             ]
         },
@@ -24,6 +25,7 @@ export default {
                 {icon: 'mdi-account-group-outline', key: 'menu.adminUsers', text: 'Users', link: '/admin/users'},
                 {icon: 'mdi-file-document-outline', key: 'menu.adminPages', text: 'Pages', link: '/admin/pages'},
                 {icon: 'mdi-post-outline', key: 'menu.adminPosts', text: 'Posts', link: '/admin/posts'},
+                {icon: 'mdi-forum-outline', key: 'menu.adminForums', text: 'Forums', link: '/admin/forums'},
                 {
                     icon: 'mdi-calendar-text',
                     key: 'menu.adminEvents',
@@ -31,8 +33,8 @@ export default {
                     link: '/admin/events',
                     items: [
                         {icon: 'mdi-calendar-star', key: 'menu.adminEventsList', text: 'List', link: '/admin/events'},
-                        {icon: 'mdi-calendar-alert-outline', key: 'menu.adminEventsList', text: 'Types', link: '/admin/events/types'},
-                        {icon: 'mdi-calendar-account-outline', key: 'menu.adminEventsList', text: 'Profiles', link: '/admin/events/profiles'}
+                        {icon: 'mdi-calendar-alert-outline', key: 'menu.adminEventsTypes', text: 'Types', link: '/admin/events/types'},
+                        {icon: 'mdi-calendar-account-outline', key: 'menu.adminEventsProfiles', text: 'Profiles', link: '/admin/events/profiles'}
                     ]
                 },
                 {
@@ -46,6 +48,10 @@ export default {
                         {icon: 'mdi-tag-outline', key: 'menu.adminTerms', text: 'Terms', link: '/admin/tags/terms'}
                     ]
                 },
+                {icon: 'mdi-folder-multiple-image', key: 'menu.adminMedia', text: 'Media Center', link: '/admin/media'},
+                {icon: 'mdi-ticket-outline', key: 'menu.adminTickets', text: 'Tickets', link: '/admin/tickets'},
+                {icon: 'mdi-translate', key: 'menu.adminTranslations', text: 'Translations', link: '/admin/translations'},
+                {icon: 'mdi-cog-outline', key: 'menu.adminSettings', text: 'Settings', link: '/admin/settings'},
                 {icon: 'mdi-bullhorn-outline', key: 'menu.adminAnnouncement', text: 'Announcement', link: '/admin/announcements'},
             ]
         }

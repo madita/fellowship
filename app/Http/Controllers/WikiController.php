@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
+use App\Models\Tag\Taxonomy;
+use App\Models\Tag\Term;
+use App\Models\Ticket\Ticket;
 use App\Models\Wiki;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Lecturize\Taxonomies\Models\Taxonomy;
-use Lecturize\Taxonomies\Models\Term;
 
 class WikiController extends Controller
 {
@@ -39,40 +41,50 @@ class WikiController extends Controller
      *
      * @param $slug
      *
-     * @return JsonResponse|\never
+     * @return JsonResponse|never
      */
     public function index(Request $request)
     {
         $perPage = 9;
         $query = $request->get('q');
+        $user = Auth::user();
+        $isAdmin = $user && $user->isAdmin();
 
         $page = request()->input('page', 1); // Current page number, default to 1
 
-        if ($query === null || $query === '') {
-            $wikidata = Wiki::where('status', null)->orderBy('created_at', 'desc')->paginate($perPage);
-        } else {
-            $wikidata = Wiki::where('title', 'LIKE', '%'.$query.'%')->where('status', null)->paginate($perPage);
+        $wikiQuery = Wiki::where('status', null);
+
+        // Non-admins only see approved pages
+        if (!$isAdmin) {
+            $wikiQuery->approved();
         }
 
+        if ($query !== null && $query !== '') {
+            $wikiQuery->whereTranslationLike('title', '%'.$query.'%');
+        }
+
+        $wikidata = $wikiQuery->with('approval')->orderBy('created_at', 'desc')->paginate($perPage);
+
         $total = $wikidata->total();
-        $offset = ($page - 1) * $perPage;
 
-        //dd($wikidata->toSql());
-
-        $wiki = $wikidata->getCollection()->map(function (Wiki $wiki) {
+        $wiki = $wikidata->getCollection()->map(function (Wiki $wiki) use ($isAdmin) {
             $model = $wiki->wikiable_type;
             $data = $model::where('id', $wiki->wikiable_id)->first();
 
             $taxonomies = $data->getCategories('wiki')->unique();
+            $tags = $data->getCategories('tags')->unique();
 
             return [
-                'title'      => $wiki->title,
-                'slug'       => $wiki->slug,
-                'type'       => Str::lower(Str::afterLast($wiki->wikiable_type, '\\')),
-                'model'      => $wiki->wikiable_type,
-                //                    'taxable_title' => $data->{$data->getTaxableTitle()},
-                'data'       => $data,
-                'taxonomies' => $taxonomies];
+                'title'       => $wiki->title,
+                'slug'        => $wiki->slug,
+                'type'        => Str::lower(Str::afterLast($wiki->wikiable_type, '\\')),
+                'model'       => $wiki->wikiable_type,
+                'data'        => $data,
+                'taxonomies'  => $taxonomies,
+                'tags'        => $tags,
+                'is_approved' => $wiki->isApproved(),
+                'approved_at' => $wiki->approval?->approved_at,
+            ];
         });
 
         $paginator = new LengthAwarePaginator(
@@ -115,12 +127,22 @@ class WikiController extends Controller
 //        return response()->json($paginator);
     }
 
+    public function getPages()
+    {
+        $user = Auth::user();
+        $isAdmin = $user && $user->isAdmin();
+
+        $wikidata = $isAdmin ? Wiki::all() : Wiki::approved()->get();
+
+        return response()->json($wikidata);
+    }
+
     /**
      * view landing pages.
      *
      * @param $slug
      *
-     * @return JsonResponse|\never
+     * @return JsonResponse|never
      */
     public function view($wikiable, $id)
     {
@@ -128,15 +150,20 @@ class WikiController extends Controller
 
     public function show($slug)
     {
-        //        dd($slug);
 
         $wiki = Wiki::where('slug', '=', $slug)->first();
 
         if ($wiki === null) {
             $data = ['slug' => $slug, 'title' => Str::ucfirst($slug), 'content' => ''];
 
-            //            return response()->json(['status' => 404, 'message' => 'Create Wiki page', 'page' => $data]);
-            return response(['status' => 404, 'message' => 'Create Wiki page', 'page' => $data], 404);
+            return response(['status' => 404, 'message' => __('messages.wiki.create_page'), 'page' => $data], 404);
+        }
+
+        // Block unapproved pages for non-admins
+        $currentUser = Auth::user();
+        $isAdmin = $currentUser && $currentUser->isAdmin();
+        if ($wiki->isPending() && !$isAdmin) {
+            abort(403, 'This page is pending approval.');
         }
 
         $model = $wiki->wikiable_type;
@@ -152,10 +179,7 @@ class WikiController extends Controller
         );
 
         foreach ($matches[0] as $key => $item) {
-            //get anker
             $title = explode('#', $matches[1][$key]);
-
-//            $page  = Page::new(['title'=> $title[0], 'slug' => Str::slug($title[0])]);
 
             $title = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : $title[0];
             $alternative = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : null;
@@ -169,10 +193,22 @@ class WikiController extends Controller
         $data->content = $content;
         $taxonomies = $data->getCategories('wiki')->unique();
         $terms = $data->getCategories('tags')->unique();
+        $user = $data->user;
 
-        //        $data->content = Str::replace()
+        $approval = $wiki->approval;
 
-        return response()->json(['page' => $data, 'wiki' => $wiki, 'parents' => $data->parents, 'terms' => $taxonomies, 'tags' => $terms]);
+        return response()->json([
+            'page'        => $data,
+            'user'        => $user,
+            'wiki'        => $wiki,
+            'parent'      => $wiki->parent,
+            'children'    => $wiki->children,
+            'terms'       => $taxonomies,
+            'tags'        => $terms,
+            'is_approved' => $approval !== null,
+            'approved_at' => $approval?->approved_at,
+            'approved_by' => $approval?->approver?->name,
+        ]);
     }
 
     public function history($wikiable, $id)
@@ -181,17 +217,20 @@ class WikiController extends Controller
 
     public function store(Request $request)
     {
-        //        dd($request->all());
+
+        $parent = $request->get('parent_id');
+        $parent_id = $parent['id'] ?? 0;
+
         $page = auth()->user()->pages()->create([
             'title'        => $request->get('title'),
             'content'      => $request->get('content'),
             'sign_in_only' => 0,
             'published'    => 1]);
 
+
         if ($request->get('categories')) {
             //            $taxonomy = $request->get('taxonomy');
             //            $taxonomy = $taxonomy['taxonomy'];
-            //            //            dd('hm');
             //            $page->addCategories($request->get('categories'), $taxonomy);
 
             foreach ($request->get('categories') as $term) {
@@ -212,24 +251,32 @@ class WikiController extends Controller
                 }
             }
         }
-        $wiki = new Wiki(['title' => $page->title, 'slug' => $request->get('slug')]);
+        $wiki = new Wiki([
+            'title'     => $page->title,
+            'slug'      => $request->get('slug'),
+            'parent_id' => $parent_id,
+        ]);
 
         $page->wikiable()->save($wiki);
 
-        return response()->json(['message' => 'success', 'page' => $page]);
+        return response()->json(['message' => __('messages.wiki.created'), 'page' => $page]);
     }
 
     public function update(Request $request, $slug)
     {
-//                dd('update', $request->all(), $slug);
 
         //
         //        $wiki = $request->all();
         //
         //        $model = $wiki['type'];
         //        $data = $model::where('id', $wiki['id'])->first();
+        $parent = $request->get('parent_id');
+        $parent_id = $parent['id'] ?? 0;
 
         $wiki = Wiki::where('slug', '=', $slug)->first();
+
+        $wiki->update(['title' => $request->get('title'), 'parent_id' => $parent_id]);
+
         $model = $wiki->wikiable_type;
 
         $data = $model::where('id', $wiki->wikiable_id)->first();
@@ -237,12 +284,12 @@ class WikiController extends Controller
         $data->update($request->only($this->getUpdatableColumns($request->get('type'))));
 
         //
-        if ($request->get('parent')) {
-            $parent = $request->get('parent');
-
-            $data->parent_id = $parent['id'];
-            $data->update();
-        }
+//        if ($request->get('parent')) {
+//            $parent = $request->get('parent');
+//
+//            $data->parent_id = $parent['id'];
+//            $data->update();
+//        }
 
         $data->detachCategories();
 
@@ -289,18 +336,50 @@ class WikiController extends Controller
         //            $data->addCategories($request->get('terms'),'tags');
         //        }
 
-        return response()->json(['message' => 'success', $model => $data]);
+        return response()->json(['message' => __('messages.wiki.updated'), $model => $data]);
+    }
+
+    public function approve($slug): JsonResponse
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isAdmin()) {
+            abort(403, 'Only admins can approve wiki pages.');
+        }
+
+        $wiki = Wiki::where('slug', '=', $slug)->firstOrFail();
+        $wiki->approve($user);
+
+        // Also resolve any open wiki_approval ticket for this wiki
+        $wiki->tickets()
+            ->open()
+            ->ofType('wiki_approval')
+            ->each(function (Ticket $ticket) {
+                $ticket->resolve();
+            });
+
+        return response()->json(['message' => 'Wiki page approved successfully.', 'wiki' => $wiki->fresh()]);
+    }
+
+    public function unapprove($slug): JsonResponse
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isAdmin()) {
+            abort(403, 'Only admins can unapprove wiki pages.');
+        }
+
+        $wiki = Wiki::where('slug', '=', $slug)->firstOrFail();
+        $wiki->unapprove();
+
+        return response()->json(['message' => 'Wiki page approval revoked.', 'wiki' => $wiki->fresh()]);
     }
 
     public function storeCategory(Request $request)
     {
-        // dd($request);
 
         $term = Term::firstOrCreate(['title' => $request->get('term')]);
 
         $taxonomy = Taxonomy::firstOrNew(['taxonomy' => 'wiki', 'term_id' => $term->id]);
         $parent = $request->get('parent');
-//        dd($parent);
 
         if ($parent['parent_id']) {
             $taxonomy->parent_id = $parent['parent_id'];
@@ -311,19 +390,17 @@ class WikiController extends Controller
         }
         $taxonomy->save();
 
-        return response()->json(['message' => 'success', 'taxonomy' => $taxonomy]);
+        return response()->json(['message' => __('messages.wiki.category_created'), 'taxonomy' => $taxonomy]);
     }
 
     public function updateCategory(Request $request, $slug)
     {
-//         dd($request);
 
         $termNew = $request->get('category');
         $termOld = $request->get('old');
         $parent = $request->get('parent');
         $title = $request->get('term');
 
-//        dd($parent);
 
         $term = Term::find($termNew['term']['id']);
         if ($term->title != $termOld['term']['title']) {
@@ -334,7 +411,6 @@ class WikiController extends Controller
 
         $taxonomy = Taxonomy::where('term_id', $term->id)->where('taxonomy', 'wiki')->first();
 //        $parent = $termNew['parent'];
-        //        dd($parent);
 
         if ($parent['parent_id']) {
             $taxonomy->parent_id = $parent['parent_id'];
@@ -345,7 +421,6 @@ class WikiController extends Controller
         }
         $taxonomy->update();
 
-//        dd($taxonomy);
-        return response()->json(['message' => 'success', 'slugchange' => $term->title != $termOld['term']['title'], 'term'=> $term, 'taxonomy' => $taxonomy]);
+        return response()->json(['message' => __('messages.wiki.category_updated'), 'slugchange' => $term->title != $termOld['term']['title'], 'term'=> $term, 'taxonomy' => $taxonomy]);
     }
 }

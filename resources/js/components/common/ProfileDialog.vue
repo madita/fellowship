@@ -7,7 +7,7 @@
                 <v-select v-if="eventDays.length > 1 && formData.days"
                           v-model="formData.days"
                           :items="eventDays"
-                          label="Days"
+                          :label="$t('profileDialog.days')"
                           outlined
                           multiple
                 />
@@ -53,9 +53,9 @@
             </VCardText>
             <VCardActions>
                 <VSpacer/>
-                <VBtn color="grey" @click="cancel">Cancel</VBtn>
+                <VBtn color="grey" @click="cancel">{{ $t('common.cancel') }}</VBtn>
                 <VBtn color="red" @click="confirm">
-                    Submit
+                    {{ $t('common.submit') }}
                 </VBtn>
             </VCardActions>
         </VCard>
@@ -63,7 +63,7 @@
 </template>
 
 <script setup>
-import {ref, computed, watch, onMounted} from 'vue';
+import {ref, computed, watch} from 'vue';
 import axios from "axios";
 
 const selectedDays = ref();

@@ -1,3 +1,6 @@
+// Import CSS custom properties declarations
+@import 'variables';
+
 *,
 *::before,
 *::after {
@@ -5,7 +8,18 @@
 }
 
 body {
+    background: transparent !important;
+}
 
+/* Make v-application transparent to show custom background */
+.v-application {
+    background: transparent !important;
+}
+
+/* Ensure main content area uses theme background color with semi-transparency to show background image */
+.v-main {
+    background: rgba(var(--v-theme-background), 0.95) !important;
+    min-height: 100vh;
 }
 
 .columns {

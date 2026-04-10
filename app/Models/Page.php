@@ -2,29 +2,35 @@
 
 namespace App\Models;
 
+use App\Contracts\CanHaveTaxonomies;
+use App\Traits\HasCache;
 use App\Traits\HasTaxonomies;
 use App\Traits\Revisionable;
-use App\Traits\Wikiable;
 //use Lecturize\Taxonomies\Traits\HasCategories;
+use App\Traits\Wikiable;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
-use Lecturize\Taxonomies\Contracts\CanHaveCategories;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Page extends Model implements HasMedia, CanHaveCategories
+class Page extends Model implements HasMedia, CanHaveTaxonomies, TranslatableContract
 {
     use InteractsWithMedia;
     use HasTaxonomies;
     use Revisionable;
     use Wikiable;
     use Sluggable;
+    use HasCache;
+    use Translatable;
+
+    public $translatedAttributes = ['title', 'content'];
 
     protected $fillable = [
-        'published',
         'title',
+        'published',
         'slug',
-        'content',
         'parent_id',
         'user_id',
         'created_at',

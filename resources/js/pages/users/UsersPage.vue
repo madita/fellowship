@@ -2,12 +2,12 @@
   <div class="d-flex flex-column flex-grow-1">
     <div class="d-flex align-center py-3">
       <div>
-        <div class="display-1">Users</div>
+        <div class="display-1">{{ $t('usersPage.title') }}</div>
         <v-breadcrumbs :items="breadcrumbs" class="pa-0 py-2"></v-breadcrumbs>
       </div>
       <v-spacer></v-spacer>
       <v-btn color="bg-primary">
-        Create User
+        {{ $t('usersPage.createUser') }}
       </v-btn>
     </div>
 
@@ -19,21 +19,21 @@
             <template v-slot:activator="{ on }">
               <transition name="slide-fade" mode="out-in">
                 <v-btn v-show="selectedUsers.length > 0" v-on="on">
-                  Actions
+                  {{ $t('usersPage.actions') }}
                   <v-icon right>mdi-menu-down</v-icon>
                 </v-btn>
               </transition>
             </template>
             <v-list dense>
               <v-list-item>
-                <v-list-item-title>Verify</v-list-item-title>
+                <v-list-item-title>{{ $t('usersPage.verify') }}</v-list-item-title>
               </v-list-item>
               <v-list-item>
-                <v-list-item-title>Disable</v-list-item-title>
+                <v-list-item-title>{{ $t('usersPage.disable') }}</v-list-item-title>
               </v-list-item>
               <v-divider></v-divider>
               <v-list-item>
-                <v-list-item-title>Delete</v-list-item-title>
+                <v-list-item-title>{{ $t('usersPage.delete') }}</v-list-item-title>
               </v-list-item>
             </v-list>
           </v-menu>
@@ -48,7 +48,7 @@
             hide-details
             dense
             clearable
-            placeholder="e.g. filter for id, email, name, etc"
+            :placeholder="$t('usersPage.searchPlaceholder')"
             @keyup.enter="searchUser(searchQuery)"
           ></v-text-field>
           <v-btn
@@ -138,29 +138,33 @@ export default {
   data() {
     return {
       isLoading: false,
-      breadcrumbs: [{
-        text: 'Users',
+      searchQuery: '',
+      selectedUsers: [],
+      users
+    }
+  },
+  computed: {
+    breadcrumbs() {
+      return [{
+        text: this.$t('usersPage.title'),
         disabled: false,
         href: '#'
       }, {
-        text: 'List'
-      }],
-
-      searchQuery: '',
-      selectedUsers: [],
-      headers: [
-        { text: 'Id', align: 'left', value: 'id' },
-        { text: 'Email', value: 'email' },
-        { text: 'Verified', value: 'verified' },
-        { text: 'Name', align: 'left', value: 'name' },
-        { text: 'Role', value: 'role' },
-        { text: 'Created', value: 'created' },
-        { text: 'Last SignIn', value: 'lastSignIn' },
-        { text: 'Disabled', value: 'disabled' },
+        text: this.$t('usersPage.list')
+      }]
+    },
+    headers() {
+      return [
+        { text: this.$t('usersPage.id'), align: 'left', value: 'id' },
+        { text: this.$t('usersPage.email'), value: 'email' },
+        { text: this.$t('usersPage.verified'), value: 'verified' },
+        { text: this.$t('usersPage.name'), align: 'left', value: 'name' },
+        { text: this.$t('usersPage.role'), value: 'role' },
+        { text: this.$t('usersPage.created'), value: 'created' },
+        { text: this.$t('usersPage.lastSignIn'), value: 'lastSignIn' },
+        { text: this.$t('usersPage.disabled'), value: 'disabled' },
         { text: '', sortable: false, align: 'right', value: 'action' }
-      ],
-
-      users
+      ]
     }
   },
   watch: {

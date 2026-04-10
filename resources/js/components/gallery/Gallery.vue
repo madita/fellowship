@@ -31,8 +31,11 @@
 
 <script setup>
 import {ref, onMounted, watch} from 'vue';
+import {useI18n} from 'vue-i18n';
 import {useRouter} from 'vue-router';
 import axios from 'axios';
+
+const {t} = useI18n();
 
 const taxonomies = ref([]);
 const collections = ref([]);
@@ -90,7 +93,7 @@ const onFileChange = (collectionId, event) => {
 
 const uploadMedia = async (collectionId) => {
     if (!selectedFile.value) {
-        alert('Please select a file first');
+        alert(t('gallery.selectFileFirst'));
         return;
     }
 

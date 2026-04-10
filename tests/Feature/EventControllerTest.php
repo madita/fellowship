@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Event\Event;
 use App\Models\Event\EventGuest;
+use App\Models\Event\EventProfile;
 use App\Models\Event\EventType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +28,7 @@ class EventControllerTest extends TestCase
         $this->user = User::factory()->create();
 
         // Create an event profile first
-        $eventProfile = \App\Models\Event\EventProfile::create([
+        $eventProfile = EventProfile::create([
             'name'    => 'Test Event Profile',
             'options' => json_encode([
                 'form' => [
@@ -38,7 +39,7 @@ class EventControllerTest extends TestCase
         ]);
 
         // Create an event type with options and event_profile_id
-        $this->eventType =  EventType::create([
+        $this->eventType = EventType::create([
             'event_profile_id' => $eventProfile->id,
             'name'             => 'Treffen',
             'color'            => '#071CB4',
@@ -88,8 +89,6 @@ class EventControllerTest extends TestCase
 
         ]);
 
-
-
         // Create an event
         $this->event = Event::create([
             'title'         => 'Test Event',
@@ -103,10 +102,8 @@ class EventControllerTest extends TestCase
 //        dd($this->user->id, $this->event);
     }
 
-
-
-    /** @test */
-    public function user_can_view_event_details()
+    #[Test]
+    public function test_user_can_view_event_details()
     {
         $this->actingAs($this->user, 'sanctum');
 
@@ -121,8 +118,8 @@ class EventControllerTest extends TestCase
             ]);
     }
 
-    /** @test */
-    public function user_can_join_event()
+    #[Test]
+    public function test_user_can_join_event()
     {
         $this->actingAs($this->user, 'sanctum');
 
@@ -138,8 +135,8 @@ class EventControllerTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function user_can_change_event_response()
+    #[Test]
+    public function test_user_can_change_event_response()
     {
         $this->actingAs($this->user, 'sanctum');
 
@@ -159,8 +156,8 @@ class EventControllerTest extends TestCase
         ]);
     }
 
-    /** @test */
-    public function user_can_join_event_with_profile_data()
+    #[Test]
+    public function test_user_can_join_event_with_profile_data()
     {
         $this->actingAs($this->user, 'sanctum');
 
@@ -197,8 +194,8 @@ class EventControllerTest extends TestCase
         }
     }
 
-    /** @test */
-    public function event_owner_can_approve_guest()
+    #[Test]
+    public function test_event_owner_can_approve_guest()
     {
         $this->actingAs($this->user, 'sanctum');
 
@@ -235,8 +232,8 @@ class EventControllerTest extends TestCase
         $this->assertNotNull($updatedGuest->approved_at);
     }
 
-    /** @test */
-    public function event_owner_can_reject_guest()
+    #[Test]
+    public function test_event_owner_can_reject_guest()
     {
         $this->actingAs($this->user, 'sanctum');
 
@@ -267,8 +264,8 @@ class EventControllerTest extends TestCase
         $this->assertNull($updatedGuest->approved_at);
     }
 
-    /** @test */
-    public function non_owner_cannot_approve_guests()
+    #[Test]
+    public function test_non_owner_cannot_approve_guests()
     {
         // Create another user who is not the event owner
         $nonOwner = User::factory()->create();
@@ -295,8 +292,8 @@ class EventControllerTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
-    public function validation_fails_with_invalid_approval_action()
+    #[Test]
+    public function test_validation_fails_with_invalid_approval_action()
     {
         $this->actingAs($this->user, 'sanctum');
 

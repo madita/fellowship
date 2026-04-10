@@ -1,6 +1,21 @@
 import { sliceEvents, createPlugin } from '@fullcalendar/core';
 import { i18n } from "@/plugins/vue-i18n.js";
 import { eventBus } from "../common/eventBus.js";
+import { formatDate } from "@/plugins/formatDate.js";
+import { useUserStore } from "@/store/userStore.js";
+import { useSettingsStore } from "@/store/settingStore.js";
+
+// Helper function to get user's time format preference
+function getUserTimeFormat() {
+    const userStore = useUserStore();
+    const settingsStore = useSettingsStore();
+
+    const timeFormat = userStore.user?.time_format ||
+                      settingsStore.appSettings?.time_format ||
+                      'H:i:s';
+    // Remove seconds for cleaner display
+    return timeFormat.replace(':s', '').replace(' s', '');
+}
 
 const CustomViewConfig = {
     classNames: ['custom-view'],
@@ -43,28 +58,35 @@ const CustomViewConfig = {
         if (segs.length > 0) {
             html += '<ul class="view-events">';
             Object.keys(eventsByDate).sort().forEach(date => {
+                // Format date with user preferences
+                const formattedDate = formatDate(new Date(date));
+                const weekday = formatDate(new Date(date), 'l'); // 'l' is PHP format for full weekday name
+
                 html += `<div class="event-list-custom fc-list-day-cushion fc-cell-shaded">
-                  <a id="fc-dom-10" class="fc-list-day-text" aria-label="${new Date(date).toDateString()}">
-                    ${new Date(date).toDateString()}
+                  <a id="fc-dom-10" class="fc-list-day-text" aria-label="${formattedDate}">
+                    ${formattedDate}
                   </a>
-                  <a aria-hidden="true" class="fc-list-day-side-text" aria-label="${new Date(date).toDateString()}">
-                    ${new Date(date).toLocaleDateString(i18n.locale, { weekday: 'long' })}
+                  <a aria-hidden="true" class="fc-list-day-side-text" aria-label="${weekday}">
+                    ${weekday}
                   </a>
                 </div>
                 <ul class="event-list-custom">`;
 
                 eventsByDate[date].forEach(event => {
-                    const startTime = new Date(event.def.extendedProps.originDate?.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const endTime = new Date(event.def.extendedProps.originDate?.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    // Use formatDate with user's timezone and time format preferences
+                    const timeFormat = getUserTimeFormat();
+                    const startTime = formatDate(event.def.extendedProps.originDate?.start, timeFormat);
+                    const endTime = formatDate(event.def.extendedProps.originDate?.end, timeFormat);
                     html += `<li>`;
                     if (event.def.allDay || (!event.isStart && !event.isEnd)) {
                         html += `<span class="fc-list-event-time">all-day</span>`;
                     } else {
+                        html += `<span class="fc-list-event-time">`;
                         if (event.isStart) {
                             html += `<span class="fc-list-event-time">${startTime}</span>`;
                         }
                         if (event.isEnd) {
-                            html += `<span class="fc-list-event-time">${endTime}</span>`;
+                            html += `- <span class="fc-list-event-time">${endTime}</span>`;
                         }
                     }
                     html += `<span class="fc-list-event-dot" :style="{'border-color': ${event.def.extendedProps.colorName}};"></span>`;

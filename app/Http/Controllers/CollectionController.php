@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Collection;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -66,6 +67,9 @@ class CollectionController extends Controller
     // Upload media to a collection
     public function uploadMedia(Request $request, Collection $collection)
     {
+        // Authorization check - only owner or admin can upload
+        $this->authorize('uploadMedia', $collection);
+
         $request->validate([
             'files'      => 'required|array', // Ensure files is an array
             'files.*'    => 'file|mimes:jpg,jpeg,png,gif|max:2048', // Validate each file
@@ -80,7 +84,7 @@ class CollectionController extends Controller
 
             $extension = $file->getClientOriginalExtension();
             $newFilename = Str::uuid().'.'.$extension;
-            /** @var \App\Models\User $user */
+            /** @var User $user */
             $user = auth()->user();
 
             $media = $collection->addMedia($file)
@@ -103,7 +107,7 @@ class CollectionController extends Controller
         }
 
         return response()->json([
-            'message'        => 'Media uploaded successfully',
+            'message'        => __('messages.media.uploaded'),
             'uploaded_media' => $uploadedMedia,
         ]);
     }
@@ -114,12 +118,17 @@ class CollectionController extends Controller
             'caption' => 'required|string|max:255',
         ]);
 
-        // Find the media item and update its caption
+        // Find the media item
         $media = Media::findOrFail($mediaId);
+
+        // Get the collection that owns this media and check authorization
+        $collection = Collection::findOrFail($media->model_id);
+        $this->authorize('update', $collection);
+
         $media->setCustomProperty('caption', $request->input('caption'));
         $media->save();
 
-        return response()->json(['message' => 'Caption updated successfully']);
+        return response()->json(['message' => __('messages.media.caption_updated')]);
     }
 
     public function setCoverImage(Request $request, $collectionId)
@@ -141,7 +150,7 @@ class CollectionController extends Controller
         $media = $collection->media()->findOrFail($request->media_id);
         $media->setCustomProperty('is_cover', true)->save();
 
-        return response()->json(['message' => 'Cover image updated successfully.']);
+        return response()->json(['message' => __('messages.media.cover_updated')]);
     }
 
     /**

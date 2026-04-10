@@ -48,6 +48,20 @@ export default {
             this.getPost();
         }
 
+        // Listen for locale changes to refetch content in new language
+        this.onLocaleChange = () => {
+            if (this.slug) {
+                this.getPost();
+            }
+        };
+        window.addEventListener('locale-changed', this.onLocaleChange);
+    },
+
+    beforeUnmount() {
+        // Clean up locale change listener
+        if (this.onLocaleChange) {
+            window.removeEventListener('locale-changed', this.onLocaleChange);
+        }
     }
 
 }

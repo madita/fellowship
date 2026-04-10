@@ -10,8 +10,8 @@
                         dark
                         class="calendar-tabs"
                     >
-                        <v-tab value="calendar">Calendar View</v-tab>
-                        <v-tab value="overview">Events Overview</v-tab>
+                        <v-tab value="calendar">{{ $t('events.calendarView') }}</v-tab>
+                        <v-tab value="overview">{{ $t('events.eventsOverview') }}</v-tab>
                     </v-tabs>
 
                     <v-window v-model="activeTab" class="mt-2">
@@ -40,7 +40,7 @@
                                             size="large"
                                             rounded="lg"
                                         >
-                                            Add New Event
+                                            {{ $t('events.addNewEvent') }}
                                         </v-btn>
                                     </div>
 
@@ -48,13 +48,14 @@
 
                                     <div class="d-flex align-center justify-center py-2">
                                         <VueDatePicker
-                                        locale="de"
+                                        :locale="userLocale"
                                         v-model="startTime"
                                         :enable-time-picker="false"
-                                        utc
+                                        :timezone="userTimezone"
                                         inline
                                         auto-apply
-                                        :preview-format="format"
+                                        :preview-format="userDateFormat"
+                                        :format="userDateFormat"
                                         @update:modelValue="jumpToDate"
                                     />
                                     </div>
@@ -63,23 +64,23 @@
 
                                     <div class="pa-4">
                                         <div class="d-flex align-center justify-space-between mb-4">
-                                            <h5 class="text-h6 font-weight-bold">Event Filters</h5>
+                                            <h5 class="text-h6 font-weight-bold">{{ $t('events.eventFilters') }}</h5>
                                             <v-btn
                                                 variant="text"
                                                 density="comfortable"
                                                 size="small"
                                                 @click="checkAll = !checkAll"
-                                            >{{ checkAll ? 'Clear All' : 'Select All' }}</v-btn>
+                                            >{{ checkAll ? $t('events.clearAll') : $t('events.selectAll') }}</v-btn>
                                         </div>
 
                                         <v-fade-transition hide-on-leave>
                                             <div class="d-flex flex-column calendars-checkbox">
                                                 <v-checkbox
                                                     v-model="checkAll"
-                                                    label="View all"
+                                                    :label="$t('events.viewAll')"
                                                     color="primary"
                                                     hide-details
-                                                    class="my-1"
+                                                    density="compact"
                                                 />
                                                 <v-checkbox
                                                     v-for="type in calendarStore.eventTypes"
@@ -87,9 +88,9 @@
                                                     v-model="calendarStore.selectedEventTypes"
                                                     :value="type.name"
                                                     :color="type.color"
-                                                    :label="type.name"
+                                                    :label="translateTypeName(type.name)"
                                                     hide-details
-                                                    class="my-1"
+                                                    density="compact"
                                                 />
                                             </div>
                                         </v-fade-transition>
@@ -99,7 +100,7 @@
 
                                     <!-- Quick Upcoming Events Preview -->
                                     <div class="pa-4">
-                                        <h5 class="text-h6 font-weight-bold mb-4">Coming Up Soon</h5>
+                                        <h5 class="text-h6 font-weight-bold mb-4">{{ $t('events.comingUpSoon') }}</h5>
                                         <div v-if="upcomingEvents.length > 0">
                                             <v-list lines="two" class="pa-0">
                                                 <v-list-item
@@ -127,7 +128,7 @@
                                             </v-list>
                                         </div>
                                         <div v-else class="text-center pa-4 text-body-2 text-disabled">
-                                            No upcoming events
+                                            {{ $t('events.noUpcomingEvents') }}
                                         </div>
                                     </div>
                                 </v-navigation-drawer>
@@ -147,10 +148,10 @@
                                                 mandatory
                                                 density="comfortable"
                                             >
-                                                <v-btn value="dayGridMonth">Month</v-btn>
-                                                <v-btn value="timeGridWeek">Week</v-btn>
-                                                <v-btn value="timeGridDay">Day</v-btn>
-                                                <v-btn value="custom">List</v-btn>
+                                                <v-btn value="dayGridMonth">{{ $t('events.month') }}</v-btn>
+                                                <v-btn value="timeGridWeek">{{ $t('events.week') }}</v-btn>
+                                                <v-btn value="timeGridDay">{{ $t('events.day') }}</v-btn>
+                                                <v-btn value="custom">{{ $t('events.list') }}</v-btn>
                                             </v-btn-toggle>
 
                                             <v-btn
@@ -165,6 +166,7 @@
 
                                         <full-calendar
                                             ref="refCalendar"
+                                            :key="userTimezone"
                                             :options="calendarOptions"
                                             class="calendar-component"
                                         />
@@ -185,8 +187,8 @@
                                         <v-card class="rounded-lg elevation-2 h-100">
                                             <v-card-title class="d-flex justify-space-between align-center py-4 px-6">
                                                 <div>
-                                                    <h3 class="text-h5 font-weight-bold">Upcoming Events</h3>
-                                                    <span class="text-caption text-medium-emphasis">Next 7 days</span>
+                                                    <h3 class="text-h5 font-weight-bold">{{ $t('events.upcomingEvents') }}</h3>
+                                                    <span class="text-caption text-medium-emphasis">{{ $t('events.next7Days') }}</span>
                                                 </div>
                                                 <v-badge
                                                     :content="upcomingEvents.length"
@@ -203,15 +205,15 @@
                                             <v-card-text class="pa-0">
                                                 <v-list v-if="upcomingEvents.length > 0" class="py-0">
                                                     <v-list-subheader class="d-flex justify-space-between px-6">
-                                                        <span>Event</span>
-                                                        <span>Date & Time</span>
+                                                        <span>{{ $t('events.event') }}</span>
+                                                        <span>{{ $t('events.dateAndTime') }}</span>
                                                     </v-list-subheader>
 
                                                     <v-list-item
                                                         v-for="event in upcomingEvents"
                                                         :key="event.id"
                                                         :title="event.title"
-                                                        :subtitle="event.extendedProps?.location || 'No location'"
+                                                        :subtitle="event.extendedProps?.location || $t('events.noLocation')"
                                                         class="px-6 event-list-item"
                                                         @click="viewEventDetails(event)"
                                                     >
@@ -236,9 +238,9 @@
 
                                                 <v-sheet v-else class="d-flex flex-column justify-center align-center py-12">
                                                     <v-icon size="64" color="grey-lighten-2">mdi-calendar-blank</v-icon>
-                                                    <span class="text-medium-emphasis mt-4">No upcoming events for the next 7 days</span>
+                                                    <span class="text-medium-emphasis mt-4">{{ $t('events.noUpcomingEventsNext7Days') }}</span>
                                                     <v-btn variant="text" color="primary" class="mt-4" @click="createEvent">
-                                                        Add Event
+                                                        {{ $t('events.addEvent') }}
                                                     </v-btn>
                                                 </v-sheet>
                                             </v-card-text>
@@ -250,8 +252,8 @@
                                         <v-card class="rounded-lg elevation-2 h-100">
                                             <v-card-title class="d-flex justify-space-between align-center py-4 px-6">
                                                 <div>
-                                                    <h3 class="text-h5 font-weight-bold">All Events</h3>
-                                                    <span class="text-caption text-medium-emphasis">By category</span>
+                                                    <h3 class="text-h5 font-weight-bold">{{ $t('events.allEvents') }}</h3>
+                                                    <span class="text-caption text-medium-emphasis">{{ $t('events.byCategory') }}</span>
                                                 </div>
                                                 <v-badge
                                                     :content="filterEvents.length"
@@ -280,7 +282,7 @@
                                                                         </v-avatar>
                                                                     </v-col>
                                                                     <v-col cols="8" class="d-flex align-center">
-                                                                        {{ typeName }}
+                                                                        {{ translateTypeName(typeName) }}
                                                                     </v-col>
                                                                     <v-col cols="2" class="text-right">
                                                                         <v-chip
@@ -324,9 +326,9 @@
 
                                                 <v-sheet v-else class="d-flex flex-column justify-center align-center py-12">
                                                     <v-icon size="64" color="grey-lighten-2">mdi-calendar-blank</v-icon>
-                                                    <span class="text-medium-emphasis mt-4">No events found</span>
+                                                    <span class="text-medium-emphasis mt-4">{{ $t('events.noEventsFound') }}</span>
                                                     <v-btn variant="text" color="primary" class="mt-4" @click="createEvent">
-                                                        Add Event
+                                                        {{ $t('events.addEvent') }}
                                                     </v-btn>
                                                 </v-sheet>
                                             </v-card-text>
@@ -337,7 +339,7 @@
                                     <v-col cols="12">
                                         <v-card class="rounded-lg elevation-2">
                                             <v-card-title class="py-4 px-6">
-                                                <h3 class="text-h5 font-weight-bold">Event Statistics</h3>
+                                                <h3 class="text-h5 font-weight-bold">{{ $t('events.eventStatistics') }}</h3>
                                             </v-card-title>
 
                                             <v-divider />
@@ -382,22 +384,39 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue';
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
-import { format, addDays, isAfter, isBefore, formatDistance } from "date-fns";
+import { addDays, isEqual, isAfter, isBefore } from "date-fns";
+import { useDateFormat } from '@/plugins/formatDate.js';
+
+const { t, te } = useI18n();
+
+const translateTypeName = (name) => {
+    const key = 'events.types.' + name.toLowerCase();
+    return te(key) ? t(key) : name;
+};
 import FullCalendar from '@fullcalendar/vue3';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
+import luxon3Plugin from '@fullcalendar/luxon3';
 import customViewPlugin from './custom-list-view.js';
 import CalendarEventHandler from "./CalendarEventHandler.vue";
 import { useCalendarStore } from '@/store/calendarStore.js';
+import { useUserStore } from '@/store/userStore.js';
+import { useSettingsStore } from '@/store/settingStore.js';
 import VueDatePicker from "@vuepic/vue-datepicker";
-import { eventBus } from "../common/eventBus.js";
+import eventBus from "../common/eventBus.js";
 
 // Store
 const calendarStore = useCalendarStore();
+const userStore = useUserStore();
+const settingsStore = useSettingsStore();
+
+// Composables
+const { formatDate: formatDateUtil } = useDateFormat();
 
 // Local state
 const activeTab = ref('calendar');
@@ -413,6 +432,7 @@ const isLeftSidebarOpen = ref(true);
 const startTime = ref(new Date());
 const value = ref(new Date());
 const endpoint = '/api/events';
+const format = ref('dd.MM.yyyy'); // Date format for the date picker preview
 
 // Blank event template
 const blankEvent = {
@@ -455,12 +475,17 @@ const filterEvents = computed(() => {
 // Upcoming events (next 7 days)
 const upcomingEvents = computed(() => {
     const now = new Date();
-    const nextWeek = addDays(now, 7);
+    const nextWeek = addDays(now, 7); //
+    const nextYear = addDays(now, 365); //
 
     return filterEvents.value
         .filter(event => {
             const eventStart = new Date(event.start);
-            return isAfter(eventStart, now) && isBefore(eventStart, nextWeek);
+            const eventEnd = new Date(event.end);
+            // console.log('eventEnd', eventEnd, 'now', now, isAfter(eventEnd, now))
+            // if(equal(evenEnd, now)) return true;
+
+            return isAfter(eventEnd, now) && isBefore(eventStart, nextYear);
         })
         .sort((a, b) => new Date(a.start) - new Date(b.start));
 });
@@ -487,30 +512,77 @@ const groupedEvents = computed(() => {
 // Event statistics
 const eventStats = computed(() => [
     {
-        title: 'Total Events',
+        title: t('events.totalEvents'),
         value: filterEvents.value.length,
         icon: 'mdi-calendar-multiple',
         color: 'primary'
     },
     {
-        title: 'This Week',
+        title: t('events.thisWeek'),
         value: upcomingEvents.value.length,
         icon: 'mdi-calendar-clock',
         color: 'success'
     },
     {
-        title: 'Categories',
+        title: t('events.categories'),
         value: Object.keys(groupedEvents.value).length,
         icon: 'mdi-tag-multiple',
         color: 'info'
     },
     {
-        title: 'All-day Events',
+        title: t('events.allDayEvents'),
         value: filterEvents.value.filter(e => e.allDay).length,
         icon: 'mdi-calendar-today',
         color: 'warning'
     }
 ]);
+
+// Get user's timezone preference
+const userTimezone = computed(() => {
+    const timezone = userStore.user?.timezone ||
+           settingsStore.appSettings?.default_timezone ||
+           'UTC';
+    console.log('timezone',timezone)
+    return timezone;
+});
+
+// Get user's locale preference
+const userLocale = computed(() => {
+    const lang = userStore.user?.language || settingsStore.appSettings?.default_language || 'en';
+    const localeMap = {
+        'en': 'en-US',
+        'de': 'de-DE',
+        'es': 'es-ES',
+        'fr': 'fr-FR',
+    };
+    return localeMap[lang] || 'en-US';
+});
+
+// Get user's date format preference for picker
+const userDateFormat = computed(() => {
+    const phpFormat = userStore.user?.date_format || settingsStore.appSettings?.date_format || 'Y-m-d';
+    const formatMap = {
+        'Y-m-d': 'yyyy-MM-dd',
+        'd/m/Y': 'dd/MM/yyyy',
+        'm/d/Y': 'MM/dd/yyyy',
+        'd.m.Y': 'dd.MM.yyyy',
+    };
+    return formatMap[phpFormat] || 'yyyy-MM-dd';
+});
+
+// Get user's time format preference
+const userTimeFormatString = computed(() => {
+    const timeFormat = userStore.user?.time_format ||
+                      settingsStore.appSettings?.time_format ||
+                      'H:i:s';
+    // Remove seconds for cleaner display
+    return timeFormat.replace(':s', '').replace(' s', '');
+});
+
+// Get user's time format preference for 12h/24h display (for FullCalendar)
+const userTimeFormat = computed(() => {
+    return userTimeFormatString.value.includes('A') || userTimeFormatString.value.includes('a');
+});
 
 // Calendar configuration
 const calendarOptions = computed(() => ({
@@ -519,6 +591,7 @@ const calendarOptions = computed(() => ({
         timeGridPlugin,
         interactionPlugin,
         listPlugin,
+        luxon3Plugin,
         customViewPlugin
     ],
     initialView: calendarViewType.value,
@@ -528,11 +601,11 @@ const calendarOptions = computed(() => ({
         right: '',
     },
     buttonText: {
-        custom: 'List',
-        today: 'Today',
-        month: 'Month',
-        week: 'Week',
-        day: 'Day',
+        custom: t('events.list'),
+        today: t('events.today'),
+        month: t('events.month'),
+        week: t('events.week'),
+        day: t('events.day'),
     },
     initialEvents: [],
     editable: false,
@@ -540,10 +613,10 @@ const calendarOptions = computed(() => ({
     selectMirror: true,
     dayMaxEvents: true,
     weekends: true,
-    // Use UTC timezone for FullCalendar to properly handle the dates
-    timeZone: 'local',
+    // Use user's preferred timezone with Luxon plugin support
+    timeZone: userTimezone.value,
     events: filterEvents.value.map(event => {
-        // Ensure event dates are properly formatted for FullCalendar
+        // Events are stored in UTC in database, FullCalendar will convert to user's timezone
         const mappedEvent = { ...event };
         if (mappedEvent.start) {
             mappedEvent.start = new Date(mappedEvent.start).toISOString();
@@ -558,19 +631,12 @@ const calendarOptions = computed(() => ({
     eventTimeFormat: {
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false
+        hour12: userTimeFormat.value
     },
-    // Custom event render to display times in local timezone
+    // Custom event render to display times in user's timezone
     eventDidMount: function(info) {
-        // You can customize how events are displayed here
-        // For example, add custom tooltips with local times
-        if (!info.event.allDay) {
-            const startLocal = new Date(info.event.start);
-            const tooltip = format(startLocal, 'HH:mm');
-
-            // You could add a tooltip or modify the event title/time display
-            // This is optional and depends on your UI requirements
-        }
+        // Events are automatically displayed in the user's timezone by FullCalendar
+        // No additional conversion needed
     },
     eventClassNames({ event: calendarEvent }) {
         const colorName = calendarEvent._def.extendedProps.colorName || 'primary';
@@ -651,20 +717,23 @@ const viewEventDetails = (event) => {
 // Helper methods for event display
 const formatEventDate = (event) => {
     const eventDate = new Date(event.start);
-    return format(eventDate, 'EEE, MMM d, yyyy');
+    return formatDateUtil(eventDate);
 };
 
 const formatEventTime = (event) => {
-    if (event.allDay) return 'All day';
+    if (event.allDay) return t('events.allDay');
 
     const start = new Date(event.start);
     const end = event.end ? new Date(event.end) : null;
 
+    // Use user's time format preference
+    const timeFormat = userTimeFormatString.value;
+
     if (end) {
-        return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
+        return `${formatDateUtil(start, timeFormat)} - ${formatDateUtil(end, timeFormat)}`;
     }
 
-    return format(start, 'HH:mm');
+    return formatDateUtil(start, timeFormat);
 };
 
 // const getEventColor = (type) => {
@@ -735,6 +804,15 @@ eventBus.on('openSidebarWithEvent', (event) => {
     isEventHandlerSidebarActive.value = true;
 });
 
+// Locale change handler - refetch events to get translated titles/descriptions
+async function onLocaleChange() {
+    try {
+        await calendarStore.fetchEvents();
+    } catch (error) {
+        console.error('Error refetching events after locale change:', error);
+    }
+}
+
 // Lifecycle hooks
 onMounted(async () => {
     loading.value = true;
@@ -751,6 +829,14 @@ onMounted(async () => {
     } finally {
         loading.value = false;
     }
+
+    // Listen for locale changes to refetch content in new language
+    window.addEventListener('locale-changed', onLocaleChange);
+});
+
+onUnmounted(() => {
+    // Clean up locale change listener
+    window.removeEventListener('locale-changed', onLocaleChange);
 });
 </script>
 
@@ -761,8 +847,8 @@ onMounted(async () => {
 }
 
 .calendar-sidebar {
-    background-color: #fafafa;
-    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    background-color: rgb(var(--v-theme-surface));
+    border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
 }
 
 .calendar-datepicker {
@@ -773,7 +859,7 @@ onMounted(async () => {
 }
 
 .calendar-main {
-    background-color: #fff;
+    background-color: rgb(var(--v-theme-background));
     min-height: 700px;
 
     .fc {
@@ -803,6 +889,44 @@ onMounted(async () => {
 
         .fc-day-today {
             background-color: rgba(var(--v-theme-primary), 0.05) !important;
+        }
+
+        // Dark mode specific styles
+        .fc-scrollgrid {
+            border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+        }
+
+        .fc-col-header-cell {
+            background-color: rgb(var(--v-theme-surface));
+            border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+        }
+
+        .fc-daygrid-day {
+            background-color: rgb(var(--v-theme-background));
+            border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+        }
+
+        .fc-timegrid-slot {
+            border-color: rgba(var(--v-theme-on-surface), 0.08) !important;
+        }
+
+        .fc-button {
+            background-color: rgb(var(--v-theme-primary)) !important;
+            border-color: rgb(var(--v-theme-primary)) !important;
+
+            &:not(:disabled):hover {
+                background-color: rgba(var(--v-theme-primary), 0.8) !important;
+            }
+
+            &.fc-button-active {
+                background-color: rgba(var(--v-theme-primary), 0.9) !important;
+            }
+        }
+
+        .fc-daygrid-day-number,
+        .fc-col-header-cell-cushion,
+        .fc-timegrid-slot-label {
+            color: rgb(var(--v-theme-on-surface));
         }
     }
 }

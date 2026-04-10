@@ -3,22 +3,25 @@
 namespace App\Models\Event;
 
 use App\Traits\HasRelateableContent;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Event extends Model
+class Event extends Model implements TranslatableContract
 {
     use Sluggable;
     use SoftDeletes;
     use HasRelateableContent;
+    use Translatable;
 
     protected $table = 'events';
 
+    public $translatedAttributes = ['title', 'description'];
+
     protected $fillable = [
-        'title',
         'user_id',
-        'description',
         'image',
         'startTime',
         'endTime',
@@ -26,7 +29,6 @@ class Event extends Model
         'endDate',
         'event_type_id',
     ];
-
 
     public function sluggable(): array
     {

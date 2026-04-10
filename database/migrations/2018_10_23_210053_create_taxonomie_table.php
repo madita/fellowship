@@ -25,9 +25,9 @@ class CreateTaxonomieTable extends Migration
      */
     public function __construct()
     {
-        $this->terms = config('lecturize.taxonomies.terms.table', config('lecturize.taxonomies.terms_table', 'terms'));
-        $this->taxonomies = config('lecturize.taxonomies.taxonomies.table', config('lecturize.taxonomies.taxonomies_table', 'taxonomies'));
-        $this->pivot = config('lecturize.taxonomies.pivot.table', config('lecturize.taxonomies.pivot_table', 'taxables'));
+        $this->terms = config('lecturize.taxonomies.terms.table', 'terms');
+        $this->taxonomies = config('lecturize.taxonomies.taxonomies.table', 'taxonomies');
+        $this->pivot = config('lecturize.taxonomies.pivot.table', 'taxables');
     }
 
     /**
@@ -89,15 +89,19 @@ class CreateTaxonomieTable extends Migration
         });
 
         Schema::create($this->pivot, function (Blueprint $table) {
+            // Make taxonomy_id NOT NULL since it's part of the primary key
             $table->integer('taxonomy_id')
-                ->nullable()
                 ->unsigned()
                 ->references('id')
                 ->on($this->taxonomies);
 
-            $table->primary(['taxonomy_id', 'taxable_type', 'taxable_id']);
+            $table->timestamps();
 
-            $table->nullableMorphs('taxable');
+            // Use morphs() instead of nullableMorphs() to make the columns NOT NULL
+            $table->morphs('taxable');
+
+            // Now we can safely create the composite primary key
+            $table->primary(['taxonomy_id', 'taxable_type', 'taxable_id']);
         });
     }
 

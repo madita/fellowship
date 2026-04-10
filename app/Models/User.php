@@ -3,7 +3,10 @@
 namespace App\Models;
 
 use App\Models\Chat\Message;
+use App\Models\Conversation\Conversation;
 use App\Models\Event\Event;
+use App\Models\Forum\ForumPostLike;
+use App\Models\Forum\ThreadSubscription;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -34,8 +37,15 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'username',
         'email',
         'password',
+        'previous_login_at',
         'last_login_at',
         'last_login_ip',
+        'timezone',
+        'date_format',
+        'time_format',
+        'theme_mode',
+        'language',
+        'email_verified_at',
     ];
 
     /**
@@ -47,6 +57,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'avatar',
         'isAdmin',
         'initials',
+        'timezone',
+        'date_format',
+        'time_format',
+        'theme_mode',
+        'language',
     ];
 
     /**
@@ -122,6 +137,121 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->getAvatar();
     }
 
+    /**
+     * Get the user's timezone preference with fallback to global setting.
+     *
+     * @return string
+     */
+    public function getTimezoneAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('timezone');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to UTC
+        try {
+            return Setting::get('default_timezone', 'UTC');
+        } catch (\Exception $e) {
+            return 'UTC';
+        }
+    }
+
+    /**
+     * Get the user's date format preference with fallback to global setting.
+     *
+     * @return string
+     */
+    public function getDateFormatAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('date_format');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to Y-m-d
+        try {
+            return Setting::get('date_format', 'Y-m-d');
+        } catch (\Exception $e) {
+            return 'Y-m-d';
+        }
+    }
+
+    /**
+     * Get the user's time format preference with fallback to global setting.
+     *
+     * @return string
+     */
+    public function getTimeFormatAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('time_format');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to H:i:s
+        try {
+            return Setting::get('time_format', 'H:i:s');
+        } catch (\Exception $e) {
+            return 'H:i:s';
+        }
+    }
+
+    /**
+     * Get the user's theme mode preference with fallback to global setting.
+     *
+     * @return string
+     */
+    public function getThemeModeAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('theme_mode');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to 'system'
+        try {
+            return Setting::get('theme_mode', 'system');
+        } catch (\Exception $e) {
+            return 'system';
+        }
+    }
+
+    /**
+     * Get the user's language preference with fallback to global setting.
+     *
+     * @return string
+     */
+    public function getLanguageAttribute()
+    {
+        // Get the raw database value
+        $value = $this->getAttributeFromArray('language');
+
+        // Return user's preference if set
+        if ($value !== null && $value !== '') {
+            return $value;
+        }
+
+        // Try to get from global settings, with fallback to 'en'
+        try {
+            return Setting::get('default_language', 'en');
+        } catch (\Exception $e) {
+            return 'en';
+        }
+    }
+
     public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')
@@ -159,5 +289,59 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->belongsToMany(Event::class, 'event_guests')
             ->withPivot('type')
             ->withTimestamps();
+    }
+
+    public function conversations()
+    {
+//        return $this->belongsToMany(Conversation::class)->whereNull('parent_id')->orderBy('last_reply', 'desc');
+        return $this->belongsToMany(Conversation::class)->withPivot('read_at');
+    }
+
+    public function inConversation($id)
+    {
+        return $this->conversations->contains('id', $id);
+    }
+
+    public function hasRead(Conversation $conversation)
+    {
+        return $this->conversations->find($conversation->id)->pivot->read_at;
+    }
+
+    /**
+     * Get the social accounts for the user.
+     */
+    public function socialAccounts()
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
+    /**
+     * Check if user has a specific social provider linked.
+     *
+     * @param string $provider
+     *
+     * @return bool
+     */
+    public function hasSocialProvider($provider)
+    {
+        return $this->socialAccounts()->where('provider', $provider)->exists();
+    }
+
+    /**
+     * Get the API keys for the user.
+     */
+    public function apiKeys()
+    {
+        return $this->hasMany(ApiKey::class);
+    }
+
+    public function forumSubscriptions()
+    {
+        return $this->hasMany(ThreadSubscription::class);
+    }
+
+    public function forumPostLikes()
+    {
+        return $this->hasMany(ForumPostLike::class);
     }
 }

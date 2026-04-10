@@ -85,7 +85,7 @@ export default {
 
     methods: {
         onKeyDown({ event }) {
-            console.log('event',event)
+            // console.log('event',event)
             if (event.key === 'ArrowUp') {
                 this.upHandler()
                 return true

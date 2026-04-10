@@ -5,15 +5,31 @@ namespace App\Http\Controllers;
 use App\Helpers\RelateableHelper;
 use App\Models\Collection;
 use App\Models\Event\Event;
+use App\Models\Page;
+use App\Models\Post;
+use App\Models\Wiki;
 use App\Models\Relateable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class RelateableController extends Controller
 {
     /**
+     * Whitelist of allowed model types for relating.
+     * Prevents arbitrary class instantiation attacks.
+     */
+    private const ALLOWED_RELATEABLE_TYPES = [
+        'App\\Models\\Collection',
+        'App\\Models\\Event\\Event',
+        'App\\Models\\Page',
+        'App\\Models\\Post',
+        'App\\Models\\Wiki',
+    ];
+    /**
      * Display a list of models that use the Relateable trait.
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function getSourceModels()
     {
@@ -47,7 +63,6 @@ class RelateableController extends Controller
     public function relateModels(Request $request)
     {
         $request->validate([
-            'data' => 'required|array',
             'data.sourceType' => 'required|string',
             'data.sourceId' => 'required|integer',
             'data.relatedType' => 'required|string',
@@ -56,11 +71,34 @@ class RelateableController extends Controller
 
         $data = $request->get('data');
 
-        $source = $data['sourceType'];
-        $sourceItem = $source::where('id', $data['sourceId'])->first();
+        $sourceType = $data['sourceType'];
+        $relatedType = $data['relatedType'];
 
-        $related = $data['relatedType'];
-        $relatedItem = $related::where('id', $data['relatedId'])->first();
+        // SECURITY: Validate model types against whitelist to prevent arbitrary class instantiation
+        if (!in_array($sourceType, self::ALLOWED_RELATEABLE_TYPES, true)) {
+            Log::warning('Relateable: Invalid source type attempted', [
+                'sourceType' => $sourceType,
+                'user_id' => auth()->id(),
+                'ip' => $request->ip(),
+            ]);
+            return response()->json(['error' => __('messages.common.invalid_model_type')], 400);
+        }
+
+        if (!in_array($relatedType, self::ALLOWED_RELATEABLE_TYPES, true)) {
+            Log::warning('Relateable: Invalid related type attempted', [
+                'relatedType' => $relatedType,
+                'user_id' => auth()->id(),
+                'ip' => $request->ip(),
+            ]);
+            return response()->json(['error' => __('messages.common.invalid_model_type')], 400);
+        }
+
+        $sourceItem = $sourceType::find($data['sourceId']);
+        $relatedItem = $relatedType::find($data['relatedId']);
+
+        if (!$sourceItem || !$relatedItem) {
+            return response()->json(['error' => __('messages.common.item_not_found')], 404);
+        }
 
         $sourceItem->relate($relatedItem);
 
@@ -95,15 +133,27 @@ class RelateableController extends Controller
         $sourceItem->unrelate($relatedItem);
 
         return response()->json(['message' => 'Item unrelated successfully']);
+        return response()->json(['message' => __('messages.common.item_related')]);
     }
 
     public function getRelatedItems(Request $request)
     {
+        $request->validate([
+            'modelType' => 'required|string',
+            'modelId' => 'required|integer',
+        ]);
+
         $modelType = $request->get('modelType');
         $modelId = $request->get('modelId');
 
-        if (!$modelId || !$modelType) {
-            return response()->json(['error' => 'Model ID and type are required'], 400);
+        // SECURITY: Validate model type against whitelist
+        if (!in_array($modelType, self::ALLOWED_RELATEABLE_TYPES, true)) {
+            Log::warning('Relateable: Invalid model type in getRelatedItems', [
+                'modelType' => $modelType,
+                'user_id' => auth()->id(),
+                'ip' => $request->ip(),
+            ]);
+            return response()->json(['error' => __('messages.common.invalid_model_type')], 400);
         }
 
         $relatedItems = Relateable::with(['source', 'related'])
@@ -117,7 +167,7 @@ class RelateableController extends Controller
 
             // Determine the coverImage if the related model is a Collection
             $coverImage = null;
-            if ($relatedModel instanceof \App\Models\Collection) {
+            if ($relatedModel instanceof Collection) {
                 $coverMedia = $relatedModel->media->first(fn ($media) => $media->getCustomProperty('is_cover', false))
                     ?? $relatedModel->media->first();
                 $coverImage = $coverMedia ? $coverMedia->getUrl() : null;

@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Helpers\TaxonomyHelper;
+use App\Models\Tag\Term;
 use Illuminate\Http\Request;
-use Lecturize\Taxonomies\Models\Term;
 
 class TermController extends DataTableController
 {
@@ -15,7 +15,6 @@ class TermController extends DataTableController
 
     public function store(Request $request)
     {
-//        dd($request);
         $parent = $request->get('tag_taxonomy_id') ?? 0;
 
         $name = $request->get('name');

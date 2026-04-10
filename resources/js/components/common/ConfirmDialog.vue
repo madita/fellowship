@@ -2,21 +2,21 @@
     <!-- Bind modelValue to the dialog's v-model -->
     <VDialog v-model="internalModelValue" max-width="400">
         <VCard>
-            <VCardTitle class="text-h5">{{ title || 'Are you sure?' }}</VCardTitle>
+            <VCardTitle class="text-h5">{{ title || $t('dialogs.confirm.title') }}</VCardTitle>
             <VCardText>
                 <p v-if="content">{{ content }}</p>
                 <VTextField
                     v-if="confirmationKeyword"
                     v-model="textField"
-                    label="Type to confirm"
+                    :label="$t('dialogs.confirm.typeToConfirm')"
                     variant="underlined"
                 />
             </VCardText>
             <VCardActions>
                 <VSpacer />
-                <VBtn color="grey" @click="cancel">{{ cancellationText || 'Cancel' }}</VBtn>
+                <VBtn color="grey" @click="cancel">{{ cancellationText || $t('common.cancel') }}</VBtn>
                 <VBtn color="red" :disabled="confirmationButtonDisabled" @click="confirm">
-                    {{ confirmationText || 'Yes' }}
+                    {{ confirmationText || $t('dialogs.confirm.yes') }}
                 </VBtn>
             </VCardActions>
         </VCard>

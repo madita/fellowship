@@ -57,12 +57,12 @@ class RelateableHelper
     {
         // Validate that the model class exists
         if (!class_exists($model)) {
-            return response()->json(['error' => 'Model does not exist.'], 404);
+            return response()->json(['error' => __('messages.common.model_not_found')], 404);
         }
 
         // Ensure the model is an instance of Eloquent or has the necessary traits
         if (!in_array('Illuminate\Database\Eloquent\Model', class_parents($model))) {
-            return response()->json(['error' => 'Invalid model type.'], 400);
+            return response()->json(['error' => __('messages.common.invalid_model_type')], 400);
         }
 
         // Fetch all items from the model

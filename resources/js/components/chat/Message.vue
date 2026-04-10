@@ -23,7 +23,7 @@
     <div v-if="message?.selfOwned" class="justify-end d-flex text-end mb-1">
         <div>
             <small class="text-medium-emphasis text-subtitle-2" v-if="message.created_at">
-                {{ $formatDistanceToNow(message?.created_at) }}
+                {{ formatDistanceToNow(message?.created_at) }}
                 </small
             >
 
@@ -44,7 +44,7 @@
         <div>
             <small class="text-medium-emphasis text-subtitle-2" v-if="message.created_at">
                 {{ message?.user?.username }},
-                {{ $formatDistanceToNow(message?.created_at) }}
+                {{ formatDistanceToNow(message?.created_at) }}
             </small>
 
             <v-sheet class="bg-grey100 rounded-md px-3 py-2 mb-1">
@@ -59,10 +59,14 @@
 
 <script>
 import UserAvatar from "@/components/common/UserAvatar.vue";
-import {formatDistanceToNow} from "date-fns";
+import { formatDateDistanceToNow } from "@/plugins/formatDate.js";
 
 export default {
-    methods: {formatDistanceToNow},
+    methods: {
+        formatDistanceToNow(date) {
+            return formatDateDistanceToNow(date);
+        }
+    },
     components: {UserAvatar},
     props: {
         message: {
@@ -80,7 +84,7 @@ export default {
         border-bottom: 1px solid #eee;
 
         &--own {
-            background-color: #f0f0f0;
+            background: rgba(var(--v-theme-primary), 0.1) !important;
         }
 
         &-user {

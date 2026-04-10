@@ -7,7 +7,7 @@
 <!--                    <VueDatePicker v-model="event.date" :range="{ partialRange: false }" />-->
                 </v-col>
                 <v-col cols="9">
-                    <v-text-field label="Title" v-model="event.title"></v-text-field>
+                    <v-text-field :label="t('common.title')" v-model="event.title"></v-text-field>
                     <!-- Notice the updated v-model usage -->
                     <Tiptap v-model="event.description" />
                 </v-col>
@@ -18,19 +18,22 @@
 </template>
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 // import VueDatePicker from '@vuepic/vue-datepicker';
 // import '@vuepic/vue-datepicker/dist/main.css';
 import EventDatePicker from './EventDatePicker.vue'
 import Tiptap from "@/components/common/tiptap/Tiptap.vue";
 import { useRoute } from 'vue-router';
 import axios from 'axios';
+
+const { t } = useI18n();
 const date = ref();
 
 const route = useRoute();
 
 // Assuming event is reactive
 const event = ref({title: "", description: "", date:null});
-const form = ref("Create");
+const form = ref(t('events.create'));
 const message = ref("");
 const id = ref(route.params.id);
 
@@ -57,7 +60,7 @@ const endpoint = '/api/events';
 const updateEvent = () => {
     // Implement update logic here
     axios.patch(`${endpoint}/${id.value}`, this.page).then(() => {
-        message.value = "Event updated"
+        message.value = t('events.eventUpdated')
     }).catch((error) => {
         if (error.response.status === 422) {
             this.editing.errors = error.response.data
@@ -82,7 +85,7 @@ const storeEvent = () => {
 // Example of using onMounted
 onMounted(() => {
     if (id.value) {
-        form.value = "Update";
+        form.value = t('events.update');
         getEvent();
     }
 });

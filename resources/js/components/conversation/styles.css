@@ -1,0 +1,66 @@
+/* Shared conversation component styles */
+
+.bg-gradient {
+    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+}
+
+.conversation-container {
+    min-height: 400px;
+}
+
+/* Scrollbar Styles */
+/* Note: Scrolling for ConversationBox is handled in the component's scoped styles */
+/* Conversation list scrollbar (for full-page conversation view) */
+.conversation-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.conversation-list::-webkit-scrollbar-track {
+    background: rgba(var(--v-theme-on-surface), 0.05);
+    border-radius: 4px;
+}
+
+.conversation-list::-webkit-scrollbar-thumb {
+    background: rgba(var(--v-theme-on-surface), 0.2);
+    border-radius: 4px;
+}
+
+.conversation-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--v-theme-on-surface), 0.3);
+}
+
+/* Message Styles */
+.message-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.message-bubble {
+    max-width: 80%;
+    word-wrap: break-word;
+    border-radius: 16px !important;
+}
+
+/* Utility Classes */
+.gap-2 {
+    gap: 8px;
+}
+
+.gap-3 {
+    gap: 12px;
+}
+
+/* Transitions */
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .d-flex.flex-wrap {
+        flex-direction: column;
+    }
+
+    .message-bubble {
+        max-width: 100%;
+    }
+}
