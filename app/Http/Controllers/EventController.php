@@ -37,7 +37,6 @@ class EventController extends Controller
     {
         $events = Event::all();
 //        $events = DB::select('select * from events');
-//        dd($events);
         $eventTypes = EventType::all()->keyBy('id');
         $eventsMapped = $events->map(function ($event) use ($eventTypes) {
             if ($event->endDate === null) {
@@ -71,7 +70,6 @@ class EventController extends Controller
 //            ];
 
 //            $eventType = $event->type()->first();
-//            dd($eventTypes[$event->type_id]['color']);
 
             $originDate = [
                 'startDate' => $event->startDate,
@@ -102,7 +100,6 @@ class EventController extends Controller
             ];
         });
 
-        //dd($eventsMapped);
         return response()->json([
             'data' => [
                 'types'  => $eventTypes,
@@ -119,6 +116,7 @@ class EventController extends Controller
             'end' => 'nullable|date|required_with:start|after_or_equal:start',
             'image' => 'nullable|string|max:500',
         ]);
+
 
         $event = new Event();
         $event->title = request()->get('title');
@@ -153,7 +151,6 @@ class EventController extends Controller
         }
 
         if ($date = request()->get('date')) {
-            //dd($date);
             $event->startDate = date('Y-m-d', strtotime($date['date'][0]));
             $event->endDate = date('Y-m-d', strtotime($date['date'][1]));
 
@@ -252,6 +249,10 @@ class EventController extends Controller
                     $answers[$answer->key] = $event->answer($answer->key)->get(['username']);
                 }
             }
+        foreach ($options->answers as $value => $answer) {
+            $answers[$answer->key] = $event->answer($answer->key)->get(['username']);
+
+//            $approved[$value] = $event->;
         }
 
         $data = [
@@ -316,7 +317,6 @@ class EventController extends Controller
         }
 
         if ($date = request()->get('date')) {
-            //dd($date);
             $event->startDate = date('Y-m-d', strtotime($date['date'][0]));
             $event->endDate = date('Y-m-d', strtotime($date['date'][1]));
 
@@ -492,7 +492,6 @@ class EventController extends Controller
 
             return $modified;
         });
-//        dd($eventTypes);
 
         return response()->json([
             'data' => $eventTypeCollection, ]);

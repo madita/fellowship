@@ -164,6 +164,25 @@ return [
         'marked_read' => 'Notification was marked as read.',
     ],
 
+    // Sandbox (Collaborative Editor)
+    'sandbox' => [
+        'created'              => 'Sandbox created successfully',
+        'updated'              => 'Sandbox updated successfully',
+        'deleted'              => 'Sandbox deleted successfully',
+        'saved'                => 'Changes saved',
+        'unauthorized'         => 'You do not have permission to access this sandbox',
+        'collaborator_added'   => 'Collaborator added successfully',
+        'collaborator_removed' => 'Collaborator removed successfully',
+        'not_a_collaborator'   => 'This user is not a collaborator on this sandbox',
+        'cannot_add_owner'     => 'Cannot add owner as a collaborator',
+        'no_invite'            => 'No pending invite found',
+        'invite_accepted'      => 'Invitation accepted',
+        'version_restored'     => 'Version restored successfully',
+        'limit_reached'        => 'You have reached your sandbox limit (:limit). Please delete an existing sandbox first.',
+        'collaborator_limit_reached' => 'This sandbox has reached the collaborator limit (:limit).',
+        'version_limit_reached' => 'This sandbox has reached the version limit (:limit). Please delete older versions first.',
+    ],
+
     // Wiki
     'wiki' => [
         'created'          => 'Wiki page created successfully',

@@ -49,7 +49,6 @@ class RelateableController extends Controller
 
     public function relateModels(Request $request)
     {
-//        dd($request->get('data'));
 
         $data = $request->get('data');
 

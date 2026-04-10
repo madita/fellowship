@@ -182,6 +182,16 @@ export const admin = [{
             ]
         },
         component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/pages/admin/settings/SettingsPage.vue')
+    },
+    {
+        path: '/admin/tickets',
+        name: 'admin-tickets',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/components/ticket/TicketList.vue')
     }]
 
 export default admin

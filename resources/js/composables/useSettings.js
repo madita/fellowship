@@ -190,6 +190,13 @@ export function useSettings() {
         age_confirmation_required: false,
         age_minimum: 13,
 
+        // Sandbox Settings
+        sandbox_enabled: false,
+        sandbox_public_enabled: false,
+        sandbox_collaboration_enabled: false,
+        sandbox_autosave_interval: 30,
+        sandbox_role_limits: null,
+
         // Advanced / Developer Settings
         environment: 'production',
         api_rate_limit_per_minute: 60,
@@ -200,6 +207,9 @@ export function useSettings() {
         custom_footer_enabled: false,
         custom_footer_html: '',
         footer_quicklinks: '[]',
+
+        // Moderation / Auto-Approval
+        auto_approve_roles_wiki: [],
     });
 
     async function fetchSettings() {
@@ -227,6 +237,9 @@ export function useSettings() {
                         type = 'boolean';
                     } else if (typeof value === 'number') {
                         type = Number.isInteger(value) ? 'integer' : 'float';
+                    } else if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
+                        type = 'json';
+                        value = JSON.stringify(value);
                     }
                     return { key, value, type };
                 });

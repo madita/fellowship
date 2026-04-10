@@ -27,18 +27,15 @@ class PermissionController extends DataTableController
     public function updateRolePermissions(Request $request)
     {
         //Todo make PermissionRequest validation
-        //dd($request);
 
         $roles = collect($request)->groupBy('role')->map(function ($role) {
             return collect($role)->map(function ($item) {
                 return $item['permission'];
             });
         });
-//        dd($roles);
         foreach ($roles as $roleId => $rolePermissions) {
             $role = Role::findById($roleId, 'api');
             $role->syncPermissions($rolePermissions);
-//            dd($rolePermissions);
 //            Permission::findById()
         }
 

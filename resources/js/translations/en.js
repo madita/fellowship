@@ -467,7 +467,9 @@ export default {
         'adminEventsTypes': 'Types',
         'adminEventsProfiles': 'Profiles',
         'adminMedia': 'Media Center',
-        'adminTranslations': 'Translations'
+        'adminTickets': 'Tickets',
+        'adminTranslations': 'Translations',
+        'myTickets': 'My Tickets'
     },
     'admin': {
         'forums': {
@@ -1671,7 +1673,7 @@ export default {
                 'cardTitle': 'Twitter Card Settings',
                 'cardType': 'Twitter Card Type',
                 'siteHandle': 'Twitter Site Handle',
-                'siteHandleHint': 'Your Twitter username (e.g., @yourhandle)'
+                'siteHandleHint': "Your Twitter username (e.g., {'@'}yourhandle)"
             }
         },
         'oauth': {
@@ -1933,6 +1935,7 @@ export default {
             'tabSEO': 'SEO',
             'tabHomepage': 'Homepage',
             'tabFooter': 'Footer',
+            'tabModeration': 'Moderation',
             'tabAdvanced': 'Advanced'
         },
         'category': {
@@ -2415,7 +2418,7 @@ export default {
             'twitterCard': 'Twitter Card Settings',
             'twitterCardType': 'Twitter Card Type',
             'twitterSiteHandle': 'Twitter Site Handle',
-            'twitterSiteHint': 'Your Twitter username (e.g., @yourhandle)',
+            'twitterSiteHint': "Your Twitter username (e.g., {'@'}yourhandle)",
             'searchEngineSettings': 'Search Engine Settings',
             'canonicalUrl': 'Canonical URL',
             'canonicalUrlHint': 'Preferred full URL for search engines (e.g., https://example.com)',
@@ -2618,6 +2621,14 @@ export default {
             'ageConfirmationHint': 'Users must confirm their age',
             'minimumAge': 'Minimum Age',
             'minimumAgeHint': 'Minimum age required to use the site',
+            'saveSettings': 'Save Settings'
+        },
+        'moderation': {
+            'contentAutoApproval': 'Content Auto-Approval',
+            'autoApprovalDesc': 'Configure which roles can bypass the approval process when creating content. Users with selected roles will have their content automatically approved without creating a review ticket.',
+            'autoApproveRolesWiki': 'Auto-approve roles for Wiki pages',
+            'autoApproveRolesWikiHint': 'Users with any of these roles will have their wiki pages automatically approved upon creation.',
+            'noRolesSelected': 'All wiki pages require manual approval',
             'saveSettings': 'Save Settings'
         }
     },
@@ -4030,7 +4041,13 @@ export default {
         'pageUpdatedSuccessfully': 'Wiki page updated successfully!',
         'errorUpdatingPage': 'An error occurred while updating the page. Please try again.',
         'editPlaceholder': 'Edit your wiki page content...',
-        'createPlaceholder': 'Start writing your wiki page content here... Use @ to link to other pages, # for headings, and * for lists.'
+        'createPlaceholder': "Start writing your wiki page content here... Use {'@'} to link to other pages, # for headings, and * for lists.",
+        'pendingApproval': 'Pending approval',
+        'approved': 'Approved',
+        'approve': 'Approve',
+        'unapprove': 'Revoke Approval',
+        'approveSuccess': 'Wiki page approved successfully',
+        'unapproveSuccess': 'Wiki page approval revoked',
     },
     'map': {
         'title': 'Map Title',
@@ -4163,7 +4180,7 @@ export default {
         },
         'general': {
             'maintenanceMessage': 'We are currently performing scheduled maintenance. Please check back soon.',
-            'emailPlaceholder': 'contact@example.com',
+            'emailPlaceholder': "contact{'@'}example.com",
             'phonePlaceholder': '+1 234 567 890',
             'addressPlaceholder': '123 Main Street, City, Country'
         },
@@ -4235,6 +4252,95 @@ export default {
             'ogImageDeleted': 'OG image deleted successfully',
             'ogImageHint': 'Image displayed when your site is shared on social media'
         }
+    },
+    'tickets': {
+        'title': 'Tickets',
+        'subtitle': 'Manage support requests, bugs, and content approvals',
+        'myTickets': 'My Tickets',
+        'myTicketsSubtitle': 'View tickets you have created',
+        'viewRelated': 'View related content',
+        'createTicket': 'Create Ticket',
+        'editTicket': 'Edit Ticket',
+        'deleteTicket': 'Delete Ticket',
+        'noTickets': 'No tickets found',
+        'noTicketsFilterHint': 'Try adjusting your filters',
+        'noTicketsCreateHint': 'Create your first ticket to get started',
+        'selectTicket': 'Select a ticket',
+        'selectTicketHint': 'Choose a ticket from the list to view details',
+        'noRelatedContent': 'No content available for this item',
+        'details': 'Details',
+        'listView': 'List view',
+        'kanbanView': 'Kanban board',
+        'noComments': 'No comments yet',
+        'unassigned': 'Unassigned',
+        'unknown': 'Unknown',
+        'internal': 'Internal',
+        'assign': 'Assign',
+        'assignToMe': 'Assign to me',
+        'view': 'View',
+        'edit': 'Edit',
+        'close': 'Close',
+        'update': 'Update',
+        'create': 'Create',
+        'cancel': 'Cancel',
+        'reset': 'Reset',
+        'comment': 'Comment',
+        'delete': 'Delete',
+        'status': {
+            'open': 'Open',
+            'in_progress': 'In Progress',
+            'pending': 'Pending',
+            'resolved': 'Resolved',
+            'closed': 'Closed',
+        },
+        'priority': {
+            'low': 'Low',
+            'normal': 'Normal',
+            'high': 'High',
+            'urgent': 'Urgent',
+        },
+        'filters': {
+            'allStatuses': 'All Statuses',
+            'allPriorities': 'All Priorities',
+            'allTypes': 'All Types',
+            'allAssignees': 'All Assignees',
+            'assignedToMe': 'Assigned to Me',
+            'unassigned': 'Unassigned',
+            'searchPlaceholder': 'Search tickets...',
+        },
+        'fields': {
+            'id': 'ID',
+            'type': 'Type',
+            'ticketType': 'Ticket Type',
+            'title': 'Title',
+            'description': 'Description',
+            'status': 'Status',
+            'priority': 'Priority',
+            'reporter': 'Reporter',
+            'assignee': 'Assignee',
+            'created': 'Created',
+        },
+        'sidebar': {
+            'activity': 'Activity ({count})',
+            'relatedTo': 'Related To',
+            'addComment': 'Add a comment...',
+            'internalNote': 'Internal note',
+            'pendingApproval': 'This content is pending approval.',
+            'approved': 'Approved',
+            'approve': 'Approve',
+            'reject': 'Reject',
+            'revokeApproval': 'Revoke Approval',
+        },
+        'confirm': {
+            'deleteTitle': 'Delete Ticket',
+            'deleteMessage': 'Are you sure you want to delete this ticket? This action cannot be undone.',
+            'deleteConfirm': 'Delete',
+            'deleteCancel': 'Cancel',
+        },
+        'validation': {
+            'titleRequired': 'Title is required',
+            'typeRequired': 'Type is required',
+        },
     },
     'commonComponents': {
         'copy': {

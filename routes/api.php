@@ -62,6 +62,12 @@ Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['store', 
 Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
 Route::patch('wiki/category/{slug}', "\App\Http\Controllers\WikiController@updateCategory");
 
+// Wiki approval (admin only, requires auth)
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::post('wiki/{slug}/approve', "\App\Http\Controllers\WikiController@approve");
+    Route::post('wiki/{slug}/unapprove', "\App\Http\Controllers\WikiController@unapprove");
+});
+
 // Public OAuth Providers endpoint (for login page)
 Route::get('/settings/oauth-providers', 'App\Http\Controllers\Admin\SettingsController@getEnabledOAuthProviders');
 
@@ -99,6 +105,28 @@ Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function (
 //    Route::get('/', 'App\Http\Controllers\Chat\ChatController@index')->name('chat');
     Route::get('/messages', 'App\Http\Controllers\Chat\ChatMessageController@index');
     Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
+});
+
+
+// Ticket System Routes
+Route::get('/ticket-types', 'App\Http\Controllers\TicketController@types');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Tickets
+    Route::get('/tickets', 'App\Http\Controllers\TicketController@index');
+    Route::get('/tickets/{ticket}', 'App\Http\Controllers\TicketController@show');
+    Route::post('/tickets', 'App\Http\Controllers\TicketController@store');
+    Route::patch('/tickets/{ticket}', 'App\Http\Controllers\TicketController@update');
+    Route::delete('/tickets/{ticket}', 'App\Http\Controllers\TicketController@destroy');
+    Route::post('/tickets/{ticket}/assign', 'App\Http\Controllers\TicketController@assign');
+    Route::post('/tickets/{ticket}/unassign', 'App\Http\Controllers\TicketController@unassign');
+    Route::post('/tickets/{ticket}/approve', 'App\Http\Controllers\TicketController@approve');
+    Route::post('/tickets/{ticket}/reject', 'App\Http\Controllers\TicketController@reject');
+
+    // Ticket Comments
+    Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\TicketCommentController@store');
+    Route::patch('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@update');
+    Route::delete('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@destroy');
 });
 
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
@@ -168,6 +196,54 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/conversations/{conversation}/reply', 'App\Http\Controllers\Conversation\ConversationReplyController@store');
     Route::post('/conversations/{conversation}/users', 'App\Http\Controllers\Conversation\ConversationUserController@store');
     Route::post('/conversations/{conversation}/mark-as-read', 'App\Http\Controllers\Conversation\ConversationController@markAsRead');
+});
+
+// Collaborative Sandbox
+Route::prefix('sandbox')->group(function () {
+    // Status endpoints are exempt from sandbox.enabled check (needed by admin settings)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/status', [App\Http\Controllers\Sandbox\SandboxStatusController::class, 'status']);
+        Route::get('/status/websocket', [App\Http\Controllers\Sandbox\SandboxStatusController::class, 'websocketStatus']);
+    });
+
+    // All other sandbox routes require the feature to be enabled
+    Route::middleware('sandbox.enabled')->group(function () {
+        Route::get('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'index'])->middleware('auth:sanctum');
+        Route::post('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'store'])->middleware('auth:sanctum');
+
+        Route::get('/{uuid}', [App\Http\Controllers\Sandbox\SandboxController::class, 'show']); // Public for public sandboxes
+
+        Route::middleware('auth:sanctum')->group(function () {
+        Route::put('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'update']);
+        Route::delete('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'destroy']);
+        
+        // Collaboration state
+        Route::get('/{sandbox}/state', [App\Http\Controllers\Sandbox\SandboxController::class, 'getState']);
+        Route::post('/{sandbox}/state', [App\Http\Controllers\Sandbox\SandboxController::class, 'saveState']);
+        
+        // Collaborators
+        Route::post('/{sandbox}/collaborators', [App\Http\Controllers\Sandbox\SandboxController::class, 'addCollaborator']);
+        Route::delete('/{sandbox}/collaborators/{collaborator}', [App\Http\Controllers\Sandbox\SandboxController::class, 'removeCollaborator']);
+        Route::post('/{sandbox}/accept-invite', [App\Http\Controllers\Sandbox\SandboxController::class, 'acceptInvite']);
+        
+        // Version history
+        Route::get('/{sandbox}/versions', [App\Http\Controllers\Sandbox\SandboxController::class, 'versions']);
+        Route::get('/{sandbox}/versions/{version}', [App\Http\Controllers\Sandbox\SandboxController::class, 'showVersion']);
+        Route::post('/{sandbox}/versions/{version}/restore', [App\Http\Controllers\Sandbox\SandboxController::class, 'restoreVersion']);
+
+        // Revision history (field-level changes)
+        Route::get('/{sandbox}/history', [App\Http\Controllers\Sandbox\SandboxController::class, 'history']);
+
+        // Comment threads
+        Route::get('/{sandbox}/threads', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'index']);
+        Route::post('/{sandbox}/threads', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'storeThread']);
+        Route::put('/{sandbox}/threads/{thread}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'updateThread']);
+        Route::delete('/{sandbox}/threads/{thread}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'destroyThread']);
+        Route::post('/{sandbox}/threads/{thread}/comments', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'storeComment']);
+        Route::put('/{sandbox}/threads/{thread}/comments/{comment}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'updateComment']);
+        Route::delete('/{sandbox}/threads/{thread}/comments/{comment}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'destroyComment']);
+    });
+    }); // sandbox.enabled
 });
 
 Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']);
