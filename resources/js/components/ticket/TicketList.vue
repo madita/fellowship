@@ -106,7 +106,10 @@ const loadTickets = async () => {
     }
 };
 
+let relatedContentRequestId = 0;
+
 const loadRelatedContent = async (ticket) => {
+    const requestId = ++relatedContentRequestId;
     relatedContent.value = null;
     relatedContentType.value = null;
 
@@ -119,17 +122,22 @@ const loadRelatedContent = async (ticket) => {
     try {
         if (type === 'App\\Models\\Wiki') {
             const response = await axios.get(`/api/wiki/${ticketable.slug}`);
+            if (requestId !== relatedContentRequestId) return;
             relatedContent.value = response.data.page || response.data;
             relatedContentType.value = 'wiki';
         } else if (type === 'App\\Models\\Page') {
             const response = await axios.get(`/api/pages/${ticketable.slug}`);
+            if (requestId !== relatedContentRequestId) return;
             relatedContent.value = response.data.page || response.data;
             relatedContentType.value = 'page';
         }
     } catch (err) {
+        if (requestId !== relatedContentRequestId) return;
         console.error('Failed to load related content:', err);
     } finally {
-        relatedContentLoading.value = false;
+        if (requestId === relatedContentRequestId) {
+            relatedContentLoading.value = false;
+        }
     }
 };
 

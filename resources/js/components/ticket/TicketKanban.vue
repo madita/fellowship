@@ -144,7 +144,12 @@ onMounted(() => {
                         <v-card
                             class="kanban-card mb-2"
                             variant="outlined"
+                            role="button"
+                            tabindex="0"
+                            :aria-label="`Open ticket: ${element.title}`"
                             @click="openTicket(element)"
+                            @keydown.enter="openTicket(element)"
+                            @keydown.space.prevent="openTicket(element)"
                         >
                             <v-card-text class="pa-3">
                                 <!-- Title row -->
