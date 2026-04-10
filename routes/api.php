@@ -62,6 +62,12 @@ Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['store', 
 Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
 Route::patch('wiki/category/{slug}', "\App\Http\Controllers\WikiController@updateCategory");
 
+// Wiki approval (admin only, requires auth)
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::post('wiki/{slug}/approve', "\App\Http\Controllers\WikiController@approve");
+    Route::post('wiki/{slug}/unapprove', "\App\Http\Controllers\WikiController@unapprove");
+});
+
 // Public OAuth Providers endpoint (for login page)
 Route::get('/settings/oauth-providers', 'App\Http\Controllers\Admin\SettingsController@getEnabledOAuthProviders');
 
@@ -99,6 +105,28 @@ Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function (
 //    Route::get('/', 'App\Http\Controllers\Chat\ChatController@index')->name('chat');
     Route::get('/messages', 'App\Http\Controllers\Chat\ChatMessageController@index');
     Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
+});
+
+
+// Ticket System Routes
+Route::get('/ticket-types', 'App\Http\Controllers\TicketController@types');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Tickets
+    Route::get('/tickets', 'App\Http\Controllers\TicketController@index');
+    Route::get('/tickets/{ticket}', 'App\Http\Controllers\TicketController@show');
+    Route::post('/tickets', 'App\Http\Controllers\TicketController@store');
+    Route::patch('/tickets/{ticket}', 'App\Http\Controllers\TicketController@update');
+    Route::delete('/tickets/{ticket}', 'App\Http\Controllers\TicketController@destroy');
+    Route::post('/tickets/{ticket}/assign', 'App\Http\Controllers\TicketController@assign');
+    Route::post('/tickets/{ticket}/unassign', 'App\Http\Controllers\TicketController@unassign');
+    Route::post('/tickets/{ticket}/approve', 'App\Http\Controllers\TicketController@approve');
+    Route::post('/tickets/{ticket}/reject', 'App\Http\Controllers\TicketController@reject');
+
+    // Ticket Comments
+    Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\TicketCommentController@store');
+    Route::patch('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@update');
+    Route::delete('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@destroy');
 });
 
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');

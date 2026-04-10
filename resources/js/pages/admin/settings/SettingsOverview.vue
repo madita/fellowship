@@ -144,6 +144,9 @@
                             <v-icon class="mr-2" size="20">mdi-page-layout-footer</v-icon>
                             <span class="d-none d-sm-inline">{{ $t('settings.overview.tabFooter') }}</span>
                         </v-tab>
+                        <v-tab value="moderation">
+                            <v-icon class="mr-2" size="20">mdi-shield-check-outline</v-icon>
+                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabModeration') }}</span>
                         <v-tab value="sandbox">
                             <v-icon class="mr-2" size="20">mdi-notebook-edit-outline</v-icon>
                             <span class="d-none d-sm-inline">Sandbox</span>
@@ -222,6 +225,8 @@
                                     @save="saveSettings"
                                 />
                             </v-window-item>
+                            <v-window-item value="moderation">
+                                <moderation-tab
                             <v-window-item value="sandbox">
                                 <sandbox-tab
                                     :settings="settings"
@@ -332,6 +337,7 @@ import HomepageTab from '@/components/settings/tabs/HomepageTab.vue';
 import FooterTab from '@/components/settings/tabs/FooterTab.vue';
 import SandboxTab from '@/components/settings/tabs/SandboxTab.vue';
 import AdvancedTab from '@/components/settings/tabs/AdvancedTab.vue';
+import ModerationTab from '@/components/settings/tabs/ModerationTab.vue';
 
 const router = useRouter();
 const searchQuery = ref('');

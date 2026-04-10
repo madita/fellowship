@@ -291,7 +291,7 @@ class SettingsController extends Controller
             'settings'         => 'required|array',
             'settings.*.key'   => 'required|string',
             'settings.*.value' => 'nullable',
-            'settings.*.type'  => 'sometimes|string|in:string,boolean,integer,float,file',
+            'settings.*.type'  => 'sometimes|string|in:string,boolean,integer,float,file,json',
         ]);
 
         if ($validator->fails()) {

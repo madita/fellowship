@@ -207,6 +207,9 @@ export function useSettings() {
         custom_footer_enabled: false,
         custom_footer_html: '',
         footer_quicklinks: '[]',
+
+        // Moderation / Auto-Approval
+        auto_approve_roles_wiki: [],
     });
 
     async function fetchSettings() {
@@ -234,6 +237,9 @@ export function useSettings() {
                         type = 'boolean';
                     } else if (typeof value === 'number') {
                         type = Number.isInteger(value) ? 'integer' : 'float';
+                    } else if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
+                        type = 'json';
+                        value = JSON.stringify(value);
                     }
                     return { key, value, type };
                 });
