@@ -57,6 +57,13 @@
                         <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-page-layout-footer</v-icon>
                         <span class="d-none d-sm-inline">Footer</span>
                     </v-tab>
+                    <v-tab value="moderation">
+                        <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-shield-check</v-icon>
+                        <span class="d-none d-sm-inline">Moderation</span>
+                    <v-tab value="sandbox">
+                        <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-notebook-edit</v-icon>
+                        <span class="d-none d-sm-inline">Sandbox</span>
+                    </v-tab>
                     <v-tab value="advanced">
                         <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-cog-sync</v-icon>
                         <span class="d-none d-sm-inline">Advanced</span>
@@ -139,6 +146,18 @@
                             />
                         </v-window-item>
 
+                        <v-window-item value="moderation">
+                            <moderation-tab
+                        <v-window-item value="sandbox">
+                            <sandbox-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                                @message="handleMessage"
+                            />
+                        </v-window-item>
+
                         <v-window-item value="advanced">
                             <advanced-tab
                                 :settings="settings"
@@ -165,7 +184,9 @@ import OAuthTab from '../../components/settings/tabs/OAuthTab.vue';
 import SeoTab from '../../components/settings/tabs/SeoTab.vue';
 import HomepageTab from '../../components/settings/tabs/HomepageTab.vue';
 import FooterTab from '../../components/settings/tabs/FooterTab.vue';
+import SandboxTab from '../../components/settings/tabs/SandboxTab.vue';
 import AdvancedTab from '../../components/settings/tabs/AdvancedTab.vue';
+import ModerationTab from '../../components/settings/tabs/ModerationTab.vue';
 
 const currentTab = ref('general');
 const { settings, isSaving, message, alertType, errors, fetchSettings, saveSettings, showMessage } = useSettings();

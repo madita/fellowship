@@ -119,9 +119,7 @@ abstract class DataTableController extends Controller
         try {
             //if model has appended attributes and append attributes  not in displayable colimns...forget them
             $forget = array_diff($this->getAppends(), $this->getDisplayableColumns());
-//            dd($request);
             $pagination = (int) $request->get('itemsPerPage') <= 0 ? (int) $request->get('itemsLength') : (int) $request->get('itemsPerPage');
-//            dd((int)$request->get('itemsLength'));
 
             if ($pagination === 0) {
                 return $builder->orderBy('id', 'asc')->get()->makeHidden($forget);

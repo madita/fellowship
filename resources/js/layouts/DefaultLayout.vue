@@ -95,6 +95,9 @@
                             <div class="mr-1">
                                 <toolbar-notifications/>
                             </div>
+                            <div v-if="sandboxEnabled" class="mr-1">
+                                <sandbox-notifications/>
+                            </div>
                             <div class="mr-1">
                                 <conversations-notification/>
                             </div>
@@ -210,6 +213,7 @@ import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
 import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue'
 import ConversationsNotification from '../components/conversation/ConversationsNotification.vue'
+import SandboxNotifications from '../components/sandbox/SandboxNotifications.vue'
 import ConversationBox from '../components/conversation/ConversationBox.vue'
 import ConversationBoxManager from '../components/conversation/ConversationBoxManager.vue'
 import SidebarUsers from '../components/conversation/SidebarUsers.vue'
@@ -228,7 +232,8 @@ export default {
         ConversationBoxManager,
         SidebarUsers,
         UserSettingsSidebar,
-        ConversationsNotification
+        ConversationsNotification,
+        SandboxNotifications,
     },
     setup() {
         const drawer = ref(true)
@@ -257,6 +262,7 @@ export default {
         const user = computed(() => userStore.user)
         const languageChangeEnabled = computed(() => settingsStore.languageChangeEnabled)
         const maintenanceMode = computed(() => settingsStore.maintenanceMode)
+        const sandboxEnabled = computed(() => settingsStore.sandboxEnabled)
 
         const keys = useMagicKeys()
 
@@ -411,6 +417,7 @@ export default {
             user,
             languageChangeEnabled,
             maintenanceMode,
+            sandboxEnabled,
             signOut,
             routeHome,
             applyThemeSettings
