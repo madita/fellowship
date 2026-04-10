@@ -217,13 +217,30 @@ class WikiController extends Controller
 
     public function store(Request $request)
     {
+        // Authorization check
+        if (!auth()->check()) {
+            abort(401, 'Authentication required to create wiki pages');
+        }
+
+        // Input validation
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'slug' => 'required|string|max:255|unique:wikiables,slug',
+            'parent_id' => 'nullable|array',
+            'categories' => 'nullable|array',
+            'terms' => 'nullable|array',
+        ]);
 
         $parent = $request->get('parent_id');
         $parent_id = $parent['id'] ?? 0;
 
+        // Sanitize content (strip potentially dangerous tags/attributes)
+        $content = strip_tags($validated['content'], '<p><br><strong><em><u><a><ul><ol><li><h1><h2><h3><h4><h5><h6><blockquote><code><pre><img><table><thead><tbody><tr><td><th>');
+
         $page = auth()->user()->pages()->create([
-            'title'        => $request->get('title'),
-            'content'      => $request->get('content'),
+            'title'        => $validated['title'],
+            'content'      => $content,
             'sign_in_only' => 0,
             'published'    => 1]);
 
@@ -264,18 +281,34 @@ class WikiController extends Controller
 
     public function update(Request $request, $slug)
     {
+        // Authorization check
+        if (!auth()->check()) {
+            abort(401, 'Authentication required to update wiki pages');
+        }
 
-        //
-        //        $wiki = $request->all();
-        //
-        //        $model = $wiki['type'];
-        //        $data = $model::where('id', $wiki['id'])->first();
+        $wiki = Wiki::where('slug', '=', $slug)->firstOrFail();
+
+        $model = $wiki->wikiable_type;
+        $data = $model::where('id', $wiki->wikiable_id)->firstOrFail();
+
+        // Check if user is the owner or admin
+        if ($data->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
+            abort(403, 'You do not have permission to edit this wiki page');
+        }
+
+        // Input validation
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'string',
+            'parent_id' => 'nullable|array',
+            'categories' => 'nullable|array',
+            'terms' => 'nullable|array',
+        ]);
+
         $parent = $request->get('parent_id');
         $parent_id = $parent['id'] ?? 0;
 
-        $wiki = Wiki::where('slug', '=', $slug)->first();
-
-        $wiki->update(['title' => $request->get('title'), 'parent_id' => $parent_id]);
+        $wiki->update(['title' => $validated['title'], 'parent_id' => $parent_id]);
 
         $model = $wiki->wikiable_type;
 
@@ -375,8 +408,19 @@ class WikiController extends Controller
 
     public function storeCategory(Request $request)
     {
+        // Authorization check - only admins can create wiki categories
+        if (!auth()->check() || !auth()->user()->isAdmin()) {
+            abort(403, 'Only administrators can create wiki categories');
+        }
 
-        $term = Term::firstOrCreate(['title' => $request->get('term')]);
+        // Input validation
+        $validated = $request->validate([
+            'term' => 'required|string|max:255',
+            'content' => 'nullable|string',
+            'parent' => 'nullable|array',
+        ]);
+
+        $term = Term::firstOrCreate(['title' => $validated['term']]);
 
         $taxonomy = Taxonomy::firstOrNew(['taxonomy' => 'wiki', 'term_id' => $term->id]);
         $parent = $request->get('parent');
@@ -395,9 +439,22 @@ class WikiController extends Controller
 
     public function updateCategory(Request $request, $slug)
     {
+        // Authorization check - only admins can update wiki categories
+        if (!auth()->check() || !auth()->user()->isAdmin()) {
+            abort(403, 'Only administrators can update wiki categories');
+        }
 
-        $termNew = $request->get('category');
-        $termOld = $request->get('old');
+        // Input validation
+        $validated = $request->validate([
+            'category' => 'required|array',
+            'old' => 'required|array',
+            'parent' => 'nullable|array',
+            'term' => 'nullable|string',
+            'content' => 'nullable|string',
+        ]);
+
+        $termNew = $validated['category'];
+        $termOld = $validated['old'];
         $parent = $request->get('parent');
         $title = $request->get('term');
 
@@ -422,5 +479,32 @@ class WikiController extends Controller
         $taxonomy->update();
 
         return response()->json(['message' => __('messages.wiki.category_updated'), 'slugchange' => $term->title != $termOld['term']['title'], 'term'=> $term, 'taxonomy' => $taxonomy]);
+    }
+
+    /**
+     * Delete a wiki page.
+     */
+    public function destroy($slug)
+    {
+        // Authorization check
+        if (!auth()->check()) {
+            abort(401, 'Authentication required to delete wiki pages');
+        }
+
+        $wiki = Wiki::where('slug', '=', $slug)->firstOrFail();
+
+        $model = $wiki->wikiable_type;
+        $data = $model::where('id', $wiki->wikiable_id)->firstOrFail();
+
+        // Check if user is the owner or admin
+        if ($data->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
+            abort(403, 'You do not have permission to delete this wiki page');
+        }
+
+        // Delete the wiki and associated page
+        $data->delete();
+        $wiki->delete();
+
+        return response()->json(['message' => __('messages.wiki.deleted')]);
     }
 }

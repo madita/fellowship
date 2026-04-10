@@ -12,12 +12,26 @@ class PageController extends DataTableController
 
     public function builder()
     {
-        return Page::query();
+        $query = Page::query();
+
+        // Filter out pages that have a wiki entry
+        if (request()->boolean('exclude_wiki')) {
+            $query->whereDoesntHave('wikiable');
+        }
+
+        return $query;
     }
 
     public function store(Request $request)
     {
-        $page = auth()->user()->pages()->create($request->only($this->getUpdatableColumns()));
+        //        dd($request);
+
+        $data = $request->only($this->getUpdatableColumns());
+        $data['published'] = $data['published'] === null ? 0 : 1;
+        $data['sign_in_only'] = $data['sign_in_only'] === null ? 0 : 1;
+
+
+        $page = auth()->user()->pages()->create($data);
 
         if ($request->get('parent')) {
             $parent = $request->get('parent');
@@ -81,6 +95,13 @@ class PageController extends DataTableController
             'content'      => 'wysiwyg',
             'published'    => 'checkbox',
             'sign_in_only' => 'checkbox', ];
+    }
+
+    public function getToggleFilters()
+    {
+        return [
+            ['key' => 'exclude_wiki', 'label' => 'Exclude Wiki Pages', 'icon' => 'mdi-book-remove-outline'],
+        ];
     }
 
     public function getDisplayableColumns()
