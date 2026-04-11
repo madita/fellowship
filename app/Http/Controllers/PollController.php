@@ -11,6 +11,8 @@ use Illuminate\Validation\Rule;
 
 class PollController extends Controller
 {
+    protected const ALLOWED_POLLABLE_TYPES = [
+        'page' => \App\Models\Page::class,
     /**
      * Allowed pollable model types.
      * Add new pollable models here as they're created.
@@ -29,12 +31,16 @@ class PollController extends Controller
 
         // Filter by pollable type and ID if provided
         if ($request->has('pollable_type') && $request->has('pollable_id')) {
+            $pollableType = self::ALLOWED_POLLABLE_TYPES[$request->pollable_type] ?? null;
+            if (!$pollableType) {
             // Validate pollable_type is in allowed list
             if (!in_array($request->pollable_type, $this->allowedPollableTypes)) {
                 return response()->json([
                     'message' => 'Invalid pollable type',
                 ], 422);
             }
+            $query->where('pollable_type', $pollableType)
+                ->where('pollable_id', (int) $request->pollable_id);
 
             $query->where('pollable_type', $request->pollable_type)
                 ->where('pollable_id', $request->pollable_id);
@@ -68,6 +74,22 @@ class PollController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'pollable_type' => ['required', 'string', Rule::in(array_keys(self::ALLOWED_POLLABLE_TYPES))],
+            'pollable_id' => 'required|integer',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string|max:5000',
+            'type' => ['required', Rule::in(['single', 'multiple'])],
+            'anonymous' => 'boolean',
+            'closes_at' => 'nullable|date|after:now',
+            'options' => 'required|array|min:2|max:50',
+            'options.*.option_text' => 'required|string|max:255',
+        ]);
+
+        $pollableClass = self::ALLOWED_POLLABLE_TYPES[$validated['pollable_type']];
+
+        if (!$pollableClass::where('id', $validated['pollable_id'])->exists()) {
+            return response()->json([
+                'message' => 'The specified pollable entity does not exist',
             'pollable_type' => ['required', 'string', Rule::in($this->allowedPollableTypes)],
             'pollable_id' => 'required|integer',
             'title' => 'required|string|max:255',
@@ -91,7 +113,7 @@ class PollController extends Controller
 
         try {
             $poll = Poll::create([
-                'pollable_type' => $validated['pollable_type'],
+                'pollable_type' => $pollableClass,
                 'pollable_id' => $validated['pollable_id'],
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
@@ -118,6 +140,9 @@ class PollController extends Controller
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Failed to create poll', ['error' => $e->getMessage()]);
+            return response()->json([
+                'message' => 'Failed to create poll',
             Log::error('Failed to create poll', [
                 'user_id' => $request->user()->id,
                 'error' => $e->getMessage(),
@@ -146,6 +171,11 @@ class PollController extends Controller
 
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
+            'description' => 'nullable|string|max:5000',
+            'type' => ['sometimes', Rule::in(['single', 'multiple'])],
+            'anonymous' => 'sometimes|boolean',
+            'closes_at' => 'nullable|date|after:now',
+            'options' => 'sometimes|array|min:2|max:50',
             'description' => 'nullable|string|max:1000',
             'type' => ['sometimes', Rule::in(['single', 'multiple'])],
             'anonymous' => 'sometimes|boolean',
@@ -179,6 +209,9 @@ class PollController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Failed to update poll', ['poll_id' => $poll->id, 'error' => $e->getMessage()]);
+            return response()->json([
+                'message' => 'Failed to update poll',
             Log::error('Failed to update poll', [
                 'poll_id' => $poll->id,
                 'user_id' => $request->user()->id,

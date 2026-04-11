@@ -520,9 +520,9 @@ class Taxonomy extends Model implements TranslatableContract
         if (count($categories) > 0) {
             foreach ($categories as $category) {
                 if (is_string($category)) {
-                    $term = Term::firstOrCreate(['title' => $category]);
+                    $term = Term::firstOrCreateByTitle($category);
                 } else {
-                    $term = Term::firstOrCreate(['title' => $category['title']]);
+                    $term = Term::firstOrCreateByTitle($category['title']);
                     $term->color = $category['color'];
                 }
 

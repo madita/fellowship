@@ -40,6 +40,10 @@ class CreateUsersTable extends Migration
      */
     public function down()
     {
+        // Drop tables with foreign keys referencing users
+        Schema::dropIfExists('poll_votes');
+        Schema::dropIfExists('poll_options');
+        Schema::dropIfExists('polls');
         Schema::dropIfExists('users');
     }
 }

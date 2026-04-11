@@ -249,10 +249,6 @@ class EventController extends Controller
                     $answers[$answer->key] = $event->answer($answer->key)->get(['username']);
                 }
             }
-        foreach ($options->answers as $value => $answer) {
-            $answers[$answer->key] = $event->answer($answer->key)->get(['username']);
-
-//            $approved[$value] = $event->;
         }
 
         $data = [

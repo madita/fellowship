@@ -224,7 +224,7 @@ class ForumController extends Controller
             $parentTaxonomyId = $parent->id;
         }
 
-        $term = Term::firstOrCreate(['title' => $validated['name']]);
+        $term = Term::firstOrCreateByTitle($validated['name']);
 
         $taxonomy = Taxonomy::create([
             'term_id'    => $term->id,

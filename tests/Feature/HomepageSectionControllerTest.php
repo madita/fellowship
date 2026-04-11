@@ -118,9 +118,11 @@ class HomepageSectionControllerTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('sections', [
-            'title'     => 'New Section',
             'layout'    => '2-col',
             'anchor_id' => 'new-section',
+        ]);
+        $this->assertDatabaseHas('section_translations', [
+            'title' => 'New Section',
         ]);
     }
 
@@ -214,9 +216,12 @@ class HomepageSectionControllerTest extends TestCase
 
         $this->assertDatabaseHas('sections', [
             'id'      => $section->id,
-            'title'   => 'Updated Title',
             'layout'  => '3-col',
             'enabled' => false,
+        ]);
+        $this->assertDatabaseHas('section_translations', [
+            'section_id' => $section->id,
+            'title'      => 'Updated Title',
         ]);
     }
 

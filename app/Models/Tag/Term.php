@@ -49,6 +49,15 @@ class Term extends Model implements TranslatableContract
         $this->table = 'terms';
     }
 
+    /**
+     * Find a term by translated title, or create one.
+     */
+    public static function firstOrCreateByTitle(string $title): static
+    {
+        return static::whereTranslation('title', $title)->first()
+            ?? static::create(['title' => $title]);
+    }
+
     /** @inheritdoc */
     public function sluggable(): array
     {

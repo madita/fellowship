@@ -222,7 +222,7 @@ class SandboxSaveStateTest extends TestCase
 
     public function test_max_sandboxes_limit_enforced()
     {
-        $role = Role::findOrCreate('user', 'web');
+        $role = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'api'], ['display_name' => 'User']);
         $this->owner->assignRole($role);
 
         Setting::set('sandbox_role_limits', json_encode([
@@ -242,7 +242,7 @@ class SandboxSaveStateTest extends TestCase
 
     public function test_max_sandboxes_zero_means_unlimited()
     {
-        $role = Role::findOrCreate('user', 'web');
+        $role = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'api'], ['display_name' => 'User']);
         $this->owner->assignRole($role);
 
         Setting::set('sandbox_role_limits', json_encode([
@@ -263,7 +263,7 @@ class SandboxSaveStateTest extends TestCase
 
     public function test_max_versions_limit_enforced()
     {
-        $role = Role::findOrCreate('user', 'web');
+        $role = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'api'], ['display_name' => 'User']);
         $this->owner->assignRole($role);
 
         Setting::set('sandbox_role_limits', json_encode([
@@ -288,7 +288,7 @@ class SandboxSaveStateTest extends TestCase
 
     public function test_max_collaborators_limit_enforced()
     {
-        $role = Role::findOrCreate('user', 'web');
+        $role = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'api'], ['display_name' => 'User']);
         $this->owner->assignRole($role);
 
         Setting::set('sandbox_role_limits', json_encode([
@@ -316,8 +316,8 @@ class SandboxSaveStateTest extends TestCase
 
     public function test_most_permissive_role_wins()
     {
-        $userRole = Role::findOrCreate('user', 'web');
-        $adminRole = Role::findOrCreate('admin', 'web');
+        $userRole = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'api'], ['display_name' => 'User']);
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'api'], ['display_name' => 'Admin']);
         $this->owner->assignRole([$userRole, $adminRole]);
 
         Setting::set('sandbox_role_limits', json_encode([
