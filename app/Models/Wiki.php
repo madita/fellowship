@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Approvable;
+use App\Models\Concerns\HasTickets;
 use App\Traits\HasCache;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
@@ -13,6 +15,8 @@ class Wiki extends Model implements TranslatableContract
     use Sluggable;
     use HasCache;
     use Translatable;
+    use HasTickets;
+    use Approvable;
 
     protected $table = 'wikiables';
     protected $cacheTag = 'wikiables';
@@ -29,6 +33,29 @@ class Wiki extends Model implements TranslatableContract
     protected $fillable = [
         'slug', 'status', 'parent_id',
     ];
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($wiki) {
+            // If creator has an auto-approve role, approve immediately (skip ticket)
+            if ($wiki->shouldAutoApprove()) {
+                $wiki->approve(auth()->user());
+                return;
+            }
+
+            // Otherwise create approval ticket as before
+            $wiki->autoCreateTicket('wiki_approval', [
+                'title' => "New Wiki Page: {$wiki->title}",
+                'description' => "A new wiki page has been created and needs review.",
+                'priority' => 'normal',
+            ]);
+        });
+    }
 
     public function sluggable(): array
     {

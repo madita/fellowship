@@ -119,9 +119,7 @@ abstract class DataTableController extends Controller
         try {
             //if model has appended attributes and append attributes  not in displayable colimns...forget them
             $forget = array_diff($this->getAppends(), $this->getDisplayableColumns());
-//            dd($request);
             $pagination = (int) $request->get('itemsPerPage') <= 0 ? (int) $request->get('itemsLength') : (int) $request->get('itemsPerPage');
-//            dd((int)$request->get('itemsLength'));
 
             if ($pagination === 0) {
                 return $builder->orderBy('id', 'asc')->get()->makeHidden($forget);
@@ -151,6 +149,7 @@ abstract class DataTableController extends Controller
                 'column_fields' => $this->getCustomInputFields(),
                 'json_fields'   => $this->getCustomJsonFields(),
                 'filter_fields' => $this->getFilterFields(),
+                'toggle_filters' => $this->getToggleFilters(),
                 'allow'         => [
                     'hasForm'  => $this->hasForm,
                     'creation' => $this->allowCreation,
@@ -236,6 +235,11 @@ abstract class DataTableController extends Controller
     }
 
     public function getFilterFields()
+    {
+        return [];
+    }
+
+    public function getToggleFilters()
     {
         return [];
     }

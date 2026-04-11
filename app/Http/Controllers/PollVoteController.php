@@ -21,7 +21,7 @@ class PollVoteController extends Controller
         }
 
         $validated = $request->validate([
-            'option_ids' => 'required|array|min:1|max:50',
+            'option_ids' => 'required|array|min:1',
             'option_ids.*' => 'integer|exists:poll_options,id',
         ]);
 
@@ -31,7 +31,7 @@ class PollVoteController extends Controller
         $validOptions = $poll->options()->whereIn('id', $validated['option_ids'])->pluck('id')->toArray();
         if (count($validOptions) !== count($validated['option_ids'])) {
             return response()->json([
-                'message' => 'Invalid option IDs',
+                'message' => 'Invalid option IDs - options must belong to this poll',
             ], 422);
         }
 
@@ -76,18 +76,23 @@ class PollVoteController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to record vote', ['poll_id' => $poll->id, 'error' => $e->getMessage()]);
+            Log::error('Failed to record vote', [
+                'poll_id' => $poll->id,
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
             return response()->json([
-                'message' => 'Failed to record vote',
+                'message' => 'Failed to record vote. Please try again.',
             ], 500);
         }
     }
 
     public function unvote(Request $request, Poll $poll): JsonResponse
     {
+        // Check if poll is still open for unvoting
         if (!$poll->is_open) {
             return response()->json([
-                'message' => 'This poll is closed',
+                'message' => 'Cannot remove vote from a closed poll',
             ], 422);
         }
 

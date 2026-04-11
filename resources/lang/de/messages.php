@@ -120,6 +120,25 @@ return [
         'marked_read' => 'Benachrichtigung wurde als gelesen markiert.',
     ],
 
+    // Sandbox (Kollaborativer Editor)
+    'sandbox' => [
+        'created'              => 'Sandbox erfolgreich erstellt',
+        'updated'              => 'Sandbox erfolgreich aktualisiert',
+        'deleted'              => 'Sandbox erfolgreich gelöscht',
+        'saved'                => 'Änderungen gespeichert',
+        'unauthorized'         => 'Du hast keine Berechtigung, auf diese Sandbox zuzugreifen',
+        'collaborator_added'   => 'Mitarbeiter erfolgreich hinzugefügt',
+        'collaborator_removed' => 'Mitarbeiter erfolgreich entfernt',
+        'not_a_collaborator'   => 'Dieser Benutzer ist kein Mitarbeiter dieser Sandbox',
+        'cannot_add_owner'     => 'Eigentümer kann nicht als Mitarbeiter hinzugefügt werden',
+        'no_invite'            => 'Keine ausstehende Einladung gefunden',
+        'invite_accepted'      => 'Einladung angenommen',
+        'version_restored'     => 'Version erfolgreich wiederhergestellt',
+        'limit_reached'        => 'Du hast dein Sandbox-Limit (:limit) erreicht. Bitte lösche zuerst eine bestehende Sandbox.',
+        'collaborator_limit_reached' => 'Diese Sandbox hat das Mitarbeiter-Limit (:limit) erreicht.',
+        'version_limit_reached' => 'Diese Sandbox hat das Versions-Limit (:limit) erreicht. Bitte lösche zuerst ältere Versionen.',
+    ],
+
     // Wiki
     'wiki' => [
         'created'          => 'Wiki-Seite erfolgreich erstellt',
@@ -209,6 +228,8 @@ return [
     // Events
     'events' => [
         'created'              => 'Event erstellt',
+        'deleted'              => 'Event erfolgreich gelöscht',
+        'unauthorized'         => 'Nicht autorisiert. Sie haben keine Berechtigung, dieses Event zu ändern.',
         'unauthorized_approve' => 'Nicht autorisiert. Nur Event-Besitzer können Gäste genehmigen.',
         'guest_not_found'      => 'Gast nicht gefunden',
         'guest_updated'        => 'Gästegenehmigung erfolgreich aktualisiert',
@@ -220,6 +241,7 @@ return [
         'invalid_foreign_key'  => 'Ungültiges Fremdschlüsselfeld',
         'model_not_found'      => 'Zugehöriges Modell nicht gefunden',
         'invalid_model_type'   => 'Ungültiger Modelltyp.',
+        'item_not_found'       => 'Element nicht gefunden.',
         'fetch_error'          => 'Fehler beim Abrufen der Elemente: :error',
         'item_related'         => 'Element verknüpft',
         'no_data'              => 'Keine Daten gefunden',
