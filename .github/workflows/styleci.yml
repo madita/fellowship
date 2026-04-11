@@ -1,0 +1,63 @@
+name: StyleCI Code Style
+
+on:
+  pull_request:
+    paths:
+      - '**.php'
+      - '.styleci.yml'
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - '**.php'
+      - '.styleci.yml'
+
+jobs:
+  style:
+    runs-on: ubuntu-latest
+    name: Check Code Style
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          tools: composer:v2
+          coverage: none
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install StyleCI CLI
+        run: |
+          composer global require styleci/cli
+          echo "$HOME/.composer/vendor/bin" >> $GITHUB_PATH
+
+      - name: Run StyleCI Analysis
+        run: styleci analyse --verbose
+
+      - name: Comment on PR (if issues found)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ **StyleCI found code style issues!**\n\nRun `styleci fix` locally to auto-fix them, or check the Actions log for details.'
+            })
