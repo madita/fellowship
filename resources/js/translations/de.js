@@ -1283,6 +1283,7 @@ export default {
             'live': 'Live',
             'multi': 'Multi',
         },
+        'viewDetailedAttendeeList': 'Detaillierte Teilnehmerliste anzeigen',
     },
     'gallery': {
         'title': 'Galerie',

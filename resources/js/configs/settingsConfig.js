@@ -113,6 +113,9 @@ export const settingsCategories = [
         color: 'deep-purple',
         settings: [
             { id: 'auto-approval', title: 'Content Auto-Approval', description: 'Configure role-based automatic content approval', icon: 'mdi-shield-check', component: 'AutoApprovalPage' },
+        ]
+    },
+    {
         id: 'sandbox',
         title: 'Sandbox',
         description: 'Collaborative sandbox and Yjs WebSocket settings',

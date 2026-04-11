@@ -204,6 +204,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::resource('polls', 'App\Http\Controllers\PollController');
     Route::post('/polls/{poll}/vote', 'App\Http\Controllers\PollVoteController@vote');
     Route::delete('/polls/{poll}/vote', 'App\Http\Controllers\PollVoteController@unvote');
+});
+
 // Collaborative Sandbox
 Route::prefix('sandbox')->group(function () {
     // Status endpoints are exempt from sandbox.enabled check (needed by admin settings)

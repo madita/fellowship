@@ -75,7 +75,7 @@
         </div>
 
         <div v-else class="text-caption text-medium-emphasis">
-            {{ $t('footer.social.noLinksConfigured') }}
+            {{ $t('settings.footer.social.noLinksConfigured') }}
         </div>
     </div>
 </template>
