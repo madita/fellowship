@@ -17,13 +17,11 @@ class EventTypeController extends DataTableController
 
     public function store(Request $request)
     {
-//                dd($request);
         $eventType = EventType::create($request->only($this->getUpdatableColumns()));
     }
 
     public function update($id, Request $request)
     {
-        //            dd($id, $request);
         $event = EventType::find($id);
         $event->update($request->only($this->getUpdatableColumns()));
 

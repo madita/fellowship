@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\CanHaveTaxonomies;
+use App\Models\Concerns\HasPolls;
 use App\Traits\HasCache;
 use App\Traits\HasTaxonomies;
 use App\Traits\Revisionable;
@@ -24,10 +25,12 @@ class Page extends Model implements HasMedia, CanHaveTaxonomies, TranslatableCon
     use Sluggable;
     use HasCache;
     use Translatable;
+    use HasPolls;
 
     public $translatedAttributes = ['title', 'content'];
 
     protected $fillable = [
+        'title',
         'published',
         'slug',
         'parent_id',

@@ -53,7 +53,6 @@ class PageController extends DataTableController
 
     public function update($id, Request $request)
     {
-        //            dd($id, $request);
         $page = Page::find($id);
         $page->update($request->only($this->getUpdatableColumns()));
 
