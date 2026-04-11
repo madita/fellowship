@@ -30,6 +30,7 @@ class Page extends Model implements HasMedia, CanHaveTaxonomies, TranslatableCon
     public $translatedAttributes = ['title', 'content'];
 
     protected $fillable = [
+        'title',
         'published',
         'slug',
         'parent_id',

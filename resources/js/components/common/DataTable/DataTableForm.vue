@@ -227,6 +227,10 @@ watch(() => props.editMode, (newEditMode) => {
 watch(() => props.isDrawerOpen, (isOpen) => {
     if (isOpen) {
         resetItem();
+        // Auto-enable edit mode for new items (no id)
+        if (!item.value.id) {
+            localEditMode.value = true;
+        }
     }
 });
 

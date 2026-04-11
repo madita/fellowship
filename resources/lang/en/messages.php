@@ -60,6 +60,8 @@ return [
     // Events
     'events' => [
         'created'              => 'Event created',
+        'deleted'              => 'Event deleted successfully',
+        'unauthorized'         => 'Unauthorized. You do not have permission to modify this event.',
         'unauthorized_approve' => 'Unauthorized. Only event owners can approve guests.',
         'guest_not_found'      => 'Guest not found',
         'guest_updated'        => 'Guest approval updated successfully',
@@ -124,6 +126,7 @@ return [
         'invalid_foreign_key'  => 'Invalid foreign key field',
         'model_not_found'      => 'Related model not found',
         'invalid_model_type'   => 'Invalid model type.',
+        'item_not_found'       => 'Item not found.',
         'fetch_error'          => 'An error occurred while fetching the items: :error',
         'item_related'         => 'Item related',
         'no_data'              => 'No data found',
@@ -160,6 +163,25 @@ return [
         'not_found'   => 'Notification does not exist.',
         'deleted'     => 'Notification was deleted successfully.',
         'marked_read' => 'Notification was marked as read.',
+    ],
+
+    // Sandbox (Collaborative Editor)
+    'sandbox' => [
+        'created'              => 'Sandbox created successfully',
+        'updated'              => 'Sandbox updated successfully',
+        'deleted'              => 'Sandbox deleted successfully',
+        'saved'                => 'Changes saved',
+        'unauthorized'         => 'You do not have permission to access this sandbox',
+        'collaborator_added'   => 'Collaborator added successfully',
+        'collaborator_removed' => 'Collaborator removed successfully',
+        'not_a_collaborator'   => 'This user is not a collaborator on this sandbox',
+        'cannot_add_owner'     => 'Cannot add owner as a collaborator',
+        'no_invite'            => 'No pending invite found',
+        'invite_accepted'      => 'Invitation accepted',
+        'version_restored'     => 'Version restored successfully',
+        'limit_reached'        => 'You have reached your sandbox limit (:limit). Please delete an existing sandbox first.',
+        'collaborator_limit_reached' => 'This sandbox has reached the collaborator limit (:limit).',
+        'version_limit_reached' => 'This sandbox has reached the version limit (:limit). Please delete older versions first.',
     ],
 
     // Wiki
