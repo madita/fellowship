@@ -3,6 +3,9 @@
         <div class="modal-content">
             <h1>{{ $t('imageModal.addImage') }}</h1>
             <header class="tab-header">
+                <button @click="tab = 1" :class="{ active: tab == 1 }">Link</button>
+                <button @click="tab = 0" :class="{ active: tab == 0 }">Upload (Drag 'n' Drop)</button>
+                <button @click="tab = 2" :class="{ active: tab == 2 }">Upload (Simple)</button>
                 <button @click="tab = 1;" :class="{ active: tab == 1 }">{{ $t('imageModal.link') }}</button>
                 <button @click="tab = 0;" :class="{ active: tab == 0 }">
                     {{ $t('imageModal.uploadDragDrop') }}
@@ -19,20 +22,18 @@
                 <input v-model="imageSrc" id="url" />
             </div>
             <div v-if="tab === 2">
+                <label for="up">Really simple input upload:</label>
+                <input type="file" @change="fileChange" id="up" />
                 <label for="up">{{ $t('imageModal.simpleUploadLabel') }}</label>
                 <input type="file" @change="fileChange" id="up" ref="file" />
             </div>
             <div v-if="tab === 0">
-                <vue-dropzone
-                    ref="myVueDropzone"
-                    id="dropzone"
-                    @vdropzone-success="vfileUploaded"
-                    :options="dropzoneOptions"
-                >
-                </vue-dropzone>
+<!--                <vue-dropzone v-bind="dropzoneProps" @vdropzone-success="vfileUploaded"></vue-dropzone>-->
             </div>
 
             <footer class="modal-footer">
+                <button @click="insertImage" class="success" :title="validImage ? '' : 'Image URL needs to be valid'" :disabled="!validImage">Add Image</button>
+                <button @click="closeModal" class="danger">Close modal</button>
                 <button
                     @click="insertImage"
                     class="success"
@@ -48,11 +49,17 @@
 </template>
 
 <script>
-import vue2Dropzone from "vue2-dropzone";
-//import "vue2-dropzone/dist/vue2Dropzone.min.css";
-import axios from "axios";
+import { ref, computed } from 'vue';
+// import { useDropzone } from 'vue3-dropzone';
+import axios from 'axios';
 
 export default {
+    setup(props, { emit }) {
+        const imageSrc = ref('');
+        const show = ref(false);
+        const tab = ref(1);
+
+        const validImage = computed(() => {
     components: {
         vueDropzone: vue2Dropzone
     },
@@ -74,65 +81,75 @@ export default {
         },
         validImage() {
             return (
-                this.imageSrc.match(/unsplash/) !== null ||
-                this.imageSrc.match(/\.(jpeg|jpg|gif|png)$/) != null
+                imageSrc.value.match(/unsplash/) !== null ||
+                imageSrc.value.match(/\.(jpeg|jpg|gif|png)$/) != null
             );
-        }
-    },
-    methods: {
-        showModal(command) {
+        });
+
+        const dropzoneProps = {
+            url: '/api/upload-image',
+            thumbnailWidth: 200,
+            dictDefaultMessage: 'UPLOAD A FILE'
+        };
+
+        const showModal = (command) => {
             // Add the sent command
-            this.command = command;
-            this.show = true;
-        },
-        vfileUploaded(file) {
-            // alert("Your image has been uploaded to the server");
-            // alert("NOTE THIS IS A DUMMY DEMO, THERE IS NO BACKEND");
+            // ... logic to handle command
+            show.value = true;
+        };
 
-            /** Here is where you get your URL/Base64 string or what ever.*/
+        const vfileUploaded = (file) => {
+            // Logic after file upload
+            imageSrc.value = 'https://source.unsplash.com/random/400x100';
+        };
 
-            this.imageSrc = "https://source.unsplash.com/random/400x100";
-        },
-
-        fileChange(e) {
-            const file = this.$refs.file.files[0];
-            const uploadUrl = `https://httpbin.org/post`;
+        const fileChange = (event) => {
+            const file = event.target.files[0];
             let formData = new FormData();
+            formData.append('file', file);
 
-            formData.append("file", this.file);
-
-            console.log("Uploading...");
-
-            axios.post(uploadUrl).then(data => {
-                // Take the URL/Base64 from `data` returned from server
-                alert("Your image has been uploaded to the server");
-                alert("NOTE THIS IS A DUMMY DEMO, THERE IS NO BACKEND");
-
-                this.imageSrc = "https://source.unsplash.com/random/400x100";
-            });
-        },
-        insertImage() {
-            const data = {
-                command: this.command,
-                data: {
-                    src: this.imageSrc
-                    // alt: "YOU CAN ADD ALT",
-                    // title: "YOU CAN ADD TITLE"
+            axios.post('/api/upload-image', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
                 }
+            }).then(response => {
+                imageSrc.value = response.data.path;
+            }).catch(error => {
+                console.error('Upload failed:', error);
+            });
+        };
+
+        const insertImage = () => {
+            const data = {
+                src: imageSrc.value
             };
+            emit('onConfirm', data);
+            closeModal();
+        };
 
-            this.$emit("onConfirm", data);
-            this.closeModal();
-        },
+        const closeModal = () => {
+            show.value = false;
+            imageSrc.value = '';
+            tab.value = 1;
+        };
 
-        closeModal() {
-            this.show = false;
-            this.imageSrc = "";
-            this.tab = 1;
-        }
+        // Export reactive properties and methods
+        return {
+            imageSrc,
+            show,
+            tab,
+            validImage,
+            showModal,
+            vfileUploaded,
+            fileChange,
+            insertImage,
+            closeModal,
+            dropzoneProps
+        };
     }
 };
 </script>
+
 
 <style scoped>
 .modal {
