@@ -31,7 +31,7 @@ class Wiki extends Model implements TranslatableContract
      * @var array
      */
     protected $fillable = [
-        'slug', 'status', 'parent_id',
+        'slug', 'status', 'parent_id', 'wikiable_type', 'wikiable_id',
     ];
 
     /**

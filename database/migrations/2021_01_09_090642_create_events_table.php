@@ -16,9 +16,9 @@ class CreateEventsTable extends Migration
         Schema::create('events', function (Blueprint $table) {
             $table->id();
             $table->integer('user_id')->nullable();
-            $table->string('title');
+            // $table->string('title'); // Moved to event_translations
             $table->string('slug')->unique();
-            $table->longText('description')->nullable();
+            // $table->longText('description')->nullable(); // Moved to event_translations
             $table->string('image')->nullable();
             $table->time('startTime')->nullable();
             $table->time('endTime')->nullable();
@@ -86,6 +86,7 @@ class CreateEventsTable extends Migration
      */
     public function down()
     {
+        Schema::dropIfExists('event_translations');
         Schema::dropIfExists('event_profiles');
         Schema::dropIfExists('event_guests');
         Schema::dropIfExists('event_details');

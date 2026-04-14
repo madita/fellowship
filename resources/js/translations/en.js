@@ -1313,6 +1313,7 @@ export default {
             'live': 'Live',
             'multi': 'Multi',
         },
+        'viewDetailedAttendeeList': 'View detailed attendee list',
     },
     'landing': {
         'hero': {

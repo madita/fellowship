@@ -226,7 +226,7 @@ class WikiController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'slug' => 'required|string|max:255|unique:wikiables,slug',
+            'slug' => 'nullable|string|max:255|unique:wikiables,slug',
             'parent_id' => 'nullable|array',
             'categories' => 'nullable|array',
             'terms' => 'nullable|array',
@@ -270,7 +270,7 @@ class WikiController extends Controller
         }
         $wiki = new Wiki([
             'title'     => $page->title,
-            'slug'      => $request->get('slug'),
+            'slug'      => $request->get('slug') ?: \Illuminate\Support\Str::slug($validated['title']),
             'parent_id' => $parent_id,
         ]);
 
@@ -420,7 +420,7 @@ class WikiController extends Controller
             'parent' => 'nullable|array',
         ]);
 
-        $term = Term::firstOrCreate(['title' => $validated['term']]);
+        $term = Term::firstOrCreateByTitle($validated['term']);
 
         $taxonomy = Taxonomy::firstOrNew(['taxonomy' => 'wiki', 'term_id' => $term->id]);
         $parent = $request->get('parent');

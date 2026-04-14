@@ -2,16 +2,24 @@
 
 namespace App\Models;
 
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
-class FooterSection extends Model
+class FooterSection extends Model implements TranslatableContract
 {
+    use Translatable;
+
     protected $table = 'sections';
+
+    public $translatedAttributes = ['title'];
+
+    public $translationModel = \App\Models\Translations\SectionTranslation::class;
+    public $translationForeignKey = 'section_id';
 
     protected $fillable = [
         'location',
-        'title',
         'layout',
         'enabled',
         'order',
