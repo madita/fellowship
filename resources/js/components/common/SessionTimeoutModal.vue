@@ -8,7 +8,7 @@
     >
         <VCard class="session-timeout-card">
             <VCardTitle class="d-flex align-center ga-3 py-4">
-                <VIcon :icon="mdiClockAlert" size="32" color="warning" />
+                <VIcon icon="mdi-clock-alert" size="32" color="warning" />
                 <span class="text-h5">{{ $t('session.timeout.title') }}</span>
             </VCardTitle>
 
@@ -27,7 +27,7 @@
                     color="primary"
                     variant="elevated"
                     size="large"
-                    :prepend-icon="mdiRefresh"
+                    prepend-icon="mdi-refresh"
                     @click="refreshPage"
                 >
                     {{ $t('session.timeout.refresh') }}
@@ -39,7 +39,6 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { mdiClockAlert, mdiRefresh } from '@mdi/js';
 
 const isVisible = ref(false);
 

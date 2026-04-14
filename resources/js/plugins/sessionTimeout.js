@@ -40,7 +40,7 @@ const isExcludedEndpoint = (url) => {
  */
 const triggerSessionTimeout = () => {
     if (sessionTimeoutTriggered) {
-        log.debug('Session timeout already triggered, skipping');
+        log.log('Session timeout already triggered, skipping');
         return;
     }
 
@@ -56,7 +56,7 @@ const triggerSessionTimeout = () => {
  */
 export const resetSessionTimeoutState = () => {
     sessionTimeoutTriggered = false;
-    log.debug('Session timeout state reset');
+    log.log('Session timeout state reset');
 };
 
 /**
@@ -68,31 +68,10 @@ export const setupSessionTimeoutInterceptor = () => {
         return;
     }
 
-    // Response interceptor
-    window.axios.interceptors.response.use(
-        // Success handler - pass through
-        (response) => response,
-
-        // Error handler
-        (error) => {
-            const status = error.response?.status;
-            const requestUrl = error.config?.url;
-
-            // Check for session expiration status codes
-            if (status === 401 || status === 419) {
-                // Don't trigger for excluded endpoints (login, register, etc.)
-                if (!isExcludedEndpoint(requestUrl)) {
-                    log.warn(`Received ${status} response from ${requestUrl}`);
-                    triggerSessionTimeout();
-                }
-            }
-
-            // Always reject the promise so calling code can handle if needed
-            return Promise.reject(error);
-        }
-    );
-
-    log.debug('Session timeout interceptor installed');
+    // 401/419 handling is owned by middleware401.js (CSRF retry + delayed logout).
+    // This plugin only exposes triggerSessionTimeout for middleware401 to call
+    // after all recovery attempts are exhausted.
+    log.log('Session timeout handler registered');
 };
 
 /**
