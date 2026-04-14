@@ -4,7 +4,7 @@
         persistent
         max-width="450"
         :scrim="true"
-        scrim-opacity="0.7"
+        opacity="0.7"
     >
         <VCard class="session-timeout-card">
             <VCardTitle class="d-flex align-center ga-3 py-4">
