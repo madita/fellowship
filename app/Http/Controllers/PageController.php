@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
+use App\Models\Revision;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,6 @@ class PageController extends Controller
      */
     public function __construct()
     {
-
     }
 
     /**
@@ -23,7 +23,7 @@ class PageController extends Controller
      *
      * @param $slug
      *
-     * @return JsonResponse|\never
+     * @return JsonResponse|never
      */
     public function view($slug)
     {
@@ -41,10 +41,9 @@ class PageController extends Controller
 
         $taxonomies = $page->getCategories('taxonomy')->unique();
 
-        $tax = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use($page)  {
+        $tax = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use ($page) {
             return  [$taxonomy => $page->getCategories($taxonomy)];
         });
-
 
         return response()
             ->json(['page' => $page, 'parents' => $page->parents, 'taxonomies' => $tax]);
@@ -52,7 +51,6 @@ class PageController extends Controller
 
     public function show(Page $page)
     {
-
         //$page = Page::where('slug', '=', $slug)->first();
 //        $pages = Page::all();
 
@@ -61,16 +59,13 @@ class PageController extends Controller
         }
         $terms = $page->getCategories();
 
-
         $taxonomies = $page->taxonomies()
             ->whereIn('term_id', $terms->pluck(['id']))
             ->pluck('taxonomy')->unique();
 
-
-        $taxterms = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use($page)  {
+        $taxterms = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use ($page) {
             return  [$taxonomy => $page->getCategories($taxonomy)->pluck(['title'])];
         });
-
 
 //        if ($page->sign_in_only && !Auth::check())
 //            return redirect('/')->withErrors(config('constants.NA'));
@@ -78,8 +73,6 @@ class PageController extends Controller
         return response()
             ->json(['page' => $page, 'parent'=> $page->parent, 'taxonomies' => $taxonomies, 'terms' => $taxterms]);
     }
-
-
 
 //    public function showWithCategory($taxonomy, $category)
 //    {
@@ -102,9 +95,10 @@ class PageController extends Controller
             return abort(403);
         }
 
-        $history = collect($page->revisions)->map(function (\App\Models\Revision $revision) {
+        $history = collect($page->revisions)->map(function (Revision $revision) {
             $revision['user'] = $revision->executor()->first();
             $revision['diff'] = $revision->getDiff();
+
             return $revision;
         });
 

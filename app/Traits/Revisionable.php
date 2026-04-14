@@ -2,12 +2,13 @@
 
 namespace App\Traits;
 
+use App\Listeners\RevisionListener;
 use App\Models\Revision;
 use App\Presenters\RevisionPresenter;
 use Carbon\Carbon;
 use DateTime;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
-use App\Listeners\RevisionListener;
 use Psy\VarDumper\Presenter;
 
 trait Revisionable
@@ -23,7 +24,7 @@ trait Revisionable
     /**
      * Get record version at given timestamp.
      *
-     * @param \DateTime|string $timestamp DateTime|Carbon object or parsable date string @see strtotime()
+     * @param DateTime|string $timestamp DateTime|Carbon object or parsable date string @see strtotime()
      *
      * @return Revision|RevisionPresenter|null
      */
@@ -48,20 +49,21 @@ trait Revisionable
     {
         /** @var Revision $revision */
         $revision = $this->revisions();
+
         return $this->wrapRevision($revision->skip($step)->first());
     }
 
     /**
      * Determine if model has history at given timestamp if provided or any at all.
      *
-     * @param \DateTime|string $timestamp DateTime|Carbon object or parsable date string @see strtotime()
+     * @param DateTime|string $timestamp DateTime|Carbon object or parsable date string @see strtotime()
      *
      * @return bool
      */
     public function hasHistory($timestamp = null)
     {
         if ($timestamp) {
-            return (bool)$this->snapshot($timestamp);
+            return (bool) $this->snapshot($timestamp);
         }
 
         return $this->revisions()->exists();
@@ -113,7 +115,7 @@ trait Revisionable
         return array_map(function ($attribute) {
             return ($attribute instanceof DateTime)
                 ? $this->fromDateTime($attribute)
-                : (string)$attribute;
+                : (string) $attribute;
         }, $attributes);
     }
 
@@ -140,7 +142,7 @@ trait Revisionable
      */
     public function getRevisionable()
     {
-        return property_exists($this, 'revisionable') ? (array)$this->revisionable : [];
+        return property_exists($this, 'revisionable') ? (array) $this->revisionable : [];
     }
 
     /**
@@ -151,14 +153,14 @@ trait Revisionable
     public function getNonRevisionable()
     {
         return property_exists($this, 'nonRevisionable')
-            ? (array)$this->nonRevisionable
+            ? (array) $this->nonRevisionable
             : ['created_at', 'updated_at', 'deleted_at'];
     }
 
     /**
      * Model has many Revisions.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function revisions()
     {
@@ -169,7 +171,7 @@ trait Revisionable
     /**
      * Model has one latestRevision.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function latestRevision()
     {
@@ -243,21 +245,22 @@ trait Revisionable
      * Get all updates for a given field.
      *
      * @param string $field
+     *
      * @return Collection
      */
     public function getFieldHistory(string $field): Collection
     {
-        return $this->revisions->map(function ($revision) use ($field) : ?array {
+        return $this->revisions->map(function ($revision) use ($field): ?array {
             if ($revision->old_value($field) == $revision->new_value($field)) {
                 return null;
             }
 
             return [
-                'created_at' => (string)$revision->created_at,
-                'user_id' => $revision->executor->id ?? null,
+                'created_at' => (string) $revision->created_at,
+                'user_id'    => $revision->executor->id ?? null,
                 'user_email' => $revision->executor->email ?? null,
-                'old_value' => $revision->old_value($field),
-                'new_value' => $revision->new_value($field),
+                'old_value'  => $revision->old_value($field),
+                'new_value'  => $revision->new_value($field),
             ];
         })->filter()->values();
     }

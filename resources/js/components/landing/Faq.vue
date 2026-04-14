@@ -2,10 +2,10 @@
   <v-sheet color="transparent">
     <v-container class="py-4 py-lg-10">
       <div class="text-center">
-        <div class="text-overline mb-3">Support</div>
-        <h2 class="text-h3 text-lg-h2">Frequently Asked Questions</h2>
+        <div class="text-overline mb-3">{{ $t('faq.support') }}</div>
+        <h2 class="text-h3 text-lg-h2">{{ $t('faq.title') }}</h2>
         <v-responsive max-width="1200" class="mx-auto">
-          <div class="text-h6 text-lg-h5 mt-4">Lorem ipsum dolor sit amet consectetur adipisicing elit. Natus impedit error labore doloremque fugit! Dolor fugit molestiae vero quos quisquam nobis, eos debitis magni omnis ea incidunt amet voluptate dignissimos!</div>
+          <div class="text-h6 text-lg-h5 mt-4">{{ $t('faq.description') }}</div>
         </v-responsive>
       </div>
       <v-row class="mt-6">

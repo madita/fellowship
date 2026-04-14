@@ -1,38 +1,82 @@
-#!/bin/sh
+#!/bin/bash
+
+# Exit on any error
 set -e
 
 echo "Deploying application ..."
 
-# Enter maintenance mode
-php artisan down || true
+# Put application in maintenance mode
+php artisan down --message="Updating application" --retry=60 || echo "Application already down"
 
-    git config --local user.email "action@github.com"
-    git config --local user.name "GitHub Action"
+# Pull latest changes from git
+echo "Pulling latest changes..."
+git checkout develop
+git pull origin develop
 
-    # Update codebase
-    git checkout develop -f
-    git pull origin develop
+# Install/update composer dependencies
+echo "Installing composer dependencies..."
+composer install --no-dev --optimize-autoloader --no-interaction
 
-    # Install dependencies based on lock file
-    composer install --no-interaction --prefer-dist --optimize-autoloader
-    composer dump-autoload
+# Check if Node.js/npm is available
+if ! command -v npm &> /dev/null; then
+    echo "⚠️  npm not found! Installing Node.js..."
 
-    chmod -R ug+rwx storage bootstrap/cache
+    # Install Node.js using NodeSource repository (Ubuntu/Debian)
+    if command -v apt-get &> /dev/null; then
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+    # Install Node.js using yum (CentOS/RHEL)
+    elif command -v yum &> /dev/null; then
+        curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -
+        sudo yum install -y nodejs
+    else
+        echo "❌ Could not install Node.js automatically. Please install manually."
+        echo "Visit: https://nodejs.org/en/download/"
+        exit 1
+    fi
 
-    # Install dependencies based on lock file
-    npm ci
-    npm run prod
+    echo "✅ Node.js installed: $(node --version)"
+    echo "✅ npm installed: $(npm --version)"
+fi
 
-    # Migrate database
-    php artisan migrate --force
+# Install/update npm dependencies
+echo "Installing npm dependencies..."
+npm ci --only=production
 
-    # Note: If you're using queue workers, this is the place to restart them.
-    # ...
+# Build frontend assets
+echo "Building frontend assets..."
+npm run build
 
-    # Clear cache
-    php artisan optimize
+# Run database migrations
+echo "Running database migrations..."
+php artisan migrate --force
 
-# Exit maintenance mode
+# Clear application cache
+echo "Clearing application cache..."
+php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
+php artisan view:clear
+
+# Cache application configuration
+echo "Caching application configuration..."
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# Set proper permissions
+echo "Setting proper permissions..."
+# Set proper permissions
+echo "Setting proper permissions..."
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || \
+    sudo chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || \
+    echo "⚠️  Failed to change ownership. Please ensure proper permissions manually."
+
+chmod -R 775 storage bootstrap/cache 2>/dev/null || \
+    sudo chmod -R 775 storage bootstrap/cache 2>/dev/null || \
+    echo "⚠️  Failed to change permissions. Please ensure proper permissions manually."
+
+# Bring application back online
 php artisan up
 
-echo "Application deployed!"
+echo "✅ Deployment completed successfully!"

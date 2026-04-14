@@ -17,13 +17,16 @@
 
                 <v-container class="fill-height pa-9">
                     <v-row>
-                        <v-col><span>{{
-                                event.startDate | formatDate('DD.MM.YYYY')
-                            }} at {{ event.startTime }} - {{
-                                event.endDate | formatDate('DD.MM.YYYY')
-                            }} at {{ event.endTime }}</span>
+                        <v-col>
+                            <span>
+                                {{ formatDate(event.startDate) }}
+                                at {{ formatDate(event.startDate, userTimeFormat) }} - {{
+                                    formatDate(event.endDate)
+                                }} at {{ formatDate(event.endDate, userTimeFormat) }}
+                            </span>
 
-                            <h1 class="event-title">{{ event.title }}</h1></v-col>
+                            <h1 class="event-title">{{ event.title }}</h1>
+                        </v-col>
                     </v-row>
                 </v-container>
 
@@ -32,7 +35,7 @@
             <v-container>
                 <div class="calendar-day">
                     <div class="calendar-day-top"></div>
-                    <div class="calendar-day-bottom">{{ event.startDate | formatDate('D') }}</div>
+                    <div class="calendar-day-bottom">{{ formatDate(event.startDate, 'd') }}</div>
                 </div>
 
                 <v-row justify="center">
@@ -40,17 +43,66 @@
                         <div v-html="event.description"></div>
                     </v-col>
                     <v-col cols="4" class="align-content-end">
-                        <v-btn :disabled="getIsGoing('yes')" @click="register('yes')">Yes</v-btn>
-                        <v-btn :disabled="getIsGoing('no')" @click="register('no')">No</v-btn>
-                        <v-btn :disabled="getIsGoing('maybe')" @click="register('maybe')">Maybe</v-btn>
+                        <div>{{ $t('events.areYouComing') }}</div>
+                        <v-btn
+                            color="primary"
+                            class="me-3"
+                            :disabled="getIsGoing('going')"
+                            @click="register('going')"
+                        >
+                            {{ $t('events.yes') }}
+                        </v-btn>
+                        <v-btn
+                            variant="tonal"
+                            color="primary"
+                            class="me-3"
+                            :disabled="getIsGoing('notgoing')"
+                            @click="register('notgoing')"
+                        >
+                            {{ $t('events.no') }}
+                        </v-btn>
+                        <v-btn
+                            variant="outlined"
+                            color="secondary"
+                            :disabled="getIsGoing('maybe')"
+                            @click="register('maybe')"
+                        >
+                            {{ $t('events.maybe') }}
+                        </v-btn>
 
-                    <v-list-subheader>Is Going ({{ eventData.going.length }})</v-list-subheader>
-                    <user-avatar v-for="user in eventData.going" :key="`going-${user.id}`" :user="user"></user-avatar>
-                    <v-list-subheader>Maybe Going ({{ eventData.maybe.length }})</v-list-subheader>
-                    <user-avatar v-for="user in eventData.maybe" :key="`maybe-${user.id}`" :user="user"></user-avatar>
-                    <v-list-subheader>Not Going ({{ eventData.notgoing.length }})</v-list-subheader>
-                    <user-avatar v-for="user in eventData.notgoing" :key="`notgoing-${user.id}`" :user="user"></user-avatar>
+                        <v-list-subheader>{{ $t('events.isGoing') }} ({{ eventData?.going?.length || 0 }})</v-list-subheader>
+                        <user-avatar
+                            v-for="user in eventData?.going || []"
+                            :key="`going-${user.id}`"
+                            :user="user"
+                        />
 
+                        <v-list-subheader>{{ $t('events.maybeGoing') }} ({{ eventData?.maybe?.length || 0 }})</v-list-subheader>
+                        <user-avatar
+                            v-for="user in eventData?.maybe || []"
+                            :key="`maybe-${user.id}`"
+                            :user="user"
+                        />
+
+                        <v-list-subheader>{{ $t('events.notGoing') }} ({{ eventData?.notgoing?.length || 0 }})</v-list-subheader>
+                        <user-avatar
+                            v-for="user in eventData?.notgoing || []"
+                            :key="`notgoing-${user.id}`"
+                            :user="user"
+                        />
+
+                        <!-- Success Message -->
+                        <v-alert
+                            v-if="message"
+                            type="success"
+                            variant="tonal"
+                            density="compact"
+                            class="mt-4"
+                            closable
+                            @click:close="message = ''"
+                        >
+                            {{ message }}
+                        </v-alert>
                     </v-col>
                 </v-row>
             </v-container>
@@ -59,70 +111,127 @@
     </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
+import { useDateFormat } from '@/plugins/formatDate.js' // Adjust path as needed
+import { useUserStore } from '@/store/userStore.js'
+import { useSettingsStore } from '@/store/settingStore.js'
+//import EventDatePicker from './EventDatePicker.vue'
+import UserAvatar from '../common/UserAvatar.vue'
+import axios from 'axios'
 
-import EventDatePicker from "./EventDatePicker";
-import UserAvatar from "../common/UserAvatar";
+const { t } = useI18n()
 
-export default {
-    components: {
-        EventDatePicker,
-        UserAvatar
-    },
-    data() {
-        return {
-            isLoading: true,
-            eventData: null,
-            event: {title: "", description: ""},
-            endpoint: '/api/events',
-            id: null,
-            message: ""
-        }
-    },
-    methods: {
-        getEvent() {
-            this.isLoading = true
-            return axios.get(`/api/events/${this.id}`).then((response) => {
-                this.eventData = response.data.data;
-                this.event = response.data.data.event;
+// Props (if any would be passed to this component)
+const props = defineProps({
+    // Add any props if needed
+})
 
-                this.isLoading = false
-            });
-        },
-        register(answer) {
-            axios.get(`${this.endpoint}/${this.id}/going/${answer}`).then((response) => {
-                this.eventData.isGoing.type = answer;
-                this.eventData.going = response.data.going
-                this.eventData.notgoing = response.data.notgoing
-                this.eventData.maybe = response.data.maybe
+// Composables
+const route = useRoute()
+const { formatDate } = useDateFormat()
+const userStore = useUserStore()
+const settingsStore = useSettingsStore()
 
-                this.message = "Answer saved"
-            }).catch((error) => {
-                if (error.response.status === 422) {
-                    // this.creating.errors = error.response.data
-                    this.editing.errors = error.response.data
-                }
-            })
-        },
-        getIsGoing(answer) {
-            if (this.eventData === null) {
-                return false;
-            }
-            return this.eventData.isGoing !== undefined && this.eventData.isGoing.type === answer
-        },
-    },
-    created() {
-        if (this.$route.params.id) {
-            this.id = this.$route.params.id;
-            this.getEvent();
-        }
+// Get user's time format preference (without seconds for display)
+const userTimeFormat = computed(() => {
+    const timeFormat = userStore.user?.time_format ||
+                      settingsStore.appSettings?.time_format ||
+                      'H:i:s';
+    // Remove seconds for cleaner display
+    return timeFormat.replace(':s', '').replace(' s', '');
+})
+
+// Reactive state
+const isLoading = ref(true)
+const eventData = ref(null)
+const event = ref({ title: '', description: '' })
+const endpoint = '/api/events'
+const id = ref(null)
+const message = ref('')
+
+// Methods
+const getEvent = async () => {
+    isLoading.value = true
+    try {
+        const response = await axios.get(`/api/events/${id.value}`)
+        eventData.value = response.data
+        event.value = response.data.event
+        isLoading.value = false
+    } catch (error) {
+        console.error('Error fetching event:', error)
+        isLoading.value = false
     }
 }
+
+const register = async (answer) => {
+    try {
+        const response = await axios.get(`${endpoint}/${id.value}/going/${answer}`)
+
+        // Update the registration status
+        if (eventData.value.isGoing) {
+            eventData.value.isGoing.type = answer
+        } else {
+            eventData.value.isGoing = { type: answer }
+        }
+
+        // Update the participant lists
+        eventData.value.going = response.data.going
+        eventData.value.notgoing = response.data.notgoing
+        eventData.value.maybe = response.data.maybe
+
+        message.value = t('events.answerSaved')
+
+        // Clear message after 3 seconds
+        setTimeout(() => {
+            message.value = ''
+        }, 3000)
+
+    } catch (error) {
+        if (error.response?.status === 422) {
+            console.error('Validation errors:', error.response.data)
+            // Handle validation errors as needed
+        }
+        console.error('Error registering:', error)
+    }
+}
+
+const getIsGoing = (answer) => {
+    if (eventData.value === null) {
+        return false
+    }
+    return eventData.value.isGoing !== undefined && eventData.value.isGoing.type === answer
+}
+
+// Locale change handler
+function onLocaleChange() {
+    if (id.value) {
+        getEvent()
+    }
+}
+
+// Lifecycle
+onMounted(() => {
+    if (route.params.id) {
+        id.value = route.params.id
+        getEvent()
+    }
+
+    // Listen for locale changes to refetch content in new language
+    window.addEventListener('locale-changed', onLocaleChange)
+})
+
+onUnmounted(() => {
+    // Clean up locale change listener
+    window.removeEventListener('locale-changed', onLocaleChange)
+})
 </script>
 
-<style>
+<style scoped>
 .event-show {
-
+    /* Add any specific styles if needed */
 }
 
 .event-hero {
@@ -163,8 +272,43 @@ export default {
     border-right: 1px solid #a2a2a2;
     border-bottom: 1px solid #a2a2a2;
     text-align: center;
+    display: flex;
+    align-items: center;
     justify-content: center;
     font-size: 3rem;
     font-weight: 600;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .event-hero h1 {
+        font-size: 3rem !important;
+    }
+
+    .calendar-day {
+        width: 60px;
+        height: 60px;
+    }
+
+    .calendar-day-top {
+        width: 60px;
+        height: 15px;
+    }
+
+    .calendar-day-bottom {
+        width: 60px;
+        height: 45px;
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .event-hero {
+        height: 40vh !important;
+    }
+
+    .event-hero h1 {
+        font-size: 2rem !important;
+    }
 }
 </style>

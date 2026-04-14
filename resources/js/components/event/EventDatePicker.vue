@@ -1,183 +1,156 @@
 <template>
-    <div>
-<!--        <v-row-->
-<!--            justify="space-around"-->
-<!--            align="center"-->
-<!--        >-->
+    <v-container>
         <v-row>
-            <!--            <v-col>-->
-            <v-date-picker
-                first-day-of-week="1"
-                v-model="dates"
-                :locale="currentLocale"
-                @change="changeDates"
-                range
-            ></v-date-picker>
-        </v-row>
-            <v-row>
+            <!-- Date Picker -->
 
-            <v-text-field
-                v-model="dateRangeText"
-                label="Date range"
-                prepend-icon="mdi-calendar"
-                readonly
-            ></v-text-field>
-            <!--                <input v-for="date in dates" name="dates[]" type="hidden" :value="date">-->
+                <VueDatePicker
+                    :locale="userLocale"
+                    v-model="dateValue"
+                    :enable-time-picker="false"
+                    range
+                    :timezone="userTimezone"
+                    inline
+                    auto-apply
+                    :preview-format="format"
+                    :format="dateFormat"
+                    @update:modelValue="updateDate"
+                />
 
-            <!--            </v-col>-->
 
-            <!--            <v-col>-->
-                </v-row><v-row>
+            <!-- Start Time Picker -->
 
-            <v-menu
-                ref="startTimeMenu"
-                v-model="startTimeMenu"
-                :close-on-content-click="false"
-                :nudge-right="40"
-                :return-value.sync="startTime"
-                transition="scale-transition"
-                offset-y
-                max-width="290px"
-                min-width="290px"
-            >
-                <template v-slot:activator="{ probs }">
-                    <v-text-field
-                        v-model="startTime"
-                        label="Starttime"
-                        prepend-icon="mdi-clock-time-four-outline"
-                        readonly
-                        v-bind="probs"
-                    ></v-text-field>
-                </template>
-                <v-time-picker
-                    v-if="startTimeMenu"
-                    locale="currentLocale"
-                    format="24hr"
+                <VueDatePicker
+                    :locale="userLocale"
                     v-model="startTime"
-                    full-width
-                    @click:minute="$refs.startTimeMenu.save(startTime)"
-                    @change="changeStartTime"
-                ></v-time-picker>
-            </v-menu>
-            <!--                <input name="startTime" type="hidden" :value="startTime">-->
+                    :time-picker="true"
+                    :is-24="is24HourFormat"
+                    :timezone="userTimezone"
+                    :enable-date-picker="false"
+                    @update:modelValue="updateStartTime"
+                />
 
-    </v-row>
-        <v-row>
-            <v-menu
-                ref="endTimeMenu"
-                v-model="endTimeMenu"
-                :close-on-content-click="false"
-                :nudge-right="40"
-                :return-value.sync="endTime"
-                transition="scale-transition"
-                offset-y
-                max-width="290px"
-                min-width="290px"
-            >
-                <template v-slot:activator="{ probs }">
-                    <v-text-field
-                        v-model="endTime"
-                        label="Endtime"
-                        prepend-icon="mdi-clock-time-four-outline"
-                        readonly
-                        v-bind="probs"
-                    ></v-text-field>
-                </template>
-                <v-time-picker
-                    v-if="endTimeMenu"
-                    locale="currentLocale"
-                    format="24hr"
+
+            <!-- End Time Picker -->
+
+                <VueDatePicker
+                    :locale="userLocale"
                     v-model="endTime"
-                    full-width
-                    @click:minute="$refs.endTimeMenu.save(endTime)"
-                    @change="changeEndTime"
-                ></v-time-picker>
-            </v-menu>
-            <!--                <input name="endTime" type="hidden" :value="endTime">-->
+                    :time-picker="true"
+                    :is-24="is24HourFormat"
+                    :timezone="userTimezone"
+                    :enable-date-picker="false"
+                    @update:modelValue="updateEndTime"
 
-            <!--            </v-col>-->
-            <!--        </v-row>-->
-            <!--        <v-row>-->
-            <!--            <v-col-->
-            <!--                cols="12"-->
-            <!--                sm="6"-->
-            <!--            >-->
+                />
 
-            <!--                model: {{ dates }}-->
-            <!--            </v-col>-->
         </v-row>
-    </div>
+    </v-container>
 </template>
 
-<script>
-export default {
-    props: {
-        event: {},
-        startDateProp: {
-            type: String,
-            default: ""
-        },
-        endDateProp: {
-            type: String,
-            default: ""
-        },
-        startTimeProp: {
-            type: String,
-            default: null
-        },
-        endTimeProp: {
-            type: String,
-            default: null
-        }
-    },
-    data() {
-        return {
-            startTimeMenu: false,
-            endTimeMenu: false,
-            dates: [],
-            startDate: null,
-            endDate: null,
-            startTime: null,
-            endTime: null,
-        }
-    },
-    computed: {
-        dateRangeText() {
-            return this.dates.join(' ~ ')
-        },
-        currentLocale() {
-            return this.$vuetify.lang.current;
-        },
-    },
-    methods: {
-        changeDates() {
-            let dates = this.dates;
-            this.$emit('change', {dates});
-        },
-        changeStartTime() {
-            let startTime = this.startTime;
-            this.$emit('change', {startTime});
-        },
-        changeEndTime() {
-            let endTime = this.endTime;
-            this.$emit('change', {endTime});
-        }
-    },
-    created() {
-        console.log('testpicker',this.event)
+<script setup>
+import {ref, watch, computed, defineProps, defineEmits} from 'vue';
+import VueDatePicker from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css';
+import { useUserStore } from '@/store/userStore.js';
+import { useSettingsStore } from '@/store/settingStore.js';
 
-        if(this.event !== undefined) {
-            this.startDate = this.event.startDate
-            this.endDate = this.event.endDate
-            this.startTime = this.event.startTime
-            this.endTime = this.event.endTime
-        }
+// Stores
+const userStore = useUserStore();
+const settingsStore = useSettingsStore();
 
+// Define props and emits
+const props = defineProps({
+    modelValue: Object,
+});
 
-        if (this.startDate && this.endDate) {
-            this.dates.push(this.startDate)
-            this.dates.push(this.endDate)
-        }
+const emit = defineEmits(['update:modelValue']);
+
+// Computed user preferences
+const userTimezone = computed(() => {
+    return userStore.user?.timezone || settingsStore.appSettings?.default_timezone || 'UTC';
+});
+
+const userLocale = computed(() => {
+    // Map language codes to locale codes for vue-datepicker
+    const lang = userStore.user?.language || settingsStore.appSettings?.default_language || 'en';
+    const localeMap = {
+        'en': 'en-US',
+        'de': 'de-DE',
+        'es': 'es-ES',
+        'fr': 'fr-FR',
+    };
+    return localeMap[lang] || 'en-US';
+});
+
+const userDateFormat = computed(() => {
+    return userStore.user?.date_format || settingsStore.appSettings?.date_format || 'Y-m-d';
+});
+
+const userTimeFormat = computed(() => {
+    return userStore.user?.time_format || settingsStore.appSettings?.time_format || 'H:i:s';
+});
+
+// Check if 24-hour format
+const is24HourFormat = computed(() => {
+    const timeFormat = userTimeFormat.value;
+    // PHP 'H' is 24-hour, 'h' is 12-hour
+    return timeFormat.includes('H');
+});
+
+// Convert PHP date format to vue-datepicker format
+const dateFormat = computed(() => {
+    const phpFormat = userDateFormat.value;
+    const formatMap = {
+        'Y-m-d': 'yyyy-MM-dd',
+        'd/m/Y': 'dd/MM/yyyy',
+        'm/d/Y': 'MM/dd/yyyy',
+        'd.m.Y': 'dd.MM.yyyy',
+    };
+    return formatMap[phpFormat] || 'yyyy-MM-dd';
+});
+
+// Reactive state
+const dateValue = ref(props.modelValue?.date || null);
+const startTime = ref(props.modelValue?.startTime || null);
+const endTime = ref(props.modelValue?.endTime || null);
+
+const format = (date) => {
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+
+    // Use user's date format preference
+    const phpFormat = userDateFormat.value;
+    if (phpFormat === 'd/m/Y' || phpFormat === 'd.m.Y') {
+        const sep = phpFormat === 'd/m/Y' ? '/' : '.';
+        return `${day}${sep}${month}${sep}${year}`;
+    } else if (phpFormat === 'm/d/Y') {
+        return `${month}/${day}/${year}`;
     }
+    return `${year}-${month}-${day}`;
 }
+
+// Methods to handle updates
+const updateDate = (newDate) => {
+    emitUpdate({date: newDate, startTime: startTime.value, endTime: endTime.value});
+};
+
+const updateStartTime = (newStartTime) => {
+    emitUpdate({date: dateValue.value, startTime: newStartTime, endTime: endTime.value});
+};
+
+const updateEndTime = (newEndTime) => {
+    emitUpdate({date: dateValue.value, startTime: startTime.value, endTime: newEndTime});
+};
+
+const emitUpdate = (value) => {
+    emit('update:modelValue', value);
+};
+
+// Watch for external updates
+watch(() => props.modelValue, (newModelValue) => {
+    dateValue.value = newModelValue?.date || null;
+    startTime.value = newModelValue?.startTime || null;
+    endTime.value = newModelValue?.endTime || null;
+});
 </script>

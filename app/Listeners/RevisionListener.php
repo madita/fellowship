@@ -3,15 +3,14 @@
 namespace App\Listeners;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 
 class RevisionListener
 {
-
-
     /**
      * Handle created event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param Model $revisioned
      */
     public function created($revisioned)
     {
@@ -21,7 +20,7 @@ class RevisionListener
     /**
      * Handle updated event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param Model $revisioned
      */
     public function updated($revisioned)
     {
@@ -33,7 +32,7 @@ class RevisionListener
     /**
      * Handle deleted event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param Model $revisioned
      */
     public function deleted($revisioned)
     {
@@ -43,7 +42,7 @@ class RevisionListener
     /**
      * Handle restored event.
      *
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param Model $revisioned
      */
     public function restored($revisioned)
     {
@@ -54,7 +53,7 @@ class RevisionListener
      * Log the revision.
      *
      * @param string $action
-     * @param  \Illuminate\Database\Eloquent\Model
+     * @param Model  $revisioned The model being revisioned
      */
     protected function log($action, $revisioned)
     {
@@ -75,22 +74,22 @@ class RevisionListener
 
         $revisioned->revisions()->create([
             'revisionable_type' => $revisioned->getTable(),
-            'action' => $action,
-            'user_id' => $this->getSystemUserId(),
-            'old_value' => json_encode($old),
-            'new_value' => json_encode($new),
-            'ip' => data_get($_SERVER, 'REMOTE_ADDR'),
-            'ip_forwarded' => data_get($_SERVER, 'HTTP_X_FORWARDED_FOR'),
-            'created_at' => Carbon::now(),
+            'action'            => $action,
+            'user_id'           => $this->getSystemUserId(),
+            'old_value'         => json_encode($old),
+            'new_value'         => json_encode($new),
+            'ip'                => data_get($_SERVER, 'REMOTE_ADDR'),
+            'ip_forwarded'      => data_get($_SERVER, 'HTTP_X_FORWARDED_FOR'),
+            'created_at'        => Carbon::now(),
         ]);
     }
 
     /**
      * Attempt to find the user id of the currently logged in user
-     * Supports Cartalyst Sentry/Sentinel based authentication, as well as stock Auth
+     * Supports Cartalyst Sentry/Sentinel based authentication, as well as stock Auth.
      **/
     public function getSystemUserId()
     {
-        return auth()->user()->getAuthIdentifier();
+        return auth()->user()?->getAuthIdentifier();
     }
 }

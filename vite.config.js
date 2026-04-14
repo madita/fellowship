@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import vue from '@vitejs/plugin-vue'
-import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
+import vuetify from 'vite-plugin-vuetify'
 // import vuetify from '@vuetify/vite-plugin'
 // import vuetify from 'vite-plugin-vuetify'
 
@@ -9,8 +9,16 @@ import path from 'path'
 
 
 export default defineConfig({
+    // Don't set base when using Laravel Vite plugin - it handles this automatically
     plugins: [
-        vue(),
+        vue({
+            template: {
+                transformAssetUrls: {
+                    base: null,
+                    includeAbsolute: false,
+                },
+            },
+        }),
         vuetify({
             autoImport: true,
         }),
@@ -24,12 +32,43 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
+            'vue': 'vue/dist/vue.esm-bundler.js',
             '~bootstrap': path.resolve(__dirname, 'node_modules/bootstrap'),
             '@': path.resolve(__dirname, 'resources/js'),
         },
     },
+    build: {
+        assetsInlineLimit: 0,
+    },
+    server: {
+        host: '127.0.0.1',
+        port: 5173,
+        strictPort: true,
+        hmr: {
+            host: '127.0.0.1',
+            port: 5173,
+            protocol: 'ws',
+            clientPort: 5173,
+        },
+    },
+    preview: {
+        host: '127.0.0.1',
+        port: 5173,
+        strictPort: true,
+    },
     optimizeDeps: {
-        exclude: ['pinia']
+        // Prevent EPERM errors on Windows by pre-bundling common dependencies
+        // This avoids runtime dependency discovery which can cause file lock issues
+        include: [
+            'vue',
+            'vue-router',
+            'axios',
+            'vuetify',
+        ],
+    },
+    // Reduce file watching aggressiveness on Windows
+    watch: {
+        ignored: ['**/node_modules/**', '**/.git/**'],
     },
     define: {
         // Vue-i18n feature flags

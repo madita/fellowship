@@ -3,7 +3,7 @@
         <v-alert v-if="message" type="success">
             {{ message }}
         </v-alert>
-        <v-card class="text-center pa-1">
+        <v-card class="text-center pa-1" elevation="4">
             <v-card-title class="justify-center display-1 mb-2">{{ $t('forgot.title') }}</v-card-title>
             <v-card-subtitle>
                 {{ $t('forgot.subtitle') }}

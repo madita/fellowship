@@ -2,29 +2,37 @@
 
 namespace App\Models;
 
+use App\Contracts\CanHaveTaxonomies;
+use App\Models\Concerns\HasPolls;
+use App\Traits\HasCache;
 use App\Traits\HasTaxonomies;
-use App\Traits\Wikiable;
-use Lecturize\Taxonomies\Contracts\CanHaveCategories;
+use App\Traits\Revisionable;
 //use Lecturize\Taxonomies\Traits\HasCategories;
+use App\Traits\Wikiable;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use App\Traits\Revisionable;
 
-class Page extends Model implements HasMedia, CanHaveCategories
+class Page extends Model implements HasMedia, CanHaveTaxonomies, TranslatableContract
 {
     use InteractsWithMedia;
     use HasTaxonomies;
     use Revisionable;
     use Wikiable;
     use Sluggable;
+    use HasCache;
+    use Translatable;
+    use HasPolls;
+
+    public $translatedAttributes = ['title', 'content'];
 
     protected $fillable = [
-        'published',
         'title',
+        'published',
         'slug',
-        'content',
         'parent_id',
         'user_id',
         'created_at',
@@ -47,7 +55,7 @@ class Page extends Model implements HasMedia, CanHaveCategories
 
     protected $wikiable = [
         'title' => 'title',
-        'slug' => 'slug'
+        'slug'  => 'slug',
     ];
 
     protected $revisionable = [
@@ -82,7 +90,7 @@ class Page extends Model implements HasMedia, CanHaveCategories
 
         $parent = $this->parent;
 
-        while(!is_null($parent)) {
+        while (!is_null($parent)) {
             $parents->push($parent);
             $parent = $parent->parent;
         }

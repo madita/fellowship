@@ -73,6 +73,7 @@
 import {ref, onMounted, computed} from 'vue';
 import { useUserStore } from "@/store/userStore.js";
 // import useEventBus from '@/bus.js';
+
 import {useOnlineUsersStore} from "@/store/onlineUsersStore.js";
 import UserAvatar from "@/components/common/UserAvatar.vue";
 
@@ -88,9 +89,10 @@ export default {
         const user = userStore.user;
 
         const users = computed(() => {
-            if (onlineUsers.users === []) {
-                return [];
-            }
+            // if (onlineUsers.users === []) {
+            //     return [];
+            // }
+            console.log('users', onlineUsers.users)
             return onlineUsers.users;
         });
 
@@ -127,8 +129,8 @@ export default {
 
 <style lang="scss">
 .users {
-    background-color: #fff;
-    border: 1px solid #d3e0e9;
+    background: rgb(var(--v-theme-surface)) !important;
+    border: 1px solid rgb(var(--v-border-color));
     border-radius: 3px;
 
     &__header {

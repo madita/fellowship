@@ -1,22 +1,31 @@
 <template>
     <div class="modal" v-if="show">
         <div class="modal-content">
-            <h1>Add image</h1>
+            <h1>{{ $t('imageModal.addImage') }}</h1>
             <header class="tab-header">
                 <button @click="tab = 1" :class="{ active: tab == 1 }">Link</button>
                 <button @click="tab = 0" :class="{ active: tab == 0 }">Upload (Drag 'n' Drop)</button>
                 <button @click="tab = 2" :class="{ active: tab == 2 }">Upload (Simple)</button>
+                <button @click="tab = 1;" :class="{ active: tab == 1 }">{{ $t('imageModal.link') }}</button>
+                <button @click="tab = 0;" :class="{ active: tab == 0 }">
+                    {{ $t('imageModal.uploadDragDrop') }}
+                </button>
+                <button @click="tab = 2;" :class="{ active: tab == 2 }">
+                    {{ $t('imageModal.uploadSimple') }}
+                </button>
             </header>
 
             <div v-if="tab === 1">
-                <p>Here is a test image URL</p>
+                <p>{{ $t('imageModal.testImageUrl') }}</p>
                 <pre>https://i.imgur.com/0ogkTp7.jpg</pre>
-                <label for="url">Image URL:</label>
+                <label for="url">{{ $t('imageModal.imageUrlLabel') }}</label>
                 <input v-model="imageSrc" id="url" />
             </div>
             <div v-if="tab === 2">
                 <label for="up">Really simple input upload:</label>
                 <input type="file" @change="fileChange" id="up" />
+                <label for="up">{{ $t('imageModal.simpleUploadLabel') }}</label>
+                <input type="file" @change="fileChange" id="up" ref="file" />
             </div>
             <div v-if="tab === 0">
 <!--                <vue-dropzone v-bind="dropzoneProps" @vdropzone-success="vfileUploaded"></vue-dropzone>-->
@@ -25,6 +34,15 @@
             <footer class="modal-footer">
                 <button @click="insertImage" class="success" :title="validImage ? '' : 'Image URL needs to be valid'" :disabled="!validImage">Add Image</button>
                 <button @click="closeModal" class="danger">Close modal</button>
+                <button
+                    @click="insertImage"
+                    class="success"
+                    :title="validImage ? '' : $t('imageModal.urlNeedsValid')"
+                    :disabled="!validImage"
+                >
+                    {{ $t('imageModal.addImageBtn') }}
+                </button>
+                <button @click="show = false;" class="danger">{{ $t('imageModal.closeModal') }}</button>
             </footer>
         </div>
     </div>
@@ -42,6 +60,26 @@ export default {
         const tab = ref(1);
 
         const validImage = computed(() => {
+    components: {
+        vueDropzone: vue2Dropzone
+    },
+    data() {
+        return {
+            imageSrc: "",
+            command: null,
+            show: false,
+            tab: 1
+        };
+    },
+    computed: {
+        dropzoneOptions() {
+            return {
+                url: "https://httpbin.org/post",
+                thumbnailWidth: 200,
+                dictDefaultMessage: this.$t('imageModal.uploadFile')
+            };
+        },
+        validImage() {
             return (
                 imageSrc.value.match(/unsplash/) !== null ||
                 imageSrc.value.match(/\.(jpeg|jpg|gif|png)$/) != null

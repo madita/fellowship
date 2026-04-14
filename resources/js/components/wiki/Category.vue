@@ -2,7 +2,7 @@
     <div>
 
         <v-sheet v-if="slug.length > 0 && !loading">
-            <v-alert v-if="categories === null" type="info">Die Kategorie existiert nicht</v-alert>
+            <v-alert v-if="categories === null" type="info">{{ $t('wiki.categoryNotExists') }}</v-alert>
             <v-container class="py-2 pt-lg-5">
 <!--                <v-alert>{{message}}</v-alert>-->
                 <v-btn v-if="authenticated" class="text-right mx-1" :to="`/wiki/category/${slug}/${mode}`">
@@ -12,7 +12,7 @@
                 <p v-html="description"></p>
 
                 <div class="sub-category py-1 pt-lg-1" v-if="info.children.length > 0">
-                    <h2>Unterkategorien</h2>
+                    <h2>{{ $t('wiki.subcategories') }}</h2>
                     <div :style="subCssVars">
                     <v-list-group
                         color="primary"
@@ -33,7 +33,7 @@
 
 
             <v-container class="category py-6 pt-lg-5">
-                <h2>Seiten in der Kategorie "{{info.term.title}}" ({{categories.total}})</h2>
+                <h2>{{ $t('wiki.pagesInCategory', { category: info.term.title, count: categories.total }) }}</h2>
                 <div :style="catCssVars">
                 <v-list-group
                     color="primary"
@@ -55,9 +55,9 @@
         </v-sheet>
         <v-sheet v-if="!slug.length && !loading">
             <v-container class="py-2 pt-lg-5">
-                <h1>Kategorien</h1>
+                <h1>{{ $t('wiki.categories') }}</h1>
                 <p><v-text-field
-                    label="Search"
+                    :label="$t('common.search')"
                     v-model="textSearch"
                     hide-details="auto"
                 ></v-text-field></p>
@@ -131,7 +131,7 @@ export default {
 
 
                 if(this.categories === null) {
-                    this.message = "Die Kategorie existiert nicht..willst du sie erstellen."
+                    this.message = this.$t('wiki.categoryNotExistsCreate')
                     this.mode = "create"
                     this.info = {term: this.slug, children:[]}
                     this.categories = {total:0}
@@ -198,7 +198,7 @@ export default {
 
             let filtered = [];
 
-            console.log('test',this.categories.length)
+            // console.log('test',this.categories.length)
 
             const capitals = this.categories.capital;
             const categories = Object.keys(this.categories.capital);

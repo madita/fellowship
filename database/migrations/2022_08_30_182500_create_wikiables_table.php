@@ -8,22 +8,22 @@ class CreateWikiablesTable extends Migration
 {
     public function up()
     {
-
         Schema::create('wikiables', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('title');
+            // $table->string('title'); // Moved to wiki_translations
             $table->string('slug');
             $table->string('wikiable_type');
             $table->unsignedInteger('wikiable_id');
             $table->string('status')->nullable();
+            $table->integer('parent_id')->unsigned()->default(0);
             $table->nullableTimestamps();
 
             $table->unique(
-                ['wikiable_id', 'wikiable_type'], 'wikiables_unique'
+                ['wikiable_id', 'wikiable_type'],
+                'wikiables_unique'
             );
         });
     }
-
 
     /**
      * Reverse the migrations.
@@ -32,6 +32,7 @@ class CreateWikiablesTable extends Migration
      */
     public function down()
     {
+        Schema::dropIfExists('wiki_translations');
         Schema::dropIfExists('wikiables');
     }
 }

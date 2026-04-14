@@ -7,6 +7,20 @@ import mitt from 'mitt'
 
 import { useAuthStore } from '@/store/authStore.js'
 import { useUserStore } from '@/store/userStore.js'
+import { useSettingsStore } from '@/store/settingStore.js'
+
+// Lazy loading directive
+import { vLazy } from '@/composables/useLazyLoading.js'
+
+// Debug utility
+import { debug } from '@/utils/debug.js'
+const log = debug.module('App')
+
+// Initialize theme before app mounts
+import { initializeTheme, setupThemeListener, setupThemeObserver } from './utils/themeInit.js'
+initializeTheme()
+setupThemeListener()
+setupThemeObserver()
 // import { createPinia } from '@pinia/store'
 
 // VUEX - https://vuex.vuejs.org/
@@ -47,6 +61,7 @@ import './plugins/echarts.js'
 import './plugins/animate.js'
 import './plugins/clipboard.js'
 import formatDate from './plugins/formatDate.js'
+import sessionTimeout from './plugins/sessionTimeout.js'
 // import './plugins/moment'
 // import './plugins/lodash'
 
@@ -59,13 +74,13 @@ import { capitalize } from './helpers/filters.js';
 // STYLES
 
 // Main Theme SCSS
-import '../sass/theme.scss'
+// import '../sass/theme.scss'
 
 // Animation library - https://animate.style/
 import 'animate.css/animate.min.css'
 import VueShortkey from 'vue-shortkey'
-import 'vue3-perfect-scrollbar/dist/vue3-perfect-scrollbar.css'
-import PerfectScrollbar from 'vue3-perfect-scrollbar';
+import 'vue3-perfect-scrollbar/style.css'; // Note: different CSS path
+import { PerfectScrollbarPlugin } from 'vue3-perfect-scrollbar';
 //
 
 // Set this to false to prevent the production tip on Vue startup.
@@ -99,12 +114,16 @@ vueApp.config.globalProperties.$helpers = helpers
 vueApp.use(pinia)
 vueApp.use(i18n)
 vueApp.use(vuetify)
-vueApp.use(PerfectScrollbar);
+
+// Register lazy loading directive
+vueApp.directive('lazy', vLazy)
+vueApp.use(PerfectScrollbarPlugin);
 // vueApp.use(store)
 // vueApp.use(permissions)
 vueApp.use(router)
 
 vueApp.use(formatDate);
+vueApp.use(sessionTimeout);
 // Vue.use(require('vue-shortkey'))
 // vueApp.use(VueShortkey)
 // vueApp.mount("#app")
@@ -118,24 +137,104 @@ vueApp.config.globalProperties.$filters = {
     }
 }
 
-// Check user session on app initialization
-async function checkUserSession() {
+// Check user session and load settings on app initialization
+async function initializeApp() {
+    const authStore = useAuthStore();
+    const userStore = useUserStore();
+    const settingsStore = useSettingsStore();
+
     try {
-        const response = await axios.get('/api/user');
-        const userStore = useUserStore();
-        userStore.updateState(response.data);  // Assuming you have a setUser method in your store
-    } catch (error) {
-        if (error.response && error.response.status === 401) {
-            const authStore = useAuthStore();
-            if(authStore.isLoggedIn) {
-                authStore.resetStore();
-                console.log('automatic logout')
+        // Load public settings first (needed for fallback values)
+        await settingsStore.fetchAppSettings();
+
+        // Check for OAuth callback token in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const oauthToken = urlParams.get('token');
+
+        if (oauthToken) {
+            // OAuth callback - user is logged in via session, need to sync frontend state
+            try {
+                await userStore.storeInfo();
+
+                // User info loaded successfully, update auth state
+                const isVerified = userStore.user?.email_verified_at !== null;
+                authStore.updateState({
+                    email: userStore.user?.email,
+                    isLoggedIn: true,
+                    isVerified
+                });
+
+                // Clean up URL (remove token parameter)
+                const cleanUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
+
+                // Redirect to dashboard
+                window.location.href = '/dashboard';
+                return;
+            } catch (error) {
+                log.error('OAuth login failed:', error);
+                // Clean up URL and continue to show page
+                window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
+
+        // Only load user data if user is logged in
+        if (authStore.isLoggedIn) {
+            try {
+                // Then load user data using the store's method (handles localStorage sync)
+                await userStore.storeInfo();
+            } catch (error) {
+                if (error.response && error.response.status === 401) {
+                    // Session expired, logout user
+                    authStore.resetStore();
+                    userStore.clearState();
+                    log.log('Session expired, automatic logout');
+                } else {
+                    log.error('Failed to load user info:', error);
+                }
+            }
+        }
+    } catch (error) {
+        log.error('Failed to initialize app:', error);
     }
 }
 
-checkUserSession();
+initializeApp();
+
+// Register PWA Service Worker (works on localhost and production)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+            .then(registration => {
+                log.log('PWA: Service Worker registered successfully:', registration.scope);
+
+                // Check for updates periodically (only in production)
+                if (import.meta.env.PROD) {
+                    setInterval(() => {
+                        registration.update();
+                    }, 60 * 60 * 1000); // Check every hour
+                }
+
+                // In development, log PWA status after a short delay
+                if (import.meta.env.DEV) {
+                    setTimeout(async () => {
+                        const { logPWAStatus } = await import('./utils/pwaCheck.js');
+                        await logPWAStatus();
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                log.error('PWA: Service Worker registration failed:', error);
+            });
+    });
+
+    // Add global function to check PWA status manually
+    window.checkPWA = async () => {
+        const { logPWAStatus } = await import('./utils/pwaCheck.js');
+        return await logPWAStatus();
+    };
+}
+
 // store.dispatch('auth/me').then(() => {
 //     new Vue({
 //         i18n,

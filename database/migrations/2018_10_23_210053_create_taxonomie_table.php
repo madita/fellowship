@@ -1,20 +1,20 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 /**
- * Class TaxonomiesTable
+ * Class TaxonomiesTable.
  */
 class CreateTaxonomieTable extends Migration
 {
     /**
      * Table names.
      *
-     * @var string  $terms       The terms table name.
-     * @var string  $taxonomies  The taxonomies table name.
-     * @var string  $pivot       The pivot table name.
+     * @var string The terms table name.
+     * @var string The taxonomies table name.
+     * @var string The pivot table name.
      */
     protected $terms;
     protected $taxonomies;
@@ -25,9 +25,9 @@ class CreateTaxonomieTable extends Migration
      */
     public function __construct()
     {
-        $this->terms      = config('lecturize.taxonomies.terms.table',      config('lecturize.taxonomies.terms_table',      'terms'));
-        $this->taxonomies = config('lecturize.taxonomies.taxonomies.table', config('lecturize.taxonomies.taxonomies_table', 'taxonomies'));
-        $this->pivot      = config('lecturize.taxonomies.pivot.table',      config('lecturize.taxonomies.pivot_table',      'taxables'));
+        $this->terms = config('lecturize.taxonomies.terms.table', 'terms');
+        $this->taxonomies = config('lecturize.taxonomies.taxonomies.table', 'taxonomies');
+        $this->pivot = config('lecturize.taxonomies.pivot.table', 'taxables');
     }
 
     /**
@@ -37,22 +37,19 @@ class CreateTaxonomieTable extends Migration
      */
     public function up()
     {
-        Schema::create($this->terms, function(Blueprint $table)
-        {
+        Schema::create($this->terms, function (Blueprint $table) {
             $table->increments('id');
 
-            $table->string('title')->nullable()->unique();
+            // $table->string('title')->nullable()->unique(); // Moved to term_translations
             $table->string('slug')->nullable()->unique();
-            $table->longText('content')->nullable();
-            $table->text('lead')->nullable();
-
+            // $table->longText('content')->nullable(); // Moved to term_translations
+            // $table->text('lead')->nullable(); // Moved to term_translations
 
             $table->timestamps();
             $table->softDeletes();
         });
 
-        Schema::create($this->taxonomies, function(Blueprint $table)
-        {
+        Schema::create($this->taxonomies, function (Blueprint $table) {
             $table->increments('id');
             $table->uuid('uuid')->nullable();
             $table->integer('parent_id')->nullable()->unsigned()->index();
@@ -65,12 +62,11 @@ class CreateTaxonomieTable extends Migration
                 ->onDelete('cascade');
 
             $table->string('taxonomy')->default('default');
-            $table->text('description')->nullable();
-            $table->longText('content')->nullable();
-            $table->text('lead')->nullable();
-            $table->text('meta_desc')->nullable();
+            // $table->text('description')->nullable(); // Moved to taxonomy_translations
+            // $table->longText('content')->nullable(); // Moved to taxonomy_translations
+            // $table->text('lead')->nullable(); // Moved to taxonomy_translations
+            // $table->text('meta_desc')->nullable(); // Moved to taxonomy_translations
             $table->text('color')->nullable();
-
 
             $table->integer('parent')->unsigned()->default(0);
 
@@ -92,17 +88,20 @@ class CreateTaxonomieTable extends Migration
             $table->unique(['term_id', 'taxonomy']);
         });
 
-        Schema::create($this->pivot, function(Blueprint $table)
-        {
+        Schema::create($this->pivot, function (Blueprint $table) {
+            // Make taxonomy_id NOT NULL since it's part of the primary key
             $table->integer('taxonomy_id')
-                ->nullable()
                 ->unsigned()
                 ->references('id')
                 ->on($this->taxonomies);
 
-            $table->primary(['taxonomy_id', 'taxable_type', 'taxable_id']);
+            $table->timestamps();
 
-            $table->nullableMorphs('taxable');
+            // Use morphs() instead of nullableMorphs() to make the columns NOT NULL
+            $table->morphs('taxable');
+
+            // Now we can safely create the composite primary key
+            $table->primary(['taxonomy_id', 'taxable_type', 'taxable_id']);
         });
     }
 
@@ -113,6 +112,8 @@ class CreateTaxonomieTable extends Migration
      */
     public function down()
     {
+        Schema::dropIfExists('taxonomy_translations');
+        Schema::dropIfExists('term_translations');
         Schema::dropIfExists($this->pivot);
         Schema::dropIfExists($this->taxonomies);
         Schema::dropIfExists($this->terms);

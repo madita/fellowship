@@ -4,10 +4,11 @@ namespace App\Presenters;
 
 use App\Models\Revision;
 use App\Traits\Revisionable;
+use Closure;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
-
+use InvalidArgumentException;
 
 class RevisionPresenter
 {
@@ -28,7 +29,7 @@ class RevisionPresenter
     /**
      * Revisoned model.
      *
-     * @var \Illuminate\Database\Eloquent\Model
+     * @var Model
      */
     protected $revisioned;
 
@@ -46,23 +47,23 @@ class RevisionPresenter
      * @var array
      */
     protected $actions = [
-        'created' => 'created',
-        'updated' => 'updated',
-        'deleted' => 'deleted',
+        'created'  => 'created',
+        'updated'  => 'updated',
+        'deleted'  => 'deleted',
         'restored' => 'restored',
     ];
 
     /**
      * Old version of revisioned model.
      *
-     * @var \Illuminate\Database\Eloquent\Model
+     * @var Model
      */
     protected $oldVersion;
 
     /**
      * New version of revisioned model.
      *
-     * @var \Illuminate\Database\Eloquent\Model
+     * @var Model
      */
     protected $newVersion;
 
@@ -77,7 +78,7 @@ class RevisionPresenter
      * Create a new revision presenter.
      *
      * @param Revision $revision
-     * @param Model $revisioned
+     * @param Model    $revisioned
      */
     public function __construct(Revision $revision, Model $revisioned)
     {
@@ -156,7 +157,7 @@ class RevisionPresenter
     /**
      * Get pass through value using dot notation.
      *
-     * @param mixed $target
+     * @param mixed  $target
      * @param string $key
      *
      * @return mixed
@@ -204,7 +205,7 @@ class RevisionPresenter
      * Get pass through value from another revision.
      *
      * @param Revision|RevisionPresenter $revision
-     * @param string $key
+     * @param string                     $key
      *
      * @return mixed
      */
@@ -221,7 +222,7 @@ class RevisionPresenter
     /**
      * Get pass through value from the Eloquent model.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param Model  $model
      * @param string $key
      *
      * @return mixed
@@ -234,31 +235,31 @@ class RevisionPresenter
     /**
      * Get revisioned model with appropriate attributes.
      *
-     * @return \Illuminate\Database\Eloquent\Model
+     * @return Model
      */
     protected function getVersion($version)
     {
-        if (!$this->{$version . 'Version'}) {
+        if (!$this->{$version.'Version'}) {
             $revisioned = get_class($this->revisioned);
 
             $revision = new $revisioned();
             $revision->setRawAttributes($this->{$version});
 
-            $this->{$version . 'Version'} = $revision;
+            $this->{$version.'Version'} = $revision;
         }
 
-        return $this->{$version . 'Version'};
+        return $this->{$version.'Version'};
     }
 
     /**
      * Decorate revision model or array/collection of models.
      *
      * @param mixed $revision
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param Model $revisioned
+     *
+     * @throws InvalidArgumentException
      *
      * @return mixed
-     *
-     * @throws \InvalidArgumentException
      */
     public static function make($revision, $revisioned)
     {
@@ -274,16 +275,16 @@ class RevisionPresenter
             return static::makeOne($revision, $revisioned);
         }
 
-        throw new \InvalidArgumentException(
-            'Presenter::make accepts array, collection or single resource, ' . gettype($revision) . ' given.'
+        throw new InvalidArgumentException(
+            'Presenter::make accepts array, collection or single resource, '.gettype($revision).' given.'
         );
     }
 
     /**
      * Decorate Eloquent model.
      *
-     * @param \Illuminate\Database\Eloquent\Model|null $revision
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param Model|null $revision
+     * @param Model      $revisioned
      *
      * @return static
      */
@@ -296,7 +297,7 @@ class RevisionPresenter
      * Decorate array of Eloquent models.
      *
      * @param array $revisions
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param Model $revisioned
      *
      * @return array
      */
@@ -308,10 +309,10 @@ class RevisionPresenter
     /**
      * Decorate collection of models.
      *
-     * @param \Illuminate\Database\Eloquent\Collection $revisions
-     * @param \Illuminate\Database\Eloquent\Model $revisioned
+     * @param Collection $revisions
+     * @param Model      $revisioned
      *
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return Collection
      */
     public static function makeCollection(Collection $revisions, Model $revisioned)
     {
@@ -321,7 +322,7 @@ class RevisionPresenter
     /**
      * Get callback for the array map.
      *
-     * @return \Closure
+     * @return Closure
      */
     protected static function getMapCallback($revisioned)
     {
@@ -339,7 +340,7 @@ class RevisionPresenter
      * Handle dynamic methods calls.
      *
      * @param string $method
-     * @param array $parameters
+     * @param array  $parameters
      *
      * @return mixed
      */

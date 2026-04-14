@@ -1,284 +1,707 @@
 <template>
-    <div class="d-flex flex-grow-1 flex-column">
-        <v-container class="mb-15">
-            <p><v-text-field
-                label="Search"
-                v-model="searchText"
-                hide-details="auto"
-                @keyup="onSearchInput"
-            ></v-text-field></p>
-            <v-row>
-                <v-col cols="12">
-                    <v-row>
-<template v-if="wikiable.length>0">
+    <div class="wiki-container">
+        <!-- Header Section -->
+        <div class="wiki-header">
+            <v-container>
+                <v-row align="center" class="mb-6">
+                    <v-col cols="12" md="8">
+                        <h1 class="wiki-title text-h3 font-weight-bold mb-2">
+                            {{ $t('wiki.title') }}
+                        </h1>
+                        <p class="text-subtitle-1 text-medium-emphasis">
+                            {{ $t('wiki.subtitle') }}
+                        </p>
+                    </v-col>
+                    <v-col cols="12" md="4" class="text-right">
+                        <v-btn
+                            color="primary"
+                            variant="elevated"
+                            size="large"
+                            prepend-icon="mdi-plus"
+                            @click="createWikiPage"
+                            class="create-btn"
+                        >
+                            {{ $t('wiki.createPage') }}
+                        </v-btn>
+                    </v-col>
+                </v-row>
 
+                <!-- Search Section -->
+                <div class="search-section mb-8">
+                    <v-text-field
+                        v-model="searchText"
+                        :label="$t('wiki.searchPlaceholder')"
+                        prepend-inner-icon="mdi-magnify"
+                        variant="outlined"
+                        density="comfortable"
+                        hide-details
+                        clearable
+                        class="search-field"
+                        @keyup="onSearchInput"
+                        @click:clear="clearSearch"
+                    >
+                        <template v-slot:append>
+                            <v-fade-transition>
+                                <v-progress-circular
+                                    v-if="searching"
+                                    size="24"
+                                    width="2"
+                                    color="primary"
+                                    indeterminate
+                                />
+                            </v-fade-transition>
+                        </template>
+                    </v-text-field>
+                </div>
+            </v-container>
+        </div>
 
-            <v-col :key="`wiki-${item.data.id}`" v-for="(item, index) in wikiable" cols="12" sm="12" md="12" :lg="index===0 ? 8 : 4" >
-                <v-card height="100%" elevation="10" class="overflow-hidden card-hover" rounded="md">
-                    <div class="position-relative feature-card">
+        <!-- Content Section -->
+        <v-container>
+            <!-- Stats Bar -->
+            <div class="stats-bar mb-6" v-if="response.total">
+                <v-chip
+                    color="primary"
+                    variant="tonal"
+                    size="small"
+                    prepend-icon="mdi-file-document-multiple"
+                >
+                    {{ $t('wiki.pagesFound', { count: response.total }) }}
+                </v-chip>
+                <v-chip
+                    v-if="searchText"
+                    color="success"
+                    variant="tonal"
+                    size="small"
+                    prepend-icon="mdi-magnify"
+                >
+                    {{ $t('wiki.resultsFor', { query: searchText }) }}
+                </v-chip>
+            </div>
 
-                            <div class="pa-6 d-flex justify-space-between flex-column h-100 position-relative">
-                                <div class="d-flex justify-space-between align-center">
-                                    <v-avatar size="40">
-<!--                                        <img :src="post?.author.avatar" alt="icon" height="40" />-->
+            <!-- Wiki Grid -->
+            <div v-if="wikiable.length > 0" class="wiki-grid">
+                <v-row>
+                    <v-col
+                        v-for="(item, index) in wikiable"
+                        :key="`wiki-${item.data.id}`"
+                        cols="12"
+                        sm="6"
+                        md="4"
+                        lg="4"
+                        xl="3"
+                    >
+                        <v-card
+                            class="wiki-card h-100"
+                            variant="elevated"
+                            :class="{ 'featured-card': index === 0 && !searchText }"
+                            @click="readMore(item.slug)"
+                        >
+                            <!-- Card Header -->
+                            <div class="card-header pa-4">
+                                <div class="d-flex justify-space-between align-start mb-3">
+                                    <v-avatar
+                                        color="primary"
+                                        size="40"
+                                        class="card-avatar"
+                                    >
+                                        <v-icon color="white" size="20">mdi-file-document</v-icon>
                                     </v-avatar>
-                                    <v-chip-group>
-                                        <v-chip class="mx-1 text-body-2 font-weight-medium bg-grey" size="small" v-for="term in item.taxonomies" v-text="term?.title"></v-chip>
-                                    </v-chip-group>
 
+                                    <v-menu>
+                                        <template v-slot:activator="{ props }">
+                                            <v-btn
+                                                icon="mdi-dots-vertical"
+                                                size="small"
+                                                variant="text"
+                                                v-bind="props"
+                                                @click.stop
+                                            />
+                                        </template>
+                                        <v-list density="compact">
+                                            <v-list-item
+                                                prepend-icon="mdi-pencil"
+                                                :title="$t('wiki.edit')"
+                                                @click="editPage(item.slug)"
+                                            />
+                                            <v-list-item
+                                                prepend-icon="mdi-share"
+                                                :title="$t('wiki.share')"
+                                                @click="sharePage(item.slug)"
+                                            />
+                                            <v-list-item
+                                                prepend-icon="mdi-delete"
+                                                :title="$t('common.delete')"
+                                                @click="deletePage(item.data.id)"
+                                            />
+                                        </v-list>
+                                    </v-menu>
                                 </div>
-                                <div>
-<!--                                    <h3 class="text-h3 text-20 my-6">-->
-<!--                                        <RouterLink class="text-decoration-none color-inherits" :to="item.slug">{{ item?.title }}</RouterLink>-->
-<!--                                    </h3>-->
-                                    <v-card-title>{{item.title}}</v-card-title>
-                                    <v-card-text v-if="item.data.content!=null">
-                                        <span v-html="item.data.content.slice(0,200)"></span>
-                                    </v-card-text>
-                                    <div class="d-flex align-center justify-space-between">
 
-<!--                                        <div class="d-flex align-center">-->
-<!--                                            <div class="d-flex align-center">-->
-<!--                                                <v-icon>mdi-eye</v-icon>-->
-<!--                                                <span class="text-subtitle-1 ml-2" v-text="0"></span>-->
-<!--                                            </div>-->
-<!--                                            <div class="d-flex align-center">-->
-<!--                                                <v-avatar class="ml-6 text-surface" size="18">-->
-<!--                                                  message-->
-<!--                                                </v-avatar>-->
-<!--                                                <span class="text-subtitle-1 ml-2" v-text="0"></span>-->
-<!--                                            </div>-->
-<!--                                        </div>-->
-                                        <div>
-                                            <v-avatar size="10" class="text-surface">
-                                                circle
-                                            </v-avatar>
-<!--                                            <span class="text-subtitle-2 ml-2" v-text="format(new Date(post?.createdAt), 'E, MMM d')"></span>-->
-                                        </div>
-                                    </div>
-                                    <v-btn @click="readMore(item.slug)" class="text-right">Read More</v-btn>
-
+                                <!-- Categorries/Taxonomies -->
+                                <div class="tags-container mb-3" v-if="item.taxonomies?.length">
+                                    <v-chip
+                                        v-for="term in item.taxonomies.slice(0, 3)"
+                                        :key="`term-${term.id}`"
+                                        size="x-small"
+                                        variant="tonal"
+                                        color="secondary"
+                                        class="mr-1 mb-1"
+                                    >
+                                        {{ term.title }}
+                                    </v-chip>
+                                    <v-chip
+                                        v-if="item.taxonomies.length > 3"
+                                        size="x-small"
+                                        variant="text"
+                                        class="mr-1 mb-1"
+                                    >
+                                        +{{ item.taxonomies.length - 3 }}
+                                    </v-chip>
                                 </div>
+
+                                <!-- Tags -->
+                                <div class="tags-container mb-3" v-if="item.tags?.length">
+                                    <v-chip
+                                        v-for="tag in item.tags.slice(0, 3)"
+                                        :key="`tag-${tag.id}`"
+                                        size="x-small"
+                                        variant="tonal"
+                                        color="secondary"
+                                        class="mr-1 mb-1"
+                                    >
+                                        #{{ tag.title }}
+                                    </v-chip>
+                                    <v-chip
+                                        v-if="item.tags.length > 3"
+                                        size="x-small"
+                                        variant="text"
+                                        class="mr-1 mb-1"
+                                    >
+                                        +{{ item.tags.length - 3 }}
+                                    </v-chip>
+                                </div>
+
                             </div>
 
-                    </div>
-                </v-card>
-            </v-col>
 
-</template>
-                    </v-row>
-                </v-col>
-            </v-row>
 
-<!--            <v-col cols="12" md="4" sm="4" v-if="wikiable.length>0">-->
-<!--                <v-card :key="`wiki-${item.data.id}`" elevation="10"  rounded="md" class="card-hover" v-for="item in wikiable">-->
-<!--                    <v-card-title>{{item.title}}</v-card-title>-->
-<!--                    <v-card-text v-if="item.data.content!=null">-->
-<!--                        <span v-html="item.data.content.slice(0,200)"></span>-->
-<!--                    </v-card-text>-->
-<!--                    <v-spacer></v-spacer>-->
-<!--                    <v-card-actions class="card-actions">-->
-<!--                        &lt;!&ndash;                                <v-chip :key="`term-${term.id}`" v-for="term in item.taxonomies">{{term.title}}</v-chip>&ndash;&gt;-->
+                            <!-- Card Content -->
+                            <v-card-text class="pa-4 pt-0">
+                                <h3 class="card-title text-h6 font-weight-bold mb-3 line-clamp-2">
+                                    {{ item.title }}
+                                    <v-chip
+                                        v-if="isAdmin && item.is_approved === false"
+                                        color="warning"
+                                        size="x-small"
+                                        variant="tonal"
+                                        class="ml-1"
+                                    >
+                                        {{ $t('wiki.pendingApproval') }}
+                                    </v-chip>
+                                </h3>
 
-<!--                        <v-btn @click="readMore(item.slug)" class="text-right">Read More</v-btn>-->
-<!--                    </v-card-actions>-->
-<!--                </v-card>-->
-<!--            </v-col>-->
+                                <div
+                                    v-if="item.data.content"
+                                    class="card-excerpt text-body-2 text-medium-emphasis line-clamp-3"
+                                    v-html="stripHtml(item.data.content).slice(0, 150) + '...'"
+                                />
 
-<!--            <v-flex d-flex v-if="wikiable.length>0">-->
-<!--                <v-layout wrap>-->
-<!--                    <v-flex md4 :key="`wiki-${item.data.id}`" v-for="item in wikiable">-->
-<!--                        <v-card class="pa-2 ma-1 card-outter"-->
-<!--                                min-height="374" max-height="374" max-width="374">-->
-<!--                            <v-card-title>{{item.title}}</v-card-title>-->
-<!--                            <v-card-text v-if="item.data.content!=null">-->
-<!--                                <span v-html="item.data.content.slice(0,200)"></span>-->
-<!--                            </v-card-text>-->
-<!--                            <v-spacer></v-spacer>-->
-<!--                            <v-card-actions class="card-actions">-->
-<!--                                &lt;!&ndash;                                <v-chip :key="`term-${term.id}`" v-for="term in item.taxonomies">{{term.title}}</v-chip>&ndash;&gt;-->
+                                <div class="content-placeholder text-body-2 text-disabled" v-else>
+                                    {{ $t('wiki.noContent') }}
+                                </div>
+                            </v-card-text>
 
-<!--                                <v-btn @click="readMore(item.slug)" class="text-right">Read More</v-btn>-->
-<!--                            </v-card-actions>-->
-<!--                        </v-card>-->
-<!--                    </v-flex>-->
-<!--                </v-layout>-->
-<!--            </v-flex>-->
+                            <!-- Card Footer -->
+                            <v-card-actions class="pa-4 pt-0 mt-auto">
+                                <div class="d-flex justify-space-between align-center w-100">
+                                    <div class="d-flex align-center">
+                                        <v-icon size="14" color="medium-emphasis" class="mr-1">
+                                            mdi-clock-outline
+                                        </v-icon>
+                                        <span class="text-caption text-medium-emphasis">
+                      {{ formatDate(item.data.updated_at || item.data.created_at) }} {{ item.data.updated_at ? $t('wiki.updated') : $t('wiki.created') }}
+                    </span>
+                                    </div>
 
-            <v-progress-circular v-if="loading"
-                                 :size="150"
-                                 color="bg-primary"
-                                 indeterminate
-            ></v-progress-circular>
+                                    <v-btn
+                                        color="primary"
+                                        variant="tonal"
+                                        size="small"
+                                        append-icon="mdi-arrow-right"
+                                        @click.stop="readMore(item.slug)"
+                                    >
+                                        {{ $t('wiki.read') }}
+                                    </v-btn>
+                                </div>
+                            </v-card-actions>
+                        </v-card>
+                    </v-col>
+                </v-row>
+            </div>
 
+            <!-- Empty State -->
+            <div v-else-if="!loading" class="empty-state text-center py-12">
+                <v-icon size="120" color="disabled" class="mb-4">
+                    {{ searchText ? 'mdi-magnify' : 'mdi-file-document-plus' }}
+                </v-icon>
+                <h3 class="text-h5 font-weight-bold mb-2">
+                    {{ searchText ? $t('wiki.noResultsFound') : $t('wiki.noPagesYet') }}
+                </h3>
+                <p class="text-body-1 text-medium-emphasis mb-6">
+                    {{ searchText
+                    ? $t('wiki.tryAdjustingSearch')
+                    : $t('wiki.startBuildingKnowledgeBase')
+                    }}
+                </p>
+                <v-btn
+                    v-if="!searchText"
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-plus"
+                    size="large"
+                    @click="createWikiPage"
+                >
+                    {{ $t('wiki.createFirstPage') }}
+                </v-btn>
+                <v-btn
+                    v-else
+                    color="primary"
+                    variant="outlined"
+                    prepend-icon="mdi-refresh"
+                    @click="clearSearch"
+                >
+                    {{ $t('wiki.clearSearch') }}
+                </v-btn>
+            </div>
+
+            <!-- Loading State -->
+            <div v-if="loading" class="loading-state text-center py-12">
+                <v-progress-circular
+                    size="64"
+                    width="4"
+                    color="primary"
+                    indeterminate
+                    class="mb-4"
+                />
+                <p class="text-body-1 text-medium-emphasis">
+                    {{ searchText ? $t('wiki.searching') : $t('wiki.loadingPages') }}
+                </p>
+            </div>
+
+            <!-- Load More -->
+            <div v-if="hasMorePages" class="text-center mt-8">
+                <v-btn
+                    color="primary"
+                    variant="outlined"
+                    :loading="loading"
+                    @click="loadMore"
+                    size="large"
+                >
+                    {{ $t('wiki.loadMorePages') }}
+                </v-btn>
+            </div>
         </v-container>
-        <v-container></v-container>
     </div>
 </template>
 
 <script>
-
-// import {mapGetters} from "vuex";
-
-import {useUserStore} from "@/store/userStore.js";
+import { useUserStore } from "@/store/userStore.js";
+import { formatDate as formatDateUtil } from '@/plugins/formatDate.js';
+import axios from 'axios';
 
 export default {
-    components: {
-    },
+    name: 'WikiComponent',
     data() {
         return {
-            page:1,
+            page: 1,
             loading: false,
-            wikiable:[],
-            response:[],
-            wikiableTotal:0,
-            searchText:"",
-            searchRequest: null,
+            searching: false,
+            wikiable: [],
+            response: {},
+            searchText: "",
+            searchTimeout: null,
+            cancelToken: null,
+        }
+    },
+    computed: {
+        user() {
+            const userStore = useUserStore();
+            return userStore.user;
+        },
+        isAdmin() {
+            return this.user?.isAdmin || false;
+        },
+        hasMorePages() {
+            return this.response.total > this.response.to && !this.loading;
         }
     },
     methods: {
-        async getWikiPages(){
+        async getWikiPages() {
             try {
                 this.loading = true;
-                const response = await fetch(`/api/wiki?page=${this.page}&q=${this.searchText}`);
-                const data = await response.json();
+                const response = await axios.get(`/api/wiki`, {
+                    params: { page: this.page, q: this.searchText }
+                });
+                const data = response.data;
                 this.response = data;
-                // console.log(Object.entries(data));
-                this.wikiable = [...this.wikiable, ...data.data];
+
+                if (this.page === 1) {
+                    this.wikiable = data.data;
+                } else {
+                    this.wikiable = [...this.wikiable, ...data.data];
+                }
 
                 this.page++;
-                this.loading = false;
             } catch (error) {
-                console.error(error);
+                console.error('Error loading wiki pages:', error);
+                this.$emit('error', this.$t('wiki.loadError'));
+            } finally {
                 this.loading = false;
             }
         },
-        // async getSearchWiki() {
-        //     this.wikiable = [];
-        //     this.page = 1;
-        //     this.loading = true;
-        //
-        //     const query = this.searchText.trim();
-        //
-        //     // Cancel previous search request
-        //     if (this.searchRequest) {
-        //         this.searchRequest.abort();
-        //     }
-        //
-        //     // Make a new search request
-        //     this.searchRequest = new AbortController();
-        //
-        //     try {
-        //         const response = await fetch(`/api/wiki?page=${this.page}&q=${this.searchText}`);
-        //         const data = await response.json();
-        //         this.wikiable = [...data.data];
-        //         this.loading = false;
-        //     } catch (error) {
-        //         console.error(error);
-        //         this.loading = false;
-        //     }
-        //
-        // },
-        async search(query) {
-            const response = await fetch(`/api/wiki?page=${this.page}&q=${query}`);
-            const data = await response.json();
+
+        async onSearchInput() {
+            // Clear previous timeout
+            if (this.searchTimeout) {
+                clearTimeout(this.searchTimeout);
+            }
+
+            // Debounce search
+            this.searchTimeout = setTimeout(async () => {
+                this.wikiable = [];
+                this.page = 1;
+                const query = this.searchText.trim();
+
+                // Cancel previous search request
+                if (this.cancelToken) {
+                    this.cancelToken.cancel('New search initiated');
+                }
+
+                if (query === '') {
+                    this.getWikiPages();
+                    return;
+                }
+
+                try {
+                    this.searching = true;
+                    this.wikiable = await this.searchWithAbort(query);
+                    this.page++;
+                } catch (err) {
+                    if (!axios.isCancel(err)) {
+                        console.error('Search error:', err);
+                    }
+                } finally {
+                    this.searching = false;
+                }
+            }, 300); // 300ms debounce
+        },
+
+        async searchWithAbort(query) {
+            // Create new cancel token for this request
+            this.cancelToken = axios.CancelToken.source();
+
+            const response = await axios.get(`/api/wiki`, {
+                params: { page: this.page, q: query },
+                cancelToken: this.cancelToken.token
+            });
+            const data = response.data;
             this.response = data;
             return data.data;
         },
-        async onSearchInput() {
+
+        clearSearch() {
+            this.searchText = '';
             this.wikiable = [];
             this.page = 1;
-            const query = this.searchText.trim();
-
-            // Cancel previous search request
-            if (this.searchRequest) {
-                this.searchRequest.abort();
-            }
-
-            // Make a new search request
-            const controller = new AbortController();
-            this.searchRequest = controller;
-            try {
-                this.wikiable = await this.searchWithAbort(query, controller.signal);
-                this.page++;
-            } catch (err) {
-                if (err.name !== 'AbortError') {
-                    console.error(err);
-                }
-            }
+            this.getWikiPages();
         },
-        async searchWithAbort(query, signal) {
-            const response = await fetch(`/api/wiki?page=${this.page}&q=${query}`, { signal });
-            const data = await response.json();
-            this.response = data;
-            return data.data;
+
+        loadMore() {
+            this.getWikiPages();
         },
+
         handleScroll() {
-
             const scrollHeight = document.documentElement.scrollHeight;
             const scrollTop = document.documentElement.scrollTop;
             const clientHeight = document.documentElement.clientHeight;
 
-            if (this.response.total > this.response.to && scrollTop + clientHeight >= scrollHeight && !this.loading) {
-                // console.log('endofline')
-                this.getWikiPages();
+            if (this.hasMorePages && scrollTop + clientHeight >= scrollHeight - 100) {
+                this.loadMore();
             }
         },
-        getWikiPage(){
-            //TODO loader
-            this.loading = true
-            return axios.get(`/api/wiki/${this.slug}`).then(() => {
-            }).catch((error) => {
-                if (error.response.status === 404) {
-                    this.$router.push('/error/not-found')
-                }
-                if (error.response.status === 401) {
-                    this.$router.push('/auth/signin')
-                }
+
+        readMore(slug) {
+            this.$router.push(`${this.$route.path}/${slug}`);
+        },
+
+        createWikiPage() {
+            this.$router.push(`${this.$route.path}/create`);
+        },
+
+        editPage(slug) {
+            this.$router.push(`${this.$route.path}/${slug}/edit`);
+        },
+
+        sharePage(slug) {
+            const url = `${window.location.origin}${this.$route.path}/${slug}`;
+            navigator.clipboard.writeText(url).then(() => {
+                this.$emit('success', this.$t('wiki.linkCopied'));
             });
         },
-        readMore (slug) {
-            this.$router.push(`${this.$route.path}/${slug}`)
-        },
-    },
-    computed: {
-        // ...mapGetters({
-        //     user: 'auth/user',
-        // }),
-        user() {
-            const userStore = useUserStore()
-            return userStore.user
-        }
 
+        async deletePage(id) {
+            if (confirm(this.$t('wiki.confirmDelete'))) {
+                try {
+                    await axios.delete(`/api/wiki/${id}`);
+                    this.wikiable = this.wikiable.filter(item => item.data.id !== id);
+                    this.$emit('success', this.$t('wiki.pageDeleted'));
+                } catch (error) {
+                    console.error('Error deleting page:', error);
+                    this.$emit('error', this.$t('wiki.deleteError'));
+                }
+            }
+        },
+
+        stripHtml(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            return tmp.textContent || tmp.innerText || '';
+        },
+
+        formatDate(dateString) {
+            if (!dateString) return this.$t('wiki.unknown');
+            return formatDateUtil(dateString, 'M d, Y');
+        }
     },
 
     mounted() {
         this.getWikiPages();
         window.addEventListener("scroll", this.handleScroll);
-        // document.addEventListener('keyup', this.search);
+
+        // Listen for locale changes to refetch content in new language
+        this.onLocaleChange = () => {
+            this.wikiable = [];
+            this.page = 1;
+            this.getWikiPages();
+        };
+        window.addEventListener('locale-changed', this.onLocaleChange);
     },
-    beforeDestroy() {
+
+    beforeUnmount() {
         window.removeEventListener("scroll", this.handleScroll);
-        if (this.searchRequest) {
-            this.searchRequest.abort();
+
+        // Clean up locale change listener
+        if (this.onLocaleChange) {
+            window.removeEventListener('locale-changed', this.onLocaleChange);
         }
-        // document.removeEventListener('keyup', this.search);
+
+        if (this.cancelToken) {
+            this.cancelToken.cancel('Component unmounted');
+        }
+        if (this.searchTimeout) {
+            clearTimeout(this.searchTimeout);
+        }
     },
 }
 </script>
 
-<style>
-img{
-    width: 50%;
+<style scoped>
+.wiki-container {
+    min-height: 100vh;
+    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
 }
-.card-outter {
-    position: relative;
-    padding-bottom: 50px;
+
+.wiki-header {
+    background: rgba(var(--v-theme-primary), 0.1);
+    padding: 32px 0;
+    backdrop-filter: blur(10px);
 }
-.card-actions {
-    position: absolute;
-    bottom: 0;
+
+/* Light mode header gradient */
+.v-theme--light .wiki-header {
+    background: linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(156, 39, 176, 0.1) 100%);
+}
+
+/* Dark mode header */
+.v-theme--dark .wiki-header {
+    background: linear-gradient(135deg, rgba(77, 166, 199, 0.15) 0%, rgba(124, 169, 186, 0.15) 100%);
+}
+
+.wiki-title {
+    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Ensure text is visible in both modes */
+.v-theme--light .wiki-title {
+    background: linear-gradient(135deg, #1976d2 0%, #9c27b0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.v-theme--dark .wiki-title {
+    background: linear-gradient(135deg, #4da6c7 0%, #7ca9ba 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.search-section {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.search-field {
+    border-radius: 16px !important;
+}
+
+.stats-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.wiki-grid {
+    margin-bottom: 32px;
+}
+
+.wiki-card {
+    border-radius: 20px !important;
+    box-shadow: 0 4px 20px rgba(var(--v-theme-on-surface), 0.08) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    background-color: rgb(var(--v-theme-surface));
+}
+
+.wiki-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(var(--v-theme-on-surface), 0.15) !important;
+}
+
+.featured-card {
+    background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.05) 0%, rgba(var(--v-theme-secondary), 0.05) 100%);
+    border: 2px solid rgba(var(--v-theme-primary), 0.2);
+}
+
+.card-header {
+    background: rgba(var(--v-theme-on-surface), 0.05);
+    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+}
+
+.card-avatar {
+    box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.3);
+}
+
+.tags-container {
+    min-height: 24px;
+}
+
+.card-title {
+    line-height: 1.3 !important;
+    color: rgb(var(--v-theme-on-surface));
+}
+
+.card-excerpt {
+    line-height: 1.5;
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.empty-state,
+.loading-state {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.create-btn {
+    border-radius: 12px !important;
+    text-transform: none !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 16px rgba(var(--v-theme-primary), 0.3) !important;
+}
+
+/* Button styling */
+.v-btn {
+    border-radius: 12px !important;
+    text-transform: none !important;
+    font-weight: 600 !important;
+}
+
+/* Responsive design */
+@media (max-width: 960px) {
+    .wiki-header {
+        padding: 24px 0;
+    }
+
+    .search-section {
+        margin-bottom: 24px;
+    }
+
+    .stats-bar {
+        justify-content: center;
+    }
+
+    .text-right {
+        text-align: center !important;
+    }
+
+    .create-btn {
+        width: 100%;
+        margin-top: 16px;
+    }
+}
+
+/* Card animations */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.wiki-card {
+    animation: slideInUp 0.5s ease-out;
+}
+
+/* Loading animation */
+.v-progress-circular {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
 }
 </style>
-
-

@@ -1,19 +1,35 @@
-// Body
-$body-bg: #f4f6f9;
+/**
+ * CSS Custom Properties Declaration
+ * This file defines all custom properties used in the project
+ * for IDE autocomplete and error checking
+ */
 
-// Typography
-$font-family-sans-serif: 'Nunito', sans-serif;
-$font-size-base: 0.9rem;
-$line-height-base: 1.6;
+:root {
+  /* Vuetify Theme Colors */
+  --v-theme-primary: #115571;
+  --v-theme-secondary: #a0b9c8;
+  --v-theme-accent: #048ba8;
+  --v-theme-background: 255, 255, 255;
+  --v-theme-surface: 242, 245, 248;
+  --v-theme-error: #ef476f;
+  --v-theme-warning: #ffd166;
+  --v-theme-info: #2196F3;
+  --v-theme-success: #06d6a0;
 
-// Colors
-$blue: #3490dc;
-$indigo: #6574cd;
-$purple: #9561e2;
-$pink: #f66d9b;
-$red: #e3342f;
-$orange: #f6993f;
-$yellow: #ffed4a;
-$green: #38c172;
-$teal: #4dc0b5;
-$cyan: #6cb2eb;
+  /* Vuetify Border Colors */
+  --v-border-color: 0, 0, 0;
+  --v-theme-borderColor: 0, 0, 0;
+
+  /* Application Opacity Settings */
+  --app-background-opacity: 0.95;
+  --app-surface-opacity: 1;
+
+  /* Vuetify Field Padding */
+  --v-field-padding-top: 12px;
+}
+
+/* Dark theme overrides */
+.v-theme--dark {
+  --v-theme-background: 18, 18, 18;
+  --v-theme-surface: 30, 30, 30;
+}

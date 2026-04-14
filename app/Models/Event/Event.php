@@ -2,14 +2,33 @@
 
 namespace App\Models\Event;
 
+use App\Traits\HasRelateableContent;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Event extends Model
+class Event extends Model implements TranslatableContract
 {
     use Sluggable;
     use SoftDeletes;
+    use HasRelateableContent;
+    use Translatable;
+
+    protected $table = 'events';
+
+    public $translatedAttributes = ['title', 'description'];
+
+    protected $fillable = [
+        'user_id',
+        'image',
+        'startTime',
+        'endTime',
+        'startDate',
+        'endDate',
+        'event_type_id',
+    ];
 
     public function sluggable(): array
     {
@@ -23,6 +42,11 @@ class Event extends Model
     public function details()
     {
         return $this->hasOne("App\\Models\\Event\EventDetail");
+    }
+
+    public function type()
+    {
+        return $this->hasOne("App\\Models\\Event\EventType", 'event_type_id');
     }
 
     public function user()
@@ -65,19 +89,24 @@ class Event extends Model
 //        return count(array_filter($images));
 //    }
 
-    public function going()
-    {
-        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'yes');
-    }
+//    public function going()
+//    {
+//        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'going');
+//    }
+//
+//    public function notgoing()
+//    {
+//        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'notgoing');
+//    }
+//
+//    public function maybegoing()
+//    {
+//        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'maybe');
+//    }
 
-    public function notgoing()
+    public function answer($answer)
     {
-        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'no');
-    }
-
-    public function maybegoing()
-    {
-        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'maybe');
+        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', $answer)->withPivot('approved_at');
     }
 
 //    public function categories(){
