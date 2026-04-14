@@ -77,7 +77,8 @@ const middleware401 = async error => {
             }
         }
 
-        console.error('CSRF token refresh failed after retry, logging out')
+        console.error('CSRF token refresh failed after retry, triggering session timeout')
+        window.dispatchEvent(new CustomEvent('session-timeout'))
         const auth = useAuthStore()
         setTimeout(async () => await auth.logout(), 3000)
         return Promise.reject({
@@ -88,7 +89,8 @@ const middleware401 = async error => {
 
     // Handle unauthorized (401)
     if (status === 401) {
-        console.log('Unauthorized (401), logging out')
+        console.log('Unauthorized (401), triggering session timeout')
+        window.dispatchEvent(new CustomEvent('session-timeout'))
         const auth = useAuthStore()
         setTimeout(async () => await auth.logout(), 3000)
         return Promise.reject({
