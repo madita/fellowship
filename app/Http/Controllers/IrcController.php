@@ -9,6 +9,7 @@ use App\Models\Irc\IrcServer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redis;
 
 class IrcController extends Controller
 {
@@ -109,43 +110,40 @@ class IrcController extends Controller
     }
 
     /**
-     * Connect to IRC server (simulated - would be handled by worker).
+     * Connect to IRC server via the IRC daemon.
      */
     public function connect(IrcConnection $connection): JsonResponse
     {
         $this->authorize('update', $connection);
 
-        // In a real implementation, this would dispatch a job
-        // For now, we'll just update the status
-        $connection->update([
-            'status' => 'connecting',
-        ]);
+        $connection->update(['status' => 'connecting']);
 
-        // Dispatch job to actually connect
-        // dispatch(new ConnectToIrc($connection));
+        Redis::rpush('irc:commands', json_encode([
+            'type' => 'connect',
+            'connection_id' => $connection->id,
+        ]));
 
         return response()->json([
             'message' => 'Connecting to IRC server...',
-            'connection' => $connection,
+            'connection' => $connection->fresh('server'),
         ]);
     }
 
     /**
-     * Disconnect from IRC server.
+     * Disconnect from IRC server via the IRC daemon.
      */
     public function disconnect(IrcConnection $connection): JsonResponse
     {
         $this->authorize('update', $connection);
 
-        $connection->update([
-            'status' => 'disconnected',
-            'disconnected_at' => now(),
-        ]);
-
-        $connection->channels()->update(['is_joined' => false]);
+        Redis::rpush('irc:commands', json_encode([
+            'type' => 'disconnect',
+            'connection_id' => $connection->id,
+            'message' => 'Leaving',
+        ]));
 
         return response()->json([
-            'message' => 'Disconnected from IRC server',
+            'message' => 'Disconnecting from IRC server...',
         ]);
     }
 
@@ -171,20 +169,20 @@ class IrcController extends Controller
                 'name' => $channelName,
             ],
             [
-                'is_joined' => true,
+                'is_joined' => false,
                 'joined_at' => now(),
             ]
         );
 
-        if (!$channel->is_joined) {
-            $channel->update([
-                'is_joined' => true,
-                'joined_at' => now(),
-            ]);
-        }
+        // Send JOIN command to IRC daemon
+        Redis::rpush('irc:commands', json_encode([
+            'type' => 'join',
+            'connection_id' => $connection->id,
+            'channel' => $channelName,
+        ]));
 
         return response()->json([
-            'message' => "Joined {$channelName}",
+            'message' => "Joining {$channelName}...",
             'channel' => $channel,
         ]);
     }
@@ -196,12 +194,14 @@ class IrcController extends Controller
     {
         $this->authorize('update', $channel->connection);
 
-        $channel->update([
-            'is_joined' => false,
-        ]);
+        Redis::rpush('irc:commands', json_encode([
+            'type' => 'part',
+            'connection_id' => $channel->irc_connection_id,
+            'channel' => $channel->name,
+        ]));
 
         return response()->json([
-            'message' => "Left {$channel->name}",
+            'message' => "Leaving {$channel->name}...",
         ]);
     }
 
@@ -215,13 +215,15 @@ class IrcController extends Controller
         $limit = $request->get('limit', 100);
         $before = $request->get('before'); // Message ID for pagination
 
-        $query = $channel->messages()->latest('sent_at');
-
-        if ($before) {
-            $query->where('id', '<', $before);
-        }
-
-        $messages = $query->limit($limit)->get()->reverse()->values();
+        // Get the latest N messages, then sort chronologically
+        $messages = $channel->messages()
+            ->orderBy('sent_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->when($before, fn ($q) => $q->where('id', '<', $before))
+            ->limit($limit)
+            ->get()
+            ->sortBy(['sent_at', 'id'])
+            ->values();
 
         // Mark as read
         $channel->markAsRead();
@@ -238,15 +240,18 @@ class IrcController extends Controller
 
         $request->validate([
             'message' => 'required|string',
+            'type' => 'nullable|string|in:message,action',
             'emotion' => 'nullable|string',
             'gesture' => 'nullable|string',
             'bubble_type' => 'nullable|string',
         ]);
 
+        $msgType = $request->type ?? 'message';
+
         $message = IrcMessage::create([
             'irc_channel_id' => $channel->id,
             'irc_connection_id' => $channel->irc_connection_id,
-            'type' => 'message',
+            'type' => $msgType,
             'from_nick' => $channel->connection->nickname,
             'message' => $request->message,
             'emotion' => $request->emotion ?? 'normal',
@@ -255,8 +260,14 @@ class IrcController extends Controller
             'sent_at' => now(),
         ]);
 
-        // In real implementation, this would send to actual IRC server
-        // For now, it's stored and broadcast via WebSocket
+        // Send to actual IRC server via daemon
+        Redis::rpush('irc:commands', json_encode([
+            'type' => 'send',
+            'connection_id' => $channel->irc_connection_id,
+            'target' => $channel->name,
+            'message' => $request->message,
+            'msg_type' => $msgType,
+        ]));
 
         return response()->json([
             'message' => 'Message sent',
@@ -295,6 +306,34 @@ class IrcController extends Controller
     }
 
     /**
+     * Get users in a channel.
+     */
+    public function getChannelUsers(IrcChannel $channel): JsonResponse
+    {
+        $this->authorize('view', $channel->connection);
+
+        // Read from Redis (populated by the IRC daemon)
+        $redisKey = "irc:channel_users:{$channel->id}";
+        $cached = Redis::get($redisKey);
+
+        if ($cached) {
+            return response()->json(json_decode($cached, true));
+        }
+
+        // Fallback: show current connection's nick
+        $connection = $channel->connection;
+        return response()->json([
+            [
+                'nickname' => $connection->nickname,
+                'isOnline' => $connection->status === 'connected',
+                'isOp' => false,
+                'isVoice' => false,
+                'prefix' => '',
+            ],
+        ]);
+    }
+
+    /**
      * Get unread count across all channels.
      */
     public function getUnreadCount(IrcConnection $connection): JsonResponse
@@ -305,6 +344,100 @@ class IrcController extends Controller
 
         return response()->json([
             'unread_count' => $unreadCount,
+        ]);
+    }
+
+    /**
+     * Poll for IRC events (status changes, messages, user updates).
+     */
+    public function pollEvents(): JsonResponse
+    {
+        $userId = Auth::id();
+        $key = "irc:events:{$userId}";
+
+        // Get all pending events and clear them
+        $events = Redis::lrange($key, 0, -1);
+        Redis::del($key);
+
+        $decoded = array_map(fn ($e) => json_decode($e, true), $events);
+
+        return response()->json($decoded);
+    }
+
+    /**
+     * Send a NICK change via the IRC daemon.
+     */
+    public function changeNick(Request $request, IrcConnection $connection): JsonResponse
+    {
+        $this->authorize('update', $connection);
+
+        $request->validate([
+            'nickname' => 'required|string|max:30',
+        ]);
+
+        Redis::rpush('irc:commands', json_encode([
+            'type' => 'nick',
+            'connection_id' => $connection->id,
+            'nickname' => $request->nickname,
+        ]));
+
+        return response()->json([
+            'message' => 'Changing nickname...',
+        ]);
+    }
+
+    /**
+     * Send a private message or open a PM channel.
+     */
+    public function sendPrivateMessage(Request $request, IrcConnection $connection): JsonResponse
+    {
+        $this->authorize('update', $connection);
+
+        $request->validate([
+            'nick' => 'required|string|max:30',
+            'message' => 'nullable|string',
+        ]);
+
+        $nick = $request->nick;
+
+        // Create or find the PM channel
+        $channel = IrcChannel::firstOrCreate(
+            [
+                'irc_connection_id' => $connection->id,
+                'name' => $nick,
+            ],
+            [
+                'is_joined' => true,
+                'is_private' => true,
+                'joined_at' => now(),
+            ]
+        );
+
+        if ($request->message) {
+            // Store the outgoing message
+            IrcMessage::create([
+                'irc_channel_id' => $channel->id,
+                'irc_connection_id' => $connection->id,
+                'type' => 'message',
+                'from_nick' => $connection->nickname,
+                'message' => $request->message,
+                'is_private' => true,
+                'sent_at' => now(),
+            ]);
+
+            // Send via IRC daemon
+            Redis::rpush('irc:commands', json_encode([
+                'type' => 'send',
+                'connection_id' => $connection->id,
+                'target' => $nick,
+                'message' => $request->message,
+                'msg_type' => 'message',
+            ]));
+        }
+
+        return response()->json([
+            'message' => $request->message ? "Message sent to {$nick}" : "Opened chat with {$nick}",
+            'channel' => $channel,
         ]);
     }
 }

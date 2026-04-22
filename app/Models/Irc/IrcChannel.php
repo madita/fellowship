@@ -17,6 +17,7 @@ class IrcChannel extends Model
         'topic',
         'is_joined',
         'is_favorite',
+        'is_private',
         'notify_mentions',
         'joined_at',
         'last_message_at',
@@ -26,6 +27,7 @@ class IrcChannel extends Model
     protected $casts = [
         'is_joined' => 'boolean',
         'is_favorite' => 'boolean',
+        'is_private' => 'boolean',
         'notify_mentions' => 'boolean',
         'joined_at' => 'datetime',
         'last_message_at' => 'datetime',

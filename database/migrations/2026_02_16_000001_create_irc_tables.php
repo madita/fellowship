@@ -2,13 +2,11 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('irc_servers', function (Blueprint $table) {
@@ -49,6 +47,7 @@ return new class extends Migration
             $table->string('topic')->nullable();
             $table->boolean('is_joined')->default(false);
             $table->boolean('is_favorite')->default(false);
+            $table->boolean('is_private')->default(false);
             $table->boolean('notify_mentions')->default(true);
             $table->timestamp('joined_at')->nullable();
             $table->timestamp('last_message_at')->nullable();
@@ -63,7 +62,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('irc_channel_id')->nullable()->constrained()->cascadeOnDelete();
             $table->foreignId('irc_connection_id')->constrained()->cascadeOnDelete();
-            $table->string('type')->default('message'); // message, join, part, quit, notice, action
+            $table->string('type')->default('message'); // message, action, join, part, quit, notice, nick, kick, topic
             $table->string('from_nick')->nullable();
             $table->string('to_nick')->nullable();
             $table->text('message');
@@ -91,17 +90,84 @@ return new class extends Migration
 
             $table->unique('user_id');
         });
+
+        // Seed default IRC servers
+        DB::table('irc_servers')->insert([
+            [
+                'name' => 'OwnIRC',
+                'host' => 'srv1332590.hstgr.cloud',
+                'port' => 6667,
+                'use_ssl' => false,
+                'description' => '',
+                'is_active' => true,
+                'order' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'Libera.Chat',
+                'host' => 'irc.libera.chat',
+                'port' => 6667,
+                'use_ssl' => true,
+                'description' => 'Libera Chat is a next-generation IRC network for FOSS projects and communities.',
+                'is_active' => true,
+                'order' => 1,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'OFTC',
+                'host' => 'irc.oftc.net',
+                'port' => 6667,
+                'use_ssl' => true,
+                'description' => 'Open and Free Technology Community',
+                'is_active' => true,
+                'order' => 2,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'EFNet',
+                'host' => 'irc.efnet.org',
+                'port' => 6667,
+                'use_ssl' => false,
+                'description' => 'The original IRC network',
+                'is_active' => true,
+                'order' => 3,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'IRCnet',
+                'host' => 'open.ircnet.net',
+                'port' => 6667,
+                'use_ssl' => false,
+                'description' => 'European IRC network',
+                'is_active' => true,
+                'order' => 4,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'DALnet',
+                'host' => 'irc.dal.net',
+                'port' => 6667,
+                'use_ssl' => false,
+                'description' => 'Community-oriented IRC network',
+                'is_active' => true,
+                'order' => 5,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
+        Schema::dropIfExists('irc_user_preferences');
         Schema::dropIfExists('irc_messages');
         Schema::dropIfExists('irc_channels');
         Schema::dropIfExists('irc_connections');
-        Schema::dropIfExists('irc_user_preferences');
         Schema::dropIfExists('irc_servers');
     }
 };

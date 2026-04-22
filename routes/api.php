@@ -336,6 +336,9 @@ Route::post('/login', function (Request $request) {
 
 // IRC Client Routes
 Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {
+    // Servers
+    Route::get('/servers', 'App\Http\Controllers\IrcController@getServers');
+
     // Connections
     Route::get('/connections', 'App\Http\Controllers\IrcController@getConnections');
     Route::post('/connections', 'App\Http\Controllers\IrcController@createConnection');
@@ -351,7 +354,13 @@ Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {
     Route::post('/channels/{channel}/favorite', 'App\Http\Controllers\IrcController@toggleFavorite');
     
     // Messages
+    Route::get('/channels/{channel}/users', 'App\Http\Controllers\IrcController@getChannelUsers');
     Route::get('/channels/{channel}/messages', 'App\Http\Controllers\IrcController@getChannelMessages');
     Route::post('/channels/{channel}/messages', 'App\Http\Controllers\IrcController@sendMessage');
     Route::get('/connections/{connection}/unread', 'App\Http\Controllers\IrcController@getUnreadCount');
+    Route::post('/connections/{connection}/nick', 'App\Http\Controllers\IrcController@changeNick');
+    Route::post('/connections/{connection}/pm', 'App\Http\Controllers\IrcController@sendPrivateMessage');
+
+    // Events polling
+    Route::get('/events', 'App\Http\Controllers\IrcController@pollEvents');
 });
