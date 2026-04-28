@@ -243,6 +243,7 @@
             ref="comicView"
             :messages="messages"
             :character="currentConnection?.comic_character || 'cat'"
+            :my-nick="currentConnection?.nickname || ''"
             :background="comicBackground"
             :show-timestamps="true"
             :show-emotion-bar="true"

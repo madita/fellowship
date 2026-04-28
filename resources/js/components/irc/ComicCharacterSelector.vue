@@ -20,17 +20,20 @@
           >
             <v-card
               :class="{ 'selected-character': selectedCharacter === character.id }"
-              class="character-card"
+              class="character-card pa-2"
               @click="selectedCharacter = character.id"
               hover
             >
-              <v-img
-                :src="character.image"
-                :alt="character.name"
-                height="120"
-                contain
-              />
-              <v-card-subtitle class="text-center">
+              <div class="d-flex justify-center">
+                <svg viewBox="0 0 100 140" class="character-preview">
+                  <comic-character
+                    :character="character.id"
+                    emotion="happy"
+                    :color="character.hue"
+                  />
+                </svg>
+              </div>
+              <v-card-subtitle class="text-center pt-1">
                 {{ character.name }}
               </v-card-subtitle>
             </v-card>
@@ -39,18 +42,18 @@
 
         <!-- Background Selection -->
         <v-divider class="my-4" />
-        
+
         <p class="text-subtitle-2 mb-3">
           Choose Comic Background Scene
         </p>
 
         <v-chip-group v-model="selectedBackground" mandatory>
-          <v-chip value="room">🏠 Room</v-chip>
-          <v-chip value="office">🏢 Office</v-chip>
-          <v-chip value="outdoor">🌳 Outdoor</v-chip>
-          <v-chip value="space">🚀 Space</v-chip>
-          <v-chip value="cafe">☕ Cafe</v-chip>
-          <v-chip value="beach">🏖️ Beach</v-chip>
+          <v-chip value="room">Room</v-chip>
+          <v-chip value="office">Office</v-chip>
+          <v-chip value="outdoor">Outdoor</v-chip>
+          <v-chip value="space">Space</v-chip>
+          <v-chip value="cafe">Cafe</v-chip>
+          <v-chip value="beach">Beach</v-chip>
         </v-chip-group>
       </v-card-text>
 
@@ -68,8 +71,11 @@
 </template>
 
 <script>
+import ComicCharacter from './ComicCharacterParts.vue';
+
 export default {
   name: 'ComicCharacterSelector',
+  components: { ComicCharacter },
   props: {
     modelValue: Boolean,
     currentCharacter: String,
@@ -81,14 +87,14 @@ export default {
       selectedCharacter: this.currentCharacter || 'cat',
       selectedBackground: this.currentBackground || 'room',
       characters: [
-        { id: 'cat', name: 'Cat', image: '/images/comic/characters/cat-normal.svg' },
-        { id: 'dog', name: 'Dog', image: '/images/comic/characters/dog-normal.svg' },
-        { id: 'robot', name: 'Robot', image: '/images/comic/characters/robot-normal.svg' },
-        { id: 'alien', name: 'Alien', image: '/images/comic/characters/alien-normal.svg' },
-        { id: 'wizard', name: 'Wizard', image: '/images/comic/characters/wizard-normal.svg' },
-        { id: 'ninja', name: 'Ninja', image: '/images/comic/characters/ninja-normal.svg' },
-        { id: 'pirate', name: 'Pirate', image: '/images/comic/characters/pirate-normal.svg' },
-        { id: 'knight', name: 'Knight', image: '/images/comic/characters/knight-normal.svg' },
+        { id: 'cat', name: 'Cat', hue: 30 },
+        { id: 'dog', name: 'Dog', hue: 25 },
+        { id: 'robot', name: 'Robot', hue: 200 },
+        { id: 'alien', name: 'Alien', hue: 120 },
+        { id: 'wizard', name: 'Wizard', hue: 270 },
+        { id: 'ninja', name: 'Ninja', hue: 0 },
+        { id: 'pirate', name: 'Pirate', hue: 45 },
+        { id: 'knight', name: 'Knight', hue: 210 },
       ],
     };
   },
@@ -118,5 +124,10 @@ export default {
 .selected-character {
   border-color: #1976d2;
   box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+.character-preview {
+  width: 80px;
+  height: 112px;
 }
 </style>

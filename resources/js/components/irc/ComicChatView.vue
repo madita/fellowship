@@ -1,163 +1,99 @@
 <template>
-  <div class="comic-chat-view" :style="{ backgroundImage: `url(${backgroundImage})` }">
+  <div class="comic-chat-view" :class="`bg-${background}`">
     <!-- Comic Panels Container -->
     <div ref="comicContainer" class="comic-panels-container">
-      <!-- Group messages into panels (3-4 messages per panel) -->
+      <!-- Group messages into panels -->
       <div
         v-for="(panel, panelIndex) in comicPanels"
         :key="panelIndex"
         class="comic-panel"
       >
-        <!-- Panel Background -->
         <div class="panel-background">
-          <!-- Messages in this panel -->
           <div
             v-for="(message, msgIndex) in panel"
             :key="message.id"
             :class="getMessagePositionClass(msgIndex, panel.length)"
           >
-            <!-- Character Avatar -->
+            <!-- Character Avatar (inline SVG) -->
             <div class="character-container">
-              <img
-                :src="getCharacterImage(message.from_nick, message.emotion)"
-                :alt="message.from_nick"
-                :class="['character-avatar', getEmotionClass(message.emotion)]"
-              />
+              <svg
+                viewBox="0 0 100 140"
+                class="character-avatar"
+                :class="getEmotionClass(message.emotion)"
+              >
+                <comic-character
+                  :character="getCharacterType(message.from_nick)"
+                  :emotion="message.emotion || 'normal'"
+                  :color="getNickHue(message.from_nick)"
+                />
+              </svg>
               <div class="character-name">{{ message.from_nick }}</div>
             </div>
 
             <!-- Speech Bubble -->
-            <div :class="['speech-bubble', getBubbleClass(message.bubble_type)]">
-              <div class="bubble-tail" />
+            <div :class="['speech-bubble', getBubbleClass(message)]">
               <div class="bubble-content">
                 <span v-if="showTimestamps" class="bubble-timestamp">
                   {{ formatTime(message.sent_at) }}
                 </span>
-                <span class="bubble-text">{{ message.message }}</span>
-                <span v-if="message.gesture !== 'none'" class="gesture-indicator">
+                <span v-if="message.type === 'action'" class="bubble-text action-text">
+                  * {{ message.from_nick }} {{ message.message }}
+                </span>
+                <span v-else class="bubble-text">{{ message.message }}</span>
+                <span v-if="message.gesture && message.gesture !== 'none'" class="gesture-indicator">
                   {{ getGestureEmoji(message.gesture) }}
                 </span>
               </div>
             </div>
           </div>
         </div>
-
-        <!-- Panel Border -->
-        <div class="panel-border" />
       </div>
 
       <!-- Empty State -->
       <div v-if="!comicPanels.length" class="empty-comic">
-        <img src="/images/comic/welcome.svg" alt="Welcome" class="welcome-character" />
+        <svg viewBox="0 0 100 140" class="welcome-character">
+          <comic-character character="cat" emotion="happy" :color="200" />
+        </svg>
         <div class="speech-bubble speech">
           <div class="bubble-content">
-            Welcome to Comic Chat! Start chatting to see the magic! 🎨
+            <span class="bubble-text">Welcome to Comic Chat! Start chatting to see the magic!</span>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Emotion/Gesture Selector (when composing) -->
-    <div v-if="showEmotionBar" class="emotion-bar">
-      <div class="emotion-selector">
-        <v-btn-toggle v-model="selectedEmotion" mandatory>
-          <v-btn value="normal" size="small">
-            😐 Normal
-          </v-btn>
-          <v-btn value="happy" size="small">
-            😊 Happy
-          </v-btn>
-          <v-btn value="sad" size="small">
-            😢 Sad
-          </v-btn>
-          <v-btn value="angry" size="small">
-            😠 Angry
-          </v-btn>
-          <v-btn value="surprised" size="small">
-            😲 Surprised
-          </v-btn>
-          <v-btn value="confused" size="small">
-            😕 Confused
-          </v-btn>
-          <v-btn value="excited" size="small">
-            🤩 Excited
-          </v-btn>
-        </v-btn-toggle>
-      </div>
-
-      <div class="gesture-selector">
-        <v-btn-toggle v-model="selectedGesture">
-          <v-btn value="none" size="small">
-            None
-          </v-btn>
-          <v-btn value="wave" size="small">
-            👋 Wave
-          </v-btn>
-          <v-btn value="laugh" size="small">
-            😂 Laugh
-          </v-btn>
-          <v-btn value="think" size="small">
-            🤔 Think
-          </v-btn>
-          <v-btn value="shout" size="small">
-            📢 Shout
-          </v-btn>
-          <v-btn value="whisper" size="small">
-            🤫 Whisper
-          </v-btn>
-        </v-btn-toggle>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import ComicCharacter from './ComicCharacterParts.vue';
+
 export default {
   name: 'ComicChatView',
+  components: { ComicCharacter },
   props: {
-    messages: {
-      type: Array,
-      default: () => [],
-    },
-    character: {
-      type: String,
-      default: 'cat',
-    },
-    background: {
-      type: String,
-      default: 'room',
-    },
-    showTimestamps: {
-      type: Boolean,
-      default: true,
-    },
-    showEmotionBar: {
-      type: Boolean,
-      default: true,
-    },
+    messages: { type: Array, default: () => [] },
+    character: { type: String, default: 'cat' },
+    myNick: { type: String, default: '' },
+    background: { type: String, default: 'room' },
+    showTimestamps: { type: Boolean, default: true },
+    showEmotionBar: { type: Boolean, default: false },
   },
+  emits: ['emotion-selected', 'gesture-selected'],
   data() {
     return {
-      selectedEmotion: 'normal',
-      selectedGesture: 'none',
       messagesPerPanel: 3,
+      characterTypes: ['cat', 'dog', 'robot', 'alien', 'wizard', 'ninja', 'pirate', 'knight'],
     };
   },
   computed: {
     comicPanels() {
-      // Group messages into panels of 3-4 messages each
       const panels = [];
-      const msgs = [...this.messages];
-
-      while (msgs.length > 0) {
-        const panelSize = Math.min(this.messagesPerPanel, msgs.length);
-        panels.push(msgs.splice(0, panelSize));
+      const msgs = this.messages.filter(m => m.type === 'message' || m.type === 'action');
+      const copy = [...msgs];
+      while (copy.length > 0) {
+        panels.push(copy.splice(0, this.messagesPerPanel));
       }
-
       return panels;
-    },
-    backgroundImage() {
-      return `/images/comic/backgrounds/${this.background}.jpg`;
     },
   },
   watch: {
@@ -166,34 +102,33 @@ export default {
     },
   },
   methods: {
-    getCharacterImage(nick, emotion = 'normal') {
-      // Get character based on nickname hash
-      const characters = ['cat', 'dog', 'robot', 'alien', 'wizard', 'ninja', 'pirate', 'knight'];
-      const charIndex = this.hashCode(nick) % characters.length;
-      const character = characters[charIndex];
-
-      // Return character image with emotion
-      return `/images/comic/characters/${character}-${emotion}.svg`;
+    getCharacterType(nick) {
+      // Use selected character for current user, hash-based for others
+      if (this.myNick && nick.toLowerCase() === this.myNick.toLowerCase()) {
+        return this.character;
+      }
+      const idx = this.hashCode(nick) % this.characterTypes.length;
+      return this.characterTypes[idx];
+    },
+    getNickHue(nick) {
+      return this.hashCode(nick) % 360;
     },
     getEmotionClass(emotion) {
-      return `emotion-${emotion}`;
+      return emotion ? `emotion-${emotion}` : '';
     },
-    getBubbleClass(bubbleType) {
-      return bubbleType || 'speech';
+    getBubbleClass(message) {
+      if (message.bubble_type === 'thought' || message.gesture === 'think') return 'thought';
+      if (message.bubble_type === 'shout' || message.gesture === 'shout') return 'shout';
+      if (message.bubble_type === 'whisper' || message.gesture === 'whisper') return 'whisper';
+      if (message.type === 'action') return 'action-bubble';
+      return 'speech';
     },
-    getMessagePositionClass(index, total) {
-      const positions = ['message-position-left', 'message-position-center', 'message-position-right'];
+    getMessagePositionClass(index) {
+      const positions = ['message-position-left', 'message-position-right'];
       return `comic-message ${positions[index % positions.length]}`;
     },
     getGestureEmoji(gesture) {
-      const emojis = {
-        wave: '👋',
-        laugh: '😂',
-        think: '🤔',
-        shout: '📢',
-        whisper: '🤫',
-      };
-      return emojis[gesture] || '';
+      return { wave: '👋', laugh: '😂', think: '💭', shout: '📢', whisper: '🤫' }[gesture] || '';
     },
     hashCode(str) {
       let hash = 0;
@@ -203,29 +138,14 @@ export default {
       return Math.abs(hash);
     },
     formatTime(timestamp) {
-      return new Date(timestamp).toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      if (!timestamp) return '';
+      return new Date(timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     },
     scrollToBottom() {
       const container = this.$refs.comicContainer;
       if (container) {
         container.scrollTop = container.scrollHeight;
       }
-    },
-    getCurrentEmotion() {
-      return this.selectedEmotion;
-    },
-    getCurrentGesture() {
-      return this.selectedGesture;
-    },
-    getBubbleType() {
-      // Map gesture to bubble type
-      if (this.selectedGesture === 'whisper') return 'whisper';
-      if (this.selectedGesture === 'shout') return 'shout';
-      if (this.selectedGesture === 'think') return 'thought';
-      return 'speech';
     },
   },
 };
@@ -234,52 +154,88 @@ export default {
 <style scoped>
 .comic-chat-view {
   height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: #f5f5dc;
   display: flex;
   flex-direction: column;
+}
+
+/* Background themes */
+.bg-room {
+  background-color: #f5f0e1;
+  background-image:
+    linear-gradient(90deg, rgba(139, 90, 43, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(139, 90, 43, 0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.bg-office {
+  background-color: #e8eaf6;
+  background-image:
+    linear-gradient(90deg, rgba(63, 81, 181, 0.06) 1px, transparent 1px),
+    linear-gradient(rgba(63, 81, 181, 0.06) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+.bg-outdoor {
+  background: linear-gradient(180deg, #bbdefb 0%, #c8e6c9 50%, #a5d6a7 100%);
+}
+
+.bg-space {
+  background-color: #1a1a2e;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.3) 1px, transparent 1px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+  background-size: 50px 50px, 30px 30px;
+  background-position: 0 0, 15px 15px;
+}
+.bg-space .comic-panel {
+  background: rgba(255, 255, 255, 0.92);
+}
+.bg-space .character-name {
+  color: #e0e0e0;
+}
+
+.bg-cafe {
+  background-color: #efebe9;
+  background-image:
+    radial-gradient(ellipse at 30% 50%, rgba(121, 85, 72, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse at 70% 50%, rgba(121, 85, 72, 0.06) 0%, transparent 70%);
+}
+
+.bg-beach {
+  background: linear-gradient(180deg, #b3e5fc 0%, #b3e5fc 40%, #ffe0b2 40%, #ffcc80 100%);
 }
 
 .comic-panels-container {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .comic-panel {
-  position: relative;
   background: white;
-  border: 3px solid #000;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
-  min-height: 200px;
+  border: 3px solid #222;
+  border-radius: 6px;
+  padding: 16px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.15);
 }
 
 .panel-background {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
 }
 
 .comic-message {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  position: relative;
+  gap: 8px;
 }
 
 .message-position-left {
   justify-content: flex-start;
-}
-
-.message-position-center {
-  justify-content: center;
 }
 
 .message-position-right {
@@ -291,93 +247,91 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 80px;
+  flex-shrink: 0;
 }
 
 .character-avatar {
-  width: 80px;
-  height: 120px;
-  object-fit: contain;
-  filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.3));
+  width: 64px;
+  height: 90px;
+  filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.2));
 }
 
 .character-name {
-  font-family: 'Comic Sans MS', cursive, sans-serif;
-  font-size: 12px;
+  font-family: 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
+  font-size: 11px;
   font-weight: bold;
-  margin-top: 5px;
+  margin-top: 2px;
   text-align: center;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .speech-bubble {
   position: relative;
   background: white;
-  border: 2px solid #000;
-  border-radius: 20px;
-  padding: 12px 16px;
-  max-width: 400px;
-  font-family: 'Comic Sans MS', cursive, sans-serif;
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+  border: 2px solid #222;
+  border-radius: 18px;
+  padding: 10px 14px;
+  max-width: 360px;
+  min-width: 60px;
+  font-family: 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.12);
 }
 
 .speech-bubble.thought {
-  border-radius: 50%;
-  padding: 20px;
+  border-radius: 50% / 40%;
+  border-style: dotted;
+  background: #f8f8ff;
 }
 
 .speech-bubble.shout {
-  background: #ffe6e6;
+  background: #fff3e0;
   border-width: 3px;
-  font-size: 1.2em;
+  border-color: #e65100;
   font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.95em;
 }
 
 .speech-bubble.whisper {
-  background: #f0f0f0;
+  background: #f3f3f3;
   border-style: dashed;
-  font-size: 0.9em;
+  border-color: #999;
   font-style: italic;
+  font-size: 0.85em;
+  color: #666;
 }
 
-.bubble-tail {
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-style: solid;
-}
-
-.message-position-left .bubble-tail {
-  left: -10px;
-  top: 20px;
-  border-width: 10px 10px 10px 0;
-  border-color: transparent #000 transparent transparent;
-}
-
-.message-position-right .bubble-tail {
-  right: -10px;
-  top: 20px;
-  border-width: 10px 0 10px 10px;
-  border-color: transparent transparent transparent #000;
+.speech-bubble.action-bubble {
+  background: #f3e5f5;
+  border-color: #9c27b0;
+  font-style: italic;
 }
 
 .bubble-content {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
 }
 
 .bubble-timestamp {
-  font-size: 10px;
-  color: #666;
+  font-size: 9px;
+  color: #999;
 }
 
 .bubble-text {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.4;
 }
 
+.action-text {
+  color: #7b1fa2;
+}
+
 .gesture-indicator {
-  font-size: 20px;
+  font-size: 18px;
   text-align: right;
 }
 
@@ -386,72 +340,48 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 400px;
-  gap: 20px;
+  height: 300px;
+  gap: 16px;
 }
 
 .welcome-character {
-  width: 150px;
-  height: 200px;
-}
-
-.emotion-bar {
-  background: white;
-  border-top: 2px solid #000;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  font-family: 'Comic Sans MS', cursive, sans-serif;
-}
-
-.emotion-selector,
-.gesture-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  width: 100px;
+  height: 140px;
 }
 
 /* Emotion animations */
-.emotion-happy {
-  animation: bounce 0.5s ease-in-out;
-}
-
-.emotion-sad {
-  filter: brightness(0.8);
-}
-
-.emotion-angry {
-  animation: shake 0.3s ease-in-out;
-}
+.emotion-happy { animation: bounce 0.5s ease-in-out; }
+.emotion-angry { animation: shake 0.3s ease-in-out; }
+.emotion-surprised { animation: pop 0.3s ease-out; }
+.emotion-excited { animation: bounce 0.4s ease-in-out infinite alternate; }
 
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-6px); }
 }
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
 }
 
-/* Scrollbar styling */
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
 .comic-panels-container::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 .comic-panels-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border: 2px solid #000;
+  background: #ece6d6;
 }
 
 .comic-panels-container::-webkit-scrollbar-thumb {
-  background: #888;
-  border: 2px solid #000;
-}
-
-.comic-panels-container::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #c4b99a;
+  border-radius: 4px;
 }
 </style>

@@ -66,6 +66,9 @@ return new class extends Migration
             $table->string('from_nick')->nullable();
             $table->string('to_nick')->nullable();
             $table->text('message');
+            $table->string('emotion')->default('normal');
+            $table->string('gesture')->default('none');
+            $table->string('bubble_type')->default('speech');
             $table->boolean('is_private')->default(false);
             $table->boolean('is_mention')->default(false);
             $table->timestamp('sent_at');

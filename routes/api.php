@@ -307,6 +307,20 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::get('/model-translations/{modelType}/{id}', 'App\Http\Controllers\Admin\ModelTranslationController@show');
     Route::put('/model-translations/{modelType}/{id}', 'App\Http\Controllers\Admin\ModelTranslationController@update');
     Route::put('/model-translations/{modelType}/bulk', 'App\Http\Controllers\Admin\ModelTranslationController@bulkUpdate');
+
+    // IRC Admin
+    Route::prefix('irc')->group(function () {
+        Route::get('/servers', 'App\Http\Controllers\Admin\IrcAdminController@getServers');
+        Route::post('/servers', 'App\Http\Controllers\Admin\IrcAdminController@storeServer');
+        Route::patch('/servers/{server}', 'App\Http\Controllers\Admin\IrcAdminController@updateServer');
+        Route::delete('/servers/{server}', 'App\Http\Controllers\Admin\IrcAdminController@deleteServer');
+        Route::post('/servers/{server}/check', 'App\Http\Controllers\Admin\IrcAdminController@checkServer');
+        Route::get('/connections', 'App\Http\Controllers\Admin\IrcAdminController@getConnections');
+        Route::post('/connections/{connection}/disconnect', 'App\Http\Controllers\Admin\IrcAdminController@disconnectConnection');
+        Route::delete('/connections/{connection}', 'App\Http\Controllers\Admin\IrcAdminController@deleteConnection');
+        Route::get('/daemon/status', 'App\Http\Controllers\Admin\IrcAdminController@getDaemonStatus');
+        Route::get('/stats', 'App\Http\Controllers\Admin\IrcAdminController@getStats');
+    });
 });
 
 Route::post('/login', function (Request $request) {

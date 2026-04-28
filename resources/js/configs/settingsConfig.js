@@ -106,6 +106,18 @@ export const settingsCategories = [
         ]
     },
     {
+        id: 'irc',
+        title: 'IRC',
+        description: 'IRC servers, daemon, and connection management',
+        icon: 'mdi-chat-processing-outline',
+        color: 'indigo',
+        settings: [
+            { id: 'dashboard', title: 'Dashboard', description: 'Daemon status, stats, and monitoring', icon: 'mdi-monitor-dashboard', component: 'IrcDashboardPage' },
+            { id: 'servers', title: 'Servers', description: 'Manage IRC servers', icon: 'mdi-server-network', component: 'IrcServersPage' },
+            { id: 'connections', title: 'Connections', description: 'Active user connections', icon: 'mdi-connection', component: 'IrcConnectionsPage' },
+        ]
+    },
+    {
         id: 'advanced',
         title: 'Advanced',
         description: 'Caching, PWA, API, and developer settings',
