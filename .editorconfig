@@ -1,0 +1,46 @@
+# EditorConfig is awesome: https://EditorConfig.org
+# Complements StyleCI for consistent coding style
+
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# PHP files
+[*.php]
+indent_size = 4
+
+# Blade templates
+[*.blade.php]
+indent_size = 4
+
+# JavaScript
+[*.{js,jsx,ts,tsx,vue}]
+indent_size = 2
+
+# JSON
+[*.json]
+indent_size = 2
+
+# YAML
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 2
+
+# Package files
+[{package.json,composer.json}]
+indent_size = 2
+
+# Makefile
+[Makefile]
+indent_style = tab

@@ -32,35 +32,29 @@ class UserController extends Controller
 
     public function searchUsers(Request $request)
     {
-        $q = $request->get('query', '');
+        $q = $request->input('query', '');
 
-        if (empty($q)) {
-            // Return all users with avatar
-            return User::where('id', '!=', auth()->id())
-                ->get(['id', 'username', 'email'])
-                ->map(function ($user) {
-                    return [
-                        'id'       => $user->id,
-                        'username' => $user->username,
-                        'email'    => $user->email,
-                        'avatar'   => $user->avatar,
-                        'initials' => $user->initials,
-                    ];
-                });
+        $query = User::where('id', '!=', auth()->id());
+
+        if (!empty($q)) {
+            $search = '%' . Str::lower($q) . '%';
+            $query->where(function ($sub) use ($search) {
+                $sub->whereRaw('LOWER(username) LIKE ?', [$search])
+                    ->orWhereRaw('LOWER(name) LIKE ?', [$search])
+                    ->orWhereRaw('LOWER(email) LIKE ?', [$search]);
+            });
         }
 
-        return User::where('id', '!=', auth()->id())
-            ->whereRaw('LOWER(username) LIKE ?', ['%'.Str::lower($q).'%'])
-            ->get(['id', 'username', 'email'])
-            ->map(function ($user) {
-                return [
-                    'id'       => $user->id,
-                    'username' => $user->username,
-                    'email'    => $user->email,
-                    'avatar'   => $user->avatar,
-                    'initials' => $user->initials,
-                ];
-            });
+        return $query->get()->map(function ($user) {
+            return [
+                'id'       => $user->id,
+                'username' => $user->username,
+                'name'     => $user->name,
+                'email'    => $user->email,
+                'avatar'   => $user->avatar,
+                'initials' => $user->initials,
+            ];
+        });
     }
 
     /**

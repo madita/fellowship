@@ -23,11 +23,11 @@ return new class() extends Migration {
             $table->string('location')->default('home'); // home, footer, page, etc.
             $table->foreignId('section_id')->nullable();
             $table->string('type'); // hero, stats, partners, feature_grid, feature_showcase, cta, testimonials, pricing, faq, gallery, quicklinks, contact, newsletter, social, text
-            $table->string('title')->nullable();
+            // $table->string('title')->nullable(); // Moved to widget_translations
             $table->boolean('enabled')->default(true);
             $table->integer('order')->default(0);
             $table->integer('column')->default(1);
-            $table->json('content')->nullable(); // Widget-specific content
+            // $table->json('content')->nullable(); // Moved to widget_translations
             $table->json('config')->nullable(); // Widget-specific configuration
             $table->string('anchor_id')->nullable(); // For navigation
             $table->timestamps();
@@ -37,7 +37,7 @@ return new class() extends Migration {
 
         Schema::create('homepage_menu_items', function (Blueprint $table) {
             $table->id();
-            $table->string('label');
+            // $table->string('label'); // Moved to homepage_menu_item_translations
             $table->string('anchor_target');
             $table->integer('order')->default(0);
             $table->boolean('enabled')->default(true);
@@ -49,7 +49,7 @@ return new class() extends Migration {
         Schema::create('sections', function (Blueprint $table) {
             $table->id();
             $table->string('location')->default('home'); // home, footer, page, etc.
-            $table->string('title')->nullable();
+            // $table->string('title')->nullable(); // Moved to section_translations
             $table->string('anchor_id')->nullable();
             $table->string('layout')->default('1-col'); // 1-col, 2-col, 3-col, 4-col, 2-1-col (66/33), 1-2-col (33/66)
             $table->boolean('enabled')->default(true);
@@ -66,9 +66,12 @@ return new class() extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('settings');
-        Schema::dropIfExists('widgets');
-        Schema::dropIfExists('homepage_menu_items');
+        Schema::dropIfExists('widget_translations');
+        Schema::dropIfExists('homepage_menu_item_translations');
+        Schema::dropIfExists('section_translations');
         Schema::dropIfExists('sections');
+        Schema::dropIfExists('homepage_menu_items');
+        Schema::dropIfExists('widgets');
+        Schema::dropIfExists('settings');
     }
 };
