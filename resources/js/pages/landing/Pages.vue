@@ -50,8 +50,8 @@
                         </template>
                     </v-table>
                 </div>
-                <div v-else v-html="page.body"></div>
-                <div v-for="child in page.children"><router-link :to="`/p/${child.slug}`" class="font-weight-bold">
+                <div v-else v-html="page.content"></div>
+                <div v-for="child in page.children"><router-link :to="`/${child.slug}`" class="font-weight-bold">
                     {{child.title}}
                 </router-link></div>
                 <v-chip :color="tag.color" v-for="tag in tags" :key="`tag-${tag.id}`" @click="goToTerm(tag.slug)">{{ tag.name }}</v-chip>
@@ -93,11 +93,11 @@ export default {
                 this.page = response.data.page
                 this.parents = Object.values(response.data.parents)
 
-                let taxonomies = response.data.taxonomies
-                this.tags = taxonomies.tags;
+                let taxonomies = response.data.taxonomies || {}
+                this.tags = taxonomies.tags || [];
 
                 this.breadcrumbs = this.parents.map(x =>  ({
-                    text:x.title, to:'/p/'+x.slug
+                    text:x.title, to:'/'+x.slug
                 })).reverse();
 
                 this.breadcrumbs.push({text:this.page.title})

@@ -4,6 +4,12 @@
             <v-container class="py-6 pt-lg-15">
                 <h1>{{post.title}}</h1>
                 <div v-html="post.body"></div>
+
+                <v-chip :color="tag.color" v-for="tag in tags" :key="`tag-${tag.id}`" @click="goToTerm(tag.slug)">{{ tag.name }}</v-chip>
+
+                <div v-for="(taxonomy, key) in taxonomies" :key="`tax-${key}`">
+                    {{key}}: <v-chip :color="tag.color" v-for="tag in taxonomy" :key="`tax-${tag.id}`" @click="goToCategory(tag.slug, key)">{{ tag.name }}</v-chip>
+                </div>
             </v-container>
         </v-sheet>
 
@@ -20,6 +26,8 @@ export default {
         return {
             loading: true,
             post: [],
+            tags: [],
+            taxonomies: {},
             slug:""
         }
     },
@@ -30,6 +38,11 @@ export default {
             return axios.get(`/api/posts/${this.slug}`).then((response) => {
                 this.post = response.data.data
 
+                let taxonomies = response.data.taxonomies || {}
+                this.tags = taxonomies.tags || []
+                delete taxonomies.tags
+                this.taxonomies = taxonomies
+
                 this.loading = false
             }).catch((error) => {
                 if (error.response.status === 404) {
@@ -39,6 +52,12 @@ export default {
                     this.$router.push('/auth/signin')
                 }
             });
+        },
+        goToTerm(slug) {
+            this.$router.push(`/tags/tags:${slug}/post`)
+        },
+        goToCategory(slug, taxonomy) {
+            this.$router.push(`/tags/${taxonomy}:${slug}/post`)
         }
     },
 

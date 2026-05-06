@@ -83,17 +83,6 @@ export const routes = [{
     //     }
     // },
     {
-        path: '/p/:slug',
-        name: 'page',
-        component: () => import(/* webpackChunkName: "landing-pages" */ '@/pages/landing/Pages.vue'),
-        meta: {
-            layout: 'landing',
-            middleware: [
-                auth, verified
-            ]
-        }
-    },
-    {
         path: '/error',
         name: 'access-denied',
         component: () => import(/* webpackChunkName: "error" */ '@/pages/error/NotFoundPage.vue'),
@@ -102,7 +91,15 @@ export const routes = [{
         }
     },
     {
-        path: '/:catchAll(.*)',
+        path: '/:slug([\\w-]+)',
+        name: 'page',
+        component: () => import(/* webpackChunkName: "landing-pages" */ '@/pages/landing/Pages.vue'),
+        meta: {
+            layout: 'landing'
+        }
+    },
+    {
+        path: '/:pathMatch(.*)*',
         name: 'error',
         component: () => import(/* webpackChunkName: "error" */ '@/pages/error/NotFoundPage.vue'),
         meta: {

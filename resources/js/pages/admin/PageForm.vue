@@ -65,24 +65,20 @@ const getPage = () => {
         page.value = response.data.page;
         page.value.parent = response.data.parent;
 
-        let taxonomies = response.data.taxonomies;
-        let termsData = response.data.terms;
+        const taxonomies = { ...(response.data.taxonomies || {}) };
 
-        if (taxonomies.hasOwnProperty('tags')) {
+        if (taxonomies.tags) {
             termValue.value = taxonomies.tags;
             delete taxonomies.tags;
         }
 
-        taxonomyValue.value = taxonomies[0];
-
-        if (taxonomyValue.value && taxonomyValue.value.length > 0 && termsData.hasOwnProperty(taxonomyValue.value)) {
-            const rawCategories = termsData[taxonomyValue.value];
-            categoryValue.value = Array.isArray(rawCategories)
-                ? rawCategories.map(cat => typeof cat === 'object' ? (cat.title || cat) : cat)
-                : rawCategories;
+        const remainingKeys = Object.keys(taxonomies);
+        if (remainingKeys.length > 0) {
+            taxonomyValue.value = remainingKeys[0];
+            categoryValue.value = taxonomies[remainingKeys[0]];
         }
 
-        getCategories(taxonomyValue.value);
+        getCategories(getTaxonomyName());
         loading.value = false;
     });
 };

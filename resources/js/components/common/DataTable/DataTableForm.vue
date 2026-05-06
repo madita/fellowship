@@ -225,7 +225,7 @@ watch(() => props.editMode, (newEditMode) => {
     localEditMode.value = newEditMode;
 }, { immediate: true });
 
-watch(() => props.isDrawerOpen, (isOpen) => {
+watch(() => props.isDrawerOpen, async (isOpen) => {
     if (isOpen) {
         resetItem();
         // Auto-enable edit mode for new items (no id)
@@ -236,7 +236,7 @@ watch(() => props.isDrawerOpen, (isOpen) => {
         // If editing existing item, fetch full data including taxonomies
         if (props.item?.id && props.endpoint) {
             try {
-                const { data } = axios.get(`/api${props.endpoint}/${props.item.id}`);
+                const { data } = await axios.get(`/api${props.endpoint}/${props.item.id}`);
                 if (data.categories) editedItem.value.categories = data.categories;
                 if (data.terms) editedItem.value.terms = data.terms;
             } catch (e) {

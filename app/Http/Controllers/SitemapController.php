@@ -214,7 +214,7 @@ class SitemapController extends Controller
         $urls = [];
 
         try {
-            $posts = Post::where('published', true)->get();
+            $posts = Post::where('status', 'published')->get();
             foreach ($posts as $post) {
                 $urls[] = [
                     'loc'        => $baseUrl.'/posts/'.$post->slug,
