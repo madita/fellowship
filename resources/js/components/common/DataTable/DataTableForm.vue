@@ -228,10 +228,8 @@ watch(() => props.editMode, (newEditMode) => {
 watch(() => props.isDrawerOpen, async (isOpen) => {
     if (isOpen) {
         resetItem();
-        // Auto-enable edit mode for new items (no id)
-        if (!item.value.id) {
-            localEditMode.value = true;
-        }
+        // Always open the drawer in edit mode — the icon that triggers it is "edit"
+        localEditMode.value = true;
 
         // If editing existing item, fetch full data including taxonomies
         if (props.item?.id && props.endpoint) {
@@ -373,10 +371,11 @@ onMounted(() => {
                                             :name="column"
                                         />
 
-                                        <!-- Checkbox -->
+                                        <!-- Checkbox (binds boolean visually, persists 1/0 to match integer columns) -->
                                         <VCheckbox
                                             v-else-if="response.column_fields?.[column] === 'checkbox'"
-                                            v-model="editedItem[column]"
+                                            :model-value="!!editedItem[column]"
+                                            @update:modelValue="editedItem[column] = $event ? 1 : 0"
                                             :label="column"
                                             :readonly="!localEditMode"
                                             density="compact"

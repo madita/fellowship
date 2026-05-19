@@ -1132,6 +1132,7 @@ export default {
         'sortAsc': 'Sort ascending',
         'sortDesc': 'Sort descending',
         'filter': 'Filter',
+        'filters': 'Filters',
         'clearFilter': 'Clear filter',
         'export': 'Export',
         'refresh': 'Refresh',
