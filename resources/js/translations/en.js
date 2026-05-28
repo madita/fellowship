@@ -184,7 +184,8 @@ export default {
         'key': 'Key',
         'value': 'Value',
         'noUpdatableFields': 'No updatable fields configured for this form.',
-        'unknownFieldConfiguration': 'Unknown field configuration'
+        'unknownFieldConfiguration': 'Unknown field configuration',
+        'unsavedChangesWarning': 'You have unsaved changes. Use the Save or Cancel buttons — clicking outside won’t close the form.'
     },
     'email': {
         'compose': 'Compose Email',
@@ -1259,6 +1260,7 @@ export default {
         'titleRequired': 'Title is required',
         'dateRequired': 'Date is required',
         'updateEvent': 'Update Event',
+        'unsavedChangesWarning': 'You have unsaved changes. Use the Save or Cancel buttons — clicking outside won’t close the form.',
         'type': 'Type',
         'selectEventType': 'Select event type',
         'startDateRequired': 'Start date is required',

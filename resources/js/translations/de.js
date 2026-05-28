@@ -184,7 +184,8 @@ export default {
         'key': 'Schlüssel',
         'value': 'Wert',
         'noUpdatableFields': 'Keine aktualisierbaren Felder für dieses Formular konfiguriert.',
-        'unknownFieldConfiguration': 'Unbekannte Feldkonfiguration'
+        'unknownFieldConfiguration': 'Unbekannte Feldkonfiguration',
+        'unsavedChangesWarning': 'Sie haben ungespeicherte Änderungen. Bitte „Speichern“ oder „Abbrechen“ verwenden – ein Klick außerhalb schließt das Formular nicht.'
     },
     'email': {
         'compose': 'E-Mail verfassen',
@@ -1229,6 +1230,7 @@ export default {
         'titleRequired': 'Titel ist erforderlich',
         'dateRequired': 'Datum ist erforderlich',
         'updateEvent': 'Termin aktualisieren',
+        'unsavedChangesWarning': 'Sie haben ungespeicherte Änderungen. Bitte „Speichern“ oder „Abbrechen“ verwenden – ein Klick außerhalb schließt das Formular nicht.',
         'type': 'Typ',
         'selectEventType': 'Termintyp auswählen',
         'startDateRequired': 'Startdatum ist erforderlich',

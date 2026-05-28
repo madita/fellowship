@@ -60,6 +60,7 @@ const item = ref(JSON.parse(JSON.stringify(props.item || props.defaultItem)));
 const itemDetails = ref({});
 const parentItems = ref({});
 const loading = ref({});
+const initialSnapshot = ref('');
 
 // Validation states
 const startDateError = ref('');
@@ -172,6 +173,10 @@ const validateEndDate = () => {
 };
 
 const dialogModelValueUpdate = (val) => {
+    // When Vuetify tries to close the drawer (scrim/Esc), only allow it if
+    // the form has no unsaved changes. With :persistent bound to isDirty,
+    // Vuetify already blocks the close, but we guard here too.
+    if (!val && isDirty.value) return;
     emit('update:isDrawerOpen', val);
 };
 
@@ -213,6 +218,11 @@ const hasUpdatableFields = computed(() => {
     return props.response?.updatable && Array.isArray(props.response.updatable);
 });
 
+const isDirty = computed(() => {
+    if (!initialSnapshot.value) return false;
+    return JSON.stringify(editedItem.value) !== initialSnapshot.value;
+});
+
 // 👉 Watchers
 watch(() => props.item, (newItem) => {
     if (newItem) {
@@ -241,6 +251,12 @@ watch(() => props.isDrawerOpen, async (isOpen) => {
                 console.error('Error fetching item details:', e);
             }
         }
+
+        // Snapshot AFTER any server-loaded fields are merged in, so they don't
+        // show up as user changes.
+        initialSnapshot.value = JSON.stringify(editedItem.value);
+    } else {
+        initialSnapshot.value = '';
     }
 });
 
@@ -253,6 +269,7 @@ onMounted(() => {
 <template>
     <VNavigationDrawer
         temporary
+        :persistent="isDirty"
         location="end"
         :model-value="props.isDrawerOpen"
         width="700"
@@ -307,6 +324,17 @@ onMounted(() => {
                         type="warning"
                         class="mb-4"
                         :text="$t('formBuilder.noUpdatableFields')"
+                    />
+
+                    <!-- Unsaved changes warning -->
+                    <VAlert
+                        v-if="isDirty"
+                        type="info"
+                        variant="tonal"
+                        density="compact"
+                        icon="mdi-information-outline"
+                        class="mb-4"
+                        :text="$t('formBuilder.unsavedChangesWarning')"
                     />
 
                     <!-- Form Section -->

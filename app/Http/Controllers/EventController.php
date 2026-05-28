@@ -37,7 +37,12 @@ class EventController extends Controller
     {
         $events = Event::all();
 //        $events = DB::select('select * from events');
-        $eventTypes = EventType::all()->keyBy('id');
+        $eventTypes = EventType::all()->keyBy('id')->map(function (EventType $type) {
+            $modified = clone $type;
+            $modified->options = json_decode($modified->options);
+
+            return $modified;
+        });
         $eventsMapped = $events->map(function ($event) use ($eventTypes) {
             if ($event->endDate === null) {
                 $event->endDate = $event->startDate;
@@ -249,10 +254,6 @@ class EventController extends Controller
                     $answers[$answer->key] = $event->answer($answer->key)->get(['username']);
                 }
             }
-        foreach ($options->answers as $value => $answer) {
-            $answers[$answer->key] = $event->answer($answer->key)->get(['username']);
-
-//            $approved[$value] = $event->;
         }
 
         $data = [

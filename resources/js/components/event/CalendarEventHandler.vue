@@ -75,6 +75,7 @@ const openConfirmationDialog = () => {
 };
 
 const localEvent = ref(null);
+const initialSnapshot = ref('');
 watch(
     () => props.event,
     (newEvent) => {
@@ -86,6 +87,11 @@ watch(
     },
     { immediate: true }
 );
+
+const isDirty = computed(() => {
+    if (!initialSnapshot.value) return false;
+    return JSON.stringify(localEvent.value) !== initialSnapshot.value;
+});
 
 const eventTypeItems = computed(() => Object.values(localEventTypes.value));
 
@@ -385,6 +391,9 @@ const joinEvent = (answer) => {
 };
 
 const dialogModelValueUpdate = (val) => {
+    // Block scrim/Esc close when there are unsaved changes; the close/cancel
+    // buttons go through onCancel and bypass this guard.
+    if (!val && isDirty.value) return;
     emit('update:isDrawerOpen', val);
 };
 
@@ -515,7 +524,18 @@ watch(() => props.editMode, () => {
     localEditMode.value = props.editMode;
 });
 
-watch(() => props.isDrawerOpen, resetEvent);
+watch(() => props.isDrawerOpen, (isOpen) => {
+    resetEvent();
+    if (isOpen) {
+        // Snapshot after localEvent has been set from props, so it reflects
+        // the unedited starting state.
+        nextTick(() => {
+            initialSnapshot.value = JSON.stringify(localEvent.value);
+        });
+    } else {
+        initialSnapshot.value = '';
+    }
+});
 
 onMounted(() => {
     if (!localEvent.value.start) {
@@ -532,6 +552,7 @@ onMounted(() => {
 <template>
     <VNavigationDrawer
         temporary
+        :persistent="isDirty"
         location="end"
         :model-value="props.isDrawerOpen"
         width="420"
@@ -618,6 +639,17 @@ onMounted(() => {
             <!-- Edit Mode Form -->
             <VCard flat class="px-2" v-if="localEditMode">
                 <VCardText>
+                    <!-- Unsaved changes warning -->
+                    <VAlert
+                        v-if="isDirty"
+                        type="info"
+                        variant="tonal"
+                        density="compact"
+                        icon="mdi-information-outline"
+                        class="mb-4"
+                        :text="$t('events.unsavedChangesWarning')"
+                    />
+
                     <VForm ref="refForm" @submit.prevent="handleSubmit">
                         <VRow>
                             <!-- Event Type Select -->
