@@ -2,13 +2,13 @@
     <div>
         <div class="mb-3">
             <v-progress-linear
-                :model-value="(widgetData.completed / widgetData.total) * 100"
+                :model-value="widgetData.total ? (widgetData.completed / widgetData.total) * 100 : 0"
                 color="success"
                 height="8"
                 rounded
             ></v-progress-linear>
             <div class="text-caption mt-1 text-center">
-                {{ widgetData.completed }}/{{ widgetData.total }} tasks completed
+                {{ widgetData.completed || 0 }}/{{ widgetData.total || 0 }} tasks completed
             </div>
         </div>
         <v-list density="compact" class="pa-0">
