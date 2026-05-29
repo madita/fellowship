@@ -51,7 +51,7 @@
                     </v-table>
                 </div>
                 <div v-else v-html="page.content"></div>
-                <div v-for="child in page.children"><router-link :to="`/${child.slug}`" class="font-weight-bold">
+                <div v-for="child in page.children" :key="`child-${child.id || child.slug}`"><router-link :to="`/${child.slug}`" class="font-weight-bold">
                     {{child.title}}
                 </router-link></div>
 
