@@ -61,6 +61,7 @@ import './plugins/echarts.js'
 import './plugins/animate.js'
 import './plugins/clipboard.js'
 import formatDate from './plugins/formatDate.js'
+import sessionTimeout from './plugins/sessionTimeout.js'
 // import './plugins/moment'
 // import './plugins/lodash'
 
@@ -122,6 +123,7 @@ vueApp.use(PerfectScrollbarPlugin);
 vueApp.use(router)
 
 vueApp.use(formatDate);
+vueApp.use(sessionTimeout);
 // Vue.use(require('vue-shortkey'))
 // vueApp.use(VueShortkey)
 // vueApp.mount("#app")

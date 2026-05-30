@@ -169,8 +169,10 @@ class HomepageWidgetControllerTest extends TestCase
 
         $this->assertDatabaseHas('widgets', [
             'type'       => 'hero',
-            'title'      => 'New Hero Widget',
             'section_id' => $this->section->id,
+        ]);
+        $this->assertDatabaseHas('widget_translations', [
+            'title' => 'New Hero Widget',
         ]);
     }
 
@@ -223,8 +225,11 @@ class HomepageWidgetControllerTest extends TestCase
 
         $this->assertDatabaseHas('widgets', [
             'id'      => $widget->id,
-            'title'   => 'Updated Title',
             'enabled' => false,
+        ]);
+        $this->assertDatabaseHas('widget_translations', [
+            'widget_id' => $widget->id,
+            'title'     => 'Updated Title',
         ]);
 
         $widget->refresh();
@@ -353,8 +358,10 @@ class HomepageWidgetControllerTest extends TestCase
         // Check that the duplicate exists and is disabled by default
         $this->assertDatabaseHas('widgets', [
             'type'    => 'hero',
-            'title'   => 'Original Widget (Copy)',
             'enabled' => false,
+        ]);
+        $this->assertDatabaseHas('widget_translations', [
+            'title' => 'Original Widget (Copy)',
         ]);
 
         $this->assertEquals(2, Widget::count());

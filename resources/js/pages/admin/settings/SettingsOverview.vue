@@ -147,6 +147,7 @@
                         <v-tab value="moderation">
                             <v-icon class="mr-2" size="20">mdi-shield-check-outline</v-icon>
                             <span class="d-none d-sm-inline">{{ $t('settings.overview.tabModeration') }}</span>
+                        </v-tab>
                         <v-tab value="sandbox">
                             <v-icon class="mr-2" size="20">mdi-notebook-edit-outline</v-icon>
                             <span class="d-none d-sm-inline">Sandbox</span>
@@ -226,7 +227,13 @@
                                 />
                             </v-window-item>
                             <v-window-item value="moderation">
-                                <moderation-tab
+                              <moderation-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                              />
+                            </v-window-item>
                             <v-window-item value="sandbox">
                                 <sandbox-tab
                                     :settings="settings"

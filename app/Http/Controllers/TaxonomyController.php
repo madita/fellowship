@@ -28,11 +28,15 @@ class TaxonomyController extends Controller
         if ($taxonomy) {
             $terms = collect();
             $tax = collect(Taxonomy::where('taxonomy', $taxonomy)->with('term')->get())->each(function (Taxonomy $taxonomy) use ($terms) {
-                $term = $taxonomy->term()->get(['id', 'title', 'slug'])->flatten()->toArray();
+                $term = $taxonomy->term;
 
-                if (isset($term[0])) {
-                    $tempArr = array_merge($term[0], ['parent_id' => $taxonomy->id]);
-                    $terms->add($tempArr);
+                if ($term) {
+                    $terms->add([
+                        'id'        => $term->id,
+                        'title'     => $term->title,
+                        'slug'      => $term->slug,
+                        'parent_id' => $taxonomy->id,
+                    ]);
                 }
             });
         } else {

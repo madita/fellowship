@@ -1318,6 +1318,7 @@ export default {
             'live': 'Live',
             'multi': 'Multi',
         },
+        'viewDetailedAttendeeList': 'View detailed attendee list',
     },
     'landing': {
         'hero': {
@@ -4517,5 +4518,13 @@ export default {
         'viewChronological': 'Chronological',
         'viewThreaded': 'Threaded',
         'new': 'NEW'
+    },
+    'session': {
+        'timeout': {
+            'title': 'Session Expired',
+            'message': 'Your session has expired due to inactivity.',
+            'explanation': 'For your security, you need to refresh the page to continue. Any unsaved changes may be lost.',
+            'refresh': 'Refresh Page'
+        }
     }
 }

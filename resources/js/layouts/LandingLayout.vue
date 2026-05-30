@@ -244,6 +244,7 @@ export default {
     computed: {
         authenticated() {
             const authStore = useAuthStore();
+
             // console.log('landingauthstore',authStore)
             return authStore.isLoggedIn ;
         },
@@ -450,6 +451,8 @@ export default {
             return this.links && this.links.length > 0;
         },
     },
+
+    mounted() {
 
     methods: {
         getColumnSize(count) {

@@ -1288,6 +1288,7 @@ export default {
             'live': 'Live',
             'multi': 'Multi',
         },
+        'viewDetailedAttendeeList': 'Detaillierte Teilnehmerliste anzeigen',
     },
     'gallery': {
         'title': 'Galerie',
@@ -4701,5 +4702,13 @@ export default {
         'viewChronological': 'Chronologisch',
         'viewThreaded': 'Verschachtelt',
         'new': 'NEU'
+    },
+    'session': {
+        'timeout': {
+            'title': 'Sitzung abgelaufen',
+            'message': 'Ihre Sitzung ist aufgrund von Inaktivität abgelaufen.',
+            'explanation': 'Aus Sicherheitsgründen müssen Sie die Seite aktualisieren, um fortzufahren. Nicht gespeicherte Änderungen können verloren gehen.',
+            'refresh': 'Seite aktualisieren'
+        }
     }
 }
