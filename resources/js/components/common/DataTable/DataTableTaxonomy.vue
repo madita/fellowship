@@ -9,7 +9,7 @@ const props = defineProps({
         required: true,
     },
     modelValue: {
-        type: Array,
+        type: [Array, String, Number, Object],
         default: () => [],
     },
     readonly: {
@@ -31,7 +31,19 @@ const chipIcon = computed(() => isTagLike.value ? 'mdi-pound' : 'mdi-folder');
 
 const toTitle = (v) => (typeof v === 'string' ? v : (v?.title ?? String(v ?? '')));
 
-const selected = ref((props.modelValue || []).map(toTitle));
+const multiple = computed(() => props.config.multiple !== false);
+
+const normalizeIn = (val) => {
+    if (multiple.value) {
+        if (Array.isArray(val)) return val.map(toTitle);
+        if (val == null || val === '') return [];
+        return [toTitle(val)];
+    }
+    const first = Array.isArray(val) ? val[0] : val;
+    return first == null || first === '' ? null : toTitle(first);
+};
+
+const selected = ref(normalizeIn(props.modelValue));
 
 const fetchTerms = async () => {
     loading.value = true;
@@ -55,8 +67,12 @@ const saveCategory = async () => {
             taxonomy: props.config.taxonomy,
         });
         await fetchTerms();
-        if (!selected.value.includes(title)) {
-            selected.value = [...selected.value, title];
+        if (multiple.value) {
+            if (!selected.value.includes(title)) {
+                selected.value = [...selected.value, title];
+            }
+        } else {
+            selected.value = title;
         }
         newCategory.value = '';
         showAddInline.value = false;
@@ -68,12 +84,15 @@ const saveCategory = async () => {
 };
 
 watch(selected, (newVal) => {
-    const titles = (newVal || []).map(toTitle);
-    emit('update:modelValue', titles);
+    if (multiple.value) {
+        emit('update:modelValue', (newVal || []).map(toTitle));
+    } else {
+        emit('update:modelValue', newVal == null || newVal === '' ? null : toTitle(newVal));
+    }
 }, { deep: true });
 
 watch(() => props.modelValue, (newVal) => {
-    const incoming = (newVal || []).map(toTitle);
+    const incoming = normalizeIn(newVal);
     if (JSON.stringify(incoming) !== JSON.stringify(selected.value)) {
         selected.value = incoming;
     }
