@@ -160,7 +160,7 @@ const containerClass = computed(() => {
 
 const activities = computed(() => {
   const items = props.content.items || []
-  const max = props.config.maxItems || 10
+  const max = props.config.maxItems ?? 10
   return items.slice(0, max)
 })
 </script>
