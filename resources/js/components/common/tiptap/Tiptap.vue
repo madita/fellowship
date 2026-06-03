@@ -1,86 +1,4 @@
 <template>
-    <div class="tiptap">
-        <ImageModal ref="modalRef" @onConfirm="addCommand" />
-        <div v-if="editor">
-            <button @click="editor.chain().focus().toggleBold().run()" :class="{ 'is-active': editor.isActive('bold') }">
-                <v-icon>mdi-format-bold</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleItalic().run()" :class="{ 'is-active': editor.isActive('italic') }">
-                <v-icon>mdi-format-italic</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleStrike().run()" :class="{ 'is-active': editor.isActive('strike') }">
-                <v-icon>mdi-format-strikethrough-variant</v-icon>
-            </button>
-<!--            <button @click="editor.chain().focus().unsetAllMarks().run()">-->
-<!--                clear marks-->
-<!--            </button>-->
-            <button @click="editor.chain().focus().clearNodes().run()">
-                <v-icon>mdi-format-clear</v-icon>
-            </button>
-            <button @click="editor.chain().focus().setParagraph().run()" :class="{ 'is-active': editor.isActive('paragraph') }">
-                <v-icon>mdi-format-pilcrow</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleHeading({ level: 1 }).run()" :class="{ 'is-active': editor.isActive('heading', { level: 1 }) }">
-                <v-icon>mdi-format-header-1</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleHeading({ level: 2 }).run()" :class="{ 'is-active': editor.isActive('heading', { level: 2 }) }">
-                <v-icon>mdi-format-header-2</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleHeading({ level: 3 }).run()" :class="{ 'is-active': editor.isActive('heading', { level: 3 }) }">
-                <v-icon>mdi-format-header-3</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleHeading({ level: 4 }).run()" :class="{ 'is-active': editor.isActive('heading', { level: 4 }) }">
-                <v-icon>mdi-format-header-4</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleHeading({ level: 5 }).run()" :class="{ 'is-active': editor.isActive('heading', { level: 5 }) }">
-                <v-icon>mdi-format-header-5</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleHeading({ level: 6 }).run()" :class="{ 'is-active': editor.isActive('heading', { level: 6 }) }">
-                <v-icon>mdi-format-header-6</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleBulletList().run()" :class="{ 'is-active': editor.isActive('bulletList') }">
-                <v-icon>mdi-format-list-bulleted</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleOrderedList().run()" :class="{ 'is-active': editor.isActive('orderedList') }">
-                <v-icon>mdi-format-list-numbered</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleBlockquote().run()" :class="{ 'is-active': editor.isActive('blockquote') }">
-                <v-icon>mdi-format-quote-close</v-icon>
-            </button>
-            <button @click="editor.chain().focus().setHorizontalRule().run()">
-                <v-icon>mdi-minus</v-icon>
-            </button>
-            <button @click="editor.chain().focus().setHardBreak().run()">
-                <v-icon>mdi-format-page-break</v-icon>
-            </button>
-            <button @click="editor.chain().focus().undo().run()">
-                <v-icon>mdi-undo</v-icon>
-            </button>
-            <button @click="editor.chain().focus().redo().run()">
-                <v-icon>mdi-redo</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleCode().run()" :class="{ 'is-active': editor.isActive('code') }">
-                <v-icon>mdi-code-tags</v-icon>
-            </button>
-            <button @click="editor.chain().focus().toggleCodeBlock().run()" :class="{ 'is-active': editor.isActive('codeBlock') }">
-                <v-icon>mdi-file-code-outline</v-icon>
-            </button>
-            <button @click="setLink" :class="{ 'is-active': editor.isActive('link') }">
-                <v-icon>mdi-link</v-icon>
-            </button>
-            <button @click="editor.chain().focus().unsetLink().run()" :disabled="!editor.isActive('link')">
-                <v-icon>mdi-link-off</v-icon>
-            </button>
-            <button @click="openModal();">
-                <svg width="14" height="14" viewBox="0 0 58 58">
-                    <path
-                        d="M57 6H1a1 1 0 0 0-1 1v44c0 .6.4 1 1 1h56c.6 0 1-.4 1-1V7c0-.6-.4-1-1-1zm-1 44H2V8h54v42z"
-                    />
-                    <path
-                        d="M16 28.1A5.6 5.6 0 1 0 16 17 5.6 5.6 0 0 0 16 28zm0-9.1a3.6 3.6 0 1 1 0 7.1 3.6 3.6 0 0 1 0-7.1zM7 46c.2 0 .5 0 .7-.2L24 31.4l10.3 10.3a1 1 0 1 0 1.4-1.4l-4.8-4.8 9.2-10 11.2 10.2a1 1 0 0 0 1.4-1.4l-12-11a1 1 0 0 0-1.4 0l-9.8 10.8-4.8-4.8a1 1 0 0 0-1.3 0l-17 15A1 1 0 0 0 7 46z"
-                    />
-                </svg>
-            </button>
     <div class="tiptap-editor">
         <!-- Toolbar -->
         <div v-if="editor && type === 'full'" class="editor-toolbar">
@@ -548,36 +466,6 @@
             </v-card>
         </bubble-menu>
 
-        <editor-content :editor="editor"/>
-
-        <div v-if="editor && limit" :class="{'character-count': true, 'character-count--warning': editor.storage.characterCount.characters() === limit}">
-            <svg
-                height="20"
-                width="20"
-                viewBox="0 0 20 20"
-                class="character-count__graph"
-            >
-                <circle
-                    r="10"
-                    cx="10"
-                    cy="10"
-                    fill="#e9ecef"
-                />
-                <circle
-                    r="5"
-                    cx="10"
-                    cy="10"
-                    fill="transparent"
-                    stroke="currentColor"
-                    stroke-width="10"
-                    :stroke-dasharray="`calc(${percentage} * 31.4 / 100) 31.4`"
-                    transform="rotate(-90) translate(-20)"
-                />
-                <circle
-                    r="6"
-                    cx="10"
-                    cy="10"
-                    fill="white"
         <!-- Character Count -->
         <div
             v-if="editor && limit"
@@ -632,14 +520,6 @@
     </div>
 </template>
 
-<script>
-//resize
-//https://codesandbox.io/p/sandbox/vue-3-tiptap-image-resize-forked-v34ns4?file=%2Fsrc%2Fcomponents%2FTipTapImageResize.vue%3A23%2C36-23%2C60
-import { ref, watch, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
-import { BubbleMenu, useEditor, Editor, EditorContent } from '@tiptap/vue-3';
-
-import CharacterCount from '@tiptap/extension-character-count'
-
 <script setup>
 import { ref, watch, computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -662,35 +542,6 @@ import hashtag from './mention/hashtag.js'
 import wiki from './mention/wiki.js'
 import MediaPickerModal from './MediaPickerModal.vue'
 
-import StarterKit from '@tiptap/starter-kit'
-// import Document from '@tiptap/extension-document'
-// import Gapcursor from '@tiptap/extension-gapcursor'
-import Paragraph from '@tiptap/extension-paragraph'
-import Table from '@tiptap/extension-table'
-import TableCell from '@tiptap/extension-table-cell'
-import TableHeader from '@tiptap/extension-table-header'
-import TableRow from '@tiptap/extension-table-row'
-import Text from '@tiptap/extension-text'
-import Link from '@tiptap/extension-link'
-import ImageResize from "./extensions/ImageResize";
-import ImageModal from './ImageModal.vue'
-
-
-export default {
-    components: {
-        StarterKit,
-        EditorContent,
-        BubbleMenu,
-        Table,
-        TableCell,
-        TableHeader,
-        TableRow,
-        Text,
-        Paragraph,
-        Image,
-        ImageModal,
-        Link,
-        ImageResize,
 const props = defineProps({
     type: {
         type: String,
@@ -815,60 +666,6 @@ const focusEditor = () => {
     // editor.value?.commands.focus()
 }
 
-    emits: ['update:modelValue'],
-
-    setup(props, { emit }) {
-
-
-        const html = ref("");
-        const modalRef = ref(null);
-
-        const editor = useEditor({
-            content: props.modelValue,
-            extensions: [
-                StarterKit,
-                Table,
-                TableCell,
-                TableHeader,
-                TableRow,
-                ImageModal,
-                ImageResize,
-                Link.configure({
-                    openOnClick: false,
-                }),
-                CharacterCount.configure({
-                    limit: props.limit,
-                }),
-                CustomMention.extend({
-                    name: "mention",
-                }).configure({
-                    HTMLAttributes: {
-                        class: 'mention',
-                    },
-                    suggestion,
-                }),
-                HashtagMention.extend({
-                    name: "hashtag",
-                }).configure({
-                    HTMLAttributes: {
-                        class: 'hashtag',
-                    },
-                    suggestion:hashtag,
-                }),
-
-                WikiMention.configure({
-                    HTMLAttributes: {
-                        class: 'wiki',
-                    },
-                    suggestion:wiki,
-                }),
-            ],
-            onUpdate: ({ editor  }) => {
-
-                emit('update:modelValue', editor.getHTML());
-                // editor.commands.setContent(editor.getHTML(), false, {preserveWhitespace: "full"});
-            },
-        });
 watch(() => props.modelValue, (value) => {
     if (!editor.value) return;
 
@@ -911,27 +708,6 @@ defineExpose({ focusEditor });
     gap: 2px;
 }
 
-        const openModal = (command) => {
-            // ... logic remains unchanged
-            //this.$refs.ytmodal.showModal(command);
-            if (modalRef.value) {
-                // Call a method of MyModal component
-                modalRef.value.showModal(command);
-            }
-        };
-
-        const addCommand = (data) => {
-            // console.log('addCommand', data)
-            // if (data.command !== null) {
-            //     data.command(data.data);
-            // }
-            const url = data.src
-
-            if (url) {
-                //editor.value.commands.setImage({ src: url })
-                editor.value.chain().focus().setImage({ src: url }).run();
-            }
-        };
 .toolbar-divider {
     height: 24px;
     margin: 0 8px;
@@ -984,15 +760,6 @@ defineExpose({ focusEditor });
         display: none;
     }
 
-        return {
-            editor,
-            html,
-            modalRef,
-            openModal,
-            addCommand,
-            // ... other methods
-            percentage
-        };
     .toolbar-group {
         margin-bottom: 4px;
     }
@@ -1110,41 +877,6 @@ defineExpose({ focusEditor });
     border-radius: 0 8px 8px 0;
 }
 
-    .resize-cursor {
-        cursor: ew-resize;
-        cursor: col-resize;
-    }
-
-    img {
-        width: 100%;
-        height: auto;
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
-
-        &.ProseMirror-selectednode {
-            outline: 3px solid #68cef8;
-        }
-    }
-    .custom-image-small {
-        max-width: 200px;
-    }
-    .custom-image-medium {
-        max-width: 500px;
-    }
-    .custom-image-large {
-        max-width: 100%;
-    }
-    .custom-image-float-none {
-        float: none;
-    }
-    .custom-image-float-left {
-        float: left;
-    }
-    .custom-image-float-right {
-        float: right;
-    }
-
 .ProseMirror hr {
     border: none;
     border-top: 2px solid rgba(var(--v-border-color), 0.5);
@@ -1162,15 +894,6 @@ defineExpose({ focusEditor });
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.tiptap button {
-    font-size: inherit;
-    font-family: inherit;
-    color: #000;
-    margin: 0.1rem;
-    /*border: 1px solid black;
-    border-radius: 0.3rem;*/
-    padding: 0.1rem 0.4rem;
-    background: white;
 .ProseMirror td,
 .ProseMirror th {
     min-width: 1em;
@@ -1305,11 +1028,6 @@ defineExpose({ focusEditor });
     border-color: rgb(var(--v-theme-info));
 }
 
-.character-count {
-    margin-top: 1rem;
-    display: flex;
-    align-items: center;
-    color: #68CEF8;
 /* Placeholder */
 .ProseMirror p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
