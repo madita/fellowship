@@ -27,9 +27,10 @@
         <template v-for="(item, index) in activities">
           <v-list-item
             :key="`item-${index}`"
-            :href="item.url"
             :to="item.internal ? item.url : undefined"
-            :target="item.external ? '_blank' : undefined"
+            :href="!item.internal ? safeUrl(item.url) : undefined"
+            :target="!item.internal && item.external ? '_blank' : undefined"
+            :rel="!item.internal && item.external ? 'noopener noreferrer' : undefined"
           >
             <v-list-item-avatar v-if="config.showAvatar !== false">
               <v-img v-if="item.avatar" :src="item.avatar"></v-img>
