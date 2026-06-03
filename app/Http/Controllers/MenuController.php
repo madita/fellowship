@@ -11,6 +11,22 @@ use Illuminate\Support\Facades\Auth;
 class MenuController extends Controller
 {
     /**
+     * Create a new controller instance.
+     * Admin methods are protected by role check.
+     */
+    public function __construct()
+    {
+        // These methods require admin role
+        $this->middleware(function ($request, $next) {
+            $user = $request->user();
+            if (!$user || !$user->hasRole('admin')) {
+                return response()->json(['message' => 'Unauthorized - Admin role required'], 403);
+            }
+            return $next($request);
+        })->only(['index', 'store', 'update', 'destroy', 'getItems', 'addItem', 'updateItem', 'deleteItem', 'reorderItems']);
+    }
+
+    /**
      * Get menu by location (for frontend consumption).
      */
     public function getByLocation(string $location): JsonResponse
