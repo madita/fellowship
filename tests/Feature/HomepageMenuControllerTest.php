@@ -138,8 +138,10 @@ class HomepageMenuControllerTest extends TestCase
             ]);
 
         $this->assertDatabaseHas('homepage_menu_items', [
-            'label'         => 'Features',
             'anchor_target' => '#features',
+        ]);
+        $this->assertDatabaseHas('homepage_menu_item_translations', [
+            'label' => 'Features',
         ]);
     }
 
@@ -183,9 +185,12 @@ class HomepageMenuControllerTest extends TestCase
 
         $this->assertDatabaseHas('homepage_menu_items', [
             'id'            => $menuItem->id,
-            'label'         => 'Updated Label',
             'anchor_target' => '#updated',
             'enabled'       => false,
+        ]);
+        $this->assertDatabaseHas('homepage_menu_item_translations', [
+            'homepage_menu_item_id' => $menuItem->id,
+            'label'                 => 'Updated Label',
         ]);
     }
 
@@ -413,8 +418,10 @@ class HomepageMenuControllerTest extends TestCase
         $response->assertStatus(201);
 
         $this->assertDatabaseHas('homepage_menu_items', [
-            'label'         => 'External Link',
             'anchor_target' => 'https://example.com',
+        ]);
+        $this->assertDatabaseHas('homepage_menu_item_translations', [
+            'label' => 'External Link',
         ]);
     }
 

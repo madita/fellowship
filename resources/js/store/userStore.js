@@ -71,6 +71,10 @@ export const useUserStore = defineStore('user', {
 
         // Update state and sync to localStorage
         updateState(payload) {
+            // console.log('userpayload', payload)
+            // console.log('userthis.$state', this.$state)
+            let newUserState = { ...this.$state, ...payload }
+            // console.log('nuserewUserState', newUserState)
             // Update the state properties
             if (payload.user !== undefined) this.user = payload.user
             if (payload.roles !== undefined) this.roles = payload.roles
@@ -107,6 +111,26 @@ export const useUserStore = defineStore('user', {
 
         // Fetch and store user information
         async storeInfo() {
+            // try {
+            //     const data = await axios.get('api/user')
+            //     this.user = data.user
+            //     // this.roles = data.roles
+            //     // this.permissions = data.permissions
+            //     // console.log('user',this.user)
+            //
+            // }
+            // catch (error) {
+            //     //alert(error)
+            //     console.log('error userstore', error)
+            // }
+            let { data: userInfo } = await api.get('/user')
+            // let { data:  userInfo } = await axios.get('/api/user')
+
+            this.updateState(userInfo)
+            // this.user = userInfo.user;
+            // this.roles = userInfo.roles;
+            localStorage.setItem('USER_INFO', JSON.stringify(userInfo))
+            this.$reset()
             try {
                 const { data: userInfo } = await api.get('/user')
 

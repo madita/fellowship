@@ -2,6 +2,8 @@
 
 namespace App\Models\Tag;
 
+use App\Models\Forum\ForumPost;
+use App\Models\Forum\ForumThread;
 use App\Models\Page;
 use App\Traits\HasCache;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
@@ -10,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection;
@@ -413,6 +416,22 @@ class Taxonomy extends Model implements TranslatableContract
 //    }
 
     /**
+     * Get forum threads belonging to this taxonomy (for forum_cat type).
+     */
+    public function forumThreads(): HasMany
+    {
+        return $this->hasMany(ForumThread::class, 'taxonomy_id');
+    }
+
+    /**
+     * Get forum posts through threads (for forum_cat type).
+     */
+    public function forumPosts(): HasManyThrough
+    {
+        return $this->hasManyThrough(ForumPost::class, ForumThread::class, 'taxonomy_id', 'thread_id');
+    }
+
+    /**
      * An example for a related posts model.
      *
      * @return MorphToMany
@@ -501,10 +520,17 @@ class Taxonomy extends Model implements TranslatableContract
         if (count($categories) > 0) {
             foreach ($categories as $category) {
                 if (is_string($category)) {
-                    $term = Term::firstOrCreate(['title' => $category]);
+                    $term = Term::firstOrCreateByTitle($category);
                 } else {
+<<<<<<< HEAD
                     $term = Term::firstOrCreate(['title' => $category['title']]);
+                    if (isset($category['color'])) {
+                        $term->color = $category['color'];
+                    }
+=======
+                    $term = Term::firstOrCreateByTitle($category['title']);
                     $term->color = $category['color'];
+>>>>>>> c0ed6b45062ecad3def4110d50c531cb3881d3eb
                 }
 
                 $term->save();

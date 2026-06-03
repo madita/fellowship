@@ -37,8 +37,12 @@ class EventController extends Controller
     {
         $events = Event::all();
 //        $events = DB::select('select * from events');
-//        dd($events);
-        $eventTypes = EventType::all()->keyBy('id');
+        $eventTypes = EventType::all()->keyBy('id')->map(function (EventType $type) {
+            $modified = clone $type;
+            $modified->options = json_decode($modified->options);
+
+            return $modified;
+        });
         $eventsMapped = $events->map(function ($event) use ($eventTypes) {
             if ($event->endDate === null) {
                 $event->endDate = $event->startDate;
@@ -71,7 +75,6 @@ class EventController extends Controller
 //            ];
 
 //            $eventType = $event->type()->first();
-//            dd($eventTypes[$event->type_id]['color']);
 
             $originDate = [
                 'startDate' => $event->startDate,
@@ -81,6 +84,9 @@ class EventController extends Controller
                 'start'     => $start,
                 'end'       => $end, ];
 
+            // Handle null event_type_id for legacy events
+            $eventType = $event->event_type_id ? ($eventTypes[$event->event_type_id] ?? null) : null;
+
             return [
                 'id'          => $event->id,
                 'title'       => $event->title,
@@ -89,18 +95,16 @@ class EventController extends Controller
                 'start'       => $start,
                 'end'         => $end,
                 'originDate'  => $originDate,
-                //                'extendedProps'  => $extendedProps,
                 'location'                  => '',
-                'type'                      => $eventTypes[$event->event_type_id]['name'],
+                'type'                      => $eventType['name'] ?? null,
                 'event_type_id'             => $event->event_type_id,
                 'allDay'                    => ($event->startTime === null) ? true : false,
-                'colorName'                 => $eventTypes[$event->event_type_id]['color'],
-                'color'                     => $eventTypes[$event->event_type_id]['color'],
-                'event_profile_id'          => $eventTypes[$event->event_type_id]['event_profile_id']];
-//                'colorName'       => $eventTypes[$event->type_id]['color']];
+                'colorName'                 => $eventType['color'] ?? null,
+                'color'                     => $eventType['color'] ?? null,
+                'event_profile_id'          => $eventType['event_profile_id'] ?? null,
+            ];
         });
 
-        //dd($eventsMapped);
         return response()->json([
             'data' => [
                 'types'  => $eventTypes,
@@ -109,13 +113,15 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
-//                dd($request->all());
-//        dd(request()->get('extendedProps'));
         $this->validate($request, [
-            'title' => 'required', //            'email'      => 'required|unique:users,email,'.$id.'|email',
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string|max:10000',
+            'event_type_id' => 'required|integer|exists:event_types,id',
+            'start' => 'nullable|date|required_with:end',
+            'end' => 'nullable|date|required_with:start|after_or_equal:start',
+            'image' => 'nullable|string|max:500',
         ]);
 
-        //        dd($request->all());
 
         $event = new Event();
         $event->title = request()->get('title');
@@ -134,15 +140,11 @@ class EventController extends Controller
 
 //        $event->type = request()->get('type');
 
-        if (request()->get('start')) {
-            //dd($date);
+        if (request()->filled('start') && request()->filled('end')) {
             $event->startDate = date('Y-m-d', strtotime(request()->get('start')));
             $event->endDate = date('Y-m-d', strtotime(request()->get('end')));
 
-            if (request()->get('allDay') === true) {
-                //                $event->startTime = "00:00:00";
-                //                $event->endTime = "23:59:59";
-            } else {
+            if (request()->get('allDay') !== true) {
                 $event->startTime = date('H:i:s', strtotime(request()->get('start')));
                 $event->endTime = date('H:i:s', strtotime(request()->get('end')));
             }
@@ -154,7 +156,6 @@ class EventController extends Controller
         }
 
         if ($date = request()->get('date')) {
-            //dd($date);
             $event->startDate = date('Y-m-d', strtotime($date['date'][0]));
             $event->endDate = date('Y-m-d', strtotime($date['date'][1]));
 
@@ -192,33 +193,32 @@ class EventController extends Controller
             $guestRecord = $event->allUsers()
                 ->where('user_id', $user->id)
                 ->first();
-            
+
             if ($guestRecord !== null) {
-                $isGoing = (object)[
-                    'id' => $guestRecord->pivot->id ?? null,
-                    'event_id' => $guestRecord->pivot->event_id ?? $event->id,
-                    'user_id' => $user->id,
-                    'type' => $guestRecord->pivot->type ?? null,
-                    'profile' => json_decode($guestRecord->pivot->profile ?? '{}'),
+                $isGoing = (object) [
+                    'id'         => $guestRecord->pivot->id ?? null,
+                    'event_id'   => $guestRecord->pivot->event_id ?? $event->id,
+                    'user_id'    => $user->id,
+                    'type'       => $guestRecord->pivot->type ?? null,
+                    'profile'    => json_decode($guestRecord->pivot->profile ?? '{}'),
                     'created_at' => $guestRecord->pivot->created_at ?? null,
                     'updated_at' => $guestRecord->pivot->updated_at ?? null,
                 ];
             }
         }
 
-        $eventGuests = EventGuest::where('event_id', '=', $event->id)->get();
-        $eventGuests = collect($eventGuests)->map(function (EventGuest $guest) {
-//            $data=array_merge($details, json_decode($guest->profile));
-            $data = json_decode($guest->profile, true);
-//            array_unshift($data, $user);
-            ////            $data->user = $guest->user()->get([ 'id', 'username']);
+        // Eager load users to prevent N+1 query problem
+        $eventGuests = EventGuest::with('user:id,username')
+            ->where('event_id', '=', $event->id)
+            ->get();
+        $eventGuests = $eventGuests->map(function (EventGuest $guest) {
+            $data = json_decode($guest->profile, true) ?? [];
             $data['type'] = $guest->type;
             $data['id'] = $guest->id;
+            // Use eager-loaded user instead of querying each time
+            $data = ['user' => $guest->user ? [['id' => $guest->user->id, 'username' => $guest->user->username]] : []] + $data;
 
-            $data = ['user'=>$guest->user()->get(['id', 'username'])] + $data;
-            $guest = $data;
-
-            return $guest;
+            return $data;
         });
 
         if ($event->startTime !== null) {
@@ -244,15 +244,16 @@ class EventController extends Controller
         $event->start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
         $event->end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
 
-        $eventType = EventType::find($event->event_type_id);
+        $eventType = $event->event_type_id ? EventType::find($event->event_type_id) : null;
 
-        $options = json_decode($eventType->options);
         $answers = [];
-        foreach ($options->answers as $value => $answer) {
-//            dd($answer);
-            $answers[$answer->key] = $event->answer($answer->key)->get(['username']);
-
-//            $approved[$value] = $event->;
+        if ($eventType && $eventType->options) {
+            $options = json_decode($eventType->options);
+            if ($options && isset($options->answers)) {
+                foreach ($options->answers as $value => $answer) {
+                    $answers[$answer->key] = $event->answer($answer->key)->get(['username']);
+                }
+            }
         }
 
         $data = [
@@ -274,11 +275,20 @@ class EventController extends Controller
 
     public function update(Request $request, Event $event)
     {
-        $this->validate($request, [
-            'title' => 'required', //            'email'      => 'required|unique:users,email,'.$id.'|email',
-        ]);
+        // Authorization check - only owner or admin can update
+        /** @var User $user */
+        $user = auth()->user();
+        if ($event->user_id !== $user->id && !$user->can('manage-posts')) {
+            return response()->json(['message' => __('messages.events.unauthorized')], 403);
+        }
 
-        //        $event->update($request->fill());
+        $this->validate($request, [
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string|max:10000',
+            'event_type_id' => 'required|integer|exists:event_types,id',
+            'start' => 'nullable|date|required_with:end',
+            'end' => 'nullable|date|required_with:start|after_or_equal:start',
+        ]);
 
         $event->title = request()->get('title');
         $event->description = request()->get('description');
@@ -290,34 +300,24 @@ class EventController extends Controller
                 $event->cover_position = request()->get('cover_position');
             }
         }
-        /** @var User $user */
-        $user = auth()->user();
-        $event->user_id = $user->id;
+
+        // Note: Preserve original owner - don't reassign user_id on update
 
         if ($extendedProps = request()->get('extendedProps')) {
-//            dd($extendedProps);
             $event->event_type_id = $extendedProps['event_type_id'];
         }
 
-//        $event->type = request()->get('type');
-
-        if (request()->get('start')) {
-            //dd($date);
+        if (request()->filled('start') && request()->filled('end')) {
             $event->startDate = date('Y-m-d', strtotime(request()->get('start')));
             $event->endDate = date('Y-m-d', strtotime(request()->get('end')));
 
-            if (request()->get('allDay') === true) {
-                //todo
-                //                $event->startTime = "00:00:00";
-                //                $event->endTime = "23:59:59";
-            } else {
+            if (request()->get('allDay') !== true) {
                 $event->startTime = date('H:i:s', strtotime(request()->get('start')));
                 $event->endTime = date('H:i:s', strtotime(request()->get('end')));
             }
         }
 
         if ($date = request()->get('date')) {
-            //dd($date);
             $event->startDate = date('Y-m-d', strtotime($date['date'][0]));
             $event->endDate = date('Y-m-d', strtotime($date['date'][1]));
 
@@ -346,11 +346,16 @@ class EventController extends Controller
      */
     public function destroy(Event $event)
     {
-        if ($event) {
-            $event->delete();
+        // Authorization check - only owner or admin can delete
+        /** @var User $user */
+        $user = auth()->user();
+        if ($event->user_id !== $user->id && !$user->can('manage-posts')) {
+            return response()->json(['message' => __('messages.events.unauthorized')], 403);
         }
 
-        return response()->json(['deleted']);
+        $event->delete();
+
+        return response()->json(['message' => __('messages.events.deleted')]);
     }
 
     public function isGoing(Event $event, $answer)
@@ -488,7 +493,6 @@ class EventController extends Controller
 
             return $modified;
         });
-//        dd($eventTypes);
 
         return response()->json([
             'data' => $eventTypeCollection, ]);

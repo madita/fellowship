@@ -27,10 +27,50 @@ Route::middleware(['cache.control'])->group(function () {
     Route::get('menus/slug/{slug}', 'App\Http\Controllers\MenuController@getBySlug');
 });
 
+// Forum Routes (public read, auth for write)
+Route::get('/forums', 'App\Http\Controllers\Forum\ForumController@index');
+Route::get('/forums/search', 'App\Http\Controllers\Forum\ForumSearchController@search');
+Route::get('/forums/recent-threads', 'App\Http\Controllers\Forum\ForumController@recentThreads');
+Route::get('/forums/{slug}', 'App\Http\Controllers\Forum\ForumController@show');
+Route::get('/forums/{forumSlug}/threads/{threadSlug}', 'App\Http\Controllers\Forum\ForumThreadController@show');
+Route::get('/activity', 'App\Http\Controllers\ActivityController@index');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Forum management (admin only)
+    Route::post('/forums', 'App\Http\Controllers\Forum\ForumController@store');
+    Route::patch('/forums/{id}', 'App\Http\Controllers\Forum\ForumController@update');
+    Route::delete('/forums/{id}', 'App\Http\Controllers\Forum\ForumController@destroy');
+
+    // Thread management
+    Route::post('/forums/{id}/threads', 'App\Http\Controllers\Forum\ForumThreadController@store');
+    Route::patch('/threads/{thread}', 'App\Http\Controllers\Forum\ForumThreadController@update');
+    Route::delete('/threads/{thread}', 'App\Http\Controllers\Forum\ForumThreadController@destroy');
+
+    // Post management
+    Route::post('/threads/{thread}/posts', 'App\Http\Controllers\Forum\ForumPostController@store');
+    Route::patch('/posts/{post}', 'App\Http\Controllers\Forum\ForumPostController@update');
+    Route::delete('/posts/{post}', 'App\Http\Controllers\Forum\ForumPostController@destroy');
+    Route::post('/posts/{post}/mark-as-solution', 'App\Http\Controllers\Forum\ForumPostController@markAsSolution');
+
+    // Thread subscriptions
+    Route::post('/threads/{thread}/subscribe', 'App\Http\Controllers\Forum\ForumSubscriptionController@store');
+    Route::delete('/threads/{thread}/subscribe', 'App\Http\Controllers\Forum\ForumSubscriptionController@destroy');
+
+    // Post likes
+    Route::post('/posts/{post}/like', 'App\Http\Controllers\Forum\ForumPostLikeController@store');
+    Route::delete('/posts/{post}/like', 'App\Http\Controllers\Forum\ForumPostLikeController@destroy');
+});
+
 // Wiki write operations (not cached)
 Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['store', 'update', 'destroy']);
 Route::post('wiki/category', "\App\Http\Controllers\WikiController@storeCategory");
 Route::patch('wiki/category/{slug}', "\App\Http\Controllers\WikiController@updateCategory");
+
+// Wiki approval (admin only, requires auth)
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::post('wiki/{slug}/approve', "\App\Http\Controllers\WikiController@approve");
+    Route::post('wiki/{slug}/unapprove', "\App\Http\Controllers\WikiController@unapprove");
+});
 
 // Public OAuth Providers endpoint (for login page)
 Route::get('/settings/oauth-providers', 'App\Http\Controllers\Admin\SettingsController@getEnabledOAuthProviders');
@@ -43,6 +83,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return ['user' => $user, 'roles' => $roles, 'permissions' => $permissions];
 });
 
+//Route::post('/upload-image', [ImageUploadController::class, 'upload']);
+Route::post('/upload-image', "\App\Http\Controllers\ImageController@upload");
 Route::post('/users/search', "\App\Http\Controllers\UserController@searchUsers");
 
 //
@@ -71,6 +113,28 @@ Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function (
     Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
 });
 
+
+// Ticket System Routes
+Route::get('/ticket-types', 'App\Http\Controllers\TicketController@types');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Tickets
+    Route::get('/tickets', 'App\Http\Controllers\TicketController@index');
+    Route::get('/tickets/{ticket}', 'App\Http\Controllers\TicketController@show');
+    Route::post('/tickets', 'App\Http\Controllers\TicketController@store');
+    Route::patch('/tickets/{ticket}', 'App\Http\Controllers\TicketController@update');
+    Route::delete('/tickets/{ticket}', 'App\Http\Controllers\TicketController@destroy');
+    Route::post('/tickets/{ticket}/assign', 'App\Http\Controllers\TicketController@assign');
+    Route::post('/tickets/{ticket}/unassign', 'App\Http\Controllers\TicketController@unassign');
+    Route::post('/tickets/{ticket}/approve', 'App\Http\Controllers\TicketController@approve');
+    Route::post('/tickets/{ticket}/reject', 'App\Http\Controllers\TicketController@reject');
+
+    // Ticket Comments
+    Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\TicketCommentController@store');
+    Route::patch('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@update');
+    Route::delete('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@destroy');
+});
+
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
 Route::get('/tag/terms/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTerms');
 Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
@@ -81,6 +145,7 @@ Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
 Route::get('/pages/{page}/history', '\App\Http\Controllers\PageController@history');
 //Route::get('/pages/tag/{term}', '\App\Http\Controllers\PageController@showWithTerm');
 //Route::get('/pages/{taxonomy}/{category}', '\App\Http\Controllers\PageController@showWithCategory');
+Route::get('/posts', '\App\Http\Controllers\PostController@index');
 Route::get('/posts/{slug}', '\App\Http\Controllers\PostController@view');
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -104,12 +169,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('events/{event}/approve-guest', ['as' => 'event.approve', 'uses' => "\App\Http\Controllers\EventController@approveGuest"]);
 });
 
+// Collections (Photo Gallery)
 Route::get('/collections', [App\Http\Controllers\CollectionController::class, 'index']); // Fetch all collections
 Route::get('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'show']); // Fetch media for a specific collection
 Route::post('/collections', [App\Http\Controllers\CollectionController::class, 'store']); // Create a new collection
 Route::post('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'uploadMedia']); // Upload media to collection
 Route::patch('/media/{media}/caption', [App\Http\Controllers\CollectionController::class, 'updateMediaCaption']); // Update caption for a media item
-Route::delete('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'delete']); // Delete collection
+Route::delete('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'destroy']); // Delete collection (fixed method name)
 Route::delete('/media/{media}', [App\Http\Controllers\CollectionController::class, 'deleteMedia']); // Delete a media item
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -140,11 +206,71 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/conversations/{conversation}/mark-as-read', 'App\Http\Controllers\Conversation\ConversationController@markAsRead');
 });
 
+// Poll System Routes
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::resource('polls', 'App\Http\Controllers\PollController');
+    Route::post('/polls/{poll}/vote', 'App\Http\Controllers\PollVoteController@vote');
+    Route::delete('/polls/{poll}/vote', 'App\Http\Controllers\PollVoteController@unvote');
+});
+
+// Collaborative Sandbox
+Route::prefix('sandbox')->group(function () {
+    // Status endpoints are exempt from sandbox.enabled check (needed by admin settings)
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/status', [App\Http\Controllers\Sandbox\SandboxStatusController::class, 'status']);
+        Route::get('/status/websocket', [App\Http\Controllers\Sandbox\SandboxStatusController::class, 'websocketStatus']);
+    });
+
+    // All other sandbox routes require the feature to be enabled
+    Route::middleware('sandbox.enabled')->group(function () {
+        Route::get('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'index'])->middleware('auth:sanctum');
+        Route::post('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'store'])->middleware('auth:sanctum');
+
+        Route::get('/{uuid}', [App\Http\Controllers\Sandbox\SandboxController::class, 'show']); // Public for public sandboxes
+
+        Route::middleware('auth:sanctum')->group(function () {
+        Route::put('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'update']);
+        Route::delete('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'destroy']);
+        
+        // Collaboration state
+        Route::get('/{sandbox}/state', [App\Http\Controllers\Sandbox\SandboxController::class, 'getState']);
+        Route::post('/{sandbox}/state', [App\Http\Controllers\Sandbox\SandboxController::class, 'saveState']);
+        
+        // Collaborators
+        Route::post('/{sandbox}/collaborators', [App\Http\Controllers\Sandbox\SandboxController::class, 'addCollaborator']);
+        Route::delete('/{sandbox}/collaborators/{collaborator}', [App\Http\Controllers\Sandbox\SandboxController::class, 'removeCollaborator']);
+        Route::post('/{sandbox}/accept-invite', [App\Http\Controllers\Sandbox\SandboxController::class, 'acceptInvite']);
+        
+        // Version history
+        Route::get('/{sandbox}/versions', [App\Http\Controllers\Sandbox\SandboxController::class, 'versions']);
+        Route::get('/{sandbox}/versions/{version}', [App\Http\Controllers\Sandbox\SandboxController::class, 'showVersion']);
+        Route::post('/{sandbox}/versions/{version}/restore', [App\Http\Controllers\Sandbox\SandboxController::class, 'restoreVersion']);
+
+        // Revision history (field-level changes)
+        Route::get('/{sandbox}/history', [App\Http\Controllers\Sandbox\SandboxController::class, 'history']);
+
+        // Comment threads
+        Route::get('/{sandbox}/threads', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'index']);
+        Route::post('/{sandbox}/threads', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'storeThread']);
+        Route::put('/{sandbox}/threads/{thread}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'updateThread']);
+        Route::delete('/{sandbox}/threads/{thread}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'destroyThread']);
+        Route::post('/{sandbox}/threads/{thread}/comments', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'storeComment']);
+        Route::put('/{sandbox}/threads/{thread}/comments/{comment}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'updateComment']);
+        Route::delete('/{sandbox}/threads/{thread}/comments/{comment}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'destroyComment']);
+    });
+    }); // sandbox.enabled
+});
+
 Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']);
 Route::get('/source-models', [App\Http\Controllers\RelateableController::class, 'getSourceModels']);
 Route::get('/model-items', [App\Http\Controllers\RelateableController::class, 'getModelItems']);
-Route::post('/relate-models', [App\Http\Controllers\RelateableController::class, 'relateModels']);
-Route::post('/related-items', [App\Http\Controllers\RelateableController::class, 'getRelatedItems']);
+// Relateable System (Link any content to any content)
+Route::get('/source-models', [App\Http\Controllers\RelateableController::class, 'getSourceModels']); // Get models that can be sources
+Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']); // Get all relateable models
+Route::get('/model-items', [App\Http\Controllers\RelateableController::class, 'getModelItems']); // Get items of a specific model
+Route::post('/relate-models', [App\Http\Controllers\RelateableController::class, 'relateModels']); // Create relationship
+Route::delete('/unrelate-models', [App\Http\Controllers\RelateableController::class, 'unrelateModels']); // Remove relationship
+Route::post('/related-items', [App\Http\Controllers\RelateableController::class, 'getRelatedItems']); // Get related items for a model
 
 Route::get('/common/items', [App\Http\Controllers\CommonController::class, 'getItems']);
 
@@ -337,6 +463,12 @@ Route::post('/login', function (Request $request) {
             'message' => ['These credentials do not match our records.'],
         ], 404);
     }
+
+    $user->update([
+        'previous_login_at' => $user->last_login_at,
+        'last_login_at' => now()->toDateTimeString(),
+        'last_login_ip' => $request->getClientIp(),
+    ]);
 
     $token = $user->createToken('my-app-token')->plainTextToken;
 

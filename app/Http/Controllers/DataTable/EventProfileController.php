@@ -18,9 +18,7 @@ class EventProfileController extends DataTableController
 
     public function store(Request $request)
     {
-//                dd($request);
         $user = auth()->user();
-//        dd($user);
         $profile = $request->only($this->getUpdatableColumns());
         $profile['user_id'] = $user->id;
         $eventProfile = EventProfile::create($profile);
@@ -29,12 +27,9 @@ class EventProfileController extends DataTableController
     public function show($id, Request $request): JsonResponse
     {
         $evnetProfile = EventProfile::find($id);
-//        dd($evnetProfile);
 
-//        dd($evnetProfile);
 
         $options = json_decode($evnetProfile->options);
-//        dd($options);
         $evnetProfile->options = $options;
 
         return response()->json(

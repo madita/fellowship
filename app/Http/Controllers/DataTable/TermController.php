@@ -15,7 +15,6 @@ class TermController extends DataTableController
 
     public function store(Request $request)
     {
-//        dd($request);
         $parent = $request->get('tag_taxonomy_id') ?? 0;
 
         $name = $request->get('name');

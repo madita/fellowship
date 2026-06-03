@@ -27,6 +27,8 @@ export default function permission({ to, next }) {
         "admin-migrations": "manage-page",
         "admin-translations": "manage-page",
         "admin-menus": "manage-page",
+        "admin-tickets": "manage-page",
+        "admin-forums": "manage-page",
     };
 
     const requiredPermission = permissionsMap[to.name];

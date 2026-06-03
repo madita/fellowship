@@ -45,6 +45,7 @@
 
                     <template v-else>
                             <toolbar-notifications/>
+                            <sandbox-notifications v-if="sandboxEnabled"/>
                             <conversations-notification/>
                             <v-btn icon variant="text" size="small" class="d-none d-md-flex" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
                                 <v-icon>mdi-account-group</v-icon>
@@ -189,6 +190,7 @@ import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
 import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue'
 import ConversationsNotification from '../components/conversation/ConversationsNotification.vue'
+import SandboxNotifications from '../components/sandbox/SandboxNotifications.vue'
 import ConversationBoxManager from '../components/conversation/ConversationBoxManager.vue'
 import SidebarUsers from '../components/conversation/SidebarUsers.vue'
 import UserSettingsSidebar from '../components/settings/UserSettingsSidebar.vue'
@@ -204,6 +206,7 @@ export default {
         ToolbarLanguage,
         ToolbarNotifications,
         ConversationsNotification,
+        SandboxNotifications,
         ConversationBoxManager,
         SidebarUsers,
         UserSettingsSidebar,
@@ -228,6 +231,7 @@ export default {
     computed: {
         authenticated() {
             const authStore = useAuthStore();
+
             // console.log('landingauthstore',authStore)
             return authStore.isLoggedIn ;
         },
@@ -314,6 +318,10 @@ export default {
         maintenanceMode() {
             const settingsStore = useSettingsStore();
             return settingsStore.maintenanceMode;
+        },
+        sandboxEnabled() {
+            const settingsStore = useSettingsStore();
+            return settingsStore.sandboxEnabled;
         },
         isAdmin() {
             const userStore = useUserStore();
@@ -425,6 +433,9 @@ export default {
             // Show navigation section if there are links to display
             return this.links && this.links.length > 0;
         },
+    },
+
+    mounted() {
     },
 
     methods: {

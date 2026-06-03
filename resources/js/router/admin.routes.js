@@ -134,6 +134,15 @@ export const admin = [{
         },
         component: () => import(/* webpackChunkName: "admin-permissions" */ '@/pages/admin/Terms.vue')
     }, {
+        path: '/admin/forums',
+        name: 'admin-forums',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-forums" */ '@/pages/admin/ForumManager.vue')
+    }, {
         path: '/admin/announcements',
         name: 'admin-announcements',
         meta: {
@@ -173,6 +182,16 @@ export const admin = [{
             ]
         },
         component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/pages/admin/settings/SettingsPage.vue')
+    },
+    {
+        path: '/admin/tickets',
+        name: 'admin-tickets',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/components/ticket/TicketList.vue')
     }, {
         path: '/admin/menus',
         name: 'admin-menus',

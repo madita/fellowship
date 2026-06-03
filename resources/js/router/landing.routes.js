@@ -8,12 +8,20 @@ export const landing =  [
             }
     },
     {
+        path: '/blog',
+        name: 'blog',
+        component: () => import(/* webpackChunkName: "landing-blog" */ '@/pages/landing/BlogList.vue'),
+        meta: {
+            layout: 'landing'
+        }
+    },
+    {
         path: '/blog/:slug',
-        name: 'posts',
+        name: 'blog-post',
         component: () => import(/* webpackChunkName: "landing-posts" */ '@/pages/landing/Posts.vue'),
-            meta: {
-                layout: 'landing'
-            }
+        meta: {
+            layout: 'landing'
+        }
     },
     // {
     //     path: '/pages/:taxonomy/:category',

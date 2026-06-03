@@ -13,15 +13,19 @@
         "astrotomic/laravel-translatable": "^11.16",
         "cviebrock/eloquent-sluggable": "^12.0",
         "guzzlehttp/guzzle": "^7.0.1",
+        "http-interop/http-factory-guzzle": "^1.2",
         "laravel/framework": "^12.0",
         "laravel/nightwatch": "^1.7",
         "laravel/sanctum": "^4.0",
+        "laravel/scout": "^10.24",
         "laravel/socialite": "^5.24",
         "laravel/tinker": "^2.5",
         "laravel/ui": "^4.0",
+        "meilisearch/meilisearch-php": "^1.16",
         "pusher/pusher-php-server": "^7.0",
         "socialiteproviders/discord": "^4.2",
         "spatie/image": "^3.8.3",
+        "spatie/laravel-activitylog": "^4.11",
         "spatie/laravel-medialibrary": "^11.13.0",
         "spatie/laravel-permission": "^6.18",
         "stevebauman/purify": "^6.3.1"
@@ -37,7 +41,10 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
     },
     "extra": {
         "laravel": {
@@ -68,6 +75,15 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi"
+        ],
+        "style:check": [
+            "styleci analyse --verbose"
+        ],
+        "style:fix": [
+            "styleci fix --verbose"
+        ],
+        "pre-commit": [
+            "@style:check"
         ]
     }
 }
