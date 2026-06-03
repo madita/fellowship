@@ -78,8 +78,9 @@ const getPage = () => {
             categoryValue.value = taxonomies[remainingKeys[0]];
         }
 
-        getCategories(getTaxonomyName());
-        loading.value = false;
+        return getCategories(getTaxonomyName()).finally(() => {
+            loading.value = false;
+        });
     });
 };
 
@@ -126,13 +127,17 @@ const getCategories = (tax) => {
 };
 
 const saveCategory = () => {
+    const term = newCategory.value.trim();
+    if (!term) return;
     const taxName = getTaxonomyName();
-    let data = { term: newCategory.value, taxonomy: taxName, parent: parentValue.value };
+    const data = { term, taxonomy: taxName, parent: parentValue.value };
     axios.post(`/api/tag/terms`, data).then(() => {
         getCategories(taxName);
-        categoryValue.value.push(newCategory.value);
+        categoryValue.value.push(term);
         newCategory.value = '';
         addCategory.value = false;
+    }).catch((error) => {
+        console.error('Failed to create category:', error);
     });
 };
 

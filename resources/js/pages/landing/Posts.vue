@@ -23,7 +23,7 @@
                     </div>
 
                     <div v-if="tags.length" class="mb-3">
-                        <div class="text-caption text-medium-emphasis text-uppercase mb-2">Tags</div>
+                        <div class="text-caption text-medium-emphasis text-uppercase mb-2">{{ $t('pageForm.terms') }}</div>
                         <v-chip
                             v-for="tag in tags"
                             :key="`tag-${tag.id}`"

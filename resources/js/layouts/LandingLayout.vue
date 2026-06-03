@@ -453,6 +453,7 @@ export default {
     },
 
     mounted() {
+    },
 
     methods: {
         getColumnSize(count) {

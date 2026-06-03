@@ -2,7 +2,7 @@
 import { ref, watch, computed, onMounted } from 'vue';
 import axios from 'axios';
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:modelValue', 'error']);
 const props = defineProps({
     config: {
         type: Object,
@@ -52,6 +52,7 @@ const fetchTerms = async () => {
         items.value = (data.terms || []).map(t => (typeof t === 'string' ? { title: t } : t));
     } catch (err) {
         console.error('Error fetching taxonomy terms:', err);
+        emit('error', { source: 'fetchTerms', error: err });
     } finally {
         loading.value = false;
     }
@@ -78,6 +79,7 @@ const saveCategory = async () => {
         showAddInline.value = false;
     } catch (e) {
         console.error('Failed to create category:', e);
+        emit('error', { source: 'saveCategory', error: e });
     } finally {
         saving.value = false;
     }
@@ -113,7 +115,7 @@ onMounted(() => {
             item-value="title"
             :return-object="false"
             :label="config.label"
-            :multiple="config.multiple !== false"
+            :multiple="multiple"
             :readonly="readonly"
             :loading="loading"
             chips

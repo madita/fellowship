@@ -243,8 +243,11 @@ watch(() => props.isDrawerOpen, async (isOpen) => {
 
         // If editing existing item, fetch full data including taxonomies
         if (props.item?.id && props.endpoint) {
+            const currentId = props.item.id;
             try {
-                const { data } = await axios.get(`/api${props.endpoint}/${props.item.id}`);
+                const { data } = await axios.get(`/api${props.endpoint}/${currentId}`);
+                // Drop the response if the drawer closed or switched items mid-flight.
+                if (!props.isDrawerOpen || props.item?.id !== currentId) return;
                 if (data.categories) editedItem.value.categories = data.categories;
                 if (data.terms) editedItem.value.terms = data.terms;
             } catch (e) {
