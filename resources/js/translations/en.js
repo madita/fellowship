@@ -6,6 +6,8 @@ export default {
         'delete': 'Delete',
         'title': 'Title',
         'save': 'Save',
+        'create': 'Create',
+        'update': 'Update',
         'faq': 'FAQ',
         'contact': 'Contact Us',
         'tos': 'Terms of Service',
@@ -182,7 +184,8 @@ export default {
         'key': 'Key',
         'value': 'Value',
         'noUpdatableFields': 'No updatable fields configured for this form.',
-        'unknownFieldConfiguration': 'Unknown field configuration'
+        'unknownFieldConfiguration': 'Unknown field configuration',
+        'unsavedChangesWarning': 'You have unsaved changes. Use the Save or Cancel buttons — clicking outside won’t close the form.'
     },
     'email': {
         'compose': 'Compose Email',
@@ -1130,6 +1133,7 @@ export default {
         'sortAsc': 'Sort ascending',
         'sortDesc': 'Sort descending',
         'filter': 'Filter',
+        'filters': 'Filters',
         'clearFilter': 'Clear filter',
         'export': 'Export',
         'refresh': 'Refresh',
@@ -1256,6 +1260,7 @@ export default {
         'titleRequired': 'Title is required',
         'dateRequired': 'Date is required',
         'updateEvent': 'Update Event',
+        'unsavedChangesWarning': 'You have unsaved changes. Use the Save or Cancel buttons — clicking outside won’t close the form.',
         'type': 'Type',
         'selectEventType': 'Select event type',
         'startDateRequired': 'Start date is required',
@@ -3815,7 +3820,14 @@ export default {
         'publish': 'Publish',
         'preview': 'Preview',
         'savedSuccess': 'Page saved successfully',
-        'publishedSuccess': 'Page published successfully'
+        'publishedSuccess': 'Page published successfully',
+        'parentPageHint': 'Select a parent page for nesting',
+        'typeToSearchCategories': 'Type to search or create categories',
+        'categoriesHint': 'Select existing categories or type to create new ones',
+        'newCategoryName': 'New category name',
+        'typeToSearchTags': 'Type to search or create tags',
+        'tagsHint': 'Add tags to help organize this page',
+        'settings': 'Settings'
     },
     'mediaFilters': {
         'searchByFilename': 'Search by filename',

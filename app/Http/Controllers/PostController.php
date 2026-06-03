@@ -15,43 +15,61 @@ class PostController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth')->only(['update']);
     }
 
     /**
-     * view posts.
-     *
-     * @param $slug
-     *
-     * @return JsonResponse|never
+     * List published posts.
      */
-    public function view($slug)
+    public function index(Request $request): JsonResponse
     {
-        $post = Post::where('slug', '=', $slug)->first();
-        $posts = Post::all();
+        $posts = Post::with('translations')
+            ->where('status', 'published')
+            ->latest()
+            ->paginate($request->get('per_page', 12));
+
+        return response()->json($posts);
+    }
+
+    /**
+     * View a single post by slug.
+     */
+    public function view($slug): JsonResponse
+    {
+        $post = Post::with('translations')
+            ->where('slug', '=', $slug)
+            ->first();
 
         if (!$post || $post->status !== 'published') {
             return abort(404);
         }
 
-        return response()
-            ->json(['data' => $post]);
+        $taxonomies = $post->taxonomies()->get()->groupBy('taxonomy')->map(function ($items) {
+            return $items->filter(fn ($t) => $t->term)->map(function ($t) {
+                return [
+                    'id'    => $t->term->id,
+                    'name'  => $t->term->title,
+                    'slug'  => $t->term->slug,
+                    'color' => $t->color,
+                ];
+            })->values();
+        });
+
+        return response()->json(['data' => $post, 'taxonomies' => $taxonomies]);
     }
 
-    public function show(Post $post)
+    /**
+     * Show post for editing.
+     */
+    public function show(Post $post): JsonResponse
     {
-        //$post = Post::where('slug', '=', $slug)->first();
-        $posts = Post::all();
-
         if (!$post) {
             return abort(404);
         }
 
-//        if ($post->sign_in_only && !Auth::check())
-//            return redirect('/')->withErrors(config('constants.NA'));
+        $post->load('translations');
 
-        return response()
-            ->json(['data' => $post]);
+        return response()->json(['data' => $post]);
     }
 
     public function update(Request $request, Post $post)

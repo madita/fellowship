@@ -51,7 +51,7 @@ export default {
             });
         },
         goToPage(slug) {
-            this.$router.push(`/p/${slug}`)
+            this.$router.push(`/${slug}`)
         }
 
     },

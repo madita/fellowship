@@ -10,7 +10,7 @@
                     <v-list-item
                         v-for="(model) in taxable"
                         :key="`${model.data.slug}`"
-                        @click="goTo(model.data.slug, model.taxonomy[0].taxonomy)"
+                        @click="goTo(model.data.slug, type)"
                     >
                         <v-list-item-content>
                             <v-list-item-title v-text="model.taxable_title"></v-list-item-title>

@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use App\Contracts\CanHaveTaxonomies;
 use App\Traits\HasCache;
+use App\Traits\HasTaxonomies;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
 
-class Post extends Model implements TranslatableContract
+class Post extends Model implements CanHaveTaxonomies, TranslatableContract
 {
     use Sluggable;
     use HasCache;
+    use HasTaxonomies;
     use Translatable;
 
     public $translatedAttributes = ['title', 'body'];
@@ -21,6 +24,8 @@ class Post extends Model implements TranslatableContract
         'slug',
         'user_id',
     ];
+
+    protected $taxable_title = 'title';
 
     protected $primaryKey = 'id';
     protected $table = 'posts';

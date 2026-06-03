@@ -522,8 +522,15 @@ class Taxonomy extends Model implements TranslatableContract
                 if (is_string($category)) {
                     $term = Term::firstOrCreateByTitle($category);
                 } else {
+<<<<<<< HEAD
+                    $term = Term::firstOrCreate(['title' => $category['title']]);
+                    if (isset($category['color'])) {
+                        $term->color = $category['color'];
+                    }
+=======
                     $term = Term::firstOrCreateByTitle($category['title']);
                     $term->color = $category['color'];
+>>>>>>> c0ed6b45062ecad3def4110d50c531cb3881d3eb
                 }
 
                 $term->save();

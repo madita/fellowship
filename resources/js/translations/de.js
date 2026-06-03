@@ -6,6 +6,8 @@ export default {
         'delete': 'Löschen',
         'title': 'Titel',
         'save': 'Speichern',
+        'create': 'Erstellen',
+        'update': 'Aktualisieren',
         'faq': 'FAQ',
         'contact': 'Kontaktieren Sie uns',
         'tos': 'Nutzungsbedingungen',
@@ -182,7 +184,8 @@ export default {
         'key': 'Schlüssel',
         'value': 'Wert',
         'noUpdatableFields': 'Keine aktualisierbaren Felder für dieses Formular konfiguriert.',
-        'unknownFieldConfiguration': 'Unbekannte Feldkonfiguration'
+        'unknownFieldConfiguration': 'Unbekannte Feldkonfiguration',
+        'unsavedChangesWarning': 'Sie haben ungespeicherte Änderungen. Bitte „Speichern“ oder „Abbrechen“ verwenden – ein Klick außerhalb schließt das Formular nicht.'
     },
     'email': {
         'compose': 'E-Mail verfassen',
@@ -1100,6 +1103,7 @@ export default {
         'sortAsc': 'Aufsteigend sortieren',
         'sortDesc': 'Absteigend sortieren',
         'filter': 'Filtern',
+        'filters': 'Filter',
         'clearFilter': 'Filter löschen',
         'export': 'Exportieren',
         'refresh': 'Aktualisieren',
@@ -1226,6 +1230,7 @@ export default {
         'titleRequired': 'Titel ist erforderlich',
         'dateRequired': 'Datum ist erforderlich',
         'updateEvent': 'Termin aktualisieren',
+        'unsavedChangesWarning': 'Sie haben ungespeicherte Änderungen. Bitte „Speichern“ oder „Abbrechen“ verwenden – ein Klick außerhalb schließt das Formular nicht.',
         'type': 'Typ',
         'selectEventType': 'Termintyp auswählen',
         'startDateRequired': 'Startdatum ist erforderlich',
@@ -3983,7 +3988,14 @@ export default {
         'publish': 'Veröffentlichen',
         'preview': 'Vorschau',
         'savedSuccess': 'Seite erfolgreich gespeichert',
-        'publishedSuccess': 'Seite erfolgreich veröffentlicht'
+        'publishedSuccess': 'Seite erfolgreich veröffentlicht',
+        'parentPageHint': 'Übergeordnete Seite für Verschachtelung wählen',
+        'typeToSearchCategories': 'Suchen oder Kategorien erstellen',
+        'categoriesHint': 'Bestehende Kategorien wählen oder neue erstellen',
+        'newCategoryName': 'Name der neuen Kategorie',
+        'typeToSearchTags': 'Suchen oder Tags erstellen',
+        'tagsHint': 'Tags hinzufügen um die Seite zu organisieren',
+        'settings': 'Einstellungen'
     },
     'mediaFilters': {
         'searchByFilename': 'Nach Dateiname suchen',

@@ -50,14 +50,43 @@
                         </template>
                     </v-table>
                 </div>
-                <div v-else v-html="page.body"></div>
-                <div v-for="child in page.children"><router-link :to="`/p/${child.slug}`" class="font-weight-bold">
+                <div v-else v-html="page.content"></div>
+                <div v-for="child in page.children" :key="`child-${child.id || child.slug}`"><router-link :to="`/${child.slug}`" class="font-weight-bold">
                     {{child.title}}
                 </router-link></div>
-                <v-chip :color="tag.color" v-for="tag in tags" :key="`tag-${tag.id}`" @click="goToTerm(tag.slug)">{{ tag.name }}</v-chip>
 
-                <div v-for="(taxonomy, key) in taxonomies">
-                    {{key}}:  <v-chip :color="tag.color" v-for="tag in taxonomy" :key="`tax-${tag.id}`" @click="goToCategory(tag.slug, key)">{{ tag.name }}</v-chip>
+                <div v-if="tags.length || Object.keys(taxonomies).length" class="mt-6">
+                    <div v-for="(terms, key) in taxonomies" :key="`tax-${key}`" class="mb-3">
+                        <div class="text-caption text-medium-emphasis text-uppercase mb-2">{{ key }}</div>
+                        <v-chip
+                            v-for="term in terms"
+                            :key="`tax-${key}-${term.id}`"
+                            :color="term.color || 'primary'"
+                            class="me-2 mb-2"
+                            variant="tonal"
+                            size="small"
+                            @click="goToCategory(term.slug, key)"
+                        >
+                            <v-icon start size="14">mdi-folder-outline</v-icon>
+                            {{ term.name }}
+                        </v-chip>
+                    </div>
+
+                    <div v-if="tags.length" class="mb-3">
+                        <div class="text-caption text-medium-emphasis text-uppercase mb-2">{{ $t('pageForm.terms') }}</div>
+                        <v-chip
+                            v-for="tag in tags"
+                            :key="`tag-${tag.id}`"
+                            :color="tag.color || 'secondary'"
+                            class="me-2 mb-2"
+                            variant="tonal"
+                            size="small"
+                            @click="goToTerm(tag.slug)"
+                        >
+                            <v-icon start size="14">mdi-pound</v-icon>
+                            {{ tag.name }}
+                        </v-chip>
+                    </div>
                 </div>
 
             </v-container>
@@ -77,7 +106,7 @@ export default {
             showHistoryItem: false,
             page: [],
             tags: [],
-            taxonomies: [],
+            taxonomies: {},
             history: [],
             historyItem: [],
             slug:"",
@@ -93,11 +122,11 @@ export default {
                 this.page = response.data.page
                 this.parents = Object.values(response.data.parents)
 
-                let taxonomies = response.data.taxonomies
-                this.tags = taxonomies.tags;
+                let taxonomies = response.data.taxonomies || {}
+                this.tags = taxonomies.tags || [];
 
                 this.breadcrumbs = this.parents.map(x =>  ({
-                    text:x.title, to:'/p/'+x.slug
+                    text:x.title, to:'/'+x.slug
                 })).reverse();
 
                 this.breadcrumbs.push({text:this.page.title})
@@ -145,11 +174,11 @@ export default {
             this.showHistoryItem = true
             this.historyItem = this.history[index]
         },
-        goToTerm(item) {
-            this.$router.push(`/pages/tags/${item}`)
+        goToTerm(slug) {
+            this.$router.push(`/tags/tags:${slug}/page`)
         },
-        goToCategory(category, taxonomy) {
-            this.$router.push(`/pages/${taxonomy}/${category}`)
+        goToCategory(slug, taxonomy) {
+            this.$router.push(`/tags/${taxonomy}:${slug}/page`)
         }
     },
 

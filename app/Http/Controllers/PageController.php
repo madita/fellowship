@@ -27,7 +27,8 @@ class PageController extends Controller
      */
     public function view($slug)
     {
-        $page = Page::where('slug', '=', $slug)->with('children')->first();
+        $page = Page::where('slug', '=', $slug)->with(['children', 'translations'])->first();
+
         $parent = null;
         //$pages = Page::all();
 
@@ -39,10 +40,15 @@ class PageController extends Controller
             return abort(403);
         }
 
-        $taxonomies = $page->getCategories('taxonomy')->unique();
-
-        $tax = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use ($page) {
-            return  [$taxonomy => $page->getCategories($taxonomy)];
+        $tax = $page->taxonomies()->get()->groupBy('taxonomy')->map(function ($items) {
+            return $items->filter(fn ($t) => $t->term)->map(function ($t) {
+                return [
+                    'id'    => $t->term->id,
+                    'name'  => $t->term->title,
+                    'slug'  => $t->term->slug,
+                    'color' => $t->color,
+                ];
+            })->values();
         });
 
         return response()
@@ -51,27 +57,23 @@ class PageController extends Controller
 
     public function show(Page $page)
     {
-        //$page = Page::where('slug', '=', $slug)->first();
-//        $pages = Page::all();
-
         if (!$page) {
             return abort(404);
         }
-        $terms = $page->getCategories();
 
-        $taxonomies = $page->taxonomies()
-            ->whereIn('term_id', $terms->pluck(['id']))
-            ->pluck('taxonomy')->unique();
-
-        $taxterms = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use ($page) {
-            return  [$taxonomy => $page->getCategories($taxonomy)->pluck(['title'])];
+        $tax = $page->taxonomies()->get()->groupBy('taxonomy')->map(function ($items) {
+            return $items->filter(fn ($t) => $t->term)->map(function ($t) {
+                return [
+                    'id'    => $t->term->id,
+                    'title' => $t->term->title,
+                    'slug'  => $t->term->slug,
+                    'color' => $t->color,
+                ];
+            })->values();
         });
 
-//        if ($page->sign_in_only && !Auth::check())
-//            return redirect('/')->withErrors(config('constants.NA'));
-
         return response()
-            ->json(['page' => $page, 'parent'=> $page->parent, 'taxonomies' => $taxonomies, 'terms' => $taxterms]);
+            ->json(['page' => $page, 'parent' => $page->parent, 'taxonomies' => $tax]);
     }
 
 //    public function showWithCategory($taxonomy, $category)
