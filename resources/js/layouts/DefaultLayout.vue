@@ -87,8 +87,9 @@
                         <v-btn class="d-flex d-md-none" icon @click="showSearch = true">
                             <v-icon>mdi-magnify</v-icon>
                         </v-btn>
-                        <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-block"/>
+
                         <mega-menu />
+                        <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-block"/>
 
 <!--                                                <toolbar-apps/>-->
 

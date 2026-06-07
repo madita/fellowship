@@ -94,6 +94,22 @@ export const settingsCategories = [
         ]
     },
     {
+        id: 'menus',
+        title: 'Navigation',
+        description: 'Site menus and menu items',
+        icon: 'mdi-menu-open',
+        color: 'indigo',
+        settings: [
+            {
+                id: 'menus',
+                title: 'Menu Manager',
+                description: 'Create and edit menus, items, and ordering',
+                icon: 'mdi-menu',
+                routeName: 'admin-settings-menus',
+            },
+        ]
+    },
+    {
         id: 'footer',
         title: 'Footer',
         description: 'Footer sections, widgets, and content',
