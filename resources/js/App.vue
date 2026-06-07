@@ -46,6 +46,7 @@ import config from './configs'
 import defaultLayout from './layouts/DefaultLayout.vue'
 import simpleLayout from './layouts/SimpleLayout.vue'
 import landingLayout from './layouts/LandingLayout.vue'
+import oneScrollLayout from './layouts/OneScrollLayout.vue'
 import authLayout from './layouts/AuthLayout.vue'
 import errorLayout from './layouts/ErrorLayout.vue'
 
@@ -72,6 +73,7 @@ export default {
     defaultLayout,
     simpleLayout,
     landingLayout,
+    oneScrollLayout,
     authLayout,
     errorLayout,
     CookieConsent,

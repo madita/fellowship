@@ -929,7 +929,7 @@ export default {
                 const titleField = document.querySelector('.title-field input')
                 if (titleField) titleField.focus()
             })
-        });
+        };
 
 
         function getWikiPage() {

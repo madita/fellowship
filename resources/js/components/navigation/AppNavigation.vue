@@ -1,335 +1,297 @@
 <template>
-  <div>
-    <!-- Desktop Header Navigation -->
+    <!-- Desktop Header -->
     <v-app-bar
-      v-if="!isMobile"
-      app
-      :elevation="scrolled ? 4 : 0"
-      :color="scrolled || !transparent ? 'surface' : 'transparent'"
-      flat
+        v-if="!mobile"
+        :elevation="scrolled ? 4 : 0"
+        :color="scrolled || !transparent ? 'surface' : 'transparent'"
+        flat
+        density="comfortable"
     >
-      <v-container>
-        <v-row align="center">
-          <v-col cols="auto">
-            <!-- Logo -->
-            <router-link to="/" class="d-flex align-center text-decoration-none">
-              <v-img
-                v-if="settings.logo"
-                :src="settings.logo"
-                max-height="40"
-                max-width="120"
+        <router-link to="/" class="d-inline-flex align-center text-decoration-none mx-4">
+            <v-img
+                v-if="logoSrc"
+                :src="logoSrc"
+                max-height="36"
+                max-width="160"
                 contain
-              />
-              <h2 v-else class="text-h5">{{ settings.site_name || 'Fellowship' }}</h2>
-            </router-link>
-          </v-col>
+            />
+            <span v-else class="text-h6 font-weight-medium text-on-surface">
+                {{ appName }}
+            </span>
+        </router-link>
 
-          <v-spacer />
+        <v-spacer />
 
-          <!-- Navigation Items -->
-          <v-col cols="auto">
-            <nav class="d-flex align-center gap-2">
-              <template v-for="item in filteredItems" :key="item.id">
-                <!-- Dropdown Menu -->
-                <v-menu v-if="item.children && item.children.length" offset-y>
-                  <template #activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      :prepend-icon="item.icon"
-                      variant="text"
-                    >
-                      {{ item.label }}
-                      <v-icon right size="small">mdi-chevron-down</v-icon>
-                    </v-btn>
-                  </template>
-                  <v-list>
-                    <v-list-item
-                      v-for="child in item.children"
-                      :key="child.id"
-                      :to="child.href"
-                      :href="child.type === 'external' ? child.href : null"
-                      :target="child.target"
-                    >
-                      <template #prepend v-if="child.icon">
-                        <v-icon>{{ child.icon }}</v-icon>
-                      </template>
-                      <v-list-item-title>{{ child.label }}</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
+        <nav class="d-flex align-center ga-1">
+            <template v-for="item in items" :key="item.id">
+                <!-- Dropdown -->
+                <v-menu
+                    v-if="item.children && item.children.length"
+                    offset-y
+                    transition="slide-y-transition"
+                >
+                    <template v-slot:activator="{ props: activatorProps }">
+                        <v-btn v-bind="activatorProps" variant="text">
+                            <v-icon v-if="item.icon" start size="small">{{ item.icon }}</v-icon>
+                            {{ item.label }}
+                            <v-icon end size="small">mdi-chevron-down</v-icon>
+                        </v-btn>
+                    </template>
+
+                    <v-list density="compact">
+                        <v-list-item
+                            v-for="child in item.children"
+                            :key="child.id"
+                            :to="child.type !== 'external' ? child.href : undefined"
+                            :href="child.type === 'external' ? child.href : undefined"
+                            :target="child.target"
+                            :active="isActive(child.href)"
+                        >
+                            <template v-slot:prepend>
+                                <v-icon v-if="isActive(child.href)">mdi-check</v-icon>
+                                <v-icon v-else-if="child.icon">{{ child.icon }}</v-icon>
+                                <div v-else style="width: 24px;"></div>
+                            </template>
+                            <v-list-item-title>{{ child.label }}</v-list-item-title>
+                        </v-list-item>
+                    </v-list>
                 </v-menu>
 
-                <!-- Regular Link -->
+                <!-- Flat link -->
                 <v-btn
-                  v-else
-                  :to="item.type !== 'external' ? item.href : null"
-                  :href="item.type === 'external' ? item.href : null"
-                  :target="item.target"
-                  :prepend-icon="item.icon"
-                  variant="text"
-                >
-                  {{ item.label }}
-                </v-btn>
-              </template>
-
-              <!-- Auth Buttons -->
-              <v-divider vertical class="mx-2" v-if="!$store.state.auth.user" />
-              <v-btn v-if="!$store.state.auth.user" to="/login" variant="outlined">
-                Login
-              </v-btn>
-              <v-btn v-if="!$store.state.auth.user" to="/register" color="primary">
-                Register
-              </v-btn>
-
-              <!-- User Menu -->
-              <v-menu v-if="$store.state.auth.user" offset-y>
-                <template #activator="{ props }">
-                  <v-btn
-                    v-bind="props"
-                    icon
+                    v-else
+                    :to="item.type !== 'external' ? item.href : undefined"
+                    :href="item.type === 'external' ? item.href : undefined"
+                    :target="item.target"
+                    :active="isActive(item.href)"
                     variant="text"
-                  >
-                    <v-avatar size="32">
-                      <v-icon>mdi-account-circle</v-icon>
-                    </v-avatar>
-                  </v-btn>
-                </template>
-                <v-list>
-                  <v-list-item :to="`/user/${$store.state.auth.user.username}`">
-                    <template #prepend>
-                      <v-icon>mdi-account</v-icon>
-                    </template>
-                    <v-list-item-title>Profile</v-list-item-title>
-                  </v-list-item>
-                  <v-list-item to="/dashboard">
-                    <template #prepend>
-                      <v-icon>mdi-view-dashboard</v-icon>
-                    </template>
-                    <v-list-item-title>Dashboard</v-list-item-title>
-                  </v-list-item>
-                  <v-list-item v-if="$store.getters['auth/isAdmin']" to="/admin/settings">
-                    <template #prepend>
-                      <v-icon>mdi-cog</v-icon>
-                    </template>
-                    <v-list-item-title>Settings</v-list-item-title>
-                  </v-list-item>
-                  <v-divider />
-                  <v-list-item @click="logout">
-                    <template #prepend>
-                      <v-icon>mdi-logout</v-icon>
-                    </template>
-                    <v-list-item-title>Logout</v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
-            </nav>
-          </v-col>
-        </v-row>
-      </v-container>
+                >
+                    <v-icon v-if="item.icon" start size="small">{{ item.icon }}</v-icon>
+                    {{ item.label }}
+                </v-btn>
+            </template>
+        </nav>
+
+        <!-- Guest actions -->
+        <template v-if="!authenticated">
+            <v-divider vertical class="mx-3" />
+            <v-btn to="/auth/signin" variant="text">{{ $t('auth.signin') }}</v-btn>
+            <v-btn to="/auth/signup" color="primary" variant="tonal" class="mx-2">
+                {{ $t('auth.signup') }}
+            </v-btn>
+        </template>
+
+        <!-- User menu -->
+        <v-menu
+            v-else
+            offset-y
+            left
+            transition="slide-y-transition"
+        >
+            <template v-slot:activator="{ props: activatorProps }">
+                <v-btn v-bind="activatorProps" icon class="mx-2">
+                    <user-avatar :user="user" />
+                </v-btn>
+            </template>
+
+            <v-list density="compact">
+                <v-list-item :to="`/user/${user?.username}`">
+                    <template v-slot:prepend><v-icon>mdi-account</v-icon></template>
+                    <v-list-item-title>{{ $t('menu.profile') }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item to="/dashboard">
+                    <template v-slot:prepend><v-icon>mdi-view-dashboard</v-icon></template>
+                    <v-list-item-title>{{ $t('menu.dashboard') }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item v-if="isAdmin" to="/admin/settings">
+                    <template v-slot:prepend><v-icon>mdi-cog</v-icon></template>
+                    <v-list-item-title>{{ $t('menu.settings') }}</v-list-item-title>
+                </v-list-item>
+
+                <v-divider class="my-1" />
+
+                <v-list-item @click="signOut">
+                    <template v-slot:prepend><v-icon>mdi-logout</v-icon></template>
+                    <v-list-item-title>{{ $t('menu.logout') }}</v-list-item-title>
+                </v-list-item>
+            </v-list>
+        </v-menu>
     </v-app-bar>
 
-    <!-- Mobile Navigation -->
-    <v-app-bar v-if="isMobile" app color="surface">
-      <v-app-bar-nav-icon @click="drawer = !drawer" />
-      <v-toolbar-title>
-        <router-link to="/" class="text-decoration-none text-inherit">
-          {{ settings.site_name || 'Fellowship' }}
-        </router-link>
-      </v-toolbar-title>
-      <v-spacer />
-      <v-btn v-if="$store.state.auth.user" icon @click="userMenu = !userMenu">
-        <v-icon>mdi-account-circle</v-icon>
-      </v-btn>
+    <!-- Mobile Header -->
+    <v-app-bar v-else color="surface" flat density="comfortable">
+        <v-app-bar-nav-icon @click="drawer = !drawer" />
+        <v-app-bar-title>
+            <router-link to="/" class="text-decoration-none text-on-surface">
+                {{ appName }}
+            </router-link>
+        </v-app-bar-title>
     </v-app-bar>
 
     <!-- Mobile Drawer -->
-    <v-navigation-drawer v-model="drawer" temporary app>
-      <v-list>
-        <!-- Logo/Title -->
-        <v-list-item>
-          <router-link to="/" @click="drawer = false">
-            <v-img
-              v-if="settings.logo"
-              :src="settings.logo"
-              max-height="40"
-              contain
-            />
-            <h3 v-else>{{ settings.site_name || 'Fellowship' }}</h3>
-          </router-link>
-        </v-list-item>
-
-        <v-divider />
-
-        <!-- Menu Items -->
-        <template v-for="item in filteredItems" :key="item.id">
-          <!-- Parent with children -->
-          <v-list-group v-if="item.children && item.children.length" :value="item.label">
-            <template #activator="{ props }">
-              <v-list-item v-bind="props">
-                <template #prepend v-if="item.icon">
-                  <v-icon>{{ item.icon }}</v-icon>
-                </template>
-                <v-list-item-title>{{ item.label }}</v-list-item-title>
-              </v-list-item>
-            </template>
-
-            <v-list-item
-              v-for="child in item.children"
-              :key="child.id"
-              :to="child.type !== 'external' ? child.href : null"
-              :href="child.type === 'external' ? child.href : null"
-              :target="child.target"
-              @click="drawer = false"
-            >
-              <template #prepend v-if="child.icon">
-                <v-icon>{{ child.icon }}</v-icon>
-              </template>
-              <v-list-item-title>{{ child.label }}</v-list-item-title>
+    <v-navigation-drawer v-if="mobile" v-model="drawer" temporary>
+        <v-list density="compact">
+            <v-list-item>
+                <router-link
+                    to="/"
+                    class="d-inline-flex align-center text-decoration-none text-on-surface"
+                    @click="drawer = false"
+                >
+                    <v-img
+                        v-if="logoSrc"
+                        :src="logoSrc"
+                        max-height="36"
+                        max-width="160"
+                        contain
+                    />
+                    <span v-else class="text-h6 font-weight-medium">{{ appName }}</span>
+                </router-link>
             </v-list-item>
-          </v-list-group>
 
-          <!-- Single item -->
-          <v-list-item
-            v-else
-            :to="item.type !== 'external' ? item.href : null"
-            :href="item.type === 'external' ? item.href : null"
-            :target="item.target"
-            @click="drawer = false"
-          >
-            <template #prepend v-if="item.icon">
-              <v-icon>{{ item.icon }}</v-icon>
-            </template>
-            <v-list-item-title>{{ item.label }}</v-list-item-title>
-          </v-list-item>
-        </template>
+            <v-divider class="my-1" />
 
-        <v-divider />
+            <template v-for="item in items" :key="item.id">
+                <v-list-group
+                    v-if="item.children && item.children.length"
+                    :value="item.label"
+                >
+                    <template v-slot:activator="{ props: activatorProps }">
+                        <v-list-item v-bind="activatorProps">
+                            <template v-slot:prepend>
+                                <v-icon v-if="item.icon">{{ item.icon }}</v-icon>
+                                <div v-else style="width: 24px;"></div>
+                            </template>
+                            <v-list-item-title>{{ item.label }}</v-list-item-title>
+                        </v-list-item>
+                    </template>
 
-        <!-- Auth Actions -->
-        <v-list-item v-if="!$store.state.auth.user" to="/login" @click="drawer = false">
-          <template #prepend>
-            <v-icon>mdi-login</v-icon>
-          </template>
-          <v-list-item-title>Login</v-list-item-title>
-        </v-list-item>
-        <v-list-item v-if="!$store.state.auth.user" to="/register" @click="drawer = false">
-          <template #prepend>
-            <v-icon>mdi-account-plus</v-icon>
-          </template>
-          <v-list-item-title>Register</v-list-item-title>
-        </v-list-item>
+                    <v-list-item
+                        v-for="child in item.children"
+                        :key="child.id"
+                        :to="child.type !== 'external' ? child.href : undefined"
+                        :href="child.type === 'external' ? child.href : undefined"
+                        :target="child.target"
+                        :active="isActive(child.href)"
+                        @click="drawer = false"
+                    >
+                        <template v-slot:prepend>
+                            <v-icon v-if="isActive(child.href)">mdi-check</v-icon>
+                            <v-icon v-else-if="child.icon">{{ child.icon }}</v-icon>
+                            <div v-else style="width: 24px;"></div>
+                        </template>
+                        <v-list-item-title>{{ child.label }}</v-list-item-title>
+                    </v-list-item>
+                </v-list-group>
 
-        <!-- User Menu -->
-        <template v-if="$store.state.auth.user">
-          <v-list-item :to="`/user/${$store.state.auth.user.username}`" @click="drawer = false">
-            <template #prepend>
-              <v-icon>mdi-account</v-icon>
+                <v-list-item
+                    v-else
+                    :to="item.type !== 'external' ? item.href : undefined"
+                    :href="item.type === 'external' ? item.href : undefined"
+                    :target="item.target"
+                    :active="isActive(item.href)"
+                    @click="drawer = false"
+                >
+                    <template v-slot:prepend>
+                        <v-icon v-if="isActive(item.href)">mdi-check</v-icon>
+                        <v-icon v-else-if="item.icon">{{ item.icon }}</v-icon>
+                        <div v-else style="width: 24px;"></div>
+                    </template>
+                    <v-list-item-title>{{ item.label }}</v-list-item-title>
+                </v-list-item>
             </template>
-            <v-list-item-title>Profile</v-list-item-title>
-          </v-list-item>
-          <v-list-item to="/dashboard" @click="drawer = false">
-            <template #prepend>
-              <v-icon>mdi-view-dashboard</v-icon>
+
+            <v-divider class="my-1" />
+
+            <template v-if="!authenticated">
+                <v-list-item to="/auth/signin" @click="drawer = false">
+                    <template v-slot:prepend><v-icon>mdi-login</v-icon></template>
+                    <v-list-item-title>{{ $t('auth.signin') }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item to="/auth/signup" @click="drawer = false">
+                    <template v-slot:prepend><v-icon>mdi-account-plus</v-icon></template>
+                    <v-list-item-title>{{ $t('auth.signup') }}</v-list-item-title>
+                </v-list-item>
             </template>
-            <v-list-item-title>Dashboard</v-list-item-title>
-          </v-list-item>
-          <v-list-item v-if="$store.getters['auth/isAdmin']" to="/admin/settings" @click="drawer = false">
-            <template #prepend>
-              <v-icon>mdi-cog</v-icon>
+
+            <template v-else>
+                <v-list-item :to="`/user/${user?.username}`" @click="drawer = false">
+                    <template v-slot:prepend><v-icon>mdi-account</v-icon></template>
+                    <v-list-item-title>{{ $t('menu.profile') }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item to="/dashboard" @click="drawer = false">
+                    <template v-slot:prepend><v-icon>mdi-view-dashboard</v-icon></template>
+                    <v-list-item-title>{{ $t('menu.dashboard') }}</v-list-item-title>
+                </v-list-item>
+                <v-list-item v-if="isAdmin" to="/admin/settings" @click="drawer = false">
+                    <template v-slot:prepend><v-icon>mdi-cog</v-icon></template>
+                    <v-list-item-title>{{ $t('menu.settings') }}</v-list-item-title>
+                </v-list-item>
+
+                <v-divider class="my-1" />
+
+                <v-list-item @click="signOut">
+                    <template v-slot:prepend><v-icon>mdi-logout</v-icon></template>
+                    <v-list-item-title>{{ $t('menu.logout') }}</v-list-item-title>
+                </v-list-item>
             </template>
-            <v-list-item-title>Settings</v-list-item-title>
-          </v-list-item>
-          <v-divider />
-          <v-list-item @click="logout">
-            <template #prepend>
-              <v-icon>mdi-logout</v-icon>
-            </template>
-            <v-list-item-title>Logout</v-list-item-title>
-          </v-list-item>
-        </template>
-      </v-list>
+        </v-list>
     </v-navigation-drawer>
-  </div>
 </template>
 
-<script>
-import axios from 'axios';
+<script setup>
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useRoute } from 'vue-router';
 import { useDisplay } from 'vuetify';
+import { useAuthStore } from '@/store/authStore.js';
+import { useUserStore } from '@/store/userStore.js';
+import { useSettingsStore } from '@/store/settingStore.js';
+import { useMenuStore } from '@/store/menuStore.js';
+import UserAvatar from '@/components/common/UserAvatar.vue';
 
-export default {
-  name: 'AppNavigation',
-  props: {
-    location: {
-      type: String,
-      default: 'header',
-    },
-    transparent: {
-      type: Boolean,
-      default: false,
-    },
-  },
-  setup() {
-    const { mobile } = useDisplay();
-    return { isMobile: mobile };
-  },
-  data() {
-    return {
-      items: [],
-      drawer: false,
-      userMenu: false,
-      scrolled: false,
-      settings: {},
-    };
-  },
-  computed: {
-    filteredItems() {
-      // Items are already filtered server-side by auth/permissions
-      return this.items;
-    },
-  },
-  mounted() {
-    this.fetchMenu();
-    this.fetchSettings();
-    window.addEventListener('scroll', this.handleScroll);
-  },
-  beforeUnmount() {
-    window.removeEventListener('scroll', this.handleScroll);
-  },
-  methods: {
-    async fetchMenu() {
-      try {
-        const { data } = await axios.get(`/api/menus/location/${this.location}`);
-        this.items = data.items || [];
-      } catch (error) {
-        console.error('Error fetching menu:', error);
-      }
-    },
-    async fetchSettings() {
-      try {
-        const { data } = await axios.get('/api/settings/public');
-        this.settings = data;
-      } catch (error) {
-        console.error('Error fetching settings:', error);
-      }
-    },
-    handleScroll() {
-      this.scrolled = window.scrollY > 50;
-    },
-    async logout() {
-      await this.$store.dispatch('auth/logout');
-      this.drawer = false;
-      this.userMenu = false;
-      this.$router.push('/');
-    },
-  },
+const props = defineProps({
+    location: { type: String, default: 'header' },
+    transparent: { type: Boolean, default: false },
+});
+
+const { mobile } = useDisplay();
+const route = useRoute();
+
+const authStore = useAuthStore();
+const userStore = useUserStore();
+const settingsStore = useSettingsStore();
+const menuStore = useMenuStore();
+
+const drawer = ref(false);
+const scrolled = ref(false);
+
+const items = computed(() => menuStore.items(props.location));
+const authenticated = computed(() => authStore.isLoggedIn);
+const user = computed(() => userStore.user);
+const isAdmin = computed(() => userStore.hasRole?.('admin') ?? false);
+const appName = computed(() => settingsStore.appName);
+const logoSrc = computed(() => {
+    if (settingsStore.appLogo) return settingsStore.appLogo;
+    const raw = settingsStore.logoLight;
+    return raw ? `/storage/${raw}` : null;
+});
+
+const isActive = (href) => !!href && route.path === href;
+
+const handleScroll = () => {
+    scrolled.value = window.scrollY > 50;
 };
+
+const signOut = async () => {
+    drawer.value = false;
+    await authStore.logout();
+};
+
+onMounted(() => {
+    menuStore.fetchMenu(props.location);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('scroll', handleScroll);
+});
 </script>
-
-<style scoped>
-.gap-2 {
-  gap: 0.5rem;
-}
-
-.text-inherit {
-  color: inherit;
-}
-</style>

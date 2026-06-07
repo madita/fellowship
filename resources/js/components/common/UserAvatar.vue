@@ -2,7 +2,7 @@
     <v-tooltip location="bottom">
         <template #activator="{ props }">
             <v-avatar v-bind="props" :color="background" size="45">
-                <v-img v-if="user.avatar" :src="user.avatar"></v-img>
+                <v-img v-if="user?.avatar" :src="user.avatar"></v-img>
                 <span
                     v-else
                     :style="styleObject"
@@ -12,7 +12,7 @@
         </span>
             </v-avatar>
         </template>
-        <span>{{ user.username }}</span>
+        <span>{{ user?.username || '—' }}</span>
     </v-tooltip>
 </template>
 
@@ -21,7 +21,7 @@ export default {
     props: {
         user: {
             type: Object,
-            required: true
+            default: null,
         }
     },
     computed: {

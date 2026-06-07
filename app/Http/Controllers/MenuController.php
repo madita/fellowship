@@ -11,19 +11,15 @@ use Illuminate\Support\Facades\Auth;
 class MenuController extends Controller
 {
     /**
-     * Create a new controller instance.
-     * Admin methods are protected by role check.
+     * Public read endpoints are open; write/admin endpoints require the
+     * project's standard admin middleware.
      */
     public function __construct()
     {
-        // These methods require admin role
-        $this->middleware(function ($request, $next) {
-            $user = $request->user();
-            if (!$user || !$user->hasRole('admin')) {
-                return response()->json(['message' => 'Unauthorized - Admin role required'], 403);
-            }
-            return $next($request);
-        })->only(['index', 'store', 'update', 'destroy', 'getItems', 'addItem', 'updateItem', 'deleteItem', 'reorderItems']);
+        $this->middleware('admin')->only([
+            'index', 'store', 'update', 'destroy',
+            'getItems', 'addItem', 'updateItem', 'deleteItem', 'reorderItems',
+        ]);
     }
 
     /**
@@ -39,12 +35,9 @@ class MenuController extends Controller
             ]);
         }
 
-        $user = Auth::user();
-        $items = $this->filterMenuItems($menu->rootItems, $user);
-
         return response()->json([
-            'menu' => $menu->only(['name', 'slug', 'location']),
-            'items' => $items,
+            'menu'  => $menu->only(['name', 'slug', 'location']),
+            'items' => $this->filterMenuItems($menu->rootItems, Auth::user()),
         ]);
     }
 
@@ -59,35 +52,33 @@ class MenuController extends Controller
             return response()->json(['message' => 'Menu not found'], 404);
         }
 
-        $user = Auth::user();
-        $items = $this->filterMenuItems($menu->rootItems, $user);
-
         return response()->json([
-            'menu' => $menu->only(['name', 'slug', 'location', 'description']),
-            'items' => $items,
+            'menu'  => $menu->only(['name', 'slug', 'location', 'description']),
+            'items' => $this->filterMenuItems($menu->rootItems, Auth::user()),
         ]);
     }
 
     /**
-     * Filter menu items based on user permissions.
+     * Recursively filter menu items by per-item visibility rules.
      */
     protected function filterMenuItems($items, $user): array
     {
-        return $items->filter(function ($item) use ($user) {
-            return $item->canView($user);
-        })->map(function ($item) use ($user) {
-            $data = $item->only([
-                'id', 'label', 'type', 'href', 'icon', 
-                'target', 'order', 'metadata'
-            ]);
+        return $items
+            ->filter(fn ($item) => $item->canView($user))
+            ->map(function ($item) use ($user) {
+                $data = $item->only([
+                    'id', 'label', 'type', 'href', 'icon',
+                    'target', 'order', 'metadata',
+                ]);
 
-            // Recursively filter children
-            if ($item->children->isNotEmpty()) {
-                $data['children'] = $this->filterMenuItems($item->children, $user);
-            }
+                if ($item->children->isNotEmpty()) {
+                    $data['children'] = $this->filterMenuItems($item->children, $user);
+                }
 
-            return $data;
-        })->values()->toArray();
+                return $data;
+            })
+            ->values()
+            ->toArray();
     }
 
     /**
@@ -95,9 +86,7 @@ class MenuController extends Controller
      */
     public function index(): JsonResponse
     {
-        $menus = Menu::with(['items' => function ($query) {
-            $query->orderBy('order');
-        }])->get();
+        $menus = Menu::with(['items' => fn ($q) => $q->orderBy('order')])->get();
 
         return response()->json($menus);
     }
@@ -107,19 +96,13 @@ class MenuController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:menus,slug',
-            'location' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $request->validate($this->menuRules());
 
         $menu = Menu::create($request->all());
 
         return response()->json([
             'message' => 'Menu created successfully',
-            'menu' => $menu,
+            'menu'    => $menu,
         ], 201);
     }
 
@@ -128,19 +111,13 @@ class MenuController extends Controller
      */
     public function update(Request $request, Menu $menu): JsonResponse
     {
-        $request->validate([
-            'name' => 'string|max:255',
-            'slug' => 'string|max:255|unique:menus,slug,' . $menu->id,
-            'location' => 'nullable|string|max:255',
-            'description' => 'nullable|string',
-            'is_active' => 'boolean',
-        ]);
+        $request->validate($this->menuRules($menu));
 
         $menu->update($request->all());
 
         return response()->json([
             'message' => 'Menu updated successfully',
-            'menu' => $menu,
+            'menu'    => $menu,
         ]);
     }
 
@@ -175,27 +152,13 @@ class MenuController extends Controller
      */
     public function addItem(Request $request, Menu $menu): JsonResponse
     {
-        $request->validate([
-            'label' => 'required|string|max:255',
-            'type' => 'required|in:custom,page,route,external',
-            'url' => 'nullable|string',
-            'route' => 'nullable|string',
-            'icon' => 'nullable|string',
-            'parent_id' => 'nullable|exists:menu_items,id',
-            'target' => 'string|in:_self,_blank',
-            'permission' => 'nullable|string',
-            'role' => 'nullable|string',
-            'auth_required' => 'boolean',
-            'guest_only' => 'boolean',
-            'order' => 'integer',
-            'metadata' => 'nullable|array',
-        ]);
+        $request->validate($this->itemRules(creating: true));
 
         $item = $menu->items()->create($request->all());
 
         return response()->json([
             'message' => 'Menu item added successfully',
-            'item' => $item,
+            'item'    => $item,
         ], 201);
     }
 
@@ -204,28 +167,13 @@ class MenuController extends Controller
      */
     public function updateItem(Request $request, MenuItem $item): JsonResponse
     {
-        $request->validate([
-            'label' => 'string|max:255',
-            'type' => 'in:custom,page,route,external',
-            'url' => 'nullable|string',
-            'route' => 'nullable|string',
-            'icon' => 'nullable|string',
-            'parent_id' => 'nullable|exists:menu_items,id',
-            'target' => 'string|in:_self,_blank',
-            'permission' => 'nullable|string',
-            'role' => 'nullable|string',
-            'auth_required' => 'boolean',
-            'guest_only' => 'boolean',
-            'order' => 'integer',
-            'is_active' => 'boolean',
-            'metadata' => 'nullable|array',
-        ]);
+        $request->validate($this->itemRules(creating: false));
 
         $item->update($request->all());
 
         return response()->json([
             'message' => 'Menu item updated successfully',
-            'item' => $item,
+            'item'    => $item,
         ]);
     }
 
@@ -247,22 +195,64 @@ class MenuController extends Controller
     public function reorderItems(Request $request, Menu $menu): JsonResponse
     {
         $request->validate([
-            'items' => 'required|array',
-            'items.*.id' => 'required|exists:menu_items,id',
-            'items.*.order' => 'required|integer',
-            'items.*.parent_id' => 'nullable|exists:menu_items,id',
+            'items'              => 'required|array',
+            'items.*.id'         => 'required|exists:menu_items,id',
+            'items.*.order'      => 'required|integer',
+            'items.*.parent_id'  => 'nullable|exists:menu_items,id',
         ]);
 
         foreach ($request->items as $itemData) {
-            MenuItem::where('id', $itemData['id'])
-                ->update([
-                    'order' => $itemData['order'],
-                    'parent_id' => $itemData['parent_id'] ?? null,
-                ]);
+            MenuItem::where('id', $itemData['id'])->update([
+                'order'     => $itemData['order'],
+                'parent_id' => $itemData['parent_id'] ?? null,
+            ]);
         }
 
         return response()->json([
             'message' => 'Menu items reordered successfully',
         ]);
+    }
+
+    /**
+     * Validation rules for a Menu. Pass the existing menu for an update
+     * (so the slug-unique rule can ignore it).
+     */
+    private function menuRules(?Menu $menu = null): array
+    {
+        $slug = 'string|max:255|unique:menus,slug' . ($menu ? ',' . $menu->id : '');
+
+        return [
+            'name'        => ($menu ? '' : 'required|') . 'string|max:255',
+            'slug'        => ($menu ? '' : 'required|') . $slug,
+            'location'    => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'is_active'   => 'boolean',
+        ];
+    }
+
+    /**
+     * Validation rules for a MenuItem. `label` and `type` are required only
+     * on create.
+     */
+    private function itemRules(bool $creating): array
+    {
+        $req = $creating ? 'required|' : '';
+
+        return [
+            'label'         => $req . 'string|max:255',
+            'type'          => $req . 'in:custom,page,route,external',
+            'url'           => 'nullable|string',
+            'route'         => 'nullable|string',
+            'icon'          => 'nullable|string',
+            'parent_id'     => 'nullable|exists:menu_items,id',
+            'target'        => 'string|in:_self,_blank',
+            'permission'    => 'nullable|string',
+            'role'          => 'nullable|string',
+            'auth_required' => 'boolean',
+            'guest_only'    => 'boolean',
+            'order'         => 'integer',
+            'is_active'     => 'boolean',
+            'metadata'      => 'nullable|array',
+        ];
     }
 }
