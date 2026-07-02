@@ -3877,6 +3877,8 @@ export default {
         'url': 'URL',
         'icon': 'Icon',
         'iconHint': 'Material Design Icon',
+        'itemDescription': 'Description',
+        'itemDescriptionHint': 'Short text shown under the label in the mega menu',
         'parent': 'Parent item',
         'parentHint': 'Leave empty for a top-level item',
         'target': 'Target',

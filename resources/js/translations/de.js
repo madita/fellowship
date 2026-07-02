@@ -4045,6 +4045,8 @@ export default {
         'url': 'URL',
         'icon': 'Symbol',
         'iconHint': 'Material Design Icon',
+        'itemDescription': 'Beschreibung',
+        'itemDescriptionHint': 'Kurztext, der im Mega-Menü unter der Bezeichnung angezeigt wird',
         'parent': 'Übergeordneter Eintrag',
         'parentHint': 'Leer lassen für Top-Level-Eintrag',
         'target': 'Ziel',

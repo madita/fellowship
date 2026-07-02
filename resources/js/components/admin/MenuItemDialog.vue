@@ -67,6 +67,19 @@
                             />
                         </v-col>
 
+                        <v-col cols="12">
+                            <v-textarea
+                                v-model="form.metadata.description"
+                                :label="t('menuAdmin.itemDescription')"
+                                variant="outlined"
+                                density="compact"
+                                rows="2"
+                                auto-grow
+                                :hint="t('menuAdmin.itemDescriptionHint')"
+                                persistent-hint
+                            />
+                        </v-col>
+
                         <v-col cols="12" md="6">
                             <v-select
                                 v-model="form.parent_id"
@@ -213,6 +226,7 @@ const blank = () => ({
     guest_only: false,
     order: 0,
     is_active: true,
+    metadata: { description: '' },
 });
 
 const form = ref(blank());
@@ -252,6 +266,11 @@ watch(
     () => props.item,
     (val) => {
         form.value = val?.id ? { ...blank(), ...val } : blank();
+        // metadata may arrive as null from the API — keep it an object so the
+        // description field can bind safely.
+        if (!form.value.metadata || typeof form.value.metadata !== 'object') {
+            form.value.metadata = { description: '' };
+        }
     },
     { immediate: true },
 );
