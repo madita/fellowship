@@ -21,6 +21,7 @@ const footerWidgetDefinitions = {
         defaultContent: {},
         defaultConfig: {
             title: 'Quick Links',
+            style: 'simple',
             links: [
                 { label: 'Home', url: '/', external: false, authOnly: false },
                 { label: 'About', url: '/about', external: false, authOnly: false },
@@ -37,8 +38,9 @@ const footerWidgetDefinitions = {
         defaultContent: {},
         defaultConfig: {
             title: '',
-            location: 'footer',
+            menu_slug: '',
             layout: 'list',
+            style: 'simple',
         },
     },
     contact: {

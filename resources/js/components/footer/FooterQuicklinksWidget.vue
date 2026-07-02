@@ -5,10 +5,11 @@
         </div>
         <div style="width: 80px; height: 2px" class="mb-3 mb-sm-5 mt-1 bg-primary"/>
         <div class="d-flex flex-column">
-            <div v-for="(link, i) in visibleLinks" :key="i" class="text-body-2 text-sm-body-1 mb-2">
+            <div v-for="(link, i) in visibleLinks" :key="i" class="mb-2" :class="sizeClass">
                 <router-link
                     v-if="!link.external"
-                    class="text-decoration-none text-primary"
+                    class="footer-link text-decoration-none text-primary"
+                    :class="{ 'font-weight-bold': isBold }"
                     :to="link.url"
                 >
                     <v-icon v-if="link.authOnly" size="x-small" class="mr-1">mdi-lock</v-icon>
@@ -16,7 +17,8 @@
                 </router-link>
                 <a
                     v-else
-                    class="text-decoration-none text-primary"
+                    class="footer-link text-decoration-none text-primary"
+                    :class="{ 'font-weight-bold': isBold }"
                     :href="link.url"
                     :target="link.external ? '_blank' : undefined"
                 >
@@ -41,6 +43,11 @@ const props = defineProps({
 
 const authStore = useAuthStore();
 
+const isBold = computed(() => props.config.style === 'bold');
+const sizeClass = computed(() =>
+    isBold.value ? 'text-body-1 text-sm-h6' : 'text-body-2 text-sm-body-1'
+);
+
 const visibleLinks = computed(() => {
     if (!props.config.links || !Array.isArray(props.config.links)) {
         return [];
@@ -55,3 +62,14 @@ const visibleLinks = computed(() => {
     });
 });
 </script>
+
+<style scoped>
+.footer-link {
+    transition: opacity 0.15s ease;
+}
+
+.footer-link:hover {
+    text-decoration: underline !important;
+    text-underline-offset: 3px;
+}
+</style>

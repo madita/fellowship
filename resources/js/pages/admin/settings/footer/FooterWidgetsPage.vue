@@ -86,8 +86,8 @@
                         </template>
 
                         <v-list-item-title>
-                            {{ widget.title || widget.type }}
-                            <v-chip size="x-small" class="ml-2" variant="outlined">{{ widget.type }}</v-chip>
+                            {{ getWidgetTitle(widget) }}
+                            <v-chip size="x-small" class="ml-2" variant="outlined">{{ getWidgetName(widget.type) }}</v-chip>
                         </v-list-item-title>
 
                         <v-list-item-subtitle>
@@ -205,6 +205,15 @@ const snackbarColor = ref('success');
 function getWidgetIcon(type) {
     const definition = getWidgetDefinition(type);
     return definition?.icon || 'mdi-widgets';
+}
+
+function getWidgetName(type) {
+    const definition = getWidgetDefinition(type);
+    return definition?.name || type;
+}
+
+function getWidgetTitle(widget) {
+    return widget.config?.title || getWidgetName(widget.type);
 }
 
 async function loadWidgets() {
