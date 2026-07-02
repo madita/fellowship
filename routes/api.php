@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['cache.control'])->group(function () {
     Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['index', 'show']);
     Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
+    
+    // Public menu access
+    Route::get('menus/location/{location}', 'App\Http\Controllers\MenuController@getByLocation');
+    Route::get('menus/slug/{slug}', 'App\Http\Controllers\MenuController@getBySlug');
 });
 
 // Forum Routes (public read, auth for write)
@@ -346,6 +350,17 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::post('/settings/test-email', 'App\Http\Controllers\Admin\SettingsController@testEmail');
     Route::get('/settings/cache-status', 'App\Http\Controllers\Admin\SettingsController@cacheStatus');
     Route::post('/settings/clear-cache', 'App\Http\Controllers\Admin\SettingsController@clearCache');
+
+    // Menu Management
+    Route::get('/menus', 'App\Http\Controllers\MenuController@index');
+    Route::post('/menus', 'App\Http\Controllers\MenuController@store');
+    Route::patch('/menus/{menu}', 'App\Http\Controllers\MenuController@update');
+    Route::delete('/menus/{menu}', 'App\Http\Controllers\MenuController@destroy');
+    Route::get('/menus/{menu}/items', 'App\Http\Controllers\MenuController@getItems');
+    Route::post('/menus/{menu}/items', 'App\Http\Controllers\MenuController@addItem');
+    Route::patch('/menu-items/{item}', 'App\Http\Controllers\MenuController@updateItem');
+    Route::delete('/menu-items/{item}', 'App\Http\Controllers\MenuController@deleteItem');
+    Route::post('/menus/{menu}/reorder', 'App\Http\Controllers\MenuController@reorderItems');
 
     // Homepage Widgets
     Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@index');

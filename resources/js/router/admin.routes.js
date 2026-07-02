@@ -164,6 +164,17 @@ export const admin = [{
         component: () => import(/* webpackChunkName: "admin-settings-overview" */ '@/pages/admin/settings/SettingsOverview.vue')
     },
     {
+        // Explicit route declared before the :category wildcard so it wins.
+        path: '/admin/settings/menus',
+        name: 'admin-settings-menus',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-menus" */ '@/pages/admin/MenuManager.vue')
+    },
+    {
         path: '/admin/settings/:category',
         name: 'admin-settings-category',
         meta: {

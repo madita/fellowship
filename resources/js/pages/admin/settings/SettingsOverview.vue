@@ -310,7 +310,7 @@
                                     :description="setting.description"
                                     :icon="setting.icon"
                                     :color="category.color"
-                                    @click="navigateToSetting(category.id, setting.id)"
+                                    @click="navigateToSetting(category.id, setting)"
                                 />
                             </v-col>
                         </v-row>
@@ -450,12 +450,17 @@ const filteredSettingsCount = computed(() => {
     }, 0);
 });
 
-function navigateToSetting(categoryId, settingId) {
+function navigateToSetting(categoryId, setting) {
+    // Settings may opt into a dedicated route by supplying `routeName`.
+    if (setting.routeName) {
+        router.push({ name: setting.routeName });
+        return;
+    }
     router.push({
         name: 'admin-settings-page',
         params: {
             category: categoryId,
-            setting: settingId
+            setting: setting.id
         }
     });
 }

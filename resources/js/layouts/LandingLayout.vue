@@ -15,21 +15,7 @@
                 <v-spacer></v-spacer>
 
                 <div class="toolbar-actions d-flex align-center">
-                    <!-- Dynamic homepage menu -->
-                    <template v-if="menuItems && menuItems.length > 0">
-                        <v-btn
-                            v-for="item in menuItems"
-                            :key="item.id"
-                            class="d-none d-md-flex"
-                            size="small"
-                            @click="scrollToSection(item.anchor_target)"
-                        >
-                            {{ item.label }}
-                        </v-btn>
-                    </template>
-<!--                    <v-btn icon size="small" class="d-flex d-md-none" @click="showMobileMenu = true">-->
-<!--                        <v-icon>mdi-menu</v-icon>-->
-<!--                    </v-btn>-->
+                    <mega-menu />
                     <!-- Language Switcher -->
                     <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-flex"/>
                     <v-btn
@@ -197,8 +183,9 @@ import logoimg from '@/assets/images/logo.png';
 import {useAuthStore} from "@/store/authStore.js";
 import {useUserStore} from "@/store/userStore.js";
 import {useSettingsStore} from "@/store/settingStore.js";
-import {useHomepageStore} from "@/store/homepageStore.js";
 import {useFooterStore} from "@/store/footerStore.js";
+import MegaMenu from '../components/navigation/MegaMenu.vue'
+import LocationMenu from '../components/navigation/LocationMenu.vue'
 import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
 import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
@@ -224,7 +211,9 @@ export default {
         ConversationBoxManager,
         SidebarUsers,
         UserSettingsSidebar,
-        FooterWidgetRenderer
+        FooterWidgetRenderer,
+        MegaMenu,
+        LocationMenu
     },
     setup() {
         const theme = useTheme()
@@ -237,7 +226,8 @@ export default {
             logoimg,
             config,
             showUsersDrawer: false,
-            showSettingsDrawer: false
+            showSettingsDrawer: false,
+            showMobileMenu: false
         }
     },
 
@@ -386,10 +376,6 @@ export default {
 
             return html;
         },
-        menuItems() {
-            const homepageStore = useHomepageStore();
-            return homepageStore.activeMenuItems;
-        },
         footerWidgets() {
             try {
                 const footerStore = useFooterStore();
@@ -522,19 +508,6 @@ export default {
             const auth = useAuthStore()
             await auth.logout()
         },
-        scrollToSection(anchorId) {
-            // Ensure anchor ID has # prefix
-            const targetId = anchorId.startsWith('#') ? anchorId : `#${anchorId}`;
-            const element = document.querySelector(targetId);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            } else {
-                // Fallback to using the helper if available
-                if (this.$helpers && this.$helpers.scrollTo) {
-                    this.$helpers.scrollTo(targetId);
-                }
-            }
-        },
         applyThemeSettings() {
             const settingsStore = useSettingsStore()
             const themeMode = settingsStore.themeMode
@@ -565,14 +538,6 @@ export default {
 
         // Apply theme settings after settings are loaded
         this.applyThemeSettings()
-
-        // Fetch homepage menu items
-        const homepageStore = useHomepageStore();
-        try {
-            await homepageStore.fetchPublicMenu();
-        } catch (error) {
-            console.error('Failed to load homepage menu:', error);
-        }
 
         // Fetch footer widgets and sections (public API)
         const footerStore = useFooterStore();
