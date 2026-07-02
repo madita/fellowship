@@ -45,7 +45,7 @@ class FooterWidgetController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'type'       => 'required|string|in:quicklinks,contact,newsletter,social,text',
+            'type'       => 'required|string|in:quicklinks,menu,contact,newsletter,social,text',
             'config'     => 'required|array',
             'order'      => 'integer',
             'enabled'    => 'boolean',
@@ -97,7 +97,7 @@ class FooterWidgetController extends Controller
         $widget = FooterWidget::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'type'       => 'string|in:quicklinks,contact,newsletter,social,text',
+            'type'       => 'string|in:quicklinks,menu,contact,newsletter,social,text',
             'config'     => 'array',
             'order'      => 'integer',
             'enabled'    => 'boolean',

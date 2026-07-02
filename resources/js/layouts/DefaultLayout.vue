@@ -189,6 +189,7 @@
         </v-main>
 
         <v-footer app class="flex-shrink-0">
+            <location-menu location="footer" variant="inline" />
             <v-spacer></v-spacer>
             <div class="overline">
                 @fellowship
@@ -199,10 +200,11 @@
 
 <script>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useTheme } from 'vuetify'
+import { useTheme, useDisplay } from 'vuetify'
 import { useAuthStore } from "@/store/authStore.js";
 import { useUserStore } from "@/store/userStore.js";
 import { useSettingsStore } from "@/store/settingStore.js";
+import { useMenuStore } from "@/store/menuStore.js";
 // import { useAppStore } from '@/api/useApi.js'
 import {useAppStore} from "@/store/app/index.js"
 import { useMagicKeys, whenever } from '@vueuse/core'
@@ -211,6 +213,7 @@ import config from '../configs'
 
 import MainMenu from '../components/navigation/MainMenu.vue'
 import MegaMenu from '../components/navigation/MegaMenu.vue'
+import LocationMenu from '../components/navigation/LocationMenu.vue'
 import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
 import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
@@ -228,6 +231,7 @@ export default {
     components: {
         MainMenu,
         MegaMenu,
+        LocationMenu,
         ToolbarUser,
         ToolbarApps,
         ToolbarLanguage,
@@ -248,6 +252,7 @@ export default {
         const showSettingsDrawer = ref(false)
 
         const theme = useTheme()
+        const display = useDisplay()
         const appStore = useAppStore()
         const authStore = useAuthStore()
         const userStore = useUserStore()

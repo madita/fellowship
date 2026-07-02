@@ -27,16 +27,16 @@
             </template>
 
             <v-card class="mega-menu-panel">
-                <template v-if="menuStore.isLoading">
+                <template v-if="isLoading">
                     <v-card-text class="text-center py-6">
                         <v-progress-circular indeterminate size="24" width="2" class="mb-2" />
                         <div class="text-caption text-medium-emphasis">{{ $t('megaMenu.loading') }}</div>
                     </v-card-text>
                 </template>
 
-                <template v-else-if="menuStore.hasItems">
+                <template v-else-if="hasItems">
                     <v-list density="compact" nav>
-                        <template v-for="item in menuStore.topLevelItems" :key="item.id">
+                        <template v-for="item in items" :key="item.id">
                             <!-- Items with children: expandable group -->
                             <v-list-group v-if="item.children && item.children.length > 0">
                                 <template #activator="{ props }">
@@ -121,14 +121,14 @@
             </div>
             <v-divider />
             <v-list density="compact" nav>
-                <template v-if="menuStore.isLoading">
+                <template v-if="isLoading">
                     <v-list-item>
                         <v-progress-circular indeterminate size="20" width="2" class="mr-2" />
                         {{ $t('megaMenu.loading') }}
                     </v-list-item>
                 </template>
-                <template v-else-if="menuStore.hasItems">
-                    <template v-for="item in menuStore.topLevelItems" :key="item.id">
+                <template v-else-if="hasItems">
+                    <template v-for="item in items" :key="item.id">
                         <!-- Items with children: expandable group -->
                         <v-list-group v-if="item.children && item.children.length > 0">
                             <template #activator="{ props }">
@@ -188,10 +188,14 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useDisplay } from 'vuetify';
 import { useMenuStore } from '@/store/menuStore.js';
+
+const props = defineProps({
+    location: { type: String, default: 'header' },
+});
 
 const route = useRoute();
 const { mdAndUp } = useDisplay();
@@ -199,13 +203,22 @@ const menuStore = useMenuStore();
 
 const menuOpen = ref(false);
 
-// Close on route change
+// menuStore is keyed by location — wrap the per-location getters as computeds
+// so the template stays readable.
+const items = computed(() => menuStore.items(props.location));
+const isLoading = computed(() => menuStore.isLoading(props.location));
+const hasItems = computed(() => items.value.length > 0);
+
 watch(() => route.fullPath, () => {
     menuOpen.value = false;
 });
 
+watch(() => props.location, (loc) => {
+    menuStore.fetchMenu(loc);
+});
+
 onMounted(() => {
-    menuStore.fetchMenu('header');
+    menuStore.fetchMenu(props.location);
 });
 </script>
 

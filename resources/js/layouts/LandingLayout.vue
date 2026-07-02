@@ -185,6 +185,7 @@ import {useUserStore} from "@/store/userStore.js";
 import {useSettingsStore} from "@/store/settingStore.js";
 import {useFooterStore} from "@/store/footerStore.js";
 import MegaMenu from '../components/navigation/MegaMenu.vue'
+import LocationMenu from '../components/navigation/LocationMenu.vue'
 import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
 import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
@@ -211,7 +212,8 @@ export default {
         SidebarUsers,
         UserSettingsSidebar,
         FooterWidgetRenderer,
-        MegaMenu
+        MegaMenu,
+        LocationMenu
     },
     setup() {
         const theme = useTheme()
@@ -224,7 +226,8 @@ export default {
             logoimg,
             config,
             showUsersDrawer: false,
-            showSettingsDrawer: false
+            showSettingsDrawer: false,
+            showMobileMenu: false
         }
     },
 

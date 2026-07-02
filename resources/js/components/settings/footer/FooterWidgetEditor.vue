@@ -171,6 +171,34 @@
           </v-alert>
         </template>
 
+        <!-- Menu Widget -->
+        <template v-if="editedWidget.type === 'menu'">
+          <v-text-field
+            v-model="editedWidget.config.title"
+            :label="$t('settings.widgetEditor.sectionTitleOptional')"
+            :hint="$t('settings.widgetEditor.leaveEmptyNoTitle')"
+            persistent-hint
+            class="mb-4"
+          ></v-text-field>
+
+          <v-select
+            v-model="editedWidget.config.location"
+            :items="menuLocations"
+            label="Menu location"
+            hint="Which menu (from Settings → Navigation) to render"
+            persistent-hint
+            class="mb-4"
+          ></v-select>
+
+          <v-select
+            v-model="editedWidget.config.layout"
+            :items="menuLayouts"
+            label="Layout"
+            hint="How items are stacked"
+            persistent-hint
+          ></v-select>
+        </template>
+
         <!-- Text Widget -->
         <template v-if="editedWidget.type === 'text'">
           <v-text-field
@@ -286,6 +314,18 @@ const widgetDefinition = computed(() => {
 });
 
 const widgetIcon = computed(() => widgetDefinition.value?.icon || 'mdi-widgets');
+
+const menuLocations = [
+    { title: 'Header', value: 'header' },
+    { title: 'Footer', value: 'footer' },
+    { title: 'Mobile', value: 'mobile' },
+    { title: 'Sidebar', value: 'sidebar' },
+];
+
+const menuLayouts = [
+    { title: 'List (stacked)', value: 'list' },
+    { title: 'Inline (row of links)', value: 'inline' },
+];
 
 watch(() => props.widget, (newWidget) => {
   if (newWidget) {

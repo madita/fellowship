@@ -28,6 +28,9 @@
               {{ item.label }}
             </v-btn>
           </template>
+          <v-btn class="d-flex d-md-none" icon size="small" @click="showMobileMenu = true" :title="$t('megaMenu.openMenu')">
+            <v-icon>mdi-menu</v-icon>
+          </v-btn>
           <mega-menu />
           <!-- Language Switcher -->
           <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-flex"/>
@@ -184,6 +187,15 @@
         <UserSettingsSidebar @close="showSettingsDrawer = false"/>
       </v-navigation-drawer>
 
+      <v-navigation-drawer
+        v-model="showMobileMenu"
+        location="left"
+        temporary
+        width="280"
+      >
+        <location-menu location="mobile" variant="list" @navigate="showMobileMenu = false" />
+      </v-navigation-drawer>
+
       <conversation-box-manager />
     </v-main>
   </div>
@@ -199,6 +211,7 @@ import {useSettingsStore} from "@/store/settingStore.js";
 import {useFooterStore} from "@/store/footerStore.js";
 import {useHomepageStore} from "@/store/homepageStore.js";
 import MegaMenu from '../components/navigation/MegaMenu.vue'
+import LocationMenu from '../components/navigation/LocationMenu.vue'
 import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
 import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
@@ -225,7 +238,8 @@ export default {
     SidebarUsers,
     UserSettingsSidebar,
     FooterWidgetRenderer,
-    MegaMenu
+    MegaMenu,
+    LocationMenu
   },
   setup() {
     const theme = useTheme()
@@ -238,7 +252,8 @@ export default {
       logoimg,
       config,
       showUsersDrawer: false,
-      showSettingsDrawer: false
+      showSettingsDrawer: false,
+      showMobileMenu: false
     }
   },
 

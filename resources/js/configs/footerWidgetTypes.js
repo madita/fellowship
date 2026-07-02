@@ -27,6 +27,20 @@ const footerWidgetDefinitions = {
             ],
         },
     },
+    menu: {
+        type: 'menu',
+        name: 'Menu',
+        description: 'Render a menu managed in Settings → Navigation',
+        icon: 'mdi-menu',
+        color: 'indigo',
+        category: 'navigation',
+        defaultContent: {},
+        defaultConfig: {
+            title: '',
+            location: 'footer',
+            layout: 'list',
+        },
+    },
     contact: {
         type: 'contact',
         name: 'Contact Information',
