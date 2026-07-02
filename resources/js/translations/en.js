@@ -2067,6 +2067,7 @@ export default {
             'styleHint': 'Visual style of the links',
             'styleSimple': 'Simple',
             'styleBold': 'Bold',
+            'styleButton': 'Button',
             'content': 'Content',
             'textContentHint': 'Text content for this footer section. Supports line breaks.',
             'enterCustomText': 'Enter your custom text here...',

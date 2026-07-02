@@ -367,6 +367,7 @@ const menuLayouts = computed(() => [
 const styleOptions = computed(() => [
   { title: t('settings.widgetEditor.styleSimple'), value: 'simple' },
   { title: t('settings.widgetEditor.styleBold'), value: 'bold' },
+  { title: t('settings.widgetEditor.styleButton'), value: 'button' },
 ]);
 
 async function loadMenus() {

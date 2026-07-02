@@ -2067,6 +2067,7 @@ export default {
             'styleHint': 'Visueller Stil der Links',
             'styleSimple': 'Einfach',
             'styleBold': 'Fett',
+            'styleButton': 'Schaltfläche',
             'content': 'Inhalt',
             'textContentHint': 'Textinhalt für diesen Fußzeilenabschnitt. Unterstützt Zeilenumbrüche.',
             'enterCustomText': 'Geben Sie hier Ihren benutzerdefinierten Text ein...',
