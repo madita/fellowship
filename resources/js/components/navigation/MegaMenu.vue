@@ -165,6 +165,7 @@ import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useDisplay } from 'vuetify';
 import { useMenuStore } from '@/store/menuStore.js';
+import { useMenuLink } from '@/composables/useMenuLink.js';
 import MegaMenuItem from '@/components/navigation/MegaMenuItem.vue';
 
 const props = defineProps({
@@ -174,6 +175,7 @@ const props = defineProps({
 const route = useRoute();
 const { mdAndUp } = useDisplay();
 const menuStore = useMenuStore();
+const { hasLink, linkTag, linkProps } = useMenuLink();
 
 const menuOpen = ref(false);
 
@@ -208,27 +210,6 @@ const columns = computed(() => {
 
     return result;
 });
-
-function isExternal(item) {
-    const href = item.href || '';
-    return item.type === 'external' || /^https?:\/\//i.test(href);
-}
-
-function hasLink(item) {
-    return !!item.href && item.href !== '#';
-}
-
-function linkTag(item) {
-    if (!hasLink(item)) return 'div';
-    return isExternal(item) ? 'a' : 'router-link';
-}
-
-function linkProps(item) {
-    if (!hasLink(item)) return {};
-    return isExternal(item)
-        ? { href: item.href, target: '_blank' }
-        : { to: item.href };
-}
 
 function descOf(item) {
     return item.metadata?.description || '';
