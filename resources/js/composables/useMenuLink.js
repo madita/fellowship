@@ -27,7 +27,7 @@ export function useMenuLink() {
     const linkProps = (item) => {
         if (!hasLink(item)) return {};
         return isExternal(item)
-            ? { href: item.href, target: '_blank' }
+            ? { href: item.href, target: '_blank', rel: 'noopener noreferrer' }
             : { to: item.href };
     };
 
