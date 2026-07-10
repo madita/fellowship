@@ -374,6 +374,11 @@ export default {
     }
 
     const deleteComment = async (thread, comment) => {
+      const isLastComment = thread.comments.length === 1
+      if (isLastComment && !confirm('Deleting the last comment will also delete this thread. Continue?')) {
+        return
+      }
+
       try {
         await axios.delete(
           `/api/sandbox/${props.sandbox.uuid}/threads/${thread.id}/comments/${comment.id}`
@@ -381,7 +386,12 @@ export default {
         thread.comments = thread.comments.filter((c) => c.id !== comment.id)
 
         if (thread.comments.length === 0) {
-          await deleteThread(thread)
+          await axios.delete(`/api/sandbox/${props.sandbox.uuid}/threads/${thread.id}`)
+          threads.value = threads.value.filter((t) => t.id !== thread.id)
+          if (props.editor) {
+            props.editor.commands.unsetComment(thread.uuid)
+          }
+          emit('thread-deleted', thread)
         }
       } catch (error) {
         console.error('Failed to delete comment:', error)
