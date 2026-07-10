@@ -162,16 +162,15 @@ export default {
         const markAllAsRead = async () => {
             // Mark only sandbox notifications as read (one by one)
             const sandboxIds = notifications.value.map(n => n.id)
-            try {
-                await Promise.all(
-                    sandboxIds.map(id => axios.get('/api/account/notification/markasread/' + id))
-                )
-                allNotifications.value = allNotifications.value.filter(
-                    n => !n.data?.type?.startsWith('sandbox_')
-                )
-            } catch (error) {
-                console.warn(error)
-            }
+            const results = await Promise.allSettled(
+                sandboxIds.map(id => axios.get('/api/account/notification/markasread/' + id))
+            )
+            const succeededIds = new Set(
+                sandboxIds.filter((_, i) => results[i].status === 'fulfilled')
+            )
+            allNotifications.value = allNotifications.value.filter(
+                n => !(n.data?.type?.startsWith('sandbox_') && succeededIds.has(n.id))
+            )
         }
 
         const getIcon = (item) => {
