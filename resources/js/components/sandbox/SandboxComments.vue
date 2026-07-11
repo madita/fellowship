@@ -321,6 +321,8 @@ export default {
       const content = replyTexts.value[thread.id]
       if (!content?.trim()) return
 
+      replyTexts.value[thread.id] = ''
+
       try {
         const response = await axios.post(
           `/api/sandbox/${props.sandbox.uuid}/threads/${thread.id}/comments`,
@@ -328,9 +330,9 @@ export default {
         )
 
         thread.comments.push(response.data.comment)
-        replyTexts.value[thread.id] = ''
       } catch (error) {
         console.error('Failed to add reply:', error)
+        replyTexts.value[thread.id] = content
       }
     }
 
