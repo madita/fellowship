@@ -136,12 +136,11 @@ export default {
         const goToNotification = async (item) => {
             try {
                 await axios.get('/api/account/notification/markasread/' + item.id)
+                // Remove from local list only after successful mark-as-read
+                allNotifications.value = allNotifications.value.filter(n => n.id !== item.id)
             } catch (error) {
                 console.warn(error)
             }
-
-            // Remove from local list immediately
-            allNotifications.value = allNotifications.value.filter(n => n.id !== item.id)
 
             // Navigate to the sandbox
             const url = item.data?.url
