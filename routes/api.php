@@ -448,6 +448,20 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::get('/model-translations/{modelType}/{id}', 'App\Http\Controllers\Admin\ModelTranslationController@show');
     Route::put('/model-translations/{modelType}/{id}', 'App\Http\Controllers\Admin\ModelTranslationController@update');
     Route::put('/model-translations/{modelType}/bulk', 'App\Http\Controllers\Admin\ModelTranslationController@bulkUpdate');
+
+    // IRC Admin
+    Route::prefix('irc')->group(function () {
+        Route::get('/servers', 'App\Http\Controllers\Admin\IrcAdminController@getServers');
+        Route::post('/servers', 'App\Http\Controllers\Admin\IrcAdminController@storeServer');
+        Route::patch('/servers/{server}', 'App\Http\Controllers\Admin\IrcAdminController@updateServer');
+        Route::delete('/servers/{server}', 'App\Http\Controllers\Admin\IrcAdminController@deleteServer');
+        Route::post('/servers/{server}/check', 'App\Http\Controllers\Admin\IrcAdminController@checkServer');
+        Route::get('/connections', 'App\Http\Controllers\Admin\IrcAdminController@getConnections');
+        Route::post('/connections/{connection}/disconnect', 'App\Http\Controllers\Admin\IrcAdminController@disconnectConnection');
+        Route::delete('/connections/{connection}', 'App\Http\Controllers\Admin\IrcAdminController@deleteConnection');
+        Route::get('/daemon/status', 'App\Http\Controllers\Admin\IrcAdminController@getDaemonStatus');
+        Route::get('/stats', 'App\Http\Controllers\Admin\IrcAdminController@getStats');
+    });
 });
 
 Route::post('/login', function (Request $request) {
@@ -478,4 +492,36 @@ Route::post('/login', function (Request $request) {
     ];
 
     return response($response, 201);
+});
+
+
+// IRC Client Routes
+Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {
+    // Servers
+    Route::get('/servers', 'App\Http\Controllers\IrcController@getServers');
+
+    // Connections
+    Route::get('/connections', 'App\Http\Controllers\IrcController@getConnections');
+    Route::post('/connections', 'App\Http\Controllers\IrcController@createConnection');
+    Route::patch('/connections/{connection}', 'App\Http\Controllers\IrcController@updateConnection');
+    Route::delete('/connections/{connection}', 'App\Http\Controllers\IrcController@deleteConnection');
+    Route::post('/connections/{connection}/connect', 'App\Http\Controllers\IrcController@connect');
+    Route::post('/connections/{connection}/disconnect', 'App\Http\Controllers\IrcController@disconnect');
+    
+    // Channels
+    Route::get('/connections/{connection}/channels', 'App\Http\Controllers\IrcController@getServerChannels');
+    Route::post('/connections/{connection}/join', 'App\Http\Controllers\IrcController@joinChannel');
+    Route::post('/channels/{channel}/part', 'App\Http\Controllers\IrcController@partChannel');
+    Route::post('/channels/{channel}/favorite', 'App\Http\Controllers\IrcController@toggleFavorite');
+    
+    // Messages
+    Route::get('/channels/{channel}/users', 'App\Http\Controllers\IrcController@getChannelUsers');
+    Route::get('/channels/{channel}/messages', 'App\Http\Controllers\IrcController@getChannelMessages');
+    Route::post('/channels/{channel}/messages', 'App\Http\Controllers\IrcController@sendMessage');
+    Route::get('/connections/{connection}/unread', 'App\Http\Controllers\IrcController@getUnreadCount');
+    Route::post('/connections/{connection}/nick', 'App\Http\Controllers\IrcController@changeNick');
+    Route::post('/connections/{connection}/pm', 'App\Http\Controllers\IrcController@sendPrivateMessage');
+
+    // Events polling
+    Route::get('/events', 'App\Http\Controllers\IrcController@pollEvents');
 });

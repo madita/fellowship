@@ -111,6 +111,10 @@ const componentMap = {
     'footer/FooterWidgetsPage': () => import('@/pages/admin/settings/footer/FooterWidgetsPage.vue'),
     'footer/CustomHtmlPage': () => import('@/pages/admin/settings/footer/CustomHtmlPage.vue'),
 
+    // IRC
+    'irc/IrcDashboardPage': () => import('@/pages/admin/settings/irc/IrcDashboardPage.vue'),
+    'irc/IrcServersPage': () => import('@/pages/admin/settings/irc/IrcServersPage.vue'),
+    'irc/IrcConnectionsPage': () => import('@/pages/admin/settings/irc/IrcConnectionsPage.vue'),
     // Moderation
     'moderation/AutoApprovalPage': () => import('@/pages/admin/settings/moderation/AutoApprovalPage.vue'),
     // Sandbox
