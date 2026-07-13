@@ -31,16 +31,6 @@ class Menu extends Model
     }
 
     /**
-     * Get only active menu items.
-     */
-    public function activeItems(): HasMany
-    {
-        return $this->hasMany(MenuItem::class)
-            ->where('is_active', true)
-            ->orderBy('order');
-    }
-
-    /**
      * Get root-level menu items (no parent).
      */
     public function rootItems(): HasMany
@@ -71,13 +61,5 @@ class Menu extends Model
             ->where('is_active', true)
             ->with(['rootItems.children'])
             ->first();
-    }
-
-    /**
-     * Scope: Active menus only.
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
     }
 }

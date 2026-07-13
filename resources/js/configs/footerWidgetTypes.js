@@ -106,17 +106,6 @@ const footerWidgetDefinitions = {
 };
 
 /**
- * Legacy export for backward compatibility
- */
-export const footerWidgetTypes = Object.values(footerWidgetDefinitions).map(def => ({
-    type: def.type,
-    label: def.name,
-    icon: def.icon,
-    description: def.description,
-    defaultConfig: def.defaultConfig,
-}));
-
-/**
  * Get footer widget definition by type (matches widgetTypes.js API)
  */
 export function getWidgetDefinition(type) {
@@ -128,20 +117,4 @@ export function getWidgetDefinition(type) {
  */
 export function getAvailableWidgets() {
     return Object.values(footerWidgetDefinitions);
-}
-
-/**
- * Get footer widget info (legacy function)
- */
-export function getWidgetTypeInfo(type) {
-    const definition = getWidgetDefinition(type);
-    if (!definition) return null;
-
-    return {
-        type: definition.type,
-        label: definition.name,
-        icon: definition.icon,
-        description: definition.description,
-        defaultConfig: definition.defaultConfig,
-    };
 }

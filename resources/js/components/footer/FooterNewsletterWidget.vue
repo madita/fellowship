@@ -1,9 +1,6 @@
 <template>
     <div>
-        <div v-if="config.title" class="text-subtitle-1 text-sm-h6 text-lg-h5 font-weight-bold mb-2">
-            {{ config.title }}
-        </div>
-        <div style="width: 80px; height: 2px" class="mb-3 mb-sm-5 mt-1 bg-primary"/>
+        <footer-widget-heading :title="config.title" />
 
         <div v-if="config.description" class="text-body-2 mb-3">
             {{ config.description }}
@@ -39,10 +36,11 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import FooterWidgetHeading from './FooterWidgetHeading.vue';
 
 const { t } = useI18n();
 
-const props = defineProps({
+defineProps({
     config: {
         type: Object,
         required: true

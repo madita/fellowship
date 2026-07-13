@@ -97,18 +97,7 @@ class HomepageWidgetController extends Controller
             ], 422);
         }
 
-        \Log::info('Updating widget', [
-            'id'       => $id,
-            'content'  => $request->input('content'),
-            'all_data' => $request->all(),
-        ]);
-
         $widget->update($request->all());
-
-        \Log::info('Widget updated', [
-            'id'            => $id,
-            'saved_content' => $widget->fresh()->content,
-        ]);
 
         return response()->json([
             'message' => __('messages.widget.updated'),

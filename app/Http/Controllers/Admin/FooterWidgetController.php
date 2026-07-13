@@ -44,14 +44,7 @@ class FooterWidgetController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'type'       => 'required|string|in:quicklinks,menu,contact,newsletter,social,text',
-            'config'     => 'required|array',
-            'order'      => 'integer',
-            'enabled'    => 'boolean',
-            'section_id' => 'nullable|exists:sections,id',
-            'column'     => 'nullable|integer|min:1|max:4',
-        ]);
+        $validator = Validator::make($request->all(), $this->widgetRules(creating: true));
 
         if ($validator->fails()) {
             return response()->json([
@@ -66,22 +59,7 @@ class FooterWidgetController extends Controller
             $data['order'] = FooterWidget::max('order') + 1;
         }
 
-        // Log what we're creating
-        \Log::info('Creating footer widget', [
-            'data'       => $data,
-            'section_id' => $data['section_id'] ?? 'null',
-            'column'     => $data['column'] ?? 'null',
-        ]);
-
         $widget = FooterWidget::create($data);
-
-        // Log what was actually created
-        \Log::info('Footer widget created', [
-            'id'          => $widget->id,
-            'section_id'  => $widget->section_id,
-            'column'      => $widget->column,
-            'column_type' => gettype($widget->column),
-        ]);
 
         return response()->json([
             'message' => __('messages.footer.widget_created'),
@@ -96,14 +74,7 @@ class FooterWidgetController extends Controller
     {
         $widget = FooterWidget::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'type'       => 'string|in:quicklinks,menu,contact,newsletter,social,text',
-            'config'     => 'array',
-            'order'      => 'integer',
-            'enabled'    => 'boolean',
-            'section_id' => 'nullable|exists:sections,id',
-            'column'     => 'nullable|integer|min:1|max:4',
-        ]);
+        $validator = Validator::make($request->all(), $this->widgetRules(creating: false));
 
         if ($validator->fails()) {
             return response()->json([
@@ -176,5 +147,23 @@ class FooterWidgetController extends Controller
         return response()->json([
             'message' => __('messages.footer.widget_reordered'),
         ]);
+    }
+
+    /**
+     * Validation rules for a footer widget. `type` and `config` are required
+     * only on create.
+     */
+    private function widgetRules(bool $creating): array
+    {
+        $req = $creating ? 'required|' : '';
+
+        return [
+            'type'       => $req . 'string|in:quicklinks,menu,contact,newsletter,social,text',
+            'config'     => $req . 'array',
+            'order'      => 'integer',
+            'enabled'    => 'boolean',
+            'section_id' => 'nullable|exists:sections,id',
+            'column'     => 'nullable|integer|min:1|max:4',
+        ];
     }
 }

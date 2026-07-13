@@ -79,16 +79,6 @@ class MenuItem extends Model
     }
 
     /**
-     * Check if menu item is external link.
-     */
-    public function isExternal(): bool
-    {
-        return $this->type === 'external' || 
-               (str_starts_with($this->url ?? '', 'http://') || 
-                str_starts_with($this->url ?? '', 'https://'));
-    }
-
-    /**
      * Check if user can view this menu item.
      */
     public function canView($user = null): bool
@@ -116,27 +106,4 @@ class MenuItem extends Model
         return $this->is_active;
     }
 
-    /**
-     * Check if item has children.
-     */
-    public function hasChildren(): bool
-    {
-        return $this->children()->exists();
-    }
-
-    /**
-     * Scope: Active items only.
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
-    /**
-     * Scope: Root items (no parent).
-     */
-    public function scopeRoot($query)
-    {
-        return $query->whereNull('parent_id');
-    }
 }

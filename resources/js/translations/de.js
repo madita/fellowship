@@ -2926,6 +2926,12 @@ export default {
         'daysAgo': 'vor {count} Tagen',
         'settings': 'Benachrichtigungseinstellungen'
     },
+    'relativeTime': {
+        'justNow': 'Gerade eben',
+        'minutesShort': 'vor {count} Min.',
+        'hoursShort': 'vor {count} Std.',
+        'daysShort': 'vor {count} Tg.'
+    },
     'profile': {
         'title': 'Profil',
         'editProfile': 'Profil bearbeiten',
