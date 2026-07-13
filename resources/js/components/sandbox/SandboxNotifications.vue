@@ -101,9 +101,10 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/userStore.js'
+import { useRelativeTime } from '@/composables/useRelativeTime.js'
 import axios from 'axios'
 
 export default {
@@ -136,11 +137,15 @@ export default {
         const goToNotification = async (item) => {
             try {
                 await axios.get('/api/account/notification/markasread/' + item.id)
-                // Remove from local list only after successful mark-as-read
-                allNotifications.value = allNotifications.value.filter(n => n.id !== item.id)
             } catch (error) {
+                // Keep the notification in local state and don't navigate it as
+                // read when the mark-as-read request fails.
                 console.warn(error)
+                return
             }
+
+            // Remove from local list only after successful mark-as-read
+            allNotifications.value = allNotifications.value.filter(n => n.id !== item.id)
 
             // Navigate to the sandbox
             const url = item.data?.url
@@ -196,32 +201,29 @@ export default {
             return map[item.data?.type] || 'primary'
         }
 
-        const formatTime = (dateStr) => {
-            if (!dateStr) return ''
-            const date = new Date(dateStr)
-            const now = new Date()
-            const diffMs = now - date
-            const diffMins = Math.floor(diffMs / 60000)
-            const diffHours = Math.floor(diffMs / 3600000)
-            const diffDays = Math.floor(diffMs / 86400000)
+        const { formatRelativeTime: formatTime } = useRelativeTime()
 
-            if (diffMins < 1) return 'Just now'
-            if (diffMins < 60) return `${diffMins}m ago`
-            if (diffHours < 24) return `${diffHours}h ago`
-            if (diffDays < 7) return `${diffDays}d ago`
-
-            return date.toLocaleDateString()
-        }
+        let notificationChannel = null
 
         onMounted(() => {
             fetchNotifications()
 
             // Listen for real-time notifications
             if (window.Echo && userStore.user?.id) {
-                window.Echo.private('users.' + userStore.user.id)
+                notificationChannel = 'users.' + userStore.user.id
+                window.Echo.private(notificationChannel)
                     .notification(() => {
                         fetchNotifications()
                     })
+            }
+        })
+
+        onUnmounted(() => {
+            // Leave the channel so remounts don't accumulate listeners or
+            // duplicate fetchNotifications calls.
+            if (window.Echo && notificationChannel) {
+                window.Echo.leave(notificationChannel)
+                notificationChannel = null
             }
         })
 

@@ -2754,6 +2754,12 @@ export default {
         'daysAgo': '{count} days ago',
         'settings': 'Notification Settings'
     },
+    'relativeTime': {
+        'justNow': 'Just now',
+        'minutesShort': '{count}m ago',
+        'hoursShort': '{count}h ago',
+        'daysShort': '{count}d ago'
+    },
     'profile': {
         'title': 'Profile',
         'editProfile': 'Edit Profile',

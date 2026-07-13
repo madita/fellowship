@@ -14,6 +14,7 @@
                 :to="!isExternal(item) ? item.href : undefined"
                 :href="isExternal(item) ? item.href : undefined"
                 :target="isExternal(item) ? (item.target || '_blank') : undefined"
+                :rel="isExternal(item) ? 'noopener noreferrer' : undefined"
                 :prepend-icon="item.icon || undefined"
                 variant="tonal"
                 color="primary"
