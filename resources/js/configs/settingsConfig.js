@@ -94,6 +94,22 @@ export const settingsCategories = [
         ]
     },
     {
+        id: 'menus',
+        title: 'Navigation',
+        description: 'Site menus and menu items',
+        icon: 'mdi-menu-open',
+        color: 'indigo',
+        settings: [
+            {
+                id: 'menus',
+                title: 'Menu Manager',
+                description: 'Create and edit menus, items, and ordering',
+                icon: 'mdi-menu',
+                routeName: 'admin-settings-menus',
+            },
+        ]
+    },
+    {
         id: 'footer',
         title: 'Footer',
         description: 'Footer sections, widgets, and content',
@@ -103,6 +119,38 @@ export const settingsCategories = [
             { id: 'sections', title: 'Sections & Grid', description: 'Manage footer sections', icon: 'mdi-view-grid-outline', component: 'FooterSectionsPage' },
             { id: 'widgets', title: 'Widgets', description: 'Configure footer widgets', icon: 'mdi-widgets-outline', component: 'FooterWidgetsPage' },
             { id: 'custom-html', title: 'Custom HTML', description: 'Custom footer HTML content', icon: 'mdi-code-tags', component: 'CustomHtmlPage' },
+        ]
+    },
+    {
+        id: 'irc',
+        title: 'IRC',
+        description: 'IRC servers, daemon, and connection management',
+        icon: 'mdi-chat-processing-outline',
+        color: 'indigo',
+        settings: [
+            { id: 'dashboard', title: 'Dashboard', description: 'Daemon status, stats, and monitoring', icon: 'mdi-monitor-dashboard', component: 'IrcDashboardPage' },
+            { id: 'servers', title: 'Servers', description: 'Manage IRC servers', icon: 'mdi-server-network', component: 'IrcServersPage' },
+            { id: 'connections', title: 'Connections', description: 'Active user connections', icon: 'mdi-connection', component: 'IrcConnectionsPage' },
+        id: 'moderation',
+        title: 'Moderation',
+        description: 'Content approval and moderation settings',
+        icon: 'mdi-shield-check-outline',
+        color: 'deep-purple',
+        settings: [
+            { id: 'auto-approval', title: 'Content Auto-Approval', description: 'Configure role-based automatic content approval', icon: 'mdi-shield-check', component: 'AutoApprovalPage' },
+        ]
+    },
+    {
+        id: 'sandbox',
+        title: 'Sandbox',
+        description: 'Collaborative sandbox and Yjs WebSocket settings',
+        icon: 'mdi-notebook-edit-outline',
+        color: 'deep-purple',
+        settings: [
+            { id: 'server-status', title: 'WebSocket Server', description: 'Yjs server status and connection info', icon: 'mdi-server-network', component: 'ServerStatusPage' },
+            { id: 'feature-settings', title: 'Feature Settings', description: 'Enable/disable sandbox and collaboration', icon: 'mdi-toggle-switch-outline', component: 'FeatureSettingsPage' },
+            { id: 'limits', title: 'Limits & Quotas', description: 'Max sandboxes, collaborators, versions', icon: 'mdi-numeric', component: 'LimitsPage' },
+            { id: 'statistics', title: 'Statistics', description: 'Sandbox usage and activity stats', icon: 'mdi-chart-bar', component: 'StatisticsPage' },
         ]
     },
     {

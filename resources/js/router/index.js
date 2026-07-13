@@ -16,6 +16,7 @@ import UsersRoutes from './users.routes'
 import LandingRoutes from './landing.routes'
 import WikiRoutes from './wiki.routes'
 import ForumRoutes from './forum.routes'
+import SandboxRoutes from './sandbox.routes'
 import AdminRoutes from './admin.routes'
 //import permission from "@/router/middleware/permission.js";
 
@@ -37,6 +38,7 @@ export const routes = [{
     ...LandingRoutes,
     ...WikiRoutes,
     ...ForumRoutes,
+    ...SandboxRoutes,
     ...AdminRoutes,
     {
         path: '/blank',
@@ -47,49 +49,6 @@ export const routes = [{
             ]
         },
         component: () => import(/* webpackChunkName: "blank" */ '@/pages/BlankPage.vue')
-    },
-    // {
-    //     path: '/game',
-    //     name: 'game',
-    //     component: () => import(/* webpackChunkName: "game" */ '@/pages/GameDemo.vue'),
-    //     meta: {
-    //         layout: 'landing'
-    //     }
-    // },
-    // {
-    //     path: '/thud',
-    //     name: 'thud',
-    //     component: () => import(/* webpackChunkName: "game" */ '@/pages/ThudDemo.vue'),
-    //     meta: {
-    //         layout: 'landing'
-    //     }
-    // },
-    // {
-    //     path: '/map-admin',
-    //     name: 'map-admin',
-    //     component: () => import(/* webpackChunkName: "map-admin" */ '@/pages/MapAdminDemo.vue'),
-    //     meta: {
-    //         layout: 'landing'
-    //     }
-    // },
-    // {
-    //     path: '/sheet',
-    //     name: 'sheet',
-    //     component: () => import(/* webpackChunkName: "game" */ '@/pages/CharSheetDemo.vue'),
-    //     meta: {
-    //         layout: 'landing'
-    //     }
-    // },
-    {
-        path: '/p/:slug',
-        name: 'page',
-        component: () => import(/* webpackChunkName: "landing-pages" */ '@/pages/landing/Pages.vue'),
-        meta: {
-            layout: 'landing',
-            middleware: [
-                auth, verified
-            ]
-        }
     },
     {
         path: '/error',
@@ -109,7 +68,15 @@ export const routes = [{
         component: () => import(/* webpackChunkName: "timeline" */ '@/components/status/StatusTimeline.vue')
     },
     {
-        path: '/:catchAll(.*)',
+        path: '/:slug([\\w-]+)',
+        name: 'page',
+        component: () => import(/* webpackChunkName: "landing-pages" */ '@/pages/landing/Pages.vue'),
+        meta: {
+            layout: 'landing'
+        }
+    },
+    {
+        path: '/:pathMatch(.*)*',
         name: 'error',
         component: () => import(/* webpackChunkName: "error" */ '@/pages/error/NotFoundPage.vue'),
         meta: {
@@ -160,6 +127,11 @@ router.beforeEach(async (to, from, next) => {
     // If maintenance middleware returned false or stopped the flow
     if (maintenanceResult === false) {
         return next(false)
+    }
+
+    // Check if sandbox feature is disabled
+    if (to.path.startsWith('/sandbox') && !settingsStore.sandboxEnabled) {
+        return next({ name: 'access-denied' })
     }
 
     // Continue with route-specific middleware

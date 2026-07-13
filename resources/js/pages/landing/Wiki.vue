@@ -190,6 +190,15 @@
                             <v-card-text class="pa-4 pt-0">
                                 <h3 class="card-title text-h6 font-weight-bold mb-3 line-clamp-2">
                                     {{ item.title }}
+                                    <v-chip
+                                        v-if="isAdmin && item.is_approved === false"
+                                        color="warning"
+                                        size="x-small"
+                                        variant="tonal"
+                                        class="ml-1"
+                                    >
+                                        {{ $t('wiki.pendingApproval') }}
+                                    </v-chip>
                                 </h3>
 
                                 <div
@@ -319,6 +328,9 @@ export default {
         user() {
             const userStore = useUserStore();
             return userStore.user;
+        },
+        isAdmin() {
+            return this.user?.isAdmin || false;
         },
         hasMorePages() {
             return this.response.total > this.response.to && !this.loading;

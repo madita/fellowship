@@ -6,6 +6,8 @@ export default {
         'delete': 'Delete',
         'title': 'Title',
         'save': 'Save',
+        'create': 'Create',
+        'update': 'Update',
         'faq': 'FAQ',
         'contact': 'Contact Us',
         'tos': 'Terms of Service',
@@ -182,7 +184,8 @@ export default {
         'key': 'Key',
         'value': 'Value',
         'noUpdatableFields': 'No updatable fields configured for this form.',
-        'unknownFieldConfiguration': 'Unknown field configuration'
+        'unknownFieldConfiguration': 'Unknown field configuration',
+        'unsavedChangesWarning': 'You have unsaved changes. Use the Save or Cancel buttons — clicking outside won’t close the form.'
     },
     'email': {
         'compose': 'Compose Email',
@@ -467,7 +470,9 @@ export default {
         'adminEventsTypes': 'Types',
         'adminEventsProfiles': 'Profiles',
         'adminMedia': 'Media Center',
-        'adminTranslations': 'Translations'
+        'adminTickets': 'Tickets',
+        'adminTranslations': 'Translations',
+        'myTickets': 'My Tickets'
     },
     'admin': {
         'forums': {
@@ -1128,6 +1133,7 @@ export default {
         'sortAsc': 'Sort ascending',
         'sortDesc': 'Sort descending',
         'filter': 'Filter',
+        'filters': 'Filters',
         'clearFilter': 'Clear filter',
         'export': 'Export',
         'refresh': 'Refresh',
@@ -1254,6 +1260,7 @@ export default {
         'titleRequired': 'Title is required',
         'dateRequired': 'Date is required',
         'updateEvent': 'Update Event',
+        'unsavedChangesWarning': 'You have unsaved changes. Use the Save or Cancel buttons — clicking outside won’t close the form.',
         'type': 'Type',
         'selectEventType': 'Select event type',
         'startDateRequired': 'Start date is required',
@@ -1311,6 +1318,7 @@ export default {
             'live': 'Live',
             'multi': 'Multi',
         },
+        'viewDetailedAttendeeList': 'View detailed attendee list',
     },
     'landing': {
         'hero': {
@@ -1671,7 +1679,7 @@ export default {
                 'cardTitle': 'Twitter Card Settings',
                 'cardType': 'Twitter Card Type',
                 'siteHandle': 'Twitter Site Handle',
-                'siteHandleHint': 'Your Twitter username (e.g., @yourhandle)'
+                'siteHandleHint': "Your Twitter username (e.g., {'@'}yourhandle)"
             }
         },
         'oauth': {
@@ -1933,6 +1941,7 @@ export default {
             'tabSEO': 'SEO',
             'tabHomepage': 'Homepage',
             'tabFooter': 'Footer',
+            'tabModeration': 'Moderation',
             'tabAdvanced': 'Advanced'
         },
         'category': {
@@ -2046,6 +2055,19 @@ export default {
             'buttonText': 'Button Text',
             'buttonTextHint': 'Text displayed on the subscribe button',
             'leaveEmptyNoTitle': 'Leave empty for no title',
+            'menuLabel': 'Menu',
+            'menuHint': 'Which menu to display. Manage menus in Settings → Navigation.',
+            'menuNoData': 'No menus available',
+            'menuEmptyHint': 'No menus found. Create one first in Settings → Navigation.',
+            'layoutLabel': 'Layout',
+            'layoutHint': 'How the menu items are arranged',
+            'layoutList': 'List (stacked)',
+            'layoutInline': 'Inline (row of links)',
+            'styleLabel': 'Style',
+            'styleHint': 'Visual style of the links',
+            'styleSimple': 'Simple',
+            'styleBold': 'Bold',
+            'styleButton': 'Button',
             'content': 'Content',
             'textContentHint': 'Text content for this footer section. Supports line breaks.',
             'enterCustomText': 'Enter your custom text here...',
@@ -2415,7 +2437,7 @@ export default {
             'twitterCard': 'Twitter Card Settings',
             'twitterCardType': 'Twitter Card Type',
             'twitterSiteHandle': 'Twitter Site Handle',
-            'twitterSiteHint': 'Your Twitter username (e.g., @yourhandle)',
+            'twitterSiteHint': "Your Twitter username (e.g., {'@'}yourhandle)",
             'searchEngineSettings': 'Search Engine Settings',
             'canonicalUrl': 'Canonical URL',
             'canonicalUrlHint': 'Preferred full URL for search engines (e.g., https://example.com)',
@@ -2619,6 +2641,14 @@ export default {
             'minimumAge': 'Minimum Age',
             'minimumAgeHint': 'Minimum age required to use the site',
             'saveSettings': 'Save Settings'
+        },
+        'moderation': {
+            'contentAutoApproval': 'Content Auto-Approval',
+            'autoApprovalDesc': 'Configure which roles can bypass the approval process when creating content. Users with selected roles will have their content automatically approved without creating a review ticket.',
+            'autoApproveRolesWiki': 'Auto-approve roles for Wiki pages',
+            'autoApproveRolesWikiHint': 'Users with any of these roles will have their wiki pages automatically approved upon creation.',
+            'noRolesSelected': 'All wiki pages require manual approval',
+            'saveSettings': 'Save Settings'
         }
     },
     'widgets': {
@@ -2723,6 +2753,12 @@ export default {
         'hoursAgo': '{count} hours ago',
         'daysAgo': '{count} days ago',
         'settings': 'Notification Settings'
+    },
+    'relativeTime': {
+        'justNow': 'Just now',
+        'minutesShort': '{count}m ago',
+        'hoursShort': '{count}h ago',
+        'daysShort': '{count}d ago'
     },
     'profile': {
         'title': 'Profile',
@@ -3660,6 +3696,14 @@ export default {
         'settings': 'Settings',
         'logout': 'Logout'
     },
+    'megaMenu': {
+        'menuTitle': 'Navigation',
+        'loading': 'Loading menu...',
+        'noItems': 'No menu items available',
+        'openMenu': 'Open navigation menu',
+        'closeMenu': 'Close navigation menu',
+        'externalLink': 'Opens in a new tab',
+    },
     'settingsPage': {
         'title': 'Application Settings',
         'maintenanceAlert': 'Maintenance Mode is Currently Active!',
@@ -3833,7 +3877,79 @@ export default {
         'publish': 'Publish',
         'preview': 'Preview',
         'savedSuccess': 'Page saved successfully',
-        'publishedSuccess': 'Page published successfully'
+        'publishedSuccess': 'Page published successfully',
+        'parentPageHint': 'Select a parent page for nesting',
+        'typeToSearchCategories': 'Type to search or create categories',
+        'categoriesHint': 'Select existing categories or type to create new ones',
+        'newCategoryName': 'New category name',
+        'typeToSearchTags': 'Type to search or create tags',
+        'tagsHint': 'Add tags to help organize this page',
+        'settings': 'Settings'
+    },
+    'menuAdmin': {
+        'title': 'Menu Management',
+        'menus': 'Menus',
+        'newMenu': 'New Menu',
+        'itemsCount': '{count} items | {count} item | {count} items',
+        'selectPrompt': 'Select a menu to manage its items',
+        'emptyMenus': 'No menus yet. Create one to get started.',
+        'emptyItems': 'No items yet. Add some to build your menu.',
+        'addItem': 'Add Item',
+        'itemsHeader': '{name} items',
+        'createMenu': 'Create Menu',
+        'editMenu': 'Edit Menu',
+        'createItem': 'Add Menu Item',
+        'editItem': 'Edit Menu Item',
+        'name': 'Menu name',
+        'slug': 'Slug',
+        'slugHint': 'Unique identifier (e.g. main-nav, footer)',
+        'location': 'Location',
+        'locationHint': 'Where this menu appears',
+        'description': 'Description',
+        'active': 'Active',
+        'label': 'Label',
+        'type': 'Type',
+        'routePath': 'Route path',
+        'url': 'URL',
+        'icon': 'Icon',
+        'iconHint': 'Material Design Icon',
+        'itemDescription': 'Description',
+        'itemDescriptionHint': 'Short text shown under the label in the mega menu',
+        'parent': 'Parent item',
+        'parentHint': 'Leave empty for a top-level item',
+        'target': 'Target',
+        'visibility': 'Visibility',
+        'authRequired': 'Sign-in required',
+        'guestOnly': 'Guests only',
+        'role': 'Required role',
+        'permission': 'Required permission',
+        'order': 'Order',
+        'orderHint': 'Lower numbers appear first',
+        'savedMenu': 'Menu saved',
+        'savedItem': 'Menu item saved',
+        'deletedMenu': 'Menu deleted',
+        'deletedItem': 'Menu item deleted',
+        'reordered': 'Order saved',
+        'saveError': 'Failed to save',
+        'deleteError': 'Failed to delete',
+        'confirmDeleteMenu': 'Delete menu "{name}"? This will also delete all its items.',
+        'confirmDeleteItem': 'Delete menu item "{label}"?',
+        'types': {
+            'route': 'Internal route',
+            'custom': 'Custom link',
+            'external': 'External link',
+            'page': 'Page',
+        },
+        'targets': {
+            'self': 'Same window',
+            'blank': 'New window',
+        },
+        'locations': {
+            'header': 'Header',
+            'footer': 'Footer',
+            'mobile': 'Mobile',
+            'sidebar': 'Sidebar',
+        },
     },
     'mediaFilters': {
         'searchByFilename': 'Search by filename',
@@ -4060,7 +4176,13 @@ export default {
         'pageUpdatedSuccessfully': 'Wiki page updated successfully!',
         'errorUpdatingPage': 'An error occurred while updating the page. Please try again.',
         'editPlaceholder': 'Edit your wiki page content...',
-        'createPlaceholder': 'Start writing your wiki page content here... Use @ to link to other pages, # for headings, and * for lists.'
+        'createPlaceholder': "Start writing your wiki page content here... Use {'@'} to link to other pages, # for headings, and * for lists.",
+        'pendingApproval': 'Pending approval',
+        'approved': 'Approved',
+        'approve': 'Approve',
+        'unapprove': 'Revoke Approval',
+        'approveSuccess': 'Wiki page approved successfully',
+        'unapproveSuccess': 'Wiki page approval revoked',
     },
     'map': {
         'title': 'Map Title',
@@ -4193,7 +4315,7 @@ export default {
         },
         'general': {
             'maintenanceMessage': 'We are currently performing scheduled maintenance. Please check back soon.',
-            'emailPlaceholder': 'contact@example.com',
+            'emailPlaceholder': "contact{'@'}example.com",
             'phonePlaceholder': '+1 234 567 890',
             'addressPlaceholder': '123 Main Street, City, Country'
         },
@@ -4265,6 +4387,95 @@ export default {
             'ogImageDeleted': 'OG image deleted successfully',
             'ogImageHint': 'Image displayed when your site is shared on social media'
         }
+    },
+    'tickets': {
+        'title': 'Tickets',
+        'subtitle': 'Manage support requests, bugs, and content approvals',
+        'myTickets': 'My Tickets',
+        'myTicketsSubtitle': 'View tickets you have created',
+        'viewRelated': 'View related content',
+        'createTicket': 'Create Ticket',
+        'editTicket': 'Edit Ticket',
+        'deleteTicket': 'Delete Ticket',
+        'noTickets': 'No tickets found',
+        'noTicketsFilterHint': 'Try adjusting your filters',
+        'noTicketsCreateHint': 'Create your first ticket to get started',
+        'selectTicket': 'Select a ticket',
+        'selectTicketHint': 'Choose a ticket from the list to view details',
+        'noRelatedContent': 'No content available for this item',
+        'details': 'Details',
+        'listView': 'List view',
+        'kanbanView': 'Kanban board',
+        'noComments': 'No comments yet',
+        'unassigned': 'Unassigned',
+        'unknown': 'Unknown',
+        'internal': 'Internal',
+        'assign': 'Assign',
+        'assignToMe': 'Assign to me',
+        'view': 'View',
+        'edit': 'Edit',
+        'close': 'Close',
+        'update': 'Update',
+        'create': 'Create',
+        'cancel': 'Cancel',
+        'reset': 'Reset',
+        'comment': 'Comment',
+        'delete': 'Delete',
+        'status': {
+            'open': 'Open',
+            'in_progress': 'In Progress',
+            'pending': 'Pending',
+            'resolved': 'Resolved',
+            'closed': 'Closed',
+        },
+        'priority': {
+            'low': 'Low',
+            'normal': 'Normal',
+            'high': 'High',
+            'urgent': 'Urgent',
+        },
+        'filters': {
+            'allStatuses': 'All Statuses',
+            'allPriorities': 'All Priorities',
+            'allTypes': 'All Types',
+            'allAssignees': 'All Assignees',
+            'assignedToMe': 'Assigned to Me',
+            'unassigned': 'Unassigned',
+            'searchPlaceholder': 'Search tickets...',
+        },
+        'fields': {
+            'id': 'ID',
+            'type': 'Type',
+            'ticketType': 'Ticket Type',
+            'title': 'Title',
+            'description': 'Description',
+            'status': 'Status',
+            'priority': 'Priority',
+            'reporter': 'Reporter',
+            'assignee': 'Assignee',
+            'created': 'Created',
+        },
+        'sidebar': {
+            'activity': 'Activity ({count})',
+            'relatedTo': 'Related To',
+            'addComment': 'Add a comment...',
+            'internalNote': 'Internal note',
+            'pendingApproval': 'This content is pending approval.',
+            'approved': 'Approved',
+            'approve': 'Approve',
+            'reject': 'Reject',
+            'revokeApproval': 'Revoke Approval',
+        },
+        'confirm': {
+            'deleteTitle': 'Delete Ticket',
+            'deleteMessage': 'Are you sure you want to delete this ticket? This action cannot be undone.',
+            'deleteConfirm': 'Delete',
+            'deleteCancel': 'Cancel',
+        },
+        'validation': {
+            'titleRequired': 'Title is required',
+            'typeRequired': 'Type is required',
+        },
     },
     'commonComponents': {
         'copy': {
@@ -4429,5 +4640,13 @@ export default {
         'viewChronological': 'Chronological',
         'viewThreaded': 'Threaded',
         'new': 'NEW'
+    },
+    'session': {
+        'timeout': {
+            'title': 'Session Expired',
+            'message': 'Your session has expired due to inactivity.',
+            'explanation': 'For your security, you need to refresh the page to continue. Any unsaved changes may be lost.',
+            'refresh': 'Refresh Page'
+        }
     }
 }

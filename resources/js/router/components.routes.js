@@ -82,6 +82,16 @@ export const componentsRoutes = [{
                 auth, verified
             ]
         }
+    },
+    {
+        path: '/irc',
+        name: 'irc-client',
+        component: () => import(/* webpackChunkName: "irc-client" */ '@/components/irc/IrcClient.vue'),
+        meta: {
+            middleware: [
+                auth, verified
+            ]
+        }
     }]
 
 export default componentsRoutes;

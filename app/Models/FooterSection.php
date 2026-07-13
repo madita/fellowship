@@ -2,16 +2,24 @@
 
 namespace App\Models;
 
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
-class FooterSection extends Model
+class FooterSection extends Model implements TranslatableContract
 {
+    use Translatable;
+
     protected $table = 'sections';
+
+    public $translatedAttributes = ['title'];
+
+    public $translationModel = \App\Models\Translations\SectionTranslation::class;
+    public $translationForeignKey = 'section_id';
 
     protected $fillable = [
         'location',
-        'title',
         'layout',
         'enabled',
         'order',
@@ -104,33 +112,5 @@ class FooterSection extends Model
         static::deleted(function () {
             self::clearCache();
         });
-    }
-
-    /**
-     * Get the number of columns for this section's layout.
-     */
-    public function getColumnCountAttribute()
-    {
-        return match ($this->layout) {
-            '1-col' => 1,
-            '2-col' => 2,
-            '3-col' => 3,
-            '4-col' => 4,
-            default => 1,
-        };
-    }
-
-    /**
-     * Get the column widths for this layout (Vuetify grid system, 12 columns).
-     */
-    public function getColumnWidthsAttribute()
-    {
-        return match ($this->layout) {
-            '1-col' => [12],
-            '2-col' => [6, 6],
-            '3-col' => [4, 4, 4],
-            '4-col' => [3, 3, 3, 3],
-            default => [12],
-        };
     }
 }

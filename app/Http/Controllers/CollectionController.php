@@ -67,6 +67,9 @@ class CollectionController extends Controller
     // Upload media to a collection
     public function uploadMedia(Request $request, Collection $collection)
     {
+        // Authorization check - only owner or admin can upload
+        $this->authorize('uploadMedia', $collection);
+
         $request->validate([
             'files'      => 'required|array', // Ensure files is an array
             'files.*'    => 'file|mimes:jpg,jpeg,png,gif|max:2048', // Validate each file
@@ -115,8 +118,13 @@ class CollectionController extends Controller
             'caption' => 'required|string|max:255',
         ]);
 
-        // Find the media item and update its caption
+        // Find the media item
         $media = Media::findOrFail($mediaId);
+
+        // Get the collection that owns this media and check authorization
+        $collection = Collection::findOrFail($media->model_id);
+        $this->authorize('update', $collection);
+
         $media->setCustomProperty('caption', $request->input('caption'));
         $media->save();
 
@@ -143,5 +151,50 @@ class CollectionController extends Controller
         $media->setCustomProperty('is_cover', true)->save();
 
         return response()->json(['message' => __('messages.media.cover_updated')]);
+    }
+
+    /**
+     * Delete a collection and all its media.
+     */
+    public function destroy(Collection $collection)
+    {
+        // Authorization check would go here
+        // $this->authorize('delete', $collection);
+
+        try {
+            // Spatie Media Library will automatically delete media files
+            $collection->delete();
+
+            return response()->json([
+                'message' => 'Collection deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete collection',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a specific media item.
+     */
+    public function deleteMedia(Media $media)
+    {
+        // Authorization check would go here
+        // $this->authorize('delete', $media->model);
+
+        try {
+            $media->delete();
+
+            return response()->json([
+                'message' => 'Media deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete media',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }

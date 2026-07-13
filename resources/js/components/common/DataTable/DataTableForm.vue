@@ -7,6 +7,7 @@ import axios from "axios";
 import Tiptap from "@/components/common/tiptap/Tiptap.vue";
 import DataTableJson from "@/components/common/DataTable/DataTableJson.vue";
 import DataTableModel from "@/components/common/DataTable/DataTableModel.vue";
+import DataTableTaxonomy from "@/components/common/DataTable/DataTableTaxonomy.vue";
 
 const { t } = useI18n();
 
@@ -59,6 +60,7 @@ const item = ref(JSON.parse(JSON.stringify(props.item || props.defaultItem)));
 const itemDetails = ref({});
 const parentItems = ref({});
 const loading = ref({});
+const initialSnapshot = ref('');
 
 // Validation states
 const startDateError = ref('');
@@ -171,6 +173,10 @@ const validateEndDate = () => {
 };
 
 const dialogModelValueUpdate = (val) => {
+    // When Vuetify tries to close the drawer (scrim/Esc), only allow it if
+    // the form has no unsaved changes. With :persistent bound to isDirty,
+    // Vuetify already blocks the close, but we guard here too.
+    if (!val && isDirty.value) return;
     emit('update:isDrawerOpen', val);
 };
 
@@ -212,6 +218,11 @@ const hasUpdatableFields = computed(() => {
     return props.response?.updatable && Array.isArray(props.response.updatable);
 });
 
+const isDirty = computed(() => {
+    if (!initialSnapshot.value) return false;
+    return JSON.stringify(editedItem.value) !== initialSnapshot.value;
+});
+
 // 👉 Watchers
 watch(() => props.item, (newItem) => {
     if (newItem) {
@@ -224,9 +235,31 @@ watch(() => props.editMode, (newEditMode) => {
     localEditMode.value = newEditMode;
 }, { immediate: true });
 
-watch(() => props.isDrawerOpen, (isOpen) => {
+watch(() => props.isDrawerOpen, async (isOpen) => {
     if (isOpen) {
         resetItem();
+        // Always open the drawer in edit mode — the icon that triggers it is "edit"
+        localEditMode.value = true;
+
+        // If editing existing item, fetch full data including taxonomies
+        if (props.item?.id && props.endpoint) {
+            const currentId = props.item.id;
+            try {
+                const { data } = await axios.get(`/api${props.endpoint}/${currentId}`);
+                // Drop the response if the drawer closed or switched items mid-flight.
+                if (!props.isDrawerOpen || props.item?.id !== currentId) return;
+                if (data.categories) editedItem.value.categories = data.categories;
+                if (data.terms) editedItem.value.terms = data.terms;
+            } catch (e) {
+                console.error('Error fetching item details:', e);
+            }
+        }
+
+        // Snapshot AFTER any server-loaded fields are merged in, so they don't
+        // show up as user changes.
+        initialSnapshot.value = JSON.stringify(editedItem.value);
+    } else {
+        initialSnapshot.value = '';
     }
 });
 
@@ -239,6 +272,7 @@ onMounted(() => {
 <template>
     <VNavigationDrawer
         temporary
+        :persistent="isDirty"
         location="end"
         :model-value="props.isDrawerOpen"
         width="700"
@@ -293,6 +327,17 @@ onMounted(() => {
                         type="warning"
                         class="mb-4"
                         :text="$t('formBuilder.noUpdatableFields')"
+                    />
+
+                    <!-- Unsaved changes warning -->
+                    <VAlert
+                        v-if="isDirty"
+                        type="info"
+                        variant="tonal"
+                        density="compact"
+                        icon="mdi-information-outline"
+                        class="mb-4"
+                        :text="$t('formBuilder.unsavedChangesWarning')"
                     />
 
                     <!-- Form Section -->
@@ -357,10 +402,11 @@ onMounted(() => {
                                             :name="column"
                                         />
 
-                                        <!-- Checkbox -->
+                                        <!-- Checkbox (binds boolean visually, persists 1/0 to match integer columns) -->
                                         <VCheckbox
                                             v-else-if="response.column_fields?.[column] === 'checkbox'"
-                                            v-model="editedItem[column]"
+                                            :model-value="!!editedItem[column]"
+                                            @update:modelValue="editedItem[column] = $event ? 1 : 0"
                                             :label="column"
                                             :readonly="!localEditMode"
                                             density="compact"
@@ -403,6 +449,25 @@ onMounted(() => {
                                             density="compact"
                                         />
                                     </template>
+                                </div>
+                            </VCol>
+                        </VRow>
+
+                        <!-- Taxonomy Fields -->
+                        <VRow
+                            v-for="(config, key) in response.taxonomy_fields"
+                            :key="`taxonomy-${key}`"
+                        >
+                            <VCol cols="12">
+                                <div class="field-container">
+                                    <div class="text-caption text-medium-emphasis mb-1">
+                                        {{ config.label }}
+                                    </div>
+                                    <DataTableTaxonomy
+                                        :config="config"
+                                        v-model="editedItem[key]"
+                                        :readonly="!localEditMode"
+                                    />
                                 </div>
                             </VCol>
                         </VRow>

@@ -31,6 +31,9 @@
 
     <!-- GDPR Cookie Consent Banner -->
     <CookieConsent ref="cookieConsent" />
+
+    <!-- Session Timeout Modal -->
+    <SessionTimeoutModal />
   </v-app>
 </template>
 
@@ -43,11 +46,13 @@ import config from './configs'
 import defaultLayout from './layouts/DefaultLayout.vue'
 import simpleLayout from './layouts/SimpleLayout.vue'
 import landingLayout from './layouts/LandingLayout.vue'
+import oneScrollLayout from './layouts/OneScrollLayout.vue'
 import authLayout from './layouts/AuthLayout.vue'
 import errorLayout from './layouts/ErrorLayout.vue'
 
 // Components
 import CookieConsent from './components/common/CookieConsent.vue'
+import SessionTimeoutModal from './components/common/SessionTimeoutModal.vue'
 // import { mapGetters } from 'vuex'
 
 
@@ -68,9 +73,11 @@ export default {
     defaultLayout,
     simpleLayout,
     landingLayout,
+    oneScrollLayout,
     authLayout,
     errorLayout,
-    CookieConsent
+    CookieConsent,
+    SessionTimeoutModal
   },
   computed: {
       authenticated() {

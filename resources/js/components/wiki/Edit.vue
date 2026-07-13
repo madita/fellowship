@@ -929,6 +929,14 @@ export default {
                 const titleField = document.querySelector('.title-field input')
                 if (titleField) titleField.focus()
             })
+        };
+
+
+        function getWikiPage() {
+            loading.value = true
+
+            return axios.get(`/api/wiki/${slug.value}`).then((response) => {
+                wikipage.value = response.data.page
         }
 
         const focusContent = () => {
@@ -1091,6 +1099,9 @@ export default {
             }
         }
 
+        function updateContent(content) {
+            console.log('updatecontent',content)
+            wikipage.value.content = content
         const saveCategory = async () => {
             if (!newCategory.value) return
 

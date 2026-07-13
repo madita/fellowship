@@ -67,7 +67,7 @@ class ForumSeeder extends Seeder
 
     private function createCategory(array $data, ?int $parentId = null): Taxonomy
     {
-        $term = Term::firstOrCreate(['title' => $data['title']]);
+        $term = Term::firstOrCreateByTitle($data['title']);
 
         $taxonomy = Taxonomy::create([
             'term_id'    => $term->id,

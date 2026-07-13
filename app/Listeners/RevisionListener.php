@@ -90,6 +90,6 @@ class RevisionListener
      **/
     public function getSystemUserId()
     {
-        return auth()->user()->getAuthIdentifier();
+        return auth()->user()?->getAuthIdentifier();
     }
 }

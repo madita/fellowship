@@ -149,6 +149,8 @@ abstract class DataTableController extends Controller
                 'column_fields' => $this->getCustomInputFields(),
                 'json_fields'   => $this->getCustomJsonFields(),
                 'filter_fields' => $this->getFilterFields(),
+                'taxonomy_fields' => $this->getTaxonomyFields(),
+                'toggle_filters' => $this->getToggleFilters(),
                 'allow'         => [
                     'hasForm'  => $this->hasForm,
                     'creation' => $this->allowCreation,
@@ -234,6 +236,16 @@ abstract class DataTableController extends Controller
     }
 
     public function getFilterFields()
+    {
+        return [];
+    }
+
+    public function getTaxonomyFields()
+    {
+        return [];
+    }
+
+    public function getToggleFilters()
     {
         return [];
     }

@@ -45,7 +45,7 @@
                                 :description="setting.description"
                                 :icon="setting.icon"
                                 :color="category.color"
-                                @click="navigateToSetting(setting.id)"
+                                @click="navigateToSetting(setting)"
                             />
                         </v-col>
                     </v-row>
@@ -103,12 +103,16 @@ function goBack() {
     router.push({ name: 'admin-settings' });
 }
 
-function navigateToSetting(settingId) {
+function navigateToSetting(setting) {
+    if (setting.routeName) {
+        router.push({ name: setting.routeName });
+        return;
+    }
     router.push({
         name: 'admin-settings-page',
         params: {
             category: route.params.category,
-            setting: settingId
+            setting: setting.id
         }
     });
 }

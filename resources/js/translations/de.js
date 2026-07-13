@@ -6,6 +6,8 @@ export default {
         'delete': 'Löschen',
         'title': 'Titel',
         'save': 'Speichern',
+        'create': 'Erstellen',
+        'update': 'Aktualisieren',
         'faq': 'FAQ',
         'contact': 'Kontaktieren Sie uns',
         'tos': 'Nutzungsbedingungen',
@@ -182,7 +184,8 @@ export default {
         'key': 'Schlüssel',
         'value': 'Wert',
         'noUpdatableFields': 'Keine aktualisierbaren Felder für dieses Formular konfiguriert.',
-        'unknownFieldConfiguration': 'Unbekannte Feldkonfiguration'
+        'unknownFieldConfiguration': 'Unbekannte Feldkonfiguration',
+        'unsavedChangesWarning': 'Sie haben ungespeicherte Änderungen. Bitte „Speichern“ oder „Abbrechen“ verwenden – ein Klick außerhalb schließt das Formular nicht.'
     },
     'email': {
         'compose': 'E-Mail verfassen',
@@ -467,7 +470,9 @@ export default {
         'adminEventsTypes': 'Typen',
         'adminEventsProfiles': 'Profile',
         'adminMedia': 'Mediencenter',
-        'adminTranslations': 'Übersetzungen'
+        'adminTickets': 'Tickets',
+        'adminTranslations': 'Übersetzungen',
+        'myTickets': 'Meine Tickets'
     },
     'admin': {
         'forums': {
@@ -1098,6 +1103,7 @@ export default {
         'sortAsc': 'Aufsteigend sortieren',
         'sortDesc': 'Absteigend sortieren',
         'filter': 'Filtern',
+        'filters': 'Filter',
         'clearFilter': 'Filter löschen',
         'export': 'Exportieren',
         'refresh': 'Aktualisieren',
@@ -1224,6 +1230,7 @@ export default {
         'titleRequired': 'Titel ist erforderlich',
         'dateRequired': 'Datum ist erforderlich',
         'updateEvent': 'Termin aktualisieren',
+        'unsavedChangesWarning': 'Sie haben ungespeicherte Änderungen. Bitte „Speichern“ oder „Abbrechen“ verwenden – ein Klick außerhalb schließt das Formular nicht.',
         'type': 'Typ',
         'selectEventType': 'Termintyp auswählen',
         'startDateRequired': 'Startdatum ist erforderlich',
@@ -1281,6 +1288,7 @@ export default {
             'live': 'Live',
             'multi': 'Multi',
         },
+        'viewDetailedAttendeeList': 'Detaillierte Teilnehmerliste anzeigen',
     },
     'gallery': {
         'title': 'Galerie',
@@ -1673,7 +1681,7 @@ export default {
                 'cardTitle': 'Twitter Card Einstellungen',
                 'cardType': 'Twitter Card Typ',
                 'siteHandle': 'Twitter Site Handle',
-                'siteHandleHint': 'Ihr Twitter-Benutzername (z.B. @ihrname)'
+                'siteHandleHint': "Ihr Twitter-Benutzername (z.B. {'@'}ihrname)"
             }
         },
         'oauth': {
@@ -1933,6 +1941,7 @@ export default {
             'tabSEO': 'SEO',
             'tabHomepage': 'Homepage',
             'tabFooter': 'Fußzeile',
+            'tabModeration': 'Moderation',
             'tabAdvanced': 'Erweitert'
         },
         'category': {
@@ -2046,6 +2055,19 @@ export default {
             'buttonText': 'Schaltflächentext',
             'buttonTextHint': 'Text auf der Abonnieren-Schaltfläche',
             'leaveEmptyNoTitle': 'Leer lassen für keinen Titel',
+            'menuLabel': 'Menü',
+            'menuHint': 'Welches Menü angezeigt werden soll. Menüs verwalten unter Einstellungen → Navigation.',
+            'menuNoData': 'Keine Menüs verfügbar',
+            'menuEmptyHint': 'Keine Menüs gefunden. Erstellen Sie zuerst eines unter Einstellungen → Navigation.',
+            'layoutLabel': 'Layout',
+            'layoutHint': 'Wie die Menüpunkte angeordnet werden',
+            'layoutList': 'Liste (gestapelt)',
+            'layoutInline': 'Inline (Reihe von Links)',
+            'styleLabel': 'Stil',
+            'styleHint': 'Visueller Stil der Links',
+            'styleSimple': 'Einfach',
+            'styleBold': 'Fett',
+            'styleButton': 'Schaltfläche',
             'content': 'Inhalt',
             'textContentHint': 'Textinhalt für diesen Fußzeilenabschnitt. Unterstützt Zeilenumbrüche.',
             'enterCustomText': 'Geben Sie hier Ihren benutzerdefinierten Text ein...',
@@ -2415,7 +2437,7 @@ export default {
             'twitterCard': 'Twitter Card-Einstellungen',
             'twitterCardType': 'Twitter Card-Typ',
             'twitterSiteHandle': 'Twitter-Site-Handle',
-            'twitterSiteHint': 'Ihr Twitter-Benutzername (z.B. @ihrname)',
+            'twitterSiteHint': "Ihr Twitter-Benutzername (z.B. {'@'}ihrname)",
             'searchEngineSettings': 'Suchmaschinen-Einstellungen',
             'canonicalUrl': 'Kanonische URL',
             'canonicalUrlHint': 'Bevorzugte vollständige URL für Suchmaschinen (z.B. https://example.com)',
@@ -2787,6 +2809,14 @@ export default {
                 'swNotRegistered': 'Service Worker ist nicht registriert. Er wird beim Laden der Seite registriert.',
                 'swNotSupported': 'Service Worker werden in diesem Browser nicht unterstützt.'
             }
+        },
+        'moderation': {
+            'contentAutoApproval': 'Automatische Inhaltsfreigabe',
+            'autoApprovalDesc': 'Konfigurieren Sie, welche Rollen den Genehmigungsprozess beim Erstellen von Inhalten umgehen können. Benutzer mit ausgewählten Rollen erhalten eine automatische Freigabe ohne ein Prüfungsticket.',
+            'autoApproveRolesWiki': 'Auto-Freigabe-Rollen für Wiki-Seiten',
+            'autoApproveRolesWikiHint': 'Benutzer mit einer dieser Rollen erhalten bei der Erstellung automatisch eine Freigabe ihrer Wiki-Seiten.',
+            'noRolesSelected': 'Alle Wiki-Seiten erfordern manuelle Freigabe',
+            'saveSettings': 'Einstellungen speichern'
         }
     },
     'widgets': {
@@ -2895,6 +2925,12 @@ export default {
         'hoursAgo': 'vor {count} Stunden',
         'daysAgo': 'vor {count} Tagen',
         'settings': 'Benachrichtigungseinstellungen'
+    },
+    'relativeTime': {
+        'justNow': 'Gerade eben',
+        'minutesShort': 'vor {count} Min.',
+        'hoursShort': 'vor {count} Std.',
+        'daysShort': 'vor {count} Tg.'
     },
     'profile': {
         'title': 'Profil',
@@ -3828,6 +3864,14 @@ export default {
         'settings': 'Einstellungen',
         'logout': 'Abmelden'
     },
+    'megaMenu': {
+        'menuTitle': 'Navigation',
+        'loading': 'Menü wird geladen...',
+        'noItems': 'Keine Menüpunkte verfügbar',
+        'openMenu': 'Navigationsmenü öffnen',
+        'closeMenu': 'Navigationsmenü schließen',
+        'externalLink': 'Öffnet in einem neuen Tab',
+    },
     'settingsPage': {
         'title': 'Anwendungseinstellungen',
         'maintenanceAlert': 'Wartungsmodus ist derzeit aktiv!',
@@ -4001,7 +4045,79 @@ export default {
         'publish': 'Veröffentlichen',
         'preview': 'Vorschau',
         'savedSuccess': 'Seite erfolgreich gespeichert',
-        'publishedSuccess': 'Seite erfolgreich veröffentlicht'
+        'publishedSuccess': 'Seite erfolgreich veröffentlicht',
+        'parentPageHint': 'Übergeordnete Seite für Verschachtelung wählen',
+        'typeToSearchCategories': 'Suchen oder Kategorien erstellen',
+        'categoriesHint': 'Bestehende Kategorien wählen oder neue erstellen',
+        'newCategoryName': 'Name der neuen Kategorie',
+        'typeToSearchTags': 'Suchen oder Tags erstellen',
+        'tagsHint': 'Tags hinzufügen um die Seite zu organisieren',
+        'settings': 'Einstellungen'
+    },
+    'menuAdmin': {
+        'title': 'Menüverwaltung',
+        'menus': 'Menüs',
+        'newMenu': 'Neues Menü',
+        'itemsCount': '{count} Einträge | {count} Eintrag | {count} Einträge',
+        'selectPrompt': 'Menü auswählen, um Einträge zu verwalten',
+        'emptyMenus': 'Noch keine Menüs. Erstelle eines, um zu beginnen.',
+        'emptyItems': 'Noch keine Einträge. Füge welche hinzu.',
+        'addItem': 'Eintrag hinzufügen',
+        'itemsHeader': 'Einträge von {name}',
+        'createMenu': 'Menü erstellen',
+        'editMenu': 'Menü bearbeiten',
+        'createItem': 'Menüeintrag hinzufügen',
+        'editItem': 'Menüeintrag bearbeiten',
+        'name': 'Menüname',
+        'slug': 'Slug',
+        'slugHint': 'Eindeutiger Bezeichner (z. B. main-nav, footer)',
+        'location': 'Position',
+        'locationHint': 'Wo dieses Menü erscheint',
+        'description': 'Beschreibung',
+        'active': 'Aktiv',
+        'label': 'Bezeichnung',
+        'type': 'Typ',
+        'routePath': 'Routen-Pfad',
+        'url': 'URL',
+        'icon': 'Symbol',
+        'iconHint': 'Material Design Icon',
+        'itemDescription': 'Beschreibung',
+        'itemDescriptionHint': 'Kurztext, der im Mega-Menü unter der Bezeichnung angezeigt wird',
+        'parent': 'Übergeordneter Eintrag',
+        'parentHint': 'Leer lassen für Top-Level-Eintrag',
+        'target': 'Ziel',
+        'visibility': 'Sichtbarkeit',
+        'authRequired': 'Anmeldung erforderlich',
+        'guestOnly': 'Nur für Gäste',
+        'role': 'Erforderliche Rolle',
+        'permission': 'Erforderliche Berechtigung',
+        'order': 'Reihenfolge',
+        'orderHint': 'Niedrigere Zahlen erscheinen zuerst',
+        'savedMenu': 'Menü gespeichert',
+        'savedItem': 'Menüeintrag gespeichert',
+        'deletedMenu': 'Menü gelöscht',
+        'deletedItem': 'Menüeintrag gelöscht',
+        'reordered': 'Reihenfolge gespeichert',
+        'saveError': 'Speichern fehlgeschlagen',
+        'deleteError': 'Löschen fehlgeschlagen',
+        'confirmDeleteMenu': 'Menü „{name}" löschen? Alle Einträge werden ebenfalls gelöscht.',
+        'confirmDeleteItem': 'Menüeintrag „{label}" löschen?',
+        'types': {
+            'route': 'Interne Route',
+            'custom': 'Eigener Link',
+            'external': 'Externer Link',
+            'page': 'Seite',
+        },
+        'targets': {
+            'self': 'Gleiches Fenster',
+            'blank': 'Neues Fenster',
+        },
+        'locations': {
+            'header': 'Header',
+            'footer': 'Footer',
+            'mobile': 'Mobil',
+            'sidebar': 'Seitenleiste',
+        },
     },
     'mediaFilters': {
         'searchByFilename': 'Nach Dateiname suchen',
@@ -4228,7 +4344,13 @@ export default {
         'pageUpdatedSuccessfully': 'Wiki-Seite erfolgreich aktualisiert!',
         'errorUpdatingPage': 'Beim Aktualisieren der Seite ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.',
         'editPlaceholder': 'Bearbeiten Sie Ihren Wiki-Seiteninhalt...',
-        'createPlaceholder': 'Beginnen Sie hier mit dem Schreiben Ihres Wiki-Seiteninhalts... Verwenden Sie @ um auf andere Seiten zu verlinken, # für Überschriften und * für Listen.'
+        'createPlaceholder': "Beginnen Sie hier mit dem Schreiben Ihres Wiki-Seiteninhalts... Verwenden Sie {'@'} um auf andere Seiten zu verlinken, # für Überschriften und * für Listen.",
+        'pendingApproval': 'Genehmigung ausstehend',
+        'approved': 'Genehmigt',
+        'approve': 'Genehmigen',
+        'unapprove': 'Genehmigung widerrufen',
+        'approveSuccess': 'Wiki-Seite erfolgreich genehmigt',
+        'unapproveSuccess': 'Wiki-Seitengenehmigung widerrufen',
     },
     'map': {
         'title': 'Kartentitel',
@@ -4361,7 +4483,7 @@ export default {
         },
         'general': {
             'maintenanceMessage': 'Wir führen derzeit geplante Wartungsarbeiten durch. Bitte versuchen Sie es später erneut.',
-            'emailPlaceholder': 'kontakt@beispiel.de',
+            'emailPlaceholder': "kontakt{'@'}beispiel.de",
             'phonePlaceholder': '+49 123 456 789',
             'addressPlaceholder': 'Musterstraße 123, Stadt, Land'
         },
@@ -4449,6 +4571,95 @@ export default {
             'connectionSuccess': 'Verbindung erfolgreich',
             'connectionError': 'Verbindung fehlgeschlagen'
         }
+    },
+    'tickets': {
+        'title': 'Tickets',
+        'subtitle': 'Supportanfragen, Fehler und Inhaltsgenehmigungen verwalten',
+        'myTickets': 'Meine Tickets',
+        'myTicketsSubtitle': 'Ihre erstellten Tickets anzeigen',
+        'viewRelated': 'Verknüpften Inhalt anzeigen',
+        'createTicket': 'Ticket erstellen',
+        'editTicket': 'Ticket bearbeiten',
+        'deleteTicket': 'Ticket löschen',
+        'noTickets': 'Keine Tickets gefunden',
+        'noTicketsFilterHint': 'Versuchen Sie, Ihre Filter anzupassen',
+        'noTicketsCreateHint': 'Erstellen Sie Ihr erstes Ticket, um loszulegen',
+        'selectTicket': 'Ticket auswählen',
+        'selectTicketHint': 'Wählen Sie ein Ticket aus der Liste, um Details anzuzeigen',
+        'noRelatedContent': 'Kein Inhalt für dieses Element verfügbar',
+        'details': 'Details',
+        'listView': 'Listenansicht',
+        'kanbanView': 'Kanban-Board',
+        'noComments': 'Noch keine Kommentare',
+        'unassigned': 'Nicht zugewiesen',
+        'unknown': 'Unbekannt',
+        'internal': 'Intern',
+        'assign': 'Zuweisen',
+        'assignToMe': 'Mir zuweisen',
+        'view': 'Anzeigen',
+        'edit': 'Bearbeiten',
+        'close': 'Schließen',
+        'update': 'Aktualisieren',
+        'create': 'Erstellen',
+        'cancel': 'Abbrechen',
+        'reset': 'Zurücksetzen',
+        'comment': 'Kommentieren',
+        'delete': 'Löschen',
+        'status': {
+            'open': 'Offen',
+            'in_progress': 'In Bearbeitung',
+            'pending': 'Ausstehend',
+            'resolved': 'Gelöst',
+            'closed': 'Geschlossen',
+        },
+        'priority': {
+            'low': 'Niedrig',
+            'normal': 'Normal',
+            'high': 'Hoch',
+            'urgent': 'Dringend',
+        },
+        'filters': {
+            'allStatuses': 'Alle Status',
+            'allPriorities': 'Alle Prioritäten',
+            'allTypes': 'Alle Typen',
+            'allAssignees': 'Alle Zugewiesenen',
+            'assignedToMe': 'Mir zugewiesen',
+            'unassigned': 'Nicht zugewiesen',
+            'searchPlaceholder': 'Tickets durchsuchen...',
+        },
+        'fields': {
+            'id': 'ID',
+            'type': 'Typ',
+            'ticketType': 'Ticket-Typ',
+            'title': 'Titel',
+            'description': 'Beschreibung',
+            'status': 'Status',
+            'priority': 'Priorität',
+            'reporter': 'Ersteller',
+            'assignee': 'Zugewiesener',
+            'created': 'Erstellt',
+        },
+        'sidebar': {
+            'activity': 'Aktivität ({count})',
+            'relatedTo': 'Verknüpft mit',
+            'addComment': 'Kommentar hinzufügen...',
+            'internalNote': 'Interne Notiz',
+            'pendingApproval': 'Dieser Inhalt wartet auf Genehmigung.',
+            'approved': 'Genehmigt',
+            'approve': 'Genehmigen',
+            'reject': 'Ablehnen',
+            'revokeApproval': 'Genehmigung widerrufen',
+        },
+        'confirm': {
+            'deleteTitle': 'Ticket löschen',
+            'deleteMessage': 'Sind Sie sicher, dass Sie dieses Ticket löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
+            'deleteConfirm': 'Löschen',
+            'deleteCancel': 'Abbrechen',
+        },
+        'validation': {
+            'titleRequired': 'Titel ist erforderlich',
+            'typeRequired': 'Typ ist erforderlich',
+        },
     },
     'commonComponents': {
         'copy': {
@@ -4613,5 +4824,13 @@ export default {
         'viewChronological': 'Chronologisch',
         'viewThreaded': 'Verschachtelt',
         'new': 'NEU'
+    },
+    'session': {
+        'timeout': {
+            'title': 'Sitzung abgelaufen',
+            'message': 'Ihre Sitzung ist aufgrund von Inaktivität abgelaufen.',
+            'explanation': 'Aus Sicherheitsgründen müssen Sie die Seite aktualisieren, um fortzufahren. Nicht gespeicherte Änderungen können verloren gehen.',
+            'refresh': 'Seite aktualisieren'
+        }
     }
 }

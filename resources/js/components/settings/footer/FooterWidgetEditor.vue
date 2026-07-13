@@ -32,6 +32,15 @@
             class="mb-4"
           ></v-text-field>
 
+          <v-select
+            v-model="editedWidget.config.style"
+            :items="styleOptions"
+            :label="$t('settings.widgetEditor.styleLabel')"
+            :hint="$t('settings.widgetEditor.styleHint')"
+            persistent-hint
+            class="mb-4"
+          ></v-select>
+
           <div class="text-subtitle-2 mb-3">{{ $t('settings.widgetEditor.links') }}</div>
           <div v-if="editedWidget.config.links && editedWidget.config.links.length > 0" class="mb-3">
             <v-card
@@ -171,6 +180,58 @@
           </v-alert>
         </template>
 
+        <!-- Menu Widget -->
+        <template v-if="editedWidget.type === 'menu'">
+          <v-text-field
+            v-model="editedWidget.config.title"
+            :label="$t('settings.widgetEditor.sectionTitleOptional')"
+            :hint="$t('settings.widgetEditor.leaveEmptyNoTitle')"
+            persistent-hint
+            class="mb-4"
+          ></v-text-field>
+
+          <v-select
+            v-model="editedWidget.config.menu_slug"
+            :items="menuOptions"
+            item-title="title"
+            item-value="value"
+            :loading="menusLoading"
+            :label="$t('settings.widgetEditor.menuLabel')"
+            :hint="$t('settings.widgetEditor.menuHint')"
+            :no-data-text="$t('settings.widgetEditor.menuNoData')"
+            persistent-hint
+            prepend-inner-icon="mdi-menu"
+            class="mb-4"
+          ></v-select>
+
+          <v-alert
+            v-if="!menusLoading && menuOptions.length === 0"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mb-4"
+          >
+            {{ $t('settings.widgetEditor.menuEmptyHint') }}
+          </v-alert>
+
+          <v-select
+            v-model="editedWidget.config.layout"
+            :items="menuLayouts"
+            :label="$t('settings.widgetEditor.layoutLabel')"
+            :hint="$t('settings.widgetEditor.layoutHint')"
+            persistent-hint
+            class="mb-4"
+          ></v-select>
+
+          <v-select
+            v-model="editedWidget.config.style"
+            :items="styleOptions"
+            :label="$t('settings.widgetEditor.styleLabel')"
+            :hint="$t('settings.widgetEditor.styleHint')"
+            persistent-hint
+          ></v-select>
+        </template>
+
         <!-- Text Widget -->
         <template v-if="editedWidget.type === 'text'">
           <v-text-field
@@ -258,8 +319,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import axios from 'axios';
 import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
 
 const { t } = useI18n();
@@ -286,6 +348,42 @@ const widgetDefinition = computed(() => {
 });
 
 const widgetIcon = computed(() => widgetDefinition.value?.icon || 'mdi-widgets');
+
+const menus = ref([]);
+const menusLoading = ref(false);
+
+const menuOptions = computed(() =>
+  menus.value.map((menu) => ({
+    title: menu.location ? `${menu.name} (${menu.location})` : menu.name,
+    value: menu.slug,
+  }))
+);
+
+const menuLayouts = computed(() => [
+  { title: t('settings.widgetEditor.layoutList'), value: 'list' },
+  { title: t('settings.widgetEditor.layoutInline'), value: 'inline' },
+]);
+
+const styleOptions = computed(() => [
+  { title: t('settings.widgetEditor.styleSimple'), value: 'simple' },
+  { title: t('settings.widgetEditor.styleBold'), value: 'bold' },
+  { title: t('settings.widgetEditor.styleButton'), value: 'button' },
+]);
+
+async function loadMenus() {
+  menusLoading.value = true;
+  try {
+    const { data } = await axios.get('/api/admin/menus');
+    menus.value = Array.isArray(data) ? data : (data.menus || []);
+  } catch (error) {
+    console.error('Failed to load menus:', error);
+    menus.value = [];
+  } finally {
+    menusLoading.value = false;
+  }
+}
+
+onMounted(loadMenus);
 
 watch(() => props.widget, (newWidget) => {
   if (newWidget) {

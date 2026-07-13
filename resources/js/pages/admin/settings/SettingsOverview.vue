@@ -144,6 +144,14 @@
                             <v-icon class="mr-2" size="20">mdi-page-layout-footer</v-icon>
                             <span class="d-none d-sm-inline">{{ $t('settings.overview.tabFooter') }}</span>
                         </v-tab>
+                        <v-tab value="moderation">
+                            <v-icon class="mr-2" size="20">mdi-shield-check-outline</v-icon>
+                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabModeration') }}</span>
+                        </v-tab>
+                        <v-tab value="sandbox">
+                            <v-icon class="mr-2" size="20">mdi-notebook-edit-outline</v-icon>
+                            <span class="d-none d-sm-inline">Sandbox</span>
+                        </v-tab>
                         <v-tab value="advanced">
                             <v-icon class="mr-2" size="20">mdi-cog-sync-outline</v-icon>
                             <span class="d-none d-sm-inline">{{ $t('settings.overview.tabAdvanced') }}</span>
@@ -218,6 +226,22 @@
                                     @save="saveSettings"
                                 />
                             </v-window-item>
+                            <v-window-item value="moderation">
+                              <moderation-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                              />
+                            </v-window-item>
+                            <v-window-item value="sandbox">
+                                <sandbox-tab
+                                    :settings="settings"
+                                    :errors="errors"
+                                    :is-saving="isSaving"
+                                    @save="saveSettings"
+                                />
+                            </v-window-item>
                             <v-window-item value="advanced">
                                 <advanced-tab
                                     :settings="settings"
@@ -286,7 +310,7 @@
                                     :description="setting.description"
                                     :icon="setting.icon"
                                     :color="category.color"
-                                    @click="navigateToSetting(category.id, setting.id)"
+                                    @click="navigateToSetting(category.id, setting)"
                                 />
                             </v-col>
                         </v-row>
@@ -318,7 +342,9 @@ import OAuthTab from '@/components/settings/tabs/OAuthTab.vue';
 import SeoTab from '@/components/settings/tabs/SeoTab.vue';
 import HomepageTab from '@/components/settings/tabs/HomepageTab.vue';
 import FooterTab from '@/components/settings/tabs/FooterTab.vue';
+import SandboxTab from '@/components/settings/tabs/SandboxTab.vue';
 import AdvancedTab from '@/components/settings/tabs/AdvancedTab.vue';
+import ModerationTab from '@/components/settings/tabs/ModerationTab.vue';
 
 const router = useRouter();
 const searchQuery = ref('');
@@ -424,12 +450,17 @@ const filteredSettingsCount = computed(() => {
     }, 0);
 });
 
-function navigateToSetting(categoryId, settingId) {
+function navigateToSetting(categoryId, setting) {
+    // Settings may opt into a dedicated route by supplying `routeName`.
+    if (setting.routeName) {
+        router.push({ name: setting.routeName });
+        return;
+    }
     router.push({
         name: 'admin-settings-page',
         params: {
             category: categoryId,
-            setting: settingId
+            setting: setting.id
         }
     });
 }

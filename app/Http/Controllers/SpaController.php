@@ -153,7 +153,7 @@ class SpaController extends Controller
             return null;
         }
 
-        $post = Post::where('slug', $slug)->where('published', true)->first();
+        $post = Post::where('slug', $slug)->where('status', 'published')->first();
         if (!$post) {
             return null;
         }

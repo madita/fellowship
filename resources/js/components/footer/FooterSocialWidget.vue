@@ -1,9 +1,6 @@
 <template>
     <div>
-        <div v-if="config.title" class="text-subtitle-1 text-sm-h6 text-lg-h5 font-weight-bold mb-2">
-            {{ config.title }}
-        </div>
-        <div style="width: 80px; height: 2px" class="mb-3 mb-sm-5 mt-1 bg-primary"/>
+        <footer-widget-heading :title="config.title" />
 
         <div v-if="hasSocialLinks" class="d-flex gap-2 flex-wrap">
             <v-btn
@@ -13,7 +10,7 @@
                 icon
                 size="small"
                 color="primary"
-                :title="$t('footer.social.twitter')"
+                :title="$t('settings.footer.social.twitter')"
             >
                 <v-icon size="small">mdi-twitter</v-icon>
             </v-btn>
@@ -24,7 +21,7 @@
                 icon
                 size="small"
                 color="primary"
-                :title="$t('footer.social.facebook')"
+                :title="$t('settings.footer.social.facebook')"
             >
                 <v-icon size="small">mdi-facebook</v-icon>
             </v-btn>
@@ -35,7 +32,7 @@
                 icon
                 size="small"
                 color="primary"
-                :title="$t('footer.social.instagram')"
+                :title="$t('settings.footer.social.instagram')"
             >
                 <v-icon size="small">mdi-instagram</v-icon>
             </v-btn>
@@ -46,7 +43,7 @@
                 icon
                 size="small"
                 color="primary"
-                :title="$t('footer.social.linkedin')"
+                :title="$t('settings.footer.social.linkedin')"
             >
                 <v-icon size="small">mdi-linkedin</v-icon>
             </v-btn>
@@ -57,7 +54,7 @@
                 icon
                 size="small"
                 color="primary"
-                :title="$t('footer.social.youtube')"
+                :title="$t('settings.footer.social.youtube')"
             >
                 <v-icon size="small">mdi-youtube</v-icon>
             </v-btn>
@@ -68,14 +65,14 @@
                 icon
                 size="small"
                 color="primary"
-                :title="$t('footer.social.discord')"
+                :title="$t('settings.footer.social.discord')"
             >
                 <v-icon size="small">mdi-discord</v-icon>
             </v-btn>
         </div>
 
         <div v-else class="text-caption text-medium-emphasis">
-            {{ $t('footer.social.noLinksConfigured') }}
+            {{ $t('settings.footer.social.noLinksConfigured') }}
         </div>
     </div>
 </template>
@@ -84,6 +81,7 @@
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useSettingsStore } from '@/store/settingStore.js';
+import FooterWidgetHeading from './FooterWidgetHeading.vue';
 
 const { t } = useI18n();
 
