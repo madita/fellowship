@@ -3160,8 +3160,12 @@ export default {
         'invertSelection': 'Invert Selection'
     },
     'timeline': {
+        'eyebrow': 'Community Feed',
         'title': 'Timeline',
         'subtitle': 'Share your thoughts with the community',
+        'caughtUpNote': 'Check back later for new updates.',
+        'asideLabel': 'Posting as',
+        'asidePrompt': 'Share updates, photos, and how you\'re feeling with the community.',
         'whatsOnYourMind': "What's on your mind?",
         'post': 'Post',
         'cancel': 'Cancel',

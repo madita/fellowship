@@ -20,7 +20,7 @@ const expanded = ref(false);
 const fileInput = ref(null);
 const selectedFiles = ref([]);
 const imagePreviews = ref([]);
-const MAX_IMAGES = 4;
+const MAX_IMAGES = 10;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 // Feeling
@@ -180,7 +180,7 @@ onBeforeUnmount(() => {
 
                         <!-- Image Previews -->
                         <div v-if="imagePreviews.length > 0" class="image-previews mb-3">
-                            <div class="preview-grid" :class="`grid-${imagePreviews.length}`">
+                            <div class="preview-grid">
                                 <div
                                     v-for="(preview, index) in imagePreviews"
                                     :key="index"
@@ -302,19 +302,7 @@ onBeforeUnmount(() => {
 .preview-grid {
     display: grid;
     gap: 8px;
-}
-
-.preview-grid.grid-1 {
-    grid-template-columns: 1fr;
-}
-
-.preview-grid.grid-2 {
-    grid-template-columns: 1fr 1fr;
-}
-
-.preview-grid.grid-3,
-.preview-grid.grid-4 {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 }
 
 .preview-item {

@@ -1,9 +1,13 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import UserAvatar from '../common/UserAvatar.vue';
+import TinyBox from '../gallery/TinyBox.vue';
 import axios from 'axios';
 import { useUserStore } from '@/store/userStore.js';
+
+const MAX_IMAGES = 10;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const props = defineProps({
     status: {
@@ -51,6 +55,77 @@ const showActions = ref(false);
 const editMode = ref(false);
 const editedContent = ref(props.status.content);
 const saving = ref(false);
+
+// Image editing state (only used while in edit mode)
+const removedMediaIds = ref([]); // existing media marked for deletion
+const newFiles = ref([]); // File objects to upload
+const newPreviews = ref([]); // object URLs for the new files
+const editFileInput = ref(null);
+
+// Existing images not yet marked for removal
+const editableMedia = computed(() =>
+    (props.status.media || []).filter((m) => !removedMediaIds.value.includes(m.id))
+);
+
+// Total images that will exist after saving (kept ≤ MAX_IMAGES)
+const editImageCount = computed(() => editableMedia.value.length + newFiles.value.length);
+
+const removeExistingImage = (id) => {
+    removedMediaIds.value.push(id);
+};
+
+const triggerEditFileInput = () => {
+    editFileInput.value?.click();
+};
+
+const onEditFilesSelected = (event) => {
+    for (const file of Array.from(event.target.files)) {
+        if (editImageCount.value >= MAX_IMAGES) break;
+        if (!file.type.startsWith('image/')) continue;
+        if (file.size > MAX_FILE_SIZE) {
+            alert(`"${file.name}" exceeds the 5MB size limit.`);
+            continue;
+        }
+        newFiles.value.push(file);
+        newPreviews.value.push(URL.createObjectURL(file));
+    }
+    event.target.value = '';
+};
+
+const removeNewImage = (index) => {
+    URL.revokeObjectURL(newPreviews.value[index]);
+    newFiles.value.splice(index, 1);
+    newPreviews.value.splice(index, 1);
+};
+
+const resetImageEditing = () => {
+    newPreviews.value.forEach((url) => URL.revokeObjectURL(url));
+    removedMediaIds.value = [];
+    newFiles.value = [];
+    newPreviews.value = [];
+};
+
+// Display images from the always-eager-loaded `media` relation rather than the
+// `media_urls` accessor, which comes back empty for feed-loaded posts.
+const images = computed(() => props.status.media || []);
+
+// Lightbox: index of the image currently open (null = closed)
+const lightboxIndex = ref(null);
+
+// Shape media into the objects TinyBox expects, carrying the author and post
+// time so the lightbox caption reads meaningfully.
+const galleryImages = computed(() =>
+    images.value.map((media) => ({
+        original_url: media.original_url,
+        caption: '',
+        uploader: props.status.user?.name,
+        created_at: props.status.created_at,
+    }))
+);
+
+const openLightbox = (index) => {
+    lightboxIndex.value = index;
+};
 
 const toggleLike = async () => {
     const previousState = isLiked.value;
@@ -151,11 +226,13 @@ const deleteComment = async (commentId) => {
 const editStatus = () => {
     editMode.value = true;
     editedContent.value = props.status.content;
+    resetImageEditing();
 };
 
 const cancelEdit = () => {
     editMode.value = false;
     editedContent.value = props.status.content;
+    resetImageEditing();
 };
 
 const saveEdit = async () => {
@@ -163,11 +240,28 @@ const saveEdit = async () => {
 
     saving.value = true;
     try {
-        const response = await axios.patch(`/api/statuses/${props.status.id}`, {
-            content: editedContent.value,
-        });
+        let response;
 
-        props.status.content = response.data.content;
+        if (newFiles.value.length > 0) {
+            // Files require a multipart POST with method spoofing — PHP does not
+            // parse uploads from a raw PATCH body.
+            const formData = new FormData();
+            formData.append('_method', 'PATCH');
+            formData.append('content', editedContent.value);
+            removedMediaIds.value.forEach((id) => formData.append('remove_media_ids[]', id));
+            newFiles.value.forEach((file) => formData.append('images[]', file));
+
+            response = await axios.post(`/api/statuses/${props.status.id}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+        } else {
+            response = await axios.patch(`/api/statuses/${props.status.id}`, {
+                content: editedContent.value,
+                remove_media_ids: removedMediaIds.value,
+            });
+        }
+
+        resetImageEditing();
         editMode.value = false;
         emit('updated', response.data);
     } catch (error) {
@@ -187,6 +281,10 @@ const deleteStatus = async () => {
         console.error('Failed to delete status:', error);
     }
 };
+
+onBeforeUnmount(() => {
+    newPreviews.value.forEach((url) => URL.revokeObjectURL(url));
+});
 </script>
 
 <template>
@@ -252,9 +350,57 @@ const deleteStatus = async () => {
                     variant="outlined"
                     rows="3"
                     hide-details
-                    class="mb-2"
+                    class="mb-3"
                 />
-                <div class="d-flex justify-end">
+
+                <!-- Existing + newly added images -->
+                <div v-if="editableMedia.length || newPreviews.length" class="edit-media-grid mb-3">
+                    <div
+                        v-for="media in editableMedia"
+                        :key="`existing-${media.id}`"
+                        class="edit-media-item"
+                    >
+                        <v-img :src="media.original_url" cover height="110" class="rounded" />
+                        <v-btn
+                            icon="mdi-close"
+                            size="x-small"
+                            color="error"
+                            variant="elevated"
+                            class="edit-media-remove"
+                            @click="removeExistingImage(media.id)"
+                        />
+                    </div>
+                    <div
+                        v-for="(preview, index) in newPreviews"
+                        :key="`new-${index}`"
+                        class="edit-media-item"
+                    >
+                        <v-img :src="preview" cover height="110" class="rounded" />
+                        <v-btn
+                            icon="mdi-close"
+                            size="x-small"
+                            color="error"
+                            variant="elevated"
+                            class="edit-media-remove"
+                            @click="removeNewImage(index)"
+                        />
+                    </div>
+                </div>
+
+                <div class="d-flex align-center">
+                    <v-btn
+                        variant="text"
+                        size="small"
+                        prepend-icon="mdi-image-plus-outline"
+                        :disabled="editImageCount >= MAX_IMAGES"
+                        @click="triggerEditFileInput"
+                    >
+                        Add photos
+                        <span v-if="editImageCount > 0" class="ml-1 text-caption">
+                            ({{ editImageCount }}/{{ MAX_IMAGES }})
+                        </span>
+                    </v-btn>
+                    <v-spacer />
                     <v-btn
                         size="small"
                         variant="text"
@@ -274,20 +420,40 @@ const deleteStatus = async () => {
                         Save
                     </v-btn>
                 </div>
+
+                <!-- Hidden file input for adding images during edit -->
+                <input
+                    ref="editFileInput"
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    style="display: none"
+                    @change="onEditFilesSelected"
+                />
             </div>
 
             <!-- Media (if exists) -->
-            <div v-if="status.media_urls && status.media_urls.length > 0" class="status-media mb-3">
-                <div class="media-grid" :class="`media-grid-${Math.min(status.media_urls.length, 4)}`">
+            <div v-if="images.length > 0" class="status-media mb-3">
+                <div class="media-grid" :class="`media-grid-${Math.min(images.length, 4)}`">
                     <v-img
-                        v-for="(url, index) in status.media_urls"
-                        :key="index"
-                        :src="url"
+                        v-for="(media, index) in images"
+                        :key="media.id"
+                        :src="media.original_url"
                         cover
                         class="rounded media-item"
+                        @click="openLightbox(index)"
                     />
                 </div>
             </div>
+
+            <!-- Fullscreen gallery for this post's images -->
+            <TinyBox
+                :index="lightboxIndex"
+                :images="galleryImages"
+                loop
+                no-thumbs
+                @change="(i) => (lightboxIndex = i)"
+            />
 
             <v-divider class="my-3" />
 
@@ -492,6 +658,32 @@ const deleteStatus = async () => {
     gap: 4px;
     border-radius: 12px;
     overflow: hidden;
+}
+
+.media-item {
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.media-item:hover {
+    opacity: 0.92;
+}
+
+.edit-media-grid {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+}
+
+.edit-media-item {
+    position: relative;
+}
+
+.edit-media-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    z-index: 1;
 }
 
 .media-grid-1 {

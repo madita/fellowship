@@ -51,7 +51,7 @@ class StatusController extends Controller
 
         $validated = $request->validate([
             'content' => 'required|string|max:5000',
-            'images' => 'array|max:4',
+            'images' => 'array|max:10',
             'images.*' => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
             'feeling' => 'nullable|string|max:50',
         ]);
@@ -87,12 +87,46 @@ class StatusController extends Controller
         }
 
         $validated = $request->validate([
-            'content' => 'string|max:5000',
+            'content' => 'sometimes|string|max:5000',
+            'remove_media_ids' => 'array',
+            'remove_media_ids.*' => 'integer',
+            'images' => 'array',
+            'images.*' => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
         ]);
 
-        $status->update($validated);
+        if ($request->has('content')) {
+            $status->update(['content' => $validated['content']]);
+        }
 
-        return response()->json($status->load('user'));
+        // Remove images the user deleted (scoped to this status only)
+        if (!empty($validated['remove_media_ids'])) {
+            $status->media()
+                ->whereIn('id', $validated['remove_media_ids'])
+                ->get()
+                ->each
+                ->delete();
+        }
+
+        // Add newly attached images, keeping the 10-image cap
+        if ($request->hasFile('images')) {
+            $remaining = 10 - $status->media()->where('collection_name', 'images')->count();
+
+            foreach ($request->file('images') as $image) {
+                if ($remaining <= 0) {
+                    break;
+                }
+
+                $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
+
+                $status->addMedia($image)
+                    ->usingFileName($filename)
+                    ->toMediaCollection('images');
+
+                $remaining--;
+            }
+        }
+
+        return response()->json($status->fresh());
     }
 
     /**

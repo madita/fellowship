@@ -3328,8 +3328,12 @@ export default {
         'invertSelection': 'Auswahl umkehren'
     },
     'timeline': {
+        'eyebrow': 'Community-Feed',
         'title': 'Zeitleiste',
         'subtitle': 'Teile deine Gedanken mit der Community',
+        'caughtUpNote': 'Schau später für neue Beiträge vorbei.',
+        'asideLabel': 'Du postest als',
+        'asidePrompt': 'Teile Neuigkeiten, Fotos und deine Stimmung mit der Community.',
         'whatsOnYourMind': 'Was bewegt dich?',
         'post': 'Posten',
         'cancel': 'Abbrechen',
