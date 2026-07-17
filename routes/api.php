@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['cache.control'])->group(function () {
     Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['index', 'show']);
     Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
-    
+
     // Public menu access
     Route::get('menus/location/{location}', 'App\Http\Controllers\MenuController@getByLocation');
     Route::get('menus/slug/{slug}', 'App\Http\Controllers\MenuController@getBySlug');
@@ -135,6 +135,27 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@destroy');
 });
 
+
+// Status Timeline Routes
+Route::get('/statuses', 'App\Http\Controllers\StatusController@index');
+Route::get('/statuses/{status}', 'App\Http\Controllers\StatusController@show');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    // Status CRUD
+    Route::post('/statuses', 'App\Http\Controllers\StatusController@store');
+    Route::patch('/statuses/{status}', 'App\Http\Controllers\StatusController@update');
+    Route::delete('/statuses/{status}', 'App\Http\Controllers\StatusController@destroy');
+
+    // Likes
+    Route::post('/statuses/{status}/like', 'App\Http\Controllers\StatusController@toggleLike');
+    Route::get('/statuses/{status}/likes', 'App\Http\Controllers\StatusController@likes');
+
+    // Comments
+    Route::post('/statuses/{status}/comments', 'App\Http\Controllers\StatusController@addComment');
+    Route::patch('/status-comments/{comment}', 'App\Http\Controllers\StatusCommentController@update');
+    Route::delete('/status-comments/{comment}', 'App\Http\Controllers\StatusCommentController@destroy');
+});
+
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
 Route::get('/tag/terms/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@getTerms');
 Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
@@ -231,16 +252,16 @@ Route::prefix('sandbox')->group(function () {
         Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'update']);
         Route::delete('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'destroy']);
-        
+
         // Collaboration state
         Route::get('/{sandbox}/state', [App\Http\Controllers\Sandbox\SandboxController::class, 'getState']);
         Route::post('/{sandbox}/state', [App\Http\Controllers\Sandbox\SandboxController::class, 'saveState']);
-        
+
         // Collaborators
         Route::post('/{sandbox}/collaborators', [App\Http\Controllers\Sandbox\SandboxController::class, 'addCollaborator']);
         Route::delete('/{sandbox}/collaborators/{collaborator}', [App\Http\Controllers\Sandbox\SandboxController::class, 'removeCollaborator']);
         Route::post('/{sandbox}/accept-invite', [App\Http\Controllers\Sandbox\SandboxController::class, 'acceptInvite']);
-        
+
         // Version history
         Route::get('/{sandbox}/versions', [App\Http\Controllers\Sandbox\SandboxController::class, 'versions']);
         Route::get('/{sandbox}/versions/{version}', [App\Http\Controllers\Sandbox\SandboxController::class, 'showVersion']);
@@ -507,13 +528,13 @@ Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {
     Route::delete('/connections/{connection}', 'App\Http\Controllers\IrcController@deleteConnection');
     Route::post('/connections/{connection}/connect', 'App\Http\Controllers\IrcController@connect');
     Route::post('/connections/{connection}/disconnect', 'App\Http\Controllers\IrcController@disconnect');
-    
+
     // Channels
     Route::get('/connections/{connection}/channels', 'App\Http\Controllers\IrcController@getServerChannels');
     Route::post('/connections/{connection}/join', 'App\Http\Controllers\IrcController@joinChannel');
     Route::post('/channels/{channel}/part', 'App\Http\Controllers\IrcController@partChannel');
     Route::post('/channels/{channel}/favorite', 'App\Http\Controllers\IrcController@toggleFavorite');
-    
+
     // Messages
     Route::get('/channels/{channel}/users', 'App\Http\Controllers\IrcController@getChannelUsers');
     Route::get('/channels/{channel}/messages', 'App\Http\Controllers\IrcController@getChannelMessages');

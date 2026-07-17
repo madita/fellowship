@@ -57,6 +57,15 @@ export const routes = [{
         meta: {
             layout: 'error'
         }
+    },{
+        path: '/timeline',
+        name: 'timeline',
+        meta: {
+            middleware: [
+                auth, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "timeline" */ '@/components/status/StatusTimeline.vue')
     },
     {
         path: '/:slug([\\w-]+)',

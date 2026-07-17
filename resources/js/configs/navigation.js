@@ -8,6 +8,7 @@ export default {
             key: 'menu.main',
             items: [
                 { icon: 'mdi-view-dashboard-outline', key: 'menu.dashboard', text: 'Dashboard', link: '/dashboard' },
+                { icon: 'mdi-timeline-text-outline', key: 'menu.timeline', text: 'Timeline', link: '/timeline' },
                 { icon: 'mdi-message-text-outline', key: 'menu.chat', text: 'Chat', link: '/chat' },
                 { icon: 'mdi-calendar', key: 'menu.events', text: 'Events', link: '/events' },
                 { icon: 'mdi-file-outline', key: 'menu.wiki', text: 'Wiki', link: '/wiki' },
