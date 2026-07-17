@@ -446,14 +446,18 @@ onBeforeUnmount(() => {
                 </div>
             </div>
 
-            <!-- Fullscreen gallery for this post's images -->
-            <TinyBox
-                :index="lightboxIndex"
-                :images="galleryImages"
-                loop
-                no-thumbs
-                @change="(i) => (lightboxIndex = i)"
-            />
+            <!-- Fullscreen gallery for this post's images.
+                 Teleported to <body> so its fixed overlay isn't trapped by an
+                 ancestor's stacking/transform context and overlapped by the next post. -->
+            <Teleport to="body">
+                <TinyBox
+                    :index="lightboxIndex"
+                    :images="galleryImages"
+                    loop
+                    no-thumbs
+                    @change="(i) => (lightboxIndex = i)"
+                />
+            </Teleport>
 
             <v-divider class="my-3" />
 
