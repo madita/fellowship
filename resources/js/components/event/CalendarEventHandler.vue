@@ -527,6 +527,13 @@ watch(() => props.editMode, () => {
 watch(() => props.isDrawerOpen, (isOpen) => {
     resetEvent();
     if (isOpen) {
+        // Re-sync from the prop on every open. The watcher on props.editMode
+        // alone is not enough: localEditMode is mutated locally (submit, the
+        // view/edit toggle), so the prop can still hold the value the parent
+        // wants while the local copy has drifted — and an unchanged prop
+        // fires no watcher.
+        localEditMode.value = props.editMode;
+
         // Snapshot after localEvent has been set from props, so it reflects
         // the unedited starting state.
         nextTick(() => {

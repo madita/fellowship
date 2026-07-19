@@ -660,7 +660,7 @@ const addEvent = async (addevent) => {
         await axios.post(`${endpoint}`, addevent);
         await calendarStore.fetchEvents();
     } catch (error) {
-        console.error('Error adding event:', error);
+        console.error('Error adding event:', error.response?.data?.errors ?? error);
     }
 };
 

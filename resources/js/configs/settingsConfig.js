@@ -131,6 +131,9 @@ export const settingsCategories = [
             { id: 'dashboard', title: 'Dashboard', description: 'Daemon status, stats, and monitoring', icon: 'mdi-monitor-dashboard', component: 'IrcDashboardPage' },
             { id: 'servers', title: 'Servers', description: 'Manage IRC servers', icon: 'mdi-server-network', component: 'IrcServersPage' },
             { id: 'connections', title: 'Connections', description: 'Active user connections', icon: 'mdi-connection', component: 'IrcConnectionsPage' },
+        ]
+    },
+    {
         id: 'moderation',
         title: 'Moderation',
         description: 'Content approval and moderation settings',
