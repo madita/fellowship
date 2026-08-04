@@ -23,7 +23,7 @@ class StoreConversationReplyRequest extends FormRequest
      */
     public function rules()
     {
-//        dd($this->all());
+        //        dd($this->all());
         return [
             'body' => 'required|max:3000',
         ];

@@ -13,6 +13,7 @@ use RecursiveIteratorIterator;
 class TranslationController extends Controller
 {
     protected string $jsTranslationsPath;
+
     protected string $phpTranslationsPath;
 
     public function __construct()
@@ -37,17 +38,17 @@ class TranslationController extends Controller
         $locales = [];
         foreach ($allLocales as $locale) {
             $locales[] = [
-                'code'      => $locale,
-                'name'      => $this->getLocaleName($locale),
-                'has_js'    => isset($jsLocales[$locale]),
-                'has_php'   => isset($phpLocales[$locale]),
-                'js_keys'   => $jsLocales[$locale]['count'] ?? 0,
+                'code' => $locale,
+                'name' => $this->getLocaleName($locale),
+                'has_js' => isset($jsLocales[$locale]),
+                'has_php' => isset($phpLocales[$locale]),
+                'js_keys' => $jsLocales[$locale]['count'] ?? 0,
                 'php_files' => $phpLocales[$locale]['files'] ?? [],
             ];
         }
 
         return response()->json([
-            'locales'        => $locales,
+            'locales' => $locales,
             'default_locale' => config('app.locale', 'en'),
         ]);
     }
@@ -59,7 +60,7 @@ class TranslationController extends Controller
     {
         $filePath = $this->jsTranslationsPath.'/'.$locale.'.js';
 
-        if (!File::exists($filePath)) {
+        if (! File::exists($filePath)) {
             return response()->json(['error' => __('messages.translations.locale_not_found')], 404);
         }
 
@@ -70,10 +71,10 @@ class TranslationController extends Controller
         $flattened = $this->flattenArray($translations);
 
         return response()->json([
-            'locale'       => $locale,
+            'locale' => $locale,
             'translations' => $flattened,
-            'nested'       => $translations,
-            'total_keys'   => count($flattened),
+            'nested' => $translations,
+            'total_keys' => count($flattened),
         ]);
     }
 
@@ -99,13 +100,13 @@ class TranslationController extends Controller
             File::put($filePath, $content);
 
             return response()->json([
-                'message'    => __('messages.translations.updated'),
-                'locale'     => $locale,
+                'message' => __('messages.translations.updated'),
+                'locale' => $locale,
                 'total_keys' => count($translations),
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'error'   => __('messages.translations.save_failed'),
+                'error' => __('messages.translations.save_failed'),
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -118,14 +119,14 @@ class TranslationController extends Controller
     {
         $localePath = $this->phpTranslationsPath.'/'.$locale;
 
-        if (!File::isDirectory($localePath)) {
+        if (! File::isDirectory($localePath)) {
             return response()->json(['error' => __('messages.translations.locale_not_found')], 404);
         }
 
         if ($file) {
             // Get specific file
             $filePath = $localePath.'/'.$file.'.php';
-            if (!File::exists($filePath)) {
+            if (! File::exists($filePath)) {
                 return response()->json(['error' => __('messages.translations.file_not_found')], 404);
             }
 
@@ -133,11 +134,11 @@ class TranslationController extends Controller
             $flattened = $this->flattenArray($translations);
 
             return response()->json([
-                'locale'       => $locale,
-                'file'         => $file,
+                'locale' => $locale,
+                'file' => $file,
                 'translations' => $flattened,
-                'nested'       => $translations,
-                'total_keys'   => count($flattened),
+                'nested' => $translations,
+                'total_keys' => count($flattened),
             ]);
         }
 
@@ -151,15 +152,15 @@ class TranslationController extends Controller
 
                 $files[$fileName] = [
                     'translations' => $flattened,
-                    'nested'       => $translations,
-                    'total_keys'   => count($flattened),
+                    'nested' => $translations,
+                    'total_keys' => count($flattened),
                 ];
             }
         }
 
         return response()->json([
             'locale' => $locale,
-            'files'  => $files,
+            'files' => $files,
         ]);
     }
 
@@ -175,7 +176,7 @@ class TranslationController extends Controller
         $localePath = $this->phpTranslationsPath.'/'.$locale;
 
         // Create locale directory if it doesn't exist
-        if (!File::isDirectory($localePath)) {
+        if (! File::isDirectory($localePath)) {
             File::makeDirectory($localePath, 0755, true);
         }
 
@@ -192,14 +193,14 @@ class TranslationController extends Controller
             File::put($filePath, $content);
 
             return response()->json([
-                'message'    => __('messages.translations.updated'),
-                'locale'     => $locale,
-                'file'       => $file,
+                'message' => __('messages.translations.updated'),
+                'locale' => $locale,
+                'file' => $file,
                 'total_keys' => count($translations),
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'error'   => __('messages.translations.save_failed'),
+                'error' => __('messages.translations.save_failed'),
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -211,10 +212,10 @@ class TranslationController extends Controller
     public function createLocale(Request $request): JsonResponse
     {
         $request->validate([
-            'code'         => 'required|string|size:2|alpha',
-            'copy_from'    => 'nullable|string|size:2',
-            'create_js'    => 'boolean',
-            'create_php'   => 'boolean',
+            'code' => 'required|string|size:2|alpha',
+            'copy_from' => 'nullable|string|size:2',
+            'create_js' => 'boolean',
+            'create_php' => 'boolean',
         ]);
 
         $code = strtolower($request->input('code'));
@@ -229,7 +230,7 @@ class TranslationController extends Controller
             $sourceJsPath = $this->jsTranslationsPath.'/'.$copyFrom.'.js';
             $targetJsPath = $this->jsTranslationsPath.'/'.$code.'.js';
 
-            if (File::exists($sourceJsPath) && !File::exists($targetJsPath)) {
+            if (File::exists($sourceJsPath) && ! File::exists($targetJsPath)) {
                 File::copy($sourceJsPath, $targetJsPath);
                 $created[] = 'js';
             }
@@ -240,7 +241,7 @@ class TranslationController extends Controller
             $sourcePhpPath = $this->phpTranslationsPath.'/'.$copyFrom;
             $targetPhpPath = $this->phpTranslationsPath.'/'.$code;
 
-            if (File::isDirectory($sourcePhpPath) && !File::isDirectory($targetPhpPath)) {
+            if (File::isDirectory($sourcePhpPath) && ! File::isDirectory($targetPhpPath)) {
                 File::copyDirectory($sourcePhpPath, $targetPhpPath);
                 $created[] = 'php';
             }
@@ -248,7 +249,7 @@ class TranslationController extends Controller
 
         return response()->json([
             'message' => __('messages.translations.locale_created'),
-            'code'    => $code,
+            'code' => $code,
             'created' => $created,
         ]);
     }
@@ -259,10 +260,10 @@ class TranslationController extends Controller
     public function addKey(Request $request): JsonResponse
     {
         $request->validate([
-            'type'   => 'required|in:js,php',
-            'key'    => 'required|string',
+            'type' => 'required|in:js,php',
+            'key' => 'required|string',
             'values' => 'required|array',
-            'file'   => 'required_if:type,php|string',
+            'file' => 'required_if:type,php|string',
         ]);
 
         $type = $request->input('type');
@@ -295,7 +296,7 @@ class TranslationController extends Controller
 
         return response()->json([
             'message' => __('messages.translations.key_added'),
-            'key'     => $key,
+            'key' => $key,
             'updated' => $updated,
         ]);
     }
@@ -306,10 +307,10 @@ class TranslationController extends Controller
     public function deleteKey(Request $request): JsonResponse
     {
         $request->validate([
-            'type'    => 'required|in:js,php',
-            'key'     => 'required|string',
+            'type' => 'required|in:js,php',
+            'key' => 'required|string',
             'locales' => 'required|array',
-            'file'    => 'required_if:type,php|string',
+            'file' => 'required_if:type,php|string',
         ]);
 
         $type = $request->input('type');
@@ -342,7 +343,7 @@ class TranslationController extends Controller
 
         return response()->json([
             'message' => __('messages.translations.key_deleted'),
-            'key'     => $key,
+            'key' => $key,
             'deleted' => $deleted,
         ]);
     }
@@ -367,10 +368,10 @@ class TranslationController extends Controller
         return response()->json([
             'missing' => $missing,
             'summary' => [
-                'js_hardcoded'   => count($missing['js']['hardcoded'] ?? []),
-                'js_missing'     => count($missing['js']['missing_keys'] ?? []),
-                'php_hardcoded'  => count($missing['php']['hardcoded'] ?? []),
-                'php_missing'    => count($missing['php']['missing_keys'] ?? []),
+                'js_hardcoded' => count($missing['js']['hardcoded'] ?? []),
+                'js_missing' => count($missing['js']['missing_keys'] ?? []),
+                'php_hardcoded' => count($missing['php']['hardcoded'] ?? []),
+                'php_missing' => count($missing['php']['missing_keys'] ?? []),
             ],
         ]);
     }
@@ -387,7 +388,7 @@ class TranslationController extends Controller
 
         if ($type === 'js') {
             $baseFile = $this->jsTranslationsPath.'/'.$baseLocale.'.js';
-            if (!File::exists($baseFile)) {
+            if (! File::exists($baseFile)) {
                 return response()->json(['error' => __('messages.translations.base_locale_not_found')], 404);
             }
 
@@ -412,16 +413,16 @@ class TranslationController extends Controller
 
                 $comparison[$locale] = [
                     'missing_count' => count($missing),
-                    'extra_count'   => count($extra),
-                    'missing'       => array_values($missing),
-                    'extra'         => array_values($extra),
-                    'completion'    => round((count($localeKeys) / count($baseKeys)) * 100, 1),
+                    'extra_count' => count($extra),
+                    'missing' => array_values($missing),
+                    'extra' => array_values($extra),
+                    'completion' => round((count($localeKeys) / count($baseKeys)) * 100, 1),
                 ];
             }
         } else {
             // PHP comparison
             $basePhpPath = $this->phpTranslationsPath.'/'.$baseLocale;
-            if (!File::isDirectory($basePhpPath)) {
+            if (! File::isDirectory($basePhpPath)) {
                 return response()->json(['error' => __('messages.translations.base_locale_not_found')], 404);
             }
 
@@ -438,7 +439,7 @@ class TranslationController extends Controller
                     $baseFilePath = $basePhpPath.'/'.$file.'.php';
                     $localeFilePath = $this->phpTranslationsPath.'/'.$locale.'/'.$file.'.php';
 
-                    if (!File::exists($baseFilePath)) {
+                    if (! File::exists($baseFilePath)) {
                         continue;
                     }
 
@@ -454,16 +455,16 @@ class TranslationController extends Controller
 
                         $comparison[$locale]['files'][$file] = [
                             'missing_count' => count($missing),
-                            'extra_count'   => count($extra),
-                            'missing'       => array_values($missing),
-                            'extra'         => array_values($extra),
-                            'completion'    => round((count($localeKeys) / max(count($baseKeys), 1)) * 100, 1),
+                            'extra_count' => count($extra),
+                            'missing' => array_values($missing),
+                            'extra' => array_values($extra),
+                            'completion' => round((count($localeKeys) / max(count($baseKeys), 1)) * 100, 1),
                         ];
                     } else {
                         $comparison[$locale]['files'][$file] = [
                             'missing_count' => count($baseKeys),
-                            'missing'       => $baseKeys,
-                            'completion'    => 0,
+                            'missing' => $baseKeys,
+                            'completion' => 0,
                         ];
                     }
                 }
@@ -472,8 +473,8 @@ class TranslationController extends Controller
 
         return response()->json([
             'base_locale' => $baseLocale,
-            'type'        => $type,
-            'comparison'  => $comparison,
+            'type' => $type,
+            'comparison' => $comparison,
         ]);
     }
 
@@ -625,7 +626,7 @@ class TranslationController extends Controller
         foreach ($array as $key => $value) {
             $newKey = $prefix ? $prefix.'.'.$key : $key;
 
-            if (is_array($value) && !empty($value)) {
+            if (is_array($value) && ! empty($value)) {
                 $result = array_merge($result, $this->flattenArray($value, $newKey));
             } else {
                 $result[$newKey] = $value;
@@ -700,16 +701,16 @@ class TranslationController extends Controller
 
         $report = [
             'generated_at' => now()->toISOString(),
-            'format'       => $format,
-            'files'        => [],
-            'summary'      => [
-                'total_files_scanned'      => 0,
-                'files_with_hardcoded'     => 0,
-                'total_hardcoded_strings'  => 0,
+            'format' => $format,
+            'files' => [],
+            'summary' => [
+                'total_files_scanned' => 0,
+                'files_with_hardcoded' => 0,
+                'total_hardcoded_strings' => 0,
                 'missing_translation_keys' => 0,
             ],
             'suggested_translations' => [],
-            'actionable_changes'     => [],
+            'actionable_changes' => [],
         ];
 
         if ($type === 'js' || $type === 'all') {
@@ -772,44 +773,44 @@ class TranslationController extends Controller
             // Vue template attributes
             [
                 'pattern' => '/<v-[a-z-]+[^>]*\s(label|title|text|placeholder|hint|message|prepend-inner-icon-text|append-inner-icon-text)="([^"]+)"/',
-                'type'    => 'vue_attribute',
+                'type' => 'vue_attribute',
                 'capture' => 2,
-                'attr'    => 1,
+                'attr' => 1,
             ],
             // Vue template content (text between tags)
             [
                 'pattern' => '/>([A-Z][^<>{}\n]{2,50})</s',
-                'type'    => 'vue_content',
+                'type' => 'vue_content',
                 'capture' => 1,
             ],
             // JS object properties
             [
                 'pattern' => '/(?:label|title|placeholder|hint|message|text|description|buttonText|headerText)\s*:\s*[\'"]([^\'"]{3,100})[\'"]/',
-                'type'    => 'js_property',
+                'type' => 'js_property',
                 'capture' => 1,
             ],
             // Alert/snackbar messages
             [
                 'pattern' => '/(?:showSnackbar|showMessage|showError|showSuccess|alert)\s*\(\s*[\'"]([^\'"]{3,100})[\'"]/',
-                'type'    => 'message_call',
+                'type' => 'message_call',
                 'capture' => 1,
             ],
             // v-btn content
             [
                 'pattern' => '/<v-btn[^>]*>([A-Za-z][^<>{}\n]{1,30})<\/v-btn>/',
-                'type'    => 'button_text',
+                'type' => 'button_text',
                 'capture' => 1,
             ],
             // v-card-title content
             [
                 'pattern' => '/<v-card-title[^>]*>([^<>{}\n]{3,50})<\/v-card-title>/',
-                'type'    => 'card_title',
+                'type' => 'card_title',
                 'capture' => 1,
             ],
             // Heading content
             [
                 'pattern' => '/<h[1-6][^>]*>([^<>{}\n]{3,100})<\/h[1-6]>/',
-                'type'    => 'heading',
+                'type' => 'heading',
                 'capture' => 1,
             ],
         ];
@@ -833,7 +834,7 @@ class TranslationController extends Controller
             foreach ($translationPatterns as $pattern) {
                 preg_match_all($pattern, $content, $matches);
                 foreach ($matches[1] as $key) {
-                    if (!isset($usedKeys[$key])) {
+                    if (! isset($usedKeys[$key])) {
                         $usedKeys[$key] = [];
                     }
                     $usedKeys[$key][] = $relativePath;
@@ -866,11 +867,11 @@ class TranslationController extends Controller
                             $suggestedKey = $this->generateTranslationKey($relativePath, $text, $patternInfo['type']);
 
                             $fileHardcoded[] = [
-                                'line'          => $lineNumber,
-                                'column'        => $match[1] ?? 0,
-                                'text'          => $text,
-                                'type'          => $patternInfo['type'],
-                                'context'       => trim($line),
+                                'line' => $lineNumber,
+                                'column' => $match[1] ?? 0,
+                                'text' => $text,
+                                'type' => $patternInfo['type'],
+                                'context' => trim($line),
                                 'suggested_key' => $suggestedKey,
                                 'suggested_fix' => $this->generateSuggestedFix($line, $text, $suggestedKey, $patternInfo['type']),
                             ];
@@ -881,28 +882,28 @@ class TranslationController extends Controller
                             ];
 
                             $actionableChanges[] = [
-                                'file'            => $relativePath,
-                                'file_full_path'  => $filePath,
-                                'line'            => $lineNumber,
-                                'original'        => trim($line),
-                                'text'            => $text,
-                                'suggested_key'   => $suggestedKey,
-                                'suggested_fix'   => $this->generateSuggestedFix($line, $text, $suggestedKey, $patternInfo['type']),
-                                'type'            => 'js',
+                                'file' => $relativePath,
+                                'file_full_path' => $filePath,
+                                'line' => $lineNumber,
+                                'original' => trim($line),
+                                'text' => $text,
+                                'suggested_key' => $suggestedKey,
+                                'suggested_fix' => $this->generateSuggestedFix($line, $text, $suggestedKey, $patternInfo['type']),
+                                'type' => 'js',
                             ];
                         }
                     }
                 }
             }
 
-            if (!empty($fileHardcoded)) {
+            if (! empty($fileHardcoded)) {
                 $filesWithHardcoded++;
                 $totalHardcoded += count($fileHardcoded);
 
                 $files[] = [
-                    'path'      => $relativePath,
+                    'path' => $relativePath,
                     'full_path' => $filePath,
-                    'type'      => 'vue/js',
+                    'type' => 'vue/js',
                     'hardcoded' => $fileHardcoded,
                 ];
             }
@@ -920,22 +921,22 @@ class TranslationController extends Controller
         // Find missing keys
         $missingKeys = [];
         foreach ($usedKeys as $key => $keyFiles) {
-            if (!isset($enTranslations[$key])) {
+            if (! isset($enTranslations[$key])) {
                 $missingKeys[$key] = $keyFiles;
             }
         }
 
         return [
-            'files'   => $files,
+            'files' => $files,
             'summary' => [
-                'total_files'          => count($vueFiles),
+                'total_files' => count($vueFiles),
                 'files_with_hardcoded' => $filesWithHardcoded,
-                'total_hardcoded'      => $totalHardcoded,
-                'missing_keys'         => count($missingKeys),
+                'total_hardcoded' => $totalHardcoded,
+                'missing_keys' => count($missingKeys),
             ],
-            'missing_keys'            => $missingKeys,
-            'suggested_translations'  => $suggestedTranslations,
-            'actionable_changes'      => $actionableChanges,
+            'missing_keys' => $missingKeys,
+            'suggested_translations' => $suggestedTranslations,
+            'actionable_changes' => $actionableChanges,
         ];
     }
 
@@ -959,31 +960,31 @@ class TranslationController extends Controller
             // Response messages
             [
                 'pattern' => '/return\s+response\(\)\s*->\s*json\(\s*\[\s*[\'"](?:message|error|success)[\'"]\s*=>\s*[\'"]([^\'"]{3,100})[\'"]/',
-                'type'    => 'response_message',
+                'type' => 'response_message',
                 'capture' => 1,
             ],
             // Throw exceptions with messages
             [
                 'pattern' => '/throw\s+new\s+\w+Exception\(\s*[\'"]([^\'"]{3,100})[\'"]/',
-                'type'    => 'exception_message',
+                'type' => 'exception_message',
                 'capture' => 1,
             ],
             // Validation messages
             [
                 'pattern' => '/[\'"](?:required|min|max|email|unique)[\'"](?:\s*=>\s*|\s*,\s*)[\'"]([^\'"]{3,100})[\'"]/',
-                'type'    => 'validation_message',
+                'type' => 'validation_message',
                 'capture' => 1,
             ],
             // Flash messages
             [
                 'pattern' => '/(?:flash|with)\([\'"](?:success|error|message|warning)[\'"]\s*,\s*[\'"]([^\'"]{3,100})[\'"]/',
-                'type'    => 'flash_message',
+                'type' => 'flash_message',
                 'capture' => 1,
             ],
             // Array messages
             [
                 'pattern' => '/[\'"]message[\'"]\s*=>\s*[\'"]([^\'"]{3,100})[\'"]/',
-                'type'    => 'array_message',
+                'type' => 'array_message',
                 'capture' => 1,
             ],
         ];
@@ -1008,7 +1009,7 @@ class TranslationController extends Controller
             foreach ($translationPatterns as $pattern) {
                 preg_match_all($pattern, $content, $matches);
                 foreach ($matches[1] as $key) {
-                    if (!isset($usedKeys[$key])) {
+                    if (! isset($usedKeys[$key])) {
                         $usedKeys[$key] = [];
                     }
                     $usedKeys[$key][] = $relativePath;
@@ -1036,10 +1037,10 @@ class TranslationController extends Controller
                             $suggestedKey = $this->generatePhpTranslationKey($relativePath, $text, $patternInfo['type']);
 
                             $fileHardcoded[] = [
-                                'line'          => $lineNumber,
-                                'text'          => $text,
-                                'type'          => $patternInfo['type'],
-                                'context'       => trim($line),
+                                'line' => $lineNumber,
+                                'text' => $text,
+                                'type' => $patternInfo['type'],
+                                'context' => trim($line),
                                 'suggested_key' => $suggestedKey,
                                 'suggested_fix' => str_replace("'{$text}'", "__('messages.{$suggestedKey}')", $line),
                             ];
@@ -1050,28 +1051,28 @@ class TranslationController extends Controller
                             ];
 
                             $actionableChanges[] = [
-                                'file'           => $relativePath,
+                                'file' => $relativePath,
                                 'file_full_path' => $filePath,
-                                'line'           => $lineNumber,
-                                'original'       => trim($line),
-                                'text'           => $text,
-                                'suggested_key'  => 'messages.'.$suggestedKey,
-                                'suggested_fix'  => str_replace("'{$text}'", "__('messages.{$suggestedKey}')", trim($line)),
-                                'type'           => 'php',
+                                'line' => $lineNumber,
+                                'original' => trim($line),
+                                'text' => $text,
+                                'suggested_key' => 'messages.'.$suggestedKey,
+                                'suggested_fix' => str_replace("'{$text}'", "__('messages.{$suggestedKey}')", trim($line)),
+                                'type' => 'php',
                             ];
                         }
                     }
                 }
             }
 
-            if (!empty($fileHardcoded)) {
+            if (! empty($fileHardcoded)) {
                 $filesWithHardcoded++;
                 $totalHardcoded += count($fileHardcoded);
 
                 $files[] = [
-                    'path'      => $relativePath,
+                    'path' => $relativePath,
                     'full_path' => $filePath,
-                    'type'      => 'php',
+                    'type' => 'php',
                     'hardcoded' => $fileHardcoded,
                 ];
             }
@@ -1094,22 +1095,22 @@ class TranslationController extends Controller
 
         $missingKeys = [];
         foreach ($usedKeys as $key => $keyFiles) {
-            if (!isset($enTranslations[$key])) {
+            if (! isset($enTranslations[$key])) {
                 $missingKeys[$key] = $keyFiles;
             }
         }
 
         return [
-            'files'   => $files,
+            'files' => $files,
             'summary' => [
-                'total_files'          => count($allFiles),
+                'total_files' => count($allFiles),
                 'files_with_hardcoded' => $filesWithHardcoded,
-                'total_hardcoded'      => $totalHardcoded,
-                'missing_keys'         => count($missingKeys),
+                'total_hardcoded' => $totalHardcoded,
+                'missing_keys' => count($missingKeys),
             ],
-            'missing_keys'           => $missingKeys,
+            'missing_keys' => $missingKeys,
             'suggested_translations' => $suggestedTranslations,
-            'actionable_changes'     => $actionableChanges,
+            'actionable_changes' => $actionableChanges,
         ];
     }
 
@@ -1208,11 +1209,11 @@ class TranslationController extends Controller
 
         // Add type suffix for context
         $typeSuffix = match ($type) {
-            'button_text'   => '_btn',
-            'card_title'    => '_title',
+            'button_text' => '_btn',
+            'card_title' => '_title',
             'vue_attribute' => '_label',
-            'heading'       => '_heading',
-            default         => '',
+            'heading' => '_heading',
+            default => '',
         };
 
         return $prefix.'.'.$fileName.'.'.$key.$typeSuffix;
@@ -1228,11 +1229,11 @@ class TranslationController extends Controller
         $fileName = pathinfo(end($pathParts), PATHINFO_FILENAME);
 
         $prefix = match ($type) {
-            'response_message'   => 'success',
-            'exception_message'  => 'error',
+            'response_message' => 'success',
+            'exception_message' => 'error',
             'validation_message' => 'validation',
-            'flash_message'      => 'flash',
-            default              => 'general',
+            'flash_message' => 'flash',
+            default => 'general',
         };
 
         $key = strtolower($text);
@@ -1298,7 +1299,7 @@ class TranslationController extends Controller
         $groupedChanges = [];
         foreach ($report['actionable_changes'] as $change) {
             $file = $change['file'];
-            if (!isset($groupedChanges[$file])) {
+            if (! isset($groupedChanges[$file])) {
                 $groupedChanges[$file] = [];
             }
             $groupedChanges[$file][] = $change;
@@ -1358,7 +1359,7 @@ class TranslationController extends Controller
             foreach ($translationPatterns as $pattern) {
                 preg_match_all($pattern, $content, $matches);
                 foreach ($matches[1] as $key) {
-                    if (!isset($usedKeys[$key])) {
+                    if (! isset($usedKeys[$key])) {
                         $usedKeys[$key] = [];
                     }
                     $usedKeys[$key][] = $relativePath;
@@ -1375,8 +1376,8 @@ class TranslationController extends Controller
                     }
 
                     $hardcoded[] = [
-                        'file'  => $relativePath,
-                        'text'  => $match,
+                        'file' => $relativePath,
+                        'text' => $match,
                     ];
                 }
             }
@@ -1394,15 +1395,15 @@ class TranslationController extends Controller
         // Find keys used in code but not in translations
         $missingKeys = [];
         foreach ($usedKeys as $key => $files) {
-            if (!isset($enTranslations[$key])) {
+            if (! isset($enTranslations[$key])) {
                 $missingKeys[$key] = $files;
             }
         }
 
         return [
-            'used_keys'    => array_keys($usedKeys),
+            'used_keys' => array_keys($usedKeys),
             'missing_keys' => $missingKeys,
-            'hardcoded'    => array_slice($hardcoded, 0, 100), // Limit to 100
+            'hardcoded' => array_slice($hardcoded, 0, 100), // Limit to 100
         ];
     }
 
@@ -1434,7 +1435,7 @@ class TranslationController extends Controller
             foreach ($translationPatterns as $pattern) {
                 preg_match_all($pattern, $content, $matches);
                 foreach ($matches[1] as $key) {
-                    if (!isset($usedKeys[$key])) {
+                    if (! isset($usedKeys[$key])) {
                         $usedKeys[$key] = [];
                     }
                     $usedKeys[$key][] = $relativePath;
@@ -1460,15 +1461,15 @@ class TranslationController extends Controller
         // Find keys used in code but not in translations
         $missingKeys = [];
         foreach ($usedKeys as $key => $files) {
-            if (!isset($enTranslations[$key])) {
+            if (! isset($enTranslations[$key])) {
                 $missingKeys[$key] = $files;
             }
         }
 
         return [
-            'used_keys'    => array_keys($usedKeys),
+            'used_keys' => array_keys($usedKeys),
             'missing_keys' => $missingKeys,
-            'hardcoded'    => $hardcoded,
+            'hardcoded' => $hardcoded,
         ];
     }
 
@@ -1477,7 +1478,7 @@ class TranslationController extends Controller
      */
     protected function getFilesWithExtension(string $directory, array $extensions): array
     {
-        if (!File::isDirectory($directory)) {
+        if (! File::isDirectory($directory)) {
             return [];
         }
 

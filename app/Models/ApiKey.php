@@ -21,10 +21,10 @@ class ApiKey extends Model
     ];
 
     protected $casts = [
-        'abilities'     => 'array',
-        'last_used_at'  => 'datetime',
-        'expires_at'    => 'datetime',
-        'is_active'     => 'boolean',
+        'abilities' => 'array',
+        'last_used_at' => 'datetime',
+        'expires_at' => 'datetime',
+        'is_active' => 'boolean',
         'request_count' => 'integer',
     ];
 
@@ -49,8 +49,8 @@ class ApiKey extends Model
         $secret = Str::random(48);
 
         return [
-            'key'         => $key,
-            'secret'      => $secret,
+            'key' => $key,
+            'secret' => $secret,
             'secret_hash' => hash('sha256', $secret),
         ];
     }
@@ -68,7 +68,7 @@ class ApiKey extends Model
      */
     public function isValid(): bool
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return false;
         }
 

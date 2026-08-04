@@ -13,7 +13,7 @@ class ImageOptimizationServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ImageOptimizationService::class, function ($app) {
-            return new ImageOptimizationService();
+            return new ImageOptimizationService;
         });
     }
 

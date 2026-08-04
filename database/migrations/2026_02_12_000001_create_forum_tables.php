@@ -47,7 +47,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            //$table->index(['forum_id', 'is_pinned', 'last_post_at']);
+            // $table->index(['forum_id', 'is_pinned', 'last_post_at']);
             $table->index(['taxonomy_id', 'is_pinned', 'last_post_at']);
             $table->index(['user_id', 'created_at']);
             $table->index('last_post_at');

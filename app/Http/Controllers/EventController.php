@@ -11,8 +11,8 @@ use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use App\Models\User;
 use DateTime;
-//use Lecturize\Taxonomies\Models\Taxonomy;
-//use Lecturize\Taxonomies\Models\Term;
+// use Lecturize\Taxonomies\Models\Taxonomy;
+// use Lecturize\Taxonomies\Models\Term;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -36,7 +36,7 @@ class EventController extends Controller
     public function index()
     {
         $events = Event::all();
-//        $events = DB::select('select * from events');
+        //        $events = DB::select('select * from events');
         $eventTypes = EventType::all()->keyBy('id')->map(function (EventType $type) {
             $modified = clone $type;
             $modified->options = json_decode($modified->options);
@@ -70,44 +70,44 @@ class EventController extends Controller
             $start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
             $end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
 
-//            $extendedProps = [
-//                'calendar' => 'Treffen'
-//            ];
+            //            $extendedProps = [
+            //                'calendar' => 'Treffen'
+            //            ];
 
-//            $eventType = $event->type()->first();
+            //            $eventType = $event->type()->first();
 
             $originDate = [
                 'startDate' => $event->startDate,
                 'startTime' => $event->startTime,
-                'endDate'   => $event->endDate,
-                'endTime'   => $event->endTime,
-                'start'     => $start,
-                'end'       => $end, ];
+                'endDate' => $event->endDate,
+                'endTime' => $event->endTime,
+                'start' => $start,
+                'end' => $end, ];
 
             // Handle null event_type_id for legacy events
             $eventType = $event->event_type_id ? ($eventTypes[$event->event_type_id] ?? null) : null;
 
             return [
-                'id'          => $event->id,
-                'title'       => $event->title,
+                'id' => $event->id,
+                'title' => $event->title,
                 'description' => $event->description,
-                'user_id'     => $event->user_id,
-                'start'       => $start,
-                'end'         => $end,
-                'originDate'  => $originDate,
-                'location'                  => '',
-                'type'                      => $eventType['name'] ?? null,
-                'event_type_id'             => $event->event_type_id,
-                'allDay'                    => ($event->startTime === null) ? true : false,
-                'colorName'                 => $eventType['color'] ?? null,
-                'color'                     => $eventType['color'] ?? null,
-                'event_profile_id'          => $eventType['event_profile_id'] ?? null,
+                'user_id' => $event->user_id,
+                'start' => $start,
+                'end' => $end,
+                'originDate' => $originDate,
+                'location' => '',
+                'type' => $eventType['name'] ?? null,
+                'event_type_id' => $event->event_type_id,
+                'allDay' => ($event->startTime === null) ? true : false,
+                'colorName' => $eventType['color'] ?? null,
+                'color' => $eventType['color'] ?? null,
+                'event_profile_id' => $eventType['event_profile_id'] ?? null,
             ];
         });
 
         return response()->json([
             'data' => [
-                'types'  => $eventTypes,
+                'types' => $eventTypes,
                 'events' => $eventsMapped, ], ]);
     }
 
@@ -122,8 +122,7 @@ class EventController extends Controller
             'image' => 'nullable|string|max:500',
         ]);
 
-
-        $event = new Event();
+        $event = new Event;
         $event->title = request()->get('title');
         $event->description = request()->get('description');
 
@@ -138,7 +137,7 @@ class EventController extends Controller
         $user = auth()->user();
         $event->user_id = $user->id;
 
-//        $event->type = request()->get('type');
+        //        $event->type = request()->get('type');
 
         if (request()->filled('start') && request()->filled('end')) {
             $event->startDate = date('Y-m-d', strtotime(request()->get('start')));
@@ -173,14 +172,13 @@ class EventController extends Controller
         return response()->json([
             'data' => [
                 'message' => __('messages.events.created'),
-                'event'   => $event, ], ]);
+                'event' => $event, ], ]);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param int $id
-     *
+     * @param  int  $id
      * @return JsonResponse
      */
     public function show(Event $event, $slug = null)
@@ -196,11 +194,11 @@ class EventController extends Controller
 
             if ($guestRecord !== null) {
                 $isGoing = (object) [
-                    'id'         => $guestRecord->pivot->id ?? null,
-                    'event_id'   => $guestRecord->pivot->event_id ?? $event->id,
-                    'user_id'    => $user->id,
-                    'type'       => $guestRecord->pivot->type ?? null,
-                    'profile'    => json_decode($guestRecord->pivot->profile ?? '{}'),
+                    'id' => $guestRecord->pivot->id ?? null,
+                    'event_id' => $guestRecord->pivot->event_id ?? $event->id,
+                    'user_id' => $user->id,
+                    'type' => $guestRecord->pivot->type ?? null,
+                    'profile' => json_decode($guestRecord->pivot->profile ?? '{}'),
                     'created_at' => $guestRecord->pivot->created_at ?? null,
                     'updated_at' => $guestRecord->pivot->updated_at ?? null,
                 ];
@@ -237,9 +235,9 @@ class EventController extends Controller
             $endTemp = $event->endDate.' 23:59:59';
         }
 
-//        $start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
-        ///        $end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
-//
+        //        $start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
+        // /        $end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
+        //
 
         $event->start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
         $event->end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
@@ -257,10 +255,10 @@ class EventController extends Controller
         }
 
         $data = [
-            'event'   => $event,
+            'event' => $event,
             'isGoing' => $isGoing,
             'answers' => $answers,
-            'guests'  => $eventGuests,
+            'guests' => $eventGuests,
         ];
 
         return response()->json($data);
@@ -278,7 +276,7 @@ class EventController extends Controller
         // Authorization check - only owner or admin can update
         /** @var User $user */
         $user = auth()->user();
-        if ($event->user_id !== $user->id && !$user->can('manage-posts')) {
+        if ($event->user_id !== $user->id && ! $user->can('manage-posts')) {
             return response()->json(['message' => __('messages.events.unauthorized')], 403);
         }
 
@@ -340,8 +338,7 @@ class EventController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param int $id
-     *
+     * @param  int  $id
      * @return JsonResponse
      */
     public function destroy(Event $event)
@@ -349,7 +346,7 @@ class EventController extends Controller
         // Authorization check - only owner or admin can delete
         /** @var User $user */
         $user = auth()->user();
-        if ($event->user_id !== $user->id && !$user->can('manage-posts')) {
+        if ($event->user_id !== $user->id && ! $user->can('manage-posts')) {
             return response()->json(['message' => __('messages.events.unauthorized')], 403);
         }
 
@@ -360,7 +357,7 @@ class EventController extends Controller
 
     public function isGoing(Event $event, $answer)
     {
-        //ToDo get just the guests???
+        // ToDo get just the guests???
         /** @var User $user */
         $user = auth()->user();
 
@@ -422,7 +419,7 @@ class EventController extends Controller
                         $parentId = null;
 
                         // Check if item has options property
-                        if (!isset($item->options)) {
+                        if (! isset($item->options)) {
                             continue;
                         }
 
@@ -432,7 +429,7 @@ class EventController extends Controller
                         }
 
                         // Skip if the field doesn't exist in the submitted data
-                        if (!isset($json[$item->name]) || !is_array($json[$item->name])) {
+                        if (! isset($json[$item->name]) || ! is_array($json[$item->name])) {
                             continue;
                         }
 
@@ -449,9 +446,9 @@ class EventController extends Controller
                                 }
 
                                 $jsonTerm = [
-                                    'id'        => $term->id,
-                                    'title'     => $term->title,
-                                    'slug'      => $term->slug,
+                                    'id' => $term->id,
+                                    'title' => $term->title,
+                                    'slug' => $term->slug,
                                     'parent_id' => $parentId,
                                 ];
 
@@ -503,11 +500,11 @@ class EventController extends Controller
         // First, validate the request
         $request->validate([
             'guestId' => 'required|integer',
-            'action'  => 'required|string|in:approve,reject',
+            'action' => 'required|string|in:approve,reject',
         ]);
 
         // Then check authorization
-        if ($event->user_id !== auth()->id() && !auth()->user()->can('manage-posts')) {
+        if ($event->user_id !== auth()->id() && ! auth()->user()->can('manage-posts')) {
             return response()->json(['message' => __('messages.events.unauthorized_approve')], 403);
         }
 
@@ -517,7 +514,7 @@ class EventController extends Controller
             ->first();
 
         // If no guest is found, return a 404 error
-        if (!$guest) {
+        if (! $guest) {
             return response()->json(['message' => __('messages.events.guest_not_found')], 404);
         }
 

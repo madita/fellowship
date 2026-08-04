@@ -16,7 +16,7 @@ class StatusCommentController extends Controller
     {
         $user = Auth::user();
 
-        if (!$comment->canEdit($user)) {
+        if (! $comment->canEdit($user)) {
             abort(403, 'You do not have permission to edit this comment.');
         }
 
@@ -36,7 +36,7 @@ class StatusCommentController extends Controller
     {
         $user = Auth::user();
 
-        if (!$comment->canDelete($user)) {
+        if (! $comment->canDelete($user)) {
             abort(403, 'You do not have permission to delete this comment.');
         }
 

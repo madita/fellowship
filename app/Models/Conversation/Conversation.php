@@ -15,8 +15,8 @@ class Conversation extends Model
 
     protected $casts = [
         'last_message_at' => 'datetime',
-        'created_at'      => 'datetime',
-        'updated_at'      => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function getRouteKeyName()

@@ -4,8 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\CacheService;
+use App\Services\ImageOptimizationService;
+use App\Services\LazyLoadingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -39,7 +44,7 @@ class SettingsController extends Controller
         }
 
         return response()->json([
-            'providers'          => $providers,
+            'providers' => $providers,
             'allow_registration' => Setting::get('oauth_allow_registration', true),
         ]);
     }
@@ -218,9 +223,9 @@ class SettingsController extends Controller
     public function serverInfo(): JsonResponse
     {
         return response()->json([
-            'environment'     => config('app.env', 'production'),
-            'debug_mode'      => config('app.debug', false),
-            'php_version'     => PHP_VERSION,
+            'environment' => config('app.env', 'production'),
+            'debug_mode' => config('app.debug', false),
+            'php_version' => PHP_VERSION,
             'laravel_version' => app()->version(),
         ]);
     }
@@ -231,8 +236,8 @@ class SettingsController extends Controller
     public function performanceSettings(): JsonResponse
     {
         return response()->json([
-            'lazy_loading'       => \App\Services\LazyLoadingService::getSettings(),
-            'image_optimization' => \App\Services\ImageOptimizationService::getSettings(),
+            'lazy_loading' => LazyLoadingService::getSettings(),
+            'image_optimization' => ImageOptimizationService::getSettings(),
         ]);
     }
 
@@ -288,16 +293,16 @@ class SettingsController extends Controller
     public function update(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'settings'         => 'required|array',
-            'settings.*.key'   => 'required|string',
+            'settings' => 'required|array',
+            'settings.*.key' => 'required|string',
             'settings.*.value' => 'nullable',
-            'settings.*.type'  => 'sometimes|string|in:string,boolean,integer,float,file,json',
+            'settings.*.type' => 'sometimes|string|in:string,boolean,integer,float,file,json',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -316,7 +321,7 @@ class SettingsController extends Controller
 
             // Email validation (only if not empty)
             if (in_array($key, ['contact_email', 'admin_email', 'support_email', 'email_sender_address'])) {
-                if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                if (! filter_var($value, FILTER_VALIDATE_EMAIL)) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid email address."];
                 }
             }
@@ -324,7 +329,7 @@ class SettingsController extends Controller
             // URL validation for external URLs that must be full URLs
             $requiresFullUrl = ['site_url', 'cdn_url', 'canonical_url'];
             if (in_array($key, $requiresFullUrl)) {
-                if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                if (! filter_var($value, FILTER_VALIDATE_URL)) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid URL (e.g., https://example.com)."];
                 }
             }
@@ -336,7 +341,7 @@ class SettingsController extends Controller
                 $isRelativePath = str_starts_with($value, '/');
                 $isFullUrl = filter_var($value, FILTER_VALIDATE_URL);
 
-                if (!$isRelativePath && !$isFullUrl) {
+                if (! $isRelativePath && ! $isFullUrl) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid URL (https://example.com/privacy) or path (/privacy-policy)."];
                 }
             }
@@ -352,7 +357,7 @@ class SettingsController extends Controller
                 'warning_color_dark', 'info_color_dark', 'success_color_dark',
             ];
             if (in_array($key, $colorFields)) {
-                if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $value)) {
+                if (! preg_match('/^#[0-9A-Fa-f]{6}$/', $value)) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid hex color (e.g., #1976D2)."];
                 }
             }
@@ -365,19 +370,19 @@ class SettingsController extends Controller
                 'sandbox_autosave_interval',
             ])) {
                 if ($key === 'sandbox_autosave_interval') {
-                    if (!ctype_digit((string) $value) || (int) $value < 5 || (int) $value > 3600) {
+                    if (! ctype_digit((string) $value) || (int) $value < 5 || (int) $value > 3600) {
                         $valueErrors["settings.{$index}.value"] = ["The {$key} must be an integer between 5 and 3600."];
                     }
-                } elseif (!is_numeric($value) || $value < 0) {
+                } elseif (! is_numeric($value) || $value < 0) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a positive number."];
                 }
             }
         }
 
-        if (!empty($valueErrors)) {
+        if (! empty($valueErrors)) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $valueErrors,
+                'errors' => $valueErrors,
             ], 422);
         }
 
@@ -405,7 +410,7 @@ class SettingsController extends Controller
         Setting::clearCache();
 
         return response()->json([
-            'message'  => __('messages.settings.updated'),
+            'message' => __('messages.settings.updated'),
             'settings' => Setting::getAllSettings(),
         ]);
     }
@@ -422,14 +427,14 @@ class SettingsController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         try {
             $file = $request->file('logo');
 
-            if (!$file || !$file->isValid()) {
+            if (! $file || ! $file->isValid()) {
                 return response()->json([
                     'message' => __('messages.media.invalid_upload'),
                 ], 422);
@@ -454,14 +459,14 @@ class SettingsController extends Controller
             Setting::clearCache();
 
             return response()->json([
-                'message'   => __('messages.settings.logo_uploaded'),
-                'logo_url'  => Storage::url($path),
+                'message' => __('messages.settings.logo_uploaded'),
+                'logo_url' => Storage::url($path),
                 'logo_path' => $path,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => __('messages.settings.logo_upload_failed'),
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -487,7 +492,7 @@ class SettingsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => __('messages.settings.logo_delete_failed'),
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -499,13 +504,13 @@ class SettingsController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg,ico,webp|max:2048',
-            'key'   => 'required|string|in:logo_light,logo_dark,favicon,app_icon,og_image,background_light,background_dark',
+            'key' => 'required|string|in:logo_light,logo_dark,favicon,app_icon,og_image,background_light,background_dark',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -513,7 +518,7 @@ class SettingsController extends Controller
             $file = $request->file('image');
             $key = $request->input('key');
 
-            if (!$file || !$file->isValid()) {
+            if (! $file || ! $file->isValid()) {
                 return response()->json([
                     'message' => __('messages.media.invalid_upload'),
                 ], 422);
@@ -524,10 +529,10 @@ class SettingsController extends Controller
                 $mimeType = $file->getMimeType();
                 $validMimes = ['image/png', 'image/webp', 'image/svg+xml'];
 
-                if (!in_array($mimeType, $validMimes)) {
+                if (! in_array($mimeType, $validMimes)) {
                     return response()->json([
                         'message' => __('messages.error.validation'),
-                        'errors'  => [
+                        'errors' => [
                             'image' => [__('messages.settings.pwa_icon_format')],
                         ],
                     ], 422);
@@ -538,10 +543,10 @@ class SettingsController extends Controller
                     $imagePath = $file->getRealPath() ?: $file->getPathname();
                     $imageInfo = @getimagesize($imagePath);
 
-                    if (!$imageInfo) {
+                    if (! $imageInfo) {
                         return response()->json([
                             'message' => __('messages.error.validation'),
-                            'errors'  => [
+                            'errors' => [
                                 'image' => [__('messages.settings.pwa_icon_dimensions_error')],
                             ],
                         ], 422);
@@ -554,7 +559,7 @@ class SettingsController extends Controller
                     if ($width < 144 || $height < 144) {
                         return response()->json([
                             'message' => __('messages.error.validation'),
-                            'errors'  => [
+                            'errors' => [
                                 'image' => [__('messages.settings.pwa_icon_min_size', ['size' => "{$width}×{$height}"])],
                             ],
                         ], 422);
@@ -565,7 +570,7 @@ class SettingsController extends Controller
                     if ($aspectRatio > 1.1) {
                         return response()->json([
                             'message' => __('messages.error.validation'),
-                            'errors'  => [
+                            'errors' => [
                                 'image' => [__('messages.settings.pwa_icon_square', ['size' => "{$width}×{$height}"])],
                             ],
                         ], 422);
@@ -596,9 +601,9 @@ class SettingsController extends Controller
             $optimizableExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
             if (in_array(strtolower($extension), $optimizableExtensions)) {
                 $fullPath = Storage::disk('public')->path($path);
-                \App\Services\ImageOptimizationService::optimize($fullPath, [
-                    'quality'    => 85,
-                    'max_width'  => $key === 'background_light' || $key === 'background_dark' ? 1920 : null,
+                ImageOptimizationService::optimize($fullPath, [
+                    'quality' => 85,
+                    'max_width' => $key === 'background_light' || $key === 'background_dark' ? 1920 : null,
                     'max_height' => $key === 'background_light' || $key === 'background_dark' ? 1080 : null,
                 ]);
             }
@@ -609,13 +614,13 @@ class SettingsController extends Controller
 
             return response()->json([
                 'message' => __('messages.settings.image_uploaded'),
-                'url'     => Storage::url($path),
-                'path'    => $path,
+                'url' => Storage::url($path),
+                'path' => $path,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => __('messages.settings.image_upload_failed'),
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -632,7 +637,7 @@ class SettingsController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -653,7 +658,7 @@ class SettingsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => __('messages.settings.image_delete_failed'),
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -670,7 +675,7 @@ class SettingsController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -678,7 +683,7 @@ class SettingsController extends Controller
             $recipient = $request->input('recipient');
             $appName = Setting::get('app_name', config('app.name'));
 
-            \Illuminate\Support\Facades\Mail::raw(
+            Mail::raw(
                 "This is a test email from {$appName}.\n\n".
                 "If you received this email, your email configuration is working correctly.\n\n".
                 'Sent at: '.now()->format('Y-m-d H:i:s'),
@@ -694,7 +699,7 @@ class SettingsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => __('messages.settings.test_email_failed'),
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -715,24 +720,24 @@ class SettingsController extends Controller
         $supportsTags = false;
 
         try {
-            $supportsTags = \Illuminate\Support\Facades\Cache::supportsTags();
+            $supportsTags = Cache::supportsTags();
         } catch (\Exception $e) {
             // Driver doesn't support tags
         }
 
         return response()->json([
-            'enabled'          => $cacheEnabled,
+            'enabled' => $cacheEnabled,
             'lifetime_seconds' => $cacheLifetime,
             'lifetime_minutes' => $cacheLifetime / 60,
-            'driver'           => $cacheStore,
-            'supports_tags'    => $supportsTags,
-            'cached_types'     => [
+            'driver' => $cacheStore,
+            'supports_tags' => $supportsTags,
+            'cached_types' => [
                 'settings' => 'Application settings',
-                'pages'    => 'Static pages',
-                'wiki'     => 'Wiki articles',
-                'posts'    => 'Blog posts',
-                'widgets'  => 'Homepage & footer widgets',
-                'http'     => 'API responses',
+                'pages' => 'Static pages',
+                'wiki' => 'Wiki articles',
+                'posts' => 'Blog posts',
+                'widgets' => 'Homepage & footer widgets',
+                'http' => 'API responses',
             ],
         ]);
     }
@@ -746,7 +751,7 @@ class SettingsController extends Controller
 
         try {
             $cleared = [];
-            $cacheService = new \App\Services\CacheService();
+            $cacheService = new CacheService;
 
             switch ($type) {
                 case 'settings':
@@ -772,7 +777,7 @@ class SettingsController extends Controller
                     break;
 
                 case 'application':
-                    \Illuminate\Support\Facades\Cache::flush();
+                    Cache::flush();
                     $cleared[] = 'application cache';
                     break;
 
@@ -809,7 +814,7 @@ class SettingsController extends Controller
                     \Artisan::call('view:clear');
                     \Artisan::call('route:clear');
                     \Artisan::call('config:clear');
-                    \Illuminate\Support\Facades\Cache::flush();
+                    Cache::flush();
                     $cleared = ['settings', 'views', 'routes', 'config', 'application cache', 'http responses'];
                     break;
             }
@@ -821,7 +826,7 @@ class SettingsController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => __('messages.settings.cache_clear_failed'),
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -832,7 +837,7 @@ class SettingsController extends Controller
     protected function clearHttpCache(): void
     {
         // Clear all http_cache keys
-        $cache = \Illuminate\Support\Facades\Cache::getStore();
+        $cache = Cache::getStore();
 
         // If using Redis or similar, we can use pattern matching
         if (method_exists($cache, 'connection')) {

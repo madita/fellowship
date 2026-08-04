@@ -10,7 +10,7 @@ class RevisionListener
     /**
      * Handle created event.
      *
-     * @param Model $revisioned
+     * @param  Model  $revisioned
      */
     public function created($revisioned)
     {
@@ -20,7 +20,7 @@ class RevisionListener
     /**
      * Handle updated event.
      *
-     * @param Model $revisioned
+     * @param  Model  $revisioned
      */
     public function updated($revisioned)
     {
@@ -32,7 +32,7 @@ class RevisionListener
     /**
      * Handle deleted event.
      *
-     * @param Model $revisioned
+     * @param  Model  $revisioned
      */
     public function deleted($revisioned)
     {
@@ -42,7 +42,7 @@ class RevisionListener
     /**
      * Handle restored event.
      *
-     * @param Model $revisioned
+     * @param  Model  $revisioned
      */
     public function restored($revisioned)
     {
@@ -52,8 +52,8 @@ class RevisionListener
     /**
      * Log the revision.
      *
-     * @param string $action
-     * @param Model  $revisioned The model being revisioned
+     * @param  string  $action
+     * @param  Model  $revisioned  The model being revisioned
      */
     protected function log($action, $revisioned)
     {
@@ -74,13 +74,13 @@ class RevisionListener
 
         $revisioned->revisions()->create([
             'revisionable_type' => $revisioned->getTable(),
-            'action'            => $action,
-            'user_id'           => $this->getSystemUserId(),
-            'old_value'         => json_encode($old),
-            'new_value'         => json_encode($new),
-            'ip'                => data_get($_SERVER, 'REMOTE_ADDR'),
-            'ip_forwarded'      => data_get($_SERVER, 'HTTP_X_FORWARDED_FOR'),
-            'created_at'        => Carbon::now(),
+            'action' => $action,
+            'user_id' => $this->getSystemUserId(),
+            'old_value' => json_encode($old),
+            'new_value' => json_encode($new),
+            'ip' => data_get($_SERVER, 'REMOTE_ADDR'),
+            'ip_forwarded' => data_get($_SERVER, 'HTTP_X_FORWARDED_FOR'),
+            'created_at' => Carbon::now(),
         ]);
     }
 

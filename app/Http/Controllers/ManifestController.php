@@ -48,17 +48,17 @@ class ManifestController extends Controller
                         if ($isSquare && $width >= 144) {
                             // Square icon suitable for PWA
                             $icons[] = [
-                                'src'     => $iconUrl,
-                                'sizes'   => $width.'x'.$height,
-                                'type'    => $mimeType,
+                                'src' => $iconUrl,
+                                'sizes' => $width.'x'.$height,
+                                'type' => $mimeType,
                                 'purpose' => 'any',
                             ];
                         } elseif ($width >= 144 && $height >= 144) {
                             // Non-square but large enough
                             $icons[] = [
-                                'src'     => $iconUrl,
-                                'sizes'   => $width.'x'.$height,
-                                'type'    => $mimeType,
+                                'src' => $iconUrl,
+                                'sizes' => $width.'x'.$height,
+                                'type' => $mimeType,
                                 'purpose' => 'any',
                             ];
                         }
@@ -76,9 +76,9 @@ class ManifestController extends Controller
                 $imageInfo = @getimagesize($fullPath);
                 if ($imageInfo && in_array($imageInfo['mime'], ['image/png', 'image/webp', 'image/svg+xml'])) {
                     $icons[] = [
-                        'src'     => $faviconUrl,
-                        'sizes'   => $imageInfo[0].'x'.$imageInfo[1],
-                        'type'    => $imageInfo['mime'],
+                        'src' => $faviconUrl,
+                        'sizes' => $imageInfo[0].'x'.$imageInfo[1],
+                        'type' => $imageInfo['mime'],
                         'purpose' => 'any',
                     ];
                 }
@@ -89,18 +89,18 @@ class ManifestController extends Controller
         if (empty($icons)) {
             if (file_exists(public_path('images/app-icon-192.png'))) {
                 $icons[] = [
-                    'src'     => '/images/app-icon-192.png',
-                    'sizes'   => '192x192',
-                    'type'    => 'image/png',
+                    'src' => '/images/app-icon-192.png',
+                    'sizes' => '192x192',
+                    'type' => 'image/png',
                     'purpose' => 'any maskable',
                 ];
             }
 
             if (file_exists(public_path('images/app-icon-512.png'))) {
                 $icons[] = [
-                    'src'     => '/images/app-icon-512.png',
-                    'sizes'   => '512x512',
-                    'type'    => 'image/png',
+                    'src' => '/images/app-icon-512.png',
+                    'sizes' => '512x512',
+                    'type' => 'image/png',
                     'purpose' => 'any maskable',
                 ];
             }
@@ -108,25 +108,25 @@ class ManifestController extends Controller
             // If still no icons, create a minimal icon reference to favicon
             if (empty($icons) && file_exists(public_path('favicon.ico'))) {
                 $icons[] = [
-                    'src'   => '/favicon.ico',
+                    'src' => '/favicon.ico',
                     'sizes' => '48x48',
-                    'type'  => 'image/x-icon',
+                    'type' => 'image/x-icon',
                 ];
             }
         }
 
         $manifest = [
-            'name'             => $appName,
-            'short_name'       => $appName,
-            'description'      => $appDescription,
-            'start_url'        => '/',
-            'display'          => 'standalone',
+            'name' => $appName,
+            'short_name' => $appName,
+            'description' => $appDescription,
+            'start_url' => '/',
+            'display' => 'standalone',
             'background_color' => $backgroundColor,
-            'theme_color'      => $themeColor,
-            'orientation'      => 'portrait-primary',
-            'icons'            => $icons,
-            'categories'       => ['social', 'community'],
-            'screenshots'      => [],
+            'theme_color' => $themeColor,
+            'orientation' => 'portrait-primary',
+            'icons' => $icons,
+            'categories' => ['social', 'community'],
+            'screenshots' => [],
         ];
 
         return response()->json($manifest)

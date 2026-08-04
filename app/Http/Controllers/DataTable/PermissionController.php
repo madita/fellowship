@@ -26,7 +26,7 @@ class PermissionController extends DataTableController
 
     public function updateRolePermissions(Request $request)
     {
-        //Todo make PermissionRequest validation
+        // Todo make PermissionRequest validation
 
         $roles = collect($request)->groupBy('role')->map(function ($role) {
             return collect($role)->map(function ($item) {
@@ -36,10 +36,10 @@ class PermissionController extends DataTableController
         foreach ($roles as $roleId => $rolePermissions) {
             $role = Role::findById($roleId, 'api');
             $role->syncPermissions($rolePermissions);
-//            Permission::findById()
+            //            Permission::findById()
         }
 
-//        $roles = Role::with('permissions')->get();
+        //        $roles = Role::with('permissions')->get();
         return response()->json([
             'data' => 'done',
         ]);
@@ -57,7 +57,7 @@ class PermissionController extends DataTableController
     public function getCustomColumnsNames()
     {
         return [
-            'name'         => 'Name',
+            'name' => 'Name',
             'display_name' => 'Display Name',
         ];
     }

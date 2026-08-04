@@ -40,16 +40,16 @@ class PostController extends Controller
             ->where('slug', '=', $slug)
             ->first();
 
-        if (!$post || $post->status !== 'published') {
+        if (! $post || $post->status !== 'published') {
             return abort(404);
         }
 
         $taxonomies = $post->taxonomies()->get()->groupBy('taxonomy')->map(function ($items) {
             return $items->filter(fn ($t) => $t->term)->map(function ($t) {
                 return [
-                    'id'    => $t->term->id,
-                    'name'  => $t->term->title,
-                    'slug'  => $t->term->slug,
+                    'id' => $t->term->id,
+                    'name' => $t->term->title,
+                    'slug' => $t->term->slug,
                     'color' => $t->color,
                 ];
             })->values();
@@ -63,7 +63,7 @@ class PostController extends Controller
      */
     public function show(Post $post): JsonResponse
     {
-        if (!$post) {
+        if (! $post) {
             return abort(404);
         }
 

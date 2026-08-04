@@ -49,13 +49,13 @@ class FooterWidgetController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         // Set default order if not provided
         $data = $validator->validated();
-        if (!isset($data['order'])) {
+        if (! isset($data['order'])) {
             $data['order'] = FooterWidget::max('order') + 1;
         }
 
@@ -63,7 +63,7 @@ class FooterWidgetController extends Controller
 
         return response()->json([
             'message' => __('messages.footer.widget_created'),
-            'widget'  => $widget,
+            'widget' => $widget,
         ], 201);
     }
 
@@ -79,7 +79,7 @@ class FooterWidgetController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -87,7 +87,7 @@ class FooterWidgetController extends Controller
 
         return response()->json([
             'message' => __('messages.footer.widget_updated'),
-            'widget'  => $widget->fresh(),
+            'widget' => $widget->fresh(),
         ]);
     }
 
@@ -110,12 +110,12 @@ class FooterWidgetController extends Controller
     public function toggle($id): JsonResponse
     {
         $widget = FooterWidget::findOrFail($id);
-        $widget->enabled = !$widget->enabled;
+        $widget->enabled = ! $widget->enabled;
         $widget->save();
 
         return response()->json([
             'message' => __('messages.footer.widget_toggled'),
-            'widget'  => $widget,
+            'widget' => $widget,
         ]);
     }
 
@@ -125,15 +125,15 @@ class FooterWidgetController extends Controller
     public function updateOrder(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'widgets'         => 'required|array',
-            'widgets.*.id'    => 'required|exists:widgets,id',
+            'widgets' => 'required|array',
+            'widgets.*.id' => 'required|exists:widgets,id',
             'widgets.*.order' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -158,12 +158,12 @@ class FooterWidgetController extends Controller
         $req = $creating ? 'required|' : '';
 
         return [
-            'type'       => $req . 'string|in:quicklinks,menu,contact,newsletter,social,text',
-            'config'     => $req . 'array',
-            'order'      => 'integer',
-            'enabled'    => 'boolean',
+            'type' => $req.'string|in:quicklinks,menu,contact,newsletter,social,text',
+            'config' => $req.'array',
+            'order' => 'integer',
+            'enabled' => 'boolean',
             'section_id' => 'nullable|exists:sections,id',
-            'column'     => 'nullable|integer|min:1|max:4',
+            'column' => 'nullable|integer|min:1|max:4',
         ];
     }
 }

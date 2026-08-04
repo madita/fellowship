@@ -3,6 +3,7 @@
 namespace App\Events\Conversations;
 
 use App\Models\Conversation\Conversation;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -39,11 +40,11 @@ class ConversationUpdated implements ShouldBroadcast
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * @return Channel|array
      */
     public function broadcastOn()
     {
-        if (!$this->conversation->relationLoaded('users')) {
+        if (! $this->conversation->relationLoaded('users')) {
             $this->conversation->load('users');
         }
 

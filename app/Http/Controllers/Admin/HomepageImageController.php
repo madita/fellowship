@@ -15,7 +15,7 @@ class HomepageImageController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'image'      => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // 2MB max
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // 2MB max
             'collection' => 'nullable|string|in:home',
         ]);
 
@@ -23,7 +23,7 @@ class HomepageImageController extends Controller
             $file = $request->file('image');
             $collection = $request->input('collection', 'home');
 
-            if (!$file || !$file->isValid()) {
+            if (! $file || ! $file->isValid()) {
                 return response()->json([
                     'success' => false,
                     'message' => __('messages.media.invalid_upload'),
@@ -40,8 +40,8 @@ class HomepageImageController extends Controller
 
             return response()->json([
                 'success' => true,
-                'path'    => $path,
-                'url'     => Storage::url($path),
+                'path' => $path,
+                'url' => Storage::url($path),
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -59,7 +59,7 @@ class HomepageImageController extends Controller
         $path = $request->input('path');
 
         // Don't try to delete if path is empty or invalid
-        if (empty($path) || !is_string($path) || trim($path) === '') {
+        if (empty($path) || ! is_string($path) || trim($path) === '') {
             return response()->json([
                 'success' => true,
                 'message' => __('messages.homepage.no_image'),

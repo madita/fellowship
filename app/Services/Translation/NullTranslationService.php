@@ -33,8 +33,8 @@ class NullTranslationService implements TranslationServiceInterface
     public function getUsageStats(): array
     {
         return [
-            'used'      => 0,
-            'limit'     => 0,
+            'used' => 0,
+            'limit' => 0,
             'remaining' => 0,
         ];
     }

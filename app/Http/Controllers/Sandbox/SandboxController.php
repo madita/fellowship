@@ -40,6 +40,7 @@ class SandboxController extends Controller
         // If user has no roles with configured limits, use config defaults
         if (empty($matchedRoles)) {
             $configDefaults = config('sandbox.default_role_limits.user', $defaults);
+
             return array_merge($defaults, $configDefaults);
         }
 
@@ -49,7 +50,7 @@ class SandboxController extends Controller
 
         foreach ($matchedRoles as $role) {
             foreach ($keys as $key) {
-                $roleValue = (int)($roleLimits[$role][$key] ?? 0);
+                $roleValue = (int) ($roleLimits[$role][$key] ?? 0);
                 $currentValue = $resolved[$key];
 
                 if ($currentValue === null) {
@@ -121,6 +122,7 @@ class SandboxController extends Controller
             } else {
                 $sandbox->relationship = $sandbox->visibility; // 'public' or 'members'
             }
+
             return $sandbox;
         });
 
@@ -154,7 +156,7 @@ class SandboxController extends Controller
         $visibility = $validated['visibility'] ?? 'private';
 
         // Enforce public sandbox setting
-        if ($visibility === 'public' && !filter_var(Setting::get('sandbox_public_enabled', true), FILTER_VALIDATE_BOOLEAN)) {
+        if ($visibility === 'public' && ! filter_var(Setting::get('sandbox_public_enabled', true), FILTER_VALIDATE_BOOLEAN)) {
             $visibility = 'private';
         }
 
@@ -191,7 +193,7 @@ class SandboxController extends Controller
 
         // Public sandboxes can be viewed anonymously; everything else must pass canView()
         if ($sandbox->visibility !== 'public') {
-            if (!$user || !$sandbox->canView($user)) {
+            if (! $user || ! $sandbox->canView($user)) {
                 return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
             }
         }
@@ -213,7 +215,7 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canManage($user)) {
+        if (! $sandbox->canManage($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
@@ -226,7 +228,7 @@ class SandboxController extends Controller
 
         // Enforce public sandbox setting
         if (isset($validated['visibility']) && $validated['visibility'] === 'public'
-            && !filter_var(Setting::get('sandbox_public_enabled', true), FILTER_VALIDATE_BOOLEAN)) {
+            && ! filter_var(Setting::get('sandbox_public_enabled', true), FILTER_VALIDATE_BOOLEAN)) {
             $validated['visibility'] = 'private';
         }
 
@@ -261,7 +263,7 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canView($user)) {
+        if (! $sandbox->canView($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
@@ -279,7 +281,7 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canEdit($user)) {
+        if (! $sandbox->canEdit($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
@@ -326,7 +328,7 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canManage($user)) {
+        if (! $sandbox->canManage($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
@@ -381,11 +383,11 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canManage($user) && $user->id !== $collaborator->id) {
+        if (! $sandbox->canManage($user) && $user->id !== $collaborator->id) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
-        if (!$sandbox->collaborators()->where('users.id', $collaborator->id)->exists()) {
+        if (! $sandbox->collaborators()->where('users.id', $collaborator->id)->exists()) {
             return response()->json(['error' => __('messages.sandbox.not_a_collaborator')], 404);
         }
 
@@ -413,7 +415,7 @@ class SandboxController extends Controller
             ->whereNull('accepted_at')
             ->first();
 
-        if (!$collaborator) {
+        if (! $collaborator) {
             return response()->json(['error' => __('messages.sandbox.no_invite')], 404);
         }
 
@@ -434,7 +436,7 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canView($user)) {
+        if (! $sandbox->canView($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
@@ -457,7 +459,7 @@ class SandboxController extends Controller
             return response()->json(['error' => __('messages.sandbox.not_found')], 404);
         }
 
-        if (!$sandbox->canEdit($user)) {
+        if (! $sandbox->canEdit($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
@@ -505,7 +507,7 @@ class SandboxController extends Controller
             return response()->json(['error' => __('messages.sandbox.not_found')], 404);
         }
 
-        if (!$sandbox->canView($user)) {
+        if (! $sandbox->canView($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
@@ -521,7 +523,7 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canView($user)) {
+        if (! $sandbox->canView($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 

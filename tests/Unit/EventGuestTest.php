@@ -15,8 +15,11 @@ class EventGuestTest extends TestCase
     use RefreshDatabase;
 
     protected $user;
+
     protected $event;
+
     protected $eventType;
+
     protected $eventGuest;
 
     protected function setUp(): void
@@ -28,7 +31,7 @@ class EventGuestTest extends TestCase
 
         // Create an event profile first
         $eventProfile = EventProfile::create([
-            'name'    => 'Test Event Profile',
+            'name' => 'Test Event Profile',
             'options' => json_encode([
                 'form' => [
                     ['name' => 'days', 'type' => 'select', 'label' => 'Days'],
@@ -39,9 +42,9 @@ class EventGuestTest extends TestCase
 
         $this->eventType = EventType::create([
             'event_profile_id' => $eventProfile->id,
-            'name'             => 'Treffen',
-            'color'            => '#071CB4',
-            'options'          => '{
+            'name' => 'Treffen',
+            'color' => '#071CB4',
+            'options' => '{
           "answers":
           [
         {
@@ -88,21 +91,21 @@ class EventGuestTest extends TestCase
 
         // Create an event
         $this->event = Event::create([
-            'title'         => 'Test Event',
-            'slug'          => 'test-event',
-            'user_id'       => $this->user->id,
+            'title' => 'Test Event',
+            'slug' => 'test-event',
+            'user_id' => $this->user->id,
             'event_type_id' => $this->eventType->id,
-            'startDate'     => now()->format('Y-m-d'),
-            'endDate'       => now()->addDays(2)->format('Y-m-d'),
+            'startDate' => now()->format('Y-m-d'),
+            'endDate' => now()->addDays(2)->format('Y-m-d'),
         ]);
 
         // Create an event guest
         $this->eventGuest = EventGuest::create([
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'event_id' => $this->event->id,
-            'type'     => 'going',
-            'profile'  => json_encode([
-                'days'  => ['Monday', 'Tuesday'],
+            'type' => 'going',
+            'profile' => json_encode([
+                'days' => ['Monday', 'Tuesday'],
                 'games' => ['Game 1', 'Game 2'],
             ]),
         ]);
@@ -121,8 +124,8 @@ class EventGuestTest extends TestCase
     public function test_it_can_store_profile_data_as_json()
     {
         $profileData = [
-            'days'    => ['Wednesday', 'Thursday'],
-            'games'   => ['Game 3', 'Game 4'],
+            'days' => ['Wednesday', 'Thursday'],
+            'games' => ['Game 3', 'Game 4'],
             'remarks' => 'Updated remarks',
         ];
 

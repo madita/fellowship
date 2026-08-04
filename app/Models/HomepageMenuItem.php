@@ -21,7 +21,7 @@ class HomepageMenuItem extends Model implements TranslatableContract
 
     protected $casts = [
         'enabled' => 'boolean',
-        'order'   => 'integer',
+        'order' => 'integer',
     ];
 
     /**

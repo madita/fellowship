@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Concerns\Approvable;
 use App\Models\Ticket\Ticket;
 use App\Models\Ticket\TicketType;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,14 +21,14 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401);
         }
 
         $query = Ticket::with(['ticketType', 'creator', 'assignee', 'ticketable']);
 
         // Non-admins can only see their own tickets
-        if (!$user->isAdmin()) {
+        if (! $user->isAdmin()) {
             $query->where('created_by_user_id', $user->id);
         }
 
@@ -66,7 +67,7 @@ class TicketController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -101,9 +102,9 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             // Users can only view their own tickets
-            if (!$user || $ticket->created_by_user_id !== $user->id) {
+            if (! $user || $ticket->created_by_user_id !== $user->id) {
                 abort(403, 'You do not have permission to view this ticket.');
             }
         }
@@ -136,7 +137,7 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401, 'You must be logged in to create a ticket.');
         }
 
@@ -164,7 +165,7 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             abort(403, 'Only admins can update tickets.');
         }
 
@@ -179,10 +180,10 @@ class TicketController extends Controller
 
         // Auto-set resolved_at/closed_at based on status
         if (isset($validated['status'])) {
-            if ($validated['status'] === 'resolved' && !$ticket->resolved_at) {
+            if ($validated['status'] === 'resolved' && ! $ticket->resolved_at) {
                 $validated['resolved_at'] = now();
             }
-            if ($validated['status'] === 'closed' && !$ticket->closed_at) {
+            if ($validated['status'] === 'closed' && ! $ticket->closed_at) {
                 $validated['closed_at'] = now();
             }
             if (in_array($validated['status'], ['open', 'in_progress', 'pending'])) {
@@ -217,7 +218,7 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             abort(403, 'Only admins can delete tickets.');
         }
 
@@ -233,7 +234,7 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             abort(403, 'Only admins can assign tickets.');
         }
 
@@ -241,7 +242,7 @@ class TicketController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        $assignee = \App\Models\User::findOrFail($validated['user_id']);
+        $assignee = User::findOrFail($validated['user_id']);
         $ticket->assignTo($assignee);
 
         return response()->json($ticket->fresh(['assignee']));
@@ -254,13 +255,13 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             abort(403, 'Only admins can approve content.');
         }
 
         $ticketable = $ticket->ticketable;
 
-        if (!$ticketable || !in_array(Approvable::class, class_uses_recursive($ticketable))) {
+        if (! $ticketable || ! in_array(Approvable::class, class_uses_recursive($ticketable))) {
             abort(422, 'This ticket is not linked to approvable content.');
         }
 
@@ -288,13 +289,13 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             abort(403, 'Only admins can reject content.');
         }
 
         $ticketable = $ticket->ticketable;
 
-        if (!$ticketable || !in_array(Approvable::class, class_uses_recursive($ticketable))) {
+        if (! $ticketable || ! in_array(Approvable::class, class_uses_recursive($ticketable))) {
             abort(422, 'This ticket is not linked to approvable content.');
         }
 
@@ -323,7 +324,7 @@ class TicketController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || !$user->isAdmin()) {
+        if (! $user || ! $user->isAdmin()) {
             abort(403, 'Only admins can unassign tickets.');
         }
 

@@ -21,9 +21,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
     use HasApiTokens;
     use HasFactory;
-    use Notifiable;
     use HasRoles;
     use InteractsWithMedia;
+    use Notifiable;
 
     protected $guard_name = 'api';
 
@@ -125,7 +125,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function getAvatar()
     {
-        if (!count($this->getMedia('avatars'))) {
+        if (! count($this->getMedia('avatars'))) {
             return '';
         }
 
@@ -293,7 +293,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function conversations()
     {
-//        return $this->belongsToMany(Conversation::class)->whereNull('parent_id')->orderBy('last_reply', 'desc');
+        //        return $this->belongsToMany(Conversation::class)->whereNull('parent_id')->orderBy('last_reply', 'desc');
         return $this->belongsToMany(Conversation::class)->withPivot('read_at');
     }
 
@@ -318,8 +318,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     /**
      * Check if user has a specific social provider linked.
      *
-     * @param string $provider
-     *
+     * @param  string  $provider
      * @return bool
      */
     public function hasSocialProvider($provider)

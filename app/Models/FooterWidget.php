@@ -20,10 +20,10 @@ class FooterWidget extends Model
     ];
 
     protected $casts = [
-        'config'     => 'array',
-        'enabled'    => 'boolean',
-        'order'      => 'integer',
-        'column'     => 'integer',
+        'config' => 'array',
+        'enabled' => 'boolean',
+        'order' => 'integer',
+        'column' => 'integer',
         'section_id' => 'integer',
     ];
 

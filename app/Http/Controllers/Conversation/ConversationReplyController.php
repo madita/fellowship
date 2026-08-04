@@ -21,7 +21,7 @@ class ConversationReplyController extends Controller
         try {
             $message = $conversation->messages()->create([
                 'user_id' => auth()->id(),
-                'body'    => $request->get('body'),
+                'body' => $request->get('body'),
             ]);
 
             $conversation->update([
@@ -41,25 +41,25 @@ class ConversationReplyController extends Controller
 
             // Simple array response (matching your frontend expectations)
             $responseData = [
-                'id'               => $message->id,
-                'body'             => $message->body,
-                'created_at'       => $message->created_at,
+                'id' => $message->id,
+                'body' => $message->body,
+                'created_at' => $message->created_at,
                 'created_at_human' => $message->created_at->diffForHumans(),
-                'self_owned'       => true,
-                'user'             => $message->user,
+                'self_owned' => true,
+                'user' => $message->user,
             ];
 
             return response()->json($responseData, 201);
         } catch (\Exception $e) {
             \Log::error('Failed to create conversation reply', [
                 'conversation_id' => $conversation->id,
-                'user_id'         => $request->user()->id,
-                'error'           => $e->getMessage(),
+                'user_id' => $request->user()->id,
+                'error' => $e->getMessage(),
             ]);
 
             return response()->json([
                 'message' => __('messages.conversations.reply_failed'),
-                'errors'  => ['body' => [__('messages.conversations.reply_error')]],
+                'errors' => ['body' => [__('messages.conversations.reply_error')]],
             ], 422);
         }
     }

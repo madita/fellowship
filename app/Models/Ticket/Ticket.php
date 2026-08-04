@@ -104,7 +104,7 @@ class Ticket extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'open' => 'Open',
             'in_progress' => 'In Progress',
             'pending' => 'Pending',
@@ -119,7 +119,7 @@ class Ticket extends Model
      */
     public function getPriorityLabelAttribute(): string
     {
-        return match($this->priority) {
+        return match ($this->priority) {
             'low' => 'Low',
             'normal' => 'Normal',
             'high' => 'High',
@@ -133,7 +133,7 @@ class Ticket extends Model
      */
     public function isOpen(): bool
     {
-        return !in_array($this->status, ['resolved', 'closed']);
+        return ! in_array($this->status, ['resolved', 'closed']);
     }
 
     /**

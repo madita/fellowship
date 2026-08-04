@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Conversation\Conversation;
+use App\Models\Sandbox\Sandbox;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -16,12 +18,12 @@ use Illuminate\Support\Facades\Broadcast;
 
 // User private channel (singular - used by frontend)
 Broadcast::channel('user.{id}', function ($user, $id) {
-    return (int)$user->id === (int)$id;
+    return (int) $user->id === (int) $id;
 });
 
 // User private channel (plural - legacy support)
 Broadcast::channel('users.{id}', function ($user, $id) {
-    return (int)$user->id === (int)$id;
+    return (int) $user->id === (int) $id;
 });
 
 Broadcast::channel('app', function ($user) {
@@ -46,13 +48,13 @@ Broadcast::channel('conversations.{conversationId}', function ($user, $conversat
 // Sandbox collaboration presence channel
 Broadcast::channel('sandbox.{sandboxId}', function ($user, $sandboxId) {
 
-    if (!\App\Models\Setting::get('sandbox_enabled', false)) {
+    if (! Setting::get('sandbox_enabled', false)) {
         return false;
     }
 
-    $sandbox = \App\Models\Sandbox\Sandbox::find($sandboxId);
+    $sandbox = Sandbox::find($sandboxId);
 
-    if (!$sandbox || !$sandbox->canView($user)) {
+    if (! $sandbox || ! $sandbox->canView($user)) {
         return false;
     }
 

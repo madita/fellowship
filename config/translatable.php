@@ -1,5 +1,7 @@
 <?php
 
+use Astrotomic\Translatable\Validation\RuleFactory;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -141,5 +143,5 @@ return [
     | This option allows you to define the rule factory class.
     |
     */
-    'rule_factory' => \Astrotomic\Translatable\Validation\RuleFactory::class,
+    'rule_factory' => RuleFactory::class,
 ];

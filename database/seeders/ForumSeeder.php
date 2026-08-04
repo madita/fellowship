@@ -57,7 +57,7 @@ class ForumSeeder extends Seeder
         foreach ($categories as $data) {
             $taxonomy = $this->createCategory($data);
 
-            if (!empty($data['children'])) {
+            if (! empty($data['children'])) {
                 foreach ($data['children'] as $childData) {
                     $this->createCategory($childData, $taxonomy->id);
                 }
@@ -70,19 +70,19 @@ class ForumSeeder extends Seeder
         $term = Term::firstOrCreateByTitle($data['title']);
 
         $taxonomy = Taxonomy::create([
-            'term_id'    => $term->id,
-            'taxonomy'   => 'forum_cat',
-            'parent_id'  => $parentId,
-            'sort'       => $data['sort'],
-            'visible'    => true,
+            'term_id' => $term->id,
+            'taxonomy' => 'forum_cat',
+            'parent_id' => $parentId,
+            'sort' => $data['sort'],
+            'visible' => true,
             'searchable' => true,
             'properties' => [
-                'is_locked'  => $data['is_locked'] ?? false,
+                'is_locked' => $data['is_locked'] ?? false,
                 'is_private' => $data['is_private'] ?? false,
             ],
         ]);
 
-        if (!empty($data['description'])) {
+        if (! empty($data['description'])) {
             $taxonomy->description = $data['description'];
             $taxonomy->save();
         }

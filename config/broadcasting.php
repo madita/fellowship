@@ -31,27 +31,27 @@ return [
     'connections' => [
 
         'pusher' => [
-            'driver'  => 'pusher',
-            'key'     => env('PUSHER_APP_KEY'),
-            'secret'  => env('PUSHER_APP_SECRET'),
-            'app_id'  => env('PUSHER_APP_ID'),
+            'driver' => 'pusher',
+            'key' => env('PUSHER_APP_KEY'),
+            'secret' => env('PUSHER_APP_SECRET'),
+            'app_id' => env('PUSHER_APP_ID'),
             'options' => [
-                'cluster'   => env('PUSHER_APP_CLUSTER'),
+                'cluster' => env('PUSHER_APP_CLUSTER'),
                 'encrypted' => true,
                 //              'host' => '127.0.0.1',
                 //              'port' => 6001,
                 //              'scheme' => 'http',
-                'useTLS'    => true,
+                'useTLS' => true,
             ],
         ],
 
         'ably' => [
             'driver' => 'ably',
-            'key'    => env('ABLY_KEY'),
+            'key' => env('ABLY_KEY'),
         ],
 
         'redis' => [
-            'driver'     => 'redis',
+            'driver' => 'redis',
             'connection' => 'default',
         ],
 

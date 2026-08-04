@@ -32,7 +32,7 @@ class UserController extends DataTableController
 
     public function getUpdatableColumns()
     {
-        return  [
+        return [
             'name',
             'email',
         ];
@@ -41,18 +41,18 @@ class UserController extends DataTableController
     public function update($id, Request $request)
     {
         $this->validate($request, [
-            'name'       => 'required',
-            'email'      => 'required|unique:users,email,'.$id.'|email',
+            'name' => 'required',
+            'email' => 'required|unique:users,email,'.$id.'|email',
             'created_at' => 'date',
         ]);
 
         $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
     }
 
-//    public function getAppends()
-//    {
-//        return [
-//            'isAdmin'
-//        ];
-//    }
+    //    public function getAppends()
+    //    {
+    //        return [
+    //            'isAdmin'
+    //        ];
+    //    }
 }

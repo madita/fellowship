@@ -12,20 +12,20 @@ class RelateableHelper
     {
         $modelsPath = app_path('Models');
         $modelFiles = File::allFiles($modelsPath);
-//        dd($modelFiles);
+        //        dd($modelFiles);
         $relateableModels = [];
 
         foreach ($modelFiles as $file) {
-//            dd($file->getRelativePathname());
+            //            dd($file->getRelativePathname());
             // Get the relative path from the models directory
-//            $relativePath = Str::replaceFirst($modelsPath . DIRECTORY_SEPARATOR, '', $file->getPathname());
+            //            $relativePath = Str::replaceFirst($modelsPath . DIRECTORY_SEPARATOR, '', $file->getPathname());
 
-//            dd($relativePath);
+            //            dd($relativePath);
 
             // Convert the relative path to a namespace
             $namespace = 'App\Models\\'.str_replace('/', '\\', Str::before($file->getRelativePathname(), '.php'));
 
-//            dd(in_array(HasRelateableContent::class, class_uses_recursive($namespace)));
+            //            dd(in_array(HasRelateableContent::class, class_uses_recursive($namespace)));
 
             if (class_exists($namespace) && in_array(HasRelateableContent::class, class_uses_recursive($namespace))) {
                 $relateableModels[] = $namespace;
@@ -39,7 +39,7 @@ class RelateableHelper
     {
         $modelsPath = app_path('Models');
         $modelFiles = File::allFiles($modelsPath);
-//        dd($modelFiles);
+        //        dd($modelFiles);
         $models = [];
 
         foreach ($modelFiles as $file) {
@@ -56,12 +56,12 @@ class RelateableHelper
     public static function getModelItems($model)
     {
         // Validate that the model class exists
-        if (!class_exists($model)) {
+        if (! class_exists($model)) {
             return response()->json(['error' => __('messages.common.model_not_found')], 404);
         }
 
         // Ensure the model is an instance of Eloquent or has the necessary traits
-        if (!in_array('Illuminate\Database\Eloquent\Model', class_parents($model))) {
+        if (! in_array('Illuminate\Database\Eloquent\Model', class_parents($model))) {
             return response()->json(['error' => __('messages.common.invalid_model_type')], 400);
         }
 

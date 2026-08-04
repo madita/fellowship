@@ -28,8 +28,8 @@ class Section extends Model implements TranslatableContract
 
     protected $casts = [
         'enabled' => 'boolean',
-        'order'   => 'integer',
-        'config'  => 'array',
+        'order' => 'integer',
+        'config' => 'array',
     ];
 
     protected $attributes = [
@@ -134,13 +134,13 @@ class Section extends Model implements TranslatableContract
     public function getColumnWidthsAttribute()
     {
         return match ($this->layout) {
-            '1-col'   => [12],
-            '2-col'   => [6, 6],
-            '3-col'   => [4, 4, 4],
-            '4-col'   => [3, 3, 3, 3],
+            '1-col' => [12],
+            '2-col' => [6, 6],
+            '3-col' => [4, 4, 4],
+            '4-col' => [3, 3, 3, 3],
             '2-1-col' => [8, 4], // 66% / 33%
             '1-2-col' => [4, 8], // 33% / 66%
-            default   => [12],
+            default => [12],
         };
     }
 }

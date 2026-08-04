@@ -15,7 +15,7 @@ class EventProfileTableSeeder extends Seeder
     public function run()
     {
         $eventProfile = EventProfile::create([
-            'name'    => 'Treffen',
+            'name' => 'Treffen',
             'options' => '{
           "form": [
     {

@@ -29,7 +29,7 @@ abstract class DataTableController extends Controller
      */
     protected $allowDeletion = true;
 
-    /*Does Edit Form for model exist?*/
+    /* Does Edit Form for model exist? */
     protected $hasForm = false;
 
     /**
@@ -75,11 +75,11 @@ abstract class DataTableController extends Controller
      */
     public function __construct()
     {
-        if (!method_exists($this, 'builder')) {
+        if (! method_exists($this, 'builder')) {
             throw new Exception('No entity builder method defined.');
         }
 
-        if (!($this->builder = $this->builder()) instanceof Builder) {
+        if (! ($this->builder = $this->builder()) instanceof Builder) {
             throw new Exception('Entity builder not instance of Builder.');
         }
     }
@@ -90,21 +90,20 @@ abstract class DataTableController extends Controller
 
         return collect($this->getDisplayableColumns())->map(function ($column) use ($columnNames) {
             return [
-                'text'     => isset($columnNames[$column]) ? $columnNames[$column] : $column,
+                'text' => isset($columnNames[$column]) ? $columnNames[$column] : $column,
                 'sortable' => false,
-                'value'    => $column,
+                'value' => $column,
             ];
         })->add([
-            'text'     => 'Actions',
+            'text' => 'Actions',
             'sortable' => false,
-            'value'    => 'actions',
+            'value' => 'actions',
         ]);
     }
 
     /**
      * Get records to be used for output.
      *
-     * @param Request $request
      *
      * @return Collection
      */
@@ -117,7 +116,7 @@ abstract class DataTableController extends Controller
         }
 
         try {
-            //if model has appended attributes and append attributes  not in displayable colimns...forget them
+            // if model has appended attributes and append attributes  not in displayable colimns...forget them
             $forget = array_diff($this->getAppends(), $this->getDisplayableColumns());
             $pagination = (int) $request->get('itemsPerPage') <= 0 ? (int) $request->get('itemsLength') : (int) $request->get('itemsPerPage');
 
@@ -133,26 +132,24 @@ abstract class DataTableController extends Controller
 
     /**
      * Show a list of entities.
-     *
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
         return response()->json([
             'data' => [
-                'table'         => $this->builder->getModel()->getTable(),
-                'headers'       => $this->getHeaders(),
-                'records'       => $this->getRecords($request),
-                'updatable'     => array_values($this->getUpdatableColumns()),
-                'displayable'   => array_values($this->getDisplayableColumns()),
-                'column_map'    => $this->getCustomColumnsNames(),
+                'table' => $this->builder->getModel()->getTable(),
+                'headers' => $this->getHeaders(),
+                'records' => $this->getRecords($request),
+                'updatable' => array_values($this->getUpdatableColumns()),
+                'displayable' => array_values($this->getDisplayableColumns()),
+                'column_map' => $this->getCustomColumnsNames(),
                 'column_fields' => $this->getCustomInputFields(),
-                'json_fields'   => $this->getCustomJsonFields(),
+                'json_fields' => $this->getCustomJsonFields(),
                 'filter_fields' => $this->getFilterFields(),
                 'taxonomy_fields' => $this->getTaxonomyFields(),
                 'toggle_filters' => $this->getToggleFilters(),
-                'allow'         => [
-                    'hasForm'  => $this->hasForm,
+                'allow' => [
+                    'hasForm' => $this->hasForm,
                     'creation' => $this->allowCreation,
                     'deletion' => $this->allowDeletion,
                 ],
@@ -172,13 +169,12 @@ abstract class DataTableController extends Controller
     /**
      * Create an entity.
      *
-     * @param Request $request
      *
      * @return Response|void
      */
     public function store(Request $request)
     {
-        if (!$this->allowCreation) {
+        if (! $this->allowCreation) {
             return;
         }
 
@@ -188,9 +184,7 @@ abstract class DataTableController extends Controller
     /**
      * Update an entity.
      *
-     * @param int     $id
-     * @param Request $request
-     *
+     * @param  int  $id
      * @return Response
      */
     public function update($id, Request $request)
@@ -201,14 +195,12 @@ abstract class DataTableController extends Controller
     /**
      * Delete an entity.
      *
-     * @param int     $id
-     * @param Request $request
-     *
+     * @param  int  $id
      * @return Response|void
      */
     public function destroy($ids, Request $request)
     {
-        if (!$this->allowDeletion) {
+        if (! $this->allowDeletion) {
             return;
         }
 
@@ -217,8 +209,6 @@ abstract class DataTableController extends Controller
 
     /**
      * Get the database column names for the entity.
-     *
-     * @return array
      */
     protected function getDatabaseColumnNames(): array
     {
@@ -253,7 +243,6 @@ abstract class DataTableController extends Controller
     /**
      * If the request has the columns required to search.
      *
-     * @param Request $request
      *
      * @return bool
      */
@@ -265,8 +254,7 @@ abstract class DataTableController extends Controller
     /**
      * Resolve the given operator to perform a query.
      *
-     * @param string $operator
-     *
+     * @param  string  $operator
      * @return string
      */
     protected function resolveQueryParts($operator, $value)
@@ -274,35 +262,35 @@ abstract class DataTableController extends Controller
         return Arr::get([
             'equals' => [
                 'operator' => '=',
-                'value'    => $value,
+                'value' => $value,
             ],
             'contains' => [
                 'operator' => 'LIKE',
-                'value'    => "%{$value}%",
+                'value' => "%{$value}%",
             ],
             'starts_with' => [
                 'operator' => 'LIKE',
-                'value'    => "{$value}%",
+                'value' => "{$value}%",
             ],
             'ends_with' => [
                 'operator' => 'LIKE',
-                'value'    => "%{$value}",
+                'value' => "%{$value}",
             ],
             'greater_than' => [
                 'operator' => '>',
-                'value'    => $value,
+                'value' => $value,
             ],
             'less_than' => [
                 'operator' => '<',
-                'value'    => $value,
+                'value' => $value,
             ],
             'greater_than_or_equal_to' => [
                 'operator' => '>=',
-                'value'    => $value,
+                'value' => $value,
             ],
             'less_than_or_equal_to' => [
                 'operator' => '<=',
-                'value'    => $value,
+                'value' => $value,
             ],
         ], $operator);
     }
@@ -310,8 +298,6 @@ abstract class DataTableController extends Controller
     /**
      * Build the search.
      *
-     * @param Builder $builder
-     * @param Request $request
      *
      * @return Builder
      */

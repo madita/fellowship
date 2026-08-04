@@ -6,6 +6,7 @@ use App\Events\Conversations\ConversationCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreConversationRequest;
 use App\Models\Conversation\Conversation;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -32,7 +33,7 @@ class ConversationController extends Controller
     public function show(Conversation $conversation, Request $request): JsonResponse
     {
         // Verify user is a participant in the conversation
-        if (!$conversation->users->contains(auth()->id())) {
+        if (! $conversation->users->contains(auth()->id())) {
             abort(403, 'You are not authorized to view this conversation.');
         }
 
@@ -59,7 +60,7 @@ class ConversationController extends Controller
     public function markAsRead(Conversation $conversation): JsonResponse
     {
         // Verify user is a participant in the conversation
-        if (!$conversation->users->contains(auth()->id())) {
+        if (! $conversation->users->contains(auth()->id())) {
             abort(403, 'You are not authorized to access this conversation.');
         }
 
@@ -77,9 +78,9 @@ class ConversationController extends Controller
             ->unique();
 
         $conversation = new Conversation([
-            'uuid'            => Str::uuid(),
+            'uuid' => Str::uuid(),
             'last_message_at' => now(),
-            'creator_id'      => auth()->id(),
+            'creator_id' => auth()->id(),
         ]);
 
         $conversation->save();
@@ -87,7 +88,7 @@ class ConversationController extends Controller
         // Create the initial message
         $conversation->messages()->create([
             'user_id' => $request->user()->id,
-            'body'    => $request->get('body'),
+            'body' => $request->get('body'),
         ]);
 
         // Sync users to conversation with read_at timestamp for creator
@@ -138,21 +139,21 @@ class ConversationController extends Controller
         }
 
         $data = [
-            'id'               => $conversation->id,
-            'uuid'             => $conversation->uuid,
-            'body'             => $firstMessage?->body,
-            'messages_count'   => $conversation->messages->count(),
-            'unread_count'     => $unreadCount,
-            'is_unread'        => $unreadCount > 0,
-            'read_at'          => $readAt ? ($readAt instanceof \Carbon\Carbon ? $readAt->toISOString() : $readAt) : null,
-            'created_at'       => $conversation->created_at->toISOString(),
+            'id' => $conversation->id,
+            'uuid' => $conversation->uuid,
+            'body' => $firstMessage?->body,
+            'messages_count' => $conversation->messages->count(),
+            'unread_count' => $unreadCount,
+            'is_unread' => $unreadCount > 0,
+            'read_at' => $readAt ? ($readAt instanceof Carbon ? $readAt->toISOString() : $readAt) : null,
+            'created_at' => $conversation->created_at->toISOString(),
             'created_at_human' => $conversation->created_at->diffForHumans(),
-            'last_message_at'  => $conversation->last_message_at
-                ? ($conversation->last_message_at instanceof \Carbon\Carbon
+            'last_message_at' => $conversation->last_message_at
+                ? ($conversation->last_message_at instanceof Carbon
                     ? $conversation->last_message_at->toISOString()
                     : $conversation->last_message_at)
                 : null,
-            'users'             => $conversation->users->map(fn ($user) => $this->transformUser($user)),
+            'users' => $conversation->users->map(fn ($user) => $this->transformUser($user)),
             'participant_count' => $conversation->users->count() - 1,
         ];
 
@@ -160,11 +161,11 @@ class ConversationController extends Controller
         if ($includeMessages && $conversation->relationLoaded('messages')) {
             $data['messages'] = $conversation->messages->map(function ($message) {
                 return [
-                    'id'               => $message->id,
-                    'body'             => $message->body,
-                    'user_id'          => $message->user_id,
-                    'user'             => $this->transformUser($message->user),
-                    'self_owned'       => $message->self_owned ?? ($message->user_id === auth()->id()),
+                    'id' => $message->id,
+                    'body' => $message->body,
+                    'user_id' => $message->user_id,
+                    'user' => $this->transformUser($message->user),
+                    'self_owned' => $message->self_owned ?? ($message->user_id === auth()->id()),
                     'created_at_human' => $message->created_at_human ?? $message->created_at->diffForHumans(),
                 ];
             });
@@ -178,16 +179,16 @@ class ConversationController extends Controller
      */
     private function transformUser($user): array
     {
-        if (!$user) {
+        if (! $user) {
             return [];
         }
 
         return [
-            'id'         => $user->id,
-            'email'      => $user->email,
-            'username'   => $user->username,
-            'initials'   => $user->initials,
-            'avatar'     => $user->avatar ?? null,
+            'id' => $user->id,
+            'email' => $user->email,
+            'username' => $user->username,
+            'initials' => $user->initials,
+            'avatar' => $user->avatar ?? null,
             'created_at' => $user->created_at?->toISOString(),
             'updated_at' => $user->updated_at?->toISOString(),
         ];

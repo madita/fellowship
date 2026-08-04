@@ -21,8 +21,6 @@ trait HasRelateableContent
     /**
      * Returns a Collection of all related models. The results are cached as a property on the
      * model, you reload them using the `loadRelated` method.
-     *
-     * @return Collection
      */
     public function getRelatedAttribute(): Collection
     {
@@ -50,16 +48,15 @@ trait HasRelateableContent
 
     public function hasRelated(): bool
     {
-        return !$this->related->isEmpty();
+        return ! $this->related->isEmpty();
     }
 
     /**
      * The `$item` parameter must be an Eloquent model or an ID. If you provide an ID, the model's
      * morph type must be specified as a second parameter.
      *
-     * @param Model|int   $item
-     * @param string|null $type
-     *
+     * @param  Model|int  $item
+     * @param  string|null  $type
      * @return \Spatie\Relateable\Relateable
      */
     public function relate($item, string $type = ''): Relateable
@@ -73,10 +70,8 @@ trait HasRelateableContent
      * The `$item` parameter must be an Eloquent model or an ID. If you provide an ID, the model's
      * morph type must be specified as a second parameter.
      *
-     * @param Model|int   $item
-     * @param string|null $type
-     *
-     * @return int
+     * @param  Model|int  $item
+     * @param  string|null  $type
      */
     public function unrelate($item, string $type = ''): int
     {
@@ -87,8 +82,8 @@ trait HasRelateableContent
      * The `$items` parameter can either contain an Eloquent collection of models, or an array
      * with the shape of [['id' => int, 'type' => string], ...].
      *
-     * @param \Illuminate\Database\Eloquent\Collection|array $items
-     * @param bool                                           $detaching
+     * @param  \Illuminate\Database\Eloquent\Collection|array  $items
+     * @param  bool  $detaching
      */
     public function syncRelated($items, $detaching = true)
     {
@@ -102,13 +97,13 @@ trait HasRelateableContent
             $this->relate($values['id'], $values['type']);
         });
 
-        if (!$detaching) {
+        if (! $detaching) {
             return;
         }
 
         $current
             ->filter(function (array $values) use ($items) {
-                return !$items->contains($values);
+                return ! $items->contains($values);
             })
             ->each(function (array $values) {
                 $this->unrelate($values['id'], $values['type']);
@@ -121,7 +116,7 @@ trait HasRelateableContent
             return $items->map(function (Model $item): array {
                 return [
                     'type' => $item->getMorphClass(),
-                    'id'   => $item->getKey(),
+                    'id' => $item->getKey(),
                 ];
             });
         }
@@ -130,23 +125,21 @@ trait HasRelateableContent
     }
 
     /**
-     * @param Model|int   $item
-     * @param string|null $type
-     *
-     * @return array
+     * @param  Model|int  $item
+     * @param  string|null  $type
      */
     protected function getRelateableValues($item, string $type = ''): array
     {
-        if (!$item instanceof Model && empty($type)) {
+        if (! $item instanceof Model && empty($type)) {
             throw new InvalidArgumentException(
                 'If an id is specified as an item, the type isn\'t allowed to be empty.'
             );
         }
 
         return [
-            'source_id'    => $this->getKey(),
-            'source_type'  => $this->getMorphClass(),
-            'related_id'   => $item instanceof Model ? $item->getKey() : $item,
+            'source_id' => $this->getKey(),
+            'source_type' => $this->getMorphClass(),
+            'related_id' => $item instanceof Model ? $item->getKey() : $item,
             'related_type' => $item instanceof Model ? $item->getMorphClass() : $type,
         ];
     }

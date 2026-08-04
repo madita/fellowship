@@ -12,19 +12,19 @@ class LazyLoadingMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response) $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
 
         // Only process HTML responses
-        if (!$this->isHtmlResponse($response)) {
+        if (! $this->isHtmlResponse($response)) {
             return $response;
         }
 
         // Check if lazy loading is enabled
-        if (!LazyLoadingService::isEnabled()) {
+        if (! LazyLoadingService::isEnabled()) {
             return $response;
         }
 

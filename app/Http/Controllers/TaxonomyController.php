@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Helpers\TaxonomyHelper;
 use App\Models\Tag\Taxable;
-//use App\Models\Tag\Taxonomy;
+// use App\Models\Tag\Taxonomy;
 
 use App\Models\Tag\Taxonomy;
-//use App\Models\Tag\Term;
+// use App\Models\Tag\Term;
 use App\Models\Tag\Term;
-//use Lecturize\Taxonomies\Models\Taxonomy;
-//use Lecturize\Taxonomies\Models\Term;
+// use Lecturize\Taxonomies\Models\Taxonomy;
+// use Lecturize\Taxonomies\Models\Term;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -32,9 +32,9 @@ class TaxonomyController extends Controller
 
                 if ($term) {
                     $terms->add([
-                        'id'        => $term->id,
-                        'title'     => $term->title,
-                        'slug'      => $term->slug,
+                        'id' => $term->id,
+                        'title' => $term->title,
+                        'slug' => $term->slug,
                         'parent_id' => $taxonomy->id,
                     ]);
                 }
@@ -48,8 +48,8 @@ class TaxonomyController extends Controller
         });
 
         $data = [
-            'terms'   => $terms,
-            'total'   => $terms->count(),
+            'terms' => $terms,
+            'total' => $terms->count(),
             'capital' => $capital,
         ];
 
@@ -66,18 +66,18 @@ class TaxonomyController extends Controller
         $params = $request->all();
         $term = Term::where('slug', $params['term'])->first();
 
-        if (!isset($term->id)) {
+        if (! isset($term->id)) {
             return response()->json(['message' => __('messages.common.no_data'), 'data' => null, 'category' => null]);
         }
 
         $taxonomy = Taxonomy::where('term_id', $term->id);
 
-//        $taxonomy = Taxonomy::where('taxonomy', 'tags');
+        //        $taxonomy = Taxonomy::where('taxonomy', 'tags');
 
-        //how to get only wiki items???
-//        if ($params['taxonomy'] != null) {
-//            $taxonomy = $taxonomy->where('taxonomy', $params['taxonomy']);
-//        }
+        // how to get only wiki items???
+        //        if ($params['taxonomy'] != null) {
+        //            $taxonomy = $taxonomy->where('taxonomy', $params['taxonomy']);
+        //        }
 
         $taxables = Taxable::whereIn('taxonomy_id', $taxonomy->pluck('id'));
 
@@ -90,27 +90,26 @@ class TaxonomyController extends Controller
             $data = $model::where('id', $taxable->taxable_id)->first();
 
             return [
-                'type'              => Str::lower(Str::afterLast($taxable->taxable_type, '\\')),
-                'taxable_title'     => $data->{$data->getTaxableTitle()},
-                'category'          => $taxonomy,
-                'data'              => $data,
-                'taxonomy'          => collect($taxonomy->get(['id', 'taxonomy', 'parent_id', 'term_id', 'description']))->where('id', $taxable->taxonomy_id),
+                'type' => Str::lower(Str::afterLast($taxable->taxable_type, '\\')),
+                'taxable_title' => $data->{$data->getTaxableTitle()},
+                'category' => $taxonomy,
+                'data' => $data,
+                'taxonomy' => collect($taxonomy->get(['id', 'taxonomy', 'parent_id', 'term_id', 'description']))->where('id', $taxable->taxonomy_id),
             ];
         });
 
         $capital = $taxableCollection->unique('data')->groupBy(function ($item, $key) {
-            return $item['data']['slug'][0];     //treats the name string as an array
+            return $item['data']['slug'][0];     // treats the name string as an array
         });
 
         $data = [
             'category' => $taxonomy->with('children')->with('parent')->first(),
-            'data'     => [
-                'total'   => $taxableCollection->unique('data')->count(),
-                'type'    => $taxableCollection->unique('data')->groupBy('type'),
+            'data' => [
+                'total' => $taxableCollection->unique('data')->count(),
+                'type' => $taxableCollection->unique('data')->groupBy('type'),
                 'capital' => $capital,
             ],
         ];
-
 
         return response()->json($data);
     }

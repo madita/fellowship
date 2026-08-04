@@ -29,7 +29,7 @@ class ImageOptimizationService
      */
     public static function configureOptimizers(): void
     {
-        if (!static::isEnabled()) {
+        if (! static::isEnabled()) {
             // Disable all optimizers by setting an empty array
             Config::set('media-library.image_optimizers', []);
         }
@@ -38,18 +38,16 @@ class ImageOptimizationService
     /**
      * Optimize an image file manually.
      *
-     * @param string $path    Path to the image file
-     * @param array  $options Optimization options
-     *
-     * @return bool
+     * @param  string  $path  Path to the image file
+     * @param  array  $options  Optimization options
      */
     public static function optimize(string $path, array $options = []): bool
     {
-        if (!static::isEnabled()) {
+        if (! static::isEnabled()) {
             return false;
         }
 
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             return false;
         }
 
@@ -80,7 +78,7 @@ class ImageOptimizationService
             return true;
         } catch (\Exception $e) {
             \Log::warning('Image optimization failed: '.$e->getMessage(), [
-                'path'    => $path,
+                'path' => $path,
                 'options' => $options,
             ]);
 
@@ -94,9 +92,9 @@ class ImageOptimizationService
     public static function getSettings(): array
     {
         return [
-            'enabled'         => static::isEnabled(),
+            'enabled' => static::isEnabled(),
             'max_upload_size' => config('media-library.max_file_size', 10 * 1024 * 1024),
-            'allowed_types'   => ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
+            'allowed_types' => ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
         ];
     }
 }

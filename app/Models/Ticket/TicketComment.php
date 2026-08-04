@@ -44,23 +44,24 @@ class TicketComment extends Model
     /**
      * Check if user can edit this comment.
      */
-    public function canEdit(User $user = null): bool
+    public function canEdit(?User $user = null): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
         // Allow editing within 15 minutes or if admin
         $editWindow = now()->subMinutes(15);
+
         return ((int) $user->id === (int) $this->user_id && $this->created_at->gt($editWindow)) || $user->isAdmin();
     }
 
     /**
      * Check if user can delete this comment.
      */
-    public function canDelete(User $user = null): bool
+    public function canDelete(?User $user = null): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 

@@ -2,17 +2,17 @@
 
 namespace App\Models\Forum;
 
+use App\Models\Concerns\SafeSearchable;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Concerns\SafeSearchable;
 
 class ForumPost extends Model
 {
-    use HasFactory, SoftDeletes, SafeSearchable;
+    use HasFactory, SafeSearchable, SoftDeletes;
 
     protected $fillable = [
         'thread_id',
@@ -83,9 +83,9 @@ class ForumPost extends Model
     /**
      * Check if user can edit this post.
      */
-    public function canEdit(User $user = null): bool
+    public function canEdit(?User $user = null): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -102,15 +102,15 @@ class ForumPost extends Model
         // Check forum-level moderate roles
         $moderateRoles = $this->thread->category->properties['moderate_roles'] ?? [];
 
-        return !empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
+        return ! empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
     }
 
     /**
      * Check if user can delete this post.
      */
-    public function canDelete(User $user = null): bool
+    public function canDelete(?User $user = null): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -121,7 +121,7 @@ class ForumPost extends Model
         // Check forum-level delete roles
         $deleteRoles = $this->thread->category->properties['delete_roles'] ?? [];
 
-        return !empty($deleteRoles) && $user->hasAnyRole($deleteRoles);
+        return ! empty($deleteRoles) && $user->hasAnyRole($deleteRoles);
     }
 
     /**
@@ -137,7 +137,7 @@ class ForumPost extends Model
      */
     public function isLikedBy(?User $user): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -149,7 +149,7 @@ class ForumPost extends Model
      */
     public function like(User $user): void
     {
-        if (!$this->isLikedBy($user)) {
+        if (! $this->isLikedBy($user)) {
             $this->likes()->create(['user_id' => $user->id]);
             $this->increment('like_count');
         }
@@ -203,6 +203,6 @@ class ForumPost extends Model
 
     public function shouldBeSearchable(): bool
     {
-        return !$this->trashed();
+        return ! $this->trashed();
     }
 }

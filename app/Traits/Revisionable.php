@@ -24,8 +24,7 @@ trait Revisionable
     /**
      * Get record version at given timestamp.
      *
-     * @param DateTime|string $timestamp DateTime|Carbon object or parsable date string @see strtotime()
-     *
+     * @param  DateTime|string  $timestamp  DateTime|Carbon object or parsable date string @see strtotime()
      * @return Revision|RevisionPresenter|null
      */
     public function snapshot($timestamp)
@@ -41,8 +40,7 @@ trait Revisionable
     /**
      * Get record version at given step back in history.
      *
-     * @param int $step
-     *
+     * @param  int  $step
      * @return Revision|RevisionPresenter|null
      */
     public function historyStep($step)
@@ -56,8 +54,7 @@ trait Revisionable
     /**
      * Determine if model has history at given timestamp if provided or any at all.
      *
-     * @param DateTime|string $timestamp DateTime|Carbon object or parsable date string @see strtotime()
-     *
+     * @param  DateTime|string  $timestamp  DateTime|Carbon object or parsable date string @see strtotime()
      * @return bool
      */
     public function hasHistory($timestamp = null)
@@ -106,7 +103,6 @@ trait Revisionable
     /**
      * Stringify revisionable attributes.
      *
-     * @param array $attributes
      *
      * @return array
      */
@@ -122,7 +118,6 @@ trait Revisionable
     /**
      * Get an array of revisionable attributes.
      *
-     * @param array $values
      *
      * @return array
      */
@@ -186,7 +181,7 @@ trait Revisionable
      */
     public function getRevisionsAttribute()
     {
-        if (!$this->relationLoaded('revisions')) {
+        if (! $this->relationLoaded('revisions')) {
             $this->load('revisions');
         }
 
@@ -202,7 +197,7 @@ trait Revisionable
      */
     public function getLatestRevisionAttribute()
     {
-        if (!$this->relationLoaded('latestRevision')) {
+        if (! $this->relationLoaded('latestRevision')) {
             $this->load('latestRevision');
         }
 
@@ -212,8 +207,7 @@ trait Revisionable
     /**
      * Wrap revision model with the presenter if provided.
      *
-     * @param Revision|\Illuminate\Database\Eloquent\Collection $history
-     *
+     * @param  Revision|\Illuminate\Database\Eloquent\Collection  $history
      * @return RevisionPresenter|Revision
      */
     public function wrapRevision($history)
@@ -232,7 +226,7 @@ trait Revisionable
      */
     public function getRevisionPresenter()
     {
-        if (!property_exists($this, 'revisionPresenter')) {
+        if (! property_exists($this, 'revisionPresenter')) {
             return null;
         }
 
@@ -243,10 +237,6 @@ trait Revisionable
 
     /**
      * Get all updates for a given field.
-     *
-     * @param string $field
-     *
-     * @return Collection
      */
     public function getFieldHistory(string $field): Collection
     {
@@ -257,10 +247,10 @@ trait Revisionable
 
             return [
                 'created_at' => (string) $revision->created_at,
-                'user_id'    => $revision->executor->id ?? null,
+                'user_id' => $revision->executor->id ?? null,
                 'user_email' => $revision->executor->email ?? null,
-                'old_value'  => $revision->old_value($field),
-                'new_value'  => $revision->new_value($field),
+                'old_value' => $revision->old_value($field),
+                'new_value' => $revision->new_value($field),
             ];
         })->filter()->values();
     }

@@ -79,13 +79,13 @@ class DynamicRateLimit
         $retryAfter = $this->limiter->availableIn($key);
 
         return response()->json([
-            'message'     => __('messages.error.too_many_requests'),
+            'message' => __('messages.error.too_many_requests'),
             'retry_after' => $retryAfter,
         ], 429)->withHeaders([
-            'X-RateLimit-Limit'     => $maxAttempts,
+            'X-RateLimit-Limit' => $maxAttempts,
             'X-RateLimit-Remaining' => 0,
-            'Retry-After'           => $retryAfter,
-            'X-RateLimit-Reset'     => time() + $retryAfter,
+            'Retry-After' => $retryAfter,
+            'X-RateLimit-Reset' => time() + $retryAfter,
         ]);
     }
 
@@ -95,7 +95,7 @@ class DynamicRateLimit
     protected function addHeaders(Response $response, int $maxAttempts, int $remainingAttempts): Response
     {
         $response->headers->add([
-            'X-RateLimit-Limit'     => $maxAttempts,
+            'X-RateLimit-Limit' => $maxAttempts,
             'X-RateLimit-Remaining' => max(0, $remainingAttempts),
         ]);
 

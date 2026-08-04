@@ -82,7 +82,7 @@ class SpamDetectionService
                 return md5(trim(strip_tags($post->body))) === $bodyHash;
             });
 
-        if (!$duplicate) {
+        if (! $duplicate) {
             $duplicate = ForumThread::where('user_id', $user->id)
                 ->where('created_at', '>=', now()->subHour())
                 ->get()

@@ -159,8 +159,8 @@ class IrcController extends Controller
         ]);
 
         $channelName = $request->channel;
-        if (!str_starts_with($channelName, '#')) {
-            $channelName = '#' . $channelName;
+        if (! str_starts_with($channelName, '#')) {
+            $channelName = '#'.$channelName;
         }
 
         $channel = IrcChannel::firstOrCreate(
@@ -297,7 +297,7 @@ class IrcController extends Controller
         $this->authorize('update', $channel->connection);
 
         $channel->update([
-            'is_favorite' => !$channel->is_favorite,
+            'is_favorite' => ! $channel->is_favorite,
         ]);
 
         return response()->json([
@@ -322,6 +322,7 @@ class IrcController extends Controller
 
         // Fallback: show current connection's nick
         $connection = $channel->connection;
+
         return response()->json([
             [
                 'nickname' => $connection->nickname,

@@ -17,6 +17,7 @@ class SandboxSaveStateTest extends TestCase
     use WithFaker;
 
     protected User $owner;
+
     protected Sandbox $sandbox;
 
     protected function setUp(): void

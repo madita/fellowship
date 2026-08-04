@@ -18,9 +18,13 @@ class SandboxCommentControllerTest extends TestCase
     use WithFaker;
 
     protected User $owner;
+
     protected User $editor;
+
     protected User $viewer;
+
     protected User $stranger;
+
     protected Sandbox $sandbox;
 
     protected function setUp(): void

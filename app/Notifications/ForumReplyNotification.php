@@ -6,6 +6,7 @@ use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Str;
 
 class ForumReplyNotification extends Notification
 {
@@ -30,7 +31,7 @@ class ForumReplyNotification extends Notification
             'thread_url' => $this->thread->url,
             'post_id' => $this->post->id,
             'post_author' => $this->post->author->username,
-            'post_excerpt' => \Illuminate\Support\Str::limit(strip_tags($this->post->body), 100),
+            'post_excerpt' => Str::limit(strip_tags($this->post->body), 100),
         ];
     }
 }

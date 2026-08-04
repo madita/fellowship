@@ -46,20 +46,20 @@ class HomepageWidgetController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'section_id' => 'nullable|exists:sections,id',
-            'type'       => 'required|string',
-            'title'      => 'nullable|string',
-            'enabled'    => 'boolean',
-            'order'      => 'integer',
-            'column'     => 'integer|min:1',
-            'content'    => 'required|array',
-            'config'     => 'nullable|array',
-            'anchor_id'  => 'nullable|string',
+            'type' => 'required|string',
+            'title' => 'nullable|string',
+            'enabled' => 'boolean',
+            'order' => 'integer',
+            'column' => 'integer|min:1',
+            'content' => 'required|array',
+            'config' => 'nullable|array',
+            'anchor_id' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -67,7 +67,7 @@ class HomepageWidgetController extends Controller
 
         return response()->json([
             'message' => __('messages.widget.created'),
-            'widget'  => $widget,
+            'widget' => $widget,
         ], 201);
     }
 
@@ -80,20 +80,20 @@ class HomepageWidgetController extends Controller
 
         $validator = Validator::make($request->all(), [
             'section_id' => 'nullable|exists:sections,id',
-            'type'       => 'string',
-            'title'      => 'nullable|string',
-            'enabled'    => 'boolean',
-            'order'      => 'integer',
-            'column'     => 'integer|min:1',
-            'content'    => 'array',
-            'config'     => 'nullable|array',
-            'anchor_id'  => 'nullable|string',
+            'type' => 'string',
+            'title' => 'nullable|string',
+            'enabled' => 'boolean',
+            'order' => 'integer',
+            'column' => 'integer|min:1',
+            'content' => 'array',
+            'config' => 'nullable|array',
+            'anchor_id' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -101,7 +101,7 @@ class HomepageWidgetController extends Controller
 
         return response()->json([
             'message' => __('messages.widget.updated'),
-            'widget'  => $widget->fresh(),
+            'widget' => $widget->fresh(),
         ]);
     }
 
@@ -124,12 +124,12 @@ class HomepageWidgetController extends Controller
     public function toggle($id): JsonResponse
     {
         $widget = Widget::findOrFail($id);
-        $widget->enabled = !$widget->enabled;
+        $widget->enabled = ! $widget->enabled;
         $widget->save();
 
         return response()->json([
             'message' => __('messages.widget.toggled'),
-            'widget'  => $widget,
+            'widget' => $widget,
         ]);
     }
 
@@ -148,7 +148,7 @@ class HomepageWidgetController extends Controller
 
         return response()->json([
             'message' => __('messages.widget.duplicated'),
-            'widget'  => $newWidget,
+            'widget' => $newWidget,
         ], 201);
     }
 
@@ -158,15 +158,15 @@ class HomepageWidgetController extends Controller
     public function updateOrder(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'widgets'         => 'required|array',
-            'widgets.*.id'    => 'required|exists:widgets,id',
+            'widgets' => 'required|array',
+            'widgets.*.id' => 'required|exists:widgets,id',
             'widgets.*.order' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 

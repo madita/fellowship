@@ -7,7 +7,9 @@ use Exception;
 class TranslationException extends Exception
 {
     protected string $sourceLocale;
+
     protected string $targetLocale;
+
     protected ?string $provider;
 
     public function __construct(

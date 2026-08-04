@@ -11,11 +11,17 @@ class CacheService
      * Cache tags for different content types.
      */
     public const TAG_SETTINGS = 'settings';
+
     public const TAG_PAGES = 'pages';
+
     public const TAG_WIKI = 'wiki';
+
     public const TAG_POSTS = 'posts';
+
     public const TAG_MENUS = 'menus';
+
     public const TAG_WIDGETS = 'widgets';
+
     public const TAG_USERS = 'users';
 
     /**
@@ -39,14 +45,14 @@ class CacheService
      */
     public static function remember(string $key, \Closure $callback, ?int $ttl = null, array $tags = [])
     {
-        if (!static::isEnabled()) {
+        if (! static::isEnabled()) {
             return $callback();
         }
 
         $ttl = $ttl ?? static::getLifetime();
 
         // Use tags if cache driver supports it
-        if (!empty($tags) && static::supportsTags()) {
+        if (! empty($tags) && static::supportsTags()) {
             return Cache::tags($tags)->remember($key, $ttl, $callback);
         }
 
@@ -58,13 +64,13 @@ class CacheService
      */
     public static function put(string $key, $value, ?int $ttl = null, array $tags = []): void
     {
-        if (!static::isEnabled()) {
+        if (! static::isEnabled()) {
             return;
         }
 
         $ttl = $ttl ?? static::getLifetime();
 
-        if (!empty($tags) && static::supportsTags()) {
+        if (! empty($tags) && static::supportsTags()) {
             Cache::tags($tags)->put($key, $value, $ttl);
         } else {
             Cache::put($key, $value, $ttl);
@@ -76,11 +82,11 @@ class CacheService
      */
     public static function get(string $key, $default = null, array $tags = [])
     {
-        if (!static::isEnabled()) {
+        if (! static::isEnabled()) {
             return $default;
         }
 
-        if (!empty($tags) && static::supportsTags()) {
+        if (! empty($tags) && static::supportsTags()) {
             return Cache::tags($tags)->get($key, $default);
         }
 
@@ -92,7 +98,7 @@ class CacheService
      */
     public static function forget(string $key, array $tags = []): void
     {
-        if (!empty($tags) && static::supportsTags()) {
+        if (! empty($tags) && static::supportsTags()) {
             Cache::tags($tags)->forget($key);
         } else {
             Cache::forget($key);
@@ -155,7 +161,7 @@ class CacheService
     public static function listKey(string $model, array $params = []): string
     {
         $key = strtolower($model).':list';
-        if (!empty($params)) {
+        if (! empty($params)) {
             $key .= ':'.md5(serialize($params));
         }
 

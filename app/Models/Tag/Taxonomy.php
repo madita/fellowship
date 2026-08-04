@@ -19,21 +19,22 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
-//use Webpatser\Uuid\Uuid;
+// use Webpatser\Uuid\Uuid;
 
 class Taxonomy extends Model implements TranslatableContract
 {
-//    protected $table = 'taxonomies';
+    use HasCache;
+
+    //    protected $table = 'taxonomies';
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     use SoftDeletes;
-    use HasCache;
     use Translatable;
 
     public $translatedAttributes = ['description', 'content', 'lead', 'meta_desc'];
 
-    /** @inheritdoc */
+    /** {@inheritdoc} */
     protected $fillable = [
         'parent_id',
         'alias_id',
@@ -47,21 +48,21 @@ class Taxonomy extends Model implements TranslatableContract
         'properties',
     ];
 
-    /** @inheritdoc */
+    /** {@inheritdoc} */
     protected $casts = [
-        'visible'    => 'boolean',
+        'visible' => 'boolean',
         'searchable' => 'boolean',
         'properties' => 'array',
 
         'deleted_at' => 'datetime',
     ];
 
-    /** @inheritdoc */
+    /** {@inheritdoc} */
     protected $with = [
         'term',
     ];
 
-    /** @inheritdoc */
+    /** {@inheritdoc} */
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
@@ -69,7 +70,7 @@ class Taxonomy extends Model implements TranslatableContract
         $this->table = config('lecturize.taxonomies.taxonomies.table', 'taxonomies');
     }
 
-    /** @inheritdoc */
+    /** {@inheritdoc} */
     protected static function boot()
     {
         parent::boot();
@@ -83,11 +84,11 @@ class Taxonomy extends Model implements TranslatableContract
         });
 
         static::saving(function (Taxonomy $model) {
-            if (isset($model->term) && $model->term->title && !$model->description) {
+            if (isset($model->term) && $model->term->title && ! $model->description) {
                 $model->description = $model->term->title;
             }
 
-            if (!$model->sort) {
+            if (! $model->sort) {
                 $sort = ($siblings = $model->siblings()->get()) ? $siblings->max('sort') : 0;
                 $model->sort = ($sort + 1);
             }
@@ -96,8 +97,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Get the term, that will be displayed as these taxonomies (categories) title.
-     *
-     * @return BelongsTo
      */
     public function term(): BelongsTo
     {
@@ -106,8 +105,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Get the parent taxonomy (categories).
-     *
-     * @return BelongsTo
      */
     public function parent(): BelongsTo
     {
@@ -116,8 +113,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Get the children taxonomies (categories).
-     *
-     * @return HasMany
      */
     public function children(): HasMany
     {
@@ -126,22 +121,18 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Get the children taxonomies (categories).
-     *
-     * @return Builder
      */
     public function siblings(): Builder
     {
         $class = Taxonomy::class;
 
-        return (new $class())->taxonomy($this->taxonomy)
+        return (new $class)->taxonomy($this->taxonomy)
             ->where('parent_id', $this->parent_id)
             ->orderBy('sort');
     }
 
     /**
      * Get the parent taxonomy (categories).
-     *
-     * @return BelongsTo
      */
     public function alias(): BelongsTo
     {
@@ -150,10 +141,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Get the breadcrumbs for this Taxonomy.
-     *
-     * @param bool $exclude_self
-     *
-     * @return Collection
      */
     public function getBreadcrumbs(bool $exclude_self = true): Collection
     {
@@ -167,7 +154,7 @@ class Taxonomy extends Model implements TranslatableContract
         ])->rememberForever($key, function () use ($exclude_self) {
             $parameters = $this->getParentBreadcrumbs();
 
-            if (!$exclude_self) {
+            if (! $exclude_self) {
                 $parameters->push($this->taxonomy);
             }
 
@@ -177,10 +164,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Add parent breadcrumb.
-     *
-     * @param Collection|null $parameters
-     *
-     * @return Collection
      */
     public function getParentBreadcrumbs(?Collection $parameters = null): Collection
     {
@@ -189,8 +172,8 @@ class Taxonomy extends Model implements TranslatableContract
         }
 
         $parameters->push([
-            'title'  => $this->term->title,
-            'slug'   => $this->term->slug,
+            'title' => $this->term->title,
+            'slug' => $this->term->slug,
             'params' => $this->getRouteParameters(),
         ]);
 
@@ -203,10 +186,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Get route parameters.
-     *
-     * @param bool $exclude_taxonomy
-     *
-     * @return array
      */
     public function getRouteParameters(bool $exclude_taxonomy = true): array
     {
@@ -216,7 +195,7 @@ class Taxonomy extends Model implements TranslatableContract
         return maybe_tagged_cache(['taxonomies', 'taxonomies:taxonomy', "taxonomies:taxonomy:$this->id"])->rememberForever($key, function () use ($exclude_taxonomy) {
             $parameters = $this->getParentSlugs();
 
-            if (!$exclude_taxonomy) {
+            if (! $exclude_taxonomy) {
                 $parameters[] = $this->taxonomy;
             }
 
@@ -226,10 +205,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Get slugs of parent terms.
-     *
-     * @param array $parameters
-     *
-     * @return array
      */
     public function getParentSlugs(array $parameters = []): array
     {
@@ -244,11 +219,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Scope by a given taxonomy (e.g. "blog_cat" for blog posts or "shop_cat" for shop products).
-     *
-     * @param Builder $query
-     * @param string  $taxonomy
-     *
-     * @return Builder
      */
     public function scopeTaxonomy(Builder $query, string $taxonomy): Builder
     {
@@ -257,11 +227,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Scope by a given taxonomy prefix (e.g. to retrieve both "shop_cat_a" and "shop_cat_b" you would scope "shop_cat%").
-     *
-     * @param Builder $query
-     * @param string  $taxonomy_prefix
-     *
-     * @return Builder
      */
     public function scopeTaxonomyStartsWith(Builder $query, string $taxonomy_prefix): Builder
     {
@@ -270,11 +235,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Scope by given taxonomies array, e.g. ['shop_cat_a', 'shop_cat_b'].
-     *
-     * @param Builder $query
-     * @param array   $taxonomies
-     *
-     * @return Builder
      */
     public function scopeTaxonomies(Builder $query, array $taxonomies): Builder
     {
@@ -283,16 +243,10 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Scope terms (category title) by given taxonomy.
-     *
-     * @param Builder    $query
-     * @param string|int $term
-     * @param string     $term_field
-     *
-     * @return Builder
      */
     public function scopeByTerm(Builder $query, string|int $term, string $term_field = 'title'): Builder
     {
-        $term_field = !in_array($term_field, ['id', 'title', 'slug']) ? 'title' : $term_field;
+        $term_field = ! in_array($term_field, ['id', 'title', 'slug']) ? 'title' : $term_field;
 
         return $query->whereHas('term', function (Builder $q) use ($term, $term_field) {
             $q->where($term_field, $term);
@@ -301,12 +255,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * A simple search scope.
-     *
-     * @param Builder $query
-     * @param string  $term
-     * @param string  $taxonomy
-     *
-     * @return Builder
      */
     public function scopeSearch(Builder $query, string $term, string $taxonomy): Builder
     {
@@ -317,10 +265,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Scope visible taxonomies.
-     *
-     * @param Builder $query
-     *
-     * @return Builder
      */
     public function scopeVisible(Builder $query): Builder
     {
@@ -329,10 +273,6 @@ class Taxonomy extends Model implements TranslatableContract
 
     /**
      * Scope searchable taxonomies.
-     *
-     * @param Builder $query
-     *
-     * @return Builder
      */
     public function scopeSearchable(Builder $query): Builder
     {
@@ -342,78 +282,78 @@ class Taxonomy extends Model implements TranslatableContract
     protected $hidden = [''];
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected $dates = ['deleted_at'];
 
-//    public function getTaxableTitle()
-//    {
-//        return property_exists($this, 'taxable_title') ? $this->taxable_title : null;
-//    }
+    //    public function getTaxableTitle()
+    //    {
+    //        return property_exists($this, 'taxable_title') ? $this->taxable_title : null;
+    //    }
 
     /**
      * Get the term this taxonomy belongs to.
      *
      * @return BelongsTo
      */
-//    public function term()
-//    {
-//        return $this->belongsTo(Term::class);
-//    }
+    //    public function term()
+    //    {
+    //        return $this->belongsTo(Term::class);
+    //    }
 
     /**
      * Get the parent taxonomy.
      *
      * @return BelongsTo
      */
-//    public function parent()
-//    {
-//        return $this->belongsTo(Taxonomy::class, 'parent_id');
-//    }
-//
-//    /**
-//     * Get the children taxonomies.
-//     *
-//     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-//     */
-//    public function children()
-//    {
-//        return $this->hasMany(Taxonomy::class, 'parent_id');
-//    }
+    //    public function parent()
+    //    {
+    //        return $this->belongsTo(Taxonomy::class, 'parent_id');
+    //    }
+    //
+    //    /**
+    //     * Get the children taxonomies.
+    //     *
+    //     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+    //     */
+    //    public function children()
+    //    {
+    //        return $this->hasMany(Taxonomy::class, 'parent_id');
+    //    }
 
-//    public function childrenRecursive()
-//    {
-//        return $this->children()->with('childrenRecursive');
-//    }
+    //    public function childrenRecursive()
+    //    {
+    //        return $this->children()->with('childrenRecursive');
+    //    }
 
-//    public function parent()
-//    {
-//        return $this->belongsTo(Taxonomy::class, 'parent_id');
-//    }
-//
-//    public function children()
-//    {
-//        return $this->hasMany(Taxonomy::class, 'parent_id');
-//    }
+    //    public function parent()
+    //    {
+    //        return $this->belongsTo(Taxonomy::class, 'parent_id');
+    //    }
+    //
+    //    public function children()
+    //    {
+    //        return $this->hasMany(Taxonomy::class, 'parent_id');
+    //    }
 
     public function childrenRecursive()
     {
         return $this->children()->with('childrenRecursive');
     }
 
-//    public function getTaxonomyAttribute()
-//    {
-//        $parents = collect([]);
-//
-//        $parent = $this->parent;
-//
-//        while(!is_null($parent)) {
-//            $parents->push($parent);
-//            $parent = $parent->parent;
-//        }
-//
-//        return $parents;
-//    }
+    //    public function getTaxonomyAttribute()
+    //    {
+    //        $parents = collect([]);
+    //
+    //        $parent = $this->parent;
+    //
+    //        while(!is_null($parent)) {
+    //            $parents->push($parent);
+    //            $parent = $parent->parent;
+    //        }
+    //
+    //        return $parents;
+    //    }
 
     /**
      * Get forum threads belonging to this taxonomy (for forum_cat type).
@@ -448,7 +388,7 @@ class Taxonomy extends Model implements TranslatableContract
      */
     public function pages()
     {
-//        return $this->morphedByMany('App\Models\Page', 'taxable', 'taxables');
+        //        return $this->morphedByMany('App\Models\Page', 'taxable', 'taxables');
         return $this->morphedByMany(Page::class, 'taxable', 'taxables')
             ->withTimestamps();
     }
@@ -456,23 +396,21 @@ class Taxonomy extends Model implements TranslatableContract
     /**
      * Scope taxonomies.
      *
-     * @param object $query
-     * @param string $taxonomy
-     *
+     * @param  object  $query
+     * @param  string  $taxonomy
      * @return mixed
      */
-//    public function scopeTaxonomy($query, $taxonomy)
-//    {
-//        return $query->where('taxonomy', $taxonomy);
-//    }
+    //    public function scopeTaxonomy($query, $taxonomy)
+    //    {
+    //        return $query->where('taxonomy', $taxonomy);
+    //    }
 
     /**
      * Scope terms.
      *
-     * @param object $query
-     * @param string $term
-     * @param string $taxonomy
-     *
+     * @param  object  $query
+     * @param  string  $term
+     * @param  string  $taxonomy
      * @return mixed
      */
     public function scopeTerm($query, $term, $taxonomy = 'major')
@@ -485,28 +423,21 @@ class Taxonomy extends Model implements TranslatableContract
     /**
      * A simple search scope.
      *
-     * @param object $query
-     * @param string $searchTerm
-     * @param string $taxonomy
-     *
+     * @param  object  $query
+     * @param  string  $searchTerm
      * @return mixed
      */
-//    public function scopeSearch($query, $searchTerm, $taxonomy = 'major')
-//    {
-//        return $query->whereHas('term', function ($q) use ($searchTerm) {
-//            $q->where('name', 'like', '%'.$searchTerm.'%');
-//        });
-//    }
+    //    public function scopeSearch($query, $searchTerm, $taxonomy = 'major')
+    //    {
+    //        return $query->whereHas('term', function ($q) use ($searchTerm) {
+    //            $q->where('name', 'like', '%'.$searchTerm.'%');
+    //        });
+    //    }
 
     /**
      * Creates terms and taxonomies.
      *
-     * @param string|array  $categories
-     * @param string        $taxonomy
-     * @param Taxonomy|null $parent
-     * @param int|null      $sort
-     *
-     * @return Collection
+     * @param  string|array  $categories
      */
     public static function createCategories($categories, string $taxonomy, ?Taxonomy $parent = null, ?int $sort = null): ?Collection
     {
@@ -534,7 +465,7 @@ class Taxonomy extends Model implements TranslatableContract
 
         foreach ($terms as $term) {
             $tax = Taxonomy::firstOrNew([
-                'term_id'  => $term->id,
+                'term_id' => $term->id,
                 'taxonomy' => $taxonomy,
             ]);
 
@@ -543,7 +474,7 @@ class Taxonomy extends Model implements TranslatableContract
                     $tax->parent_id = $parent->id;
                 }
 
-                if (is_integer($sort) && $tax->sort !== $sort) {
+                if (is_int($sort) && $tax->sort !== $sort) {
                     $tax->sort = $sort;
                 }
 

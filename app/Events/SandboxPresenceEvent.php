@@ -24,13 +24,13 @@ class SandboxPresenceEvent implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new PresenceChannel('sandbox.' . $this->sandbox->id),
+            new PresenceChannel('sandbox.'.$this->sandbox->id),
         ];
     }
 
     public function broadcastAs(): string
     {
-        return 'presence.' . $this->action;
+        return 'presence.'.$this->action;
     }
 
     public function broadcastWith(): array

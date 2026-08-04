@@ -15,33 +15,33 @@ use Illuminate\Support\Str;
 /**
  * Class Term.
  *
- * @property int                   $id
- * @property string                $title
- * @property string|null           $slug
- * @property string|null           $content
- * @property string|null           $lead
+ * @property int $id
+ * @property string $title
+ * @property string|null $slug
+ * @property string|null $content
+ * @property string|null $lead
  * @property Collection|Taxonomy[] $taxonomies
  */
 class Term extends Model implements TranslatableContract
 {
+    use HasCache;
     use Sluggable;
     use SoftDeletes;
-    use HasCache;
     use Translatable;
 
     public $translatedAttributes = ['title', 'content', 'lead'];
 
-    /** @inheritdoc */
+    /** {@inheritdoc} */
     protected $fillable = [
         'slug',
     ];
 
-    /** @inheritdoc */
+    /** {@inheritdoc} */
     protected $casts = [
         'deleted_at' => 'datetime',
     ];
 
-    /** @inheritdoc */
+    /** {@inheritdoc} */
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
@@ -58,7 +58,7 @@ class Term extends Model implements TranslatableContract
             ?? static::create(['title' => $title]);
     }
 
-    /** @inheritdoc */
+    /** {@inheritdoc} */
     public function sluggable(): array
     {
         return ['slug' => ['source' => 'title']];
@@ -66,8 +66,6 @@ class Term extends Model implements TranslatableContract
 
     /**
      * Get the taxonomies (categories) this term belongs to.
-     *
-     * @return HasMany
      */
     public function taxonomies(): HasMany
     {
@@ -76,10 +74,6 @@ class Term extends Model implements TranslatableContract
 
     /**
      * Get display title.
-     *
-     * @param int $limit
-     *
-     * @return string
      */
     public function getDisplayTitle(int $limit = 0): string
     {

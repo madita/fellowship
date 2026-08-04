@@ -20,7 +20,7 @@ class TermController extends DataTableController
         $name = $request->get('name');
         $taxonomy = $request->get('taxonomy');
 
-        if (!$taxonomy || !$name) {
+        if (! $taxonomy || ! $name) {
             return response()->json(['message' => 'error']);
         }
 
@@ -31,7 +31,7 @@ class TermController extends DataTableController
 
     public function getUpdatableColumns()
     {
-        return  [
+        return [
             'name',
             'taxonomy',
             'tag_taxonomy_id',
@@ -43,9 +43,9 @@ class TermController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'name'            => 'input',
-            'desc'            => 'textarea',
-            'taxonomy'        => 'model',
+            'name' => 'input',
+            'desc' => 'textarea',
+            'taxonomy' => 'model',
             'tag_taxonomy_id' => 'model',
         ];
     }
@@ -62,8 +62,8 @@ class TermController extends DataTableController
         ];
     }
 
-//    public function update($id, TaxonomyRequest $request)
-//    {
-//        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
-//    }
+    //    public function update($id, TaxonomyRequest $request)
+    //    {
+    //        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
+    //    }
 }

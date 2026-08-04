@@ -17,7 +17,7 @@ class SitemapController extends Controller
     public function sitemapIndex(): Response
     {
         $sitemapEnabled = Setting::get('sitemap_enabled', true);
-        if (!$sitemapEnabled) {
+        if (! $sitemapEnabled) {
             abort(404);
         }
 
@@ -49,7 +49,7 @@ class SitemapController extends Controller
         foreach ($sitemaps as $sitemap) {
             $xml .= '  <sitemap>'.PHP_EOL;
             $xml .= '    <loc>'.htmlspecialchars($sitemap['loc']).'</loc>'.PHP_EOL;
-            if (!empty($sitemap['lastmod'])) {
+            if (! empty($sitemap['lastmod'])) {
                 $xml .= '    <lastmod>'.$sitemap['lastmod'].'</lastmod>'.PHP_EOL;
             }
             $xml .= '  </sitemap>'.PHP_EOL;
@@ -80,7 +80,7 @@ class SitemapController extends Controller
     public function index(): Response
     {
         $sitemapEnabled = Setting::get('sitemap_enabled', true);
-        if (!$sitemapEnabled) {
+        if (! $sitemapEnabled) {
             abort(404);
         }
 
@@ -98,7 +98,7 @@ class SitemapController extends Controller
     public function wikiSitemap(): Response
     {
         $sitemapEnabled = Setting::get('sitemap_enabled', true);
-        if (!$sitemapEnabled) {
+        if (! $sitemapEnabled) {
             abort(404);
         }
 
@@ -116,7 +116,7 @@ class SitemapController extends Controller
     public function pagesSitemap(): Response
     {
         $sitemapEnabled = Setting::get('sitemap_enabled', true);
-        if (!$sitemapEnabled) {
+        if (! $sitemapEnabled) {
             abort(404);
         }
 
@@ -134,7 +134,7 @@ class SitemapController extends Controller
     public function postsSitemap(): Response
     {
         $sitemapEnabled = Setting::get('sitemap_enabled', true);
-        if (!$sitemapEnabled) {
+        if (! $sitemapEnabled) {
             abort(404);
         }
 
@@ -174,10 +174,10 @@ class SitemapController extends Controller
         $wikis = Wiki::all();
         foreach ($wikis as $wiki) {
             $urls[] = [
-                'loc'        => $baseUrl.'/wiki/'.$wiki->slug,
-                'lastmod'    => $wiki->updated_at?->toW3cString(),
+                'loc' => $baseUrl.'/wiki/'.$wiki->slug,
+                'lastmod' => $wiki->updated_at?->toW3cString(),
                 'changefreq' => 'weekly',
-                'priority'   => '0.8',
+                'priority' => '0.8',
             ];
         }
 
@@ -195,10 +195,10 @@ class SitemapController extends Controller
         $pages = Page::where('published', true)->get();
         foreach ($pages as $page) {
             $urls[] = [
-                'loc'        => $baseUrl.'/pages/'.$page->slug,
-                'lastmod'    => $page->updated_at?->toW3cString(),
+                'loc' => $baseUrl.'/pages/'.$page->slug,
+                'lastmod' => $page->updated_at?->toW3cString(),
                 'changefreq' => 'weekly',
-                'priority'   => '0.7',
+                'priority' => '0.7',
             ];
         }
 
@@ -217,10 +217,10 @@ class SitemapController extends Controller
             $posts = Post::where('status', 'published')->get();
             foreach ($posts as $post) {
                 $urls[] = [
-                    'loc'        => $baseUrl.'/posts/'.$post->slug,
-                    'lastmod'    => $post->updated_at?->toW3cString(),
+                    'loc' => $baseUrl.'/posts/'.$post->slug,
+                    'lastmod' => $post->updated_at?->toW3cString(),
                     'changefreq' => 'monthly',
-                    'priority'   => '0.6',
+                    'priority' => '0.6',
                 ];
             }
         } catch (\Exception $e) {
@@ -241,13 +241,13 @@ class SitemapController extends Controller
         foreach ($urls as $url) {
             $xml .= '  <url>'.PHP_EOL;
             $xml .= '    <loc>'.htmlspecialchars($url['loc']).'</loc>'.PHP_EOL;
-            if (!empty($url['lastmod'])) {
+            if (! empty($url['lastmod'])) {
                 $xml .= '    <lastmod>'.$url['lastmod'].'</lastmod>'.PHP_EOL;
             }
-            if (!empty($url['changefreq'])) {
+            if (! empty($url['changefreq'])) {
                 $xml .= '    <changefreq>'.$url['changefreq'].'</changefreq>'.PHP_EOL;
             }
-            if (!empty($url['priority'])) {
+            if (! empty($url['priority'])) {
                 $xml .= '    <priority>'.$url['priority'].'</priority>'.PHP_EOL;
             }
             $xml .= '  </url>'.PHP_EOL;
@@ -269,7 +269,7 @@ class SitemapController extends Controller
 
         $content = '';
 
-        if (!$indexingEnabled) {
+        if (! $indexingEnabled) {
             // Block all crawlers
             $content = "User-agent: *\nDisallow: /\n";
         } else {
@@ -288,7 +288,7 @@ class SitemapController extends Controller
         }
 
         // Append custom robots.txt content
-        if (!empty($customRobots)) {
+        if (! empty($customRobots)) {
             $content .= "\n# Custom rules\n";
             $content .= $customRobots."\n";
         }

@@ -22,46 +22,46 @@ class MigrationController extends Controller
      */
     protected array $migrations = [
         'events' => [
-            'name'        => 'Events',
+            'name' => 'Events',
             'description' => 'Migrate events from the old database',
-            'group'       => 'events',
-            'job'         => MigrateEventsJob::class,
+            'group' => 'events',
+            'job' => MigrateEventsJob::class,
         ],
         'gallery' => [
-            'name'        => 'Gallery Collections',
+            'name' => 'Gallery Collections',
             'description' => 'Migrate gallery collections and images',
-            'group'       => 'events',
-            'job'         => MigrateGalleryJob::class,
+            'group' => 'events',
+            'job' => MigrateGalleryJob::class,
         ],
         'linkGallery' => [
-            'name'        => 'Link Gallery to Events',
+            'name' => 'Link Gallery to Events',
             'description' => 'Create relationships between galleries and events',
-            'group'       => 'events',
-            'job'         => MigrateLinkGalleryJob::class,
+            'group' => 'events',
+            'job' => MigrateLinkGalleryJob::class,
         ],
         'wikiTerms' => [
-            'name'        => 'Wiki Terms',
+            'name' => 'Wiki Terms',
             'description' => 'Migrate wiki categories and terms',
-            'group'       => 'wiki',
-            'job'         => MigrateWikiTermsJob::class,
+            'group' => 'wiki',
+            'job' => MigrateWikiTermsJob::class,
         ],
         'wikiPages' => [
-            'name'        => 'Wiki Pages',
+            'name' => 'Wiki Pages',
             'description' => 'Migrate wiki pages with content transformation',
-            'group'       => 'wiki',
-            'job'         => MigrateWikiPagesJob::class,
+            'group' => 'wiki',
+            'job' => MigrateWikiPagesJob::class,
         ],
         'wikiLinking' => [
-            'name'        => 'Wiki Internal Links',
+            'name' => 'Wiki Internal Links',
             'description' => 'Update internal wiki page links',
-            'group'       => 'wiki',
-            'job'         => MigrateWikiLinkingJob::class,
+            'group' => 'wiki',
+            'job' => MigrateWikiLinkingJob::class,
         ],
         'wikiTermsLinking' => [
-            'name'        => 'Wiki Terms Linking',
+            'name' => 'Wiki Terms Linking',
             'description' => 'Update wiki term links in descriptions',
-            'group'       => 'wiki',
-            'job'         => MigrateWikiTermsLinkingJob::class,
+            'group' => 'wiki',
+            'job' => MigrateWikiTermsLinkingJob::class,
         ],
     ];
 
@@ -79,10 +79,10 @@ class MigrationController extends Controller
         $migrations = [];
         foreach ($this->migrations as $key => $migration) {
             $migrations[] = [
-                'key'         => $key,
-                'name'        => $migration['name'],
+                'key' => $key,
+                'name' => $migration['name'],
                 'description' => $migration['description'],
-                'group'       => $migration['group'],
+                'group' => $migration['group'],
             ];
         }
 
@@ -94,7 +94,7 @@ class MigrationController extends Controller
 
         return response()->json([
             'migrations' => $migrations,
-            'groups'     => [
+            'groups' => [
                 ['key' => 'events', 'name' => 'Events & Gallery'],
                 ['key' => 'wiki', 'name' => 'Wiki'],
             ],
@@ -108,7 +108,7 @@ class MigrationController extends Controller
     public function start(Request $request): JsonResponse
     {
         $request->validate([
-            'migrations'   => 'required|array|min:1',
+            'migrations' => 'required|array|min:1',
             'migrations.*' => 'string',
         ]);
 
@@ -117,7 +117,7 @@ class MigrationController extends Controller
 
         // Validate all requested migrations exist
         foreach ($requestedMigrations as $key) {
-            if (!array_key_exists($key, $this->migrations)) {
+            if (! array_key_exists($key, $this->migrations)) {
                 return response()->json([
                     'error' => __('messages.migrations.unknown', ['key' => $key]),
                 ], 400);
@@ -130,11 +130,11 @@ class MigrationController extends Controller
 
             // Create log entry
             $log = MigrationLog::create([
-                'batch_id'       => $batchId,
-                'migration_key'  => $key,
+                'batch_id' => $batchId,
+                'migration_key' => $key,
                 'migration_name' => $migration['name'],
-                'status'         => 'pending',
-                'logs'           => [['type' => 'info', 'message' => __('messages.migrations.queued'), 'timestamp' => now()->toIso8601String()]],
+                'status' => 'pending',
+                'logs' => [['type' => 'info', 'message' => __('messages.migrations.queued'), 'timestamp' => now()->toIso8601String()]],
             ]);
 
             // Dispatch job with delay to ensure sequential processing
@@ -148,7 +148,7 @@ class MigrationController extends Controller
         return response()->json([
             'message' => __('messages.migrations.queued_all'),
             'batchId' => $batchId,
-            'count'   => count($requestedMigrations),
+            'count' => count($requestedMigrations),
         ]);
     }
 
@@ -167,16 +167,16 @@ class MigrationController extends Controller
 
         $migrations = $logs->map(function ($log) {
             return [
-                'key'         => $log->migration_key,
-                'name'        => $log->migration_name,
-                'status'      => $log->status,
-                'total'       => $log->total_items,
-                'processed'   => $log->processed_items,
-                'errors'      => $log->error_count,
-                'percentage'  => $log->getProgressPercentage(),
+                'key' => $log->migration_key,
+                'name' => $log->migration_name,
+                'status' => $log->status,
+                'total' => $log->total_items,
+                'processed' => $log->processed_items,
+                'errors' => $log->error_count,
+                'percentage' => $log->getProgressPercentage(),
                 'currentItem' => $log->current_item,
-                'lastError'   => $log->last_error,
-                'startedAt'   => $log->started_at?->toIso8601String(),
+                'lastError' => $log->last_error,
+                'startedAt' => $log->started_at?->toIso8601String(),
                 'completedAt' => $log->completed_at?->toIso8601String(),
             ];
         });
@@ -197,13 +197,13 @@ class MigrationController extends Controller
 
         return response()->json([
             'batchId' => $batchId,
-            'status'  => $overallStatus,
+            'status' => $overallStatus,
             'summary' => [
-                'pending'   => $pending,
-                'running'   => $running,
+                'pending' => $pending,
+                'running' => $running,
                 'completed' => $completed,
-                'failed'    => $failed,
-                'total'     => $total,
+                'failed' => $failed,
+                'total' => $total,
             ],
             'migrations' => $migrations,
         ]);
@@ -218,18 +218,18 @@ class MigrationController extends Controller
             ->where('migration_key', $migrationKey)
             ->first();
 
-        if (!$log) {
+        if (! $log) {
             return response()->json(['error' => __('messages.migrations.log_not_found')], 404);
         }
 
         return response()->json([
-            'migration'  => $migrationKey,
-            'name'       => $log->migration_name,
-            'status'     => $log->status,
-            'logs'       => $log->logs ?? [],
-            'total'      => $log->total_items,
-            'processed'  => $log->processed_items,
-            'errors'     => $log->error_count,
+            'migration' => $migrationKey,
+            'name' => $log->migration_name,
+            'status' => $log->status,
+            'logs' => $log->logs ?? [],
+            'total' => $log->total_items,
+            'processed' => $log->processed_items,
+            'errors' => $log->error_count,
             'percentage' => $log->getProgressPercentage(),
         ]);
     }
@@ -242,13 +242,13 @@ class MigrationController extends Controller
         $updated = MigrationLog::where('batch_id', $batchId)
             ->where('status', 'pending')
             ->update([
-                'status'       => 'failed',
-                'last_error'   => __('messages.migrations.cancelled'),
+                'status' => 'failed',
+                'last_error' => __('messages.migrations.cancelled'),
                 'completed_at' => now(),
             ]);
 
         return response()->json([
-            'message'   => __('messages.migrations.cancelled_count', ['count' => $updated]),
+            'message' => __('messages.migrations.cancelled_count', ['count' => $updated]),
             'cancelled' => $updated,
         ]);
     }
@@ -274,13 +274,13 @@ class MigrationController extends Controller
         return response()->json([
             'batches' => $batches->map(function ($batch) {
                 return [
-                    'batchId'         => $batch->batch_id,
-                    'startedAt'       => $batch->started_at,
-                    'completedAt'     => $batch->completed_at,
+                    'batchId' => $batch->batch_id,
+                    'startedAt' => $batch->started_at,
+                    'completedAt' => $batch->completed_at,
                     'totalMigrations' => $batch->total_migrations,
-                    'completed'       => $batch->completed,
-                    'failed'          => $batch->failed,
-                    'status'          => $batch->failed > 0 ? 'completed_with_errors' :
+                    'completed' => $batch->completed,
+                    'failed' => $batch->failed,
+                    'status' => $batch->failed > 0 ? 'completed_with_errors' :
                         ($batch->completed === $batch->total_migrations ? 'completed' : 'running'),
                 ];
             }),

@@ -44,6 +44,7 @@ class IrcServer extends Model
     public function getConnectionUrlAttribute(): string
     {
         $protocol = $this->use_ssl ? 'ircs' : 'irc';
+
         return "{$protocol}://{$this->host}:{$this->port}";
     }
 

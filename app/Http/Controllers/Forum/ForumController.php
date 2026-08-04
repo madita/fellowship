@@ -26,7 +26,7 @@ class ForumController extends Controller
             ->whereNull('parent_id')
             ->with([
                 'term',
-                'children' => fn($q) => $q->with('term')->withCount('forumThreads')->orderBy('sort'),
+                'children' => fn ($q) => $q->with('term')->withCount('forumThreads')->orderBy('sort'),
             ])
             ->withCount(['forumThreads', 'forumPosts'])
             ->orderBy('sort')
@@ -34,9 +34,9 @@ class ForumController extends Controller
             ->each(function ($cat) {
                 // Query the actual latest ForumPost across all threads in this category
                 $latestPost = ForumPost::whereIn(
-                        'thread_id',
-                        $cat->forumThreads()->select('id')
-                    )
+                    'thread_id',
+                    $cat->forumThreads()->select('id')
+                )
                     ->with('author')
                     ->orderByDesc('created_at')
                     ->first();
@@ -44,7 +44,7 @@ class ForumController extends Controller
                 $cat->setAttribute('latestPost', $latestPost);
 
                 // Fall back to thread author if no replies exist yet
-                if (!$latestPost) {
+                if (! $latestPost) {
                     $latestThread = $cat->forumThreads()
                         ->with('author')
                         ->orderByDesc('created_at')
@@ -52,14 +52,14 @@ class ForumController extends Controller
                     $cat->setRelation('latestThread', $latestThread);
                 }
             })
-            ->filter(fn($cat) => $this->canAccessForum($cat, $user))
+            ->filter(fn ($cat) => $this->canAccessForum($cat, $user))
             ->values();
 
         // Compute has_unread per category for authenticated users
         $categoryUnread = [];
         if ($user) {
             $catIds = $categories->pluck('id')->all();
-            $childIds = $categories->flatMap(fn($cat) => $cat->children->pluck('id'))->all();
+            $childIds = $categories->flatMap(fn ($cat) => $cat->children->pluck('id'))->all();
             $allCatIds = array_merge($catIds, $childIds);
 
             // Get threads with activity since previous_login_at (new threads OR new replies)
@@ -86,8 +86,9 @@ class ForumController extends Controller
                     ->whereIn('taxonomy_id', $ownAndChildIds)
                     ->contains(function ($thread) use ($readRecords) {
                         $readAt = $readRecords[$thread->id] ?? null;
+
                         // Unread if never opened, or if new posts since last read
-                        return !$readAt || $thread->last_post_at > $readAt;
+                        return ! $readAt || $thread->last_post_at > $readAt;
                     });
 
                 $categoryUnread[$cat->id] = $unread;
@@ -97,6 +98,7 @@ class ForumController extends Controller
         $result = $categories->map(function ($cat) use ($categoryUnread) {
             $data = $this->transformCategory($cat);
             $data['has_unread'] = $categoryUnread[$cat->id] ?? false;
+
             return $data;
         });
 
@@ -112,12 +114,12 @@ class ForumController extends Controller
         $user = Auth::user();
 
         $taxonomy = Taxonomy::taxonomy('forum_cat')
-            ->whereHas('term', fn($q) => $q->where('slug', $slug))
+            ->whereHas('term', fn ($q) => $q->where('slug', $slug))
             ->with(['term', 'parent.term', 'children.term'])
             ->withCount('forumThreads')
             ->firstOrFail();
 
-        if (!$this->canAccessForum($taxonomy, $user)) {
+        if (! $this->canAccessForum($taxonomy, $user)) {
             abort(403, 'You do not have permission to access this forum.');
         }
 
@@ -173,6 +175,7 @@ class ForumController extends Controller
                 // If the user made the last post, they already know about it
                 if ($thread->last_post_user_id === $user->id) {
                     $thread->is_read = true;
+
                     return $thread;
                 }
 
@@ -182,6 +185,7 @@ class ForumController extends Controller
                 } else {
                     $thread->is_read = $user->previous_login_at && $thread->last_post_at <= $user->previous_login_at;
                 }
+
                 return $thread;
             });
         }
@@ -219,7 +223,7 @@ class ForumController extends Controller
 
         // Resolve parent: if parent_id is given, find the taxonomy
         $parentTaxonomyId = null;
-        if (!empty($validated['parent_id'])) {
+        if (! empty($validated['parent_id'])) {
             $parent = Taxonomy::taxonomy('forum_cat')->findOrFail($validated['parent_id']);
             $parentTaxonomyId = $parent->id;
         }
@@ -227,23 +231,23 @@ class ForumController extends Controller
         $term = Term::firstOrCreateByTitle($validated['name']);
 
         $taxonomy = Taxonomy::create([
-            'term_id'    => $term->id,
-            'taxonomy'   => 'forum_cat',
-            'parent_id'  => $parentTaxonomyId,
-            'sort'       => $validated['position'] ?? 0,
-            'visible'    => true,
+            'term_id' => $term->id,
+            'taxonomy' => 'forum_cat',
+            'parent_id' => $parentTaxonomyId,
+            'sort' => $validated['position'] ?? 0,
+            'visible' => true,
             'searchable' => true,
             'properties' => [
-                'is_private'    => $validated['is_private'] ?? false,
-                'is_locked'     => $validated['is_locked'] ?? false,
-                'allowed_roles'  => $validated['allowed_roles'] ?? [],
-                'post_roles'     => $validated['post_roles'] ?? [],
+                'is_private' => $validated['is_private'] ?? false,
+                'is_locked' => $validated['is_locked'] ?? false,
+                'allowed_roles' => $validated['allowed_roles'] ?? [],
+                'post_roles' => $validated['post_roles'] ?? [],
                 'moderate_roles' => $validated['moderate_roles'] ?? [],
-                'delete_roles'   => $validated['delete_roles'] ?? [],
+                'delete_roles' => $validated['delete_roles'] ?? [],
             ],
         ]);
 
-        if (!empty($validated['description'])) {
+        if (! empty($validated['description'])) {
             $taxonomy->description = $validated['description'];
             $taxonomy->save();
         }
@@ -361,7 +365,7 @@ class ForumController extends Controller
         $excludeIds = [];
         $privateCats = Taxonomy::taxonomy('forum_cat')
             ->get()
-            ->filter(fn($cat) => ($cat->properties['is_private'] ?? false) && !$this->canAccessForum($cat, $user));
+            ->filter(fn ($cat) => ($cat->properties['is_private'] ?? false) && ! $this->canAccessForum($cat, $user));
 
         foreach ($privateCats as $cat) {
             $excludeIds[] = $cat->id;
@@ -376,7 +380,7 @@ class ForumController extends Controller
         $query = ForumThread::with(['author', 'category.term', 'lastPostUser'])
             ->withCount('posts');
 
-        if (!empty($excludeIds)) {
+        if (! empty($excludeIds)) {
             $query->whereNotIn('taxonomy_id', $excludeIds);
         }
 
@@ -421,6 +425,7 @@ class ForumController extends Controller
             if ($user) {
                 if ($thread->last_post_user_id === $user->id) {
                     $thread->is_read = true;
+
                     return $thread;
                 }
 
@@ -443,11 +448,11 @@ class ForumController extends Controller
      */
     private function canAccessForum(Taxonomy $cat, ?User $user): bool
     {
-        if (!($cat->properties['is_private'] ?? false)) {
+        if (! ($cat->properties['is_private'] ?? false)) {
             return true;
         }
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -469,11 +474,11 @@ class ForumController extends Controller
      */
     private function canPostInForum(Taxonomy $cat, ?User $user): bool
     {
-        if (!($cat->properties['is_locked'] ?? false)) {
+        if (! ($cat->properties['is_locked'] ?? false)) {
             return true;
         }
 
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -496,49 +501,49 @@ class ForumController extends Controller
     private function transformCategory(Taxonomy $cat): array
     {
         return [
-            'id'            => $cat->id,
-            'name'          => $cat->term->title,
-            'slug'          => $cat->term->slug,
-            'description'   => $cat->description,
-            'parent_id'     => $cat->parent_id,
-            'position'      => $cat->sort,
-            'color'         => $cat->color,
-            'is_private'    => $cat->properties['is_private'] ?? false,
-            'is_locked'     => $cat->properties['is_locked'] ?? false,
-            'allowed_roles'  => $cat->properties['allowed_roles'] ?? [],
-            'post_roles'     => $cat->properties['post_roles'] ?? [],
+            'id' => $cat->id,
+            'name' => $cat->term->title,
+            'slug' => $cat->term->slug,
+            'description' => $cat->description,
+            'parent_id' => $cat->parent_id,
+            'position' => $cat->sort,
+            'color' => $cat->color,
+            'is_private' => $cat->properties['is_private'] ?? false,
+            'is_locked' => $cat->properties['is_locked'] ?? false,
+            'allowed_roles' => $cat->properties['allowed_roles'] ?? [],
+            'post_roles' => $cat->properties['post_roles'] ?? [],
             'moderate_roles' => $cat->properties['moderate_roles'] ?? [],
-            'delete_roles'   => $cat->properties['delete_roles'] ?? [],
+            'delete_roles' => $cat->properties['delete_roles'] ?? [],
             'threads_count' => $cat->forum_threads_count ?? 0,
-            'posts_count'   => $cat->forum_posts_count ?? 0,
-            'last_post_at'  => $cat->latestPost
+            'posts_count' => $cat->forum_posts_count ?? 0,
+            'last_post_at' => $cat->latestPost
                 ? $cat->latestPost->created_at
                 : ($cat->relationLoaded('latestThread') && $cat->latestThread
                     ? $cat->latestThread->created_at
                     : null),
-            'lastPost'      => $cat->latestPost
+            'lastPost' => $cat->latestPost
                 ? [
                     'author' => $cat->latestPost->author ? [
-                        'id'       => $cat->latestPost->author->id,
+                        'id' => $cat->latestPost->author->id,
                         'username' => $cat->latestPost->author->username,
-                        'avatar'   => $cat->latestPost->author->avatar ?? null,
+                        'avatar' => $cat->latestPost->author->avatar ?? null,
                     ] : null,
                 ]
                 : ($cat->relationLoaded('latestThread') && $cat->latestThread
                     ? [
                         'author' => $cat->latestThread->author ? [
-                            'id'       => $cat->latestThread->author->id,
+                            'id' => $cat->latestThread->author->id,
                             'username' => $cat->latestThread->author->username,
-                            'avatar'   => $cat->latestThread->author->avatar ?? null,
+                            'avatar' => $cat->latestThread->author->avatar ?? null,
                         ] : null,
                     ]
                     : null),
-            'children'      => $cat->relationLoaded('children')
-                ? $cat->children->map(fn($c) => $this->transformCategory($c))->values()
+            'children' => $cat->relationLoaded('children')
+                ? $cat->children->map(fn ($c) => $this->transformCategory($c))->values()
                 : [],
-            'parent'        => $cat->relationLoaded('parent') && $cat->parent
+            'parent' => $cat->relationLoaded('parent') && $cat->parent
                 ? [
-                    'id'   => $cat->parent->id,
+                    'id' => $cat->parent->id,
                     'name' => $cat->parent->term->title,
                     'slug' => $cat->parent->term->slug,
                 ]

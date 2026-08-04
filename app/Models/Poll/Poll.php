@@ -66,7 +66,7 @@ class Poll extends Model
 
     public function hasVoted(?User $user): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -77,7 +77,7 @@ class Poll extends Model
 
     public function userVotes(?User $user): array
     {
-        if (!$user) {
+        if (! $user) {
             return [];
         }
 

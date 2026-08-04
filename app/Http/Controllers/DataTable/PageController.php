@@ -27,9 +27,8 @@ class PageController extends DataTableController
         //        dd($request);
 
         $data = $request->only($this->getUpdatableColumns());
-        $data['published'] = !empty($data['published']) ? 1 : 0;
-        $data['sign_in_only'] = !empty($data['sign_in_only']) ? 1 : 0;
-
+        $data['published'] = ! empty($data['published']) ? 1 : 0;
+        $data['sign_in_only'] = ! empty($data['sign_in_only']) ? 1 : 0;
 
         $page = auth()->user()->pages()->create($data);
 
@@ -118,8 +117,8 @@ class PageController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'content'      => 'wysiwyg',
-            'published'    => 'checkbox',
+            'content' => 'wysiwyg',
+            'published' => 'checkbox',
             'sign_in_only' => 'checkbox', ];
     }
 

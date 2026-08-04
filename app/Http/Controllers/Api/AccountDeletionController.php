@@ -40,32 +40,32 @@ class AccountDeletionController extends Controller
         // Collect all user data
         $userData = [
             'account' => [
-                'id'                => $user->id,
-                'name'              => $user->name,
-                'username'          => $user->username,
-                'email'             => $user->email,
-                'created_at'        => $user->created_at->toISOString(),
-                'updated_at'        => $user->updated_at->toISOString(),
+                'id' => $user->id,
+                'name' => $user->name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'created_at' => $user->created_at->toISOString(),
+                'updated_at' => $user->updated_at->toISOString(),
                 'email_verified_at' => $user->email_verified_at?->toISOString(),
             ],
             'profile' => [
-                'avatar'      => $user->avatar,
-                'timezone'    => $user->timezone,
+                'avatar' => $user->avatar,
+                'timezone' => $user->timezone,
                 'date_format' => $user->date_format,
-                'theme_mode'  => $user->theme_mode,
-                'language'    => $user->language,
+                'theme_mode' => $user->theme_mode,
+                'language' => $user->language,
             ],
             'social_accounts' => $user->socialAccounts()->get()->map(function ($account) {
                 return [
-                    'provider'   => $account->provider,
+                    'provider' => $account->provider,
                     'created_at' => $account->created_at->toISOString(),
                 ];
             })->toArray(),
             'api_keys' => $user->apiKeys()->get()->map(function ($key) {
                 return [
-                    'name'          => $key->name,
-                    'created_at'    => $key->created_at->toISOString(),
-                    'last_used_at'  => $key->last_used_at?->toISOString(),
+                    'name' => $key->name,
+                    'created_at' => $key->created_at->toISOString(),
+                    'last_used_at' => $key->last_used_at?->toISOString(),
                     'request_count' => $key->request_count,
                 ];
             })->toArray(),
@@ -76,9 +76,9 @@ class AccountDeletionController extends Controller
         if (method_exists($user, 'posts')) {
             $userData['posts'] = $user->posts()->get()->map(function ($post) {
                 return [
-                    'id'         => $post->id,
-                    'title'      => $post->title,
-                    'content'    => $post->content,
+                    'id' => $post->id,
+                    'title' => $post->title,
+                    'content' => $post->content,
                     'created_at' => $post->created_at->toISOString(),
                 ];
             })->toArray();
@@ -88,8 +88,8 @@ class AccountDeletionController extends Controller
         if (method_exists($user, 'messages')) {
             $userData['messages'] = $user->messages()->get()->map(function ($message) {
                 return [
-                    'id'         => $message->id,
-                    'content'    => $message->content ?? $message->body,
+                    'id' => $message->id,
+                    'content' => $message->content ?? $message->body,
                     'created_at' => $message->created_at->toISOString(),
                 ];
             })->toArray();
@@ -97,7 +97,7 @@ class AccountDeletionController extends Controller
 
         return response()->json([
             'message' => __('messages.account.data_exported'),
-            'data'    => $userData,
+            'data' => $userData,
         ]);
     }
 
@@ -108,7 +108,7 @@ class AccountDeletionController extends Controller
     {
         // Check if feature is enabled
         $enabled = (bool) Setting::get('right_to_be_forgotten_enabled', false);
-        if (!$enabled) {
+        if (! $enabled) {
             return response()->json([
                 'message' => __('messages.account.deletion_disabled'),
             ], 403);
@@ -116,26 +116,26 @@ class AccountDeletionController extends Controller
 
         $request->validate([
             'password' => 'required|string',
-            'reason'   => 'nullable|string|max:1000',
-            'confirm'  => 'required|accepted',
+            'reason' => 'nullable|string|max:1000',
+            'confirm' => 'required|accepted',
         ]);
 
         $user = $request->user();
 
         // Verify password
-        if (!Hash::check($request->password, $user->password)) {
+        if (! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => __('messages.account.incorrect_password'),
-                'errors'  => ['password' => [__('messages.account.password_incorrect')]],
+                'errors' => ['password' => [__('messages.account.password_incorrect')]],
             ], 422);
         }
 
         // Log the deletion request
         Log::info('Account deletion requested', [
             'user_id' => $user->id,
-            'email'   => $user->email,
-            'reason'  => $request->reason,
-            'ip'      => $request->ip(),
+            'email' => $user->email,
+            'reason' => $request->reason,
+            'ip' => $request->ip(),
         ]);
 
         // Send notification to admin

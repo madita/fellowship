@@ -39,7 +39,7 @@ class NotificationController extends Controller
         /** @var User $user */
         $user = auth()->user();
         $notification = $user->notifications()->find($request->id);
-        if (!$notification) {
+        if (! $notification) {
             return ['message' => __('messages.notifications.not_found')];
         }
 
@@ -54,7 +54,7 @@ class NotificationController extends Controller
         $user = auth()->user();
         $notification = $user->notifications()->find($request->id);
 
-        if (!$notification) {
+        if (! $notification) {
             return ['message' => __('messages.notifications.not_found')];
         }
         $notification->markAsRead();
