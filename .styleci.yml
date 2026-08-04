@@ -10,6 +10,10 @@ enabled:
   - ordered_class_elements
   - phpdoc_order
 
+disabled:
+  - unalign_equals
+  - unalign_double_arrow
+
 finder:
   exclude:
     - "bootstrap"
