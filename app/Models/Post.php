@@ -12,9 +12,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model implements CanHaveTaxonomies, TranslatableContract
 {
-    use Sluggable;
     use HasCache;
     use HasTaxonomies;
+    use Sluggable;
     use Translatable;
 
     public $translatedAttributes = ['title', 'body'];
@@ -28,6 +28,7 @@ class Post extends Model implements CanHaveTaxonomies, TranslatableContract
     protected $taxable_title = 'title';
 
     protected $primaryKey = 'id';
+
     protected $table = 'posts';
 
     public function sluggable(): array
@@ -38,11 +39,11 @@ class Post extends Model implements CanHaveTaxonomies, TranslatableContract
             ],
         ];
     }
-//    protected $revisionable = [
-//        'title',
-//        'slug',
-//        'body',
-//    ];
+    //    protected $revisionable = [
+    //        'title',
+    //        'slug',
+    //        'body',
+    //    ];
 
     public function user()
     {

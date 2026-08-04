@@ -24,13 +24,13 @@ class OAuthConfigServiceProvider extends ServiceProvider
     {
         // Only load OAuth settings if not in console (migrations, etc.)
         // or if we're specifically running the application
-        if ($this->app->runningInConsole() && !$this->app->runningUnitTests()) {
+        if ($this->app->runningInConsole() && ! $this->app->runningUnitTests()) {
             return;
         }
 
         try {
             // Check if settings table exists
-            if (!\Schema::hasTable('settings')) {
+            if (! \Schema::hasTable('settings')) {
                 return;
             }
 
@@ -52,9 +52,9 @@ class OAuthConfigServiceProvider extends ServiceProvider
                     if ($clientId && $clientSecret) {
                         $redirectUrl = "{$siteUrl}/auth/{$provider}/callback";
                         config([
-                            "services.{$provider}.client_id"     => $clientId,
+                            "services.{$provider}.client_id" => $clientId,
                             "services.{$provider}.client_secret" => $clientSecret,
-                            "services.{$provider}.redirect"      => $redirectUrl,
+                            "services.{$provider}.redirect" => $redirectUrl,
                         ]);
                         \Log::debug("OAuth {$provider} redirect URL configured: {$redirectUrl}");
                     }

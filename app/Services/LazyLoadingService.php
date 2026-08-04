@@ -36,23 +36,22 @@ class LazyLoadingService
     public static function getSettings(): array
     {
         return [
-            'enabled'                => static::isEnabled(),
-            'loading_attribute'      => static::getLoadingAttribute(),
+            'enabled' => static::isEnabled(),
+            'loading_attribute' => static::getLoadingAttribute(),
             'intersection_threshold' => 0.1, // 10% visible before loading
-            'root_margin'            => '50px', // Start loading 50px before entering viewport
+            'root_margin' => '50px', // Start loading 50px before entering viewport
         ];
     }
 
     /**
      * Add lazy loading attributes to an img tag.
      *
-     * @param string $html HTML containing img tags
-     *
+     * @param  string  $html  HTML containing img tags
      * @return string Modified HTML with lazy loading attributes
      */
     public static function processHtml(string $html): string
     {
-        if (!static::isEnabled()) {
+        if (! static::isEnabled()) {
             return $html;
         }
 
@@ -82,13 +81,12 @@ class LazyLoadingService
     /**
      * Add lazy loading to iframe tags as well.
      *
-     * @param string $html HTML containing iframe tags
-     *
+     * @param  string  $html  HTML containing iframe tags
      * @return string Modified HTML with lazy loading attributes
      */
     public static function processIframes(string $html): string
     {
-        if (!static::isEnabled()) {
+        if (! static::isEnabled()) {
             return $html;
         }
 
@@ -110,10 +108,6 @@ class LazyLoadingService
 
     /**
      * Process all lazy-loadable elements in HTML.
-     *
-     * @param string $html
-     *
-     * @return string
      */
     public static function processAllElements(string $html): string
     {

@@ -34,11 +34,11 @@ class FooterSectionController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'title'   => 'nullable|string|max:255',
-            'layout'  => 'required|string|in:1-col,2-col,3-col,4-col',
+            'title' => 'nullable|string|max:255',
+            'layout' => 'required|string|in:1-col,2-col,3-col,4-col',
             'enabled' => 'boolean',
-            'order'   => 'integer|min:0',
-            'config'  => 'nullable|array',
+            'order' => 'integer|min:0',
+            'config' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -58,11 +58,11 @@ class FooterSectionController extends Controller
         $section = FooterSection::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'title'   => 'nullable|string|max:255',
-            'layout'  => 'string|in:1-col,2-col,3-col,4-col',
+            'title' => 'nullable|string|max:255',
+            'layout' => 'string|in:1-col,2-col,3-col,4-col',
             'enabled' => 'boolean',
-            'order'   => 'integer|min:0',
-            'config'  => 'nullable|array',
+            'order' => 'integer|min:0',
+            'config' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -91,7 +91,7 @@ class FooterSectionController extends Controller
     public function toggle($id)
     {
         $section = FooterSection::findOrFail($id);
-        $section->enabled = !$section->enabled;
+        $section->enabled = ! $section->enabled;
         $section->save();
 
         return response()->json($section);
@@ -103,8 +103,8 @@ class FooterSectionController extends Controller
     public function updateOrder(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'sections'         => 'required|array',
-            'sections.*.id'    => 'required|exists:sections,id',
+            'sections' => 'required|array',
+            'sections.*.id' => 'required|exists:sections,id',
             'sections.*.order' => 'required|integer|min:0',
         ]);
 

@@ -22,7 +22,7 @@ class CreateSystemTables extends Migration
             $table->integer('sign_in_only')->default(0);
             // $table->string('title'); // Moved to page_translations
             $table->string('slug')->unique();
-            $table->string('type')->default('page'); //page, wiki
+            $table->string('type')->default('page'); // page, wiki
             // $table->longText('content')->nullable(); // Moved to page_translations
             $table->integer('user_id')->unsigned()->index('pages_user_id_index');
             $table->integer('parent_id')->unsigned()->default(0);
@@ -38,7 +38,7 @@ class CreateSystemTables extends Migration
             $table->string('slug')->unique();
             // $table->text('content')->nullable(); // Moved to post_translations
             $table->integer('user_id')->unsigned()->index('posts_user_id_index');
-            $table->string('status'); //published, draft
+            $table->string('status'); // published, draft
             $table->timestamps();
         });
 
@@ -58,7 +58,7 @@ class CreateSystemTables extends Migration
             $table->integer('user_id');
             $table->integer('likeable_id');
             $table->string('likeable_type');
-            //$table->integer('icon_id');
+            // $table->integer('icon_id');
             $table->timestamps();
         });
 
@@ -66,11 +66,11 @@ class CreateSystemTables extends Migration
             $table->id();
             // $table->string('name'); // Moved to collection_translations
             $table->string('slug')->unique();
-//            $table->string('type'); // album collectio, page collections (epic)
-//            $table->string('cover_image');
+            //            $table->string('type'); // album collectio, page collections (epic)
+            //            $table->string('cover_image');
             $table->integer('taxonomy_id')->nullable();
             $table->integer('user_id');
-//            $table->foreignId('taxonomy_id')->constrained()->onDelete('cascade');
+            //            $table->foreignId('taxonomy_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
 

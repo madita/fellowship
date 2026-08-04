@@ -24,7 +24,7 @@ class ApiKeyController extends Controller
         $enabled = (bool) Setting::get('api_keys_enabled', false);
 
         return response()->json([
-            'enabled'    => $enabled,
+            'enabled' => $enabled,
             'rate_limit' => (int) Setting::get('api_rate_limit_per_minute', 60),
         ]);
     }
@@ -42,16 +42,16 @@ class ApiKeyController extends Controller
             ->get()
             ->map(function ($key) {
                 return [
-                    'id'            => $key->id,
-                    'name'          => $key->name,
-                    'key'           => $key->key,
-                    'key_preview'   => substr($key->key, 0, 12).'...',
-                    'abilities'     => $key->abilities,
-                    'is_active'     => $key->is_active,
-                    'last_used_at'  => $key->last_used_at?->toISOString(),
-                    'expires_at'    => $key->expires_at?->toISOString(),
+                    'id' => $key->id,
+                    'name' => $key->name,
+                    'key' => $key->key,
+                    'key_preview' => substr($key->key, 0, 12).'...',
+                    'abilities' => $key->abilities,
+                    'is_active' => $key->is_active,
+                    'last_used_at' => $key->last_used_at?->toISOString(),
+                    'expires_at' => $key->expires_at?->toISOString(),
                     'request_count' => $key->request_count,
-                    'created_at'    => $key->created_at->toISOString(),
+                    'created_at' => $key->created_at->toISOString(),
                 ];
             });
 
@@ -68,16 +68,16 @@ class ApiKeyController extends Controller
         $this->checkApiKeysEnabled();
 
         $validator = Validator::make($request->all(), [
-            'name'        => 'required|string|max:255',
-            'abilities'   => 'nullable|array',
+            'name' => 'required|string|max:255',
+            'abilities' => 'nullable|array',
             'abilities.*' => 'string',
-            'expires_at'  => 'nullable|date|after:now',
+            'expires_at' => 'nullable|date|after:now',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -94,22 +94,22 @@ class ApiKeyController extends Controller
 
         // Create the API key
         $apiKey = $request->user()->apiKeys()->create([
-            'name'        => $request->name,
-            'key'         => $keyPair['key'],
+            'name' => $request->name,
+            'key' => $keyPair['key'],
             'secret_hash' => $keyPair['secret_hash'],
-            'abilities'   => $request->abilities,
-            'expires_at'  => $request->expires_at,
-            'is_active'   => true,
+            'abilities' => $request->abilities,
+            'expires_at' => $request->expires_at,
+            'is_active' => true,
         ]);
 
         return response()->json([
             'message' => __('messages.api_keys.created'),
             'api_key' => [
-                'id'         => $apiKey->id,
-                'name'       => $apiKey->name,
-                'key'        => $keyPair['key'],
-                'secret'     => $keyPair['secret'], // Only shown once!
-                'abilities'  => $apiKey->abilities,
+                'id' => $apiKey->id,
+                'name' => $apiKey->name,
+                'key' => $keyPair['key'],
+                'secret' => $keyPair['secret'], // Only shown once!
+                'abilities' => $apiKey->abilities,
                 'expires_at' => $apiKey->expires_at?->toISOString(),
                 'created_at' => $apiKey->created_at->toISOString(),
             ],
@@ -127,15 +127,15 @@ class ApiKeyController extends Controller
 
         return response()->json([
             'api_key' => [
-                'id'            => $apiKey->id,
-                'name'          => $apiKey->name,
-                'key'           => $apiKey->key,
-                'abilities'     => $apiKey->abilities,
-                'is_active'     => $apiKey->is_active,
-                'last_used_at'  => $apiKey->last_used_at?->toISOString(),
-                'expires_at'    => $apiKey->expires_at?->toISOString(),
+                'id' => $apiKey->id,
+                'name' => $apiKey->name,
+                'key' => $apiKey->key,
+                'abilities' => $apiKey->abilities,
+                'is_active' => $apiKey->is_active,
+                'last_used_at' => $apiKey->last_used_at?->toISOString(),
+                'expires_at' => $apiKey->expires_at?->toISOString(),
                 'request_count' => $apiKey->request_count,
-                'created_at'    => $apiKey->created_at->toISOString(),
+                'created_at' => $apiKey->created_at->toISOString(),
             ],
         ]);
     }
@@ -150,17 +150,17 @@ class ApiKeyController extends Controller
         $apiKey = $request->user()->apiKeys()->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'name'        => 'sometimes|string|max:255',
-            'abilities'   => 'nullable|array',
+            'name' => 'sometimes|string|max:255',
+            'abilities' => 'nullable|array',
             'abilities.*' => 'string',
-            'is_active'   => 'sometimes|boolean',
-            'expires_at'  => 'nullable|date',
+            'is_active' => 'sometimes|boolean',
+            'expires_at' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -169,11 +169,11 @@ class ApiKeyController extends Controller
         return response()->json([
             'message' => __('messages.api_keys.updated'),
             'api_key' => [
-                'id'         => $apiKey->id,
-                'name'       => $apiKey->name,
-                'key'        => $apiKey->key,
-                'abilities'  => $apiKey->abilities,
-                'is_active'  => $apiKey->is_active,
+                'id' => $apiKey->id,
+                'name' => $apiKey->name,
+                'key' => $apiKey->key,
+                'abilities' => $apiKey->abilities,
+                'is_active' => $apiKey->is_active,
                 'expires_at' => $apiKey->expires_at?->toISOString(),
             ],
         ]);
@@ -207,16 +207,16 @@ class ApiKeyController extends Controller
         $keyPair = ApiKey::generateKeyPair();
 
         $apiKey->update([
-            'key'         => $keyPair['key'],
+            'key' => $keyPair['key'],
             'secret_hash' => $keyPair['secret_hash'],
         ]);
 
         return response()->json([
             'message' => __('messages.api_keys.regenerated'),
             'api_key' => [
-                'id'     => $apiKey->id,
-                'name'   => $apiKey->name,
-                'key'    => $keyPair['key'],
+                'id' => $apiKey->id,
+                'name' => $apiKey->name,
+                'key' => $keyPair['key'],
                 'secret' => $keyPair['secret'], // Only shown once!
             ],
         ]);
@@ -229,7 +229,7 @@ class ApiKeyController extends Controller
     {
         $enabled = (bool) Setting::get('api_keys_enabled', false);
 
-        if (!$enabled) {
+        if (! $enabled) {
             abort(403, __('messages.api_keys.disabled'));
         }
     }

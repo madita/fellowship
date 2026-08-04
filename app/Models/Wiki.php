@@ -12,17 +12,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class Wiki extends Model implements TranslatableContract
 {
-    use Sluggable;
-    use HasCache;
-    use Translatable;
-    use HasTickets;
     use Approvable;
+    use HasCache;
+    use HasTickets;
+    use Sluggable;
+    use Translatable;
 
     protected $table = 'wikiables';
+
     protected $cacheTag = 'wikiables';
-//    protected $guard_name = 'api';
+    //    protected $guard_name = 'api';
 
     public $translatedAttributes = ['title'];
+
     public $translationForeignKey = 'wiki_id';
 
     /**
@@ -45,13 +47,14 @@ class Wiki extends Model implements TranslatableContract
             // If creator has an auto-approve role, approve immediately (skip ticket)
             if ($wiki->shouldAutoApprove()) {
                 $wiki->approve(auth()->user());
+
                 return;
             }
 
             // Otherwise create approval ticket as before
             $wiki->autoCreateTicket('wiki_approval', [
                 'title' => "New Wiki Page: {$wiki->title}",
-                'description' => "A new wiki page has been created and needs review.",
+                'description' => 'A new wiki page has been created and needs review.',
                 'priority' => 'normal',
             ]);
         });
@@ -87,15 +90,15 @@ class Wiki extends Model implements TranslatableContract
 
         $parent = $this->parent;
 
-        while (!is_null($parent)) {
+        while (! is_null($parent)) {
             $parents->push($parent);
             $parent = $parent->parent;
         }
 
         return $parents;
     }
-//
-//    public function wikiable() {
-//        return $this->morphTo();
-//    }
+    //
+    //    public function wikiable() {
+    //        return $this->morphTo();
+    //    }
 }

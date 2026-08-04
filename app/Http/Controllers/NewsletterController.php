@@ -28,7 +28,7 @@ class NewsletterController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.newsletter.invalid_email'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 

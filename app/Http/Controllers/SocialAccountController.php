@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -15,10 +16,6 @@ class SocialAccountController extends Controller
 
     /**
      * Get list of user's connected social accounts.
-     *
-     * @param Request $request
-     *
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
@@ -26,36 +23,33 @@ class SocialAccountController extends Controller
 
         $accounts = $user->socialAccounts()->get()->map(function ($account) {
             return [
-                'provider'     => $account->provider,
-                'provider_id'  => $account->provider_id,
-                'avatar'       => $account->avatar,
+                'provider' => $account->provider,
+                'provider_id' => $account->provider_id,
+                'avatar' => $account->avatar,
                 'connected_at' => $account->created_at->diffForHumans(),
             ];
         });
 
         // Add available providers to link
         $availableProviders = collect(self::PROVIDERS)->filter(function ($provider) use ($user) {
-            return !$user->hasSocialProvider($provider);
+            return ! $user->hasSocialProvider($provider);
         })->values();
 
         return response()->json([
-            'connected'    => $accounts,
-            'available'    => $availableProviders,
-            'has_password' => !is_null($user->password),
+            'connected' => $accounts,
+            'available' => $availableProviders,
+            'has_password' => ! is_null($user->password),
         ]);
     }
 
     /**
      * Disconnect (unlink) a social account from user.
      *
-     * @param Request $request
-     * @param string  $provider
-     *
-     * @return JsonResponse
+     * @param  string  $provider
      */
     public function disconnect(Request $request, $provider): JsonResponse
     {
-        if (!in_array($provider, self::PROVIDERS)) {
+        if (! in_array($provider, self::PROVIDERS)) {
             return response()->json(['error' => __('messages.oauth.invalid_provider')], 400);
         }
 
@@ -63,9 +57,9 @@ class SocialAccountController extends Controller
 
         // Check if user has password or other social accounts
         $connectedAccounts = $user->socialAccounts()->count();
-        $hasPassword = !is_null($user->password);
+        $hasPassword = ! is_null($user->password);
 
-        if ($connectedAccounts === 1 && !$hasPassword) {
+        if ($connectedAccounts === 1 && ! $hasPassword) {
             return response()->json([
                 'error' => __('messages.oauth.cannot_disconnect_last'),
             ], 422);
@@ -74,7 +68,7 @@ class SocialAccountController extends Controller
         // Delete the social account
         $deleted = $user->socialAccounts()->where('provider', $provider)->delete();
 
-        if (!$deleted) {
+        if (! $deleted) {
             return response()->json(['error' => __('messages.oauth.provider_not_connected')], 404);
         }
 
@@ -86,14 +80,12 @@ class SocialAccountController extends Controller
     /**
      * Link a new social provider to existing user account.
      *
-     * @param Request $request
-     * @param string  $provider
-     *
-     * @return \Illuminate\Http\RedirectResponse
+     * @param  string  $provider
+     * @return RedirectResponse
      */
     public function link(Request $request, $provider)
     {
-        if (!in_array($provider, self::PROVIDERS)) {
+        if (! in_array($provider, self::PROVIDERS)) {
             return redirect('/')->with('error', 'Invalid OAuth provider');
         }
 

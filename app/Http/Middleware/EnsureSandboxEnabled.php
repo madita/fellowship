@@ -13,7 +13,7 @@ class EnsureSandboxEnabled
     {
         $enabled = Setting::get('sandbox_enabled', true);
 
-        if (!filter_var($enabled, FILTER_VALIDATE_BOOLEAN)) {
+        if (! filter_var($enabled, FILTER_VALIDATE_BOOLEAN)) {
             return response()->json([
                 'message' => 'The sandbox feature is currently disabled.',
             ], 403);

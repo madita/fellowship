@@ -31,7 +31,7 @@ trait HasTickets
     {
         $ticketType = TicketType::findAutoCreateBySlug($typeSlug);
 
-        if (!$ticketType) {
+        if (! $ticketType) {
             return null;
         }
 
@@ -53,7 +53,8 @@ trait HasTickets
     protected function getTicketTitle(): string
     {
         $modelName = class_basename($this);
-        return "New {$modelName}: " . ($this->title ?? $this->name ?? $this->id);
+
+        return "New {$modelName}: ".($this->title ?? $this->name ?? $this->id);
     }
 
     /**

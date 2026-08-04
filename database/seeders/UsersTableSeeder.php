@@ -16,14 +16,14 @@ class UsersTableSeeder extends Seeder
     public function run()
     {
         $user = User::create([
-            'username'          => 'disorganizer',
-            'email'             => 'disorganizer@disorganizer.net',
-            'password'          => bcrypt('admin'),
+            'username' => 'disorganizer',
+            'email' => 'disorganizer@disorganizer.net',
+            'password' => bcrypt('admin'),
             'email_verified_at' => Carbon::now(),
         ]);
 
         $user->assignRole('admin');
-//        $user->roles()->attach(1);
+        //        $user->roles()->attach(1);
 
         /* $profile = new \App\Profile;
          $profile->user()->associate($user);
@@ -32,20 +32,20 @@ class UsersTableSeeder extends Seeder
          $profile->save();*/
 
         $user = User::create([
-            'username'          => 'madita',
-            'email'             => 'rogi@stadtwache.net',
-            'password'          => bcrypt('igorina'),
+            'username' => 'madita',
+            'email' => 'rogi@stadtwache.net',
+            'password' => bcrypt('igorina'),
             'email_verified_at' => Carbon::now(),
         ]);
 
         $user->assignRole('user');
 
-//           $user->roles()->attach(2);
+        //           $user->roles()->attach(2);
 
         $user = User::create([
-            'username'          => 'test',
-            'email'             => 'madita.tack@gmail.com',
-            'password'          => bcrypt('test1234'),
+            'username' => 'test',
+            'email' => 'madita.tack@gmail.com',
+            'password' => bcrypt('test1234'),
             'email_verified_at' => Carbon::now(),
         ]);
 

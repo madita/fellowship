@@ -2,6 +2,7 @@
 
 namespace App\Models\Forum;
 
+use App\Models\Concerns\SafeSearchable;
 use App\Models\Tag\Taxonomy;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,7 +11,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-use App\Models\Concerns\SafeSearchable;
 
 /**
  * @property int $id
@@ -20,10 +20,9 @@ use App\Models\Concerns\SafeSearchable;
  * @property string $slug
  * @property string $body
  */
-
 class ForumThread extends Model
 {
-    use HasFactory, SoftDeletes, SafeSearchable;
+    use HasFactory, SafeSearchable, SoftDeletes;
 
     protected $fillable = [
         'taxonomy_id',
@@ -66,7 +65,7 @@ class ForumThread extends Model
                 // Ensure slug is unique
                 $count = 1;
                 while (static::where('slug', $thread->slug)->exists()) {
-                    $thread->slug = Str::slug($thread->title) . '-' . $count++;
+                    $thread->slug = Str::slug($thread->title).'-'.$count++;
                 }
             }
 
@@ -121,6 +120,7 @@ class ForumThread extends Model
     public function getUrlAttribute(): string
     {
         $categorySlug = $this->category?->term?->slug ?? 'unknown';
+
         return "/forum/{$categorySlug}/{$this->slug}";
     }
 
@@ -135,7 +135,7 @@ class ForumThread extends Model
     /**
      * Check if user can reply to this thread.
      */
-    public function canReply(User $user = null): bool
+    public function canReply(?User $user = null): bool
     {
         if ($this->is_locked) {
             return $user && $user->isAdmin();
@@ -147,9 +147,9 @@ class ForumThread extends Model
     /**
      * Check if user can edit this thread.
      */
-    public function canEdit(User $user = null): bool
+    public function canEdit(?User $user = null): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -159,15 +159,15 @@ class ForumThread extends Model
 
         $moderateRoles = $this->category->properties['moderate_roles'] ?? [];
 
-        return !empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
+        return ! empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
     }
 
     /**
      * Check if user can delete this thread.
      */
-    public function canDelete(User $user = null): bool
+    public function canDelete(?User $user = null): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -177,7 +177,7 @@ class ForumThread extends Model
 
         $deleteRoles = $this->category->properties['delete_roles'] ?? [];
 
-        return !empty($deleteRoles) && $user->hasAnyRole($deleteRoles);
+        return ! empty($deleteRoles) && $user->hasAnyRole($deleteRoles);
     }
 
     /**
@@ -198,7 +198,7 @@ class ForumThread extends Model
      */
     public function isSubscribedBy(?User $user): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
         }
 
@@ -261,6 +261,6 @@ class ForumThread extends Model
 
     public function shouldBeSearchable(): bool
     {
-        return !$this->trashed();
+        return ! $this->trashed();
     }
 }

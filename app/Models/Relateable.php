@@ -30,7 +30,7 @@ class Relateable extends Model
     {
         return [
             'type' => $this->related_type,
-            'id'   => $this->related_id,
+            'id' => $this->related_id,
         ];
     }
 }

@@ -8,10 +8,10 @@ use App\Models\Tag\Term;
 class TaxonomyHelper
 {
     /**
-     * @param mixed  $terms
-     * @param string $taxonomy
-     * @param int    $parent
-     * @param int    $order
+     * @param  mixed  $terms
+     * @param  string  $taxonomy
+     * @param  int  $parent
+     * @param  int  $order
      */
     public static function createTaxables($terms, $taxonomy, $parent = 0, $order = 0)
     {
@@ -23,15 +23,12 @@ class TaxonomyHelper
         return $taxonomy;
     }
 
-    /**
-     * @param array $terms
-     */
     public static function createTerms(array $terms)
     {
         if (count($terms) > 0) {
             $found = Term::whereIn('title', $terms)->pluck('title')->all();
 
-            if (!is_array($found)) {
+            if (! is_array($found)) {
                 $found = [];
             }
 
@@ -40,7 +37,7 @@ class TaxonomyHelper
                     continue;
                 }
 
-                $term = new Term();
+                $term = new Term;
                 $term->title = $title;
                 $term->save();
             }
@@ -48,10 +45,9 @@ class TaxonomyHelper
     }
 
     /**
-     * @param array  $terms
-     * @param string $taxonomy
-     * @param int    $parent
-     * @param int    $order
+     * @param  string  $taxonomy
+     * @param  int  $parent
+     * @param  int  $order
      */
     public static function createTaxonomies(array $terms, $taxonomy, $parent = 0, $order = 0)
     {
@@ -64,18 +60,18 @@ class TaxonomyHelper
                 $term_id = Term::where('title', $term)->first()->id;
 
                 if (Taxonomy::where('taxonomy', $taxonomy)->where('term_id', $term_id)->first()) {
-                    //->where('sort', $order)->first()
+                    // ->where('sort', $order)->first()
                     continue;
                 }
 
-                $model = new Taxonomy();
+                $model = new Taxonomy;
                 $model->taxonomy = $taxonomy;
                 $model->term_id = $term_id;
                 if ($parent > 0) {
                     $model->parent_id = $parent;
                 }
 
-//                $model->sort = $order;
+                //                $model->sort = $order;
                 $model->save();
 
                 return $model;
@@ -86,8 +82,7 @@ class TaxonomyHelper
     }
 
     /**
-     * @param string|array $terms
-     *
+     * @param  string|array  $terms
      * @return array
      */
     public static function makeTermsArray($terms)
@@ -102,8 +97,7 @@ class TaxonomyHelper
     }
 
     /**
-     * @param string|array $terms
-     *
+     * @param  string|array  $terms
      * @return array
      */
     public static function getTaxonomy()
@@ -113,7 +107,7 @@ class TaxonomyHelper
             ->get())->map(function (Taxonomy $taxonomy) {
                 return [
                     'name' => $taxonomy->taxonomy,
-                    'id'   => $taxonomy->taxonomy,
+                    'id' => $taxonomy->taxonomy,
                 ];
             });
 

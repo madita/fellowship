@@ -30,16 +30,16 @@ class ForumThreadController extends Controller
         $category = $thread->category;
         if (($category->properties['is_private'] ?? false)) {
             $canAccess = $user && ($user->isAdmin() || (
-                !empty($category->properties['allowed_roles']) && $user->hasAnyRole($category->properties['allowed_roles'])
+                ! empty($category->properties['allowed_roles']) && $user->hasAnyRole($category->properties['allowed_roles'])
             ));
-            if (!$canAccess) {
+            if (! $canAccess) {
                 abort(403, 'You do not have permission to access this thread.');
             }
         }
 
         // Increment view count (throttle to once per session)
         $viewedKey = "thread_viewed_{$thread->id}";
-        if (!session()->has($viewedKey)) {
+        if (! session()->has($viewedKey)) {
             $thread->incrementViews();
             session()->put($viewedKey, true);
         }
@@ -84,8 +84,8 @@ class ForumThreadController extends Controller
             } else {
                 $moderateRoles = $category->properties['moderate_roles'] ?? [];
                 $deleteRoles = $category->properties['delete_roles'] ?? [];
-                $canModerate = !empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
-                $canDeleteOthers = !empty($deleteRoles) && $user->hasAnyRole($deleteRoles);
+                $canModerate = ! empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
+                $canDeleteOthers = ! empty($deleteRoles) && $user->hasAnyRole($deleteRoles);
             }
         }
 
@@ -111,7 +111,7 @@ class ForumThreadController extends Controller
     ): JsonResponse {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401, 'You must be logged in to create a thread.');
         }
 
@@ -120,9 +120,9 @@ class ForumThreadController extends Controller
         // Check access to private forum
         if ($category->properties['is_private'] ?? false) {
             $canAccess = $user->isAdmin() || (
-                !empty($category->properties['allowed_roles']) && $user->hasAnyRole($category->properties['allowed_roles'])
+                ! empty($category->properties['allowed_roles']) && $user->hasAnyRole($category->properties['allowed_roles'])
             );
-            if (!$canAccess) {
+            if (! $canAccess) {
                 abort(403, 'You do not have permission to post in this forum.');
             }
         }
@@ -130,9 +130,9 @@ class ForumThreadController extends Controller
         // Check posting permission in locked forum
         if ($category->properties['is_locked'] ?? false) {
             $canPost = $user->isAdmin() || (
-                !empty($category->properties['post_roles']) && $user->hasAnyRole($category->properties['post_roles'])
+                ! empty($category->properties['post_roles']) && $user->hasAnyRole($category->properties['post_roles'])
             );
-            if (!$canPost) {
+            if (! $canPost) {
                 abort(403, 'This forum is locked.');
             }
         }
@@ -175,7 +175,7 @@ class ForumThreadController extends Controller
     {
         $user = Auth::user();
 
-        if (!$thread->canEdit($user)) {
+        if (! $thread->canEdit($user)) {
             abort(403, 'You do not have permission to edit this thread.');
         }
 
@@ -207,7 +207,7 @@ class ForumThreadController extends Controller
     {
         $user = Auth::user();
 
-        if (!$thread->canDelete($user)) {
+        if (! $thread->canDelete($user)) {
             abort(403, 'You do not have permission to delete this thread.');
         }
 

@@ -24,63 +24,63 @@ class ModelTranslationController extends Controller
      */
     protected array $translatableModels = [
         'page' => [
-            'model'      => Page::class,
-            'label'      => 'Pages',
-            'fields'     => ['title', 'content'],
+            'model' => Page::class,
+            'label' => 'Pages',
+            'fields' => ['title', 'content'],
             'identifier' => 'title',
         ],
         'post' => [
-            'model'      => Post::class,
-            'label'      => 'Posts',
-            'fields'     => ['title', 'body'],
+            'model' => Post::class,
+            'label' => 'Posts',
+            'fields' => ['title', 'body'],
             'identifier' => 'title',
         ],
         'wiki' => [
-            'model'      => Wiki::class,
-            'label'      => 'Wiki',
-            'fields'     => ['title'],
+            'model' => Wiki::class,
+            'label' => 'Wiki',
+            'fields' => ['title'],
             'identifier' => 'title',
         ],
         'event' => [
-            'model'      => Event::class,
-            'label'      => 'Events',
-            'fields'     => ['title', 'description'],
+            'model' => Event::class,
+            'label' => 'Events',
+            'fields' => ['title', 'description'],
             'identifier' => 'title',
         ],
         'collection' => [
-            'model'      => Collection::class,
-            'label'      => 'Collections',
-            'fields'     => ['name'],
+            'model' => Collection::class,
+            'label' => 'Collections',
+            'fields' => ['name'],
             'identifier' => 'name',
         ],
         'term' => [
-            'model'      => Term::class,
-            'label'      => 'Terms',
-            'fields'     => ['title', 'content', 'lead'],
+            'model' => Term::class,
+            'label' => 'Terms',
+            'fields' => ['title', 'content', 'lead'],
             'identifier' => 'title',
         ],
         'taxonomy' => [
-            'model'      => Taxonomy::class,
-            'label'      => 'Taxonomies',
-            'fields'     => ['description', 'content', 'lead', 'meta_desc'],
+            'model' => Taxonomy::class,
+            'label' => 'Taxonomies',
+            'fields' => ['description', 'content', 'lead', 'meta_desc'],
             'identifier' => 'description',
         ],
         'section' => [
-            'model'      => Section::class,
-            'label'      => 'Sections',
-            'fields'     => ['title'],
+            'model' => Section::class,
+            'label' => 'Sections',
+            'fields' => ['title'],
             'identifier' => 'title',
         ],
         'widget' => [
-            'model'      => Widget::class,
-            'label'      => 'Widgets',
-            'fields'     => ['title', 'content'],
+            'model' => Widget::class,
+            'label' => 'Widgets',
+            'fields' => ['title', 'content'],
             'identifier' => 'title',
         ],
         'homepage_menu_item' => [
-            'model'      => HomepageMenuItem::class,
-            'label'      => 'Menu Items',
-            'fields'     => ['label'],
+            'model' => HomepageMenuItem::class,
+            'label' => 'Menu Items',
+            'fields' => ['label'],
             'identifier' => 'label',
         ],
     ];
@@ -105,16 +105,16 @@ class ModelTranslationController extends Controller
             $count = $modelClass::withoutGlobalScopes()->count();
 
             $models[] = [
-                'key'        => $key,
-                'label'      => $config['label'],
-                'fields'     => $config['fields'],
-                'count'      => $count,
+                'key' => $key,
+                'label' => $config['label'],
+                'fields' => $config['fields'],
+                'count' => $count,
                 'identifier' => $config['identifier'],
             ];
         }
 
         return response()->json([
-            'models'  => $models,
+            'models' => $models,
             'locales' => $this->getLocales(),
         ]);
     }
@@ -124,7 +124,7 @@ class ModelTranslationController extends Controller
      */
     public function show(string $modelType, int $id): JsonResponse
     {
-        if (!isset($this->translatableModels[$modelType])) {
+        if (! isset($this->translatableModels[$modelType])) {
             return response()->json(['error' => 'Invalid model type'], 404);
         }
 
@@ -133,7 +133,7 @@ class ModelTranslationController extends Controller
 
         $item = $modelClass::withoutGlobalScopes()->with('translations')->find($id);
 
-        if (!$item) {
+        if (! $item) {
             return response()->json(['error' => 'Item not found'], 404);
         }
 
@@ -146,11 +146,11 @@ class ModelTranslationController extends Controller
         }
 
         return response()->json([
-            'id'           => $item->id,
-            'identifier'   => $item->{$config['identifier']} ?? $item->getTranslation('en')?->{$config['identifier']} ?? "#{$item->id}",
-            'fields'       => $config['fields'],
+            'id' => $item->id,
+            'identifier' => $item->{$config['identifier']} ?? $item->getTranslation('en')?->{$config['identifier']} ?? "#{$item->id}",
+            'fields' => $config['fields'],
             'translations' => $translations,
-            'locales'      => $this->getLocales(),
+            'locales' => $this->getLocales(),
         ]);
     }
 
@@ -159,7 +159,7 @@ class ModelTranslationController extends Controller
      */
     public function update(Request $request, string $modelType, int $id): JsonResponse
     {
-        if (!isset($this->translatableModels[$modelType])) {
+        if (! isset($this->translatableModels[$modelType])) {
             return response()->json(['error' => 'Invalid model type'], 404);
         }
 
@@ -168,7 +168,7 @@ class ModelTranslationController extends Controller
 
         $item = $modelClass::withoutGlobalScopes()->find($id);
 
-        if (!$item) {
+        if (! $item) {
             return response()->json(['error' => 'Item not found'], 404);
         }
 
@@ -178,7 +178,7 @@ class ModelTranslationController extends Controller
 
         try {
             foreach ($translations as $locale => $fields) {
-                if (!in_array($locale, $this->getLocales())) {
+                if (! in_array($locale, $this->getLocales())) {
                     continue;
                 }
 
@@ -189,7 +189,7 @@ class ModelTranslationController extends Controller
                     }
                 }
 
-                if (!empty($data)) {
+                if (! empty($data)) {
                     $item->translateOrNew($locale)->fill($data);
                 }
             }
@@ -209,7 +209,7 @@ class ModelTranslationController extends Controller
             DB::rollBack();
 
             return response()->json([
-                'error'   => 'Failed to update translations',
+                'error' => 'Failed to update translations',
                 'message' => $e->getMessage(),
             ], 500);
         }
@@ -221,7 +221,7 @@ class ModelTranslationController extends Controller
     protected function syncWikiTranslations($item, array $translations): void
     {
         // Check if the model uses the Wikiable trait (has wikiable() method)
-        if (!method_exists($item, 'wikiable')) {
+        if (! method_exists($item, 'wikiable')) {
             return;
         }
 
@@ -251,7 +251,7 @@ class ModelTranslationController extends Controller
                     }
                 }
 
-                if (!empty($wikiData)) {
+                if (! empty($wikiData)) {
                     $wiki->translateOrNew($locale)->fill($wikiData);
                 }
             }
@@ -268,7 +268,7 @@ class ModelTranslationController extends Controller
         try {
             $reflection = new \ReflectionClass($item);
 
-            if (!$reflection->hasProperty('wikiable')) {
+            if (! $reflection->hasProperty('wikiable')) {
                 return [];
             }
 
@@ -294,9 +294,9 @@ class ModelTranslationController extends Controller
             $totalCount = $modelClass::withoutGlobalScopes()->count();
 
             $modelStats = [
-                'key'     => $key,
-                'label'   => $config['label'],
-                'total'   => $totalCount,
+                'key' => $key,
+                'label' => $config['label'],
+                'total' => $totalCount,
                 'locales' => [],
             ];
 
@@ -310,7 +310,7 @@ class ModelTranslationController extends Controller
 
                 $modelStats['locales'][$locale] = [
                     'translated' => $translatedCount,
-                    'missing'    => $totalCount - $translatedCount,
+                    'missing' => $totalCount - $translatedCount,
                     'percentage' => $totalCount > 0 ? round(($translatedCount / $totalCount) * 100, 1) : 100,
                 ];
             }
@@ -330,15 +330,15 @@ class ModelTranslationController extends Controller
             }
 
             $overall[$locale] = [
-                'total'      => $totalItems,
+                'total' => $totalItems,
                 'translated' => $translatedItems,
-                'missing'    => $totalItems - $translatedItems,
+                'missing' => $totalItems - $translatedItems,
                 'percentage' => $totalItems > 0 ? round(($translatedItems / $totalItems) * 100, 1) : 100,
             ];
         }
 
         return response()->json([
-            'models'  => $stats,
+            'models' => $stats,
             'overall' => $overall,
             'locales' => $locales,
         ]);
@@ -349,7 +349,7 @@ class ModelTranslationController extends Controller
      */
     public function missing(string $locale): JsonResponse
     {
-        if (!in_array($locale, $this->getLocales())) {
+        if (! in_array($locale, $this->getLocales())) {
             return response()->json(['error' => 'Invalid locale'], 400);
         }
 
@@ -371,7 +371,7 @@ class ModelTranslationController extends Controller
                     'label' => $config['label'],
                     'items' => $items->map(function ($item) use ($config) {
                         return [
-                            'id'         => $item->id,
+                            'id' => $item->id,
                             'identifier' => $item->{$config['identifier']}
                                 ?? $item->getTranslation('en')?->{$config['identifier']}
                                 ?? "#{$item->id}",
@@ -382,7 +382,7 @@ class ModelTranslationController extends Controller
         }
 
         return response()->json([
-            'locale'  => $locale,
+            'locale' => $locale,
             'missing' => $missing,
         ]);
     }
@@ -392,7 +392,7 @@ class ModelTranslationController extends Controller
      */
     public function listItems(Request $request, string $modelType): JsonResponse
     {
-        if (!isset($this->translatableModels[$modelType])) {
+        if (! isset($this->translatableModels[$modelType])) {
             return response()->json(['error' => 'Invalid model type'], 404);
         }
 
@@ -428,19 +428,19 @@ class ModelTranslationController extends Controller
             }
 
             return [
-                'id'                 => $item->id,
-                'identifier'         => $item->{$config['identifier']}
+                'id' => $item->id,
+                'identifier' => $item->{$config['identifier']}
                     ?? $item->getTranslation('en')?->{$config['identifier']}
                     ?? "#{$item->id}",
                 'translation_status' => $translationStatus,
-                'created_at'         => $item->created_at,
-                'updated_at'         => $item->updated_at,
+                'created_at' => $item->created_at,
+                'updated_at' => $item->updated_at,
             ];
         });
 
         return response()->json([
-            'items'   => $items,
-            'fields'  => $config['fields'],
+            'items' => $items,
+            'fields' => $config['fields'],
             'locales' => $locales,
         ]);
     }
@@ -450,7 +450,7 @@ class ModelTranslationController extends Controller
      */
     public function bulkUpdate(Request $request, string $modelType): JsonResponse
     {
-        if (!isset($this->translatableModels[$modelType])) {
+        if (! isset($this->translatableModels[$modelType])) {
             return response()->json(['error' => 'Invalid model type'], 404);
         }
 
@@ -467,14 +467,15 @@ class ModelTranslationController extends Controller
             foreach ($items as $itemData) {
                 $item = $modelClass::withoutGlobalScopes()->find($itemData['id']);
 
-                if (!$item) {
+                if (! $item) {
                     $errors[] = "Item #{$itemData['id']} not found";
+
                     continue;
                 }
 
                 if (isset($itemData['translations'])) {
                     foreach ($itemData['translations'] as $locale => $fields) {
-                        if (!in_array($locale, $this->getLocales())) {
+                        if (! in_array($locale, $this->getLocales())) {
                             continue;
                         }
 
@@ -485,7 +486,7 @@ class ModelTranslationController extends Controller
                             }
                         }
 
-                        if (!empty($data)) {
+                        if (! empty($data)) {
                             $item->translateOrNew($locale)->fill($data);
                         }
                     }
@@ -504,13 +505,13 @@ class ModelTranslationController extends Controller
             return response()->json([
                 'success' => true,
                 'updated' => $updated,
-                'errors'  => $errors,
+                'errors' => $errors,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
 
             return response()->json([
-                'error'   => 'Failed to update translations',
+                'error' => 'Failed to update translations',
                 'message' => $e->getMessage(),
             ], 500);
         }

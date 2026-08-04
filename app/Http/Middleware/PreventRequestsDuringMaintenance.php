@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Setting;
 use Closure;
 use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance as Middleware;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class PreventRequestsDuringMaintenance extends Middleware
@@ -24,10 +25,7 @@ class PreventRequestsDuringMaintenance extends Middleware
     /**
      * Handle an incoming request.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param \Closure                 $next
-     *
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @param  Request  $request
      */
     public function handle($request, Closure $next): Response
     {

@@ -1,6 +1,6 @@
 <?php
 
-//https://github.com/Lecturize/Laravel-Taxonomies/blob/master/src/Traits/HasCategories.php
+// https://github.com/Lecturize/Laravel-Taxonomies/blob/master/src/Traits/HasCategories.php
 
 namespace App\Traits;
 
@@ -8,12 +8,12 @@ use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-//use App\Helpers\TaxonomyHelper;
-//use App\Models\Tag\Taxable;
+// use App\Helpers\TaxonomyHelper;
+// use App\Models\Tag\Taxable;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Collection;
 
-//use Lecturize\Taxonomies\Traits\HasCategories;
+// use Lecturize\Taxonomies\Traits\HasCategories;
 
 trait HasTaxonomies
 {
@@ -43,7 +43,7 @@ trait HasTaxonomies
      */
     public function attachTaxonomy(int $taxonomy_id): void
     {
-        if (!$this->taxonomies()->where('id', $taxonomy_id)->first()) {
+        if (! $this->taxonomies()->where('id', $taxonomy_id)->first()) {
             $this->taxonomies()->attach($taxonomy_id);
         }
     }
@@ -190,7 +190,7 @@ trait HasTaxonomies
      */
     public function detachCategory(string $term_title, string $taxonomy = ''): ?int
     {
-        if (!$term = $this->getCategory($term_title, $taxonomy)) {
+        if (! $term = $this->getCategory($term_title, $taxonomy)) {
             return null;
         }
 
@@ -251,7 +251,7 @@ trait HasTaxonomies
         $term_ids = Taxonomy::where('taxonomy', $taxonomy)->pluck('term_id');
         $term = Term::whereIn('id', $term_ids)->where('title', $category)->first();
 
-        if (!$term) {
+        if (! $term) {
             return $query->whereRaw('0 = 1'); // Return empty result set
         }
 
@@ -290,11 +290,6 @@ trait HasTaxonomies
 
     /**
      * Scope by given taxonomy.
-     *
-     * @param Builder           $query
-     * @param Taxonomy|int|null $taxonomy
-     *
-     * @return Builder
      */
     public function scopeWithinTaxonomy(Builder $query, Taxonomy|int|null $taxonomy): Builder
     {
@@ -314,10 +309,7 @@ trait HasTaxonomies
     /**
      * Scope by given taxonomy.
      *
-     * @param Builder           $query
-     * @param Taxonomy|int|null $taxonomy
      *
-     * @return Builder
      *
      * @deprecated This seemed confusing, use scopeWithinTaxonomy() instead.
      */
@@ -329,10 +321,7 @@ trait HasTaxonomies
     /**
      * Scope by taxonomies.
      *
-     * @param Builder                          $query
-     * @param Collection|Taxonomy[]|array|null $taxonomies
-     *
-     * @return Builder
+     * @param  Collection|Taxonomy[]|array|null  $taxonomies
      */
     public function scopeWithinTaxonomies(Builder $query, Collection|array|null $taxonomies): Builder
     {
@@ -352,10 +341,7 @@ trait HasTaxonomies
     /**
      * Scope by taxonomies.
      *
-     * @param Builder                          $query
-     * @param Collection|Taxonomy[]|array|null $taxonomies
-     *
-     * @return Builder
+     * @param  Collection|Taxonomy[]|array|null  $taxonomies
      *
      * @deprecated This seemed confusing, use scopeHasTaxonomies() instead.
      */

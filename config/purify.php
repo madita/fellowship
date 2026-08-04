@@ -1,6 +1,6 @@
 <?php
 
-use Stevebauman\Purify\Definitions\Html5Definition;
+use App\Support\SandboxHtmlDefinition;
 
 return [
 
@@ -82,7 +82,7 @@ return [
     |
     */
 
-    'definitions' => \App\Support\SandboxHtmlDefinition::class,
+    'definitions' => SandboxHtmlDefinition::class,
 
     /*
     |--------------------------------------------------------------------------

@@ -16,7 +16,7 @@ class ForumPostLikeController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401);
         }
 
@@ -42,7 +42,7 @@ class ForumPostLikeController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401);
         }
 

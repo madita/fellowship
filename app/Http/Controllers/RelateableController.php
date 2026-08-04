@@ -4,10 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Helpers\RelateableHelper;
 use App\Models\Collection;
-use App\Models\Event\Event;
-use App\Models\Page;
-use App\Models\Post;
-use App\Models\Wiki;
 use App\Models\Relateable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,6 +22,7 @@ class RelateableController extends Controller
         'App\\Models\\Post',
         'App\\Models\\Wiki',
     ];
+
     /**
      * Display a list of models that use the Relateable trait.
      *
@@ -75,28 +72,30 @@ class RelateableController extends Controller
         $relatedType = $data['relatedType'];
 
         // SECURITY: Validate model types against whitelist to prevent arbitrary class instantiation
-        if (!in_array($sourceType, self::ALLOWED_RELATEABLE_TYPES, true)) {
+        if (! in_array($sourceType, self::ALLOWED_RELATEABLE_TYPES, true)) {
             Log::warning('Relateable: Invalid source type attempted', [
                 'sourceType' => $sourceType,
                 'user_id' => auth()->id(),
                 'ip' => $request->ip(),
             ]);
+
             return response()->json(['error' => __('messages.common.invalid_model_type')], 400);
         }
 
-        if (!in_array($relatedType, self::ALLOWED_RELATEABLE_TYPES, true)) {
+        if (! in_array($relatedType, self::ALLOWED_RELATEABLE_TYPES, true)) {
             Log::warning('Relateable: Invalid related type attempted', [
                 'relatedType' => $relatedType,
                 'user_id' => auth()->id(),
                 'ip' => $request->ip(),
             ]);
+
             return response()->json(['error' => __('messages.common.invalid_model_type')], 400);
         }
 
         $sourceItem = $sourceType::find($data['sourceId']);
         $relatedItem = $relatedType::find($data['relatedId']);
 
-        if (!$sourceItem || !$relatedItem) {
+        if (! $sourceItem || ! $relatedItem) {
             return response()->json(['error' => __('messages.common.item_not_found')], 404);
         }
 
@@ -126,13 +125,14 @@ class RelateableController extends Controller
         $related = $data['relatedType'];
         $relatedItem = $related::where('id', $data['relatedId'])->first();
 
-        if (!$sourceItem || !$relatedItem) {
+        if (! $sourceItem || ! $relatedItem) {
             return response()->json(['message' => 'Source or related item not found'], 404);
         }
 
         $sourceItem->unrelate($relatedItem);
 
         return response()->json(['message' => 'Item unrelated successfully']);
+
         return response()->json(['message' => __('messages.common.item_related')]);
     }
 
@@ -147,12 +147,13 @@ class RelateableController extends Controller
         $modelId = $request->get('modelId');
 
         // SECURITY: Validate model type against whitelist
-        if (!in_array($modelType, self::ALLOWED_RELATEABLE_TYPES, true)) {
+        if (! in_array($modelType, self::ALLOWED_RELATEABLE_TYPES, true)) {
             Log::warning('Relateable: Invalid model type in getRelatedItems', [
                 'modelType' => $modelType,
                 'user_id' => auth()->id(),
                 'ip' => $request->ip(),
             ]);
+
             return response()->json(['error' => __('messages.common.invalid_model_type')], 400);
         }
 
@@ -175,16 +176,16 @@ class RelateableController extends Controller
 
             return [
                 'source' => [
-                    'id'    => $item->source->id,
-                    'type'  => $item->source_type,
+                    'id' => $item->source->id,
+                    'type' => $item->source_type,
                     'title' => $this->getModelLabel($item->source),
-                    'slug'  => $item->source->slug,
+                    'slug' => $item->source->slug,
                 ],
                 'related' => [
-                    'id'         => $relatedModel->id,
-                    'type'       => $item->related_type,
-                    'title'      => $this->getModelLabel($relatedModel),
-                    'slug'       => $relatedModel->slug,
+                    'id' => $relatedModel->id,
+                    'type' => $item->related_type,
+                    'title' => $this->getModelLabel($relatedModel),
+                    'slug' => $relatedModel->slug,
                     'coverImage' => $coverImage, // Include the coverImage for related items
                 ],
             ];

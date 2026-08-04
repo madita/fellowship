@@ -16,9 +16,9 @@ use Illuminate\Support\Str;
 class Sandbox extends Model
 {
     use HasFactory;
+    use Revisionable;
     use Sluggable;
     use SoftDeletes;
-    use Revisionable;
 
     protected $revisionable = [
         'title',

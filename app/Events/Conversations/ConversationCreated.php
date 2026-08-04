@@ -3,6 +3,7 @@
 namespace App\Events\Conversations;
 
 use App\Models\Conversation\Conversation;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -30,12 +31,12 @@ class ConversationCreated implements ShouldBroadcast
     public function broadcastWith()
     {
         // Load relationships if not already loaded
-        if (!$this->conversation->relationLoaded('users')) {
+        if (! $this->conversation->relationLoaded('users')) {
             $this->conversation->load('users');
         }
 
         // Load creator relationship - may be null for old conversations
-        if (!$this->conversation->relationLoaded('creator')) {
+        if (! $this->conversation->relationLoaded('creator')) {
             $this->conversation->load('creator');
         }
 
@@ -43,17 +44,17 @@ class ConversationCreated implements ShouldBroadcast
 
         return [
             'conversation' => [
-                'uuid'    => $this->conversation->uuid,
+                'uuid' => $this->conversation->uuid,
                 'creator' => $creator ? [
-                    'id'       => $creator->id,
+                    'id' => $creator->id,
                     'username' => $creator->username ?? $creator->email,
-                    'avatar'   => $creator->avatar ?? null,
+                    'avatar' => $creator->avatar ?? null,
                 ] : null,
                 'users' => $this->conversation->users->map(function ($user) {
                     return [
-                        'id'       => $user->id,
+                        'id' => $user->id,
                         'username' => $user->username ?? $user->email,
-                        'avatar'   => $user->avatar ?? null,
+                        'avatar' => $user->avatar ?? null,
                     ];
                 })->toArray(),
             ],
@@ -63,16 +64,16 @@ class ConversationCreated implements ShouldBroadcast
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * @return Channel|array
      */
-//    public function broadcastOn()
-//    {
-//       // dd('test');
-//        return $this->conversation->others->map(function ($user) {
-//            return new PrivateChannel('users.' . $user->id);
-//        })
-//            ->toArray();
-//    }
+    //    public function broadcastOn()
+    //    {
+    //       // dd('test');
+    //        return $this->conversation->others->map(function ($user) {
+    //            return new PrivateChannel('users.' . $user->id);
+    //        })
+    //            ->toArray();
+    //    }
 
     public function broadcastOn()
     {

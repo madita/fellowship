@@ -9,8 +9,11 @@ use Illuminate\Support\Facades\Log;
 class NewsletterService
 {
     protected $enabled;
+
     protected $provider;
+
     protected $apiKey;
+
     protected $listId;
 
     public function __construct()
@@ -34,18 +37,18 @@ class NewsletterService
      */
     public function subscribe(string $email): array
     {
-        if (!$this->enabled) {
+        if (! $this->enabled) {
             return [
                 'success' => false,
                 'message' => __('messages.newsletter.disabled'),
             ];
         }
 
-        if (!$this->provider || !$this->apiKey || !$this->listId) {
+        if (! $this->provider || ! $this->apiKey || ! $this->listId) {
             Log::warning('Newsletter settings incomplete', [
-                'provider'    => $this->provider,
-                'has_api_key' => !empty($this->apiKey),
-                'has_list_id' => !empty($this->listId),
+                'provider' => $this->provider,
+                'has_api_key' => ! empty($this->apiKey),
+                'has_list_id' => ! empty($this->listId),
             ]);
 
             return [
@@ -77,8 +80,8 @@ class NewsletterService
         } catch (\Exception $e) {
             Log::error('Newsletter subscription failed', [
                 'provider' => $this->provider,
-                'email'    => $email,
-                'error'    => $e->getMessage(),
+                'email' => $email,
+                'error' => $e->getMessage(),
             ]);
 
             return [
@@ -100,7 +103,7 @@ class NewsletterService
         $response = Http::withBasicAuth('anystring', $this->apiKey)
             ->post($url, [
                 'email_address' => $email,
-                'status'        => 'subscribed',
+                'status' => 'subscribed',
             ]);
 
         if ($response->successful() || $response->status() === 400 && str_contains($response->json('title', ''), 'Member Exists')) {
@@ -111,7 +114,7 @@ class NewsletterService
         }
 
         Log::error('Mailchimp subscription failed', [
-            'status'   => $response->status(),
+            'status' => $response->status(),
             'response' => $response->json(),
         ]);
 
@@ -185,7 +188,7 @@ class NewsletterService
 
         $response = Http::post($url, [
             'api_key' => $this->apiKey,
-            'email'   => $email,
+            'email' => $email,
         ]);
 
         if ($response->successful()) {
@@ -224,8 +227,8 @@ class NewsletterService
         $response = Http::withHeaders([
             'api-key' => $this->apiKey,
         ])->post($url, [
-            'email'         => $email,
-            'listIds'       => [(int) $this->listId],
+            'email' => $email,
+            'listIds' => [(int) $this->listId],
             'updateEnabled' => true,
         ]);
 

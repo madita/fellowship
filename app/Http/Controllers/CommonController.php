@@ -13,7 +13,7 @@ class CommonController extends Controller
     {
         $foreignKeyField = $request->get('foreign_key');
 
-        if (!$foreignKeyField) {
+        if (! $foreignKeyField) {
             return response()->json(['error' => __('messages.common.invalid_params')], 400);
         }
 
@@ -47,7 +47,7 @@ class CommonController extends Controller
         }
 
         // Check if the related model class exists
-        if (!class_exists($relatedModelClass)) {
+        if (! class_exists($relatedModelClass)) {
             return response()->json(['error' => __('messages.common.model_not_found')], 404);
         }
 

@@ -10,9 +10,8 @@ class JobDispatcher
     /**
      * Dispatch a job, either to the queue or synchronously based on settings.
      *
-     * @param ShouldQueue $job   The job to dispatch
-     * @param string|null $queue Optional queue name
-     *
+     * @param  ShouldQueue  $job  The job to dispatch
+     * @param  string|null  $queue  Optional queue name
      * @return mixed
      */
     public static function dispatch(ShouldQueue $job, ?string $queue = null)
@@ -35,8 +34,7 @@ class JobDispatcher
     /**
      * Dispatch a job to run after the response is sent.
      *
-     * @param ShouldQueue $job The job to dispatch
-     *
+     * @param  ShouldQueue  $job  The job to dispatch
      * @return mixed
      */
     public static function dispatchAfterResponse(ShouldQueue $job)
@@ -54,9 +52,8 @@ class JobDispatcher
     /**
      * Dispatch a job with a delay.
      *
-     * @param ShouldQueue                          $job   The job to dispatch
-     * @param \DateTimeInterface|\DateInterval|int $delay The delay
-     *
+     * @param  ShouldQueue  $job  The job to dispatch
+     * @param  \DateTimeInterface|\DateInterval|int  $delay  The delay
      * @return mixed
      */
     public static function dispatchWithDelay(ShouldQueue $job, $delay)
@@ -73,8 +70,6 @@ class JobDispatcher
 
     /**
      * Check if background jobs are enabled.
-     *
-     * @return bool
      */
     public static function isBackgroundJobsEnabled(): bool
     {
@@ -91,12 +86,10 @@ class JobDispatcher
 
     /**
      * Get the queue connection to use.
-     *
-     * @return string
      */
     public static function getQueueConnection(): string
     {
-        if (!static::isBackgroundJobsEnabled()) {
+        if (! static::isBackgroundJobsEnabled()) {
             return 'sync';
         }
 

@@ -28,9 +28,9 @@ class Widget extends Model implements TranslatableContract
 
     protected $casts = [
         'enabled' => 'boolean',
-        'order'   => 'integer',
-        'column'  => 'integer',
-        'config'  => 'array',
+        'order' => 'integer',
+        'column' => 'integer',
+        'config' => 'array',
     ];
 
     protected $attributes = [

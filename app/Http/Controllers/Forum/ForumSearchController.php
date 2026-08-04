@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Meilisearch\Exceptions\CommunicationException;
 
 class ForumSearchController extends Controller
 {
@@ -56,7 +57,7 @@ class ForumSearchController extends Controller
             return $this->searchThreadsViaMeilisearch($query, $filter, $page, $perPage);
         } catch (\Exception $e) {
             if ($this->isMeilisearchError($e)) {
-                Log::warning('Meilisearch unavailable for thread search, falling back to database: ' . $e->getMessage());
+                Log::warning('Meilisearch unavailable for thread search, falling back to database: '.$e->getMessage());
                 $this->searchDegraded = true;
 
                 return $this->searchThreadsViaDatabase($query, $page, $perPage);
@@ -72,7 +73,7 @@ class ForumSearchController extends Controller
             return $this->searchPostsViaMeilisearch($query, $filter, $page, $perPage);
         } catch (\Exception $e) {
             if ($this->isMeilisearchError($e)) {
-                Log::warning('Meilisearch unavailable for post search, falling back to database: ' . $e->getMessage());
+                Log::warning('Meilisearch unavailable for post search, falling back to database: '.$e->getMessage());
                 $this->searchDegraded = true;
 
                 return $this->searchPostsViaDatabase($query, $page, $perPage);
@@ -101,7 +102,7 @@ class ForumSearchController extends Controller
                 return array_search($thread->id, $threadIds);
             })
             ->values()
-            ->map(fn($thread) => $this->transformThread($thread));
+            ->map(fn ($thread) => $this->transformThread($thread));
 
         return [
             'data' => $threads,
@@ -130,7 +131,7 @@ class ForumSearchController extends Controller
                 return array_search($post->id, $postIds);
             })
             ->values()
-            ->map(fn($post) => $this->transformPost($post));
+            ->map(fn ($post) => $this->transformPost($post));
 
         return [
             'data' => $posts,
@@ -150,7 +151,7 @@ class ForumSearchController extends Controller
                     ->orWhere('body', 'LIKE', "%{$query}%");
             });
 
-        if (!empty($privateIds)) {
+        if (! empty($privateIds)) {
             $builder->whereNotIn('taxonomy_id', $privateIds);
         }
 
@@ -159,7 +160,7 @@ class ForumSearchController extends Controller
             ->paginate($perPage, ['*'], 'page', $page);
 
         return [
-            'data' => $results->getCollection()->map(fn($thread) => $this->transformThread($thread)),
+            'data' => $results->getCollection()->map(fn ($thread) => $this->transformThread($thread)),
             'total' => $results->total(),
             'current_page' => $results->currentPage(),
             'last_page' => $results->lastPage(),
@@ -173,7 +174,7 @@ class ForumSearchController extends Controller
         $builder = ForumPost::query()
             ->where('body', 'LIKE', "%{$query}%");
 
-        if (!empty($privateIds)) {
+        if (! empty($privateIds)) {
             $builder->whereHas('thread', function ($q) use ($privateIds) {
                 $q->whereNotIn('taxonomy_id', $privateIds);
             });
@@ -184,7 +185,7 @@ class ForumSearchController extends Controller
             ->paginate($perPage, ['*'], 'page', $page);
 
         return [
-            'data' => $results->getCollection()->map(fn($post) => $this->transformPost($post)),
+            'data' => $results->getCollection()->map(fn ($post) => $this->transformPost($post)),
             'total' => $results->total(),
             'current_page' => $results->currentPage(),
             'last_page' => $results->lastPage(),
@@ -206,7 +207,7 @@ class ForumSearchController extends Controller
         }
 
         // Meilisearch filter syntax: exclude each private taxonomy_id
-        $filters = array_map(fn($id) => "taxonomy_id != {$id}", $privateIds);
+        $filters = array_map(fn ($id) => "taxonomy_id != {$id}", $privateIds);
 
         return implode(' AND ', $filters);
     }
@@ -221,19 +222,19 @@ class ForumSearchController extends Controller
 
         return Taxonomy::taxonomy('forum_cat')
             ->get()
-            ->filter(fn($cat) => $cat->properties['is_private'] ?? false)
+            ->filter(fn ($cat) => $cat->properties['is_private'] ?? false)
             ->pluck('id')
             ->all();
     }
 
     private function isMeilisearchError(\Exception $e): bool
     {
-        if ($e instanceof \Meilisearch\Exceptions\CommunicationException) {
+        if ($e instanceof CommunicationException) {
             return true;
         }
 
         $previous = $e->getPrevious();
-        if ($previous instanceof \Meilisearch\Exceptions\CommunicationException) {
+        if ($previous instanceof CommunicationException) {
             return true;
         }
 

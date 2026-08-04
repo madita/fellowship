@@ -60,7 +60,7 @@ trait HasCache
      */
     public static function findCached($id)
     {
-        $model = new static();
+        $model = new static;
         $key = CacheService::modelKey(class_basename($model), $id);
         $tag = $model->getCacheTag();
 
@@ -74,7 +74,7 @@ trait HasCache
      */
     public static function findBySlugCached(string $slug)
     {
-        $model = new static();
+        $model = new static;
         $key = CacheService::modelKey(class_basename($model), 'slug:'.$slug);
         $tag = $model->getCacheTag();
 
@@ -88,7 +88,7 @@ trait HasCache
      */
     public static function allCached()
     {
-        $model = new static();
+        $model = new static;
         $key = CacheService::listKey(class_basename($model));
         $tag = $model->getCacheTag();
 
@@ -102,7 +102,7 @@ trait HasCache
      */
     public static function paginateCached(int $perPage = 15, array $params = [])
     {
-        $model = new static();
+        $model = new static;
         $page = request()->get('page', 1);
         $cacheParams = array_merge($params, ['page' => $page, 'per_page' => $perPage]);
         $key = CacheService::listKey(class_basename($model), $cacheParams);

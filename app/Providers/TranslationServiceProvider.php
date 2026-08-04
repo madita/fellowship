@@ -16,8 +16,8 @@ class TranslationServiceProvider extends ServiceProvider
             $provider = config('services.translation.provider', null);
             $apiKey = config('services.translation.api_key', null);
 
-            if (!$enabled || !$apiKey) {
-                return new NullTranslationService();
+            if (! $enabled || ! $apiKey) {
+                return new NullTranslationService;
             }
 
             // Future: Add provider-specific implementations
@@ -30,7 +30,7 @@ class TranslationServiceProvider extends ServiceProvider
             //         return new NullTranslationService();
             // }
 
-            return new NullTranslationService();
+            return new NullTranslationService;
         });
     }
 

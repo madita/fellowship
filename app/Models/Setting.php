@@ -86,9 +86,9 @@ class Setting extends Model
     public static function get(string $key, $default = null)
     {
         // If caching is disabled, fetch directly from database
-        if (!static::isCacheEnabled()) {
+        if (! static::isCacheEnabled()) {
             $setting = static::where('key', $key)->first();
-            if (!$setting) {
+            if (! $setting) {
                 return $default;
             }
 
@@ -100,7 +100,7 @@ class Setting extends Model
         return Cache::remember("setting.{$key}", $lifetime, function () use ($key, $default) {
             $setting = static::where('key', $key)->first();
 
-            if (!$setting) {
+            if (! $setting) {
                 return $default;
             }
 
@@ -132,7 +132,7 @@ class Setting extends Model
     public static function getAllSettings(): array
     {
         // If caching is disabled, fetch directly from database
-        if (!static::isCacheEnabled()) {
+        if (! static::isCacheEnabled()) {
             $settings = static::query()->get();
             $result = [];
             foreach ($settings as $setting) {
@@ -222,7 +222,7 @@ class Setting extends Model
         return match ($type) {
             'boolean' => in_array($value, ['1', 1, true, 'true', 'yes', 'on'], true),
             'integer' => (int) $value,
-            'float'   => (float) $value,
+            'float' => (float) $value,
             'array', 'json' => json_decode($value, true),
             default => $value,
         };

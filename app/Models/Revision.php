@@ -100,8 +100,7 @@ class Revision extends Model
     /**
      * Determine whether field was updated during current action.
      *
-     * @param string $key
-     *
+     * @param  string  $key
      * @return bool
      */
     public function isUpdated($key)
@@ -132,9 +131,8 @@ class Revision extends Model
     /**
      * Get single value from the new/old array.
      *
-     * @param string $version
-     * @param string $key
-     *
+     * @param  string  $version
+     * @param  string  $key
      * @return string
      */
     protected function getFromArray($version, $key)
@@ -155,11 +153,11 @@ class Revision extends Model
     /**
      * Set custom table name for the model.
      *
-     * @param string $table
+     * @param  string  $table
      */
     public static function setCustomTable($table)
     {
-        if (!isset(static::$customTable)) {
+        if (! isset(static::$customTable)) {
             static::$customTable = $table;
         }
     }
@@ -170,7 +168,6 @@ class Revision extends Model
      * @link https://laravel.com/docs/eloquent#local-scopes
      *
      * @param  Builder
-     *
      * @return Builder
      */
     public function scopeOrdered($query)
@@ -183,9 +180,8 @@ class Revision extends Model
      *
      * @link https://laravel.com/docs/eloquent#local-scopes
      *
-     * @param Builder      $query
-     * @param Model|string $table
-     *
+     * @param  Builder  $query
+     * @param  Model|string  $table
      * @return Builder
      */
     public function scopeFor($query, $table)
@@ -200,9 +196,8 @@ class Revision extends Model
     /**
      * Handle dynamic method calls.
      *
-     * @param string $method
-     * @param array  $parameters
-     *
+     * @param  string  $method
+     * @param  array  $parameters
      * @return mixed
      */
     public function __call($method, $parameters)

@@ -34,19 +34,19 @@ class SpaController extends Controller
     private function getBaseSeoSettings(): array
     {
         return [
-            'app_name'          => Setting::get('app_name', config('app.name', 'Fellowship')),
-            'meta_title'        => Setting::get('meta_title'),
-            'meta_description'  => Setting::get('meta_description'),
-            'meta_keywords'     => Setting::get('meta_keywords'),
-            'og_title'          => Setting::get('og_title'),
-            'og_description'    => Setting::get('og_description'),
-            'og_image'          => Setting::get('og_image'),
+            'app_name' => Setting::get('app_name', config('app.name', 'Fellowship')),
+            'meta_title' => Setting::get('meta_title'),
+            'meta_description' => Setting::get('meta_description'),
+            'meta_keywords' => Setting::get('meta_keywords'),
+            'og_title' => Setting::get('og_title'),
+            'og_description' => Setting::get('og_description'),
+            'og_image' => Setting::get('og_image'),
             'twitter_card_type' => Setting::get('twitter_card_type', 'summary_large_image'),
-            'twitter_site'      => Setting::get('twitter_site'),
-            'canonical_url'     => Setting::get('canonical_url'),
-            'indexing_enabled'  => Setting::get('indexing_enabled', true),
-            'app_logo'          => Setting::get('app_logo'),
-            'content_type'      => 'website',
+            'twitter_site' => Setting::get('twitter_site'),
+            'canonical_url' => Setting::get('canonical_url'),
+            'indexing_enabled' => Setting::get('indexing_enabled', true),
+            'app_logo' => Setting::get('app_logo'),
+            'content_type' => 'website',
             // Custom scripts
             'custom_head_scripts' => Setting::get('custom_head_scripts', ''),
             'custom_body_scripts' => Setting::get('custom_body_scripts', ''),
@@ -101,16 +101,16 @@ class SpaController extends Controller
         }
 
         $wiki = Wiki::where('slug', $slug)->first();
-        if (!$wiki) {
+        if (! $wiki) {
             return null;
         }
 
         $appName = Setting::get('app_name', 'Fellowship');
 
         return [
-            'meta_title'    => $wiki->title.' | '.$appName,
-            'og_title'      => $wiki->title,
-            'content_type'  => 'article',
+            'meta_title' => $wiki->title.' | '.$appName,
+            'og_title' => $wiki->title,
+            'content_type' => 'article',
             'canonical_url' => url('/wiki/'.$wiki->slug),
         ];
     }
@@ -125,7 +125,7 @@ class SpaController extends Controller
         }
 
         $page = Page::where('slug', $slug)->where('published', true)->first();
-        if (!$page) {
+        if (! $page) {
             return null;
         }
 
@@ -133,14 +133,14 @@ class SpaController extends Controller
         $description = $this->extractDescription($page->content);
 
         return [
-            'meta_title'       => $page->title.' | '.$appName,
+            'meta_title' => $page->title.' | '.$appName,
             'meta_description' => $description,
-            'og_title'         => $page->title,
-            'og_description'   => $description,
-            'content_type'     => 'article',
-            'canonical_url'    => url('/pages/'.$page->slug),
-            'published_time'   => $page->created_at?->toIso8601String(),
-            'modified_time'    => $page->updated_at?->toIso8601String(),
+            'og_title' => $page->title,
+            'og_description' => $description,
+            'content_type' => 'article',
+            'canonical_url' => url('/pages/'.$page->slug),
+            'published_time' => $page->created_at?->toIso8601String(),
+            'modified_time' => $page->updated_at?->toIso8601String(),
         ];
     }
 
@@ -154,7 +154,7 @@ class SpaController extends Controller
         }
 
         $post = Post::where('slug', $slug)->where('status', 'published')->first();
-        if (!$post) {
+        if (! $post) {
             return null;
         }
 
@@ -162,14 +162,14 @@ class SpaController extends Controller
         $description = $this->extractDescription($post->content ?? $post->excerpt ?? '');
 
         return [
-            'meta_title'       => $post->title.' | '.$appName,
+            'meta_title' => $post->title.' | '.$appName,
             'meta_description' => $description,
-            'og_title'         => $post->title,
-            'og_description'   => $description,
-            'content_type'     => 'article',
-            'canonical_url'    => url('/posts/'.$post->slug),
-            'published_time'   => $post->created_at?->toIso8601String(),
-            'modified_time'    => $post->updated_at?->toIso8601String(),
+            'og_title' => $post->title,
+            'og_description' => $description,
+            'content_type' => 'article',
+            'canonical_url' => url('/posts/'.$post->slug),
+            'published_time' => $post->created_at?->toIso8601String(),
+            'modified_time' => $post->updated_at?->toIso8601String(),
         ];
     }
 
@@ -209,17 +209,17 @@ class SpaController extends Controller
         // Base organization/website schema
         $data = [
             '@context' => 'https://schema.org',
-            '@graph'   => [
+            '@graph' => [
                 [
-                    '@type'           => 'WebSite',
-                    '@id'             => $siteUrl.'/#website',
-                    'url'             => $siteUrl,
-                    'name'            => $appName,
-                    'description'     => $seo['meta_description'] ?? '',
+                    '@type' => 'WebSite',
+                    '@id' => $siteUrl.'/#website',
+                    'url' => $siteUrl,
+                    'name' => $appName,
+                    'description' => $seo['meta_description'] ?? '',
                     'potentialAction' => [
-                        '@type'  => 'SearchAction',
+                        '@type' => 'SearchAction',
                         'target' => [
-                            '@type'       => 'EntryPoint',
+                            '@type' => 'EntryPoint',
                             'urlTemplate' => $siteUrl.'/search?q={search_term_string}',
                         ],
                         'query-input' => 'required name=search_term_string',
@@ -231,21 +231,21 @@ class SpaController extends Controller
         // Add article schema for content pages
         if ($contentSeo && ($seo['content_type'] ?? null) === 'article') {
             $article = [
-                '@type'       => 'Article',
-                '@id'         => ($seo['canonical_url'] ?? url()->current()).'/#article',
-                'headline'    => $seo['og_title'] ?? $seo['meta_title'] ?? '',
+                '@type' => 'Article',
+                '@id' => ($seo['canonical_url'] ?? url()->current()).'/#article',
+                'headline' => $seo['og_title'] ?? $seo['meta_title'] ?? '',
                 'description' => $seo['og_description'] ?? $seo['meta_description'] ?? '',
-                'url'         => $seo['canonical_url'] ?? url()->current(),
-                'isPartOf'    => ['@id' => $siteUrl.'/#website'],
+                'url' => $seo['canonical_url'] ?? url()->current(),
+                'isPartOf' => ['@id' => $siteUrl.'/#website'],
             ];
 
-            if (!empty($seo['published_time'])) {
+            if (! empty($seo['published_time'])) {
                 $article['datePublished'] = $seo['published_time'];
             }
-            if (!empty($seo['modified_time'])) {
+            if (! empty($seo['modified_time'])) {
                 $article['dateModified'] = $seo['modified_time'];
             }
-            if (!empty($seo['og_image'])) {
+            if (! empty($seo['og_image'])) {
                 $imageUrl = str_starts_with($seo['og_image'], 'http')
                     ? $seo['og_image']
                     : asset('storage/'.$seo['og_image']);

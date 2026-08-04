@@ -16,7 +16,7 @@ class ForumSubscriptionController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401);
         }
 
@@ -35,7 +35,7 @@ class ForumSubscriptionController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             abort(401);
         }
 

@@ -5,10 +5,10 @@ namespace Tests\Feature;
 use App\Models\Sandbox\Sandbox;
 use App\Models\Sandbox\SandboxVersion;
 use App\Models\User;
+use App\Notifications\SandboxNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Notification;
-use App\Notifications\SandboxNotification;
 use Tests\TestCase;
 
 class SandboxControllerTest extends TestCase
@@ -17,9 +17,13 @@ class SandboxControllerTest extends TestCase
     use WithFaker;
 
     protected User $owner;
+
     protected User $editor;
+
     protected User $viewer;
+
     protected User $stranger;
+
     protected Sandbox $sandbox;
 
     protected function setUp(): void

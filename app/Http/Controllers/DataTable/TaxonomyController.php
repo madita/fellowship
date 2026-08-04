@@ -47,10 +47,10 @@ class TaxonomyController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'content'        => 'wysiwyg',
-            'description'    => 'textarea',
-            'color'          => 'color',
-            'parent_id'      => 'parent', ];
+            'content' => 'wysiwyg',
+            'description' => 'textarea',
+            'color' => 'color',
+            'parent_id' => 'parent', ];
     }
 
     public function getDisplayableColumns()
@@ -69,8 +69,8 @@ class TaxonomyController extends DataTableController
         ];
     }
 
-//    public function update($id, TaxonomyRequest $request)
-//    {
-//        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
-//    }
+    //    public function update($id, TaxonomyRequest $request)
+    //    {
+    //        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
+    //    }
 }

@@ -14,14 +14,11 @@ class PageController extends Controller
      *
      * @return void
      */
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * view landing pages.
      *
-     * @param $slug
      *
      * @return JsonResponse|never
      */
@@ -30,22 +27,22 @@ class PageController extends Controller
         $page = Page::where('slug', '=', $slug)->with(['children', 'translations'])->first();
 
         $parent = null;
-        //$pages = Page::all();
+        // $pages = Page::all();
 
-        if (!$page || !$page->published) {
+        if (! $page || ! $page->published) {
             return abort(404);
         }
 
-        if ($page->sign_in_only && !auth()->check()) {
+        if ($page->sign_in_only && ! auth()->check()) {
             return abort(403);
         }
 
         $tax = $page->taxonomies()->get()->groupBy('taxonomy')->map(function ($items) {
             return $items->filter(fn ($t) => $t->term)->map(function ($t) {
                 return [
-                    'id'    => $t->term->id,
-                    'name'  => $t->term->title,
-                    'slug'  => $t->term->slug,
+                    'id' => $t->term->id,
+                    'name' => $t->term->title,
+                    'slug' => $t->term->slug,
                     'color' => $t->color,
                 ];
             })->values();
@@ -57,16 +54,16 @@ class PageController extends Controller
 
     public function show(Page $page)
     {
-        if (!$page) {
+        if (! $page) {
             return abort(404);
         }
 
         $tax = $page->taxonomies()->get()->groupBy('taxonomy')->map(function ($items) {
             return $items->filter(fn ($t) => $t->term)->map(function ($t) {
                 return [
-                    'id'    => $t->term->id,
+                    'id' => $t->term->id,
                     'title' => $t->term->title,
-                    'slug'  => $t->term->slug,
+                    'slug' => $t->term->slug,
                     'color' => $t->color,
                 ];
             })->values();
@@ -76,24 +73,24 @@ class PageController extends Controller
             ->json(['page' => $page, 'parent' => $page->parent, 'taxonomies' => $tax]);
     }
 
-//    public function showWithCategory($taxonomy, $category)
-//    {
-//
-//        $pages = Page::withTerm($category, 'tags')->where('published', true)->get();
-//
-//        return response()
-//            ->json(['pages' => $pages]);
-//    }
+    //    public function showWithCategory($taxonomy, $category)
+    //    {
+    //
+    //        $pages = Page::withTerm($category, 'tags')->where('published', true)->get();
+    //
+    //        return response()
+    //            ->json(['pages' => $pages]);
+    //    }
 
     public function history(Page $page)
     {
-//        $page = Page::where('slug', '=', $slug)->first();
+        //        $page = Page::where('slug', '=', $slug)->first();
 
-        if (!$page || !$page->published) {
+        if (! $page || ! $page->published) {
             return abort(404);
         }
 
-        if ($page->sign_in_only && !auth()->check()) {
+        if ($page->sign_in_only && ! auth()->check()) {
             return abort(403);
         }
 

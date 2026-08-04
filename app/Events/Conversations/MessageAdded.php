@@ -3,6 +3,7 @@
 namespace App\Events\Conversations;
 
 use App\Models\Conversation\ConversationMessage;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -33,9 +34,9 @@ class MessageAdded implements ShouldBroadcast
 
         return [
             'message' => array_merge($this->message->toArray(), [
-                'self_owned'       => false,
+                'self_owned' => false,
                 'created_at_human' => $this->message->created_at->diffForHumans(),
-                'conversation'     => [
+                'conversation' => [
                     'uuid' => $this->message->conversation->uuid,
                 ],
             ]),
@@ -45,7 +46,7 @@ class MessageAdded implements ShouldBroadcast
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * @return Channel|array
      */
     public function broadcastOn()
     {

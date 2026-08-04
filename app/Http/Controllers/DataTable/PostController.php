@@ -58,13 +58,13 @@ class PostController extends DataTableController
         return [
             'categories' => [
                 'taxonomy' => 'category',
-                'label'    => 'Categories',
+                'label' => 'Categories',
                 'multiple' => true,
                 'endpoint' => '/api/tag/terms/category',
             ],
             'terms' => [
                 'taxonomy' => 'tags',
-                'label'    => 'Tags',
+                'label' => 'Tags',
                 'multiple' => true,
                 'endpoint' => '/api/tag/terms/tags',
             ],
@@ -83,7 +83,7 @@ class PostController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'body'   => 'wysiwyg',
+            'body' => 'wysiwyg',
             'status' => ['select' => ['draft', 'published']],
         ];
     }

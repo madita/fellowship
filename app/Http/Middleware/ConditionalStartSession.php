@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Setting;
 use Closure;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
@@ -54,7 +55,7 @@ class ConditionalStartSession extends StartSession
     protected function shouldSaveSessionCookie(Request $request): bool
     {
         // If cookie consent feature is disabled, always save
-        if (!$this->isCookieConsentEnabled()) {
+        if (! $this->isCookieConsentEnabled()) {
             return true;
         }
 
@@ -82,7 +83,7 @@ class ConditionalStartSession extends StartSession
     {
         try {
             // Check setting from database/cache
-            $setting = \App\Models\Setting::get('cookie_consent_enabled', true);
+            $setting = Setting::get('cookie_consent_enabled', true);
 
             return (bool) $setting;
         } catch (\Exception $e) {

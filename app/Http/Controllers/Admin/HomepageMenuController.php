@@ -45,16 +45,16 @@ class HomepageMenuController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'label'         => 'required|string',
+            'label' => 'required|string',
             'anchor_target' => 'required|string',
-            'order'         => 'integer',
-            'enabled'       => 'boolean',
+            'order' => 'integer',
+            'enabled' => 'boolean',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -62,7 +62,7 @@ class HomepageMenuController extends Controller
 
         return response()->json([
             'message' => __('messages.menu.item_created'),
-            'item'    => $item,
+            'item' => $item,
         ], 201);
     }
 
@@ -74,16 +74,16 @@ class HomepageMenuController extends Controller
         $item = HomepageMenuItem::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'label'         => 'string',
+            'label' => 'string',
             'anchor_target' => 'string',
-            'order'         => 'integer',
-            'enabled'       => 'boolean',
+            'order' => 'integer',
+            'enabled' => 'boolean',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -91,7 +91,7 @@ class HomepageMenuController extends Controller
 
         return response()->json([
             'message' => __('messages.menu.item_updated'),
-            'item'    => $item,
+            'item' => $item,
         ]);
     }
 
@@ -114,15 +114,15 @@ class HomepageMenuController extends Controller
     public function updateOrder(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'items'         => 'required|array',
-            'items.*.id'    => 'required|exists:homepage_menu_items,id',
+            'items' => 'required|array',
+            'items.*.id' => 'required|exists:homepage_menu_items,id',
             'items.*.order' => 'required|integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'message' => __('messages.error.validation'),
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 

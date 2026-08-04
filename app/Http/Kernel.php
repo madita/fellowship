@@ -3,9 +3,14 @@
 namespace App\Http;
 
 use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\AuthenticateApiKey;
+use App\Http\Middleware\CacheControl;
 use App\Http\Middleware\ConditionalStartSession;
+use App\Http\Middleware\DynamicRateLimit;
 use App\Http\Middleware\EncryptCookies;
+use App\Http\Middleware\EnsureSandboxEnabled;
 use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\LazyLoadingMiddleware;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\SetLocale;
@@ -43,7 +48,7 @@ class Kernel extends HttpKernel
     protected $middleware = [
         // \App\Http\Middleware\TrustHosts::class,
         TrustProxies::class,
-        //\Fruitcake\Cors\HandleCors::class,
+        // \Fruitcake\Cors\HandleCors::class,
         HandleCors::class,
         PreventRequestsDuringMaintenance::class,
         ValidatePostSize::class,
@@ -67,7 +72,7 @@ class Kernel extends HttpKernel
             VerifyCsrfToken::class,
             SubstituteBindings::class,
             SetLocale::class,
-            \App\Http\Middleware\LazyLoadingMiddleware::class,
+            LazyLoadingMiddleware::class,
         ],
 
         'api' => [
@@ -86,23 +91,23 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $routeMiddleware = [
-        'auth'               => Authenticate::class,
-        'auth.basic'         => AuthenticateWithBasicAuth::class,
-        'cache.headers'      => SetCacheHeaders::class,
-        'can'                => Authorize::class,
-        'guest'              => RedirectIfAuthenticated::class,
-        'password.confirm'   => RequirePassword::class,
-        'signed'             => ValidateSignature::class,
-        'throttle'           => ThrottleRequests::class,
-        'verified'           => EnsureEmailIsVerified::class,
-        'role'               => RoleMiddleware::class,
-        'permission'         => PermissionMiddleware::class,
+        'auth' => Authenticate::class,
+        'auth.basic' => AuthenticateWithBasicAuth::class,
+        'cache.headers' => SetCacheHeaders::class,
+        'can' => Authorize::class,
+        'guest' => RedirectIfAuthenticated::class,
+        'password.confirm' => RequirePassword::class,
+        'signed' => ValidateSignature::class,
+        'throttle' => ThrottleRequests::class,
+        'verified' => EnsureEmailIsVerified::class,
+        'role' => RoleMiddleware::class,
+        'permission' => PermissionMiddleware::class,
         'role_or_permission' => RoleOrPermissionMiddleware::class,
-        'admin'              => EnsureUserIsAdmin::class,
-        'cache.control'      => \App\Http\Middleware\CacheControl::class,
-        'api.key'            => \App\Http\Middleware\AuthenticateApiKey::class,
-        'api.rate'           => \App\Http\Middleware\DynamicRateLimit::class,
-        'lazy.loading'       => \App\Http\Middleware\LazyLoadingMiddleware::class,
-        'sandbox.enabled'    => \App\Http\Middleware\EnsureSandboxEnabled::class,
+        'admin' => EnsureUserIsAdmin::class,
+        'cache.control' => CacheControl::class,
+        'api.key' => AuthenticateApiKey::class,
+        'api.rate' => DynamicRateLimit::class,
+        'lazy.loading' => LazyLoadingMiddleware::class,
+        'sandbox.enabled' => EnsureSandboxEnabled::class,
     ];
 }
