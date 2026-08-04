@@ -12,6 +12,7 @@ enabled:
 
 disabled:
   - unalign_equals
+  - concat_without_spaces
 
 finder:
   exclude:
