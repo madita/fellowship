@@ -11,8 +11,6 @@ use Illuminate\Validation\Rule;
 
 class PollController extends Controller
 {
-    protected const ALLOWED_POLLABLE_TYPES = [
-        'page' => \App\Models\Page::class,
     /**
      * Allowed pollable model types.
      * Add new pollable models here as they're created.
