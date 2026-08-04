@@ -6,8 +6,6 @@ enabled:
   - align_double_arrow
   - align_equals
   - concat_with_spaces
-  - const_visibility_required
-  - declare_strict_types
   - method_separation
   - not_operator_with_space
   - ordered_class_elements
