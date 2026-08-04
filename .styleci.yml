@@ -13,6 +13,7 @@ enabled:
 disabled:
   - unalign_equals
   - concat_without_spaces
+  - symfony_phpdoc_order
 
 finder:
   exclude:
