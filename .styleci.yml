@@ -69,15 +69,8 @@ enabled:
   - ternary_operator_spaces
   - trailing_comma_in_multiline_array
   - trim_array_spaces
-  - unalign_double_arrow
-  - unalign_equals
   - visibility_required
   - whitespace_after_comma_in_array
-
-disabled:
-  - length_ordered_imports
-  - unalign_double_arrow
-  - unalign_equals
 
 finder:
   exclude:
