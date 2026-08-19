@@ -59,7 +59,10 @@ class ForumPostController extends Controller
 
         $post = $thread->posts()->create([
             'user_id' => $user->id,
-            'body' => Purify::clean($validated['body']),
+            // The 'sandbox' config matches the TipTap editor's output
+            // (tables, code blocks, blockquotes, …) — the default config
+            // would silently strip those elements.
+            'body' => Purify::config('sandbox')->clean($validated['body']),
             'parent_id' => $validated['parent_id'] ?? null,
         ]);
 
@@ -112,7 +115,7 @@ class ForumPostController extends Controller
             'body' => 'required|string',
         ]);
 
-        $validated['body'] = Purify::clean($validated['body']);
+        $validated['body'] = Purify::config('sandbox')->clean($validated['body']);
         $post->update($validated);
 
         return response()->json($post->load('author'));

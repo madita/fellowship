@@ -530,6 +530,7 @@ Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {
     Route::post('/connections/{connection}/disconnect', 'App\Http\Controllers\IrcController@disconnect');
 
     // Channels
+    Route::get('/available-channels', 'App\Http\Controllers\IrcController@availableChannels');
     Route::get('/connections/{connection}/channels', 'App\Http\Controllers\IrcController@getServerChannels');
     Route::post('/connections/{connection}/join', 'App\Http\Controllers\IrcController@joinChannel');
     Route::post('/channels/{channel}/part', 'App\Http\Controllers\IrcController@partChannel');

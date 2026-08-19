@@ -74,12 +74,49 @@ const openConfirmationDialog = () => {
     confirmationDialog.value.isOpen = true;
 };
 
+// Location can arrive as null (no location), a legacy plain string (treated as
+// custom text) or the structured object we now persist. Normalise to a single
+// object shape so the edit form can bind to it directly.
+const normalizeLocation = (loc) => {
+    const base = {
+        type: null,
+        address: '',
+        lat: null,
+        lng: null,
+        virtualMode: 'irc',
+        irc_channel_id: null,
+        url: '',
+        text: '',
+        irc_channel: null,
+    };
+    if (typeof loc === 'string') {
+        return loc.trim() === '' ? base : { ...base, type: 'custom', text: loc };
+    }
+    if (loc && typeof loc === 'object') {
+        return { ...base, ...loc, virtualMode: loc.virtualMode ?? 'irc' };
+    }
+    return base;
+};
+
 const localEvent = ref(null);
 const initialSnapshot = ref('');
 watch(
     () => props.event,
     (newEvent) => {
         localEvent.value = newEvent ? JSON.parse(JSON.stringify(newEvent)) : null;
+        if (localEvent.value) {
+            const ep = localEvent.value.extendedProps = localEvent.value.extendedProps || {};
+            // Raw API items (list/upcoming views) carry these fields at top
+            // level; only FullCalendar transposes them into extendedProps.
+            // Normalise so the form and view mode read a single shape — and
+            // so saving a list-opened event doesn't wipe its stored location.
+            for (const key of ['location', 'event_type_id', 'description', 'type', 'user_id', 'event_profile_id']) {
+                if (ep[key] === undefined && localEvent.value[key] !== undefined) {
+                    ep[key] = localEvent.value[key];
+                }
+            }
+            ep.location = normalizeLocation(ep.location);
+        }
         if (localEvent.value?.id) {
             getEvent(localEvent.value.id);
             fetchRelatedItems('App\\Models\\Event\\Event', localEvent.value.id);
@@ -87,6 +124,93 @@ watch(
     },
     { immediate: true }
 );
+
+// Which location modes this event type allows, from options.location
+// (["custom","real","virtual"]). Falls back to custom-only.
+const selectedEventTypeId = computed(() =>
+    localEvent.value?.extendedProps?.event_type_id ?? localEvent.value?.event_type_id ?? null
+);
+const allowedLocationModes = computed(() => {
+    const type = Object.values(localEventTypes.value).find(t => t.id === selectedEventTypeId.value);
+    let opts = type?.options;
+    if (typeof opts === 'string') {
+        try { opts = JSON.parse(opts); } catch (e) { opts = {}; }
+    }
+    const modes = opts?.location;
+    return Array.isArray(modes) && modes.length ? modes : ['custom'];
+});
+
+// Keep the selected mode valid for the chosen event type.
+watch([allowedLocationModes, selectedEventTypeId], () => {
+    const loc = localEvent.value?.extendedProps?.location;
+    if (!loc) return;
+    if (!loc.type || !allowedLocationModes.value.includes(loc.type)) {
+        loc.type = allowedLocationModes.value[0] ?? null;
+    }
+});
+
+const locationModeIcon = (mode) => ({
+    real: 'mdi-map-marker',
+    virtual: 'mdi-web',
+    custom: 'mdi-map-marker-outline',
+}[mode] || 'mdi-map-marker');
+
+// IRC channels for the "virtual" picker, loaded lazily.
+const ircChannels = ref([]);
+const ircChannelsLoading = ref(false);
+const fetchIrcChannels = async () => {
+    if (ircChannels.value.length || ircChannelsLoading.value) return;
+    ircChannelsLoading.value = true;
+    try {
+        const { data } = await axios.get('/api/irc/available-channels');
+        ircChannels.value = Array.isArray(data) ? data : [];
+    } catch (e) {
+        console.error('Failed to load IRC channels:', e);
+    } finally {
+        ircChannelsLoading.value = false;
+    }
+};
+
+// How the location renders in view mode: an icon, a label and (optionally) a
+// link — a Google Maps search for physical addresses, the internal IRC client
+// for a channel, or the raw URL for an online link.
+const viewLocation = computed(() => {
+    const loc = localEvent.value?.extendedProps?.location;
+    if (!loc || !loc.type) return null;
+
+    if (loc.type === 'real') {
+        const address = (loc.address || '').trim();
+        const hasCoords = loc.lat != null && loc.lng != null && loc.lat !== '' && loc.lng !== '';
+        if (!address && !hasCoords) return null;
+        const query = hasCoords ? `${loc.lat},${loc.lng}` : address;
+        return {
+            icon: 'mdi-map-marker',
+            label: address || `${loc.lat}, ${loc.lng}`,
+            href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`,
+            external: true,
+        };
+    }
+
+    if (loc.type === 'virtual') {
+        if (loc.virtualMode === 'irc') {
+            if (!loc.irc_channel_id) return null;
+            const name = loc.irc_channel ? loc.irc_channel.replace(/^#/, '') : null;
+            return {
+                icon: 'mdi-pound',
+                label: name ? `#${name}` : t('events.locationIrcChannel'),
+                to: { path: '/irc', query: { channel: loc.irc_channel_id } },
+            };
+        }
+        const url = (loc.url || '').trim();
+        // Only ever link plain web URLs — a stored javascript:/data: URL
+        // must not become a clickable href for other viewers.
+        if (!/^https?:\/\//i.test(url)) return null;
+        return { icon: 'mdi-link-variant', label: url, href: url, external: true };
+    }
+
+    const text = (loc.text || '').trim();
+    return text ? { icon: 'mdi-map-marker-outline', label: text } : null;
+});
 
 const isDirty = computed(() => {
     if (!initialSnapshot.value) return false;
@@ -545,6 +669,7 @@ watch(() => props.isDrawerOpen, (isOpen) => {
 });
 
 onMounted(() => {
+    fetchIrcChannels();
     if (!localEvent.value.start) {
         // Set initial start date with proper timezone handling
         localEvent.value.start = roundDateToNextTimeIncrement(new Date());
@@ -740,14 +865,90 @@ onMounted(() => {
                                     />
                                 </VCol>
 
-                                <VCol cols="12">
+                                <VCol cols="12" v-if="localEvent.extendedProps.location">
+                                    <!-- Mode selector: only when the event type allows more than one -->
+                                    <VBtnToggle
+                                        v-if="allowedLocationModes.length > 1"
+                                        v-model="localEvent.extendedProps.location.type"
+                                        color="primary"
+                                        density="comfortable"
+                                        mandatory
+                                        class="mb-3 flex-wrap"
+                                    >
+                                        <VBtn
+                                            v-for="mode in allowedLocationModes"
+                                            :key="mode"
+                                            :value="mode"
+                                            :prepend-icon="locationModeIcon(mode)"
+                                        >
+                                            {{ $t('events.locationModes.' + mode) }}
+                                        </VBtn>
+                                    </VBtnToggle>
+
+                                    <!-- real: physical address (rendered as a map link in view mode) -->
                                     <VTextField
-                                        v-model="localEvent.extendedProps.location"
-                                        :label="$t('events.location')"
-                                        :rules="rules.location"
+                                        v-if="localEvent.extendedProps.location.type === 'real'"
+                                        v-model="localEvent.extendedProps.location.address"
+                                        :label="$t('events.locationAddress')"
                                         variant="outlined"
                                         density="comfortable"
                                         prepend-inner-icon="mdi-map-marker"
+                                    />
+
+                                    <!-- virtual: an internal IRC channel or an external URL -->
+                                    <template v-else-if="localEvent.extendedProps.location.type === 'virtual'">
+                                        <VBtnToggle
+                                            v-model="localEvent.extendedProps.location.virtualMode"
+                                            color="primary"
+                                            density="comfortable"
+                                            mandatory
+                                            class="mb-3"
+                                        >
+                                            <VBtn value="irc" prepend-icon="mdi-pound">{{ $t('events.locationIrc') }}</VBtn>
+                                            <VBtn value="url" prepend-icon="mdi-link-variant">{{ $t('events.locationUrl') }}</VBtn>
+                                        </VBtnToggle>
+
+                                        <VSelect
+                                            v-if="localEvent.extendedProps.location.virtualMode === 'irc'"
+                                            v-model="localEvent.extendedProps.location.irc_channel_id"
+                                            :items="ircChannels"
+                                            item-title="name"
+                                            item-value="id"
+                                            :label="$t('events.locationIrcChannel')"
+                                            :loading="ircChannelsLoading"
+                                            :no-data-text="$t('events.locationNoChannels')"
+                                            variant="outlined"
+                                            density="comfortable"
+                                            prepend-inner-icon="mdi-pound"
+                                            clearable
+                                        >
+                                            <template #item="{ props: itemProps, item }">
+                                                <VListItem
+                                                    v-bind="itemProps"
+                                                    :title="item.raw.name"
+                                                    :subtitle="item.raw.server"
+                                                />
+                                            </template>
+                                        </VSelect>
+                                        <VTextField
+                                            v-else
+                                            v-model="localEvent.extendedProps.location.url"
+                                            :label="$t('events.locationUrl')"
+                                            placeholder="https://"
+                                            variant="outlined"
+                                            density="comfortable"
+                                            prepend-inner-icon="mdi-link-variant"
+                                        />
+                                    </template>
+
+                                    <!-- custom: free text -->
+                                    <VTextField
+                                        v-else
+                                        v-model="localEvent.extendedProps.location.text"
+                                        :label="$t('events.location')"
+                                        variant="outlined"
+                                        density="comfortable"
+                                        prepend-inner-icon="mdi-map-marker-outline"
                                     />
                                 </VCol>
 
@@ -797,7 +998,28 @@ onMounted(() => {
                                 <span>{{ $t('events.location') }}</span>
                             </div>
                             <div class="info-content">
-                                {{ localEvent?.extendedProps?.location || $t('events.noLocationSpecified') }}
+                                <template v-if="viewLocation">
+                                    <a
+                                        v-if="viewLocation.external"
+                                        :href="viewLocation.href"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="d-inline-flex align-center location-link"
+                                    >
+                                        <v-icon size="18" class="mr-1">{{ viewLocation.icon }}</v-icon>{{ viewLocation.label }}
+                                    </a>
+                                    <router-link
+                                        v-else-if="viewLocation.to"
+                                        :to="viewLocation.to"
+                                        class="d-inline-flex align-center location-link"
+                                    >
+                                        <v-icon size="18" class="mr-1">{{ viewLocation.icon }}</v-icon>{{ viewLocation.label }}
+                                    </router-link>
+                                    <span v-else class="d-inline-flex align-center">
+                                        <v-icon size="18" class="mr-1">{{ viewLocation.icon }}</v-icon>{{ viewLocation.label }}
+                                    </span>
+                                </template>
+                                <template v-else>{{ $t('events.noLocationSpecified') }}</template>
                             </div>
                         </div>
 

@@ -128,8 +128,12 @@
                             </v-icon>
                         </td>
                         <td>
-                            <v-chip :color="server.is_reachable ? 'success' : 'error'" size="x-small" variant="flat">
-                                {{ server.is_reachable ? 'Online' : 'Offline' }}
+                            <v-chip
+                                :color="server.is_reachable == null ? 'grey' : (server.is_reachable ? 'success' : 'error')"
+                                size="x-small"
+                                variant="flat"
+                            >
+                                {{ server.is_reachable == null ? 'Unknown' : (server.is_reachable ? 'Online' : 'Offline') }}
                             </v-chip>
                         </td>
                         <td>{{ server.connections_count }}</td>

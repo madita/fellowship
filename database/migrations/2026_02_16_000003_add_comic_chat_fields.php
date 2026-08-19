@@ -11,21 +11,40 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Fresh installs already get these columns from the base
+        // create_irc_tables migration — only add the ones missing, so this
+        // runs on both fresh and pre-comic-chat databases.
         Schema::table('irc_connections', function (Blueprint $table) {
-            $table->string('comic_character')->default('cat')->after('realname');
-            $table->string('comic_view_mode')->default('classic')->after('comic_character'); // classic, comic
+            if (! Schema::hasColumn('irc_connections', 'comic_character')) {
+                $table->string('comic_character')->default('cat')->after('realname');
+            }
+            if (! Schema::hasColumn('irc_connections', 'comic_view_mode')) {
+                $table->string('comic_view_mode')->default('classic')->after('comic_character'); // classic, comic
+            }
         });
 
         Schema::table('irc_messages', function (Blueprint $table) {
-            $table->string('emotion')->default('normal')->after('message'); // normal, happy, sad, angry, confused, etc.
-            $table->string('gesture')->default('none')->after('emotion'); // none, wave, laugh, think, shout, whisper
-            $table->string('bubble_type')->default('speech')->after('gesture'); // speech, thought, whisper, shout
+            if (! Schema::hasColumn('irc_messages', 'emotion')) {
+                $table->string('emotion')->default('normal')->after('message'); // normal, happy, sad, angry, confused, etc.
+            }
+            if (! Schema::hasColumn('irc_messages', 'gesture')) {
+                $table->string('gesture')->default('none')->after('emotion'); // none, wave, laugh, think, shout, whisper
+            }
+            if (! Schema::hasColumn('irc_messages', 'bubble_type')) {
+                $table->string('bubble_type')->default('speech')->after('gesture'); // speech, thought, whisper, shout
+            }
         });
 
         Schema::table('irc_user_preferences', function (Blueprint $table) {
-            $table->string('default_view_mode')->default('classic')->after('theme'); // classic, comic, split
-            $table->string('comic_background')->default('room')->after('default_view_mode'); // room, office, outdoor, space, etc.
-            $table->boolean('show_emotions')->default(true)->after('comic_background');
+            if (! Schema::hasColumn('irc_user_preferences', 'default_view_mode')) {
+                $table->string('default_view_mode')->default('classic')->after('theme'); // classic, comic, split
+            }
+            if (! Schema::hasColumn('irc_user_preferences', 'comic_background')) {
+                $table->string('comic_background')->default('room')->after('default_view_mode'); // room, office, outdoor, space, etc.
+            }
+            if (! Schema::hasColumn('irc_user_preferences', 'show_emotions')) {
+                $table->boolean('show_emotions')->default(true)->after('comic_background');
+            }
         });
     }
 

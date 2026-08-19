@@ -82,7 +82,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="status-timeline-container">
+  <v-container fluid class="pa-0">
         <!-- Page Header -->
         <div class="timeline-header">
             <div class="timeline-header-inner">
@@ -176,7 +176,7 @@ onMounted(() => {
                 </v-col>
             </v-row>
         </v-container>
-    </div>
+    </v-container>
 </template>
 
 <style scoped>

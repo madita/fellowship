@@ -290,6 +290,32 @@ class IrcController extends Controller
     }
 
     /**
+     * Flat list of the current user's channels across all their connections.
+     * Used by the event location picker to attach an event to an IRC channel.
+     */
+    public function availableChannels(): JsonResponse
+    {
+        $userId = Auth::id();
+
+        $channels = IrcChannel::query()
+            ->whereHas('connection', fn ($q) => $q->where('user_id', $userId))
+            // DM windows (is_private) and parted channels are not valid
+            // event locations and must not leak into the picker.
+            ->where('is_private', false)
+            ->where('is_joined', true)
+            ->with('connection.server:id,name')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (IrcChannel $c) => [
+                'id'     => $c->id,
+                'name'   => $c->name,
+                'server' => $c->connection?->server?->name,
+            ]);
+
+        return response()->json($channels);
+    }
+
+    /**
      * Toggle favorite channel.
      */
     public function toggleFavorite(IrcChannel $channel): JsonResponse

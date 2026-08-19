@@ -426,11 +426,17 @@ export default {
       return this.connections.find(c => c.id === this.activeChannel.irc_connection_id);
     },
   },
+  watch: {
+    // Deep links (e.g. an event's location link) target /irc?channel=<id>.
+    '$route.query.channel'() {
+      this.openChannelFromRoute();
+    },
+  },
   mounted() {
     this.calculateHeight();
     window.addEventListener('resize', this.calculateHeight);
     this.fetchServers();
-    this.fetchConnections();
+    this.fetchConnections().then(() => this.openChannelFromRoute());
     this.startEventPolling();
   },
   beforeUnmount() {
@@ -586,6 +592,17 @@ export default {
       this.activeChannel = channel;
       await this.fetchMessages(channel);
       this.fetchChannelUsers(channel);
+    },
+    openChannelFromRoute() {
+      const channelId = Number(this.$route?.query?.channel);
+      if (!channelId || this.activeChannel?.id === channelId) return;
+      for (const connection of this.connections) {
+        const channel = (connection.channels || []).find(c => c.id === channelId);
+        if (channel) {
+          this.selectChannel(channel);
+          return;
+        }
+      }
     },
     async fetchChannelUsers(channel) {
       try {

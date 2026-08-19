@@ -185,7 +185,7 @@
                 >
                     <v-card-title class="text-h6">{{ $t('forum.reply') }}</v-card-title>
                     <v-card-text>
-                        <Tiptap v-model="replyBody" type="simple"/>
+                        <Tiptap v-model="replyBody" type="full"/>
                     </v-card-text>
                     <v-card-actions class="px-4 pb-4">
                         <v-spacer/>

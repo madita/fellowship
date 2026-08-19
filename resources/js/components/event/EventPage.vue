@@ -213,7 +213,7 @@
                                                         v-for="event in upcomingEvents"
                                                         :key="event.id"
                                                         :title="event.title"
-                                                        :subtitle="event.extendedProps?.location || $t('events.noLocation')"
+                                                        :subtitle="formatEventLocation(event)"
                                                         class="px-6 event-list-item"
                                                         @click="viewEventDetails(event)"
                                                     >
@@ -444,7 +444,16 @@ const blankEvent = {
     extendedProps: {
         calendar: undefined,
         guests: [],
-        location: '',
+        location: {
+            type: null,
+            address: '',
+            lat: null,
+            lng: null,
+            virtualMode: 'irc',
+            irc_channel_id: null,
+            url: '',
+            text: '',
+        },
         description: '',
         event_profile_id: 0,
     },
@@ -595,6 +604,11 @@ const calendarOptions = computed(() => ({
         customViewPlugin
     ],
     initialView: calendarViewType.value,
+    // Fill the bounded .calendar-main container instead of sizing by
+    // aspectRatio (which grows the page). expandRows makes month rows fill
+    // the height; timegrid views scroll internally.
+    height: '100%',
+    expandRows: true,
     headerToolbar: {
         left: 'prev,next today',
         center: 'title',
@@ -736,6 +750,29 @@ const formatEventTime = (event) => {
     return formatDateUtil(start, timeFormat);
 };
 
+// The API returns the location as a structured object (or a legacy plain
+// string) — reduce it to a display label for the list subtitle.
+const formatEventLocation = (event) => {
+    const loc = event.location ?? event.extendedProps?.location;
+    if (typeof loc === 'string') return loc.trim() || t('events.noLocation');
+    if (!loc || !loc.type) return t('events.noLocation');
+    switch (loc.type) {
+        case 'real': {
+            const hasCoords = loc.lat != null && loc.lng != null && loc.lat !== '' && loc.lng !== '';
+            return loc.address || (hasCoords ? `${loc.lat}, ${loc.lng}` : t('events.noLocation'));
+        }
+        case 'virtual':
+            if (loc.virtualMode === 'irc') {
+                return loc.irc_channel
+                    ? `#${String(loc.irc_channel).replace(/^#/, '')}`
+                    : t('events.locationIrcChannel');
+            }
+            return loc.url || t('events.noLocation');
+        default:
+            return loc.text || t('events.noLocation');
+    }
+};
+
 // const getEventColor = (type) => {
 //     console.log('getEventColor', type)
 //     console.log('calendarStore', calendarStore.eventTypes)
@@ -860,7 +897,19 @@ onUnmounted(() => {
 
 .calendar-main {
     background-color: rgb(var(--v-theme-background));
-    min-height: 700px;
+    // Cap the calendar to the viewport so it scrolls internally instead of
+    // growing the page. The offset accounts for the app bar, tabs and the
+    // view-toggle row above; min-height keeps it usable on short screens.
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - 180px);
+    min-height: 500px;
+
+    // The view-toggle row is fixed height; the calendar fills the rest.
+    .calendar-component {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
 
     .fc {
         height: 100%;
