@@ -409,6 +409,7 @@ import { useUserStore } from '@/store/userStore.js';
 import { useSettingsStore } from '@/store/settingStore.js';
 import VueDatePicker from "@vuepic/vue-datepicker";
 import eventBus from "../common/eventBus.js";
+import { blankLocation, formatEventLocationLabel } from '@/utils/eventLocation.js';
 
 // Store
 const calendarStore = useCalendarStore();
@@ -444,16 +445,7 @@ const blankEvent = {
     extendedProps: {
         calendar: undefined,
         guests: [],
-        location: {
-            type: null,
-            address: '',
-            lat: null,
-            lng: null,
-            virtualMode: 'irc',
-            irc_channel_id: null,
-            url: '',
-            text: '',
-        },
+        location: blankLocation(),
         description: '',
         event_profile_id: 0,
     },
@@ -752,26 +744,7 @@ const formatEventTime = (event) => {
 
 // The API returns the location as a structured object (or a legacy plain
 // string) — reduce it to a display label for the list subtitle.
-const formatEventLocation = (event) => {
-    const loc = event.location ?? event.extendedProps?.location;
-    if (typeof loc === 'string') return loc.trim() || t('events.noLocation');
-    if (!loc || !loc.type) return t('events.noLocation');
-    switch (loc.type) {
-        case 'real': {
-            const hasCoords = loc.lat != null && loc.lng != null && loc.lat !== '' && loc.lng !== '';
-            return loc.address || (hasCoords ? `${loc.lat}, ${loc.lng}` : t('events.noLocation'));
-        }
-        case 'virtual':
-            if (loc.virtualMode === 'irc') {
-                return loc.irc_channel
-                    ? `#${String(loc.irc_channel).replace(/^#/, '')}`
-                    : t('events.locationIrcChannel');
-            }
-            return loc.url || t('events.noLocation');
-        default:
-            return loc.text || t('events.noLocation');
-    }
-};
+const formatEventLocation = (event) => formatEventLocationLabel(event, t);
 
 // const getEventColor = (type) => {
 //     console.log('getEventColor', type)

@@ -20,6 +20,7 @@ import RelatedContent from '../common/RelatedContent.vue';
 import { useUserStore } from "@/store/userStore.js";
 import { useSettingsStore } from "@/store/settingStore.js";
 import { useDateFormat } from '@/plugins/formatDate.js';
+import { buildViewLocation, mergeTopLevelIntoExtendedProps } from '@/utils/eventLocation.js';
 
 const props = defineProps({
     isDrawerOpen: Boolean,
@@ -74,49 +75,18 @@ const openConfirmationDialog = () => {
     confirmationDialog.value.isOpen = true;
 };
 
-// Location can arrive as null (no location), a legacy plain string (treated as
-// custom text) or the structured object we now persist. Normalise to a single
-// object shape so the edit form can bind to it directly.
-const normalizeLocation = (loc) => {
-    const base = {
-        type: null,
-        address: '',
-        lat: null,
-        lng: null,
-        virtualMode: 'irc',
-        irc_channel_id: null,
-        url: '',
-        text: '',
-        irc_channel: null,
-    };
-    if (typeof loc === 'string') {
-        return loc.trim() === '' ? base : { ...base, type: 'custom', text: loc };
-    }
-    if (loc && typeof loc === 'object') {
-        return { ...base, ...loc, virtualMode: loc.virtualMode ?? 'irc' };
-    }
-    return base;
-};
-
 const localEvent = ref(null);
 const initialSnapshot = ref('');
 watch(
     () => props.event,
     (newEvent) => {
-        localEvent.value = newEvent ? JSON.parse(JSON.stringify(newEvent)) : null;
-        if (localEvent.value) {
-            const ep = localEvent.value.extendedProps = localEvent.value.extendedProps || {};
-            // Raw API items (list/upcoming views) carry these fields at top
-            // level; only FullCalendar transposes them into extendedProps.
-            // Normalise so the form and view mode read a single shape — and
-            // so saving a list-opened event doesn't wipe its stored location.
-            for (const key of ['location', 'event_type_id', 'description', 'type', 'user_id', 'event_profile_id']) {
-                if (ep[key] === undefined && localEvent.value[key] !== undefined) {
-                    ep[key] = localEvent.value[key];
-                }
-            }
-            ep.location = normalizeLocation(ep.location);
-        }
+        // Raw API items (list/upcoming views) carry location & co. at top
+        // level; only FullCalendar transposes them into extendedProps.
+        // Merging gives the form and view mode a single shape — and stops
+        // saving a list-opened event from wiping its stored location.
+        localEvent.value = newEvent
+            ? mergeTopLevelIntoExtendedProps(JSON.parse(JSON.stringify(newEvent)))
+            : null;
         if (localEvent.value?.id) {
             getEvent(localEvent.value.id);
             fetchRelatedItems('App\\Models\\Event\\Event', localEvent.value.id);
@@ -174,43 +144,7 @@ const fetchIrcChannels = async () => {
 // How the location renders in view mode: an icon, a label and (optionally) a
 // link — a Google Maps search for physical addresses, the internal IRC client
 // for a channel, or the raw URL for an online link.
-const viewLocation = computed(() => {
-    const loc = localEvent.value?.extendedProps?.location;
-    if (!loc || !loc.type) return null;
-
-    if (loc.type === 'real') {
-        const address = (loc.address || '').trim();
-        const hasCoords = loc.lat != null && loc.lng != null && loc.lat !== '' && loc.lng !== '';
-        if (!address && !hasCoords) return null;
-        const query = hasCoords ? `${loc.lat},${loc.lng}` : address;
-        return {
-            icon: 'mdi-map-marker',
-            label: address || `${loc.lat}, ${loc.lng}`,
-            href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`,
-            external: true,
-        };
-    }
-
-    if (loc.type === 'virtual') {
-        if (loc.virtualMode === 'irc') {
-            if (!loc.irc_channel_id) return null;
-            const name = loc.irc_channel ? loc.irc_channel.replace(/^#/, '') : null;
-            return {
-                icon: 'mdi-pound',
-                label: name ? `#${name}` : t('events.locationIrcChannel'),
-                to: { path: '/irc', query: { channel: loc.irc_channel_id } },
-            };
-        }
-        const url = (loc.url || '').trim();
-        // Only ever link plain web URLs — a stored javascript:/data: URL
-        // must not become a clickable href for other viewers.
-        if (!/^https?:\/\//i.test(url)) return null;
-        return { icon: 'mdi-link-variant', label: url, href: url, external: true };
-    }
-
-    const text = (loc.text || '').trim();
-    return text ? { icon: 'mdi-map-marker-outline', label: text } : null;
-});
+const viewLocation = computed(() => buildViewLocation(localEvent.value?.extendedProps?.location, t));
 
 const isDirty = computed(() => {
     if (!initialSnapshot.value) return false;
