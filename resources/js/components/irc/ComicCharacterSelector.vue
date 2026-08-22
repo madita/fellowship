@@ -98,6 +98,17 @@ export default {
       ],
     };
   },
+  watch: {
+    // The dialog component is created once at page mount; re-sync the
+    // selection from the props each time it opens, otherwise it always
+    // shows the initial (default) character.
+    modelValue(open) {
+      if (open) {
+        this.selectedCharacter = this.currentCharacter || 'cat';
+        this.selectedBackground = this.currentBackground || 'room';
+      }
+    },
+  },
   methods: {
     save() {
       this.$emit('saved', {

@@ -79,6 +79,8 @@ class IrcController extends Controller
             'realname' => 'nullable|string|max:100',
             'auto_connect' => 'boolean',
             'auto_join_channels' => 'nullable|array',
+            'comic_character' => 'nullable|string|in:cat,dog,robot,alien,wizard,ninja,pirate,knight',
+            'comic_view_mode' => 'nullable|string|in:classic,comic',
         ]);
 
         $connection->update($request->only([
@@ -87,6 +89,8 @@ class IrcController extends Controller
             'realname',
             'auto_connect',
             'auto_join_channels',
+            'comic_character',
+            'comic_view_mode',
         ]));
 
         return response()->json([
