@@ -125,6 +125,20 @@
                         </v-col>
                     </v-row>
                 </v-col>
+
+                <!-- Empty album -->
+                <v-col v-else-if="album" cols="12">
+                    <v-sheet
+                        class="d-flex flex-column align-center justify-center text-center py-16"
+                        color="transparent"
+                    >
+                        <v-icon size="72" color="grey-lighten-1">mdi-image-off-outline</v-icon>
+                        <h3 class="text-h6 mt-4">{{ $t('gallery.noImages') }}</h3>
+                        <p class="text-body-2 text-medium-emphasis mt-1" style="max-width: 420px;">
+                            {{ $t('gallery.noImagesText') }}
+                        </p>
+                    </v-sheet>
+                </v-col>
             </v-row>
 
 

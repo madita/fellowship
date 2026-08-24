@@ -1,8 +1,26 @@
 <template>
     <v-container fluid class="pa-5">
+        <!-- Loading -->
+        <v-sheet v-if="loading" class="d-flex justify-center align-center py-16" color="transparent">
+            <v-progress-circular indeterminate color="primary" size="48" />
+        </v-sheet>
+
+        <!-- Empty State -->
+        <v-sheet
+            v-else-if="!collections.length"
+            class="d-flex flex-column align-center justify-center text-center py-16"
+            color="transparent"
+        >
+            <v-icon size="72" color="grey-lighten-1">mdi-image-off-outline</v-icon>
+            <h3 class="text-h6 mt-4">{{ $t('gallery.noCollections') }}</h3>
+            <p class="text-body-2 text-medium-emphasis mt-1" style="max-width: 420px;">
+                {{ $t('gallery.noCollectionsText') }}
+            </p>
+        </v-sheet>
+
         <!-- Gallery Collections -->
-        <v-row justify="end" class="mt-5">
-            <v-col cols="12" v-if="collections.length">
+        <v-row v-else justify="end" class="mt-5">
+            <v-col cols="12">
                 <v-row>
                     <v-col cols="12" sm="6" md="4" v-for="(collection, index) in collections" :key="index">
                         <v-card @click="openAlbum(collection.slug)"
@@ -39,6 +57,7 @@ const {t} = useI18n();
 
 const taxonomies = ref([]);
 const collections = ref([]);
+const loading = ref(true);
 const newCollection = ref({name: ''});
 const selectedTaxonomy = ref(null);
 const selectedFile = ref(null);
@@ -57,6 +76,7 @@ const fetchTaxonomies = async () => {
 
 const fetchCollections = async () => {
     // if (!selectedTaxonomy.value) return;
+    loading.value = true;
     try {
         const response = await axios.get('/api/collections', {
             params: {taxonomy_id: selectedTaxonomy.value},
@@ -67,6 +87,8 @@ const fetchCollections = async () => {
         });
     } catch (error) {
         console.error(error);
+    } finally {
+        loading.value = false;
     }
 };
 
