@@ -190,6 +190,19 @@ export function useSettings() {
         age_confirmation_required: false,
         age_minimum: 13,
 
+        // IRC
+        irc_comic_chat_enabled: false,
+
+        // Feature Toggles
+        feature_timeline_enabled: true,
+        feature_chat_enabled: true,
+        feature_events_enabled: true,
+        feature_wiki_enabled: true,
+        feature_forum_enabled: true,
+        feature_irc_enabled: true,
+        feature_gallery_enabled: true,
+        feature_tickets_enabled: true,
+
         // Sandbox Settings
         sandbox_enabled: false,
         sandbox_public_enabled: false,
