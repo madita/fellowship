@@ -439,14 +439,17 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::delete('/media/{media}', 'App\Http\Controllers\Admin\MediaController@destroy');
     Route::post('/media/bulk-delete', 'App\Http\Controllers\Admin\MediaController@bulkDestroy');
 
-    // Migration Dashboard
-    Route::get('/migrations', 'App\Http\Controllers\Admin\MigrationController@index');
-    Route::post('/migrations/start', 'App\Http\Controllers\Admin\MigrationController@start');
-    Route::get('/migrations/status/{batchId}', 'App\Http\Controllers\Admin\MigrationController@status');
-    Route::get('/migrations/logs/{batchId}/{migrationKey}', 'App\Http\Controllers\Admin\MigrationController@logs');
-    Route::post('/migrations/cancel/{batchId}', 'App\Http\Controllers\Admin\MigrationController@cancel');
-    Route::get('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@history');
-    Route::delete('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@clearHistory');
+    // Migration Dashboard — the controller and its jobs are intentionally
+    // not in the repo yet; only register the routes where they exist.
+    if (class_exists(\App\Http\Controllers\Admin\MigrationController::class)) {
+        Route::get('/migrations', 'App\Http\Controllers\Admin\MigrationController@index');
+        Route::post('/migrations/start', 'App\Http\Controllers\Admin\MigrationController@start');
+        Route::get('/migrations/status/{batchId}', 'App\Http\Controllers\Admin\MigrationController@status');
+        Route::get('/migrations/logs/{batchId}/{migrationKey}', 'App\Http\Controllers\Admin\MigrationController@logs');
+        Route::post('/migrations/cancel/{batchId}', 'App\Http\Controllers\Admin\MigrationController@cancel');
+        Route::get('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@history');
+        Route::delete('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@clearHistory');
+    }
 
     // Translation Management
     Route::get('/translations/locales', 'App\Http\Controllers\Admin\TranslationController@locales');
