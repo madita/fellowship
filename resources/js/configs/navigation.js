@@ -27,9 +27,8 @@ export default {
                 {icon: 'mdi-account-group-outline', key: 'menu.adminUsers', text: 'Users', link: '/admin/users'},
                 {icon: 'mdi-file-document-outline', key: 'menu.adminPages', text: 'Pages', link: '/admin/pages'},
                 {icon: 'mdi-post-outline', key: 'menu.adminPosts', text: 'Posts', link: '/admin/posts'},
-                {feature: 'forum', icon: 'mdi-forum-outline', key: 'menu.adminForums', text: 'Forums', link: '/admin/forums'},
+                {icon: 'mdi-forum-outline', key: 'menu.adminForums', text: 'Forums', link: '/admin/forums'},
                 {
-                    feature: 'events',
                     icon: 'mdi-calendar-text',
                     key: 'menu.adminEvents',
                     text: 'Events',
@@ -52,7 +51,7 @@ export default {
                     ]
                 },
                 {icon: 'mdi-folder-multiple-image', key: 'menu.adminMedia', text: 'Media Center', link: '/admin/media'},
-                {feature: 'tickets', icon: 'mdi-ticket-outline', key: 'menu.adminTickets', text: 'Tickets', link: '/admin/tickets'},
+                {icon: 'mdi-ticket-outline', key: 'menu.adminTickets', text: 'Tickets', link: '/admin/tickets'},
                 {icon: 'mdi-translate', key: 'menu.adminTranslations', text: 'Translations', link: '/admin/translations'},
                 {icon: 'mdi-cog-outline', key: 'menu.adminSettings', text: 'Settings', link: '/admin/settings'},
                 {icon: 'mdi-bullhorn-outline', key: 'menu.adminAnnouncement', text: 'Announcement', link: '/admin/announcements'},

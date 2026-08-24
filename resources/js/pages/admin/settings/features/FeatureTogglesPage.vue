@@ -13,8 +13,9 @@
     >
         <settings-card icon="mdi-puzzle-outline" title="Site Features">
             <p class="text-body-2 text-medium-emphasis mb-4">
-                Turning a feature off hides its menu entries for everyone and blocks its pages.
-                Existing data is kept — turning the feature back on restores it.
+                Turning a feature off hides its user-facing menu entries and blocks its pages.
+                Admin management pages stay visible and reachable, and existing data is kept —
+                turning the feature back on restores everything.
             </p>
 
             <v-switch

@@ -2,9 +2,11 @@
  * Feature registry — the single source of truth for togglable features.
  *
  * Each feature maps to a boolean setting `feature_<key>_enabled` (managed
- * under Admin → Settings → Features). A disabled feature is hidden from the
- * sidebar menu (items tagged with `feature: '<key>'` in navigation.js) and
- * its routes are blocked by the global router guard.
+ * under Admin → Settings → Features). A disabled feature is hidden from
+ * user-facing menus (items tagged with `feature: '<key>'` in navigation.js
+ * and toolbar.js) and its user-facing routes are blocked by the global
+ * router guard. Admin management pages stay visible and reachable so
+ * admins can keep managing the data while the feature is off.
  *
  * Features default to ENABLED when the setting is missing, so existing
  * installs keep their menus until an admin explicitly turns something off.
@@ -64,7 +66,7 @@ export const FEATURES = [
         label: 'Tickets',
         description: 'Support tickets and requests',
         icon: 'mdi-ticket-outline',
-        routePrefixes: ['/account/tickets', '/admin/tickets'],
+        routePrefixes: ['/account/tickets'],
     },
 ];
 
