@@ -13,3 +13,34 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 node_modules/.vite
+
+# Local environment variants (.env.example / .env.testing stay tracked)
+.env.*
+!.env.example
+!.env.testing
+
+# IDE / editor
+/.idea/
+/.vscode/
+/.claude/
+
+# Claude Code scratch files
+tmpclaude-*
+
+# IDE inspection exports at repo root (phpunit.xml stays tracked)
+/*.xml
+!/phpunit.xml
+
+# Tooling caches & local artifacts
+/.php-cs-fixer.cache
+/.phpunit.cache/
+/composer.phar
+/yarn.lock
+/nul
+/cache
+*.bak
+/.editorconfigBAK
+/.styleciBAK.yml
+
+# Runtime storage
+/storage/media-library/
