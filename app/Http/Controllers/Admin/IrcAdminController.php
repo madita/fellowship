@@ -118,6 +118,18 @@ class IrcAdminController extends Controller
 
     public function disconnectConnection(IrcConnection $connection): JsonResponse
     {
+        // With no daemon to consume the command, mark the connection
+        // disconnected directly instead of queueing into the void.
+        if (! IrcConnectionManager::isDaemonRunning()) {
+            $connection->update([
+                'status' => 'disconnected',
+                'disconnected_at' => now(),
+            ]);
+            $connection->channels()->update(['is_joined' => false]);
+
+            return response()->json(['message' => 'IRC daemon is not running — connection marked as disconnected.']);
+        }
+
         Redis::rpush('irc:commands', json_encode([
             'type' => 'disconnect',
             'connection_id' => $connection->id,
@@ -129,7 +141,7 @@ class IrcAdminController extends Controller
 
     public function deleteConnection(IrcConnection $connection): JsonResponse
     {
-        if ($connection->status === 'connected') {
+        if ($connection->status === 'connected' && IrcConnectionManager::isDaemonRunning()) {
             Redis::rpush('irc:commands', json_encode([
                 'type' => 'disconnect',
                 'connection_id' => $connection->id,
@@ -157,7 +169,7 @@ class IrcAdminController extends Controller
 
         // Check daemon heartbeat (we'll set this in the daemon)
         $lastHeartbeat = Redis::get('irc:daemon:heartbeat');
-        $daemonRunning = $lastHeartbeat && (time() - (int) $lastHeartbeat) < 15;
+        $daemonRunning = IrcConnectionManager::isDaemonRunning();
 
         return response()->json([
             'daemon_running' => $daemonRunning,

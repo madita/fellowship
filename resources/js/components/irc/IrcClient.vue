@@ -46,8 +46,8 @@
                       <v-list-item @click="showJoinDialog(connection)">
                         <v-list-item-title>Join Channel</v-list-item-title>
                       </v-list-item>
-                      <v-divider />
-                      <v-list-item @click="showCharacterSelector(connection)">
+                      <v-divider v-if="comicChatEnabled" />
+                      <v-list-item v-if="comicChatEnabled" @click="showCharacterSelector(connection)">
                         <v-list-item-title>Choose Character</v-list-item-title>
                       </v-list-item>
                       <v-list-item @click="editConnection(connection)">
@@ -173,7 +173,7 @@
             </div>
             <div class="d-flex gap-2 align-center">
               <!-- View Mode Toggle -->
-              <v-btn-toggle v-model="viewMode" mandatory density="compact">
+              <v-btn-toggle v-if="comicChatEnabled" v-model="viewMode" mandatory density="compact">
                 <v-btn value="classic" size="small">
                   <v-icon>mdi-format-align-left</v-icon>
                   <v-tooltip activator="parent" location="bottom">
@@ -206,7 +206,7 @@
 
           <!-- Classic IRC View -->
           <v-card-text
-            v-if="viewMode === 'classic'"
+            v-if="!isComicMode"
             ref="messagesContainer"
             class="messages-container flex-grow-1"
             style="overflow-y: auto; min-height: 0;"
@@ -233,11 +233,11 @@
                   <span class="message-text">{{ message.message }}</span>
                   <!-- Comic-mode gestures/emotions also show up in the text view -->
                   <span
-                    v-if="message.gesture && message.gesture !== 'none'"
+                    v-if="comicChatEnabled && message.gesture && message.gesture !== 'none'"
                     class="gesture-note"
                   >* {{ message.from_nick }} {{ getGestureVerb(message.gesture) }} {{ getGestureEmoji(message.gesture) }}</span>
                   <span
-                    v-if="message.emotion && message.emotion !== 'normal'"
+                    v-if="comicChatEnabled && message.emotion && message.emotion !== 'normal'"
                     class="emotion-note"
                     :title="message.emotion"
                   >{{ getEmotionEmoji(message.emotion) }}</span>
@@ -271,7 +271,7 @@
           <v-card-actions class="pa-2 flex-shrink-0">
             <v-row dense>
               <!-- Emotion/Gesture Bar (Comic Mode Only) -->
-              <v-col v-if="viewMode === 'comic'" cols="12">
+              <v-col v-if="isComicMode" cols="12">
                 <div class="d-flex gap-2 flex-wrap">
                   <v-chip-group v-model="selectedEmotion" mandatory>
                     <v-chip size="small" value="normal">Normal</v-chip>
@@ -474,6 +474,7 @@
 
 <script>
 import axios from 'axios';
+import { useSettingsStore } from '@/store/settingStore.js';
 import IrcConnectionDialog from './IrcConnectionDialog.vue';
 import IrcJoinDialog from './IrcJoinDialog.vue';
 import ComicChatView from './ComicChatView.vue';
@@ -517,6 +518,13 @@ export default {
     };
   },
   computed: {
+    // Comic chat can be turned off in Admin → Settings → IRC → Client.
+    comicChatEnabled() {
+      return useSettingsStore().ircComicChatEnabled;
+    },
+    isComicMode() {
+      return this.comicChatEnabled && this.viewMode === 'comic';
+    },
     currentConnection() {
       if (this.activeChannel) {
         return this.connections.find(c => c.id === this.activeChannel.irc_connection_id);
@@ -567,7 +575,12 @@ export default {
         // page doesn't yield an oversized (or looping) height.
         const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
         const top = el.getBoundingClientRect().top + scrollTop;
-        const next = `${Math.max(320, window.innerHeight - top)}px`;
+        // The app footer is fixed at the viewport bottom — without
+        // subtracting it, the client is one footer-height too tall and the
+        // send input hides behind it.
+        const footer = document.querySelector('.v-footer');
+        const footerHeight = footer ? footer.offsetHeight : 0;
+        const next = `${Math.max(320, window.innerHeight - top - footerHeight)}px`;
         if (next !== this.containerHeight) {
           this.containerHeight = next;
         }
@@ -697,7 +710,8 @@ export default {
     async connect(connection) {
       try {
         this.logServer(connection.id, `Connecting to ${connection.server?.host}:${connection.server?.port}...`);
-        await axios.post(`/api/irc/connections/${connection.id}/connect`);
+        const { data } = await axios.post(`/api/irc/connections/${connection.id}/connect`);
+        if (data?.message) this.logServer(connection.id, data.message);
         this.fetchConnections();
       } catch (error) {
         this.logServer(connection.id, `Error connecting: ${error.response?.data?.message || error.message}`);
@@ -707,7 +721,8 @@ export default {
     async disconnect(connection) {
       try {
         this.logServer(connection.id, 'Disconnecting...');
-        await axios.post(`/api/irc/connections/${connection.id}/disconnect`);
+        const { data } = await axios.post(`/api/irc/connections/${connection.id}/disconnect`);
+        if (data?.message) this.logServer(connection.id, data.message);
         this.fetchConnections();
       } catch (error) {
         this.logServer(connection.id, `Error disconnecting: ${error.response?.data?.message || error.message}`);
@@ -799,7 +814,7 @@ export default {
         };
 
         // Add comic chat metadata if in comic mode
-        if (this.viewMode === 'comic') {
+        if (this.isComicMode) {
           payload.emotion = this.selectedEmotion;
           payload.gesture = this.selectedGesture;
           payload.bubble_type = this.getBubbleType();

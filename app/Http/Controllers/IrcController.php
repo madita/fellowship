@@ -6,6 +6,7 @@ use App\Models\Irc\IrcChannel;
 use App\Models\Irc\IrcConnection;
 use App\Models\Irc\IrcMessage;
 use App\Models\Irc\IrcServer;
+use App\Services\Irc\IrcConnectionManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -120,6 +121,14 @@ class IrcController extends Controller
     {
         $this->authorize('update', $connection);
 
+        // Without a running daemon the queued command is never consumed and
+        // the connection would hang in "connecting" forever.
+        if (! IrcConnectionManager::isDaemonRunning()) {
+            return response()->json([
+                'message' => 'The IRC daemon is not running — connecting is currently unavailable.',
+            ], 503);
+        }
+
         $connection->update(['status' => 'connecting']);
 
         Redis::rpush('irc:commands', json_encode([
@@ -139,6 +148,22 @@ class IrcController extends Controller
     public function disconnect(IrcConnection $connection): JsonResponse
     {
         $this->authorize('update', $connection);
+
+        // With no daemon to consume the command, mark the connection
+        // disconnected directly so the client doesn't stay "connected"
+        // (or "connecting") forever.
+        if (! IrcConnectionManager::isDaemonRunning()) {
+            $connection->update([
+                'status' => 'disconnected',
+                'disconnected_at' => now(),
+            ]);
+            $connection->channels()->update(['is_joined' => false]);
+
+            return response()->json([
+                'message' => 'IRC daemon is not running — connection marked as disconnected.',
+                'connection' => $connection->fresh('server'),
+            ]);
+        }
 
         Redis::rpush('irc:commands', json_encode([
             'type' => 'disconnect',
