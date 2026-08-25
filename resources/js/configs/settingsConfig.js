@@ -19,6 +19,16 @@ export const settingsCategories = [
         ]
     },
     {
+        id: 'features',
+        title: 'Features',
+        description: 'Activate or deactivate site features',
+        icon: 'mdi-puzzle-outline',
+        color: 'amber',
+        settings: [
+            { id: 'toggles', title: 'Feature Toggles', description: 'Enable/disable features and hide them from the menu', icon: 'mdi-toggle-switch-outline', component: 'FeatureTogglesPage' },
+        ]
+    },
+    {
         id: 'localization',
         title: 'Localization',
         description: 'Language, timezone, and regional settings',
@@ -128,9 +138,13 @@ export const settingsCategories = [
         icon: 'mdi-chat-processing-outline',
         color: 'indigo',
         settings: [
+            { id: 'client', title: 'Client Settings', description: 'Comic chat and client options', icon: 'mdi-tune', component: 'IrcClientSettingsPage' },
             { id: 'dashboard', title: 'Dashboard', description: 'Daemon status, stats, and monitoring', icon: 'mdi-monitor-dashboard', component: 'IrcDashboardPage' },
             { id: 'servers', title: 'Servers', description: 'Manage IRC servers', icon: 'mdi-server-network', component: 'IrcServersPage' },
             { id: 'connections', title: 'Connections', description: 'Active user connections', icon: 'mdi-connection', component: 'IrcConnectionsPage' },
+        ]
+    },
+    {
         id: 'moderation',
         title: 'Moderation',
         description: 'Content approval and moderation settings',

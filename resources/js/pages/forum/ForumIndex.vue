@@ -1,5 +1,5 @@
 <template>
-    <div class="forum-container">
+  <v-container fluid class="pa-0">
         <!-- Header Section -->
         <div class="forum-header">
             <v-container>
@@ -288,7 +288,7 @@
                 {{ forumStore.error }}
             </v-alert>
         </v-container>
-    </div>
+    </v-container>
 </template>
 
 <script>

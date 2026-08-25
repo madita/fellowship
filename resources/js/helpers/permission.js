@@ -1,6 +1,7 @@
 // Import the Pinia auth store
 // import { useAuthStore } from '@/store/authStore'
 import { useUserStore } from '@/store/userStore'
+import { useSettingsStore } from '@/store/settingStore'
 
 // Instantiate the auth store
 
@@ -28,6 +29,12 @@ export default {
 
     applyPermissions(menuItem) {
         // const auth = useAuthStore()
+
+        // Items tagged with a feature disappear when that feature is
+        // deactivated in Admin → Settings → Features.
+        if (menuItem.feature && !useSettingsStore().isFeatureEnabled(menuItem.feature)) {
+            return false
+        }
 
         const menuHasPermission = menuItem.hasOwnProperty('permission')
         const menuHasRole = menuItem.hasOwnProperty('role')

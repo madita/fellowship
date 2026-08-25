@@ -213,7 +213,7 @@
                                                         v-for="event in upcomingEvents"
                                                         :key="event.id"
                                                         :title="event.title"
-                                                        :subtitle="event.extendedProps?.location || $t('events.noLocation')"
+                                                        :subtitle="formatEventLocation(event)"
                                                         class="px-6 event-list-item"
                                                         @click="viewEventDetails(event)"
                                                     >
@@ -409,6 +409,7 @@ import { useUserStore } from '@/store/userStore.js';
 import { useSettingsStore } from '@/store/settingStore.js';
 import VueDatePicker from "@vuepic/vue-datepicker";
 import eventBus from "../common/eventBus.js";
+import { blankLocation, formatEventLocationLabel } from '@/utils/eventLocation.js';
 
 // Store
 const calendarStore = useCalendarStore();
@@ -444,7 +445,7 @@ const blankEvent = {
     extendedProps: {
         calendar: undefined,
         guests: [],
-        location: '',
+        location: blankLocation(),
         description: '',
         event_profile_id: 0,
     },
@@ -595,6 +596,11 @@ const calendarOptions = computed(() => ({
         customViewPlugin
     ],
     initialView: calendarViewType.value,
+    // Fill the bounded .calendar-main container instead of sizing by
+    // aspectRatio (which grows the page). expandRows makes month rows fill
+    // the height; timegrid views scroll internally.
+    height: '100%',
+    expandRows: true,
     headerToolbar: {
         left: 'prev,next today',
         center: 'title',
@@ -660,7 +666,7 @@ const addEvent = async (addevent) => {
         await axios.post(`${endpoint}`, addevent);
         await calendarStore.fetchEvents();
     } catch (error) {
-        console.error('Error adding event:', error);
+        console.error('Error adding event:', error.response?.data?.errors ?? error);
     }
 };
 
@@ -735,6 +741,10 @@ const formatEventTime = (event) => {
 
     return formatDateUtil(start, timeFormat);
 };
+
+// The API returns the location as a structured object (or a legacy plain
+// string) — reduce it to a display label for the list subtitle.
+const formatEventLocation = (event) => formatEventLocationLabel(event, t);
 
 // const getEventColor = (type) => {
 //     console.log('getEventColor', type)
@@ -860,7 +870,19 @@ onUnmounted(() => {
 
 .calendar-main {
     background-color: rgb(var(--v-theme-background));
-    min-height: 700px;
+    // Cap the calendar to the viewport so it scrolls internally instead of
+    // growing the page. The offset accounts for the app bar, tabs and the
+    // view-toggle row above; min-height keeps it usable on short screens.
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - 180px);
+    min-height: 500px;
+
+    // The view-toggle row is fixed height; the calendar fills the rest.
+    .calendar-component {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
 
     .fc {
         height: 100%;

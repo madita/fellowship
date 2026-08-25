@@ -2,6 +2,17 @@ import { useAuthStore } from '@/store/authStore.js'
 import axios from 'axios'
 import { refreshCsrfToken, resetCsrfRefreshTimer } from '@/api/middlewareCSRF.js'
 import { i18n } from '@/plugins/vue-i18n.js'
+import { triggerSessionTimeout } from '@/plugins/sessionTimeout.js'
+
+/**
+ * Expire the session once, no matter how many in-flight requests fail at the
+ * same time. Every failing request used to schedule its own logout(), so a page
+ * with N pending requests fired N logout POSTs and N redirects.
+ */
+const expireSession = async auth => {
+    if (!triggerSessionTimeout()) return
+    setTimeout(async () => await auth.logout(), 3000)
+}
 
 /**
  * Get the value of a specific cookie
@@ -78,9 +89,7 @@ const middleware401 = async error => {
         }
 
         console.error('CSRF token refresh failed after retry, triggering session timeout')
-        window.dispatchEvent(new CustomEvent('session-timeout'))
-        const auth = useAuthStore()
-        setTimeout(async () => await auth.logout(), 3000)
+        await expireSession(useAuthStore())
         return Promise.reject({
             name: 'Session expired',
             message: i18n.global.t('common.middleware401.sessionExpired'),
@@ -90,9 +99,7 @@ const middleware401 = async error => {
     // Handle unauthorized (401)
     if (status === 401) {
         console.log('Unauthorized (401), triggering session timeout')
-        window.dispatchEvent(new CustomEvent('session-timeout'))
-        const auth = useAuthStore()
-        setTimeout(async () => await auth.logout(), 3000)
+        await expireSession(useAuthStore())
         return Promise.reject({
             name: 'Permission denied',
             message: i18n.global.t('common.middleware401.credentialsLost'),

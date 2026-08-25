@@ -8,12 +8,13 @@ export default {
             key: 'menu.main',
             items: [
                 { icon: 'mdi-view-dashboard-outline', key: 'menu.dashboard', text: 'Dashboard', link: '/dashboard' },
-                { icon: 'mdi-timeline-text-outline', key: 'menu.timeline', text: 'Timeline', link: '/timeline' },
-                { icon: 'mdi-message-text-outline', key: 'menu.chat', text: 'Chat', link: '/chat' },
-                { icon: 'mdi-calendar', key: 'menu.events', text: 'Events', link: '/events' },
-                { icon: 'mdi-file-outline', key: 'menu.wiki', text: 'Wiki', link: '/wiki' },
-                { icon: 'mdi-forum', key: 'menu.forum', text: 'Forum', link: '/forum' },
-                { icon: 'mdi-file-outline', key: 'menu.blank', text: 'Blank Page', link: '/blank' }
+                { feature: 'timeline', icon: 'mdi-timeline-text-outline', key: 'menu.timeline', text: 'Timeline', link: '/timeline' },
+                { feature: 'chat', icon: 'mdi-message-text-outline', key: 'menu.chat', text: 'Chat', link: '/chat' },
+                { feature: 'events', icon: 'mdi-calendar', key: 'menu.events', text: 'Events', link: '/events' },
+                { feature: 'wiki', icon: 'mdi-file-outline', key: 'menu.wiki', text: 'Wiki', link: '/wiki' },
+                { feature: 'forum', icon: 'mdi-forum', key: 'menu.forum', text: 'Forum', link: '/forum' },
+                { feature: 'irc', icon: 'mdi-chat-processing-outline', key: 'menu.irc', text: 'IRC', link: '/irc' },
+                { feature: 'gallery', icon: 'mdi-image-multiple-outline', key: 'menu.gallery', text: 'Gallery', link: '/gallery' }
             ]
         },
         {

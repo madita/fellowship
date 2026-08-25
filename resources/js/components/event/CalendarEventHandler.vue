@@ -20,6 +20,7 @@ import RelatedContent from '../common/RelatedContent.vue';
 import { useUserStore } from "@/store/userStore.js";
 import { useSettingsStore } from "@/store/settingStore.js";
 import { useDateFormat } from '@/plugins/formatDate.js';
+import { buildViewLocation, mergeTopLevelIntoExtendedProps } from '@/utils/eventLocation.js';
 
 const props = defineProps({
     isDrawerOpen: Boolean,
@@ -79,7 +80,13 @@ const initialSnapshot = ref('');
 watch(
     () => props.event,
     (newEvent) => {
-        localEvent.value = newEvent ? JSON.parse(JSON.stringify(newEvent)) : null;
+        // Raw API items (list/upcoming views) carry location & co. at top
+        // level; only FullCalendar transposes them into extendedProps.
+        // Merging gives the form and view mode a single shape — and stops
+        // saving a list-opened event from wiping its stored location.
+        localEvent.value = newEvent
+            ? mergeTopLevelIntoExtendedProps(JSON.parse(JSON.stringify(newEvent)))
+            : null;
         if (localEvent.value?.id) {
             getEvent(localEvent.value.id);
             fetchRelatedItems('App\\Models\\Event\\Event', localEvent.value.id);
@@ -87,6 +94,57 @@ watch(
     },
     { immediate: true }
 );
+
+// Which location modes this event type allows, from options.location
+// (["custom","real","virtual"]). Falls back to custom-only.
+const selectedEventTypeId = computed(() =>
+    localEvent.value?.extendedProps?.event_type_id ?? localEvent.value?.event_type_id ?? null
+);
+const allowedLocationModes = computed(() => {
+    const type = Object.values(localEventTypes.value).find(t => t.id === selectedEventTypeId.value);
+    let opts = type?.options;
+    if (typeof opts === 'string') {
+        try { opts = JSON.parse(opts); } catch (e) { opts = {}; }
+    }
+    const modes = opts?.location;
+    return Array.isArray(modes) && modes.length ? modes : ['custom'];
+});
+
+// Keep the selected mode valid for the chosen event type.
+watch([allowedLocationModes, selectedEventTypeId], () => {
+    const loc = localEvent.value?.extendedProps?.location;
+    if (!loc) return;
+    if (!loc.type || !allowedLocationModes.value.includes(loc.type)) {
+        loc.type = allowedLocationModes.value[0] ?? null;
+    }
+});
+
+const locationModeIcon = (mode) => ({
+    real: 'mdi-map-marker',
+    virtual: 'mdi-web',
+    custom: 'mdi-map-marker-outline',
+}[mode] || 'mdi-map-marker');
+
+// IRC channels for the "virtual" picker, loaded lazily.
+const ircChannels = ref([]);
+const ircChannelsLoading = ref(false);
+const fetchIrcChannels = async () => {
+    if (ircChannels.value.length || ircChannelsLoading.value) return;
+    ircChannelsLoading.value = true;
+    try {
+        const { data } = await axios.get('/api/irc/available-channels');
+        ircChannels.value = Array.isArray(data) ? data : [];
+    } catch (e) {
+        console.error('Failed to load IRC channels:', e);
+    } finally {
+        ircChannelsLoading.value = false;
+    }
+};
+
+// How the location renders in view mode: an icon, a label and (optionally) a
+// link — a Google Maps search for physical addresses, the internal IRC client
+// for a channel, or the raw URL for an online link.
+const viewLocation = computed(() => buildViewLocation(localEvent.value?.extendedProps?.location, t));
 
 const isDirty = computed(() => {
     if (!initialSnapshot.value) return false;
@@ -527,6 +585,13 @@ watch(() => props.editMode, () => {
 watch(() => props.isDrawerOpen, (isOpen) => {
     resetEvent();
     if (isOpen) {
+        // Re-sync from the prop on every open. The watcher on props.editMode
+        // alone is not enough: localEditMode is mutated locally (submit, the
+        // view/edit toggle), so the prop can still hold the value the parent
+        // wants while the local copy has drifted — and an unchanged prop
+        // fires no watcher.
+        localEditMode.value = props.editMode;
+
         // Snapshot after localEvent has been set from props, so it reflects
         // the unedited starting state.
         nextTick(() => {
@@ -538,6 +603,7 @@ watch(() => props.isDrawerOpen, (isOpen) => {
 });
 
 onMounted(() => {
+    fetchIrcChannels();
     if (!localEvent.value.start) {
         // Set initial start date with proper timezone handling
         localEvent.value.start = roundDateToNextTimeIncrement(new Date());
@@ -733,14 +799,90 @@ onMounted(() => {
                                     />
                                 </VCol>
 
-                                <VCol cols="12">
+                                <VCol cols="12" v-if="localEvent.extendedProps.location">
+                                    <!-- Mode selector: only when the event type allows more than one -->
+                                    <VBtnToggle
+                                        v-if="allowedLocationModes.length > 1"
+                                        v-model="localEvent.extendedProps.location.type"
+                                        color="primary"
+                                        density="comfortable"
+                                        mandatory
+                                        class="mb-3 flex-wrap"
+                                    >
+                                        <VBtn
+                                            v-for="mode in allowedLocationModes"
+                                            :key="mode"
+                                            :value="mode"
+                                            :prepend-icon="locationModeIcon(mode)"
+                                        >
+                                            {{ $t('events.locationModes.' + mode) }}
+                                        </VBtn>
+                                    </VBtnToggle>
+
+                                    <!-- real: physical address (rendered as a map link in view mode) -->
                                     <VTextField
-                                        v-model="localEvent.extendedProps.location"
-                                        :label="$t('events.location')"
-                                        :rules="rules.location"
+                                        v-if="localEvent.extendedProps.location.type === 'real'"
+                                        v-model="localEvent.extendedProps.location.address"
+                                        :label="$t('events.locationAddress')"
                                         variant="outlined"
                                         density="comfortable"
                                         prepend-inner-icon="mdi-map-marker"
+                                    />
+
+                                    <!-- virtual: an internal IRC channel or an external URL -->
+                                    <template v-else-if="localEvent.extendedProps.location.type === 'virtual'">
+                                        <VBtnToggle
+                                            v-model="localEvent.extendedProps.location.virtualMode"
+                                            color="primary"
+                                            density="comfortable"
+                                            mandatory
+                                            class="mb-3"
+                                        >
+                                            <VBtn value="irc" prepend-icon="mdi-pound">{{ $t('events.locationIrc') }}</VBtn>
+                                            <VBtn value="url" prepend-icon="mdi-link-variant">{{ $t('events.locationUrl') }}</VBtn>
+                                        </VBtnToggle>
+
+                                        <VSelect
+                                            v-if="localEvent.extendedProps.location.virtualMode === 'irc'"
+                                            v-model="localEvent.extendedProps.location.irc_channel_id"
+                                            :items="ircChannels"
+                                            item-title="name"
+                                            item-value="id"
+                                            :label="$t('events.locationIrcChannel')"
+                                            :loading="ircChannelsLoading"
+                                            :no-data-text="$t('events.locationNoChannels')"
+                                            variant="outlined"
+                                            density="comfortable"
+                                            prepend-inner-icon="mdi-pound"
+                                            clearable
+                                        >
+                                            <template #item="{ props: itemProps, item }">
+                                                <VListItem
+                                                    v-bind="itemProps"
+                                                    :title="item.raw.name"
+                                                    :subtitle="item.raw.server"
+                                                />
+                                            </template>
+                                        </VSelect>
+                                        <VTextField
+                                            v-else
+                                            v-model="localEvent.extendedProps.location.url"
+                                            :label="$t('events.locationUrl')"
+                                            placeholder="https://"
+                                            variant="outlined"
+                                            density="comfortable"
+                                            prepend-inner-icon="mdi-link-variant"
+                                        />
+                                    </template>
+
+                                    <!-- custom: free text -->
+                                    <VTextField
+                                        v-else
+                                        v-model="localEvent.extendedProps.location.text"
+                                        :label="$t('events.location')"
+                                        variant="outlined"
+                                        density="comfortable"
+                                        prepend-inner-icon="mdi-map-marker-outline"
                                     />
                                 </VCol>
 
@@ -790,7 +932,28 @@ onMounted(() => {
                                 <span>{{ $t('events.location') }}</span>
                             </div>
                             <div class="info-content">
-                                {{ localEvent?.extendedProps?.location || $t('events.noLocationSpecified') }}
+                                <template v-if="viewLocation">
+                                    <a
+                                        v-if="viewLocation.external"
+                                        :href="viewLocation.href"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        class="d-inline-flex align-center location-link"
+                                    >
+                                        <v-icon size="18" class="mr-1">{{ viewLocation.icon }}</v-icon>{{ viewLocation.label }}
+                                    </a>
+                                    <router-link
+                                        v-else-if="viewLocation.to"
+                                        :to="viewLocation.to"
+                                        class="d-inline-flex align-center location-link"
+                                    >
+                                        <v-icon size="18" class="mr-1">{{ viewLocation.icon }}</v-icon>{{ viewLocation.label }}
+                                    </router-link>
+                                    <span v-else class="d-inline-flex align-center">
+                                        <v-icon size="18" class="mr-1">{{ viewLocation.icon }}</v-icon>{{ viewLocation.label }}
+                                    </span>
+                                </template>
+                                <template v-else>{{ $t('events.noLocationSpecified') }}</template>
                             </div>
                         </div>
 

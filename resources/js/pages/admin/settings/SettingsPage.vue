@@ -73,6 +73,9 @@ const componentMap = {
     'general/PublicContactPage': () => import('@/pages/admin/settings/general/PublicContactPage.vue'),
     'general/SocialMediaPage': () => import('@/pages/admin/settings/general/SocialMediaPage.vue'),
 
+    // Features
+    'features/FeatureTogglesPage': () => import('@/pages/admin/settings/features/FeatureTogglesPage.vue'),
+
     // Localization
     'localization/RegionalSettingsPage': () => import('@/pages/admin/settings/localization/RegionalSettingsPage.vue'),
     'localization/LanguageOptionsPage': () => import('@/pages/admin/settings/localization/LanguageOptionsPage.vue'),
@@ -112,6 +115,7 @@ const componentMap = {
     'footer/CustomHtmlPage': () => import('@/pages/admin/settings/footer/CustomHtmlPage.vue'),
 
     // IRC
+    'irc/IrcClientSettingsPage': () => import('@/pages/admin/settings/irc/IrcClientSettingsPage.vue'),
     'irc/IrcDashboardPage': () => import('@/pages/admin/settings/irc/IrcDashboardPage.vue'),
     'irc/IrcServersPage': () => import('@/pages/admin/settings/irc/IrcServersPage.vue'),
     'irc/IrcConnectionsPage': () => import('@/pages/admin/settings/irc/IrcConnectionsPage.vue'),

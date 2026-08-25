@@ -44,9 +44,11 @@ Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms')
 //});
 //
 
-//migration
-Route::get('migration/wiki', "\App\Http\Controllers\Admin\MigrationController@wiki");
-Route::get('migration/event', "\App\Http\Controllers\Admin\MigrationController@event");
+//migration — controller intentionally not in the repo yet
+if (class_exists(\App\Http\Controllers\Admin\MigrationController::class)) {
+    Route::get('migration/wiki', "\App\Http\Controllers\Admin\MigrationController@wiki");
+    Route::get('migration/event', "\App\Http\Controllers\Admin\MigrationController@event");
+}
 
 // PWA Manifest
 Route::get('/manifest.json', 'App\Http\Controllers\ManifestController@generate')->name('manifest');

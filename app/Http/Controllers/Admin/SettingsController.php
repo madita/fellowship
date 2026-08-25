@@ -178,6 +178,19 @@ class SettingsController extends Controller
             'sandbox_collaboration_enabled',
             'sandbox_autosave_interval',
             'sandbox_role_limits',
+
+            // IRC client
+            'irc_comic_chat_enabled',
+
+            // Feature toggles (drive menu visibility and route guards)
+            'feature_timeline_enabled',
+            'feature_chat_enabled',
+            'feature_events_enabled',
+            'feature_wiki_enabled',
+            'feature_forum_enabled',
+            'feature_irc_enabled',
+            'feature_gallery_enabled',
+            'feature_tickets_enabled',
         ];
 
         $settings = [];
@@ -259,6 +272,10 @@ class SettingsController extends Controller
             'oauth_google_enabled', 'oauth_discord_enabled', 'oauth_github_enabled',
             'oauth_facebook_enabled', 'oauth_allow_registration', 'oauth_auto_verify_email',
             'sandbox_enabled', 'sandbox_public_enabled', 'sandbox_collaboration_enabled',
+            'irc_comic_chat_enabled',
+            'feature_timeline_enabled', 'feature_chat_enabled', 'feature_events_enabled',
+            'feature_wiki_enabled', 'feature_forum_enabled', 'feature_irc_enabled',
+            'feature_gallery_enabled', 'feature_tickets_enabled',
         ];
 
         foreach ($booleanKeys as $key) {

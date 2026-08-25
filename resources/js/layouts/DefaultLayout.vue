@@ -312,9 +312,12 @@ export default {
             onSettingsOpen = () => { showSettingsDrawer.value = true }
             eventBus.on('toolbar.settings.open', onSettingsOpen)
 
-            // Initialize presence for SidebarUsers if Echo is available
+            // Initialize presence for SidebarUsers if Echo is available.
+            // Guests must not join: presence channels POST /broadcasting/auth,
+            // which requires an authenticated session (public forum pages use
+            // this layout too).
             try {
-                if (window.Echo) {
+                if (window.Echo && authStore.isLoggedIn) {
                     presenceChannel = window.Echo.join('chat')
                         .here((users) => {
                             eventBus.emit('users.here', Array.isArray(users) ? users : [])
