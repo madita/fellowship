@@ -44,3 +44,6 @@ tmpclaude-*
 
 # Runtime storage
 /storage/media-library/
+
+# php-cs-fixer toolchain dependencies (composer install in tools/php-cs-fixer)
+/tools/php-cs-fixer/vendor/
