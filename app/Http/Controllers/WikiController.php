@@ -179,15 +179,20 @@ class WikiController extends Controller
         );
 
         foreach ($matches[0] as $key => $item) {
-            $title = explode('#', $matches[1][$key]);
-
-            $title = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : $title[0];
+            // [[Target#anchor|Label]] — the link points at Target; the label
+            // is only what gets displayed.
+            $target = explode('#', $matches[1][$key])[0];
+            $label = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : $target;
             $alternative = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : null;
 
-            $page = Page::firstOrNew(['title' => $title, 'slug' => Str::slug($title)]);
+            // title lives in page_translations — match via translation or slug,
+            // falling back to an unsaved page for the "create this page" link.
+            $page = Page::whereTranslation('title', $target)->first()
+                ?? Page::where('slug', Str::slug($target))->first()
+                ?? new Page(['title' => $target, 'slug' => Str::slug($target)]);
 
             $replace =
-                "<a data-wiki-id=\"0\" class=\"new\" data-title=\"{$page->title}\" data-linked-resource-type=\"wikiable\" data-alternative=\"{$alternative}\" href=\"/wiki/{$page->slug}\" contenteditable=\"false\">{$title}</a>";
+                "<a data-wiki-id=\"0\" class=\"new\" data-title=\"{$page->title}\" data-linked-resource-type=\"wikiable\" data-alternative=\"{$alternative}\" href=\"/wiki/{$page->slug}\" contenteditable=\"false\">{$label}</a>";
             $content = Str::replace($item, $replace, $content);
         }
         $data->content = $content;
