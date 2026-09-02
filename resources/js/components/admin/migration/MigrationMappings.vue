@@ -101,6 +101,106 @@
                         {{ $t('migrationTool.rowsInTable', { count: rowCount }) }}
                     </div>
 
+                    <!-- Joins (relations) -->
+                    <template v-if="form.source_table">
+                        <div class="d-flex align-center mb-1">
+                            <span class="text-subtitle-2">{{ $t('migrationTool.joins') }}</span>
+                            <v-btn size="x-small" variant="text" color="primary" prepend-icon="mdi-plus" class="ml-2" @click="addJoin">
+                                {{ $t('migrationTool.addJoin') }}
+                            </v-btn>
+                        </div>
+                        <div v-if="!form.options.joins.length" class="text-caption text-medium-emphasis mb-3">
+                            {{ $t('migrationTool.joinsHint') }}
+                        </div>
+                        <v-row v-for="(join, index) in form.options.joins" :key="`join-${index}`" dense class="align-center">
+                            <v-col cols="6" md="2">
+                                <v-select
+                                    v-model="join.type"
+                                    :items="joinTypes"
+                                    :label="$t('migrationTool.joinType')"
+                                    hide-details variant="outlined" density="compact"
+                                />
+                            </v-col>
+                            <v-col cols="6" md="3">
+                                <v-select
+                                    v-model="join.table"
+                                    :items="tables"
+                                    :label="$t('migrationTool.joinTable')"
+                                    hide-details variant="outlined" density="compact"
+                                    @update:model-value="loadJoinColumns(join.table)"
+                                />
+                            </v-col>
+                            <v-col cols="5" md="3">
+                                <v-text-field
+                                    v-model="join.first"
+                                    :label="$t('migrationTool.joinFirst')"
+                                    :placeholder="`${join.table || 'table'}.column`"
+                                    hide-details variant="outlined" density="compact"
+                                />
+                            </v-col>
+                            <v-col cols="2" md="1">
+                                <v-select
+                                    v-model="join.operator"
+                                    :items="operators"
+                                    hide-details variant="outlined" density="compact"
+                                />
+                            </v-col>
+                            <v-col cols="5" md="2">
+                                <v-text-field
+                                    v-model="join.second"
+                                    :label="$t('migrationTool.joinSecond')"
+                                    :placeholder="`${form.source_table}.column`"
+                                    hide-details variant="outlined" density="compact"
+                                />
+                            </v-col>
+                            <v-col cols="12" md="1" class="text-right">
+                                <v-btn icon size="small" variant="text" color="error" @click="form.options.joins.splice(index, 1)">
+                                    <v-icon size="small">mdi-close</v-icon>
+                                </v-btn>
+                            </v-col>
+                        </v-row>
+
+                        <!-- Row filters -->
+                        <div class="d-flex align-center mb-1 mt-2">
+                            <span class="text-subtitle-2">{{ $t('migrationTool.filters') }}</span>
+                            <v-btn size="x-small" variant="text" color="primary" prepend-icon="mdi-plus" class="ml-2" @click="addFilter">
+                                {{ $t('migrationTool.addFilter') }}
+                            </v-btn>
+                        </div>
+                        <div v-if="!form.options.wheres.length" class="text-caption text-medium-emphasis mb-3">
+                            {{ $t('migrationTool.filtersHint') }}
+                        </div>
+                        <v-row v-for="(where, index) in form.options.wheres" :key="`where-${index}`" dense class="align-center">
+                            <v-col cols="5" md="4">
+                                <v-text-field
+                                    v-model="where.column"
+                                    :label="$t('migrationTool.filterColumn')"
+                                    hide-details variant="outlined" density="compact"
+                                />
+                            </v-col>
+                            <v-col cols="2" md="2">
+                                <v-select
+                                    v-model="where.operator"
+                                    :items="operators"
+                                    hide-details variant="outlined" density="compact"
+                                />
+                            </v-col>
+                            <v-col cols="5" md="5">
+                                <v-text-field
+                                    v-model="where.value"
+                                    :label="$t('migrationTool.filterValue')"
+                                    hide-details variant="outlined" density="compact"
+                                />
+                            </v-col>
+                            <v-col cols="12" md="1" class="text-right">
+                                <v-btn icon size="small" variant="text" color="error" @click="form.options.wheres.splice(index, 1)">
+                                    <v-icon size="small">mdi-close</v-icon>
+                                </v-btn>
+                            </v-col>
+                        </v-row>
+                        <div class="mb-3" />
+                    </template>
+
                     <!-- Field mapping grid -->
                     <template v-if="currentTarget && form.source_table">
                         <div class="text-subtitle-2 mb-2">{{ $t('migrationTool.fieldMapping') }}</div>
@@ -227,6 +327,11 @@ const tables = ref([]);
 const columns = ref([]);
 const sample = ref({});
 const rowCount = ref(null);
+const joinColumns = ref({});
+const joinSamples = ref({});
+
+const joinTypes = ['left', 'inner'];
+const operators = ['=', '!=', '<', '>', '<=', '>=', 'like'];
 
 const editor = ref(false);
 const editing = ref(null);
@@ -238,16 +343,42 @@ const loadingColumns = ref(false);
 const preview = ref(null);
 const error = ref('');
 
-const form = ref({ name: '', migration_source_id: null, target: null, source_table: null, field_map: {} });
+const emptyForm = () => ({
+    name: '', migration_source_id: null, target: null, source_table: null,
+    field_map: {}, options: { joins: [], wheres: [] },
+});
+
+const form = ref(emptyForm());
 
 const currentTarget = computed(() => targets.value.find(target => target.key === form.value.target));
-const columnItems = computed(() => columns.value.map(column => ({ title: `${column.name} (${column.type || '?'})`, value: column.name })));
+const activeJoinTables = computed(() =>
+    form.value.options.joins.map(join => join.table).filter(Boolean)
+);
+const columnItems = computed(() => {
+    const items = columns.value.map(column => ({ title: `${column.name} (${column.type || '?'})`, value: column.name }));
+    for (const table of activeJoinTables.value) {
+        for (const column of joinColumns.value[table] || []) {
+            if (!items.some(item => item.value === column.name)) {
+                items.push({ title: `${column.name} (${table})`, value: column.name });
+            }
+        }
+    }
+    return items;
+});
 const canSave = computed(() =>
     form.value.name && form.value.migration_source_id && form.value.target && form.value.source_table
 );
 
 const targetLabel = (key) => targets.value.find(target => target.key === key)?.label || key;
-const sampleFor = (column) => (column && sample.value ? sample.value[column] : null);
+const sampleFor = (column) => {
+    if (!column) return null;
+    if (sample.value && sample.value[column] !== undefined) return sample.value[column];
+    for (const table of activeJoinTables.value) {
+        const joined = joinSamples.value[table];
+        if (joined && joined[column] !== undefined) return joined[column];
+    }
+    return null;
+};
 const displayValue = (value) => {
     if (value === null || value === undefined) return '—';
     if (typeof value === 'object') return JSON.stringify(value);
@@ -293,6 +424,9 @@ const openEditor = async (mapping = null) => {
     columns.value = [];
     sample.value = {};
 
+    joinColumns.value = {};
+    joinSamples.value = {};
+
     form.value = mapping
         ? {
             name: mapping.name,
@@ -300,8 +434,12 @@ const openEditor = async (mapping = null) => {
             target: mapping.target,
             source_table: mapping.source_table,
             field_map: JSON.parse(JSON.stringify(mapping.field_map || {})),
+            options: {
+                joins: JSON.parse(JSON.stringify(mapping.options?.joins || [])),
+                wheres: JSON.parse(JSON.stringify(mapping.options?.wheres || [])),
+            },
         }
-        : { name: '', migration_source_id: null, target: null, source_table: null, field_map: {} };
+        : emptyForm();
 
     ensureFieldMap();
     editor.value = true;
@@ -309,12 +447,38 @@ const openEditor = async (mapping = null) => {
     if (mapping) {
         await loadTables();
         await loadColumns();
+        await Promise.all(form.value.options.joins.map(join => loadJoinColumns(join.table)));
+    }
+};
+
+const addJoin = () => {
+    form.value.options.joins.push({ type: 'left', table: null, first: '', operator: '=', second: '' });
+};
+
+const addFilter = () => {
+    form.value.options.wheres.push({ column: '', operator: '=', value: '' });
+};
+
+const loadJoinColumns = async (table) => {
+    if (!table || !form.value.migration_source_id || joinColumns.value[table]) return;
+    try {
+        const { data } = await axios.get(
+            `/api/admin/migrations/sources/${form.value.migration_source_id}/tables/${encodeURIComponent(table)}/columns`
+        );
+        joinColumns.value = { ...joinColumns.value, [table]: data.columns };
+        joinSamples.value = { ...joinSamples.value, [table]: data.sample || {} };
+    } catch (e) {
+        error.value = e.response?.data?.error || e.message;
     }
 };
 
 const onSourceChanged = async () => {
     form.value.source_table = null;
+    form.value.options.joins = [];
+    form.value.options.wheres = [];
     columns.value = [];
+    joinColumns.value = {};
+    joinSamples.value = {};
     await loadTables();
 };
 
@@ -360,6 +524,14 @@ const loadColumns = async () => {
 
 const cleanedForm = () => ({
     ...form.value,
+    options: {
+        joins: form.value.options.joins
+            .filter(join => join.table && join.first && join.second)
+            .map(join => ({ ...join, operator: join.operator || '=' })),
+        wheres: form.value.options.wheres
+            .filter(where => where.column)
+            .map(where => ({ ...where, operator: where.operator || '=', value: where.value ?? '' })),
+    },
     field_map: Object.fromEntries(
         Object.entries(form.value.field_map).map(([key, spec]) => {
             const cleaned = { ...spec };

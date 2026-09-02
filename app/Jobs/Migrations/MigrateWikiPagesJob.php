@@ -89,6 +89,8 @@ class MigrateWikiPagesJob extends BaseMigrationJob
                 if ($this->log->processed_items % 10 === 0) {
                     gc_collect_cycles();
                 }
+            } catch (MigrationCancelledException $e) {
+                throw $e;
             } catch (Exception $e) {
                 $this->error("Error migrating page {$wpage->page_title}: " . $e->getMessage());
             }

@@ -9,7 +9,7 @@ use DateTime;
  *
  * A field map is: targetField => spec, where spec supports
  *  - source:    source column name to read from
- *  - transform: none|trim|html_decode|int|float|bool|json|date|time|datetime
+ *  - transform: none|trim|html_decode|underscores_to_spaces|int|float|bool|json|date|time|datetime
  *  - format:    input format for the date/time/datetime transforms
  *               (e.g. "Ymd", "Hi"); defaults to letting PHP parse freely
  *  - default:   value used when the column is missing/null/empty
@@ -19,7 +19,7 @@ use DateTime;
  */
 class RowMapper
 {
-    public const TRANSFORMS = ['none', 'trim', 'html_decode', 'int', 'float', 'bool', 'json', 'date', 'time', 'datetime'];
+    public const TRANSFORMS = ['none', 'trim', 'html_decode', 'underscores_to_spaces', 'int', 'float', 'bool', 'json', 'date', 'time', 'datetime'];
 
     /**
      * @param array<string,array<string,mixed>> $fieldMap
@@ -73,6 +73,7 @@ class RowMapper
         return match ($transform) {
             'trim' => trim((string) $value),
             'html_decode' => html_entity_decode((string) $value),
+            'underscores_to_spaces' => str_replace('_', ' ', (string) $value),
             'int' => is_numeric($value) ? (int) $value : null,
             'float' => is_numeric($value) ? (float) $value : null,
             'bool' => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),

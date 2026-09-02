@@ -16,6 +16,7 @@ use App\Models\MigrationMapping;
 use App\Models\MigrationSource;
 use App\Services\Migration\MigrationTargets;
 use App\Services\Migration\RowMapper;
+use App\Services\Migration\SourceQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -243,12 +244,14 @@ class MigrationController extends Controller
     }
 
     /**
-     * Cancel a running batch (marks pending as cancelled).
+     * Cancel a batch: pending migrations are skipped by their queued jobs,
+     * and running ones notice the status change and stop (they poll it
+     * between items via BaseMigrationJob::checkForCancellation()).
      */
     public function cancel(string $batchId): JsonResponse
     {
         $updated = MigrationLog::where('batch_id', $batchId)
-            ->where('status', 'pending')
+            ->whereIn('status', ['pending', 'running'])
             ->update([
                 'status'       => 'failed',
                 'last_error'   => __('messages.migrations.cancelled'),
@@ -441,6 +444,18 @@ class MigrationController extends Controller
             'field_map.*.transform' => ['nullable', Rule::in(RowMapper::TRANSFORMS)],
             'field_map.*.format' => 'nullable|string|max:64',
             'options' => 'nullable|array',
+            'options.joins' => 'nullable|array',
+            'options.joins.*' => 'array',
+            'options.joins.*.table' => 'required|string|max:255|regex:/^[A-Za-z0-9_]+$/',
+            'options.joins.*.type' => ['nullable', Rule::in(SourceQuery::JOIN_TYPES)],
+            'options.joins.*.first' => ['required', 'string', 'max:255', 'regex:'.SourceQuery::IDENTIFIER_PATTERN],
+            'options.joins.*.operator' => ['nullable', Rule::in(SourceQuery::OPERATORS)],
+            'options.joins.*.second' => ['required', 'string', 'max:255', 'regex:'.SourceQuery::IDENTIFIER_PATTERN],
+            'options.wheres' => 'nullable|array',
+            'options.wheres.*' => 'array',
+            'options.wheres.*.column' => ['required', 'string', 'max:255', 'regex:'.SourceQuery::IDENTIFIER_PATTERN],
+            'options.wheres.*.operator' => ['nullable', Rule::in(SourceQuery::OPERATORS)],
+            'options.wheres.*.value' => 'nullable|string|max:1024',
         ];
     }
 
@@ -479,15 +494,17 @@ class MigrationController extends Controller
     public function previewMapping(MigrationMapping $mapping): JsonResponse
     {
         try {
-            $source = $mapping->source;
-            if (!in_array($mapping->source_table, $this->tableNames($source), true)) {
-                return response()->json(['error' => 'Source table no longer exists'], 422);
+            $available = $this->tableNames($mapping->source);
+            foreach (SourceQuery::tables($mapping) as $table) {
+                if (!in_array($table, $available, true)) {
+                    return response()->json(['error' => "Source table \"{$table}\" no longer exists"], 422);
+                }
             }
 
-            $connection = $source->connectionName();
             $mapper = new RowMapper($mapping->field_map);
+            $query = SourceQuery::build($mapping);
 
-            $rows = DB::connection($connection)->table($mapping->source_table)->limit(10)->get();
+            $rows = (clone $query)->limit(10)->get();
             $preview = $rows->map(function ($row) use ($mapper, $mapping) {
                 $mapped = $mapper->map((array) $row);
 
@@ -498,7 +515,7 @@ class MigrationController extends Controller
             });
 
             return response()->json([
-                'total' => DB::connection($connection)->table($mapping->source_table)->count(),
+                'total' => (clone $query)->count(),
                 'rows' => $preview,
             ]);
         } catch (\Throwable $e) {

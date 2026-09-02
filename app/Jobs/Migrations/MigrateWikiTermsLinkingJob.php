@@ -48,7 +48,8 @@ class MigrateWikiTermsLinkingJob extends BaseMigrationJob
 
             foreach ($matches[0] as $key => $item) {
                 $titleParts = explode("#", $matches[1][$key]);
-                $page = Page::where('title', $titleParts[0])->first();
+                // title lives in page_translations — match via the translation.
+                $page = Page::whereTranslation('title', $titleParts[0])->first();
 
                 if ($page) {
                     $title = isset($matches[3][$key]) && trim($matches[3][$key]) != "" ? $matches[3][$key] : $page->title;

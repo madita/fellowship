@@ -49,6 +49,8 @@ class MigrateEventsJob extends BaseMigrationJob
                 ]);
 
                 $this->progress($eventItem->title);
+            } catch (MigrationCancelledException $e) {
+                throw $e;
             } catch (Exception $e) {
                 $this->error("Error migrating event {$event->location}: " . $e->getMessage());
             }

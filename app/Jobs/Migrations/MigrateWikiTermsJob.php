@@ -69,6 +69,8 @@ class MigrateWikiTermsJob extends BaseMigrationJob
 
                 // Rate limit API calls
                 usleep(100000); // 100ms delay between API calls
+            } catch (MigrationCancelledException $e) {
+                throw $e;
             } catch (Exception $e) {
                 $this->error("Error migrating category {$category->cat_title}: " . $e->getMessage());
             }

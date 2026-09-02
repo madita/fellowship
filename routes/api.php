@@ -449,6 +449,22 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
         Route::post('/migrations/cancel/{batchId}', 'App\Http\Controllers\Admin\MigrationController@cancel');
         Route::get('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@history');
         Route::delete('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@clearHistory');
+
+        // Generic migration tool: sources, schema introspection, mappings
+        Route::get('/migrations/sources', 'App\Http\Controllers\Admin\MigrationController@sources');
+        Route::post('/migrations/sources', 'App\Http\Controllers\Admin\MigrationController@storeSource');
+        Route::patch('/migrations/sources/{source}', 'App\Http\Controllers\Admin\MigrationController@updateSource');
+        Route::delete('/migrations/sources/{source}', 'App\Http\Controllers\Admin\MigrationController@deleteSource');
+        Route::post('/migrations/sources/{source}/test', 'App\Http\Controllers\Admin\MigrationController@testSource');
+        Route::get('/migrations/sources/{source}/tables', 'App\Http\Controllers\Admin\MigrationController@sourceTables');
+        Route::get('/migrations/sources/{source}/tables/{table}/columns', 'App\Http\Controllers\Admin\MigrationController@sourceColumns');
+        Route::get('/migrations/targets', 'App\Http\Controllers\Admin\MigrationController@targets');
+        Route::get('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@mappings');
+        Route::post('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@storeMapping');
+        Route::patch('/migrations/mappings/{mapping}', 'App\Http\Controllers\Admin\MigrationController@updateMapping');
+        Route::delete('/migrations/mappings/{mapping}', 'App\Http\Controllers\Admin\MigrationController@deleteMapping');
+        Route::post('/migrations/mappings/{mapping}/preview', 'App\Http\Controllers\Admin\MigrationController@previewMapping');
+        Route::post('/migrations/mappings/{mapping}/run', 'App\Http\Controllers\Admin\MigrationController@runMapping');
     }
 
     // Translation Management

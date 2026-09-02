@@ -70,6 +70,13 @@ class RowMapperTest extends TestCase
         $this->assertSame(['x' => 1], $mapped['f']);
     }
 
+    public function test_underscores_to_spaces_transform(): void
+    {
+        $mapper = new RowMapper(['title' => ['source' => 'page_title', 'transform' => 'underscores_to_spaces']]);
+
+        $this->assertSame(['title' => 'Night Watch HQ'], $mapper->map(['page_title' => 'Night_Watch_HQ']));
+    }
+
     public function test_missing_column_and_static_defaults(): void
     {
         $mapper = new RowMapper([

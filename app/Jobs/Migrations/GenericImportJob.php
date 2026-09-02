@@ -5,8 +5,8 @@ namespace App\Jobs\Migrations;
 use App\Models\MigrationMapping;
 use App\Services\Migration\MigrationTargets;
 use App\Services\Migration\RowMapper;
+use App\Services\Migration\SourceQuery;
 use Exception;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Imports rows from any configured source database into a feature target,
@@ -32,10 +32,9 @@ class GenericImportJob extends BaseMigrationJob
     protected function runMigration(): void
     {
         $mapping = MigrationMapping::with('source')->findOrFail($this->mappingId);
-        $connection = $mapping->source->connectionName();
         $mapper = new RowMapper($mapping->field_map);
 
-        $query = DB::connection($connection)->table($mapping->source_table);
+        $query = SourceQuery::build($mapping);
 
         $total = (clone $query)->count();
         $this->setTotal($total);
@@ -60,6 +59,8 @@ class GenericImportJob extends BaseMigrationJob
                 } else {
                     $this->progress($label);
                 }
+            } catch (MigrationCancelledException $e) {
+                throw $e;
             } catch (Exception $e) {
                 $this->error('Row failed: ' . $e->getMessage());
             }

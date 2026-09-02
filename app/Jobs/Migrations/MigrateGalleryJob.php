@@ -94,6 +94,8 @@ class MigrateGalleryJob extends BaseMigrationJob
 
                 $this->progress($collection->topic);
                 unset($collectionItem, $galleries);
+            } catch (MigrationCancelledException $e) {
+                throw $e;
             } catch (Exception $e) {
                 $this->error("Error creating collection {$collection->topic}: " . $e->getMessage());
             }
