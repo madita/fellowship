@@ -84,7 +84,10 @@ return [
     | set it to false.
     |
     */
-    'fallback_locale' => 'en',
+    // The site's content is German-first: when a translation is missing in
+    // the requested locale (e.g. an English UI viewing imported wiki pages),
+    // fall back to the German original instead of showing nothing.
+    'fallback_locale' => 'de',
 
     /*
     |--------------------------------------------------------------------------

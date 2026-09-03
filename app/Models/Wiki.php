@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Approvable;
 use App\Models\Concerns\HasTickets;
+use App\Models\Translations\WikiTranslation;
 use App\Traits\HasCache;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
@@ -24,6 +25,8 @@ class Wiki extends Model implements TranslatableContract
 
     public $translatedAttributes = ['title'];
     public $translationForeignKey = 'wiki_id';
+
+    public $translationModel = WikiTranslation::class;
 
     /**
      * The attributes that are mass assignable.
