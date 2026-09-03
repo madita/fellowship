@@ -4,12 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\Migrations\GenericImportJob;
-use App\Jobs\Migrations\MigrateEventsJob;
-use App\Jobs\Migrations\MigrateGalleryJob;
 use App\Jobs\Migrations\MigrateLinkGalleryJob;
 use App\Jobs\Migrations\MigrateWikiLinkingJob;
-use App\Jobs\Migrations\MigrateWikiPagesJob;
-use App\Jobs\Migrations\MigrateWikiTermsJob;
 use App\Jobs\Migrations\MigrateWikiTermsLinkingJob;
 use App\Models\MigrationLog;
 use App\Models\MigrationMapping;
@@ -21,55 +17,34 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class MigrationController extends Controller
 {
     /**
-     * Available migrations with their job classes.
+     * Post-import steps: source-independent jobs that run over already
+     * imported data. Row imports themselves are driven by the stored
+     * mappings (Mappings tab) — see MigrationTargets.
      */
     protected array $migrations = [
-        'events' => [
-            'name'        => 'Events',
-            'description' => 'Migrate events from the old database',
-            'group'       => 'events',
-            'job'         => MigrateEventsJob::class,
-        ],
-        'gallery' => [
-            'name'        => 'Gallery Collections',
-            'description' => 'Migrate gallery collections and images',
-            'group'       => 'events',
-            'job'         => MigrateGalleryJob::class,
-        ],
         'linkGallery' => [
             'name'        => 'Link Gallery to Events',
-            'description' => 'Create relationships between galleries and events',
-            'group'       => 'events',
+            'description' => 'Attach gallery collections to imported events via the album name in the event details',
+            'group'       => 'post',
             'job'         => MigrateLinkGalleryJob::class,
-        ],
-        'wikiTerms' => [
-            'name'        => 'Wiki Terms',
-            'description' => 'Migrate wiki categories and terms',
-            'group'       => 'wiki',
-            'job'         => MigrateWikiTermsJob::class,
-        ],
-        'wikiPages' => [
-            'name'        => 'Wiki Pages',
-            'description' => 'Migrate wiki pages with content transformation',
-            'group'       => 'wiki',
-            'job'         => MigrateWikiPagesJob::class,
         ],
         'wikiLinking' => [
             'name'        => 'Wiki Internal Links',
-            'description' => 'Update internal wiki page links',
-            'group'       => 'wiki',
+            'description' => 'Rewrite remaining [[...]] links in imported wiki pages to real page links',
+            'group'       => 'post',
             'job'         => MigrateWikiLinkingJob::class,
         ],
         'wikiTermsLinking' => [
             'name'        => 'Wiki Terms Linking',
-            'description' => 'Update wiki term links in descriptions',
-            'group'       => 'wiki',
+            'description' => 'Rewrite remaining [[...]] links in wiki term descriptions',
+            'group'       => 'post',
             'job'         => MigrateWikiTermsLinkingJob::class,
         ],
     ];
@@ -104,8 +79,7 @@ class MigrationController extends Controller
         return response()->json([
             'migrations' => $migrations,
             'groups'     => [
-                ['key' => 'events', 'name' => 'Events & Gallery'],
-                ['key' => 'wiki', 'name' => 'Wiki'],
+                ['key' => 'post', 'name' => 'Post-import steps'],
             ],
             'activeBatches' => $activeBatches,
         ]);
@@ -443,7 +417,9 @@ class MigrationController extends Controller
             'field_map.*.source' => 'nullable|string|max:255',
             'field_map.*.transform' => ['nullable', Rule::in(RowMapper::TRANSFORMS)],
             'field_map.*.format' => 'nullable|string|max:64',
+            'field_map.*.template' => 'nullable|string|max:1024',
             'options' => 'nullable|array',
+            'options.locale' => 'nullable|string|max:10|regex:/^[a-z]{2}(-[A-Za-z]{2,4})?$/',
             'options.joins' => 'nullable|array',
             'options.joins.*' => 'array',
             'options.joins.*.table' => 'required|string|max:255|regex:/^[A-Za-z0-9_]+$/',
@@ -485,6 +461,82 @@ class MigrationController extends Controller
         $mapping->delete();
 
         return response()->json(['message' => 'Mapping deleted']);
+    }
+
+    /**
+     * Export all mappings as portable JSON (sources referenced by name).
+     */
+    public function exportMappings(): JsonResponse
+    {
+        $mappings = MigrationMapping::with('source:id,name')->orderBy('name')->get();
+
+        return response()->json([
+            'mappings' => $mappings->map(fn ($mapping) => array_filter([
+                'source' => $mapping->source?->name,
+                'name' => $mapping->name,
+                'target' => $mapping->target,
+                'source_table' => $mapping->source_table,
+                'field_map' => $mapping->field_map,
+                'options' => $mapping->options,
+            ], fn ($value) => $value !== null)),
+        ]);
+    }
+
+    /**
+     * Import mappings from the JSON produced by exportMappings (or written
+     * by hand). Sources are referenced by name; a mapping whose name already
+     * exists is updated, so imports are idempotent.
+     */
+    public function importMappings(Request $request): JsonResponse
+    {
+        $request->validate([
+            'mappings' => 'required|array|min:1',
+            'mappings.*' => 'array',
+            'mappings.*.source' => 'nullable|string|max:255',
+        ]);
+
+        $created = 0;
+        $updated = 0;
+        $errors = [];
+
+        foreach ($request->input('mappings') as $index => $item) {
+            $label = is_array($item) ? ($item['name'] ?? "#{$index}") : "#{$index}";
+
+            // Resolve the source by name unless an id is given directly.
+            if (empty($item['migration_source_id']) && !empty($item['source'])) {
+                $source = MigrationSource::where('name', $item['source'])->first();
+                if (!$source) {
+                    $errors[] = "{$label}: unknown source \"{$item['source']}\" — create it on the Sources tab first";
+                    continue;
+                }
+                $item['migration_source_id'] = $source->id;
+            }
+            unset($item['source']);
+
+            $validator = Validator::make($item, $this->mappingRules());
+            if ($validator->fails()) {
+                $errors[] = "{$label}: " . implode(' ', $validator->errors()->all());
+                continue;
+            }
+            $data = $validator->validated();
+
+            $existing = MigrationMapping::where('name', $data['name'])->first();
+            if ($existing) {
+                $existing->update($data);
+                $updated++;
+            } else {
+                MigrationMapping::create($data);
+                $created++;
+            }
+        }
+
+        $failedCompletely = $errors && $created === 0 && $updated === 0;
+
+        return response()->json([
+            'created' => $created,
+            'updated' => $updated,
+            'errors' => $errors,
+        ], $failedCompletely ? 422 : 200);
     }
 
     /**
@@ -556,6 +608,19 @@ class MigrationController extends Controller
         $connection = $source->connectionName();
 
         return collect(Schema::connection($connection)->getTables())
+            ->filter(function ($table) use ($source) {
+                // On MySQL/MariaDB getTables() lists every schema the DB user
+                // can see — including this app's own tables. Only tables of
+                // the configured source database are usable (they are queried
+                // unqualified), so hide the rest.
+                if (!in_array($source->driver, ['mysql', 'mariadb'], true)) {
+                    return true;
+                }
+
+                $schema = is_array($table) ? ($table['schema'] ?? null) : ($table->schema ?? null);
+
+                return $schema === null || $schema === $source->database;
+            })
             ->map(fn ($table) => is_array($table) ? $table['name'] : $table->name)
             ->values()
             ->all();

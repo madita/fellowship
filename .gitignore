@@ -47,3 +47,6 @@ tmpclaude-*
 
 # php-cs-fixer toolchain dependencies (composer install in tools/php-cs-fixer)
 /tools/php-cs-fixer/vendor/
+
+# Local database dumps
+/*.sql

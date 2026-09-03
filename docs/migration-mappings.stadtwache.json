@@ -1,0 +1,200 @@
+{
+    "__readme": "Mappings replicating the former hardcoded stadtwache migration jobs. Import on Admin → Migration → Mappings → Import JSON (the source named 'stadtwache' must exist). Order: Events → Gallery Collections → Gallery Images → Wiki Terms → Wiki Pages, then run the post-import steps on the Runs tab. 'Wiki Pages' needs the MediaWiki ww_text table, which is not part of the stadtwache dump — load it first or the run fails.",
+    "mappings": [
+        {
+            "source": "stadtwache",
+            "name": "Stadtwache: Events",
+            "target": "events",
+            "source_table": "treffen_treffen",
+            "field_map": {
+                "title": {
+                    "source": "location",
+                    "transform": "html_decode"
+                },
+                "description": {
+                    "source": "bericht",
+                    "transform": "html_decode"
+                },
+                "startDate": {
+                    "source": "starttag",
+                    "transform": "date",
+                    "format": "Ymd"
+                },
+                "endDate": {
+                    "source": "endtag",
+                    "transform": "date",
+                    "format": "Ymd"
+                },
+                "startTime": {
+                    "source": "startzeit",
+                    "transform": "time",
+                    "format": "Hi"
+                },
+                "endTime": {
+                    "source": "endzeit",
+                    "transform": "time",
+                    "format": "Hi"
+                },
+                "lat": {
+                    "source": "x",
+                    "transform": "float"
+                },
+                "lng": {
+                    "source": "y",
+                    "transform": "float"
+                },
+                "album": {
+                    "source": "foto_topic"
+                },
+                "max_participants": {
+                    "source": "max_teiln"
+                },
+                "creator": {
+                    "source": "entryuser"
+                },
+                "last_edited_by": {
+                    "source": "lasteditby"
+                },
+                "user_id": {
+                    "default": 1
+                },
+                "event_type_id": {
+                    "default": 1
+                },
+                "created_at": {
+                    "source": "entrydate",
+                    "transform": "datetime",
+                    "format": "!Ymd"
+                }
+            },
+            "options": {
+                "locale": "de"
+            }
+        },
+        {
+            "source": "stadtwache",
+            "name": "Stadtwache: Gallery Collections",
+            "target": "gallery_collections",
+            "source_table": "treffen_bilder",
+            "field_map": {
+                "name": {
+                    "source": "topic"
+                },
+                "taxonomy_id": {
+                    "default": 1
+                },
+                "user_id": {
+                    "default": 1
+                },
+                "created_at": {
+                    "source": "datum",
+                    "transform": "datetime"
+                }
+            },
+            "options": {
+                "locale": "de"
+            }
+        },
+        {
+            "source": "stadtwache",
+            "name": "Stadtwache: Gallery Images",
+            "target": "gallery_images",
+            "source_table": "treffen_bilder",
+            "field_map": {
+                "collection": {
+                    "source": "topic"
+                },
+                "base_path": {
+                    "default": "C:\\Users\\madit\\PhpstormProjects\\stadtwache\\treffen\\uploads"
+                },
+                "file": {
+                    "template": "{topic|fold}/{id}.jpg"
+                },
+                "caption": {
+                    "source": "info"
+                },
+                "uploader": {
+                    "source": "uploader"
+                },
+                "created_at": {
+                    "source": "datum",
+                    "transform": "datetime"
+                }
+            },
+            "options": {
+                "locale": "de"
+            }
+        },
+        {
+            "source": "stadtwache",
+            "name": "Stadtwache: Wiki Terms",
+            "target": "wiki_terms",
+            "source_table": "ww_category",
+            "field_map": {
+                "name": {
+                    "source": "cat_title",
+                    "transform": "underscores_to_spaces"
+                }
+            },
+            "options": {
+                "locale": "de"
+            }
+        },
+        {
+            "source": "stadtwache",
+            "name": "Stadtwache: Wiki Pages (needs ww_text)",
+            "target": "wiki_pages",
+            "source_table": "ww_page",
+            "field_map": {
+                "title": {
+                    "source": "page_title",
+                    "transform": "underscores_to_spaces"
+                },
+                "content": {
+                    "source": "old_text"
+                },
+                "status": {
+                    "source": "page_is_redirect",
+                    "transform": "bool"
+                },
+                "locale": {
+                    "default": "de"
+                },
+                "user_id": {
+                    "default": 1
+                },
+                "created_at": {
+                    "source": "rev_timestamp",
+                    "transform": "datetime",
+                    "format": "YmdHis"
+                }
+            },
+            "options": {
+                "locale": "de",
+                "joins": [
+                    {
+                        "table": "ww_revision",
+                        "type": "inner",
+                        "first": "ww_revision.rev_id",
+                        "operator": "=",
+                        "second": "ww_page.page_latest"
+                    },
+                    {
+                        "table": "ww_text",
+                        "type": "inner",
+                        "first": "ww_text.old_id",
+                        "operator": "=",
+                        "second": "ww_revision.rev_text_id"
+                    }
+                ],
+                "wheres": [
+                    {
+                        "column": "page_namespace",
+                        "operator": "=",
+                        "value": "0"
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -49,6 +49,10 @@ class MigrationTargets
                     ['key' => 'endTime', 'label' => 'End time', 'required' => false, 'hint' => 'time transform'],
                     ['key' => 'lat', 'label' => 'Latitude', 'required' => false],
                     ['key' => 'lng', 'label' => 'Longitude', 'required' => false],
+                    ['key' => 'album', 'label' => 'Gallery album name', 'required' => false, 'hint' => 'stored in the event details; "Link Gallery" uses it to attach the collection'],
+                    ['key' => 'max_participants', 'label' => 'Max participants', 'required' => false, 'hint' => 'stored in the event details options'],
+                    ['key' => 'creator', 'label' => 'Original creator (name)', 'required' => false, 'hint' => 'stored in the event details options'],
+                    ['key' => 'last_edited_by', 'label' => 'Last edited by (name)', 'required' => false, 'hint' => 'stored in the event details options'],
                     ['key' => 'user_id', 'label' => 'Owner user id', 'required' => false, 'hint' => 'default: 1'],
                     ['key' => 'event_type_id', 'label' => 'Event type id', 'required' => false, 'hint' => 'default: 1'],
                     ['key' => 'created_at', 'label' => 'Created at', 'required' => false, 'hint' => 'datetime transform'],
@@ -81,10 +85,34 @@ class MigrationTargets
             ],
             'gallery_collections' => [
                 'label' => 'Gallery Collections',
-                'description' => 'Import gallery collections (albums). Images are not transferred.',
+                'description' => 'Import gallery collections (albums). One collection per distinct name — duplicates are skipped, so a per-image table can be mapped directly. Use the Gallery Images target for the files.',
                 'fields' => [
                     ['key' => 'name', 'label' => 'Name', 'required' => true],
+                    ['key' => 'taxonomy_id', 'label' => 'Taxonomy id', 'required' => false, 'hint' => 'e.g. default 1'],
                     ['key' => 'user_id', 'label' => 'Owner user id', 'required' => false, 'hint' => 'default: 1'],
+                    ['key' => 'created_at', 'label' => 'Created at', 'required' => false, 'hint' => 'datetime transform'],
+                ],
+            ],
+            'gallery_images' => [
+                'label' => 'Gallery Images',
+                'description' => 'Attach image files from a folder on this server to existing gallery collections (import the collections first). One row per image; already-attached file names are skipped.',
+                'fields' => [
+                    ['key' => 'collection', 'label' => 'Collection name', 'required' => true],
+                    ['key' => 'base_path', 'label' => 'Image folder on this server', 'required' => true, 'hint' => 'set as default, e.g. C:\\archive\\uploads'],
+                    ['key' => 'file', 'label' => 'File (relative to folder)', 'required' => true, 'hint' => 'template e.g. {topic|fold}/{id}.jpg'],
+                    ['key' => 'caption', 'label' => 'Caption', 'required' => false],
+                    ['key' => 'uploader', 'label' => 'Uploader (name)', 'required' => false],
+                    ['key' => 'created_at', 'label' => 'Created at', 'required' => false, 'hint' => 'datetime transform'],
+                ],
+            ],
+            'wiki_terms' => [
+                'label' => 'Wiki Terms',
+                'description' => 'Import wiki categories as terms/taxonomies, with optional parent relations (e.g. MediaWiki: map namespace-14 pages joined with revision + text for descriptions, or categorylinks rows for the hierarchy).',
+                'fields' => [
+                    ['key' => 'name', 'label' => 'Category name', 'required' => true, 'hint' => 'underscores become spaces'],
+                    ['key' => 'description', 'label' => 'Description', 'required' => false],
+                    ['key' => 'convert_wikitext', 'label' => 'Convert wikitext', 'required' => false, 'hint' => 'default: 1 — set default 0 when the description is already HTML'],
+                    ['key' => 'parent', 'label' => 'Parent category name', 'required' => false, 'hint' => 'created as wiki taxonomy if missing'],
                 ],
             ],
         ];
@@ -118,7 +146,9 @@ class MigrationTargets
             'events' => self::importEvent($mapped),
             'forum_threads' => self::importForumThread($mapped),
             'wiki_pages' => self::importWikiPage($mapped),
+            'wiki_terms' => self::importWikiTerm($mapped),
             'gallery_collections' => self::importCollection($mapped),
+            'gallery_images' => self::importGalleryImage($mapped),
             default => throw new \InvalidArgumentException("Unknown migration target: {$target}"),
         };
     }
@@ -159,11 +189,20 @@ class MigrationTargets
         }
         $event->save();
 
-        if (isset($mapped['lat'], $mapped['lng'])) {
+        // Extra metadata lives in the event details options (the same keys
+        // the "Link Gallery" post-import step reads).
+        $options = array_filter([
+            'max' => $mapped['max_participants'] ?? null,
+            'creator' => $mapped['creator'] ?? null,
+            'lastEditedBy' => $mapped['last_edited_by'] ?? null,
+            'albumName' => $mapped['album'] ?? null,
+        ], fn ($value) => $value !== null && $value !== '');
+
+        if (isset($mapped['lat'], $mapped['lng']) || $options) {
             $event->details()->create([
-                'lat' => $mapped['lat'],
-                'lng' => $mapped['lng'],
-                'options' => json_encode([]),
+                'lat' => $mapped['lat'] ?? null,
+                'lng' => $mapped['lng'] ?? null,
+                'options' => json_encode($options),
             ]);
         }
 
@@ -260,12 +299,95 @@ class MigrationTargets
         return $title;
     }
 
-    private static function importCollection(array $mapped): string
+    private static function importCollection(array $mapped): ?string
     {
-        $collection = new Collection(['user_id' => $mapped['user_id'] ?? 1]);
-        $collection->name = $mapped['name'];
+        $name = trim((string) $mapped['name']);
+
+        if ($name === '' || Collection::whereTranslation('name', $name)->exists()) {
+            return null; // one collection per distinct name — skip duplicates
+        }
+
+        $collection = new Collection(array_filter([
+            'user_id' => $mapped['user_id'] ?? 1,
+            'taxonomy_id' => $mapped['taxonomy_id'] ?? null,
+        ]));
+        $collection->name = $name;
         $collection->save();
 
-        return (string) $mapped['name'];
+        if (!empty($mapped['created_at'])) {
+            Collection::whereKey($collection->id)->update(['created_at' => $mapped['created_at']]);
+        }
+
+        return $name;
+    }
+
+    private static function importGalleryImage(array $mapped): ?string
+    {
+        $name = trim((string) $mapped['collection']);
+        $collection = Collection::whereTranslation('name', $name)->first();
+        if (!$collection) {
+            throw new \RuntimeException("Collection \"{$name}\" not found — import the collections first");
+        }
+
+        $relative = str_replace(['\\', '/'], DIRECTORY_SEPARATOR, trim((string) $mapped['file']));
+        $path = rtrim((string) $mapped['base_path'], '/\\') . DIRECTORY_SEPARATOR . $relative;
+        if (!is_file($path)) {
+            throw new \RuntimeException("File not found: {$path}");
+        }
+
+        $fileName = basename($relative);
+        $alreadyAttached = $collection->media()
+            ->where('collection_name', 'gallery')
+            ->where('file_name', $fileName)
+            ->exists();
+        if ($alreadyAttached) {
+            return null; // re-runs skip files that are already attached
+        }
+
+        $properties = array_filter([
+            'album' => $name,
+            'uploader' => $mapped['uploader'] ?? null,
+            'caption' => $mapped['caption'] ?? null,
+        ], fn ($value) => $value !== null && $value !== '');
+
+        $media = $collection->addMedia($path)
+            ->preservingOriginal()
+            ->usingFileName($fileName)
+            ->withCustomProperties($properties)
+            ->toMediaCollection('gallery');
+
+        if (!empty($mapped['created_at'])) {
+            $media->created_at = $mapped['created_at'];
+            $media->save();
+        }
+
+        return $fileName;
+    }
+
+    private static function importWikiTerm(array $mapped): string
+    {
+        $name = trim(str_replace('_', ' ', (string) $mapped['name']));
+
+        $term = Term::firstOrCreateByTitle($name);
+        $taxonomy = Taxonomy::firstOrNew(['taxonomy' => 'wiki', 'term_id' => $term->id]);
+
+        $description = $mapped['description'] ?? null;
+        if ($description !== null && $description !== '') {
+            $convert = filter_var($mapped['convert_wikitext'] ?? true, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true;
+            $taxonomy->description = $convert
+                ? (new WikitextConverter())->toHtml((string) $description)
+                : (string) $description;
+        }
+
+        $parentName = trim(str_replace('_', ' ', (string) ($mapped['parent'] ?? '')));
+        if ($parentName !== '') {
+            $parentTerm = Term::firstOrCreateByTitle($parentName);
+            $parent = Taxonomy::firstOrCreate(['taxonomy' => 'wiki', 'term_id' => $parentTerm->id]);
+            $taxonomy->parent_id = $parent->id;
+        }
+
+        $taxonomy->save();
+
+        return $name;
     }
 }

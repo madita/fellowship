@@ -34,6 +34,24 @@ class GenericImportJob extends BaseMigrationJob
         $mapping = MigrationMapping::with('source')->findOrFail($this->mappingId);
         $mapper = new RowMapper($mapping->field_map);
 
+        // Translatable models write to the app locale — imports of legacy
+        // content should land in the language the content is written in.
+        $previousLocale = app()->getLocale();
+        $locale = $mapping->options['locale'] ?? null;
+        if ($locale) {
+            app()->setLocale($locale);
+            $this->log('info', "Importing with content locale \"{$locale}\"");
+        }
+
+        try {
+            $this->import($mapping, $mapper);
+        } finally {
+            app()->setLocale($previousLocale);
+        }
+    }
+
+    private function import(MigrationMapping $mapping, RowMapper $mapper): void
+    {
         $query = SourceQuery::build($mapping);
 
         $total = (clone $query)->count();

@@ -460,6 +460,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
         Route::get('/migrations/sources/{source}/tables/{table}/columns', 'App\Http\Controllers\Admin\MigrationController@sourceColumns');
         Route::get('/migrations/targets', 'App\Http\Controllers\Admin\MigrationController@targets');
         Route::get('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@mappings');
+        Route::get('/migrations/mappings/export', 'App\Http\Controllers\Admin\MigrationController@exportMappings');
+        Route::post('/migrations/mappings/import', 'App\Http\Controllers\Admin\MigrationController@importMappings');
         Route::post('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@storeMapping');
         Route::patch('/migrations/mappings/{mapping}', 'App\Http\Controllers\Admin\MigrationController@updateMapping');
         Route::delete('/migrations/mappings/{mapping}', 'App\Http\Controllers\Admin\MigrationController@deleteMapping');

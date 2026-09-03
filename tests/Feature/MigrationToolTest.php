@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Jobs\Migrations\GenericImportJob;
+use App\Jobs\Migrations\MigrateLinkGalleryJob;
+use App\Models\Collection;
 use App\Models\Event\Event;
 use App\Models\Event\EventType;
 use App\Models\MigrationLog;
@@ -43,10 +45,10 @@ class MigrationToolTest extends TestCase
         // Build a legacy-style source database.
         $this->sourceDbPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'migration_source_' . uniqid() . '.sqlite';
         $pdo = new PDO('sqlite:' . $this->sourceDbPath);
-        $pdo->exec('CREATE TABLE treffen (location TEXT, bericht TEXT, starttag TEXT, startzeit TEXT, x REAL, y REAL)');
-        $pdo->exec("INSERT INTO treffen VALUES ('Town Hall &amp; Garden', 'First meetup', '20240315', '1830', 52.5, 13.4)");
-        $pdo->exec("INSERT INTO treffen VALUES ('Old Docks', 'Second meetup', '20240401', '1900', NULL, NULL)");
-        $pdo->exec("INSERT INTO treffen VALUES ('Broken Row', 'No date at all', NULL, NULL, NULL, NULL)");
+        $pdo->exec('CREATE TABLE treffen (location TEXT, bericht TEXT, starttag TEXT, startzeit TEXT, x REAL, y REAL, foto_topic TEXT)');
+        $pdo->exec("INSERT INTO treffen VALUES ('Town Hall &amp; Garden', 'First meetup', '20240315', '1830', 52.5, 13.4, 'Hanau Juni 2004')");
+        $pdo->exec("INSERT INTO treffen VALUES ('Old Docks', 'Second meetup', '20240401', '1900', NULL, NULL, NULL)");
+        $pdo->exec("INSERT INTO treffen VALUES ('Broken Row', 'No date at all', NULL, NULL, NULL, NULL, NULL)");
         unset($pdo);
     }
 
@@ -79,6 +81,7 @@ class MigrationToolTest extends TestCase
                 'startTime' => ['source' => 'startzeit', 'transform' => 'time', 'format' => 'Hi'],
                 'lat' => ['source' => 'x', 'transform' => 'float'],
                 'lng' => ['source' => 'y', 'transform' => 'float'],
+                'album' => ['source' => 'foto_topic'],
                 'user_id' => ['default' => 1],
                 'event_type_id' => ['default' => 1],
             ],
@@ -155,6 +158,8 @@ class MigrationToolTest extends TestCase
         $this->assertSame('Town Hall & Garden', $event->title);
         $details = $event->details()->first();
         $this->assertEquals(52.5, (float) $details->lat);
+        // Album name lands in the details options for the Link Gallery step.
+        $this->assertSame('Hanau Juni 2004', json_decode($details->options)->albumName);
 
         $status = $this->actingAs($this->admin, 'sanctum')
             ->getJson("/api/admin/migrations/status/{$batchId}")
@@ -310,6 +315,254 @@ class MigrationToolTest extends TestCase
         $this->assertSame('failed', $running->fresh()->status);
         $logMessages = array_column($running->fresh()->logs ?? [], 'message');
         $this->assertContains('Skipped: migration was cancelled before it started', $logMessages);
+    }
+
+    /**
+     * Regression: collections keep their name in collection_translations —
+     * linking galleries to events must match via the translation, not a
+     * (removed) collections.name column.
+     */
+    public function test_link_gallery_job_matches_collections_via_translation(): void
+    {
+        $event = new Event();
+        $event->title = 'Sommerfest';
+        $event->user_id = $this->admin->id;
+        $event->event_type_id = 1;
+        $event->startDate = '2004-06-01';
+        $event->endDate = '2004-06-01';
+        $event->save();
+        $event->details()->create([
+            'lat' => 0,
+            'lng' => 0,
+            'options' => json_encode(['albumName' => 'Hanau Juni 2004']),
+        ]);
+
+        $collection = new Collection(['user_id' => $this->admin->id]);
+        $collection->name = 'Hanau Juni 2004';
+        $collection->save();
+
+        $batchId = (string) Str::uuid();
+        $log = MigrationLog::create([
+            'batch_id' => $batchId,
+            'migration_key' => 'linkGallery',
+            'migration_name' => 'Link Gallery to Events',
+            'status' => 'pending',
+        ]);
+
+        dispatch(new MigrateLinkGalleryJob($batchId, $log->id));
+
+        $log = $log->fresh();
+        $this->assertSame('completed', $log->status);
+        $messages = array_column($log->logs ?? [], 'message');
+        $this->assertContains('Link Gallery complete: 1 linked, 0 not found', $messages);
+    }
+
+    public function test_wiki_terms_import_builds_the_category_hierarchy(): void
+    {
+        $dbPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'wiki_terms_' . uniqid() . '.sqlite';
+        $pdo = new PDO('sqlite:' . $dbPath);
+        $pdo->exec('CREATE TABLE kategorien (name TEXT, beschreibung TEXT, parent TEXT)');
+        $insert = $pdo->prepare('INSERT INTO kategorien VALUES (?, ?, ?)');
+        $insert->execute(['Orga', "== Info ==\nDie '''Organisation'''.", null]);
+        $insert->execute(['Treffen_Archiv', null, 'Orga']);
+        unset($insert, $pdo);
+
+        try {
+            $source = MigrationSource::create(['name' => 'Wiki cats', 'driver' => 'sqlite', 'database' => $dbPath]);
+            $mapping = MigrationMapping::create([
+                'migration_source_id' => $source->id,
+                'name' => 'Wiki categories',
+                'target' => 'wiki_terms',
+                'source_table' => 'kategorien',
+                'field_map' => [
+                    'name' => ['source' => 'name'],
+                    'description' => ['source' => 'beschreibung'],
+                    'parent' => ['source' => 'parent'],
+                ],
+            ]);
+
+            $this->actingAs($this->admin, 'sanctum')
+                ->postJson("/api/admin/migrations/mappings/{$mapping->id}/run")
+                ->assertStatus(200);
+
+            $orga = \App\Models\Tag\Term::whereTranslation('title', 'Orga')->firstOrFail();
+            $orgaTax = \App\Models\Tag\Taxonomy::where('taxonomy', 'wiki')->where('term_id', $orga->id)->firstOrFail();
+            $this->assertStringContainsString('<h2', $orgaTax->description);
+            $this->assertStringContainsString('<strong class="highlight">Organisation</strong>', $orgaTax->description);
+
+            // Child hangs below its parent, underscores become spaces.
+            $child = \App\Models\Tag\Term::whereTranslation('title', 'Treffen Archiv')->firstOrFail();
+            $childTax = \App\Models\Tag\Taxonomy::where('taxonomy', 'wiki')->where('term_id', $child->id)->firstOrFail();
+            $this->assertSame($orgaTax->id, $childTax->parent_id);
+        } finally {
+            @unlink($dbPath);
+        }
+    }
+
+    public function test_gallery_collections_and_images_import_from_folder(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        // Image archive on "this server": {folded topic}/{id}.jpg
+        $archive = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'gallery_' . uniqid();
+        mkdir($archive . DIRECTORY_SEPARATOR . 'Gruene Wiese', 0777, true);
+        file_put_contents($archive . DIRECTORY_SEPARATOR . 'Gruene Wiese' . DIRECTORY_SEPARATOR . '1.jpg', 'jpg-bytes-1');
+        file_put_contents($archive . DIRECTORY_SEPARATOR . 'Gruene Wiese' . DIRECTORY_SEPARATOR . '2.jpg', 'jpg-bytes-2');
+
+        $dbPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'bilder_' . uniqid() . '.sqlite';
+        $pdo = new PDO('sqlite:' . $dbPath);
+        $pdo->exec('CREATE TABLE bilder (id INTEGER, topic TEXT, info TEXT, uploader TEXT, datum TEXT)');
+        $pdo->exec("INSERT INTO bilder VALUES (1, 'Grüne Wiese', 'Erstes Bild', 'madita', '2004-06-01 12:00:00')");
+        $pdo->exec("INSERT INTO bilder VALUES (2, 'Grüne Wiese', NULL, 'madita', '2004-06-01 12:05:00')");
+        $pdo->exec("INSERT INTO bilder VALUES (3, 'Grüne Wiese', 'Fehlt', 'madita', '2004-06-01 12:10:00')"); // file missing
+        unset($pdo);
+
+        try {
+            $source = MigrationSource::create(['name' => 'Bilder', 'driver' => 'sqlite', 'database' => $dbPath]);
+
+            // Collections first: one per distinct topic (duplicates skipped).
+            $collections = MigrationMapping::create([
+                'migration_source_id' => $source->id,
+                'name' => 'Albums',
+                'target' => 'gallery_collections',
+                'source_table' => 'bilder',
+                'field_map' => [
+                    'name' => ['source' => 'topic'],
+                    'user_id' => ['default' => 1],
+                    'created_at' => ['source' => 'datum', 'transform' => 'datetime'],
+                ],
+            ]);
+            $this->actingAs($this->admin, 'sanctum')
+                ->postJson("/api/admin/migrations/mappings/{$collections->id}/run")
+                ->assertStatus(200);
+
+            $this->assertSame(1, Collection::count());
+            $collection = Collection::whereTranslation('name', 'Grüne Wiese')->firstOrFail();
+
+            // Then the files, resolved via a path template.
+            $images = MigrationMapping::create([
+                'migration_source_id' => $source->id,
+                'name' => 'Album images',
+                'target' => 'gallery_images',
+                'source_table' => 'bilder',
+                'field_map' => [
+                    'collection' => ['source' => 'topic'],
+                    'base_path' => ['default' => $archive],
+                    'file' => ['template' => '{topic|fold}/{id}.jpg'],
+                    'caption' => ['source' => 'info'],
+                    'uploader' => ['source' => 'uploader'],
+                    'created_at' => ['source' => 'datum', 'transform' => 'datetime'],
+                ],
+            ]);
+            $this->actingAs($this->admin, 'sanctum')
+                ->postJson("/api/admin/migrations/mappings/{$images->id}/run")
+                ->assertStatus(200);
+
+            $media = $collection->getMedia('gallery');
+            $this->assertCount(2, $media); // the third file does not exist → row error
+            $this->assertSame('Erstes Bild', $media[0]->getCustomProperty('caption'));
+            $this->assertSame('madita', $media[0]->getCustomProperty('uploader'));
+
+            // Re-running skips already-attached files instead of duplicating.
+            $this->actingAs($this->admin, 'sanctum')
+                ->postJson("/api/admin/migrations/mappings/{$images->id}/run")
+                ->assertStatus(200);
+            $this->assertCount(2, $collection->fresh()->getMedia('gallery'));
+        } finally {
+            @unlink($dbPath);
+            @unlink($archive . DIRECTORY_SEPARATOR . 'Gruene Wiese' . DIRECTORY_SEPARATOR . '1.jpg');
+            @unlink($archive . DIRECTORY_SEPARATOR . 'Gruene Wiese' . DIRECTORY_SEPARATOR . '2.jpg');
+            @rmdir($archive . DIRECTORY_SEPARATOR . 'Gruene Wiese');
+            @rmdir($archive);
+        }
+    }
+
+    public function test_import_writes_translations_to_the_mapping_locale(): void
+    {
+        $mapping = $this->createEventsMapping($this->createSource());
+        $mapping->update(['options' => ['locale' => 'de']]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/admin/migrations/mappings/{$mapping->id}/run")
+            ->assertStatus(200);
+
+        $event = Event::whereDate('startDate', '2024-03-15')->firstOrFail();
+        $this->assertNotNull($event->translate('de'));
+        $this->assertSame('Town Hall & Garden', $event->translate('de')->title);
+
+        // The worker's locale is restored after the run.
+        $this->assertNotSame('de', app()->getLocale());
+    }
+
+    public function test_mappings_can_be_imported_and_exported_as_json(): void
+    {
+        $this->createSource(); // named "Legacy DB"
+
+        $payload = [
+            'mappings' => [
+                [
+                    'source' => 'Legacy DB',
+                    'name' => 'Imported events',
+                    'target' => 'events',
+                    'source_table' => 'treffen',
+                    'field_map' => [
+                        'title' => ['source' => 'location', 'transform' => 'html_decode'],
+                        'startDate' => ['source' => 'starttag', 'transform' => 'date', 'format' => 'Ymd'],
+                        'user_id' => ['default' => 1],
+                        'event_type_id' => ['default' => 1],
+                    ],
+                    'options' => [
+                        'wheres' => [['column' => 'starttag', 'operator' => '!=', 'value' => '']],
+                    ],
+                ],
+                [
+                    'source' => 'No Such Source',
+                    'name' => 'Broken mapping',
+                    'target' => 'events',
+                    'source_table' => 'x',
+                    'field_map' => ['title' => ['source' => 'y']],
+                ],
+            ],
+        ];
+
+        $result = $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/migrations/mappings/import', $payload)
+            ->assertStatus(200)
+            ->json();
+
+        $this->assertSame(1, $result['created']);
+        $this->assertSame(0, $result['updated']);
+        $this->assertCount(1, $result['errors']);
+        $this->assertStringContainsString('No Such Source', $result['errors'][0]);
+
+        $mapping = MigrationMapping::where('name', 'Imported events')->firstOrFail();
+        $this->assertSame('events', $mapping->target);
+        $this->assertSame('html_decode', $mapping->field_map['title']['transform']);
+
+        // Re-importing the same JSON updates instead of duplicating.
+        $payload['mappings'][0]['field_map']['description'] = ['source' => 'bericht'];
+        $again = $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/migrations/mappings/import', $payload)
+            ->assertStatus(200)
+            ->json();
+        $this->assertSame(0, $again['created']);
+        $this->assertSame(1, $again['updated']);
+        $this->assertSame(1, MigrationMapping::where('name', 'Imported events')->count());
+        $this->assertSame('bericht', $mapping->fresh()->field_map['description']['source']);
+
+        // Export round-trips the same shape (source referenced by name).
+        $export = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/mappings/export')
+            ->assertStatus(200)
+            ->json();
+        $this->assertSame('Legacy DB', $export['mappings'][0]['source']);
+        $this->assertSame('Imported events', $export['mappings'][0]['name']);
+        $this->assertArrayHasKey('wheres', $export['mappings'][0]['options']);
+
+        // The repo ships a ready-made JSON for the old hardcoded jobs — keep it valid.
+        $shipped = json_decode(file_get_contents(base_path('docs/migration-mappings.stadtwache.json')), true);
+        $this->assertIsArray($shipped['mappings']);
+        $this->assertCount(5, $shipped['mappings']);
     }
 
     public function test_non_admins_cannot_use_the_tool(): void

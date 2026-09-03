@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
  * German [[Kategorie:…]]).
  *
  * This is the generalised version of the transformation the legacy
- * MigrateWikiPagesJob performed inline: no hardcoded archive paths, both
+ * MigrateWikiPagesJob (since removed) performed inline: no hardcoded archive paths, both
  * English and German namespaces, and image references are stripped instead
  * of copied from a local folder (media files are not part of a DB import).
  */

@@ -29,7 +29,8 @@ class MigrateLinkGalleryJob extends BaseMigrationJob
                 $options = json_decode($details['options']);
 
                 if (isset($options->albumName)) {
-                    $gallery = Collection::where('name', $options->albumName)->first();
+                    // name lives in collection_translations — match via translation.
+                    $gallery = Collection::whereTranslation('name', $options->albumName)->first();
                     if ($gallery) {
                         $event->relate($gallery);
                         $linked++;

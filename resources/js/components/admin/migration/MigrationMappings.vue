@@ -2,9 +2,17 @@
     <v-card>
         <v-card-title class="d-flex align-center justify-space-between">
             <span>{{ $t('migrationTool.mappings') }}</span>
-            <v-btn color="primary" size="small" prepend-icon="mdi-plus" @click="openEditor()">
-                {{ $t('migrationTool.addMapping') }}
-            </v-btn>
+            <div>
+                <v-btn size="small" variant="text" prepend-icon="mdi-download" class="mr-1" @click="exportMappings">
+                    {{ $t('migrationTool.exportJson') }}
+                </v-btn>
+                <v-btn size="small" variant="text" prepend-icon="mdi-upload" class="mr-1" @click="importDialog = true">
+                    {{ $t('migrationTool.importJson') }}
+                </v-btn>
+                <v-btn color="primary" size="small" prepend-icon="mdi-plus" @click="openEditor()">
+                    {{ $t('migrationTool.addMapping') }}
+                </v-btn>
+            </div>
         </v-card-title>
         <v-card-text class="pa-0">
             <v-table v-if="mappings.length" density="comfortable">
@@ -49,6 +57,35 @@
             </div>
         </v-card-text>
 
+        <!-- Import JSON dialog -->
+        <v-dialog v-model="importDialog" max-width="720">
+            <v-card>
+                <v-card-title>{{ $t('migrationTool.importJson') }}</v-card-title>
+                <v-card-text>
+                    <div class="text-caption text-medium-emphasis mb-2">{{ $t('migrationTool.importHint') }}</div>
+                    <v-textarea
+                        v-model="importText"
+                        rows="12"
+                        variant="outlined"
+                        density="compact"
+                        placeholder='{ "mappings": [ … ] }'
+                        hide-details
+                        class="import-textarea"
+                    />
+                    <v-alert v-if="importErrors.length" type="warning" variant="tonal" density="compact" class="mt-2">
+                        <div v-for="(err, i) in importErrors" :key="i">{{ err }}</div>
+                    </v-alert>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn @click="importDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" :loading="importing" :disabled="!importText.trim()" @click="doImport">
+                        {{ $t('migrationTool.importJson') }}
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
         <!-- Mapping editor dialog -->
         <v-dialog v-model="editor" max-width="980" scrollable>
             <v-card>
@@ -57,10 +94,10 @@
                 </v-card-title>
                 <v-card-text>
                     <v-row dense>
-                        <v-col cols="12" md="4">
+                        <v-col cols="12" md="3">
                             <v-text-field v-model="form.name" :label="$t('common.name')" variant="outlined" density="compact" />
                         </v-col>
-                        <v-col cols="12" md="4">
+                        <v-col cols="12" md="3">
                             <v-select
                                 v-model="form.migration_source_id"
                                 :items="sources"
@@ -72,7 +109,7 @@
                                 @update:model-value="onSourceChanged"
                             />
                         </v-col>
-                        <v-col cols="12" md="4">
+                        <v-col cols="12" md="3">
                             <v-select
                                 v-model="form.target"
                                 :items="targets"
@@ -82,6 +119,17 @@
                                 variant="outlined"
                                 density="compact"
                                 @update:model-value="onTargetChanged"
+                            />
+                        </v-col>
+                        <v-col cols="12" md="3">
+                            <v-text-field
+                                v-model="form.options.locale"
+                                :label="$t('migrationTool.contentLocale')"
+                                :hint="$t('migrationTool.contentLocaleHint')"
+                                persistent-hint
+                                placeholder="de"
+                                variant="outlined"
+                                density="compact"
                             />
                         </v-col>
                     </v-row>
@@ -207,11 +255,12 @@
                         <v-table density="compact" class="mapping-grid mb-3">
                             <thead>
                                 <tr>
-                                    <th style="width: 22%">{{ $t('migrationTool.targetField') }}</th>
-                                    <th style="width: 26%">{{ $t('migrationTool.sourceColumn') }}</th>
-                                    <th style="width: 18%">{{ $t('migrationTool.transform') }}</th>
-                                    <th style="width: 14%">{{ $t('migrationTool.format') }}</th>
-                                    <th style="width: 20%">{{ $t('migrationTool.defaultValue') }}</th>
+                                    <th style="width: 20%">{{ $t('migrationTool.targetField') }}</th>
+                                    <th style="width: 22%">{{ $t('migrationTool.sourceColumn') }}</th>
+                                    <th style="width: 14%">{{ $t('migrationTool.transform') }}</th>
+                                    <th style="width: 12%">{{ $t('migrationTool.format') }}</th>
+                                    <th style="width: 16%">{{ $t('migrationTool.template') }}</th>
+                                    <th style="width: 16%">{{ $t('migrationTool.defaultValue') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -249,6 +298,15 @@
                                             v-model="form.field_map[field.key].format"
                                             :disabled="!['date', 'time', 'datetime'].includes(form.field_map[field.key].transform)"
                                             placeholder="Ymd"
+                                            hide-details
+                                            variant="outlined"
+                                            density="compact"
+                                        />
+                                    </td>
+                                    <td>
+                                        <v-text-field
+                                            v-model="form.field_map[field.key].template"
+                                            :placeholder="$t('migrationTool.templatePlaceholder')"
                                             hide-details
                                             variant="outlined"
                                             density="compact"
@@ -335,6 +393,10 @@ const operators = ['=', '!=', '<', '>', '<=', '>=', 'like'];
 
 const editor = ref(false);
 const editing = ref(null);
+const importDialog = ref(false);
+const importText = ref('');
+const importErrors = ref([]);
+const importing = ref(false);
 const saving = ref(false);
 const previewing = ref(false);
 const runningId = ref(null);
@@ -345,7 +407,7 @@ const error = ref('');
 
 const emptyForm = () => ({
     name: '', migration_source_id: null, target: null, source_table: null,
-    field_map: {}, options: { joins: [], wheres: [] },
+    field_map: {}, options: { joins: [], wheres: [], locale: '' },
 });
 
 const form = ref(emptyForm());
@@ -408,6 +470,7 @@ const ensureFieldMap = () => {
             source: null,
             transform: 'none',
             format: '',
+            template: '',
             default: '',
             ...(form.value.field_map[field.key] || {}),
         };
@@ -437,6 +500,7 @@ const openEditor = async (mapping = null) => {
             options: {
                 joins: JSON.parse(JSON.stringify(mapping.options?.joins || [])),
                 wheres: JSON.parse(JSON.stringify(mapping.options?.wheres || [])),
+                locale: mapping.options?.locale || '',
             },
         }
         : emptyForm();
@@ -531,12 +595,14 @@ const cleanedForm = () => ({
         wheres: form.value.options.wheres
             .filter(where => where.column)
             .map(where => ({ ...where, operator: where.operator || '=', value: where.value ?? '' })),
+        ...(form.value.options.locale ? { locale: form.value.options.locale } : {}),
     },
     field_map: Object.fromEntries(
         Object.entries(form.value.field_map).map(([key, spec]) => {
             const cleaned = { ...spec };
             if (!cleaned.source) delete cleaned.source;
             if (!cleaned.format) delete cleaned.format;
+            if (!cleaned.template) delete cleaned.template;
             if (cleaned.default === '' || cleaned.default === null) delete cleaned.default;
             if (!cleaned.transform || cleaned.transform === 'none') delete cleaned.transform;
             return [key, cleaned];
@@ -590,6 +656,49 @@ const run = async (mapping) => {
         emit('notify', { text: e.response?.data?.message || e.message, color: 'error' });
     } finally {
         runningId.value = null;
+    }
+};
+
+const exportMappings = async () => {
+    try {
+        const { data } = await axios.get('/api/admin/migrations/mappings/export');
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'migration-mappings.json';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    } catch (e) {
+        emit('notify', { text: e.response?.data?.message || e.message, color: 'error' });
+    }
+};
+
+const doImport = async () => {
+    importErrors.value = [];
+    let payload;
+    try {
+        payload = JSON.parse(importText.value);
+    } catch (e) {
+        importErrors.value = [t('migrationTool.invalidJson')];
+        return;
+    }
+
+    importing.value = true;
+    try {
+        const { data } = await axios.post('/api/admin/migrations/mappings/import', payload);
+        importErrors.value = data.errors || [];
+        await fetchAll();
+        emit('notify', { text: t('migrationTool.importResult', { created: data.created, updated: data.updated }) });
+        if (!importErrors.value.length) {
+            importDialog.value = false;
+            importText.value = '';
+        }
+    } catch (e) {
+        importErrors.value = e.response?.data?.errors?.length
+            ? e.response.data.errors
+            : [e.response?.data?.message || e.message];
+    } finally {
+        importing.value = false;
     }
 };
 

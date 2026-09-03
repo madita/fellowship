@@ -77,6 +77,28 @@ class RowMapperTest extends TestCase
         $this->assertSame(['title' => 'Night Watch HQ'], $mapper->map(['page_title' => 'Night_Watch_HQ']));
     }
 
+    public function test_template_combines_columns_with_modifiers(): void
+    {
+        $mapper = new RowMapper([
+            'file' => ['template' => '{topic|fold}/{id}.jpg'],
+            'url' => ['template' => 'events/{topic|slug}'],
+        ]);
+
+        $mapped = $mapper->map(['topic' => 'Grüne Wiese/2004', 'id' => 7]);
+
+        $this->assertSame('Gruene Wiese_2004/7.jpg', $mapped['file']);
+        $this->assertSame('events/grune-wiese2004', $mapped['url']);
+    }
+
+    public function test_template_with_missing_column_falls_back_to_default(): void
+    {
+        $mapper = new RowMapper([
+            'file' => ['template' => '{folder}/{id}.jpg', 'default' => 'unknown.jpg'],
+        ]);
+
+        $this->assertSame(['file' => 'unknown.jpg'], $mapper->map(['id' => 7]));
+    }
+
     public function test_missing_column_and_static_defaults(): void
     {
         $mapper = new RowMapper([

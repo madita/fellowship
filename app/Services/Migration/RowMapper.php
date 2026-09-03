@@ -12,6 +12,10 @@ use DateTime;
  *  - transform: none|trim|html_decode|underscores_to_spaces|int|float|bool|json|date|time|datetime
  *  - format:    input format for the date/time/datetime transforms
  *               (e.g. "Ymd", "Hi"); defaults to letting PHP parse freely
+ *  - template:  string combining several columns, e.g. "{topic|fold}/{id}.jpg";
+ *               placeholders are {column}, {column|slug} (URL slug) and
+ *               {column|fold} (fold umlauts/specials for file system names).
+ *               Takes precedence over source; null when any column is empty.
  *  - default:   value used when the column is missing/null/empty
  *
  * Outputs are normalised: date => Y-m-d, time => H:i:s,
@@ -51,8 +55,12 @@ class RowMapper
     {
         $value = null;
 
+        $template = $spec['template'] ?? null;
         $sourceColumn = $spec['source'] ?? null;
-        if ($sourceColumn !== null && $sourceColumn !== '') {
+
+        if ($template !== null && $template !== '') {
+            $value = $this->applyTemplate($template, $row);
+        } elseif ($sourceColumn !== null && $sourceColumn !== '') {
             $value = $row[$sourceColumn] ?? null;
             $value = $this->transform($value, $spec['transform'] ?? 'none', $spec['format'] ?? null);
         }
@@ -62,6 +70,57 @@ class RowMapper
         }
 
         return $value;
+    }
+
+    /**
+     * Substitute {column} / {column|slug} / {column|fold} placeholders with
+     * row values. Returns null when any referenced column is missing/empty,
+     * so the field can fall back to its default.
+     */
+    private function applyTemplate(string $template, array $row): ?string
+    {
+        $missing = false;
+
+        $result = preg_replace_callback(
+            '/\{([A-Za-z0-9_]+)(?:\|(slug|fold))?\}/',
+            function ($match) use ($row, &$missing) {
+                $value = $row[$match[1]] ?? null;
+                if ($value === null || $value === '') {
+                    $missing = true;
+
+                    return '';
+                }
+
+                return match ($match[2] ?? '') {
+                    'slug' => \Illuminate\Support\Str::slug((string) $value),
+                    'fold' => self::foldForFilesystem((string) $value),
+                    default => (string) $value,
+                };
+            },
+            $template
+        );
+
+        return $missing ? null : $result;
+    }
+
+    /**
+     * Fold umlauts/accents and path-hostile characters the way legacy file
+     * archives commonly name their folders (ä→ae, / → _, …).
+     */
+    public static function foldForFilesystem(string $value): string
+    {
+        $value = strtr($value, [
+            'ä' => 'ae', 'Ä' => 'Ae',
+            'ö' => 'oe', 'Ö' => 'Oe',
+            'ü' => 'ue', 'Ü' => 'Ue',
+            'ß' => 'ss',
+            'é' => 'e', 'è' => 'e', 'ê' => 'e',
+        ]);
+
+        return strtr($value, [
+            '/' => '_', '\\' => '_', ':' => '_', '?' => '_',
+            '&' => '_', '(' => '_', ')' => '_',
+        ]);
     }
 
     private function transform(mixed $value, string $transform, ?string $format): mixed
