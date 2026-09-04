@@ -16,8 +16,9 @@ class MigrateWikiTermsLinkingJob extends BaseMigrationJob
 
     protected function runMigration(): void
     {
+        // description lives in taxonomy_translations — match via translation.
         $taxonomies = Taxonomy::where('taxonomy', 'wiki')
-            ->where('description', 'LIKE', '%[[%')
+            ->whereTranslationLike('description', '%[[%')
             ->get();
 
         $this->setTotal($taxonomies->count());

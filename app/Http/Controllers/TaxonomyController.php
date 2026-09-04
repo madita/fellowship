@@ -94,7 +94,11 @@ class TaxonomyController extends Controller
                 'taxable_title'     => $data->{$data->getTaxableTitle()},
                 'category'          => $taxonomy,
                 'data'              => $data,
-                'taxonomy'          => collect($taxonomy->get(['id', 'taxonomy', 'parent_id', 'term_id', 'description']))->where('id', $taxable->taxonomy_id),
+                // description lives in taxonomy_translations — the translated
+                // attribute is appended on serialization, don't select it.
+                // values() so the filtered collection serialises as a JSON
+                // array (the frontend reads taxonomy[0]).
+                'taxonomy'          => collect($taxonomy->get(['id', 'taxonomy', 'parent_id', 'term_id']))->where('id', $taxable->taxonomy_id)->values(),
             ];
         });
 

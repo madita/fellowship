@@ -72,6 +72,25 @@ class WikiShowTest extends TestCase
         $this->assertSame('Tagesordnung', $response->json('wiki.title'));
     }
 
+    /**
+     * Regression: taxonomy descriptions live in taxonomy_translations —
+     * the category (taxables) endpoint must not select the moved column.
+     */
+    public function test_category_page_lists_its_wiki_pages(): void
+    {
+        $page = $this->createWikiPage('Nachtwache', 'nachtwache', '<p>Inhalt</p>');
+        $page->addCategory('Orga', 'wiki');
+
+        $term = \App\Models\Tag\Term::whereTranslation('title', 'Orga')->firstOrFail();
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/taxables?term=' . $term->slug . '&model=&taxonomy=wiki')
+            ->assertStatus(200);
+
+        $this->assertSame(1, $response->json('data.total'));
+        $this->assertNotNull($response->json('category'));
+    }
+
     public function test_show_returns_create_hint_for_unknown_slug(): void
     {
         $this->actingAs($this->admin, 'sanctum')

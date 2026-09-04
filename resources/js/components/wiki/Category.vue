@@ -11,45 +11,47 @@
                 <h1>{{info.term.title}}</h1>
                 <p v-html="description"></p>
 
-                <div class="sub-category py-1 pt-lg-1" v-if="info.children.length > 0">
+                <div class="sub-category py-1 pt-lg-1" v-if="info.children?.length">
                     <h2>{{ $t('wiki.subcategories') }}</h2>
                     <div :style="subCssVars">
-                    <v-list-group
-                        color="primary"
-                        v-for="(category, capital) in $helpers.groupTerms(this.info.children)"
-                        :key="`${capital}-${category}`"
-                    >{{capital.toUpperCase()}}
-                        <v-list-item
-                            v-for="(child) in category"
-                            :key="`${child.slug}`"
-                            @click="goToCategory(child.slug)"
+                    <v-list density="compact" class="bg-transparent">
+                        <template
+                            v-for="(category, capital) in $helpers.groupTerms(info.children)"
+                            :key="capital"
                         >
+                            <v-list-subheader>{{ capital.toUpperCase() }}</v-list-subheader>
+                            <v-list-item
+                                v-for="child in category"
+                                :key="child.slug"
+                                @click="goToCategory(child.slug)"
+                            >
                                 <v-list-item-title v-text="child.title"></v-list-item-title>
-                        </v-list-item>
-                    </v-list-group>
+                            </v-list-item>
+                        </template>
+                    </v-list>
                     </div>
                 </div>
             </v-container>
 
 
             <v-container class="category py-6 pt-lg-5">
-                <h2>{{ $t('wiki.pagesInCategory', { category: info.term.title, count: categories.total }) }}</h2>
+                <h2>{{ $t('wiki.pagesInCategory', { category: info.term?.title, count: categories.total }) }}</h2>
                 <div :style="catCssVars">
-                <v-list-group
-                    color="primary"
-                    v-for="(category, capital) in categories.capital"
-                    :key="`${capital}-${category}`"
-                >{{capital.toUpperCase()}}
-                    <v-list-item
-                        v-for="(model) in category"
-                        :key="`${model.data.slug}`"
-                        @click="goTo(model.data.slug, model.taxonomy[0].taxonomy)"
+                <v-list density="compact" class="bg-transparent">
+                    <template
+                        v-for="(category, capital) in categories.capital"
+                        :key="capital"
                     >
-                        <v-list-item-content>
+                        <v-list-subheader>{{ capital.toUpperCase() }}</v-list-subheader>
+                        <v-list-item
+                            v-for="model in category"
+                            :key="model.data.slug"
+                            @click="goTo(model.data.slug, model.taxonomy[0]?.taxonomy)"
+                        >
                             <v-list-item-title v-text="model.taxable_title"></v-list-item-title>
-                        </v-list-item-content>
-                    </v-list-item>
-                </v-list-group>
+                        </v-list-item>
+                    </template>
+                </v-list>
                 </div>
             </v-container>
         </v-sheet>
@@ -64,21 +66,21 @@
             </v-container>
             <v-container class="category py-6 pt-lg-5">
                 <div :style="catCssVars">
-                <v-list-group
-                    color="primary"
-                    v-for="(category, capital) in catFilter"
-                    :key="`${capital}-${category}`"
-                >{{capital.toUpperCase()}}
-                    <v-list-item
-                        v-for="(term) in category"
-                        :key="`${term.slug}`"
-                        @click="goToCategory(term.slug)"
+                <v-list density="compact" class="bg-transparent">
+                    <template
+                        v-for="(category, capital) in catFilter"
+                        :key="capital"
                     >
-                        <v-list-item-content>
+                        <v-list-subheader>{{ capital.toUpperCase() }}</v-list-subheader>
+                        <v-list-item
+                            v-for="term in category"
+                            :key="term.slug"
+                            @click="goToCategory(term.slug)"
+                        >
                             <v-list-item-title v-text="term.title"></v-list-item-title>
-                        </v-list-item-content>
-                    </v-list-item>
-                </v-list-group>
+                        </v-list-item>
+                    </template>
+                </v-list>
                 </div>
             </v-container>
         </v-sheet>
@@ -86,8 +88,7 @@
 </template>
 
 <script>
-
-// import {mapGetters} from "vuex";
+import { useAuthStore } from '@/store/authStore.js';
 
 export default {
     components: {
@@ -179,14 +180,13 @@ export default {
             return authStore.user;
         },
         catCssVars () {
-
             return {
-                'column-count': (this.catTotal  >= 9) || (Object.keys(this.categories.capital).length >= 5) ? 3: 1
+                'column-count': (this.catTotal >= 9) || (Object.keys(this.categories?.capital || {}).length >= 5) ? 3 : 1
             }
         },
         subCssVars () {
             return {
-                'column-count': this.info.children.length >= 5 ? 3: 1
+                'column-count': (this.info.children?.length || 0) >= 5 ? 3 : 1
             }
         },
         catFilter: function() {
