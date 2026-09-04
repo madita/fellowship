@@ -565,6 +565,20 @@ class MigrationToolTest extends TestCase
         $this->assertCount(5, $shipped['mappings']);
     }
 
+    public function test_cli_command_runs_a_mapping_by_name(): void
+    {
+        $this->createEventsMapping($this->createSource());
+
+        // Completes despite the one broken source row (logged as row error).
+        $this->artisan('migration:run-mapping', ['mapping' => 'Legacy events'])
+            ->assertExitCode(0);
+
+        $this->assertSame(2, Event::count());
+
+        $log = MigrationLog::orderByDesc('id')->first();
+        $this->assertSame('completed', $log->status);
+    }
+
     public function test_non_admins_cannot_use_the_tool(): void
     {
         $source = $this->createSource();

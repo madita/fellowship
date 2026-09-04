@@ -70,7 +70,7 @@ class MigrationLog extends Model
         ]);
     }
 
-    public function incrementProgress(string $currentItem = null): void
+    public function incrementProgress(?string $currentItem = null): void
     {
         $this->increment('processed_items');
         if ($currentItem) {
@@ -78,7 +78,7 @@ class MigrationLog extends Model
         }
     }
 
-    public function incrementErrors(string $error = null): void
+    public function incrementErrors(?string $error = null): void
     {
         $this->increment('error_count');
         if ($error) {

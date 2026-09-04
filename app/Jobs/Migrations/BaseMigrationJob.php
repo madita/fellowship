@@ -77,7 +77,7 @@ abstract class BaseMigrationJob implements ShouldQueue
         $this->log->markRunning($total);
     }
 
-    protected function progress(string $currentItem = null): void
+    protected function progress(?string $currentItem = null): void
     {
         $this->log->incrementProgress($currentItem);
         $this->checkForCancellation();
