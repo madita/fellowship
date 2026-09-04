@@ -5,6 +5,8 @@ namespace App\Services\Migration;
 use App\Models\Collection;
 use App\Models\Event\Event;
 use App\Models\Forum\ForumThread;
+use App\Models\MigrationAttribution;
+use App\Models\MigrationLegacyUser;
 use App\Models\Page;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
@@ -37,6 +39,18 @@ class MigrationTargets
                     ['key' => 'created_at', 'label' => 'Created at', 'required' => false, 'hint' => 'datetime transform'],
                 ],
             ],
+            'legacy_users' => [
+                'label' => 'Legacy Users',
+                'description' => 'Import the user roster of a legacy system into the legacy-user directory (no accounts are created). Shows up on the Legacy Users tab with e-mails, used to verify claims and suggest matches with registered users. Re-runs update existing entries.',
+                'fields' => [
+                    ['key' => 'username', 'label' => 'Username', 'required' => true],
+                    ['key' => 'legacy_source', 'label' => 'Legacy system', 'required' => true, 'hint' => 'set a default naming the old system (e.g. "wiki", "forum") — must match the legacy system used by the content mappings'],
+                    ['key' => 'email', 'label' => 'E-mail', 'required' => false, 'hint' => 'used to verify claims / suggest registered users'],
+                    ['key' => 'legacy_user_id', 'label' => 'Old user id', 'required' => false],
+                    ['key' => 'real_name', 'label' => 'Real name', 'required' => false],
+                    ['key' => 'registered_at', 'label' => 'Registered at', 'required' => false, 'hint' => 'datetime transform — MediaWiki format: YmdHis'],
+                ],
+            ],
             'events' => [
                 'label' => 'Events',
                 'description' => 'Import calendar events (with optional coordinates into event details).',
@@ -52,6 +66,8 @@ class MigrationTargets
                     ['key' => 'album', 'label' => 'Gallery album name', 'required' => false, 'hint' => 'stored in the event details; "Link Gallery" uses it to attach the collection'],
                     ['key' => 'max_participants', 'label' => 'Max participants', 'required' => false, 'hint' => 'stored in the event details options'],
                     ['key' => 'creator', 'label' => 'Original creator (name)', 'required' => false, 'hint' => 'stored in the event details options'],
+                    ['key' => 'legacy_owner', 'label' => 'Legacy owner (username)', 'required' => false, 'hint' => 'recorded for later assignment to a registered user; falls back to creator'],
+                    ['key' => 'legacy_source', 'label' => 'Legacy system', 'required' => false, 'hint' => 'set a default naming the old system (e.g. "treffen") — same usernames from different systems stay distinct'],
                     ['key' => 'last_edited_by', 'label' => 'Last edited by (name)', 'required' => false, 'hint' => 'stored in the event details options'],
                     ['key' => 'user_id', 'label' => 'Owner user id', 'required' => false, 'hint' => 'default: 1'],
                     ['key' => 'event_type_id', 'label' => 'Event type id', 'required' => false, 'hint' => 'default: 1'],
@@ -78,6 +94,8 @@ class MigrationTargets
                     ['key' => 'convert_wikitext', 'label' => 'Convert wikitext', 'required' => false, 'hint' => 'default: 1 — set default 0 when content is already HTML'],
                     ['key' => 'status', 'label' => 'Status', 'required' => false, 'hint' => 'MediaWiki page_is_redirect → bool transform ("redirect" when true)'],
                     ['key' => 'locale', 'label' => 'Language', 'required' => false, 'hint' => 'locale the title/content are written to (e.g. default "de") — falls back to the app locale'],
+                    ['key' => 'legacy_owner', 'label' => 'Legacy owner (username)', 'required' => false, 'hint' => 'MediaWiki rev_user_text — recorded for later assignment to a registered user'],
+                    ['key' => 'legacy_source', 'label' => 'Legacy system', 'required' => false, 'hint' => 'set a default naming the old system (e.g. "wiki")'],
                     ['key' => 'user_id', 'label' => 'Owner user id', 'required' => false, 'hint' => 'default: 1'],
                     ['key' => 'created_at', 'label' => 'Created at', 'required' => false, 'hint' => 'datetime transform — MediaWiki format: YmdHis'],
                     ['key' => 'updated_at', 'label' => 'Updated at', 'required' => false, 'hint' => 'datetime transform — MediaWiki format: YmdHis'],
@@ -90,6 +108,8 @@ class MigrationTargets
                     ['key' => 'name', 'label' => 'Name', 'required' => true],
                     ['key' => 'taxonomy_id', 'label' => 'Taxonomy id', 'required' => false, 'hint' => 'e.g. default 1'],
                     ['key' => 'user_id', 'label' => 'Owner user id', 'required' => false, 'hint' => 'default: 1'],
+                    ['key' => 'legacy_owner', 'label' => 'Legacy owner (username)', 'required' => false, 'hint' => 'recorded for later assignment to a registered user'],
+                    ['key' => 'legacy_source', 'label' => 'Legacy system', 'required' => false, 'hint' => 'set a default naming the old system (e.g. "gallery")'],
                     ['key' => 'created_at', 'label' => 'Created at', 'required' => false, 'hint' => 'datetime transform'],
                 ],
             ],
@@ -101,7 +121,8 @@ class MigrationTargets
                     ['key' => 'base_path', 'label' => 'Image folder on this server', 'required' => true, 'hint' => 'set as default, e.g. C:\\archive\\uploads'],
                     ['key' => 'file', 'label' => 'File (relative to folder)', 'required' => true, 'hint' => 'template e.g. {topic|fold}/{id}.jpg'],
                     ['key' => 'caption', 'label' => 'Caption', 'required' => false],
-                    ['key' => 'uploader', 'label' => 'Uploader (name)', 'required' => false],
+                    ['key' => 'uploader', 'label' => 'Uploader (name)', 'required' => false, 'hint' => 'also recorded as the legacy owner for later user assignment'],
+                    ['key' => 'legacy_source', 'label' => 'Legacy system', 'required' => false, 'hint' => 'set a default naming the old system (e.g. "gallery")'],
                     ['key' => 'created_at', 'label' => 'Created at', 'required' => false, 'hint' => 'datetime transform'],
                 ],
             ],
@@ -143,6 +164,7 @@ class MigrationTargets
     {
         return match ($target) {
             'users' => self::importUser($mapped),
+            'legacy_users' => self::importLegacyUser($mapped),
             'events' => self::importEvent($mapped),
             'forum_threads' => self::importForumThread($mapped),
             'wiki_pages' => self::importWikiPage($mapped),
@@ -171,6 +193,29 @@ class MigrationTargets
         $user->save();
 
         return $user->username;
+    }
+
+    private static function importLegacyUser(array $mapped): ?string
+    {
+        $username = trim((string) $mapped['username']);
+        if ($username === '') {
+            return null;
+        }
+
+        MigrationLegacyUser::updateOrCreate(
+            [
+                'legacy_source' => trim((string) $mapped['legacy_source']),
+                'username' => $username,
+            ],
+            array_filter([
+                'email' => trim((string) ($mapped['email'] ?? '')) ?: null,
+                'legacy_user_id' => $mapped['legacy_user_id'] ?? null,
+                'real_name' => trim((string) ($mapped['real_name'] ?? '')) ?: null,
+                'registered_at' => $mapped['registered_at'] ?? null,
+            ], fn ($value) => $value !== null)
+        );
+
+        return $username;
     }
 
     private static function importEvent(array $mapped): string
@@ -205,6 +250,8 @@ class MigrationTargets
                 'options' => json_encode($options),
             ]);
         }
+
+        MigrationAttribution::record($event, $mapped['legacy_owner'] ?? $mapped['creator'] ?? null, $mapped['legacy_source'] ?? null);
 
         return (string) $event->title;
     }
@@ -287,6 +334,8 @@ class MigrationTargets
             }
         }
 
+        MigrationAttribution::record($page, $mapped['legacy_owner'] ?? null, $mapped['legacy_source'] ?? null);
+
         // Preserve original timestamps without the model touching them again.
         $timestamps = array_filter([
             'created_at' => $mapped['created_at'] ?? null,
@@ -317,6 +366,8 @@ class MigrationTargets
         if (!empty($mapped['created_at'])) {
             Collection::whereKey($collection->id)->update(['created_at' => $mapped['created_at']]);
         }
+
+        MigrationAttribution::record($collection, $mapped['legacy_owner'] ?? null, $mapped['legacy_source'] ?? null);
 
         return $name;
     }
@@ -360,6 +411,8 @@ class MigrationTargets
             $media->created_at = $mapped['created_at'];
             $media->save();
         }
+
+        MigrationAttribution::record($media, $mapped['uploader'] ?? null, $mapped['legacy_source'] ?? null);
 
         return $fileName;
     }

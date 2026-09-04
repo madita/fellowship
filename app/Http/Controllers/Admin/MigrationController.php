@@ -7,9 +7,14 @@ use App\Jobs\Migrations\GenericImportJob;
 use App\Jobs\Migrations\MigrateLinkGalleryJob;
 use App\Jobs\Migrations\MigrateWikiLinkingJob;
 use App\Jobs\Migrations\MigrateWikiTermsLinkingJob;
+use App\Models\MigrationAttribution;
+use App\Models\MigrationLegacyUser;
 use App\Models\MigrationLog;
 use App\Models\MigrationMapping;
 use App\Models\MigrationSource;
+use App\Models\Ticket\Ticket;
+use App\Models\Ticket\TicketType;
+use App\Models\User;
 use App\Services\Migration\MigrationTargets;
 use App\Services\Migration\RowMapper;
 use App\Services\Migration\SourceQuery;
@@ -597,6 +602,198 @@ class MigrationController extends Controller
             'message' => __('messages.migrations.queued_all'),
             'batchId' => $batchId,
             'count' => 1,
+        ]);
+    }
+
+    // ------------------------------------------------------------------
+    // Legacy users: imported records remember their old owner's username
+    // (migration_attributions); once the person registers, an admin
+    // assigns the legacy identity and the content moves to their account.
+    // ------------------------------------------------------------------
+
+    public function legacyUsers(): JsonResponse
+    {
+        // Identity is (legacy system, username) — "Vimes" in the wiki and
+        // "Vimes" in the forum may be different people.
+        $rows = MigrationAttribution::query()
+            ->selectRaw('legacy_source, legacy_username, attributable_type, COUNT(*) as items, MAX(assigned_user_id) as assigned_user_id, MAX(assigned_at) as assigned_at')
+            ->groupBy('legacy_source', 'legacy_username', 'attributable_type')
+            ->get()
+            ->groupBy(fn ($row) => $row->legacy_source . '|' . $row->legacy_username);
+
+        $assignedUsers = User::whereIn(
+            'id',
+            $rows->flatten()->pluck('assigned_user_id')->filter()->unique()
+        )->get(['id', 'username'])->keyBy('id');
+
+        // Open claim tickets for legacy accounts.
+        $claims = Ticket::whereHas('ticketType', fn ($q) => $q->where('slug', 'legacy-account-claim'))
+            ->whereIn('status', ['open', 'in_progress', 'pending'])
+            ->with('creator:id,username,email')
+            ->get();
+
+        // Directory entries imported via the "Legacy Users" target: full
+        // roster with e-mails, keyed like the attribution groups.
+        $directory = MigrationLegacyUser::with('assignedUser:id,username')->get()
+            ->keyBy(fn ($entry) => $entry->legacy_source . '|' . $entry->username);
+
+        // Registered users matching a directory e-mail → suggestions.
+        $registeredByEmail = User::whereIn(
+            'email',
+            $directory->pluck('email')->filter()->unique()
+        )->get(['id', 'username', 'email'])->keyBy(fn ($user) => mb_strtolower($user->email));
+
+        $legacyUsers = $rows->map(function ($types) use ($assignedUsers, $claims, $directory, $registeredByEmail) {
+            $legacySource = $types->first()->legacy_source;
+            $legacyUsername = $types->first()->legacy_username;
+            $assignedId = $types->pluck('assigned_user_id')->filter()->first();
+            $entry = $directory->get($legacySource . '|' . $legacyUsername);
+            $suggested = $entry?->email ? $registeredByEmail->get(mb_strtolower($entry->email)) : null;
+            // A claim matches when its username matches and it either names
+            // this source or none (claims cover all systems by default).
+            $claim = $claims->first(function ($ticket) use ($legacySource, $legacyUsername) {
+                $claimSource = $ticket->metadata['legacy_source'] ?? null;
+
+                return mb_strtolower($ticket->metadata['legacy_username'] ?? '') === mb_strtolower($legacyUsername)
+                    && ($claimSource === null || $claimSource === $legacySource);
+            });
+
+            return [
+                'legacy_source' => $legacySource,
+                'legacy_username' => $legacyUsername,
+                'email' => $entry?->email,
+                'items' => $types->sum('items'),
+                'types' => $types->mapWithKeys(fn ($row) => [class_basename($row->attributable_type) => (int) $row->items]),
+                'assigned_user' => $assignedId ? $assignedUsers->get($assignedId)?->only(['id', 'username']) : ($entry?->assignedUser?->only(['id', 'username'])),
+                'assigned_at' => $types->pluck('assigned_at')->filter()->first(),
+                'suggested_user' => $suggested?->only(['id', 'username']),
+                'claim' => $claim ? [
+                    'ticket_id' => $claim->id,
+                    'user' => $claim->creator?->only(['id', 'username']),
+                    // Strong signal: the claimant's registered e-mail matches
+                    // the e-mail of the legacy account (from the directory).
+                    'email_verified' => (bool) ($entry?->email && $claim->creator
+                        && mb_strtolower($claim->creator->email) === mb_strtolower($entry->email)),
+                ] : null,
+            ];
+        });
+
+        // Directory entries without any imported content still belong on
+        // the roster (0 items).
+        $covered = $legacyUsers->map(fn ($row) => $row['legacy_source'] . '|' . $row['legacy_username']);
+        // toBase(): Eloquent\Collection::except() filters by model primary
+        // keys, not the (source|username) collection keys used here.
+        $directoryOnly = $directory->toBase()->except($covered->all())->map(function ($entry) use ($registeredByEmail, $claims) {
+            $suggested = $entry->email ? $registeredByEmail->get(mb_strtolower($entry->email)) : null;
+            $claim = $claims->first(function ($ticket) use ($entry) {
+                $claimSource = $ticket->metadata['legacy_source'] ?? null;
+
+                return mb_strtolower($ticket->metadata['legacy_username'] ?? '') === mb_strtolower($entry->username)
+                    && ($claimSource === null || $claimSource === $entry->legacy_source);
+            });
+
+            return [
+                'legacy_source' => $entry->legacy_source,
+                'legacy_username' => $entry->username,
+                'email' => $entry->email,
+                'items' => 0,
+                'types' => (object) [],
+                'assigned_user' => $entry->assignedUser?->only(['id', 'username']),
+                'assigned_at' => $entry->assigned_user_id ? $entry->updated_at : null,
+                'suggested_user' => $suggested?->only(['id', 'username']),
+                'claim' => $claim ? [
+                    'ticket_id' => $claim->id,
+                    'user' => $claim->creator?->only(['id', 'username']),
+                    'email_verified' => (bool) ($entry->email && $claim->creator
+                        && mb_strtolower($claim->creator->email) === mb_strtolower($entry->email)),
+                ] : null,
+            ];
+        })->values();
+
+        $legacyUsers = $legacyUsers->concat($directoryOnly)->sortBy([
+            fn ($a, $b) => strnatcasecmp($a['legacy_username'], $b['legacy_username'])
+                ?: strnatcasecmp($a['legacy_source'], $b['legacy_source']),
+        ])->values();
+
+        return response()->json(['legacyUsers' => $legacyUsers]);
+    }
+
+    /**
+     * Assign a legacy username to a registered user: every attributed
+     * record's ownership moves to that user, and an open claim ticket for
+     * it is resolved.
+     */
+    public function assignLegacyUser(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'legacy_username' => 'required|string|max:255',
+            'legacy_source' => 'required|string|max:255',
+            'user' => 'required|string|max:255',
+        ]);
+
+        $user = User::where('username', $data['user'])
+            ->orWhere('email', $data['user'])
+            ->first();
+        if (!$user) {
+            return response()->json(['message' => __('messages.migrations.user_not_found', ['user' => $data['user']])], 422);
+        }
+
+        // Scoped to one legacy system: assigning "Vimes" from the wiki must
+        // not touch a "Vimes" imported from another system.
+        $attributions = MigrationAttribution::where('legacy_username', $data['legacy_username'])
+            ->where('legacy_source', $data['legacy_source'])
+            ->get();
+        $directoryEntry = MigrationLegacyUser::where('legacy_source', $data['legacy_source'])
+            ->where('username', $data['legacy_username'])
+            ->first();
+        if ($attributions->isEmpty() && !$directoryEntry) {
+            return response()->json(['message' => __('messages.migrations.legacy_user_not_found', ['name' => $data['legacy_username']])], 404);
+        }
+
+        $reassigned = [];
+
+        DB::transaction(function () use ($attributions, $directoryEntry, $user, $data, &$reassigned) {
+            foreach ($attributions->groupBy('attributable_type') as $type => $group) {
+                $ids = $group->pluck('attributable_id')->all();
+
+                if ($type === \Spatie\MediaLibrary\MediaCollections\Models\Media::class) {
+                    // Media has no user_id column — record the owner as a
+                    // custom property instead.
+                    foreach ($type::whereIn('id', $ids)->cursor() as $media) {
+                        $media->setCustomProperty('user_id', $user->id);
+                        $media->save();
+                    }
+                } else {
+                    $model = new $type();
+                    $type::whereIn($model->getKeyName(), $ids)->update(['user_id' => $user->id]);
+                }
+
+                $reassigned[class_basename($type)] = count($ids);
+            }
+
+            MigrationAttribution::where('legacy_username', $data['legacy_username'])
+                ->where('legacy_source', $data['legacy_source'])
+                ->update(['assigned_user_id' => $user->id, 'assigned_at' => now()]);
+
+            $directoryEntry?->update(['assigned_user_id' => $user->id]);
+
+            // Resolve a matching claim ticket once nothing remains
+            // unassigned for the claimed username.
+            $stillUnassigned = MigrationAttribution::where('legacy_username', $data['legacy_username'])
+                ->whereNull('assigned_user_id')
+                ->exists();
+            if (!$stillUnassigned) {
+                Ticket::whereHas('ticketType', fn ($q) => $q->where('slug', 'legacy-account-claim'))
+                    ->whereIn('status', ['open', 'in_progress', 'pending'])
+                    ->get()
+                    ->filter(fn ($ticket) => mb_strtolower($ticket->metadata['legacy_username'] ?? '') === mb_strtolower($data['legacy_username']))
+                    ->each(fn ($ticket) => $ticket->update(['status' => 'resolved', 'resolved_at' => now()]));
+            }
+        });
+
+        return response()->json([
+            'message' => __('messages.migrations.legacy_assigned', ['name' => $data['legacy_username'], 'user' => $user->username]),
+            'reassigned' => $reassigned,
         ]);
     }
 

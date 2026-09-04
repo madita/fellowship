@@ -208,6 +208,11 @@ return [
         'cancelled'       => 'Vom Benutzer abgebrochen',
         'cancelled_count' => ':count ausstehende Migrationen abgebrochen',
         'deleted_count'   => ':count alte Migrationsprotokolle gelöscht',
+        'user_not_found'        => 'Kein registrierter Benutzer „:user" (Benutzername oder E-Mail)',
+        'legacy_user_not_found' => 'Kein importierter Inhalt ist „:name" zugeordnet',
+        'legacy_assigned'       => 'Inhalte von „:name" wurden :user zugewiesen',
+        'claim_exists'          => 'Du hast bereits eine offene Anfrage für dieses alte Konto',
+        'claim_created'         => 'Anfrage eingereicht — ein Admin prüft sie und weist dir deine alten Inhalte zu',
     ],
 
     // SPA

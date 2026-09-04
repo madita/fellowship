@@ -3911,6 +3911,21 @@ export default {
         'invalidJson': 'Invalid JSON — please check the pasted text',
         'contentLocale': 'Content language',
         'contentLocaleHint': 'Locale translations are written to, e.g. "de"',
+        'tabLegacyUsers': 'Legacy Users',
+        'legacyUsers': 'Legacy Users',
+        'legacyUsersHint': 'Imported content remembers its old owner. When that person registers here (or files a claim from their account settings), assign the legacy name to move all their content over.',
+        'legacyUsername': 'Legacy username',
+        'legacySource': 'Legacy system',
+        'claimEmailVerified': 'Claimant e-mail matches the legacy account e-mail',
+        'suggestedByEmail': 'Registered user with the same e-mail as the legacy account',
+        'legacyItems': 'Imported items',
+        'legacyClaim': 'Claim request',
+        'assignedTo': 'Assigned to',
+        'assign': 'Assign',
+        'assignTitle': 'Assign "{name}"',
+        'assignHint': 'All imported content attributed to this legacy account will be moved to the given registered user. An open claim ticket is resolved automatically.',
+        'assignUserLabel': 'Registered username or e-mail',
+        'noLegacyUsers': 'No legacy owners recorded yet — imports record them when a mapping fills the "Legacy owner" field.',
     },
     'migrationDashboard': {
         'title': 'Migration Dashboard',
@@ -4736,6 +4751,20 @@ export default {
             'message': 'Your session has expired due to inactivity.',
             'explanation': 'For your security, you need to refresh the page to continue. Any unsaved changes may be lost.',
             'refresh': 'Refresh Page'
+        }
+    },
+    'account': {
+        'legacyClaim': {
+            'tab': 'Legacy Account',
+            'title': 'Claim your content from the old site',
+            'intro': 'Wiki pages, events and galleries were imported from the old site and still remember their original owner. Enter your old username to check what belongs to you and request the transfer — an admin will verify and assign it to this account.',
+            'usernameLabel': 'Your username on the old site',
+            'check': 'Check',
+            'found': '{total} imported items found for "{name}":',
+            'notFound': 'No unassigned imported content found for "{name}". Check the spelling, or it may already be assigned.',
+            'messageLabel': 'Message for the admin (optional)',
+            'messageHint': 'Anything that helps verify the account is yours',
+            'submit': 'Request transfer'
         }
     }
 }

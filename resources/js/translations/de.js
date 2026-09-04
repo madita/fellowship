@@ -4079,6 +4079,21 @@ export default {
         'invalidJson': 'Ungültiges JSON — bitte den eingefügten Text prüfen',
         'contentLocale': 'Inhaltssprache',
         'contentLocaleHint': 'Locale, in die Übersetzungen geschrieben werden, z. B. „de"',
+        'tabLegacyUsers': 'Alte Benutzer',
+        'legacyUsers': 'Alte Benutzer',
+        'legacyUsersHint': 'Importierte Inhalte kennen ihre alten Besitzer. Registriert sich die Person hier (oder stellt eine Anfrage in den Kontoeinstellungen), weise den alten Namen zu, um alle Inhalte zu übertragen.',
+        'legacyUsername': 'Alter Benutzername',
+        'legacySource': 'Altes System',
+        'claimEmailVerified': 'E-Mail des Anfragenden stimmt mit der E-Mail des alten Kontos überein',
+        'suggestedByEmail': 'Registrierter Benutzer mit derselben E-Mail wie das alte Konto',
+        'legacyItems': 'Importierte Einträge',
+        'legacyClaim': 'Anfrage',
+        'assignedTo': 'Zugewiesen an',
+        'assign': 'Zuweisen',
+        'assignTitle': '„{name}" zuweisen',
+        'assignHint': 'Alle importierten Inhalte dieses alten Kontos werden dem angegebenen registrierten Benutzer übertragen. Eine offene Anfrage wird automatisch erledigt.',
+        'assignUserLabel': 'Registrierter Benutzername oder E-Mail',
+        'noLegacyUsers': 'Noch keine alten Besitzer erfasst — Importe erfassen sie, wenn ein Mapping das Feld „Legacy owner" befüllt.',
     },
     'migrationDashboard': {
         'title': 'Migrations-Dashboard',
@@ -4920,6 +4935,20 @@ export default {
             'message': 'Ihre Sitzung ist aufgrund von Inaktivität abgelaufen.',
             'explanation': 'Aus Sicherheitsgründen müssen Sie die Seite aktualisieren, um fortzufahren. Nicht gespeicherte Änderungen können verloren gehen.',
             'refresh': 'Seite aktualisieren'
+        }
+    },
+    'account': {
+        'legacyClaim': {
+            'tab': 'Altes Konto',
+            'title': 'Inhalte von der alten Seite übernehmen',
+            'intro': 'Wiki-Seiten, Events und Galerien wurden von der alten Seite importiert und kennen noch ihre ursprünglichen Besitzer. Gib deinen alten Benutzernamen ein, um zu prüfen, was dir gehört, und die Übertragung anzufragen — ein Admin prüft und weist die Inhalte diesem Konto zu.',
+            'usernameLabel': 'Dein Benutzername auf der alten Seite',
+            'check': 'Prüfen',
+            'found': '{total} importierte Einträge für „{name}" gefunden:',
+            'notFound': 'Keine nicht zugewiesenen Inhalte für „{name}" gefunden. Prüfe die Schreibweise — oder sie wurden bereits zugewiesen.',
+            'messageLabel': 'Nachricht an den Admin (optional)',
+            'messageHint': 'Alles, was hilft zu bestätigen, dass das Konto dir gehört',
+            'submit': 'Übertragung anfragen'
         }
     }
 }

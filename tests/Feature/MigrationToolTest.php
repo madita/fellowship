@@ -562,7 +562,7 @@ class MigrationToolTest extends TestCase
         // The repo ships a ready-made JSON for the old hardcoded jobs — keep it valid.
         $shipped = json_decode(file_get_contents(base_path('docs/migration-mappings.stadtwache.json')), true);
         $this->assertIsArray($shipped['mappings']);
-        $this->assertCount(5, $shipped['mappings']);
+        $this->assertCount(8, $shipped['mappings']);
     }
 
     public function test_cli_command_runs_a_mapping_by_name(): void
@@ -577,6 +577,135 @@ class MigrationToolTest extends TestCase
 
         $log = MigrationLog::orderByDesc('id')->first();
         $this->assertSame('completed', $log->status);
+    }
+
+    /**
+     * Full legacy-account cycle: imports record the old owner's username;
+     * a registered user files a claim (ticket); the admin assigns the
+     * legacy name — content ownership moves and the ticket is resolved.
+     */
+    public function test_legacy_owner_claim_and_assignment_cycle(): void
+    {
+        // Import events whose mapping records the legacy owner.
+        $source = $this->createSource();
+        $mapping = $this->createEventsMapping($source);
+        $fieldMap = $mapping->field_map;
+        $fieldMap['legacy_owner'] = ['default' => 'OldVimes'];
+        $fieldMap['legacy_source'] = ['default' => 'treffen'];
+        $mapping->update(['field_map' => $fieldMap]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/admin/migrations/mappings/{$mapping->id}/run")
+            ->assertStatus(200);
+
+        $this->assertSame(2, \App\Models\MigrationAttribution::where('legacy_username', 'OldVimes')->where('legacy_source', 'treffen')->count());
+
+        // The same username in a DIFFERENT legacy system is a separate identity.
+        $otherSystemEvent = new Event();
+        $otherSystemEvent->title = 'Other system event';
+        $otherSystemEvent->user_id = 1;
+        $otherSystemEvent->event_type_id = 1;
+        $otherSystemEvent->startDate = '2020-01-01';
+        $otherSystemEvent->endDate = '2020-01-01';
+        $otherSystemEvent->save();
+        \App\Models\MigrationAttribution::record($otherSystemEvent, 'OldVimes', 'forum');
+
+        // The returning user checks and claims their legacy account.
+        $vimes = User::factory()->create(['username' => 'vimes']);
+
+        $preview = $this->actingAs($vimes, 'sanctum')
+            ->postJson('/api/account/legacy-claim/preview', ['legacy_username' => 'OldVimes'])
+            ->assertStatus(200)
+            ->json();
+        $this->assertTrue($preview['found']);
+        $this->assertSame(3, $preview['total']);
+        // …with a per-system breakdown.
+        $this->assertSame(2, $preview['sources']['treffen']['total']);
+        $this->assertSame(1, $preview['sources']['forum']['total']);
+
+        $this->actingAs($vimes, 'sanctum')
+            ->postJson('/api/account/legacy-claim', ['legacy_username' => 'OldVimes', 'message' => 'That was me!'])
+            ->assertStatus(201);
+
+        // Duplicate claims are rejected.
+        $this->actingAs($vimes, 'sanctum')
+            ->postJson('/api/account/legacy-claim', ['legacy_username' => 'OldVimes'])
+            ->assertStatus(409);
+
+        // A legacy-user directory entry backs the treffen identity: it
+        // carries the old e-mail, which matches vimes' registered e-mail —
+        // so the listing marks the claim as e-mail-verified and suggests
+        // the match even without a claim.
+        \App\Models\MigrationLegacyUser::create([
+            'legacy_source' => 'treffen',
+            'username' => 'OldVimes',
+            'email' => $vimes->email,
+        ]);
+
+        // The admin sees one row PER SYSTEM, both showing the open claim…
+        $listing = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/legacy-users')
+            ->assertStatus(200)
+            ->json('legacyUsers');
+        $rows = collect($listing)->where('legacy_username', 'OldVimes');
+        $this->assertCount(2, $rows);
+        $treffenRow = $rows->firstWhere('legacy_source', 'treffen');
+        $this->assertSame(2, $treffenRow['items']);
+        $this->assertSame('vimes', $treffenRow['claim']['user']['username']);
+        $this->assertNull($treffenRow['assigned_user']);
+        // Directory data: e-mail shown, claim verified, match suggested.
+        $this->assertSame($vimes->email, $treffenRow['email']);
+        $this->assertTrue($treffenRow['claim']['email_verified']);
+        $this->assertSame('vimes', $treffenRow['suggested_user']['username']);
+        // The forum identity has no directory entry — nothing verified there.
+        $forumRow = $rows->firstWhere('legacy_source', 'forum');
+        $this->assertNull($forumRow['email']);
+        $this->assertFalse($forumRow['claim']['email_verified']);
+
+        // …and assigns only the treffen identity.
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/migrations/legacy-users/assign', [
+                'legacy_username' => 'OldVimes',
+                'legacy_source' => 'treffen',
+                'user' => 'vimes',
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('reassigned.Event', 2);
+
+        // treffen content moved; the forum identity stayed untouched.
+        $this->assertSame(2, Event::where('user_id', $vimes->id)->count());
+        $this->assertNotSame($vimes->id, $otherSystemEvent->fresh()->user_id);
+
+        // The ticket stays open while the forum part is unassigned…
+        $ticket = \App\Models\Ticket\Ticket::whereHas('ticketType', fn ($q) => $q->where('slug', 'legacy-account-claim'))->first();
+        $this->assertSame('open', $ticket->status);
+
+        // …and resolves after the last system is assigned.
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/migrations/legacy-users/assign', [
+                'legacy_username' => 'OldVimes',
+                'legacy_source' => 'forum',
+                'user' => 'vimes',
+            ])
+            ->assertStatus(200);
+        $this->assertSame('resolved', $ticket->fresh()->status);
+
+        $listing = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/legacy-users')
+            ->json('legacyUsers');
+        $this->assertSame(
+            'vimes',
+            collect($listing)->where('legacy_username', 'OldVimes')->firstWhere('legacy_source', 'treffen')['assigned_user']['username']
+        );
+
+        // Unknown target user is a clean 422.
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/migrations/legacy-users/assign', [
+                'legacy_username' => 'OldVimes',
+                'legacy_source' => 'treffen',
+                'user' => 'nobody-here',
+            ])
+            ->assertStatus(422);
     }
 
     public function test_non_admins_cannot_use_the_tool(): void

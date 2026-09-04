@@ -3,6 +3,80 @@
     "mappings": [
         {
             "source": "stadtwache",
+            "name": "Stadtwache: Legacy Users (wiki)",
+            "target": "legacy_users",
+            "source_table": "ww_user",
+            "field_map": {
+                "username": {
+                    "source": "user_name",
+                    "transform": "underscores_to_spaces"
+                },
+                "legacy_source": {
+                    "default": "wiki"
+                },
+                "email": {
+                    "source": "user_email"
+                },
+                "legacy_user_id": {
+                    "source": "user_id"
+                },
+                "real_name": {
+                    "source": "user_real_name"
+                },
+                "registered_at": {
+                    "source": "user_registration",
+                    "transform": "datetime",
+                    "format": "YmdHis"
+                }
+            }
+        },
+        {
+            "source": "stadtwache",
+            "name": "Stadtwache: Legacy Users (forum)",
+            "target": "legacy_users",
+            "source_table": "phpbb3_users",
+            "field_map": {
+                "username": {
+                    "source": "username"
+                },
+                "legacy_source": {
+                    "default": "forum"
+                },
+                "email": {
+                    "source": "user_email"
+                },
+                "legacy_user_id": {
+                    "source": "user_id"
+                },
+                "registered_at": {
+                    "source": "user_regdate",
+                    "transform": "datetime",
+                    "format": "U"
+                }
+            }
+        },
+        {
+            "source": "stadtwache",
+            "name": "Stadtwache: Legacy Users (waechter)",
+            "target": "legacy_users",
+            "source_table": "waechter",
+            "field_map": {
+                "username": {
+                    "source": "name"
+                },
+                "legacy_source": {
+                    "default": "treffen"
+                },
+                "email": {
+                    "source": "email"
+                },
+                "legacy_user_id": {
+                    "source": "id"
+                }
+            }
+        },
+        {
+            "source": "stadtwache",
             "name": "Stadtwache: Events",
             "target": "events",
             "source_table": "treffen_treffen",
@@ -51,6 +125,12 @@
                 },
                 "creator": {
                     "source": "entryuser"
+                },
+                "legacy_owner": {
+                    "source": "entryuser"
+                },
+                "legacy_source": {
+                    "default": "treffen"
                 },
                 "last_edited_by": {
                     "source": "lasteditby"
@@ -116,6 +196,9 @@
                 "uploader": {
                     "source": "uploader"
                 },
+                "legacy_source": {
+                    "default": "gallery"
+                },
                 "created_at": {
                     "source": "datum",
                     "transform": "datetime"
@@ -159,6 +242,12 @@
                 },
                 "locale": {
                     "default": "de"
+                },
+                "legacy_owner": {
+                    "source": "rev_user_text"
+                },
+                "legacy_source": {
+                    "default": "wiki"
                 },
                 "user_id": {
                     "default": 1

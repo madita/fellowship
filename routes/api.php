@@ -89,6 +89,10 @@ Route::post('/users/search', "\App\Http\Controllers\UserController@searchUsers")
 
 //
 Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 'account.'], function () {
+    // Claim content from the old site (creates a legacy-account-claim ticket)
+    Route::post('/legacy-claim/preview', 'App\Http\Controllers\LegacyClaimController@preview');
+    Route::post('/legacy-claim', 'App\Http\Controllers\LegacyClaimController@store');
+
     Route::get('/notifications', 'App\Http\Controllers\NotificationController@index')->name('notification.index');
     Route::get('/notification', 'App\Http\Controllers\NotificationController@notification')->name('notification.unread');
     Route::delete('/notification/delete/{id}', 'App\Http\Controllers\NotificationController@notificationdelete');
@@ -459,6 +463,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
         Route::get('/migrations/sources/{source}/tables', 'App\Http\Controllers\Admin\MigrationController@sourceTables');
         Route::get('/migrations/sources/{source}/tables/{table}/columns', 'App\Http\Controllers\Admin\MigrationController@sourceColumns');
         Route::get('/migrations/targets', 'App\Http\Controllers\Admin\MigrationController@targets');
+        Route::get('/migrations/legacy-users', 'App\Http\Controllers\Admin\MigrationController@legacyUsers');
+        Route::post('/migrations/legacy-users/assign', 'App\Http\Controllers\Admin\MigrationController@assignLegacyUser');
         Route::get('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@mappings');
         Route::get('/migrations/mappings/export', 'App\Http\Controllers\Admin\MigrationController@exportMappings');
         Route::post('/migrations/mappings/import', 'App\Http\Controllers\Admin\MigrationController@importMappings');

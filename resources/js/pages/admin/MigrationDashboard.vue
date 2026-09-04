@@ -38,6 +38,9 @@
             <v-tab value="mappings">
                 <v-icon start>mdi-swap-horizontal</v-icon>{{ $t('migrationTool.tabMappings') }}
             </v-tab>
+            <v-tab value="legacyUsers">
+                <v-icon start>mdi-account-convert</v-icon>{{ $t('migrationTool.tabLegacyUsers') }}
+            </v-tab>
         </v-tabs>
 
         <v-window v-model="tab">
@@ -47,6 +50,10 @@
 
         <v-window-item value="mappings">
             <migration-mappings @notify="onNotify" @run="onImportRun" />
+        </v-window-item>
+
+        <v-window-item value="legacyUsers">
+            <migration-legacy-users @notify="onNotify" />
         </v-window-item>
 
         <v-window-item value="runs">
@@ -272,6 +279,7 @@ import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import MigrationSources from '@/components/admin/migration/MigrationSources.vue';
 import MigrationMappings from '@/components/admin/migration/MigrationMappings.vue';
+import MigrationLegacyUsers from '@/components/admin/migration/MigrationLegacyUsers.vue';
 
 const { t } = useI18n();
 

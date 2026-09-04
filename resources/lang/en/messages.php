@@ -253,6 +253,11 @@ return [
         'cancelled'       => 'Cancelled by user',
         'cancelled_count' => 'Cancelled :count pending migrations',
         'deleted_count'   => 'Deleted :count old migration logs',
+        'user_not_found'        => 'No registered user ":user" (username or e-mail)',
+        'legacy_user_not_found' => 'No imported content is attributed to ":name"',
+        'legacy_assigned'       => 'Content of ":name" assigned to :user',
+        'claim_exists'          => 'You already have an open claim for this legacy account',
+        'claim_created'         => 'Claim submitted — an admin will review it and assign your old content',
     ],
 
     // SPA
