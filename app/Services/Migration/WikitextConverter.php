@@ -93,7 +93,177 @@ class WikitextConverter
         // Anything still wrapped in [[…]] (unknown namespaces): keep the label.
         $content = preg_replace('/\[\[(?:[^\]|]*\|)?([^\]|]*)\]\]/', '$1', $content);
 
+        // Tables last: inline markup inside the cells is already converted.
+        $content = $this->processTables($content);
+
         return $this->wrapInParagraphs($content);
+    }
+
+    /**
+     * Convert MediaWiki table markup into HTML tables:
+     *   {| class="prettytable"     table start (attributes)
+     *   |+ caption                 caption
+     *   |- class="row"             row start (attributes)
+     *   ! a !! b || class="c"|d    header cells ("attrs|content" per cell)
+     *   | a || b                   data cells
+     *   |}                         table end
+     * Nested tables are appended into the parent's current cell.
+     */
+    private function processTables(string $content): string
+    {
+        if (!str_contains($content, '{|')) {
+            return $content;
+        }
+
+        $out = [];
+        $stack = [];
+
+        foreach (explode("\n", $content) as $line) {
+            $trim = trim($line);
+
+            if (str_starts_with($trim, '{|')) {
+                $stack[] = [
+                    'attrs' => $this->sanitizeAttributes(substr($trim, 2)),
+                    'caption' => null,
+                    'rows' => [],
+                    'rowAttrs' => '',
+                    'cells' => [],
+                ];
+                continue;
+            }
+
+            if (!$stack) {
+                $out[] = $line;
+                continue;
+            }
+
+            $table = &$stack[count($stack) - 1];
+
+            if (str_starts_with($trim, '|}')) {
+                $html = $this->renderTable($table);
+                unset($table);
+                array_pop($stack);
+
+                if ($stack) {
+                    // nested table becomes part of the parent's current cell
+                    $parent = &$stack[count($stack) - 1];
+                    if (!$parent['cells']) {
+                        $parent['cells'][] = ['td', '', ''];
+                    }
+                    $parent['cells'][count($parent['cells']) - 1][2] .= $html;
+                    unset($parent);
+                } else {
+                    $out[] = $html;
+                }
+                continue;
+            }
+
+            if (str_starts_with($trim, '|+')) {
+                $table['caption'] = trim(substr($trim, 2));
+            } elseif (str_starts_with($trim, '|-')) {
+                $this->flushRow($table);
+                $table['rowAttrs'] = $this->sanitizeAttributes(ltrim(substr($trim, 2), '-'));
+            } elseif (str_starts_with($trim, '!')) {
+                foreach (preg_split('/!!|\|\|/', substr($trim, 1)) as $cell) {
+                    $table['cells'][] = $this->makeCell('th', $cell);
+                }
+            } elseif (str_starts_with($trim, '|')) {
+                foreach (explode('||', substr($trim, 1)) as $cell) {
+                    $table['cells'][] = $this->makeCell('td', $cell);
+                }
+            } elseif ($trim !== '') {
+                // continuation of the previous cell's content
+                if (!$table['cells']) {
+                    $table['cells'][] = ['td', '', ''];
+                }
+                $table['cells'][count($table['cells']) - 1][2] .= '<br>' . $trim;
+            }
+
+            unset($table);
+        }
+
+        // Unterminated tables: render what we have.
+        while ($stack) {
+            $table = array_pop($stack);
+            $out[] = $this->renderTable($table);
+        }
+
+        return implode("\n", $out);
+    }
+
+    /**
+     * @return array{0:string,1:string,2:string} [tag, attribute string, content]
+     */
+    private function makeCell(string $tag, string $cell): array
+    {
+        $attrs = '';
+        $content = trim($cell);
+
+        // "class="unsortable"|Content" — text before the first pipe is
+        // attributes when it actually looks like attributes.
+        $pipe = strpos($content, '|');
+        if ($pipe !== false) {
+            $candidate = substr($content, 0, $pipe);
+            if (preg_match('/^\s*(?:[\w-]+\s*=\s*("[^"]*"|\'[^\']*\'|[\w-]+)\s*)+$/', $candidate)) {
+                $attrs = $this->sanitizeAttributes($candidate);
+                $content = trim(substr($content, $pipe + 1));
+            }
+        }
+
+        return [$tag, $attrs, $content];
+    }
+
+    /**
+     * Keep only harmless presentation attributes (drops on* handlers etc.).
+     */
+    private function sanitizeAttributes(string $raw): string
+    {
+        $allowed = ['class', 'style', 'id', 'colspan', 'rowspan', 'align', 'valign', 'width', 'scope'];
+
+        preg_match_all('/([\w-]+)\s*=\s*("([^"]*)"|\'([^\']*)\'|(\S+))/', $raw, $matches, PREG_SET_ORDER);
+
+        $attrs = [];
+        foreach ($matches as $match) {
+            $name = strtolower($match[1]);
+            if (in_array($name, $allowed, true)) {
+                $value = $match[3] !== '' ? $match[3] : ($match[4] ?? '') . ($match[5] ?? '');
+                $attrs[] = $name . '="' . htmlspecialchars($value, ENT_QUOTES) . '"';
+            }
+        }
+
+        return $attrs ? ' ' . implode(' ', $attrs) : '';
+    }
+
+    /**
+     * @param array{attrs:string,caption:?string,rows:array,rowAttrs:string,cells:array} $table
+     */
+    private function renderTable(array $table): string
+    {
+        $this->flushRow($table);
+
+        $html = '<table' . $table['attrs'] . '>';
+        if ($table['caption'] !== null && $table['caption'] !== '') {
+            $html .= '<caption>' . $table['caption'] . '</caption>';
+        }
+
+        foreach ($table['rows'] as $row) {
+            $html .= '<tr' . $row['attrs'] . '>';
+            foreach ($row['cells'] as [$tag, $attrs, $content]) {
+                $html .= "<{$tag}{$attrs}>{$content}</{$tag}>";
+            }
+            $html .= '</tr>';
+        }
+
+        return $html . '</table>';
+    }
+
+    private function flushRow(array &$table): void
+    {
+        if ($table['cells']) {
+            $table['rows'][] = ['attrs' => $table['rowAttrs'], 'cells' => $table['cells']];
+        }
+        $table['cells'] = [];
+        $table['rowAttrs'] = '';
     }
 
     private function processLists(string $content): string
