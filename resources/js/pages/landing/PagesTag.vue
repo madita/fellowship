@@ -2,20 +2,15 @@
     <div>
         <v-sheet>
             <v-container class="py-6 pt-lg-15">
-                <v-list-item-group
-                    v-model="selectedItem"
-                    color="primary"
-                >
+                <v-list color="primary" class="bg-transparent">
                     <v-list-item
                         v-for="(page, index) in pages"
                         :key="index"
                         @click="goToPage(page.slug)"
                     >
-                        <v-list-item-content>
-                            <v-list-item-title v-text="page.title"></v-list-item-title>
-                        </v-list-item-content>
+                        <v-list-item-title v-text="page.title"></v-list-item-title>
                     </v-list-item>
-                </v-list-item-group>
+                </v-list>
             </v-container>
         </v-sheet>
     </div>

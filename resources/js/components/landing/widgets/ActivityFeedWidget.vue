@@ -32,36 +32,36 @@
             :target="!item.internal && item.external ? '_blank' : undefined"
             :rel="!item.internal && item.external ? 'noopener noreferrer' : undefined"
           >
-            <v-list-item-avatar v-if="config.showAvatar !== false">
-              <v-img v-if="item.avatar" :src="item.avatar"></v-img>
-              <v-icon v-else :color="item.iconColor || 'grey'">
-                {{ item.icon || 'mdi-circle-outline' }}
-              </v-icon>
-            </v-list-item-avatar>
+            <template v-if="config.showAvatar !== false" #prepend>
+              <v-avatar>
+                <v-img v-if="item.avatar" :src="item.avatar"></v-img>
+                <v-icon v-else :color="item.iconColor || 'grey'">
+                  {{ item.icon || 'mdi-circle-outline' }}
+                </v-icon>
+              </v-avatar>
+            </template>
 
-            <v-list-item-content>
-              <v-list-item-title>
-                {{ item.title }}
-                <v-chip
-                  v-if="item.badge"
-                  :color="item.badgeColor || 'primary'"
-                  x-small
-                  class="ml-2"
-                >
-                  {{ item.badge }}
-                </v-chip>
-              </v-list-item-title>
-              <v-list-item-subtitle v-if="item.subtitle">
-                {{ item.subtitle }}
-              </v-list-item-subtitle>
-              <v-list-item-subtitle v-if="item.description && config.threeLine">
-                {{ item.description }}
-              </v-list-item-subtitle>
-            </v-list-item-content>
+            <v-list-item-title>
+              {{ item.title }}
+              <v-chip
+                v-if="item.badge"
+                :color="item.badgeColor || 'primary'"
+                size="x-small"
+                class="ml-2"
+              >
+                {{ item.badge }}
+              </v-chip>
+            </v-list-item-title>
+            <v-list-item-subtitle v-if="item.subtitle">
+              {{ item.subtitle }}
+            </v-list-item-subtitle>
+            <v-list-item-subtitle v-if="item.description && config.threeLine">
+              {{ item.description }}
+            </v-list-item-subtitle>
 
-            <v-list-item-action v-if="item.timestamp">
-              <v-list-item-action-text>{{ item.timestamp }}</v-list-item-action-text>
-            </v-list-item-action>
+            <template v-if="item.timestamp" #append>
+              <span class="text-caption text-medium-emphasis">{{ item.timestamp }}</span>
+            </template>
           </v-list-item>
 
           <v-divider
@@ -71,11 +71,9 @@
         </template>
 
         <v-list-item v-if="activities.length === 0">
-          <v-list-item-content>
-            <v-list-item-title class="text-center text--secondary">
-              {{ content.emptyText || 'No recent activity' }}
-            </v-list-item-title>
-          </v-list-item-content>
+          <v-list-item-title class="text-center text-medium-emphasis">
+            {{ content.emptyText || 'No recent activity' }}
+          </v-list-item-title>
         </v-list-item>
       </v-list>
     </v-card>

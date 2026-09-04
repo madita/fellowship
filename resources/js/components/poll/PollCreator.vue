@@ -96,27 +96,25 @@
               :key="index"
               class="px-0"
             >
-              <v-list-item-content>
-                <v-text-field
-                  v-model="option.option_text"
-                  :label="`Option ${index + 1}`"
-                  :rules="[rules.required]"
-                  outlined
-                  dense
-                  hide-details
-                >
-                  <template v-slot:append-outer>
-                    <v-btn
-                      icon
-                      small
-                      @click="removeOption(index)"
-                      :disabled="form.options.length <= 2"
-                    >
-                      <v-icon small>mdi-close</v-icon>
-                    </v-btn>
-                  </template>
-                </v-text-field>
-              </v-list-item-content>
+              <v-text-field
+                v-model="option.option_text"
+                :label="`Option ${index + 1}`"
+                :rules="[rules.required]"
+                outlined
+                dense
+                hide-details
+              >
+                <template v-slot:append>
+                  <v-btn
+                    icon
+                    small
+                    @click="removeOption(index)"
+                    :disabled="form.options.length <= 2"
+                  >
+                    <v-icon small>mdi-close</v-icon>
+                  </v-btn>
+                </template>
+              </v-text-field>
             </v-list-item>
           </v-list>
 

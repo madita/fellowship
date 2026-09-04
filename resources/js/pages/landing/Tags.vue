@@ -2,21 +2,21 @@
     <div>
         <v-sheet>
             <v-container class="py-6 pt-lg-15">
-                <v-list-group
-                    color="bg-primary"
-                    v-for="(taxable, type) in taxables.type"
-                    :key="`${type}-${$taxable}`"
-                >{{type}}
-                    <v-list-item
-                        v-for="(model) in taxable"
-                        :key="`${model.data.slug}`"
-                        @click="goTo(model.data.slug, type)"
+                <v-list class="bg-transparent">
+                    <template
+                        v-for="(taxable, type) in taxables.type"
+                        :key="type"
                     >
-                        <v-list-item-content>
+                        <v-list-subheader>{{ type }}</v-list-subheader>
+                        <v-list-item
+                            v-for="model in taxable"
+                            :key="model.data.slug"
+                            @click="goTo(model.data.slug, type)"
+                        >
                             <v-list-item-title v-text="model.taxable_title"></v-list-item-title>
-                        </v-list-item-content>
-                    </v-list-item>
-                </v-list-group>
+                        </v-list-item>
+                    </template>
+                </v-list>
             </v-container>
         </v-sheet>
     </div>
