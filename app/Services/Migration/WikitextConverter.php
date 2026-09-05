@@ -19,6 +19,20 @@ class WikitextConverter
 {
     private const CATEGORY_NAMESPACES = '(?:Category|Kategorie)';
 
+    private const IMAGE_NAMESPACES = '(?:File|Image|Bild|Datei)';
+
+    /**
+     * @param \Closure|null $imageResolver fn (string $filename, ?string $caption): ?string
+     *                                     returns HTML for an [[Image:…]] reference
+     *                                     (e.g. an <img> tag after attaching the
+     *                                     file as media), or null to drop it.
+     *                                     Without a resolver, image references
+     *                                     are stripped.
+     */
+    public function __construct(private ?\Closure $imageResolver = null)
+    {
+    }
+
     /**
      * @return array{html: string, categories: string[]}
      */
@@ -73,8 +87,9 @@ class WikitextConverter
         $content = preg_replace('/\[\[' . self::CATEGORY_NAMESPACES . ':[^\]]*\]\]/u', '', $content);
         $content = preg_replace('/\[\[[a-z]{2,3}:[^\]]*\]\]/', '', $content);
 
-        // Image references: the files live outside the database — strip them.
-        $content = preg_replace('/\[\[(?:File|Image|Bild|Datei):[^\]]*\]\]/u', '', $content);
+        // Image references: resolve them to media (when a resolver is
+        // configured) or strip them — the files live outside the database.
+        $content = $this->processImages($content);
 
         $content = $this->processInternalLinks($content);
 
@@ -325,6 +340,32 @@ class WikitextConverter
         }
 
         return $content;
+    }
+
+    private function processImages(string $content): string
+    {
+        return preg_replace_callback(
+            '/\[\[' . self::IMAGE_NAMESPACES . ':([^\]|]+)((?:\|[^\]]*)?)\]\]/u',
+            function ($match) {
+                if (!$this->imageResolver) {
+                    return '';
+                }
+
+                // Params like thumb|200px|left carry MediaWiki layout; the
+                // last non-layout param is the caption/alt text.
+                $params = array_filter(array_map('trim', explode('|', ltrim($match[2], '|'))));
+                $caption = null;
+                foreach (array_reverse($params) as $param) {
+                    if (!preg_match('/^(thumb|thumbnail|frame|frameless|border|left|right|center|none|\d+px|x\d+px|upright.*)$/i', $param)) {
+                        $caption = str_replace("'", '', $param);
+                        break;
+                    }
+                }
+
+                return ($this->imageResolver)(trim($match[1]), $caption) ?? '';
+            },
+            $content
+        );
     }
 
     /**

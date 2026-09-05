@@ -377,6 +377,9 @@
                 "content": {
                     "source": "old_text"
                 },
+                "images_path": {
+                    "default": "C:\\Users\\madit\\OneDrive\\Pictures\\Wache\\website\\wachewiki"
+                },
                 "status": {
                     "source": "page_is_redirect",
                     "transform": "bool"

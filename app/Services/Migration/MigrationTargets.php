@@ -115,6 +115,7 @@ class MigrationTargets
                     ['key' => 'title', 'label' => 'Title', 'required' => true, 'hint' => 'MediaWiki page_title → transform underscores_to_spaces'],
                     ['key' => 'content', 'label' => 'Content', 'required' => true, 'hint' => 'MediaWiki text.old_text (join revision on page_latest, text on rev_text_id)'],
                     ['key' => 'convert_wikitext', 'label' => 'Convert wikitext', 'required' => false, 'hint' => 'default: 1 — set default 0 when content is already HTML'],
+                    ['key' => 'images_path', 'label' => 'Image folder on this server', 'required' => false, 'hint' => 'set as default, e.g. the MediaWiki images dir — [[Image:…]] refs attach found files as page media; missing files are dropped'],
                     ['key' => 'status', 'label' => 'Status', 'required' => false, 'hint' => 'MediaWiki page_is_redirect → bool transform ("redirect" when true)'],
                     ['key' => 'locale', 'label' => 'Language', 'required' => false, 'hint' => 'locale the title/content are written to (e.g. default "de") — falls back to the app locale'],
                     ['key' => 'legacy_owner', 'label' => 'Legacy owner (username)', 'required' => false, 'hint' => 'MediaWiki rev_user_text — recorded for later assignment to a registered user'],
@@ -376,14 +377,6 @@ class MigrationTargets
         }
 
         $content = (string) $mapped['content'];
-        $categories = [];
-
-        $convert = filter_var($mapped['convert_wikitext'] ?? true, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true;
-        if ($convert) {
-            $converted = (new WikitextConverter())->convert($content);
-            $content = $converted['html'];
-            $categories = $converted['categories'];
-        }
 
         $userId = (int) ($mapped['user_id'] ?? 1);
 
@@ -391,11 +384,26 @@ class MigrationTargets
         // explicit locale so imports don't depend on the queue worker's locale.
         $locale = trim((string) ($mapped['locale'] ?? '')) ?: app()->getLocale();
 
+        // The page must exist before conversion: resolved [[Image:…]] refs
+        // attach their files as this page's media.
         $page = new Page(['user_id' => $userId, 'slug' => $slug]);
         $translation = $page->translateOrNew($locale);
         $translation->title = $title;
         $translation->content = $content;
         $page->save();
+
+        $categories = [];
+        $convert = filter_var($mapped['convert_wikitext'] ?? true, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true;
+        if ($convert) {
+            $resolver = !empty($mapped['images_path'])
+                ? self::wikiImageResolver($page, (string) $mapped['images_path'])
+                : null;
+
+            $converted = (new WikitextConverter($resolver))->convert($content);
+            $page->translateOrNew($locale)->content = $converted['html'];
+            $page->save();
+            $categories = $converted['categories'];
+        }
 
         // MediaWiki's page_is_redirect maps to the wiki "redirect" status;
         // any other non-empty string is stored as-is.
@@ -503,6 +511,51 @@ class MigrationTargets
         MigrationAttribution::record($media, $mapped['uploader'] ?? null, $mapped['legacy_source'] ?? null);
 
         return $fileName;
+    }
+
+    /**
+     * Resolver for [[Image:…]] references in wikitext: looks the file up in
+     * the given folder (MediaWiki-style, spaces as underscores; falls back
+     * to the newest version in its archive/ subfolder), attaches it to the
+     * page's media and returns an <img> tag. Missing files resolve to null
+     * (the reference is dropped). Files already attached are reused.
+     */
+    public static function wikiImageResolver(Page $page, string $basePath): \Closure
+    {
+        $basePath = rtrim($basePath, '/\\');
+
+        return function (string $filename, ?string $caption) use ($page, $basePath): ?string {
+            $fileName = str_replace(' ', '_', trim($filename));
+            $alt = htmlspecialchars($caption ?? pathinfo($fileName, PATHINFO_FILENAME), ENT_QUOTES);
+
+            // Re-use an already attached copy (regenerating content must
+            // not duplicate media).
+            $existing = $page->getMedia('images')->firstWhere('file_name', $fileName);
+            if ($existing) {
+                return "<img src=\"{$existing->getUrl()}\" alt=\"{$alt}\">";
+            }
+
+            $path = $basePath . DIRECTORY_SEPARATOR . $fileName;
+            if (!is_file($path)) {
+                // Replaced/removed files may survive in archive/ — under
+                // their plain name or as {timestamp}!{name} versions.
+                $path = $basePath . DIRECTORY_SEPARATOR . 'archive' . DIRECTORY_SEPARATOR . $fileName;
+            }
+            if (!is_file($path)) {
+                $versions = glob($basePath . DIRECTORY_SEPARATOR . 'archive' . DIRECTORY_SEPARATOR . '*!' . $fileName) ?: [];
+                $path = $versions ? max($versions) : null;
+            }
+            if (!$path || !is_file($path)) {
+                return null; // file lost — drop the reference
+            }
+
+            $media = $page->addMedia($path)
+                ->preservingOriginal()
+                ->usingFileName($fileName)
+                ->toMediaCollection('images');
+
+            return "<img src=\"{$media->getUrl()}\" alt=\"{$alt}\">";
+        };
     }
 
     private static function importWikiTerm(array $mapped): string

@@ -177,6 +177,13 @@ class MigrationToolTest extends TestCase
      */
     public function test_mediawiki_wiki_pages_import_with_joins_and_filters(): void
     {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        // Image archive: one existing file; a second ref points nowhere.
+        $imagesPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'wikiimg_' . uniqid();
+        mkdir($imagesPath, 0777, true);
+        file_put_contents($imagesPath . DIRECTORY_SEPARATOR . 'Watch_badge.jpg', 'jpg-bytes');
+
         $dbPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'mediawiki_' . uniqid() . '.sqlite';
         $pdo = new PDO('sqlite:' . $dbPath);
         $pdo->exec('CREATE TABLE page (page_id INTEGER, page_namespace INTEGER, page_title TEXT, page_is_redirect INTEGER, page_latest INTEGER)');
@@ -191,7 +198,7 @@ class MigrationToolTest extends TestCase
         $pdo->exec("INSERT INTO revision VALUES (11, 2, '20240116120000', 101)");
         $pdo->exec("INSERT INTO revision VALUES (12, 3, '20240117120000', 102)");
 
-        $wikitext = "== History ==\nThe '''watch''' patrols [[Ankh-Morpork|the city]].\n* Vimes\n* Carrot\n[[Kategorie:Orga]]";
+        $wikitext = "== History ==\nThe '''watch''' patrols [[Ankh-Morpork|the city]].\n[[Bild:Watch badge.jpg|thumb|Das Abzeichen]]\n[[Bild:Lost file.jpg|gone]]\n* Vimes\n* Carrot\n[[Kategorie:Orga]]";
         $insert = $pdo->prepare('INSERT INTO "text" VALUES (?, ?)');
         $insert->execute([100, $wikitext]);
         $insert->execute([101, 'talk page text']);
@@ -213,6 +220,7 @@ class MigrationToolTest extends TestCase
                 'field_map' => [
                     'title' => ['source' => 'page_title', 'transform' => 'underscores_to_spaces'],
                     'content' => ['source' => 'old_text'],
+                    'images_path' => ['default' => $imagesPath],
                     'status' => ['source' => 'page_is_redirect', 'transform' => 'bool'],
                     'locale' => ['default' => 'de'],
                     'user_id' => ['default' => $this->admin->id],
@@ -257,6 +265,15 @@ class MigrationToolTest extends TestCase
             $this->assertStringContainsString('<a href="/wiki/ankh-morpork">the city</a>', $content);
             $this->assertStringContainsString('<li>Vimes</li>', $content);
             $this->assertStringNotContainsString('[[Kategorie', $content);
+            // The existing image attached as page media with its caption…
+            $media = $page->getMedia('images');
+            $this->assertCount(1, $media);
+            $this->assertSame('Watch_badge.jpg', $media[0]->file_name);
+            $this->assertStringContainsString('alt="Das Abzeichen"', $content);
+            $this->assertStringContainsString($media[0]->getUrl(), $content);
+            // …the lost one was dropped without leaving raw markup.
+            $this->assertStringNotContainsString('[[Bild', $content);
+            $this->assertStringNotContainsString('Lost_file', $content);
             $this->assertTrue($page->hasCategory('Orga', 'wiki'));
             $this->assertSame('2024-01-15 12:00:00', $page->created_at->format('Y-m-d H:i:s'));
 
@@ -277,6 +294,8 @@ class MigrationToolTest extends TestCase
                 ->assertStatus(200);
             $this->assertSame(2, Page::count());
         } finally {
+            @unlink($imagesPath . DIRECTORY_SEPARATOR . 'Watch_badge.jpg');
+            @rmdir($imagesPath);
             @unlink($dbPath);
         }
     }
