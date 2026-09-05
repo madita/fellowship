@@ -562,7 +562,7 @@ class MigrationToolTest extends TestCase
         // The repo ships a ready-made JSON for the old hardcoded jobs — keep it valid.
         $shipped = json_decode(file_get_contents(base_path('docs/migration-mappings.stadtwache.json')), true);
         $this->assertIsArray($shipped['mappings']);
-        $this->assertCount(8, $shipped['mappings']);
+        $this->assertCount(10, $shipped['mappings']);
     }
 
     public function test_cli_command_runs_a_mapping_by_name(): void
@@ -706,6 +706,149 @@ class MigrationToolTest extends TestCase
                 'user' => 'nobody-here',
             ])
             ->assertStatus(422);
+    }
+
+    /**
+     * phpBB-shaped forum import: threads from topics (first post = body,
+     * category from the forum table), replies linked via the legacy topic
+     * id, first posts filtered out by column comparison, BBCode converted,
+     * and re-runs skipping everything already imported.
+     */
+    public function test_phpbb_forum_threads_and_posts_import(): void
+    {
+        $dbPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phpbb_' . uniqid() . '.sqlite';
+        $pdo = new PDO('sqlite:' . $dbPath);
+        $pdo->exec('CREATE TABLE forums (forum_id INTEGER, forum_name TEXT)');
+        $pdo->exec('CREATE TABLE topics (topic_id INTEGER, forum_id INTEGER, topic_title TEXT, topic_first_post_id INTEGER, topic_first_poster_name TEXT, topic_time INTEGER, topic_status INTEGER, topic_type INTEGER, topic_views INTEGER, topic_visibility INTEGER, topic_moved_id INTEGER)');
+        $pdo->exec('CREATE TABLE posts (post_id INTEGER, topic_id INTEGER, poster_name TEXT, post_text TEXT, post_time INTEGER, post_visibility INTEGER)');
+
+        $pdo->exec("INSERT INTO forums VALUES (1, 'Taverne')");
+        $pdo->exec("INSERT INTO topics VALUES (10, 1, 'Muffins &amp; Kekse', 100, 'Laiza', 1200000000, 0, 1, 42, 1, 0)");
+        $pdo->exec("INSERT INTO topics VALUES (11, 1, 'Hidden', 102, 'X', 1200000000, 0, 0, 0, 0, 0)"); // invisible
+
+        $insert = $pdo->prepare('INSERT INTO posts VALUES (?, ?, ?, ?, ?, ?)');
+        $insert->execute([100, 10, 'Laiza', '<r>Wer mag <B><s>[b]</s>Muffins<e>[/b]</e></B>?</r>', 1200000000, 1]);
+        $insert->execute([101, 10, 'Vimes', '<r><QUOTE author="Laiza"><s>[quote]</s>Wer mag Muffins?<e>[/quote]</e></QUOTE>Ich!</r>', 1200000500, 1]);
+        $insert->execute([102, 11, 'X', 'invisible topic post', 1200000000, 1]);
+        unset($insert, $pdo);
+
+        try {
+            $source = MigrationSource::create(['name' => 'phpBB', 'driver' => 'sqlite', 'database' => $dbPath]);
+
+            $threads = MigrationMapping::create([
+                'migration_source_id' => $source->id,
+                'name' => 'phpBB threads',
+                'target' => 'forum_threads',
+                'source_table' => 'topics',
+                'field_map' => [
+                    'title' => ['source' => 'topic_title', 'transform' => 'html_decode'],
+                    'body' => ['source' => 'post_text'],
+                    'category' => ['source' => 'forum_name'],
+                    'legacy_id' => ['source' => 'topic_id'],
+                    'is_pinned' => ['source' => 'topic_type', 'transform' => 'int'],
+                    'view_count' => ['source' => 'topic_views', 'transform' => 'int'],
+                    'legacy_owner' => ['source' => 'topic_first_poster_name'],
+                    'legacy_source' => ['default' => 'forum'],
+                    'created_at' => ['source' => 'topic_time', 'transform' => 'datetime', 'format' => 'U'],
+                ],
+                'options' => [
+                    'joins' => [
+                        ['table' => 'forums', 'type' => 'inner', 'first' => 'forums.forum_id', 'operator' => '=', 'second' => 'topics.forum_id'],
+                        ['table' => 'posts', 'type' => 'inner', 'first' => 'posts.post_id', 'operator' => '=', 'second' => 'topics.topic_first_post_id'],
+                    ],
+                    'wheres' => [
+                        ['column' => 'topic_visibility', 'operator' => '=', 'value' => '1'],
+                    ],
+                ],
+            ]);
+
+            $posts = MigrationMapping::create([
+                'migration_source_id' => $source->id,
+                'name' => 'phpBB posts',
+                'target' => 'forum_posts',
+                'source_table' => 'posts',
+                'field_map' => [
+                    'thread_legacy_id' => ['source' => 'topic_id'],
+                    'body' => ['source' => 'post_text'],
+                    'legacy_id' => ['source' => 'post_id'],
+                    'legacy_owner' => ['source' => 'poster_name'],
+                    'legacy_source' => ['default' => 'forum'],
+                    'created_at' => ['source' => 'post_time', 'transform' => 'datetime', 'format' => 'U'],
+                ],
+                'options' => [
+                    'joins' => [
+                        ['table' => 'topics', 'type' => 'inner', 'first' => 'topics.topic_id', 'operator' => '=', 'second' => 'posts.topic_id'],
+                    ],
+                    'wheres' => [
+                        ['column' => 'topic_visibility', 'operator' => '=', 'value' => '1'],
+                        ['column' => 'posts.post_id', 'operator' => '!=', 'value' => 'topics.topic_first_post_id', 'compare' => 'column'],
+                    ],
+                ],
+            ]);
+
+            $this->actingAs($this->admin, 'sanctum')
+                ->postJson("/api/admin/migrations/mappings/{$threads->id}/run")
+                ->assertStatus(200);
+
+            // Only the visible topic imported; category created; BBCode converted.
+            $this->assertSame(1, \App\Models\Forum\ForumThread::count());
+            $thread = \App\Models\Forum\ForumThread::first();
+            $this->assertSame('Muffins & Kekse', $thread->title);
+            $this->assertStringContainsString('<strong>Muffins</strong>', $thread->body);
+            $this->assertTrue($thread->is_pinned);
+            $this->assertSame(42, $thread->view_count);
+            $this->assertSame('Taverne', $thread->category->term->title);
+            $this->assertSame('2008-01-10 21:20:00', $thread->created_at->format('Y-m-d H:i:s'));
+
+            $this->actingAs($this->admin, 'sanctum')
+                ->postJson("/api/admin/migrations/mappings/{$posts->id}/run")
+                ->assertStatus(200);
+
+            // Only the reply imported (first post filtered by column compare,
+            // invisible topic's post filtered by the visibility where).
+            $this->assertSame(1, \App\Models\Forum\ForumPost::count());
+            $post = \App\Models\Forum\ForumPost::first();
+            $this->assertSame($thread->id, $post->thread_id);
+            // Original posters stay visible without importing accounts.
+            $this->assertSame('Laiza', $thread->display_author);
+            $this->assertSame('Vimes', $post->display_author);
+            $this->assertStringContainsString('<blockquote><p><strong>Laiza:</strong></p>', $post->body);
+            $this->assertStringContainsString('Ich!', $post->body);
+            $this->assertSame('2008-01-10 21:28:20', $post->created_at->format('Y-m-d H:i:s'));
+            $this->assertSame('2008-01-10 21:28:20', $thread->fresh()->last_post_at->format('Y-m-d H:i:s'));
+
+            // Poster attribution recorded per identity.
+            $this->assertSame(1, \App\Models\MigrationAttribution::where('legacy_username', 'Vimes')->where('legacy_source', 'forum')->count());
+
+            // Re-runs skip everything (legacy id dedup).
+            foreach ([$threads, $posts] as $mapping) {
+                $this->actingAs($this->admin, 'sanctum')
+                    ->postJson("/api/admin/migrations/mappings/{$mapping->id}/run")
+                    ->assertStatus(200);
+            }
+            $this->assertSame(1, \App\Models\Forum\ForumThread::count());
+            $this->assertSame(1, \App\Models\Forum\ForumPost::count());
+
+            // Assigning the legacy poster moves ownership AND retires the
+            // placeholder byline — the registered account shows from then on.
+            $vimes = User::factory()->create(['username' => 'realvimes']);
+            $this->actingAs($this->admin, 'sanctum')
+                ->postJson('/api/admin/migrations/legacy-users/assign', [
+                    'legacy_username' => 'Vimes',
+                    'legacy_source' => 'forum',
+                    'user' => 'realvimes',
+                ])
+                ->assertStatus(200);
+
+            $post = $post->fresh();
+            $this->assertSame($vimes->id, $post->user_id);
+            $this->assertSame('realvimes', $post->display_author);
+            $this->assertNull($post->meta['legacy_author'] ?? null);
+            // The thread (posted by Laiza) keeps its placeholder.
+            $this->assertSame('Laiza', $thread->fresh()->display_author);
+        } finally {
+            @unlink($dbPath);
+        }
     }
 
     public function test_non_admins_cannot_use_the_tool(): void

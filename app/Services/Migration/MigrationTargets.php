@@ -4,8 +4,10 @@ namespace App\Services\Migration;
 
 use App\Models\Collection;
 use App\Models\Event\Event;
+use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
 use App\Models\MigrationAttribution;
+use App\Models\MigrationIdMap;
 use App\Models\MigrationLegacyUser;
 use App\Models\Page;
 use App\Models\Tag\Taxonomy;
@@ -76,13 +78,34 @@ class MigrationTargets
             ],
             'forum_threads' => [
                 'label' => 'Forum Threads',
-                'description' => 'Import forum threads; the category is created (forum_cat taxonomy) if missing.',
+                'description' => 'Import forum threads; the category is created (forum_cat taxonomy) if missing. For phpBB: map phpbb3_topics, join phpbb3_forums for the category and phpbb3_posts (on topic_first_post_id) for the body.',
                 'fields' => [
-                    ['key' => 'title', 'label' => 'Title', 'required' => true],
-                    ['key' => 'body', 'label' => 'Body', 'required' => true],
-                    ['key' => 'category', 'label' => 'Category name', 'required' => true],
+                    ['key' => 'title', 'label' => 'Title', 'required' => true, 'hint' => 'phpBB: topic_title, html_decode transform'],
+                    ['key' => 'body', 'label' => 'Body', 'required' => true, 'hint' => 'phpBB: post_text of the first post'],
+                    ['key' => 'convert_bbcode', 'label' => 'Convert BBCode', 'required' => false, 'hint' => 'default: 1 — converts phpBB post markup to HTML'],
+                    ['key' => 'category', 'label' => 'Category name', 'required' => true, 'hint' => 'phpBB: forum_name'],
+                    ['key' => 'legacy_id', 'label' => 'Legacy thread id', 'required' => false, 'hint' => 'phpBB: topic_id — lets posts link up and makes re-runs skip imported threads'],
+                    ['key' => 'is_locked', 'label' => 'Locked', 'required' => false, 'hint' => 'phpBB: topic_status, bool transform'],
+                    ['key' => 'is_pinned', 'label' => 'Pinned', 'required' => false, 'hint' => 'phpBB: topic_type (any non-zero value pins)'],
+                    ['key' => 'view_count', 'label' => 'Views', 'required' => false, 'hint' => 'phpBB: topic_views, int transform'],
+                    ['key' => 'legacy_owner', 'label' => 'Legacy owner (username)', 'required' => false, 'hint' => 'phpBB: topic_first_poster_name — recorded for later assignment'],
+                    ['key' => 'legacy_source', 'label' => 'Legacy system', 'required' => false, 'hint' => 'e.g. default "forum"'],
                     ['key' => 'user_id', 'label' => 'Author user id', 'required' => false, 'hint' => 'default: 1'],
-                    ['key' => 'created_at', 'label' => 'Created at', 'required' => false, 'hint' => 'datetime transform'],
+                    ['key' => 'created_at', 'label' => 'Created at', 'required' => false, 'hint' => 'phpBB: topic_time — datetime transform, format U'],
+                ],
+            ],
+            'forum_posts' => [
+                'label' => 'Forum Posts',
+                'description' => 'Import forum replies into threads imported earlier (matched via the legacy thread id). Import the threads first. Filter out each topic\'s first post — it already became the thread body.',
+                'fields' => [
+                    ['key' => 'thread_legacy_id', 'label' => 'Legacy thread id', 'required' => true, 'hint' => 'phpBB: topic_id — must match the threads\' "Legacy thread id"'],
+                    ['key' => 'body', 'label' => 'Body', 'required' => true, 'hint' => 'phpBB: post_text'],
+                    ['key' => 'convert_bbcode', 'label' => 'Convert BBCode', 'required' => false, 'hint' => 'default: 1'],
+                    ['key' => 'legacy_id', 'label' => 'Legacy post id', 'required' => false, 'hint' => 'phpBB: post_id — makes re-runs skip imported posts'],
+                    ['key' => 'legacy_owner', 'label' => 'Legacy owner (username)', 'required' => false, 'hint' => 'phpBB: join phpbb3_users on poster_id → username'],
+                    ['key' => 'legacy_source', 'label' => 'Legacy system', 'required' => false, 'hint' => 'e.g. default "forum"'],
+                    ['key' => 'user_id', 'label' => 'Author user id', 'required' => false, 'hint' => 'default: 1'],
+                    ['key' => 'created_at', 'label' => 'Created at', 'required' => false, 'hint' => 'phpBB: post_time — datetime transform, format U'],
                 ],
             ],
             'wiki_pages' => [
@@ -167,6 +190,7 @@ class MigrationTargets
             'legacy_users' => self::importLegacyUser($mapped),
             'events' => self::importEvent($mapped),
             'forum_threads' => self::importForumThread($mapped),
+            'forum_posts' => self::importForumPost($mapped),
             'wiki_pages' => self::importWikiPage($mapped),
             'wiki_terms' => self::importWikiTerm($mapped),
             'gallery_collections' => self::importCollection($mapped),
@@ -256,26 +280,90 @@ class MigrationTargets
         return (string) $event->title;
     }
 
-    private static function importForumThread(array $mapped): string
+    private static function importForumThread(array $mapped): ?string
     {
+        if (MigrationIdMap::exists_for('forum_topic', $mapped['legacy_id'] ?? null)) {
+            return null; // already imported — skip
+        }
+
         $term = Term::firstOrCreateByTitle($mapped['category']);
         $taxonomy = Taxonomy::firstOrCreate(
             ['term_id' => $term->id, 'taxonomy' => 'forum_cat'],
             ['sort' => 0, 'visible' => true, 'searchable' => true, 'properties' => []]
         );
 
+        $body = (string) $mapped['body'];
+        $convert = filter_var($mapped['convert_bbcode'] ?? true, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true;
+        if ($convert) {
+            $body = (new BbcodeConverter())->toHtml($body);
+        }
+
+        $legacyOwner = trim((string) ($mapped['legacy_owner'] ?? ''));
+
         $thread = ForumThread::create([
             'taxonomy_id' => $taxonomy->id,
             'user_id' => $mapped['user_id'] ?? 1,
             'title' => $mapped['title'],
-            'body' => $mapped['body'],
+            'body' => $body,
+            'is_locked' => (bool) ($mapped['is_locked'] ?? false),
+            // phpBB topic_type: 0 normal, 1 sticky, 2/3 announcement.
+            'is_pinned' => !empty($mapped['is_pinned']),
+            'view_count' => (int) ($mapped['view_count'] ?? 0),
+            // Shown as the author until the legacy account is assigned.
+            'meta' => $legacyOwner !== '' ? ['legacy_author' => $legacyOwner] : null,
         ]);
         if (!empty($mapped['created_at'])) {
-            $thread->created_at = $mapped['created_at'];
-            $thread->save();
+            ForumThread::whereKey($thread->id)->update([
+                'created_at' => $mapped['created_at'],
+                'last_post_at' => $mapped['created_at'],
+            ]);
         }
 
+        MigrationIdMap::remember('forum_topic', $mapped['legacy_id'] ?? null, $thread);
+        MigrationAttribution::record($thread, $mapped['legacy_owner'] ?? null, $mapped['legacy_source'] ?? null);
+
         return (string) $thread->title;
+    }
+
+    private static function importForumPost(array $mapped): ?string
+    {
+        if (MigrationIdMap::exists_for('forum_post', $mapped['legacy_id'] ?? null)) {
+            return null; // already imported — skip
+        }
+
+        $thread = MigrationIdMap::lookup('forum_topic', $mapped['thread_legacy_id']);
+        if (!$thread instanceof ForumThread) {
+            throw new \RuntimeException("No imported thread for legacy topic id \"{$mapped['thread_legacy_id']}\" — import the threads first");
+        }
+
+        $body = (string) $mapped['body'];
+        $convert = filter_var($mapped['convert_bbcode'] ?? true, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true;
+        if ($convert) {
+            $body = (new BbcodeConverter())->toHtml($body);
+        }
+
+        $legacyOwner = trim((string) ($mapped['legacy_owner'] ?? ''));
+
+        $post = ForumPost::create([
+            'thread_id' => $thread->id,
+            'user_id' => $mapped['user_id'] ?? 1,
+            'body' => $body,
+            // Shown as the author until the legacy account is assigned.
+            'meta' => $legacyOwner !== '' ? ['legacy_author' => $legacyOwner] : null,
+        ]);
+        if (!empty($mapped['created_at'])) {
+            ForumPost::whereKey($post->id)->update(['created_at' => $mapped['created_at']]);
+            // The created-hook stamped last_post_at with now() — correct it
+            // to the real newest post time.
+            ForumThread::whereKey($thread->id)->update([
+                'last_post_at' => ForumPost::where('thread_id', $thread->id)->max('created_at'),
+            ]);
+        }
+
+        MigrationIdMap::remember('forum_post', $mapped['legacy_id'] ?? null, $post);
+        MigrationAttribution::record($post, $mapped['legacy_owner'] ?? null, $mapped['legacy_source'] ?? null);
+
+        return Str::limit(strip_tags($body), 40);
     }
 
     private static function importWikiPage(array $mapped): ?string

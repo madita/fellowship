@@ -4,9 +4,9 @@
             <!-- Post Header -->
             <v-card-text class="pb-2">
                 <div class="d-flex align-center mb-3">
-                    <UserAvatar v-if="post.author" :user="post.author" />
+                    <UserAvatar v-if="post.author || post.meta?.legacy_author" :user="post.author" :legacy-name="post.meta?.legacy_author" />
                     <div class="ml-3">
-                        <span class="font-weight-medium">{{ post.author?.username }}</span>
+                        <span class="font-weight-medium">{{ post.display_author || post.author?.username }}</span>
                         <div class="text-caption text-medium-emphasis">
                             {{ formatDateDistance(post.created_at) }}
                         </div>
@@ -190,7 +190,7 @@ export default {
         onReplyClick() {
             this.$emit('quote-reply', {
                 postId: this.post.id,
-                username: this.post.author?.username || '',
+                username: this.post.display_author || this.post.author?.username || '',
                 body: this.post.body
             })
         },

@@ -437,6 +437,7 @@ class MigrationController extends Controller
             'options.wheres.*.column' => ['required', 'string', 'max:255', 'regex:'.SourceQuery::IDENTIFIER_PATTERN],
             'options.wheres.*.operator' => ['nullable', Rule::in(SourceQuery::OPERATORS)],
             'options.wheres.*.value' => 'nullable|string|max:1024',
+            'options.wheres.*.compare' => ['nullable', Rule::in(['value', 'column'])],
         ];
     }
 
@@ -766,6 +767,17 @@ class MigrationController extends Controller
                 } else {
                     $model = new $type();
                     $type::whereIn($model->getKeyName(), $ids)->update(['user_id' => $user->id]);
+
+                    // Forum content displayed the legacy author's name as a
+                    // placeholder — the real account takes over now.
+                    if (in_array($type, [\App\Models\Forum\ForumThread::class, \App\Models\Forum\ForumPost::class], true)) {
+                        foreach ($type::whereIn($model->getKeyName(), $ids)->whereNotNull('meta')->cursor() as $record) {
+                            $meta = $record->meta;
+                            unset($meta['legacy_author']);
+                            $record->meta = $meta ?: null;
+                            $record->saveQuietly();
+                        }
+                    }
                 }
 
                 $reassigned[class_basename($type)] = count($ids);

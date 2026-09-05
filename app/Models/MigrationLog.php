@@ -32,7 +32,7 @@ class MigrationLog extends Model
         $logs = $this->logs ?? [];
         $logs[] = [
             'type' => $type,
-            'message' => $message,
+            'message' => mb_substr($message, 0, 1000),
             'timestamp' => now()->toIso8601String(),
         ];
 
@@ -65,7 +65,9 @@ class MigrationLog extends Model
     {
         $this->update([
             'status' => 'failed',
-            'last_error' => $error,
+            // Errors can embed whole SQL statements (with huge bound
+            // values) — keep the head, or storing the error fails too.
+            'last_error' => mb_substr($error, 0, 1000),
             'completed_at' => now(),
         ]);
     }
@@ -82,7 +84,7 @@ class MigrationLog extends Model
     {
         $this->increment('error_count');
         if ($error) {
-            $this->update(['last_error' => $error]);
+            $this->update(['last_error' => mb_substr($error, 0, 1000)]);
         }
     }
 

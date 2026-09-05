@@ -36,7 +36,8 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('title');
             $table->string('slug')->unique();
-            $table->text('body');
+            $table->longText('body');
+            $table->json('meta')->nullable();
             $table->boolean('is_pinned')->default(false);
             $table->boolean('is_locked')->default(false);
             $table->integer('view_count')->default(0);
@@ -59,7 +60,8 @@ return new class extends Migration
             $table->foreignId('thread_id')->constrained('forum_threads')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('parent_id')->nullable()->constrained('forum_posts')->onDelete('cascade');
-            $table->text('body');
+            $table->longText('body');
+            $table->json('meta')->nullable();
             $table->boolean('is_solution')->default(false);
             $table->integer('like_count')->default(0);
             $table->timestamps();

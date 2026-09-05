@@ -1,5 +1,5 @@
 {
-    "__readme": "Mappings replicating the former hardcoded stadtwache migration jobs. Import on Admin → Migration → Mappings → Import JSON (the source named 'stadtwache' must exist). Order: Events → Gallery Collections → Gallery Images → Wiki Terms → Wiki Pages, then run the post-import steps on the Runs tab. 'Wiki Pages' needs the MediaWiki ww_text table, which is not part of the stadtwache dump — load it first or the run fails.",
+    "__readme": "Mappings for the stadtwache legacy import. Import on Admin → Migration → Mappings → Import JSON (the source named 'stadtwache' must exist). Order: Legacy Users (all three) → Events → Gallery Collections → Gallery Images → Wiki Terms → Wiki Pages → Forum Threads → Forum Posts, then run the post-import steps on the Runs tab. 'Wiki Pages' needs the MediaWiki ww_text table (not part of the base dump). Forum Posts must run AFTER Forum Threads (posts find their thread via the legacy topic id). Large runs (gallery images, forum posts): use 'php artisan migration:run-mapping \"<name>\"' instead of the dashboard button.",
     "mappings": [
         {
             "source": "stadtwache",
@@ -73,6 +73,147 @@
                 "legacy_user_id": {
                     "source": "id"
                 }
+            }
+        },
+        {
+            "source": "stadtwache",
+            "name": "Stadtwache: Forum Threads",
+            "target": "forum_threads",
+            "source_table": "phpbb3_topics",
+            "field_map": {
+                "title": {
+                    "source": "topic_title",
+                    "transform": "html_decode"
+                },
+                "body": {
+                    "source": "post_text",
+                    "default": "<p><em>Der ursprüngliche erste Beitrag ist im alten Forum verloren gegangen.</em></p>"
+                },
+                "category": {
+                    "source": "forum_name",
+                    "transform": "html_decode"
+                },
+                "legacy_id": {
+                    "source": "topic_id"
+                },
+                "is_locked": {
+                    "source": "topic_status",
+                    "transform": "bool"
+                },
+                "is_pinned": {
+                    "source": "topic_type",
+                    "transform": "int"
+                },
+                "view_count": {
+                    "source": "topic_views",
+                    "transform": "int"
+                },
+                "legacy_owner": {
+                    "source": "topic_first_poster_name"
+                },
+                "legacy_source": {
+                    "default": "forum"
+                },
+                "user_id": {
+                    "default": 1
+                },
+                "created_at": {
+                    "source": "topic_time",
+                    "transform": "datetime",
+                    "format": "U"
+                }
+            },
+            "options": {
+                "joins": [
+                    {
+                        "table": "phpbb3_forums",
+                        "type": "inner",
+                        "first": "phpbb3_forums.forum_id",
+                        "operator": "=",
+                        "second": "phpbb3_topics.forum_id"
+                    },
+                    {
+                        "table": "phpbb3_posts",
+                        "type": "left",
+                        "first": "phpbb3_posts.post_id",
+                        "operator": "=",
+                        "second": "phpbb3_topics.topic_first_post_id"
+                    }
+                ],
+                "wheres": [
+                    {
+                        "column": "topic_visibility",
+                        "operator": "=",
+                        "value": "1"
+                    },
+                    {
+                        "column": "topic_moved_id",
+                        "operator": "=",
+                        "value": "0"
+                    }
+                ]
+            }
+        },
+        {
+            "source": "stadtwache",
+            "name": "Stadtwache: Forum Posts",
+            "target": "forum_posts",
+            "source_table": "phpbb3_posts",
+            "field_map": {
+                "thread_legacy_id": {
+                    "source": "topic_id"
+                },
+                "body": {
+                    "source": "post_text"
+                },
+                "legacy_id": {
+                    "source": "post_id"
+                },
+                "legacy_owner": {
+                    "source": "username"
+                },
+                "legacy_source": {
+                    "default": "forum"
+                },
+                "user_id": {
+                    "default": 1
+                },
+                "created_at": {
+                    "source": "post_time",
+                    "transform": "datetime",
+                    "format": "U"
+                }
+            },
+            "options": {
+                "joins": [
+                    {
+                        "table": "phpbb3_topics",
+                        "type": "inner",
+                        "first": "phpbb3_topics.topic_id",
+                        "operator": "=",
+                        "second": "phpbb3_posts.topic_id"
+                    },
+                    {
+                        "table": "phpbb3_users",
+                        "type": "left",
+                        "first": "phpbb3_users.user_id",
+                        "operator": "=",
+                        "second": "phpbb3_posts.poster_id"
+                    }
+                ],
+                "wheres": [
+                    {
+                        "column": "post_visibility",
+                        "operator": "=",
+                        "value": "1"
+                    },
+                    {
+                        "column": "phpbb3_posts.post_id",
+                        "operator": "!=",
+                        "value": "phpbb3_topics.topic_first_post_id",
+                        "compare": "column"
+                    }
+                ]
             }
         },
         {

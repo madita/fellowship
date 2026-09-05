@@ -38,6 +38,7 @@ class ForumThread extends Model
         'last_post_id',
         'last_post_user_id',
         'last_post_at',
+        'meta',
     ];
 
     protected $casts = [
@@ -46,9 +47,20 @@ class ForumThread extends Model
         'view_count' => 'integer',
         'reply_count' => 'integer',
         'last_post_at' => 'datetime',
+        'meta' => 'array',
     ];
 
-    protected $appends = ['url'];
+    protected $appends = ['url', 'display_author'];
+
+    /**
+     * Name to show as the author: imported content keeps its original
+     * poster's name (meta.legacy_author) until the legacy account is
+     * assigned to a registered user.
+     */
+    public function getDisplayAuthorAttribute(): ?string
+    {
+        return $this->meta['legacy_author'] ?? $this->author?->username;
+    }
 
     protected $with = ['author'];
 
@@ -135,7 +147,7 @@ class ForumThread extends Model
     /**
      * Check if user can reply to this thread.
      */
-    public function canReply(User $user = null): bool
+    public function canReply(?User $user = null): bool
     {
         if ($this->is_locked) {
             return $user && $user->isAdmin();
@@ -147,7 +159,7 @@ class ForumThread extends Model
     /**
      * Check if user can edit this thread.
      */
-    public function canEdit(User $user = null): bool
+    public function canEdit(?User $user = null): bool
     {
         if (!$user) {
             return false;
@@ -165,7 +177,7 @@ class ForumThread extends Model
     /**
      * Check if user can delete this thread.
      */
-    public function canDelete(User $user = null): bool
+    public function canDelete(?User $user = null): bool
     {
         if (!$user) {
             return false;
