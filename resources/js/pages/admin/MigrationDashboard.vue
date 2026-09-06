@@ -104,6 +104,37 @@
                     </v-card-text>
                 </v-card>
 
+                <!-- Archive imported forum -->
+                <v-card class="mt-4">
+                    <v-card-title>{{ $t('migrationTool.forumArchive') }}</v-card-title>
+                    <v-card-text>
+                        <div class="text-caption text-medium-emphasis mb-3">{{ $t('migrationTool.forumArchiveHint') }}</div>
+                        <v-text-field
+                            v-model="archiveCategory"
+                            :label="$t('migrationTool.forumArchiveCategory')"
+                            placeholder="Archiv"
+                            variant="outlined"
+                            density="compact"
+                        />
+                        <v-checkbox
+                            v-model="archiveLockThreads"
+                            :label="$t('migrationTool.forumArchiveLock')"
+                            density="compact"
+                            hide-details
+                            class="mb-2"
+                        />
+                        <v-btn
+                            color="primary"
+                            variant="tonal"
+                            :loading="archiving"
+                            :disabled="!archiveCategory"
+                            @click="archiveForum"
+                        >
+                            {{ $t('migrationTool.forumArchiveRun') }}
+                        </v-btn>
+                    </v-card-text>
+                </v-card>
+
                 <!-- Current Batch Progress -->
                 <v-card v-if="currentBatchId" class="mt-4">
                     <v-card-title class="d-flex align-center justify-space-between">
@@ -590,6 +621,26 @@ const showSnackbar = (text, color = 'success') => {
 };
 
 const onNotify = ({ text, color = 'success' }) => showSnackbar(text, color);
+
+// Archive imported forum content under a chosen category
+const archiveCategory = ref('');
+const archiveLockThreads = ref(true);
+const archiving = ref(false);
+
+const archiveForum = async () => {
+    archiving.value = true;
+    try {
+        const { data } = await axios.post('/api/admin/migrations/forum/archive', {
+            category: archiveCategory.value,
+            lock_threads: archiveLockThreads.value,
+        });
+        showSnackbar(`${data.message} (${data.moved_categories} ${t('migrationTool.forumArchiveMoved')}, ${data.locked_threads} ${t('migrationTool.forumArchiveLocked')})`);
+    } catch (e) {
+        showSnackbar(e.response?.data?.message || e.message, 'error');
+    } finally {
+        archiving.value = false;
+    }
+};
 
 // A mapping import was queued — jump to the runs tab and follow its batch.
 const onImportRun = (batchId) => {

@@ -213,6 +213,8 @@ return [
         'legacy_assigned'       => 'Inhalte von „:name" wurden :user zugewiesen',
         'claim_exists'          => 'Du hast bereits eine offene Anfrage für dieses alte Konto',
         'claim_created'         => 'Anfrage eingereicht — ein Admin prüft sie und weist dir deine alten Inhalte zu',
+        'forum_archive_nothing' => 'Keine importierten Foreninhalte zum Archivieren gefunden',
+        'forum_archived'        => 'Importiertes Forum nach „:category" verschoben',
     ],
 
     // SPA

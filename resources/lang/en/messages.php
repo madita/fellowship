@@ -258,6 +258,8 @@ return [
         'legacy_assigned'       => 'Content of ":name" assigned to :user',
         'claim_exists'          => 'You already have an open claim for this legacy account',
         'claim_created'         => 'Claim submitted — an admin will review it and assign your old content',
+        'forum_archive_nothing' => 'No imported forum content found to archive',
+        'forum_archived'        => 'Imported forum moved into ":category"',
     ],
 
     // SPA

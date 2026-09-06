@@ -8,6 +8,7 @@ use App\Jobs\Migrations\MigrateLinkGalleryJob;
 use App\Jobs\Migrations\MigrateWikiLinkingJob;
 use App\Jobs\Migrations\MigrateWikiTermsLinkingJob;
 use App\Models\MigrationAttribution;
+use App\Models\MigrationIdMap;
 use App\Models\MigrationLegacyUser;
 use App\Models\MigrationLog;
 use App\Models\MigrationMapping;
@@ -438,6 +439,9 @@ class MigrationController extends Controller
             'options.wheres.*.operator' => ['nullable', Rule::in(SourceQuery::OPERATORS)],
             'options.wheres.*.value' => 'nullable|string|max:1024',
             'options.wheres.*.compare' => ['nullable', Rule::in(['value', 'column'])],
+            'options.order_by' => 'nullable|array',
+            'options.order_by.column' => ['required_with:options.order_by', 'string', 'max:255', 'regex:'.SourceQuery::IDENTIFIER_PATTERN],
+            'options.order_by.direction' => ['nullable', Rule::in(['asc', 'desc'])],
         ];
     }
 
@@ -806,6 +810,76 @@ class MigrationController extends Controller
         return response()->json([
             'message' => __('messages.migrations.legacy_assigned', ['name' => $data['legacy_username'], 'user' => $user->username]),
             'reassigned' => $reassigned,
+        ]);
+    }
+
+    /**
+     * Move the imported forum into an archive category chosen by the
+     * admin: top-level imported categories are re-parented under it
+     * (internal hierarchy preserved), and imported threads can be locked.
+     */
+    public function archiveForumImport(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'category' => 'required|string|max:255',
+            'lock_threads' => 'nullable|boolean',
+        ]);
+
+        // Everything the forum import created, via the id maps.
+        $categoryIds = MigrationIdMap::where('context', 'forum_category')
+            ->where('mappable_type', \App\Models\Tag\Taxonomy::class)
+            ->pluck('mappable_id');
+        $threadIds = MigrationIdMap::where('context', 'forum_topic')
+            ->where('mappable_type', \App\Models\Forum\ForumThread::class)
+            ->pluck('mappable_id');
+
+        // Categories created implicitly by thread imports (no category
+        // mapping) count too.
+        $threadCategoryIds = \App\Models\Forum\ForumThread::whereIn('id', $threadIds)->distinct()->pluck('taxonomy_id');
+        $allCategoryIds = $categoryIds->concat($threadCategoryIds)->unique()->values();
+
+        if ($allCategoryIds->isEmpty()) {
+            return response()->json(['message' => __('messages.migrations.forum_archive_nothing')], 404);
+        }
+
+        $archiveTerm = \App\Models\Tag\Term::firstOrCreateByTitle(trim($data['category']));
+        $archive = \App\Models\Tag\Taxonomy::firstOrCreate(
+            ['term_id' => $archiveTerm->id, 'taxonomy' => 'forum_cat'],
+            ['sort' => 0, 'visible' => true, 'searchable' => true, 'properties' => []]
+        );
+
+        $moved = 0;
+        $locked = 0;
+
+        DB::transaction(function () use ($allCategoryIds, $archive, $threadIds, $data, &$moved, &$locked) {
+            $categories = \App\Models\Tag\Taxonomy::whereIn('id', $allCategoryIds)
+                ->where('id', '!=', $archive->id)
+                ->get();
+            $idSet = $categories->pluck('id')->all();
+
+            foreach ($categories as $category) {
+                // Keep the internal hierarchy: only top-level imported
+                // categories (parent not imported itself) move under the
+                // archive.
+                $parentIsImported = $category->parent_id && in_array($category->parent_id, $idSet, true);
+                if (!$parentIsImported && $category->parent_id !== $archive->id) {
+                    $category->parent_id = $archive->id;
+                    $category->save();
+                    $moved++;
+                }
+            }
+
+            if ($data['lock_threads'] ?? false) {
+                $locked = \App\Models\Forum\ForumThread::whereIn('id', $threadIds)
+                    ->where('is_locked', false)
+                    ->update(['is_locked' => true]);
+            }
+        });
+
+        return response()->json([
+            'message' => __('messages.migrations.forum_archived', ['category' => $archiveTerm->title]),
+            'moved_categories' => $moved,
+            'locked_threads' => $locked,
         ]);
     }
 

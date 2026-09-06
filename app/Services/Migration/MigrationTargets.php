@@ -76,6 +76,18 @@ class MigrationTargets
                     ['key' => 'created_at', 'label' => 'Created at', 'required' => false, 'hint' => 'datetime transform'],
                 ],
             ],
+            'forum_categories' => [
+                'label' => 'Forum Categories',
+                'description' => 'Import the forum category tree (forum_cat taxonomies) with descriptions and hierarchy — so empty forums exist too. Import BEFORE the threads. For phpBB map phpbb3_forums, ordered by left_id so parents come first.',
+                'fields' => [
+                    ['key' => 'name', 'label' => 'Name', 'required' => true, 'hint' => 'phpBB: forum_name, html_decode transform'],
+                    ['key' => 'description', 'label' => 'Description', 'required' => false, 'hint' => 'phpBB: forum_desc'],
+                    ['key' => 'convert_bbcode', 'label' => 'Convert BBCode', 'required' => false, 'hint' => 'default: 1'],
+                    ['key' => 'legacy_id', 'label' => 'Legacy category id', 'required' => false, 'hint' => 'phpBB: forum_id — enables the parent link and re-run skipping'],
+                    ['key' => 'parent_legacy_id', 'label' => 'Parent legacy id', 'required' => false, 'hint' => 'phpBB: parent_id (0 = top level) — resolved via the imported categories, so order by left_id'],
+                    ['key' => 'position', 'label' => 'Sort position', 'required' => false, 'hint' => 'phpBB: left_id, int transform'],
+                ],
+            ],
             'forum_threads' => [
                 'label' => 'Forum Threads',
                 'description' => 'Import forum threads; the category is created (forum_cat taxonomy) if missing. For phpBB: map phpbb3_topics, join phpbb3_forums for the category and phpbb3_posts (on topic_first_post_id) for the body.',
@@ -190,6 +202,7 @@ class MigrationTargets
             'users' => self::importUser($mapped),
             'legacy_users' => self::importLegacyUser($mapped),
             'events' => self::importEvent($mapped),
+            'forum_categories' => self::importForumCategory($mapped),
             'forum_threads' => self::importForumThread($mapped),
             'forum_posts' => self::importForumPost($mapped),
             'wiki_pages' => self::importWikiPage($mapped),
@@ -279,6 +292,47 @@ class MigrationTargets
         MigrationAttribution::record($event, $mapped['legacy_owner'] ?? $mapped['creator'] ?? null, $mapped['legacy_source'] ?? null);
 
         return (string) $event->title;
+    }
+
+    private static function importForumCategory(array $mapped): ?string
+    {
+        if (MigrationIdMap::exists_for('forum_category', $mapped['legacy_id'] ?? null)) {
+            return null; // already imported — skip
+        }
+
+        $name = trim((string) $mapped['name']);
+        if ($name === '') {
+            return null;
+        }
+
+        $term = Term::firstOrCreateByTitle($name);
+        $taxonomy = Taxonomy::firstOrCreate(
+            ['term_id' => $term->id, 'taxonomy' => 'forum_cat'],
+            ['sort' => 0, 'visible' => true, 'searchable' => true, 'properties' => []]
+        );
+
+        $description = trim((string) ($mapped['description'] ?? ''));
+        if ($description !== '') {
+            $convert = filter_var($mapped['convert_bbcode'] ?? true, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true;
+            $taxonomy->description = $convert ? (new BbcodeConverter())->toHtml($description) : $description;
+        }
+
+        // Parent resolved via the id map — parents must import first
+        // (order the mapping by the tree column, e.g. phpBB left_id).
+        $parent = MigrationIdMap::lookup('forum_category', $mapped['parent_legacy_id'] ?? null);
+        if ($parent instanceof Taxonomy) {
+            $taxonomy->parent_id = $parent->id;
+        }
+
+        if (isset($mapped['position'])) {
+            $taxonomy->sort = (int) $mapped['position'];
+        }
+
+        $taxonomy->save();
+
+        MigrationIdMap::remember('forum_category', $mapped['legacy_id'] ?? null, $taxonomy);
+
+        return $name;
     }
 
     private static function importForumThread(array $mapped): ?string

@@ -464,6 +464,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
         Route::get('/migrations/sources/{source}/tables/{table}/columns', 'App\Http\Controllers\Admin\MigrationController@sourceColumns');
         Route::get('/migrations/targets', 'App\Http\Controllers\Admin\MigrationController@targets');
         Route::get('/migrations/legacy-users', 'App\Http\Controllers\Admin\MigrationController@legacyUsers');
+        Route::post('/migrations/forum/archive', 'App\Http\Controllers\Admin\MigrationController@archiveForumImport');
         Route::post('/migrations/legacy-users/assign', 'App\Http\Controllers\Admin\MigrationController@assignLegacyUser');
         Route::get('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@mappings');
         Route::get('/migrations/mappings/export', 'App\Http\Controllers\Admin\MigrationController@exportMappings');

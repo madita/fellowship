@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
  *                   compare "column" treats value as another column
  *                   (e.g. post_id != topic_first_post_id); default is a
  *                   plain value comparison.
+ *  options.order_by = {column, direction?(asc|desc)} — import order, for
+ *                   targets where parents must exist before children.
  *
  * Joined tables are selected with table.* so their columns become available
  * to the field map under their plain column names. When two tables share a
@@ -54,6 +56,11 @@ class SourceQuery
             } else {
                 $query->where($where['column'], $where['operator'] ?? '=', $where['value'] ?? null);
             }
+        }
+
+        $orderBy = $mapping->options['order_by'] ?? null;
+        if (is_array($orderBy) && !empty($orderBy['column']) && preg_match(self::IDENTIFIER_PATTERN, $orderBy['column'])) {
+            $query->orderBy($orderBy['column'], strtolower($orderBy['direction'] ?? 'asc') === 'desc' ? 'desc' : 'asc');
         }
 
         return $query;
