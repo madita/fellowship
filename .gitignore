@@ -50,3 +50,6 @@ tmpclaude-*
 
 # Local database dumps
 /*.sql
+
+# Local documentation & migration mapping sets (machine-specific paths)
+/docs/

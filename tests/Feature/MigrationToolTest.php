@@ -578,10 +578,12 @@ class MigrationToolTest extends TestCase
         $this->assertSame('Imported events', $export['mappings'][0]['name']);
         $this->assertArrayHasKey('wheres', $export['mappings'][0]['options']);
 
-        // The repo ships a ready-made JSON for the old hardcoded jobs — keep it valid.
-        $shipped = json_decode(file_get_contents(base_path('docs/migration-mappings.stadtwache.json')), true);
-        $this->assertIsArray($shipped['mappings']);
-        $this->assertCount(10, $shipped['mappings']);
+        // Local (untracked) mapping sets in docs/ must stay importable.
+        $local = base_path('docs/migration-mappings.stadtwache.json');
+        if (file_exists($local)) {
+            $shipped = json_decode(file_get_contents($local), true);
+            $this->assertIsArray($shipped['mappings'] ?? null, 'docs/migration-mappings.stadtwache.json is not valid mapping JSON');
+        }
     }
 
     public function test_cli_command_runs_a_mapping_by_name(): void
@@ -737,11 +739,13 @@ class MigrationToolTest extends TestCase
     {
         $dbPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'phpbb_' . uniqid() . '.sqlite';
         $pdo = new PDO('sqlite:' . $dbPath);
-        $pdo->exec('CREATE TABLE forums (forum_id INTEGER, forum_name TEXT)');
+        $pdo->exec('CREATE TABLE forums (forum_id INTEGER, parent_id INTEGER, forum_name TEXT, forum_desc TEXT, forum_type INTEGER, left_id INTEGER)');
         $pdo->exec('CREATE TABLE topics (topic_id INTEGER, forum_id INTEGER, topic_title TEXT, topic_first_post_id INTEGER, topic_first_poster_name TEXT, topic_time INTEGER, topic_status INTEGER, topic_type INTEGER, topic_views INTEGER, topic_visibility INTEGER, topic_moved_id INTEGER)');
         $pdo->exec('CREATE TABLE posts (post_id INTEGER, topic_id INTEGER, poster_name TEXT, post_text TEXT, post_time INTEGER, post_visibility INTEGER)');
 
-        $pdo->exec("INSERT INTO forums VALUES (1, 'Taverne')");
+        $pdo->exec("INSERT INTO forums VALUES (5, 0, 'Wache-Foren', 'Alles rund um die Wache', 0, 1)");
+        $pdo->exec("INSERT INTO forums VALUES (1, 5, 'Taverne', '', 1, 2)");
+        $pdo->exec("INSERT INTO forums VALUES (6, 0, 'Linkliste', '', 2, 3)"); // type 2 = link, filtered
         $pdo->exec("INSERT INTO topics VALUES (10, 1, 'Muffins &amp; Kekse', 100, 'Laiza', 1200000000, 0, 1, 42, 1, 0)");
         $pdo->exec("INSERT INTO topics VALUES (11, 1, 'Hidden', 102, 'X', 1200000000, 0, 0, 0, 0, 0)"); // invisible
 
@@ -753,6 +757,38 @@ class MigrationToolTest extends TestCase
 
         try {
             $source = MigrationSource::create(['name' => 'phpBB', 'driver' => 'sqlite', 'database' => $dbPath]);
+
+            $categories = MigrationMapping::create([
+                'migration_source_id' => $source->id,
+                'name' => 'phpBB categories',
+                'target' => 'forum_categories',
+                'source_table' => 'forums',
+                'field_map' => [
+                    'name' => ['source' => 'forum_name'],
+                    'description' => ['source' => 'forum_desc'],
+                    'legacy_id' => ['source' => 'forum_id'],
+                    'parent_legacy_id' => ['source' => 'parent_id'],
+                    'position' => ['source' => 'left_id', 'transform' => 'int'],
+                ],
+                'options' => [
+                    'wheres' => [['column' => 'forum_type', 'operator' => '!=', 'value' => '2']],
+                    'order_by' => ['column' => 'left_id', 'direction' => 'asc'],
+                ],
+            ]);
+
+            $this->actingAs($this->admin, 'sanctum')
+                ->postJson("/api/admin/migrations/mappings/{$categories->id}/run")
+                ->assertStatus(200);
+
+            // Container + forum imported with hierarchy; the link skipped.
+            $parentTax = \App\Models\Tag\Taxonomy::where('taxonomy', 'forum_cat')
+                ->whereHas('term', fn ($q) => $q->whereTranslation('title', 'Wache-Foren'))->firstOrFail();
+            $taverneTax = \App\Models\Tag\Taxonomy::where('taxonomy', 'forum_cat')
+                ->whereHas('term', fn ($q) => $q->whereTranslation('title', 'Taverne'))->firstOrFail();
+            $this->assertSame($parentTax->id, $taverneTax->parent_id);
+            $this->assertStringContainsString('Alles rund um die Wache', (string) $parentTax->description);
+            $this->assertSame(0, \App\Models\Tag\Taxonomy::where('taxonomy', 'forum_cat')
+                ->whereHas('term', fn ($q) => $q->whereTranslation('title', 'Linkliste'))->count());
 
             $threads = MigrationMapping::create([
                 'migration_source_id' => $source->id,
@@ -865,6 +901,23 @@ class MigrationToolTest extends TestCase
             $this->assertNull($post->meta['legacy_author'] ?? null);
             // The thread (posted by Laiza) keeps its placeholder.
             $this->assertSame('Laiza', $thread->fresh()->display_author);
+
+            // Archive the imported forum under an admin-chosen category:
+            // the top-level container moves, the hierarchy underneath stays,
+            // and the imported threads get locked.
+            $this->actingAs($this->admin, 'sanctum')
+                ->postJson('/api/admin/migrations/forum/archive', [
+                    'category' => 'Altes Forum',
+                    'lock_threads' => true,
+                ])
+                ->assertStatus(200)
+                ->assertJsonPath('locked_threads', 1);
+
+            $archiveTax = \App\Models\Tag\Taxonomy::where('taxonomy', 'forum_cat')
+                ->whereHas('term', fn ($q) => $q->whereTranslation('title', 'Altes Forum'))->firstOrFail();
+            $this->assertSame($archiveTax->id, $parentTax->fresh()->parent_id);
+            $this->assertSame($parentTax->id, $taverneTax->fresh()->parent_id); // hierarchy preserved
+            $this->assertTrue($thread->fresh()->is_locked);
         } finally {
             @unlink($dbPath);
         }
