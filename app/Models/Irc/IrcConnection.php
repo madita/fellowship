@@ -28,10 +28,10 @@ class IrcConnection extends Model
     ];
 
     protected $casts = [
-        'auto_connect' => 'boolean',
+        'auto_connect'       => 'boolean',
         'auto_join_channels' => 'array',
-        'connected_at' => 'datetime',
-        'disconnected_at' => 'datetime',
+        'connected_at'       => 'datetime',
+        'disconnected_at'    => 'datetime',
     ];
 
     /**

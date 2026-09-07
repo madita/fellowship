@@ -14,10 +14,10 @@ class EventType extends Model
         'created_at',
         'updated_at',
     ];
-//    public function event()
-//    {
-//        return $this->belongsTo("App\\Models\\Event\Event");
-//    }
+    //    public function event()
+    //    {
+    //        return $this->belongsTo("App\\Models\\Event\Event");
+    //    }
 
     public function event()
     {

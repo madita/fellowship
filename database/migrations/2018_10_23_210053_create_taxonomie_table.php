@@ -17,7 +17,9 @@ class CreateTaxonomieTable extends Migration
      * @var string The pivot table name.
      */
     protected $terms;
+
     protected $taxonomies;
+
     protected $pivot;
 
     /**
@@ -74,7 +76,7 @@ class CreateTaxonomieTable extends Migration
 
             $table->boolean('visible')->default(1);
             $table->boolean('searchable')->default(1);
-//            $table->json('properties')->nullable();
+            //            $table->json('properties')->nullable();
             $table->longText('properties')->nullable();
 
             $table->timestamps();

@@ -1,5 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\MigrationController;
+use App\Http\Controllers\CollectionController;
+use App\Http\Controllers\CommonController;
+use App\Http\Controllers\RelateableController;
+use App\Http\Controllers\Sandbox\SandboxCommentController;
+use App\Http\Controllers\Sandbox\SandboxController;
+use App\Http\Controllers\Sandbox\SandboxStatusController;
+use App\Http\Controllers\SocialAccountController;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +24,7 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-//Broadcast::routes(['middleware' => ['auth:sanctum']]);
+// Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
 // Public cacheable routes
 Route::middleware(['cache.control'])->group(function () {
@@ -76,14 +85,14 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 Route::get('/settings/oauth-providers', 'App\Http\Controllers\Admin\SettingsController@getEnabledOAuthProviders');
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    $user = $request->user();
+    $user        = $request->user();
     $permissions = $user->getAllPermissions()->pluck('name');
-    $roles = $user->roles()->pluck('name');
+    $roles       = $user->roles()->pluck('name');
 
     return ['user' => $user, 'roles' => $roles, 'permissions' => $permissions];
 });
 
-//Route::post('/upload-image', [ImageUploadController::class, 'upload']);
+// Route::post('/upload-image', [ImageUploadController::class, 'upload']);
 Route::post('/upload-image', "\App\Http\Controllers\ImageController@upload");
 Route::post('/users/search', "\App\Http\Controllers\UserController@searchUsers");
 
@@ -103,20 +112,19 @@ Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 
     Route::patch('/preferences', 'App\Http\Controllers\UserController@updatePreferences');
 
     // Social Account Management
-    Route::get('/social-accounts', [\App\Http\Controllers\SocialAccountController::class, 'index'])
+    Route::get('/social-accounts', [SocialAccountController::class, 'index'])
         ->name('social-accounts.index');
-    Route::delete('/social-accounts/{provider}', [\App\Http\Controllers\SocialAccountController::class, 'disconnect'])
+    Route::delete('/social-accounts/{provider}', [SocialAccountController::class, 'disconnect'])
         ->name('social-accounts.disconnect');
-    Route::get('/social-accounts/{provider}/link', [\App\Http\Controllers\SocialAccountController::class, 'link'])
+    Route::get('/social-accounts/{provider}/link', [SocialAccountController::class, 'link'])
         ->name('social-accounts.link');
 });
 
 Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function () {
-//    Route::get('/', 'App\Http\Controllers\Chat\ChatController@index')->name('chat');
+    //    Route::get('/', 'App\Http\Controllers\Chat\ChatController@index')->name('chat');
     Route::get('/messages', 'App\Http\Controllers\Chat\ChatMessageController@index');
     Route::post('/messages', 'App\Http\Controllers\Chat\ChatMessageController@store');
 });
-
 
 // Ticket System Routes
 Route::get('/ticket-types', 'App\Http\Controllers\TicketController@types');
@@ -138,7 +146,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::patch('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@update');
     Route::delete('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@destroy');
 });
-
 
 // Status Timeline Routes
 Route::get('/statuses', 'App\Http\Controllers\StatusController@index');
@@ -168,8 +175,8 @@ Route::get('/tag/{term}/{taxonomy?}', '\App\Http\Controllers\TaxonomyController@
 
 Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
 Route::get('/pages/{page}/history', '\App\Http\Controllers\PageController@history');
-//Route::get('/pages/tag/{term}', '\App\Http\Controllers\PageController@showWithTerm');
-//Route::get('/pages/{taxonomy}/{category}', '\App\Http\Controllers\PageController@showWithCategory');
+// Route::get('/pages/tag/{term}', '\App\Http\Controllers\PageController@showWithTerm');
+// Route::get('/pages/{taxonomy}/{category}', '\App\Http\Controllers\PageController@showWithCategory');
 Route::get('/posts', '\App\Http\Controllers\PostController@index');
 Route::get('/posts/{slug}', '\App\Http\Controllers\PostController@view');
 
@@ -183,7 +190,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/events/{event}/going/{answer}', "\App\Http\Controllers\EventController@isGoing");
     Route::get('/events/types', "\App\Http\Controllers\EventController@getTypes");
     Route::post('/events/{event}/answer', "\App\Http\Controllers\EventController@joinEvent");
-//    Route::resource('events', "\App\Http\Controllers\EventController");
+    //    Route::resource('events', "\App\Http\Controllers\EventController");
     Route::get('events/create', ['as' => 'event.create', 'uses' => "\App\Http\Controllers\EventController@create"]);
     Route::get('events', ['as' => 'event.index', 'uses' => "\App\Http\Controllers\EventController@index"]);
     Route::post('events', ['as' => 'event.store', 'uses' => "\App\Http\Controllers\EventController@store"]);
@@ -195,18 +202,18 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 });
 
 // Collections (Photo Gallery)
-Route::get('/collections', [App\Http\Controllers\CollectionController::class, 'index']); // Fetch all collections
-Route::get('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'show']); // Fetch media for a specific collection
-Route::post('/collections', [App\Http\Controllers\CollectionController::class, 'store']); // Create a new collection
-Route::post('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'uploadMedia']); // Upload media to collection
-Route::patch('/media/{media}/caption', [App\Http\Controllers\CollectionController::class, 'updateMediaCaption']); // Update caption for a media item
-Route::delete('/collections/{collection}', [App\Http\Controllers\CollectionController::class, 'destroy']); // Delete collection (fixed method name)
-Route::delete('/media/{media}', [App\Http\Controllers\CollectionController::class, 'deleteMedia']); // Delete a media item
+Route::get('/collections', [CollectionController::class, 'index']); // Fetch all collections
+Route::get('/collections/{collection}', [CollectionController::class, 'show']); // Fetch media for a specific collection
+Route::post('/collections', [CollectionController::class, 'store']); // Create a new collection
+Route::post('/collections/{collection}', [CollectionController::class, 'uploadMedia']); // Upload media to collection
+Route::patch('/media/{media}/caption', [CollectionController::class, 'updateMediaCaption']); // Update caption for a media item
+Route::delete('/collections/{collection}', [CollectionController::class, 'destroy']); // Delete collection (fixed method name)
+Route::delete('/media/{media}', [CollectionController::class, 'deleteMedia']); // Delete a media item
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
-    //Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
+    // Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
     Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');
-//    Route::get('datatable/pages/categories/{taxonomy}', 'App\Http\Controllers\DataTable\PageController@getCategories');
+    //    Route::get('datatable/pages/categories/{taxonomy}', 'App\Http\Controllers\DataTable\PageController@getCategories');
     Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\PostController');
     Route::resource('datatable/users', 'App\Http\Controllers\DataTable\UserController');
     Route::resource('datatable/roles', 'App\Http\Controllers\DataTable\RoleController');
@@ -222,9 +229,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 });
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
-    //Route::get('', 'ConversationController@index');
-    //Route::post('', 'ConversationController@store');
-    //Route::get('/{conversation}', 'ConversationController@show');
+    // Route::get('', 'ConversationController@index');
+    // Route::post('', 'ConversationController@store');
+    // Route::get('/{conversation}', 'ConversationController@show');
     Route::resource('conversations', 'App\Http\Controllers\Conversation\ConversationController');
     Route::post('/conversations/{conversation}/reply', 'App\Http\Controllers\Conversation\ConversationReplyController@store');
     Route::post('/conversations/{conversation}/users', 'App\Http\Controllers\Conversation\ConversationUserController@store');
@@ -242,68 +249,68 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 Route::prefix('sandbox')->group(function () {
     // Status endpoints are exempt from sandbox.enabled check (needed by admin settings)
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/status', [App\Http\Controllers\Sandbox\SandboxStatusController::class, 'status']);
-        Route::get('/status/websocket', [App\Http\Controllers\Sandbox\SandboxStatusController::class, 'websocketStatus']);
+        Route::get('/status', [SandboxStatusController::class, 'status']);
+        Route::get('/status/websocket', [SandboxStatusController::class, 'websocketStatus']);
     });
 
     // All other sandbox routes require the feature to be enabled
     Route::middleware('sandbox.enabled')->group(function () {
-        Route::get('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'index'])->middleware('auth:sanctum');
-        Route::post('/', [App\Http\Controllers\Sandbox\SandboxController::class, 'store'])->middleware('auth:sanctum');
+        Route::get('/', [SandboxController::class, 'index'])->middleware('auth:sanctum');
+        Route::post('/', [SandboxController::class, 'store'])->middleware('auth:sanctum');
 
-        Route::get('/{uuid}', [App\Http\Controllers\Sandbox\SandboxController::class, 'show']); // Public for public sandboxes
+        Route::get('/{uuid}', [SandboxController::class, 'show']); // Public for public sandboxes
 
         Route::middleware('auth:sanctum')->group(function () {
-        Route::put('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'update']);
-        Route::delete('/{sandbox}', [App\Http\Controllers\Sandbox\SandboxController::class, 'destroy']);
+            Route::put('/{sandbox}', [SandboxController::class, 'update']);
+            Route::delete('/{sandbox}', [SandboxController::class, 'destroy']);
 
-        // Collaboration state
-        Route::get('/{sandbox}/state', [App\Http\Controllers\Sandbox\SandboxController::class, 'getState']);
-        Route::post('/{sandbox}/state', [App\Http\Controllers\Sandbox\SandboxController::class, 'saveState']);
+            // Collaboration state
+            Route::get('/{sandbox}/state', [SandboxController::class, 'getState']);
+            Route::post('/{sandbox}/state', [SandboxController::class, 'saveState']);
 
-        // Collaborators
-        Route::post('/{sandbox}/collaborators', [App\Http\Controllers\Sandbox\SandboxController::class, 'addCollaborator']);
-        Route::delete('/{sandbox}/collaborators/{collaborator}', [App\Http\Controllers\Sandbox\SandboxController::class, 'removeCollaborator']);
-        Route::post('/{sandbox}/accept-invite', [App\Http\Controllers\Sandbox\SandboxController::class, 'acceptInvite']);
+            // Collaborators
+            Route::post('/{sandbox}/collaborators', [SandboxController::class, 'addCollaborator']);
+            Route::delete('/{sandbox}/collaborators/{collaborator}', [SandboxController::class, 'removeCollaborator']);
+            Route::post('/{sandbox}/accept-invite', [SandboxController::class, 'acceptInvite']);
 
-        // Version history
-        Route::get('/{sandbox}/versions', [App\Http\Controllers\Sandbox\SandboxController::class, 'versions']);
-        Route::get('/{sandbox}/versions/{version}', [App\Http\Controllers\Sandbox\SandboxController::class, 'showVersion']);
-        Route::post('/{sandbox}/versions/{version}/restore', [App\Http\Controllers\Sandbox\SandboxController::class, 'restoreVersion']);
+            // Version history
+            Route::get('/{sandbox}/versions', [SandboxController::class, 'versions']);
+            Route::get('/{sandbox}/versions/{version}', [SandboxController::class, 'showVersion']);
+            Route::post('/{sandbox}/versions/{version}/restore', [SandboxController::class, 'restoreVersion']);
 
-        // Revision history (field-level changes)
-        Route::get('/{sandbox}/history', [App\Http\Controllers\Sandbox\SandboxController::class, 'history']);
+            // Revision history (field-level changes)
+            Route::get('/{sandbox}/history', [SandboxController::class, 'history']);
 
-        // Comment threads
-        Route::get('/{sandbox}/threads', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'index']);
-        Route::post('/{sandbox}/threads', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'storeThread']);
-        Route::put('/{sandbox}/threads/{thread}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'updateThread']);
-        Route::delete('/{sandbox}/threads/{thread}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'destroyThread']);
-        Route::post('/{sandbox}/threads/{thread}/comments', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'storeComment']);
-        Route::put('/{sandbox}/threads/{thread}/comments/{comment}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'updateComment']);
-        Route::delete('/{sandbox}/threads/{thread}/comments/{comment}', [App\Http\Controllers\Sandbox\SandboxCommentController::class, 'destroyComment']);
-    });
+            // Comment threads
+            Route::get('/{sandbox}/threads', [SandboxCommentController::class, 'index']);
+            Route::post('/{sandbox}/threads', [SandboxCommentController::class, 'storeThread']);
+            Route::put('/{sandbox}/threads/{thread}', [SandboxCommentController::class, 'updateThread']);
+            Route::delete('/{sandbox}/threads/{thread}', [SandboxCommentController::class, 'destroyThread']);
+            Route::post('/{sandbox}/threads/{thread}/comments', [SandboxCommentController::class, 'storeComment']);
+            Route::put('/{sandbox}/threads/{thread}/comments/{comment}', [SandboxCommentController::class, 'updateComment']);
+            Route::delete('/{sandbox}/threads/{thread}/comments/{comment}', [SandboxCommentController::class, 'destroyComment']);
+        });
     }); // sandbox.enabled
 });
 
-Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']);
-Route::get('/source-models', [App\Http\Controllers\RelateableController::class, 'getSourceModels']);
-Route::get('/model-items', [App\Http\Controllers\RelateableController::class, 'getModelItems']);
+Route::get('/models', [RelateableController::class, 'getModels']);
+Route::get('/source-models', [RelateableController::class, 'getSourceModels']);
+Route::get('/model-items', [RelateableController::class, 'getModelItems']);
 // Relateable System (Link any content to any content)
-Route::get('/source-models', [App\Http\Controllers\RelateableController::class, 'getSourceModels']); // Get models that can be sources
-Route::get('/models', [App\Http\Controllers\RelateableController::class, 'getModels']); // Get all relateable models
-Route::get('/model-items', [App\Http\Controllers\RelateableController::class, 'getModelItems']); // Get items of a specific model
-Route::post('/relate-models', [App\Http\Controllers\RelateableController::class, 'relateModels']); // Create relationship
-Route::delete('/unrelate-models', [App\Http\Controllers\RelateableController::class, 'unrelateModels']); // Remove relationship
-Route::post('/related-items', [App\Http\Controllers\RelateableController::class, 'getRelatedItems']); // Get related items for a model
+Route::get('/source-models', [RelateableController::class, 'getSourceModels']); // Get models that can be sources
+Route::get('/models', [RelateableController::class, 'getModels']); // Get all relateable models
+Route::get('/model-items', [RelateableController::class, 'getModelItems']); // Get items of a specific model
+Route::post('/relate-models', [RelateableController::class, 'relateModels']); // Create relationship
+Route::delete('/unrelate-models', [RelateableController::class, 'unrelateModels']); // Remove relationship
+Route::post('/related-items', [RelateableController::class, 'getRelatedItems']); // Get related items for a model
 
-Route::get('/common/items', [App\Http\Controllers\CommonController::class, 'getItems']);
+Route::get('/common/items', [CommonController::class, 'getItems']);
 
 // Cache test route
 Route::get('/cache-test', function () {
     return response()->json([
-        'cache_enabled'  => \App\Models\Setting::isCacheEnabled(),
-        'cache_lifetime' => \App\Models\Setting::getCacheLifetime(),
+        'cache_enabled'  => Setting::isCacheEnabled(),
+        'cache_lifetime' => Setting::getCacheLifetime(),
         'time'           => now()->toDateTimeString(),
     ]);
 })->middleware('cache.control');
@@ -445,7 +452,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
 
     // Migration Dashboard — the controller and its jobs are intentionally
     // not in the repo yet; only register the routes where they exist.
-    if (class_exists(\App\Http\Controllers\Admin\MigrationController::class)) {
+    if (class_exists(MigrationController::class)) {
         Route::get('/migrations', 'App\Http\Controllers\Admin\MigrationController@index');
         Route::post('/migrations/start', 'App\Http\Controllers\Admin\MigrationController@start');
         Route::get('/migrations/status/{batchId}', 'App\Http\Controllers\Admin\MigrationController@status');
@@ -521,7 +528,7 @@ Route::post('/login', function (Request $request) {
 
     $user = User::where('email', $request->email)->first();
 
-    if (!$user || !Hash::check($request->password, $user->password)) {
+    if ( ! $user || ! Hash::check($request->password, $user->password)) {
         return response([
             'message' => ['These credentials do not match our records.'],
         ], 404);
@@ -529,8 +536,8 @@ Route::post('/login', function (Request $request) {
 
     $user->update([
         'previous_login_at' => $user->last_login_at,
-        'last_login_at' => now()->toDateTimeString(),
-        'last_login_ip' => $request->getClientIp(),
+        'last_login_at'     => now()->toDateTimeString(),
+        'last_login_ip'     => $request->getClientIp(),
     ]);
 
     $token = $user->createToken('my-app-token')->plainTextToken;
@@ -542,7 +549,6 @@ Route::post('/login', function (Request $request) {
 
     return response($response, 201);
 });
-
 
 // IRC Client Routes
 Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {

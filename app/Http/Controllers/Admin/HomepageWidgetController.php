@@ -123,8 +123,8 @@ class HomepageWidgetController extends Controller
      */
     public function toggle($id): JsonResponse
     {
-        $widget = Widget::findOrFail($id);
-        $widget->enabled = !$widget->enabled;
+        $widget          = Widget::findOrFail($id);
+        $widget->enabled = ! $widget->enabled;
         $widget->save();
 
         return response()->json([
@@ -140,9 +140,9 @@ class HomepageWidgetController extends Controller
     {
         $widget = Widget::findOrFail($id);
 
-        $newWidget = $widget->replicate();
-        $newWidget->title = ($widget->title ?? $widget->type).' '.__('messages.common.copy_suffix');
-        $newWidget->order = Widget::max('order') + 1;
+        $newWidget          = $widget->replicate();
+        $newWidget->title   = ($widget->title ?? $widget->type) . ' ' . __('messages.common.copy_suffix');
+        $newWidget->order   = Widget::max('order') + 1;
         $newWidget->enabled = false;
         $newWidget->save();
 

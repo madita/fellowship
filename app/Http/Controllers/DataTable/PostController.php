@@ -48,7 +48,7 @@ class PostController extends DataTableController
         $data = $post->toArray();
 
         $data['categories'] = $post->getCategories('category')->pluck('title')->toArray();
-        $data['terms'] = $post->getCategories('tags')->pluck('title')->toArray();
+        $data['terms']      = $post->getCategories('tags')->pluck('title')->toArray();
 
         return response()->json($data);
     }

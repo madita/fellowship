@@ -28,18 +28,18 @@ class ForumThreadController extends Controller
 
         // Check access via category properties
         $category = $thread->category;
-        if (($category->properties['is_private'] ?? false)) {
+        if ($category->properties['is_private'] ?? false) {
             $canAccess = $user && ($user->isAdmin() || (
-                !empty($category->properties['allowed_roles']) && $user->hasAnyRole($category->properties['allowed_roles'])
+                ! empty($category->properties['allowed_roles']) && $user->hasAnyRole($category->properties['allowed_roles'])
             ));
-            if (!$canAccess) {
+            if ( ! $canAccess) {
                 abort(403, 'You do not have permission to access this thread.');
             }
         }
 
         // Increment view count (throttle to once per session)
         $viewedKey = "thread_viewed_{$thread->id}";
-        if (!session()->has($viewedKey)) {
+        if ( ! session()->has($viewedKey)) {
             $thread->incrementViews();
             session()->put($viewedKey, true);
         }
@@ -61,7 +61,7 @@ class ForumThreadController extends Controller
         // Batch query liked post IDs for the authenticated user
         $likedPostIds = [];
         if ($user) {
-            $postIds = collect($posts->items())->pluck('id');
+            $postIds      = collect($posts->items())->pluck('id');
             $likedPostIds = ForumPostLike::where('user_id', $user->id)
                 ->whereIn('post_id', $postIds)
                 ->pluck('post_id')
@@ -75,29 +75,29 @@ class ForumThreadController extends Controller
         }
 
         // Compute forum-level moderation permissions
-        $canModerate = false;
+        $canModerate     = false;
         $canDeleteOthers = false;
         if ($user) {
             if ($user->isAdmin()) {
-                $canModerate = true;
+                $canModerate     = true;
                 $canDeleteOthers = true;
             } else {
-                $moderateRoles = $category->properties['moderate_roles'] ?? [];
-                $deleteRoles = $category->properties['delete_roles'] ?? [];
-                $canModerate = !empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
-                $canDeleteOthers = !empty($deleteRoles) && $user->hasAnyRole($deleteRoles);
+                $moderateRoles   = $category->properties['moderate_roles'] ?? [];
+                $deleteRoles     = $category->properties['delete_roles'] ?? [];
+                $canModerate     = ! empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
+                $canDeleteOthers = ! empty($deleteRoles) && $user->hasAnyRole($deleteRoles);
             }
         }
 
         return response()->json([
-            'thread' => $thread,
-            'posts' => $postsData,
-            'can_reply' => $thread->canReply($user),
-            'can_edit' => $thread->canEdit($user),
-            'can_delete' => $thread->canDelete($user),
-            'can_moderate' => $canModerate,
+            'thread'            => $thread,
+            'posts'             => $postsData,
+            'can_reply'         => $thread->canReply($user),
+            'can_edit'          => $thread->canEdit($user),
+            'can_delete'        => $thread->canDelete($user),
+            'can_moderate'      => $canModerate,
             'can_delete_others' => $canDeleteOthers,
-            'is_subscribed' => $thread->isSubscribedBy($user),
+            'is_subscribed'     => $thread->isSubscribedBy($user),
         ]);
     }
 
@@ -111,7 +111,7 @@ class ForumThreadController extends Controller
     ): JsonResponse {
         $user = Auth::user();
 
-        if (!$user) {
+        if ( ! $user) {
             abort(401, 'You must be logged in to create a thread.');
         }
 
@@ -120,9 +120,9 @@ class ForumThreadController extends Controller
         // Check access to private forum
         if ($category->properties['is_private'] ?? false) {
             $canAccess = $user->isAdmin() || (
-                !empty($category->properties['allowed_roles']) && $user->hasAnyRole($category->properties['allowed_roles'])
+                ! empty($category->properties['allowed_roles']) && $user->hasAnyRole($category->properties['allowed_roles'])
             );
-            if (!$canAccess) {
+            if ( ! $canAccess) {
                 abort(403, 'You do not have permission to post in this forum.');
             }
         }
@@ -130,16 +130,16 @@ class ForumThreadController extends Controller
         // Check posting permission in locked forum
         if ($category->properties['is_locked'] ?? false) {
             $canPost = $user->isAdmin() || (
-                !empty($category->properties['post_roles']) && $user->hasAnyRole($category->properties['post_roles'])
+                ! empty($category->properties['post_roles']) && $user->hasAnyRole($category->properties['post_roles'])
             );
-            if (!$canPost) {
+            if ( ! $canPost) {
                 abort(403, 'This forum is locked.');
             }
         }
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'body' => 'required|string',
+            'body'  => 'required|string',
         ]);
 
         // Spam check
@@ -150,7 +150,7 @@ class ForumThreadController extends Controller
 
         $thread = $category->forumThreads()->create([
             'user_id' => $user->id,
-            'title' => $validated['title'],
+            'title'   => $validated['title'],
             // The 'sandbox' config matches the TipTap editor's output
             // (tables, code blocks, blockquotes, …) — the default config
             // would silently strip those elements.
@@ -178,13 +178,13 @@ class ForumThreadController extends Controller
     {
         $user = Auth::user();
 
-        if (!$thread->canEdit($user)) {
+        if ( ! $thread->canEdit($user)) {
             abort(403, 'You do not have permission to edit this thread.');
         }
 
         $validated = $request->validate([
-            'title' => 'string|max:255',
-            'body' => 'string',
+            'title'     => 'string|max:255',
+            'body'      => 'string',
             'is_pinned' => 'boolean',
             'is_locked' => 'boolean',
         ]);
@@ -210,7 +210,7 @@ class ForumThreadController extends Controller
     {
         $user = Auth::user();
 
-        if (!$thread->canDelete($user)) {
+        if ( ! $thread->canDelete($user)) {
             abort(403, 'You do not have permission to delete this thread.');
         }
 

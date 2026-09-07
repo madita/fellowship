@@ -9,8 +9,11 @@ use Illuminate\Support\Facades\Log;
 class NewsletterService
 {
     protected $enabled;
+
     protected $provider;
+
     protected $apiKey;
+
     protected $listId;
 
     public function __construct()
@@ -19,33 +22,22 @@ class NewsletterService
     }
 
     /**
-     * Load newsletter settings from database.
-     */
-    protected function loadSettings()
-    {
-        $this->enabled = Setting::where('key', 'newsletter_enabled')->value('value') === 'true';
-        $this->provider = Setting::where('key', 'newsletter_provider')->value('value');
-        $this->apiKey = Setting::where('key', 'newsletter_api_key')->value('value');
-        $this->listId = Setting::where('key', 'newsletter_list_id')->value('value');
-    }
-
-    /**
      * Subscribe an email to the newsletter.
      */
     public function subscribe(string $email): array
     {
-        if (!$this->enabled) {
+        if ( ! $this->enabled) {
             return [
                 'success' => false,
                 'message' => __('messages.newsletter.disabled'),
             ];
         }
 
-        if (!$this->provider || !$this->apiKey || !$this->listId) {
+        if ( ! $this->provider || ! $this->apiKey || ! $this->listId) {
             Log::warning('Newsletter settings incomplete', [
                 'provider'    => $this->provider,
-                'has_api_key' => !empty($this->apiKey),
-                'has_list_id' => !empty($this->listId),
+                'has_api_key' => ! empty($this->apiKey),
+                'has_list_id' => ! empty($this->listId),
             ]);
 
             return [
@@ -89,13 +81,24 @@ class NewsletterService
     }
 
     /**
+     * Load newsletter settings from database.
+     */
+    protected function loadSettings()
+    {
+        $this->enabled  = Setting::where('key', 'newsletter_enabled')->value('value') === 'true';
+        $this->provider = Setting::where('key', 'newsletter_provider')->value('value');
+        $this->apiKey   = Setting::where('key', 'newsletter_api_key')->value('value');
+        $this->listId   = Setting::where('key', 'newsletter_list_id')->value('value');
+    }
+
+    /**
      * Subscribe via Mailchimp.
      */
     protected function subscribeMailchimp(string $email): array
     {
         // Extract datacenter from API key (e.g., us19 from key-us19)
         $datacenter = substr($this->apiKey, strpos($this->apiKey, '-') + 1);
-        $url = "https://{$datacenter}.api.mailchimp.com/3.0/lists/{$this->listId}/members";
+        $url        = "https://{$datacenter}.api.mailchimp.com/3.0/lists/{$this->listId}/members";
 
         $response = Http::withBasicAuth('anystring', $this->apiKey)
             ->post($url, [
@@ -155,7 +158,7 @@ class NewsletterService
         $url = 'https://api.sendgrid.com/v3/marketing/contacts';
 
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer '.$this->apiKey,
+            'Authorization' => 'Bearer ' . $this->apiKey,
         ])->put($url, [
             'list_ids' => [$this->listId],
             'contacts' => [

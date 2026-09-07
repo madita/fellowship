@@ -61,15 +61,15 @@ class MediaController extends Controller
             ->get();
 
         // Build hierarchical folder structure
-        $structure = [];
+        $structure  = [];
         $totalCount = 0;
-        $totalSize = 0;
+        $totalSize  = 0;
 
         foreach ($folders as $folder) {
-            $modelType = $folder->model_type;
+            $modelType      = $folder->model_type;
             $collectionName = $folder->collection_name;
 
-            if (!isset($structure[$modelType])) {
+            if ( ! isset($structure[$modelType])) {
                 $structure[$modelType] = [
                     'model_type'  => $modelType,
                     'label'       => $this->contextLabels[$modelType] ?? $this->formatModelType($modelType),
@@ -97,7 +97,7 @@ class MediaController extends Controller
         // Format sizes for contexts
         foreach ($structure as &$context) {
             $context['size_formatted'] = $this->formatBytes($context['total_size']);
-            $context['collections'] = array_values($context['collections']);
+            $context['collections']    = array_values($context['collections']);
         }
 
         return response()->json([
@@ -115,10 +115,10 @@ class MediaController extends Controller
      */
     public function modelItems(Request $request): JsonResponse
     {
-        $modelType = $request->input('model_type');
+        $modelType      = $request->input('model_type');
         $collectionName = $request->input('collection');
 
-        if (!$modelType) {
+        if ( ! $modelType) {
             return response()->json(['error' => 'model_type is required'], 400);
         }
 
@@ -188,7 +188,7 @@ class MediaController extends Controller
 
         // Filter by mime type prefix (e.g., 'image', 'application')
         if ($request->filled('mime_type')) {
-            $query->where('mime_type', 'like', $request->input('mime_type').'%');
+            $query->where('mime_type', 'like', $request->input('mime_type') . '%');
         }
 
         // Search by file name
@@ -209,12 +209,12 @@ class MediaController extends Controller
         }
 
         // Sorting
-        $sortBy = $request->input('sort_by', 'created_at');
+        $sortBy  = $request->input('sort_by', 'created_at');
         $sortDir = $request->input('sort_dir', 'desc');
 
         // Validate sort column
         $allowedSortColumns = ['created_at', 'size', 'file_name', 'name'];
-        if (!in_array($sortBy, $allowedSortColumns)) {
+        if ( ! in_array($sortBy, $allowedSortColumns)) {
             $sortBy = 'created_at';
         }
 
@@ -222,7 +222,7 @@ class MediaController extends Controller
 
         // Pagination
         $perPage = min((int) $request->input('per_page', 24), 100);
-        $media = $query->paginate($perPage);
+        $media   = $query->paginate($perPage);
 
         // Transform the data
         $data = $media->getCollection()->map(function (Media $item) {
@@ -282,7 +282,7 @@ class MediaController extends Controller
         ]);
 
         try {
-            $ids = $request->input('ids');
+            $ids     = $request->input('ids');
             $deleted = Media::whereIn('id', $ids)->delete();
 
             return response()->json([
@@ -308,9 +308,9 @@ class MediaController extends Controller
             'collection' => 'nullable|string|in:images,documents',
         ]);
 
-        $library = MediaLibrary::getLibrary();
+        $library    = MediaLibrary::getLibrary();
         $collection = $request->input('collection', 'images');
-        $uploaded = [];
+        $uploaded   = [];
 
         foreach ($request->file('files') as $file) {
             try {
@@ -320,14 +320,14 @@ class MediaController extends Controller
                 $uploaded[] = $this->transformMedia($media);
             } catch (\Exception $e) {
                 return response()->json([
-                    'message' => 'Failed to upload file: '.$file->getClientOriginalName(),
+                    'message' => 'Failed to upload file: ' . $file->getClientOriginalName(),
                     'error'   => $e->getMessage(),
                 ], 500);
             }
         }
 
         return response()->json([
-            'message' => count($uploaded).' file(s) uploaded successfully',
+            'message' => count($uploaded) . ' file(s) uploaded successfully',
             'data'    => $uploaded,
         ]);
     }
@@ -338,7 +338,7 @@ class MediaController extends Controller
     public function libraryImages(Request $request): JsonResponse
     {
         $perPage = min((int) $request->input('per_page', 24), 100);
-        $search = $request->input('search');
+        $search  = $request->input('search');
 
         $query = Media::where('model_type', MediaLibrary::class);
 
@@ -380,7 +380,7 @@ class MediaController extends Controller
     public function stats(): JsonResponse
     {
         $totalCount = Media::count();
-        $totalSize = Media::sum('size');
+        $totalSize  = Media::sum('size');
 
         // Breakdown by context (model_type)
         $byContext = Media::selectRaw('model_type, COUNT(*) as count, SUM(size) as total_size')
@@ -434,12 +434,12 @@ class MediaController extends Controller
             });
 
         return response()->json([
-            'total_count'     => $totalCount,
-            'total_size'      => $totalSize,
-            'size_formatted'  => $this->formatBytes($totalSize),
-            'by_context'      => $byContext,
-            'by_type'         => $byType,
-            'by_collection'   => $byCollection,
+            'total_count'    => $totalCount,
+            'total_size'     => $totalSize,
+            'size_formatted' => $this->formatBytes($totalSize),
+            'by_context'     => $byContext,
+            'by_type'        => $byType,
+            'by_collection'  => $byCollection,
         ]);
     }
 
@@ -501,10 +501,10 @@ class MediaController extends Controller
         $data['model_name'] = $this->getModelName($media);
 
         if ($detailed) {
-            $data['custom_properties'] = $media->custom_properties;
+            $data['custom_properties']     = $media->custom_properties;
             $data['generated_conversions'] = $media->generated_conversions;
-            $data['disk'] = $media->disk;
-            $data['updated_at'] = $media->updated_at?->toIso8601String();
+            $data['disk']                  = $media->disk;
+            $data['updated_at']            = $media->updated_at?->toIso8601String();
 
             // Try to get image dimensions
             if (str_starts_with($media->mime_type, 'image/')) {
@@ -513,7 +513,7 @@ class MediaController extends Controller
                     if (file_exists($path)) {
                         $imageInfo = @getimagesize($path);
                         if ($imageInfo) {
-                            $data['width'] = $imageInfo[0];
+                            $data['width']  = $imageInfo[0];
                             $data['height'] = $imageInfo[1];
                         }
                     }
@@ -561,18 +561,18 @@ class MediaController extends Controller
     protected function getModelNameById(string $modelType, int $modelId): ?string
     {
         try {
-            if (!class_exists($modelType)) {
+            if ( ! class_exists($modelType)) {
                 return "#{$modelId}";
             }
 
             $model = $modelType::find($modelId);
-            if (!$model) {
+            if ( ! $model) {
                 return "#{$modelId} (deleted)";
             }
 
             // Try common name attributes
             foreach (['name', 'title', 'username', 'email'] as $attribute) {
-                if (isset($model->{$attribute}) && !empty($model->{$attribute})) {
+                if (isset($model->{$attribute}) && ! empty($model->{$attribute})) {
                     return $model->{$attribute};
                 }
             }
@@ -603,11 +603,11 @@ class MediaController extends Controller
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
 
         $bytes = max($bytes, 0);
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
+        $pow   = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow   = min($pow, count($units) - 1);
 
         $bytes /= (1 << (10 * $pow));
 
-        return round($bytes, $precision).' '.$units[$pow];
+        return round($bytes, $precision) . ' ' . $units[$pow];
     }
 }

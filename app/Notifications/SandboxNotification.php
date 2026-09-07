@@ -25,7 +25,8 @@ class SandboxNotification extends Notification
         protected string $action,
         protected User $actor,
         protected array $extra = []
-    ) {}
+    ) {
+    }
 
     public function via($notifiable): array
     {
@@ -35,15 +36,15 @@ class SandboxNotification extends Notification
     public function toArray($notifiable): array
     {
         $data = [
-            'type' => 'sandbox_' . $this->action,
-            'sandbox_id' => $this->sandbox->id,
-            'sandbox_uuid' => $this->sandbox->uuid,
-            'sandbox_title' => $this->sandbox->title,
-            'actor_id' => $this->actor->id,
+            'type'           => 'sandbox_' . $this->action,
+            'sandbox_id'     => $this->sandbox->id,
+            'sandbox_uuid'   => $this->sandbox->uuid,
+            'sandbox_title'  => $this->sandbox->title,
+            'actor_id'       => $this->actor->id,
             'actor_username' => $this->actor->username,
-            'subject' => $this->getSubject(),
-            'body' => $this->getBody(),
-            'url' => '/sandbox/' . $this->sandbox->uuid,
+            'subject'        => $this->getSubject(),
+            'body'           => $this->getBody(),
+            'url'            => '/sandbox/' . $this->sandbox->uuid,
         ];
 
         return array_merge($data, $this->extra);
@@ -52,13 +53,13 @@ class SandboxNotification extends Notification
     protected function getSubject(): string
     {
         return match ($this->action) {
-            'shared' => 'Sandbox shared with you',
-            'removed' => 'Removed from sandbox',
-            'comment' => 'New comment on sandbox',
-            'reply' => 'New reply on your comment',
-            'resolved' => 'Comment thread resolved',
+            'shared'          => 'Sandbox shared with you',
+            'removed'         => 'Removed from sandbox',
+            'comment'         => 'New comment on sandbox',
+            'reply'           => 'New reply on your comment',
+            'resolved'        => 'Comment thread resolved',
             'invite_accepted' => 'Invite accepted',
-            default => 'Sandbox notification',
+            default           => 'Sandbox notification',
         };
     }
 
@@ -68,13 +69,13 @@ class SandboxNotification extends Notification
         $title = $this->sandbox->title;
 
         return match ($this->action) {
-            'shared' => "{$actor} shared \"{$title}\" with you" . (isset($this->extra['role']) ? " as {$this->extra['role']}" : ''),
-            'removed' => "{$actor} removed you from \"{$title}\"",
-            'comment' => "{$actor} commented on \"{$title}\"" . (isset($this->extra['quote']) ? ": \"{$this->extra['quote']}\"" : ''),
-            'reply' => "{$actor} replied to your comment on \"{$title}\"" . (isset($this->extra['excerpt']) ? ": \"{$this->extra['excerpt']}\"" : ''),
-            'resolved' => "{$actor} resolved a comment thread on \"{$title}\"",
+            'shared'          => "{$actor} shared \"{$title}\" with you" . (isset($this->extra['role']) ? " as {$this->extra['role']}" : ''),
+            'removed'         => "{$actor} removed you from \"{$title}\"",
+            'comment'         => "{$actor} commented on \"{$title}\"" . (isset($this->extra['quote']) ? ": \"{$this->extra['quote']}\"" : ''),
+            'reply'           => "{$actor} replied to your comment on \"{$title}\"" . (isset($this->extra['excerpt']) ? ": \"{$this->extra['excerpt']}\"" : ''),
+            'resolved'        => "{$actor} resolved a comment thread on \"{$title}\"",
             'invite_accepted' => "{$actor} accepted your invitation to \"{$title}\"",
-            default => "{$actor} updated \"{$title}\"",
+            default           => "{$actor} updated \"{$title}\"",
         };
     }
 }

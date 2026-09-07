@@ -27,16 +27,16 @@ class CreateEventsTable extends Migration
             $table->tinyInteger('allDay')->nullable();
             $table->tinyInteger('hasMedia')->nullable();
             $table->integer('event_type_id')->nullable();
-//            $table->string('type')->nullable(); //gathering, meetup, rpg...story
+            //            $table->string('type')->nullable(); //gathering, meetup, rpg...story
             $table->timestamps();
             $table->softDeletes();
         });
 
         Schema::create('event_types', function (Blueprint $table) {
             $table->id();
-            //$table->integer('event_id')->unsigned();
+            // $table->integer('event_id')->unsigned();
             $table->string('name', 255)->nullable();
-//            $table->string('slug')->unique();
+            //            $table->string('slug')->unique();
             $table->integer('event_profile_id')->nullable();
             $table->string('color', 45)->nullable();
             $table->text('options')->nullable();
@@ -61,9 +61,9 @@ class CreateEventsTable extends Migration
             $table->id();
             $table->integer('user_id')->nullable();
             $table->integer('event_id')->nullable();
-            $table->string('type')->nullable(); //yes no maybe? // master, player, guest
+            $table->string('type')->nullable(); // yes no maybe? // master, player, guest
             $table->text('profile')->nullable();
-            $table->timestamp('approved_at')->nullable(); //yes no maybe? // master, player, guest
+            $table->timestamp('approved_at')->nullable(); // yes no maybe? // master, player, guest
             $table->timestamps();
             $table->softDeletes();
         });
@@ -71,8 +71,8 @@ class CreateEventsTable extends Migration
         Schema::create('event_profiles', function (Blueprint $table) {
             $table->id();
             $table->string('name', 255)->nullable();
-//            $table->integer('user_id')->unsigned();
-//            $table->integer('event_type_id')->unsigned();
+            //            $table->integer('user_id')->unsigned();
+            //            $table->integer('event_type_id')->unsigned();
             $table->text('options')->nullable();
             $table->timestamps();
             $table->softDeletes();

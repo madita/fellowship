@@ -45,7 +45,7 @@ class ApiKey extends Model
      */
     public static function generateKeyPair(): array
     {
-        $key = 'fk_'.Str::random(32); // fk = fellowship key
+        $key    = 'fk_' . Str::random(32); // fk = fellowship key
         $secret = Str::random(48);
 
         return [
@@ -68,7 +68,7 @@ class ApiKey extends Model
      */
     public function isValid(): bool
     {
-        if (!$this->is_active) {
+        if ( ! $this->is_active) {
             return false;
         }
 

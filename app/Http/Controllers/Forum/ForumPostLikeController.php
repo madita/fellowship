@@ -16,7 +16,7 @@ class ForumPostLikeController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if ( ! $user) {
             abort(401);
         }
 
@@ -30,7 +30,7 @@ class ForumPostLikeController extends Controller
             ->log('liked a post');
 
         return response()->json([
-            'is_liked' => true,
+            'is_liked'   => true,
             'like_count' => $post->fresh()->like_count,
         ]);
     }
@@ -42,14 +42,14 @@ class ForumPostLikeController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if ( ! $user) {
             abort(401);
         }
 
         $post->unlike($user);
 
         return response()->json([
-            'is_liked' => false,
+            'is_liked'   => false,
             'like_count' => $post->fresh()->like_count,
         ]);
     }

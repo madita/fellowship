@@ -15,14 +15,14 @@ class TicketTypeFactory extends Factory
         $name = $this->faker->unique()->word();
 
         return [
-            'name' => $name,
-            'slug' => Str::slug($name),
+            'name'        => $name,
+            'slug'        => Str::slug($name),
             'description' => $this->faker->sentence(),
-            'icon' => 'mdi-ticket',
-            'color' => $this->faker->hexColor(),
-            'is_active' => true,
+            'icon'        => 'mdi-ticket',
+            'color'       => $this->faker->hexColor(),
+            'is_active'   => true,
             'auto_create' => false,
-            'position' => $this->faker->numberBetween(0, 10),
+            'position'    => $this->faker->numberBetween(0, 10),
         ];
     }
 }

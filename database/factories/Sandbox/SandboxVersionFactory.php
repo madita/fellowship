@@ -15,9 +15,9 @@ class SandboxVersionFactory extends Factory
     {
         return [
             'sandbox_id' => Sandbox::factory(),
-            'user_id' => User::factory(),
-            'title' => $this->faker->optional()->sentence(2),
-            'content' => '<p>' . $this->faker->paragraph() . '</p>',
+            'user_id'    => User::factory(),
+            'title'      => $this->faker->optional()->sentence(2),
+            'content'    => '<p>' . $this->faker->paragraph() . '</p>',
         ];
     }
 }

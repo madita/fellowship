@@ -76,14 +76,45 @@ class RevisionPresenter
 
     /**
      * Create a new revision presenter.
-     *
-     * @param Revision $revision
-     * @param Model    $revisioned
      */
     public function __construct(Revision $revision, Model $revisioned)
     {
-        $this->revision = $revision;
+        $this->revision   = $revision;
         $this->revisioned = $revisioned;
+    }
+
+    /**
+     * Handle dynamic methods calls.
+     *
+     * @param  string  $method
+     * @param  array  $parameters
+     * @return mixed
+     */
+    public function __call($method, $parameters)
+    {
+        if (in_array($method, ['new_value', 'old_value'])) {
+            array_unshift($parameters, $method);
+
+            return call_user_func_array([$this, 'getFromRevision'], $parameters);
+        }
+
+        return call_user_func_array([$this->revision, $method], $parameters);
+    }
+
+    /**
+     * Pass dynamic property calls on to underlying revision model.
+     *
+     * @param  string  $property
+     * @return mixed
+     */
+    public function __get($property)
+    {
+        // Return decorated property if method is defined on this presenter.
+        if (method_exists($this, $property)) {
+            return $this->$property();
+        }
+
+        return $this->revision->$property;
     }
 
     /**
@@ -101,8 +132,7 @@ class RevisionPresenter
     /**
      * Get custom label for revisioned field.
      *
-     * @param string $key
-     *
+     * @param  string  $key
      * @return string
      */
     public function label($key)
@@ -113,9 +143,8 @@ class RevisionPresenter
     /**
      * Get value from the revision.
      *
-     * @param string $version
-     * @param string $key
-     *
+     * @param  string  $version
+     * @param  string  $key
      * @return mixed
      */
     public function getFromRevision($version, $key)
@@ -126,10 +155,71 @@ class RevisionPresenter
     }
 
     /**
+     * Decorate revision model or array/collection of models.
+     *
+     * @param  mixed  $revision
+     * @param  Model  $revisioned
+     *
+     * @throws InvalidArgumentException
+     *
+     * @return mixed
+     */
+    public static function make($revision, $revisioned)
+    {
+        if (is_array($revision)) {
+            return static::makeArray($revision, $revisioned);
+        }
+
+        if ($revision instanceof Collection) {
+            return static::makeCollection($revision, $revisioned);
+        }
+
+        if ( ! $revision || $revision instanceof Model) {
+            return static::makeOne($revision, $revisioned);
+        }
+
+        throw new InvalidArgumentException(
+            'Presenter::make accepts array, collection or single resource, ' . gettype($revision) . ' given.'
+        );
+    }
+
+    /**
+     * Decorate Eloquent model.
+     *
+     * @param  Model|null  $revision
+     * @return static
+     */
+    public static function makeOne(Revison $revision, Model $revisioned)
+    {
+        return new static($revision, $revisioned);
+    }
+
+    /**
+     * Decorate array of Eloquent models.
+     *
+     *
+     * @return array
+     */
+    public static function makeArray(array $revisions, Model $revisioned)
+    {
+        return array_map(static::getMapCallback($revisioned), $revisions);
+    }
+
+    /**
+     * Decorate collection of models.
+     *
+     *
+     * @return Collection
+     */
+    public static function makeCollection(Collection $revisions, Model $revisioned)
+    {
+        return $revisions->map(static::getMapCallback($revisioned));
+    }
+
+    /**
      * Determine whether the value should be fetched from the relation.
      *
-     * @param string $key
-     *
+     * @param  string  $key
      * @return bool
      */
     protected function isPassedThrough($key)
@@ -140,9 +230,8 @@ class RevisionPresenter
     /**
      * Get value from the relation.
      *
-     * @param string $version
-     * @param string $key
-     *
+     * @param  string  $version
+     * @param  string  $key
      * @return mixed
      */
     protected function passThrough($version, $key)
@@ -157,9 +246,8 @@ class RevisionPresenter
     /**
      * Get pass through value using dot notation.
      *
-     * @param mixed  $target
-     * @param string $key
-     *
+     * @param  mixed  $target
+     * @param  string  $key
      * @return mixed
      */
     protected function dataGet($target, $key)
@@ -175,7 +263,7 @@ class RevisionPresenter
                 $target = null;
             }
 
-            if (!$target) {
+            if ( ! $target) {
                 return null;
             }
         }
@@ -204,9 +292,8 @@ class RevisionPresenter
     /**
      * Get pass through value from another revision.
      *
-     * @param Revision|RevisionPresenter $revision
-     * @param string                     $key
-     *
+     * @param  Revision|RevisionPresenter  $revision
+     * @param  string  $key
      * @return mixed
      */
     protected function passThroughRevision($revision, $key)
@@ -222,9 +309,7 @@ class RevisionPresenter
     /**
      * Get pass through value from the Eloquent model.
      *
-     * @param Model  $model
-     * @param string $key
-     *
+     * @param  string  $key
      * @return mixed
      */
     protected function passThroughModel(Model $model, $key)
@@ -239,84 +324,16 @@ class RevisionPresenter
      */
     protected function getVersion($version)
     {
-        if (!$this->{$version.'Version'}) {
+        if ( ! $this->{$version . 'Version'}) {
             $revisioned = get_class($this->revisioned);
 
-            $revision = new $revisioned();
+            $revision = new $revisioned;
             $revision->setRawAttributes($this->{$version});
 
-            $this->{$version.'Version'} = $revision;
+            $this->{$version . 'Version'} = $revision;
         }
 
-        return $this->{$version.'Version'};
-    }
-
-    /**
-     * Decorate revision model or array/collection of models.
-     *
-     * @param mixed $revision
-     * @param Model $revisioned
-     *
-     * @throws InvalidArgumentException
-     *
-     * @return mixed
-     */
-    public static function make($revision, $revisioned)
-    {
-        if (is_array($revision)) {
-            return static::makeArray($revision, $revisioned);
-        }
-
-        if ($revision instanceof Collection) {
-            return static::makeCollection($revision, $revisioned);
-        }
-
-        if (!$revision || $revision instanceof Model) {
-            return static::makeOne($revision, $revisioned);
-        }
-
-        throw new InvalidArgumentException(
-            'Presenter::make accepts array, collection or single resource, '.gettype($revision).' given.'
-        );
-    }
-
-    /**
-     * Decorate Eloquent model.
-     *
-     * @param Model|null $revision
-     * @param Model      $revisioned
-     *
-     * @return static
-     */
-    public static function makeOne(Revison $revision, Model $revisioned)
-    {
-        return new static($revision, $revisioned);
-    }
-
-    /**
-     * Decorate array of Eloquent models.
-     *
-     * @param array $revisions
-     * @param Model $revisioned
-     *
-     * @return array
-     */
-    public static function makeArray(array $revisions, Model $revisioned)
-    {
-        return array_map(static::getMapCallback($revisioned), $revisions);
-    }
-
-    /**
-     * Decorate collection of models.
-     *
-     * @param Collection $revisions
-     * @param Model      $revisioned
-     *
-     * @return Collection
-     */
-    public static function makeCollection(Collection $revisions, Model $revisioned)
-    {
-        return $revisions->map(static::getMapCallback($revisioned));
+        return $this->{$version . 'Version'};
     }
 
     /**
@@ -334,41 +351,5 @@ class RevisionPresenter
         return function ($revision) use ($presenter, $revisioned) {
             return new $presenter($revision, $revisioned);
         };
-    }
-
-    /**
-     * Handle dynamic methods calls.
-     *
-     * @param string $method
-     * @param array  $parameters
-     *
-     * @return mixed
-     */
-    public function __call($method, $parameters)
-    {
-        if (in_array($method, ['new_value', 'old_value'])) {
-            array_unshift($parameters, $method);
-
-            return call_user_func_array([$this, 'getFromRevision'], $parameters);
-        }
-
-        return call_user_func_array([$this->revision, $method], $parameters);
-    }
-
-    /**
-     * Pass dynamic property calls on to underlying revision model.
-     *
-     * @param string $property
-     *
-     * @return mixed
-     */
-    public function __get($property)
-    {
-        // Return decorated property if method is defined on this presenter.
-        if (method_exists($this, $property)) {
-            return $this->$property();
-        }
-
-        return $this->revision->$property;
     }
 }

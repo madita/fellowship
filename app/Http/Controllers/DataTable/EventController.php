@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Models\Event\Event;
-//use App\Models\Tag\Taxonomy;
+// use App\Models\Tag\Taxonomy;
 use Illuminate\Http\Request;
 
 class EventController extends DataTableController
@@ -43,28 +43,28 @@ class EventController extends DataTableController
         $event->update($request->only($this->getUpdatableColumns()));
 
         //
-//        if ($request->get('parent')) {
-//            $parent = $request->get('parent');
-//
-//
-//            $event->parent_id = $parent['id'];
-//            $event->update();
-//        }
+        //        if ($request->get('parent')) {
+        //            $parent = $request->get('parent');
+        //
+        //
+        //            $event->parent_id = $parent['id'];
+        //            $event->update();
+        //        }
 
-//        $event->detachCategories();
-//
-//        if ($request->get('taxonomy') && $request->get('categories')) {
-//            $taxonomy = $request->get('taxonomy');
-//            if (!is_string($taxonomy)) {
-//                $taxonomy = $taxonomy['taxonomy'];
-//            }
-//
-//            $event->addCategories($request->get('categories'), $taxonomy);
-//        }
-//
-//        if ($request->get('terms')) {
-//            $event->addCategories($request->get('terms'), 'tags');
-//        }
+        //        $event->detachCategories();
+        //
+        //        if ($request->get('taxonomy') && $request->get('categories')) {
+        //            $taxonomy = $request->get('taxonomy');
+        //            if (!is_string($taxonomy)) {
+        //                $taxonomy = $taxonomy['taxonomy'];
+        //            }
+        //
+        //            $event->addCategories($request->get('categories'), $taxonomy);
+        //        }
+        //
+        //        if ($request->get('terms')) {
+        //            $event->addCategories($request->get('terms'), 'tags');
+        //        }
     }
 
     public function getUpdatableColumns()
@@ -81,7 +81,7 @@ class EventController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'description'      => 'wysiwyg',
+            'description' => 'wysiwyg',
         ];
     }
 

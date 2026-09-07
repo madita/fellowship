@@ -61,7 +61,7 @@ class SpamDetectionService
         // All-caps check: >80% uppercase on >20 char text
         if (mb_strlen($plainText) > 20) {
             $uppercase = preg_match_all('/\p{Lu}/u', $plainText);
-            $letters = preg_match_all('/\p{L}/u', $plainText);
+            $letters   = preg_match_all('/\p{L}/u', $plainText);
             if ($letters > 0 && ($uppercase / $letters) > 0.8) {
                 return ['status' => 422, 'message' => 'Please avoid writing in all capitals.'];
             }
@@ -74,7 +74,7 @@ class SpamDetectionService
         }
 
         // Duplicate: same body from same user within 1 hour
-        $bodyHash = md5(trim($plainText));
+        $bodyHash  = md5(trim($plainText));
         $duplicate = ForumPost::where('user_id', $user->id)
             ->where('created_at', '>=', now()->subHour())
             ->get()
@@ -82,7 +82,7 @@ class SpamDetectionService
                 return md5(trim(strip_tags($post->body))) === $bodyHash;
             });
 
-        if (!$duplicate) {
+        if ( ! $duplicate) {
             $duplicate = ForumThread::where('user_id', $user->id)
                 ->where('created_at', '>=', now()->subHour())
                 ->get()

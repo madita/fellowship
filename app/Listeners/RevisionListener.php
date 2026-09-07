@@ -10,7 +10,7 @@ class RevisionListener
     /**
      * Handle created event.
      *
-     * @param Model $revisioned
+     * @param  Model  $revisioned
      */
     public function created($revisioned)
     {
@@ -20,7 +20,7 @@ class RevisionListener
     /**
      * Handle updated event.
      *
-     * @param Model $revisioned
+     * @param  Model  $revisioned
      */
     public function updated($revisioned)
     {
@@ -32,7 +32,7 @@ class RevisionListener
     /**
      * Handle deleted event.
      *
-     * @param Model $revisioned
+     * @param  Model  $revisioned
      */
     public function deleted($revisioned)
     {
@@ -42,7 +42,7 @@ class RevisionListener
     /**
      * Handle restored event.
      *
-     * @param Model $revisioned
+     * @param  Model  $revisioned
      */
     public function restored($revisioned)
     {
@@ -50,10 +50,19 @@ class RevisionListener
     }
 
     /**
+     * Attempt to find the user id of the currently logged in user
+     * Supports Cartalyst Sentry/Sentinel based authentication, as well as stock Auth.
+     **/
+    public function getSystemUserId()
+    {
+        return auth()->user()?->getAuthIdentifier();
+    }
+
+    /**
      * Log the revision.
      *
-     * @param string $action
-     * @param Model  $revisioned The model being revisioned
+     * @param  string  $action
+     * @param  Model  $revisioned  The model being revisioned
      */
     protected function log($action, $revisioned)
     {
@@ -82,14 +91,5 @@ class RevisionListener
             'ip_forwarded'      => data_get($_SERVER, 'HTTP_X_FORWARDED_FOR'),
             'created_at'        => Carbon::now(),
         ]);
-    }
-
-    /**
-     * Attempt to find the user id of the currently logged in user
-     * Supports Cartalyst Sentry/Sentinel based authentication, as well as stock Auth.
-     **/
-    public function getSystemUserId()
-    {
-        return auth()->user()?->getAuthIdentifier();
     }
 }

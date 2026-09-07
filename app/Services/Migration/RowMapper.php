@@ -3,6 +3,7 @@
 namespace App\Services\Migration;
 
 use DateTime;
+use Illuminate\Support\Str;
 
 /**
  * Applies a stored field map to one row from a source database.
@@ -26,14 +27,14 @@ class RowMapper
     public const TRANSFORMS = ['none', 'trim', 'html_decode', 'underscores_to_spaces', 'int', 'float', 'bool', 'json', 'date', 'time', 'datetime'];
 
     /**
-     * @param array<string,array<string,mixed>> $fieldMap
+     * @param  array<string,array<string,mixed>>  $fieldMap
      */
     public function __construct(private array $fieldMap)
     {
     }
 
     /**
-     * @param array<string,mixed> $row source row (column => value)
+     * @param  array<string,mixed>  $row  source row (column => value)
      * @return array<string,mixed> target field => mapped value
      */
     public function map(array $row): array
@@ -48,14 +49,34 @@ class RowMapper
     }
 
     /**
-     * @param array<string,mixed> $spec
-     * @param array<string,mixed> $row
+     * Fold umlauts/accents and path-hostile characters the way legacy file
+     * archives commonly name their folders (ä→ae, / → _, …).
+     */
+    public static function foldForFilesystem(string $value): string
+    {
+        $value = strtr($value, [
+            'ä' => 'ae', 'Ä' => 'Ae',
+            'ö' => 'oe', 'Ö' => 'Oe',
+            'ü' => 'ue', 'Ü' => 'Ue',
+            'ß' => 'ss',
+            'é' => 'e', 'è' => 'e', 'ê' => 'e',
+        ]);
+
+        return strtr($value, [
+            '/' => '_', '\\' => '_', ':' => '_', '?' => '_',
+            '&' => '_', '(' => '_', ')' => '_',
+        ]);
+    }
+
+    /**
+     * @param  array<string,mixed>  $spec
+     * @param  array<string,mixed>  $row
      */
     private function mapField(array $spec, array $row): mixed
     {
         $value = null;
 
-        $template = $spec['template'] ?? null;
+        $template     = $spec['template'] ?? null;
         $sourceColumn = $spec['source'] ?? null;
 
         if ($template !== null && $template !== '') {
@@ -92,8 +113,8 @@ class RowMapper
                 }
 
                 return match ($match[2] ?? '') {
-                    'slug' => \Illuminate\Support\Str::slug((string) $value),
-                    'fold' => self::foldForFilesystem((string) $value),
+                    'slug'  => Str::slug((string) $value),
+                    'fold'  => self::foldForFilesystem((string) $value),
                     default => (string) $value,
                 };
             },
@@ -103,26 +124,6 @@ class RowMapper
         return $missing ? null : $result;
     }
 
-    /**
-     * Fold umlauts/accents and path-hostile characters the way legacy file
-     * archives commonly name their folders (ä→ae, / → _, …).
-     */
-    public static function foldForFilesystem(string $value): string
-    {
-        $value = strtr($value, [
-            'ä' => 'ae', 'Ä' => 'Ae',
-            'ö' => 'oe', 'Ö' => 'Oe',
-            'ü' => 'ue', 'Ü' => 'Ue',
-            'ß' => 'ss',
-            'é' => 'e', 'è' => 'e', 'ê' => 'e',
-        ]);
-
-        return strtr($value, [
-            '/' => '_', '\\' => '_', ':' => '_', '?' => '_',
-            '&' => '_', '(' => '_', ')' => '_',
-        ]);
-    }
-
     private function transform(mixed $value, string $transform, ?string $format): mixed
     {
         if ($value === null) {
@@ -130,17 +131,17 @@ class RowMapper
         }
 
         return match ($transform) {
-            'trim' => trim((string) $value),
-            'html_decode' => html_entity_decode((string) $value),
+            'trim'                  => trim((string) $value),
+            'html_decode'           => html_entity_decode((string) $value),
             'underscores_to_spaces' => str_replace('_', ' ', (string) $value),
-            'int' => is_numeric($value) ? (int) $value : null,
-            'float' => is_numeric($value) ? (float) $value : null,
-            'bool' => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
-            'json' => is_string($value) ? json_decode($value, true) : $value,
-            'date' => $this->parseDate($value, $format)?->format('Y-m-d'),
-            'time' => $this->parseDate($value, $format)?->format('H:i:s'),
-            'datetime' => $this->parseDate($value, $format)?->format('Y-m-d H:i:s'),
-            default => $value,
+            'int'                   => is_numeric($value) ? (int) $value : null,
+            'float'                 => is_numeric($value) ? (float) $value : null,
+            'bool'                  => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+            'json'                  => is_string($value) ? json_decode($value, true) : $value,
+            'date'                  => $this->parseDate($value, $format)?->format('Y-m-d'),
+            'time'                  => $this->parseDate($value, $format)?->format('H:i:s'),
+            'datetime'              => $this->parseDate($value, $format)?->format('Y-m-d H:i:s'),
+            default                 => $value,
         };
     }
 

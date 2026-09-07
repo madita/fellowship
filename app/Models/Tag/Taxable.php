@@ -12,9 +12,11 @@ class Taxable extends Model
     use HasCache;
 
     protected $table = 'taxables';
+
     protected $cacheTag = 'taxables';
+
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected $fillable = [
         'taxonomy_id',

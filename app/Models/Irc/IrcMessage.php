@@ -28,7 +28,7 @@ class IrcMessage extends Model
     protected $casts = [
         'is_private' => 'boolean',
         'is_mention' => 'boolean',
-        'sent_at' => 'datetime',
+        'sent_at'    => 'datetime',
     ];
 
     /**

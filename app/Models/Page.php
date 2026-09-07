@@ -7,7 +7,7 @@ use App\Models\Concerns\HasPolls;
 use App\Traits\HasCache;
 use App\Traits\HasTaxonomies;
 use App\Traits\Revisionable;
-//use Lecturize\Taxonomies\Traits\HasCategories;
+// use Lecturize\Taxonomies\Traits\HasCategories;
 use App\Traits\Wikiable;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
@@ -16,16 +16,16 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Page extends Model implements HasMedia, CanHaveTaxonomies, TranslatableContract
+class Page extends Model implements CanHaveTaxonomies, HasMedia, TranslatableContract
 {
-    use InteractsWithMedia;
-    use HasTaxonomies;
-    use Revisionable;
-    use Wikiable;
-    use Sluggable;
     use HasCache;
-    use Translatable;
     use HasPolls;
+    use HasTaxonomies;
+    use InteractsWithMedia;
+    use Revisionable;
+    use Sluggable;
+    use Translatable;
+    use Wikiable;
 
     public $translatedAttributes = ['title', 'content'];
 
@@ -42,16 +42,8 @@ class Page extends Model implements HasMedia, CanHaveTaxonomies, TranslatableCon
     protected $taxable_title = 'title';
 
     protected $primaryKey = 'id';
-    protected $table = 'pages';
 
-    public function sluggable(): array
-    {
-        return [
-            'slug' => [
-                'source' => 'title',
-            ],
-        ];
-    }
+    protected $table = 'pages';
 
     protected $wikiable = [
         'title' => 'title',
@@ -63,6 +55,15 @@ class Page extends Model implements HasMedia, CanHaveTaxonomies, TranslatableCon
         'slug',
         'content',
     ];
+
+    public function sluggable(): array
+    {
+        return [
+            'slug' => [
+                'source' => 'title',
+            ],
+        ];
+    }
 
     public function user()
     {
@@ -90,7 +91,7 @@ class Page extends Model implements HasMedia, CanHaveTaxonomies, TranslatableCon
 
         $parent = $this->parent;
 
-        while (!is_null($parent)) {
+        while ( ! is_null($parent)) {
             $parents->push($parent);
             $parent = $parent->parent;
         }

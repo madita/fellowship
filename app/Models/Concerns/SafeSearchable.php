@@ -4,6 +4,7 @@ namespace App\Models\Concerns;
 
 use Illuminate\Support\Facades\Log;
 use Laravel\Scout\Searchable;
+use Meilisearch\Exceptions\CommunicationException;
 
 trait SafeSearchable
 {
@@ -17,7 +18,7 @@ trait SafeSearchable
     {
         try {
             parent::searchable();
-        } catch (\Meilisearch\Exceptions\CommunicationException $e) {
+        } catch (CommunicationException $e) {
             Log::warning('Meilisearch unavailable, skipping index for ' . static::class . ': ' . $e->getMessage());
         } catch (\Exception $e) {
             if ($this->isMeilisearchConnectionError($e)) {
@@ -36,7 +37,7 @@ trait SafeSearchable
     {
         try {
             parent::unsearchable();
-        } catch (\Meilisearch\Exceptions\CommunicationException $e) {
+        } catch (CommunicationException $e) {
             Log::warning('Meilisearch unavailable, skipping unsearchable for ' . static::class . ': ' . $e->getMessage());
         } catch (\Exception $e) {
             if ($this->isMeilisearchConnectionError($e)) {
@@ -54,7 +55,7 @@ trait SafeSearchable
     {
         $previous = $e->getPrevious();
 
-        if ($previous instanceof \Meilisearch\Exceptions\CommunicationException) {
+        if ($previous instanceof CommunicationException) {
             return true;
         }
 

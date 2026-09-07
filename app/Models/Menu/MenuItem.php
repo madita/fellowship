@@ -31,10 +31,10 @@ class MenuItem extends Model
 
     protected $casts = [
         'auth_required' => 'boolean',
-        'guest_only' => 'boolean',
-        'is_active' => 'boolean',
-        'metadata' => 'array',
-        'order' => 'integer',
+        'guest_only'    => 'boolean',
+        'is_active'     => 'boolean',
+        'metadata'      => 'array',
+        'order'         => 'integer',
     ];
 
     protected $appends = ['href'];
@@ -70,10 +70,10 @@ class MenuItem extends Model
      */
     public function getHrefAttribute(): ?string
     {
-        return match($this->type) {
+        return match ($this->type) {
             'route' => $this->route,
             'custom', 'external' => $this->url,
-            'page' => $this->url, // Could resolve to page slug
+            'page'  => $this->url, // Could resolve to page slug
             default => '#',
         };
     }
@@ -89,21 +89,20 @@ class MenuItem extends Model
         }
 
         // Auth required
-        if ($this->auth_required && !$user) {
+        if ($this->auth_required && ! $user) {
             return false;
         }
 
         // Role check
-        if ($this->role && $user && !$user->hasRole($this->role)) {
+        if ($this->role && $user && ! $user->hasRole($this->role)) {
             return false;
         }
 
         // Permission check
-        if ($this->permission && $user && !$user->can($this->permission)) {
+        if ($this->permission && $user && ! $user->can($this->permission)) {
             return false;
         }
 
         return $this->is_active;
     }
-
 }

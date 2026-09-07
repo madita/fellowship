@@ -40,7 +40,7 @@ class PostController extends Controller
             ->where('slug', '=', $slug)
             ->first();
 
-        if (!$post || $post->status !== 'published') {
+        if ( ! $post || $post->status !== 'published') {
             return abort(404);
         }
 
@@ -63,7 +63,7 @@ class PostController extends Controller
      */
     public function show(Post $post): JsonResponse
     {
-        if (!$post) {
+        if ( ! $post) {
             return abort(404);
         }
 

@@ -23,9 +23,9 @@ class CollectionController extends Controller
             $collection->coverImage = $coverMedia ? $coverMedia->getUrl() : null;
 
             $collection->media->each(function ($media) {
-                $media->caption = $media->getCustomProperty('caption');
+                $media->caption  = $media->getCustomProperty('caption');
                 $media->uploader = $media->getCustomProperty('uploader');
-                $media->url = $media->getUrl();
+                $media->url      = $media->getUrl();
             });
         });
 
@@ -40,7 +40,7 @@ class CollectionController extends Controller
 
         // Add custom properties to each media item
         $collection->media->each(function ($media) {
-            $media->caption = $media->getCustomProperty('caption');
+            $media->caption  = $media->getCustomProperty('caption');
             $media->uploader = $media->getCustomProperty('uploader');
         });
 
@@ -82,8 +82,8 @@ class CollectionController extends Controller
         foreach ($request->file('files') as $index => $file) {
             // Add each media item to the collection
 
-            $extension = $file->getClientOriginalExtension();
-            $newFilename = Str::uuid().'.'.$extension;
+            $extension   = $file->getClientOriginalExtension();
+            $newFilename = Str::uuid() . '.' . $extension;
             /** @var User $user */
             $user = auth()->user();
 
@@ -171,7 +171,7 @@ class CollectionController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to delete collection',
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
@@ -193,7 +193,7 @@ class CollectionController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to delete media',
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }

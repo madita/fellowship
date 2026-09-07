@@ -17,7 +17,9 @@ class EventControllerTest extends TestCase
     use WithFaker;
 
     protected $user;
+
     protected $event;
+
     protected $eventType;
 
     protected function setUp(): void
@@ -29,7 +31,7 @@ class EventControllerTest extends TestCase
 
         // Create an event profile first
         $eventProfile = EventProfile::create([
-            'name'    => 'Test Event Profile',
+            'name' => 'Test Event Profile',
             'options' => json_encode([
                 'form' => [
                     ['name' => 'remarks', 'type' => 'text', 'label' => 'Remarks'],
@@ -41,9 +43,9 @@ class EventControllerTest extends TestCase
         // Create an event type with options and event_profile_id
         $this->eventType = EventType::create([
             'event_profile_id' => $eventProfile->id,
-            'name'             => 'Treffen',
-            'color'            => '#071CB4',
-            'options'          => '{
+            'name' => 'Treffen',
+            'color' => '#071CB4',
+            'options' => '{
           "answers":
           [
         {
@@ -91,15 +93,15 @@ class EventControllerTest extends TestCase
 
         // Create an event
         $this->event = Event::create([
-            'title'         => 'Test Event',
-            'slug'          => 'test-event',
-            'user_id'       => $this->user->id,
+            'title' => 'Test Event',
+            'slug' => 'test-event',
+            'user_id' => $this->user->id,
             'event_type_id' => $this->eventType->id,
-            'startDate'     => now()->format('Y-m-d'),
-            'endDate'       => now()->addDays(2)->format('Y-m-d'),
+            'startDate' => now()->format('Y-m-d'),
+            'endDate' => now()->addDays(2)->format('Y-m-d'),
         ]);
 
-//        dd($this->user->id, $this->event);
+        //        dd($this->user->id, $this->event);
     }
 
     #[Test]
@@ -129,9 +131,9 @@ class EventControllerTest extends TestCase
 
         // Check that the user is now going to the event
         $this->assertDatabaseHas('event_guests', [
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'event_id' => $this->event->id,
-            'type'     => 'going',
+            'type' => 'going',
         ]);
     }
 
@@ -150,9 +152,9 @@ class EventControllerTest extends TestCase
 
         // Check that the user's response was updated
         $this->assertDatabaseHas('event_guests', [
-            'user_id'  => $this->user->id,
+            'user_id' => $this->user->id,
             'event_id' => $this->event->id,
-            'type'     => 'notgoing',
+            'type' => 'notgoing',
         ]);
     }
 
@@ -162,17 +164,17 @@ class EventControllerTest extends TestCase
         $this->actingAs($this->user, 'sanctum');
 
         $profileData = [
-            'days'    => ['Monday', 'Tuesday'],
-            'games'   => ['Game 1', 'Game 2'],
+            'days' => ['Monday', 'Tuesday'],
+            'games' => ['Game 1', 'Game 2'],
             'remarks' => 'Test remarks',
         ];
 
         $response = $this->postJson("/api/events/{$this->event->id}/answer", [
             'answer' => 'going',
-            'data'   => json_encode($profileData),
+            'data' => json_encode($profileData),
         ]);
 
-//        dd($response);
+        //        dd($response);
 
         $response->assertStatus(200)
             ->assertJson([
@@ -204,16 +206,16 @@ class EventControllerTest extends TestCase
 
         // Add the guest to the event
         $eventGuest = EventGuest::create([
-            'user_id'     => $guest->id,
-            'event_id'    => $this->event->id,
-            'type'        => 'going',
+            'user_id' => $guest->id,
+            'event_id' => $this->event->id,
+            'type' => 'going',
             'approved_at' => null,
         ]);
 
         // The event owner approves the guest
         $response = $this->postJson("/api/events/{$this->event->id}/approve-guest", [
             'guestId' => $guest->id,
-            'action'  => 'approve',
+            'action' => 'approve',
         ]);
 
         $response->assertStatus(200)
@@ -223,9 +225,9 @@ class EventControllerTest extends TestCase
 
         // Check that the guest was approved
         $this->assertDatabaseHas('event_guests', [
-            'user_id'  => $guest->id,
+            'user_id' => $guest->id,
             'event_id' => $this->event->id,
-            'type'     => 'going',
+            'type' => 'going',
         ]);
 
         $updatedGuest = EventGuest::find($eventGuest->id);
@@ -242,16 +244,16 @@ class EventControllerTest extends TestCase
 
         // Add the guest to the event and approve them
         $eventGuest = EventGuest::create([
-            'user_id'     => $guest->id,
-            'event_id'    => $this->event->id,
-            'type'        => 'going',
+            'user_id' => $guest->id,
+            'event_id' => $this->event->id,
+            'type' => 'going',
             'approved_at' => now(),
         ]);
 
         // The event owner rejects the guest
         $response = $this->postJson("/api/events/{$this->event->id}/approve-guest", [
             'guestId' => $guest->id,
-            'action'  => 'reject',
+            'action' => 'reject',
         ]);
 
         $response->assertStatus(200)
@@ -274,16 +276,16 @@ class EventControllerTest extends TestCase
         // Create a guest
         $guest = User::factory()->create();
         EventGuest::create([
-            'user_id'     => $guest->id,
-            'event_id'    => $this->event->id,
-            'type'        => 'going',
+            'user_id' => $guest->id,
+            'event_id' => $this->event->id,
+            'type' => 'going',
             'approved_at' => null,
         ]);
 
         // The non-owner tries to approve the guest
         $response = $this->postJson("/api/events/{$this->event->id}/approve-guest", [
             'guestId' => $guest->id,
-            'action'  => 'approve',
+            'action' => 'approve',
         ]);
 
         // This should fail with a 403 Forbidden status
@@ -300,16 +302,16 @@ class EventControllerTest extends TestCase
         // Create a guest
         $guest = User::factory()->create();
         EventGuest::create([
-            'user_id'     => $guest->id,
-            'event_id'    => $this->event->id,
-            'type'        => 'going',
+            'user_id' => $guest->id,
+            'event_id' => $this->event->id,
+            'type' => 'going',
             'approved_at' => null,
         ]);
 
         // Try to approve with an invalid action
         $response = $this->postJson("/api/events/{$this->event->id}/approve-guest", [
             'guestId' => $guest->id,
-            'action'  => 'invalid-action', // Not 'approve' or 'reject'
+            'action' => 'invalid-action', // Not 'approve' or 'reject'
         ]);
 
         $response->assertStatus(422)

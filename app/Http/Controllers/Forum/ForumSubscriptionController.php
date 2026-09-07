@@ -16,7 +16,7 @@ class ForumSubscriptionController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if ( ! $user) {
             abort(401);
         }
 
@@ -24,7 +24,7 @@ class ForumSubscriptionController extends Controller
 
         return response()->json([
             'is_subscribed' => true,
-            'message' => 'Subscribed to thread',
+            'message'       => 'Subscribed to thread',
         ]);
     }
 
@@ -35,7 +35,7 @@ class ForumSubscriptionController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if ( ! $user) {
             abort(401);
         }
 
@@ -43,7 +43,7 @@ class ForumSubscriptionController extends Controller
 
         return response()->json([
             'is_subscribed' => false,
-            'message' => 'Unsubscribed from thread',
+            'message'       => 'Unsubscribed from thread',
         ]);
     }
 }

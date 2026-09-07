@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\MigrationController;
+use App\Http\Controllers\Auth\SocialLoginController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,15 +18,15 @@ use Illuminate\Support\Facades\Route;
 // Route::get('/', function () {
 //     return view('welcome');
 // });
-//Auth::routes(['verify' => true]);
+// Auth::routes(['verify' => true]);
 Auth::routes(['verify' => true]);
 
 // OAuth Social Login Routes
-Route::get('/auth/{provider}', [App\Http\Controllers\Auth\SocialLoginController::class, 'redirect'])
+Route::get('/auth/{provider}', [SocialLoginController::class, 'redirect'])
     ->name('social.redirect')
     ->where('provider', 'google|discord|github|facebook');
 
-Route::get('/auth/{provider}/callback', [App\Http\Controllers\Auth\SocialLoginController::class, 'callback'])
+Route::get('/auth/{provider}/callback', [SocialLoginController::class, 'callback'])
     ->name('social.callback')
     ->where('provider', 'google|discord|github|facebook');
 
@@ -34,18 +36,18 @@ Route::get('/taxables', '\App\Http\Controllers\TaxonomyController@getTaxables');
 Route::post('/tag/terms/', '\App\Http\Controllers\TaxonomyController@saveTerms');
 
 //
-//Route::group(['prefix' => '/api'], function () {
+// Route::group(['prefix' => '/api'], function () {
 //    //    Route::get('/', 'App\Http\Controllers\Chat\ChatController@index')->name('chat');
 //    Route::get('/pages/{slug}', '\App\Http\Controllers\PageController@view');
 //    Route::get('/pages/{page}/history', '\App\Http\Controllers\PageController@history');
 //    //Route::get('/pages/tag/{term}', '\App\Http\Controllers\PageController@showWithTerm');
 //    Route::get('/pages/{taxonomy}/{category}', '\App\Http\Controllers\PageController@showWithCategory');
 //    Route::get('/posts/{slug}', '\App\Http\Controllers\PostController@view');
-//});
+// });
 //
 
-//migration — controller intentionally not in the repo yet
-if (class_exists(\App\Http\Controllers\Admin\MigrationController::class)) {
+// migration — controller intentionally not in the repo yet
+if (class_exists(MigrationController::class)) {
     Route::get('migration/wiki', "\App\Http\Controllers\Admin\MigrationController@wiki");
     Route::get('migration/event', "\App\Http\Controllers\Admin\MigrationController@event");
 }

@@ -25,13 +25,13 @@ class IrcChannel extends Model
     ];
 
     protected $casts = [
-        'is_joined' => 'boolean',
-        'is_favorite' => 'boolean',
-        'is_private' => 'boolean',
+        'is_joined'       => 'boolean',
+        'is_favorite'     => 'boolean',
+        'is_private'      => 'boolean',
         'notify_mentions' => 'boolean',
-        'joined_at' => 'datetime',
+        'joined_at'       => 'datetime',
         'last_message_at' => 'datetime',
-        'unread_count' => 'integer',
+        'unread_count'    => 'integer',
     ];
 
     /**

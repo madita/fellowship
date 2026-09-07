@@ -22,17 +22,17 @@ class MigrationLog extends Model
     ];
 
     protected $casts = [
-        'logs' => 'array',
-        'started_at' => 'datetime',
+        'logs'         => 'array',
+        'started_at'   => 'datetime',
         'completed_at' => 'datetime',
     ];
 
     public function addLog(string $type, string $message): void
     {
-        $logs = $this->logs ?? [];
+        $logs   = $this->logs ?? [];
         $logs[] = [
-            'type' => $type,
-            'message' => mb_substr($message, 0, 1000),
+            'type'      => $type,
+            'message'   => mb_substr($message, 0, 1000),
             'timestamp' => now()->toIso8601String(),
         ];
 
@@ -47,16 +47,16 @@ class MigrationLog extends Model
     public function markRunning(int $totalItems = 0): void
     {
         $this->update([
-            'status' => 'running',
+            'status'      => 'running',
             'total_items' => $totalItems,
-            'started_at' => now(),
+            'started_at'  => now(),
         ]);
     }
 
     public function markCompleted(): void
     {
         $this->update([
-            'status' => 'completed',
+            'status'       => 'completed',
             'completed_at' => now(),
         ]);
     }
@@ -67,7 +67,7 @@ class MigrationLog extends Model
             'status' => 'failed',
             // Errors can embed whole SQL statements (with huge bound
             // values) — keep the head, or storing the error fails too.
-            'last_error' => mb_substr($error, 0, 1000),
+            'last_error'   => mb_substr($error, 0, 1000),
             'completed_at' => now(),
         ]);
     }
@@ -93,6 +93,7 @@ class MigrationLog extends Model
         if ($this->total_items === 0) {
             return 0;
         }
+
         return round(($this->processed_items / $this->total_items) * 100, 1);
     }
 }

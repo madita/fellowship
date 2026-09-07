@@ -29,7 +29,7 @@ class MenuController extends Controller
     {
         $menu = Menu::getByLocation($location);
 
-        if (!$menu) {
+        if ( ! $menu) {
             return response()->json([
                 'items' => [],
             ]);
@@ -48,7 +48,7 @@ class MenuController extends Controller
     {
         $menu = Menu::getBySlug($slug);
 
-        if (!$menu) {
+        if ( ! $menu) {
             return response()->json(['message' => 'Menu not found'], 404);
         }
 
@@ -56,29 +56,6 @@ class MenuController extends Controller
             'menu'  => $menu->only(['name', 'slug', 'location', 'description']),
             'items' => $this->filterMenuItems($menu->rootItems, Auth::user()),
         ]);
-    }
-
-    /**
-     * Recursively filter menu items by per-item visibility rules.
-     */
-    protected function filterMenuItems($items, $user): array
-    {
-        return $items
-            ->filter(fn ($item) => $item->canView($user))
-            ->map(function ($item) use ($user) {
-                $data = $item->only([
-                    'id', 'label', 'type', 'href', 'icon',
-                    'target', 'order', 'metadata',
-                ]);
-
-                if ($item->children->isNotEmpty()) {
-                    $data['children'] = $this->filterMenuItems($item->children, $user);
-                }
-
-                return $data;
-            })
-            ->values()
-            ->toArray();
     }
 
     /**
@@ -195,10 +172,10 @@ class MenuController extends Controller
     public function reorderItems(Request $request, Menu $menu): JsonResponse
     {
         $request->validate([
-            'items'              => 'required|array',
-            'items.*.id'         => 'required|exists:menu_items,id',
-            'items.*.order'      => 'required|integer',
-            'items.*.parent_id'  => 'nullable|exists:menu_items,id',
+            'items'             => 'required|array',
+            'items.*.id'        => 'required|exists:menu_items,id',
+            'items.*.order'     => 'required|integer',
+            'items.*.parent_id' => 'nullable|exists:menu_items,id',
         ]);
 
         foreach ($request->items as $itemData) {
@@ -211,6 +188,29 @@ class MenuController extends Controller
         return response()->json([
             'message' => 'Menu items reordered successfully',
         ]);
+    }
+
+    /**
+     * Recursively filter menu items by per-item visibility rules.
+     */
+    protected function filterMenuItems($items, $user): array
+    {
+        return $items
+            ->filter(fn ($item) => $item->canView($user))
+            ->map(function ($item) use ($user) {
+                $data = $item->only([
+                    'id', 'label', 'type', 'href', 'icon',
+                    'target', 'order', 'metadata',
+                ]);
+
+                if ($item->children->isNotEmpty()) {
+                    $data['children'] = $this->filterMenuItems($item->children, $user);
+                }
+
+                return $data;
+            })
+            ->values()
+            ->toArray();
     }
 
     /**

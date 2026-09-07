@@ -4,8 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\CacheService;
+use App\Services\ImageOptimizationService;
+use App\Services\LazyLoadingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -22,14 +27,14 @@ class SettingsController extends Controller
      */
     public function getEnabledOAuthProviders(): JsonResponse
     {
-        $providers = [];
+        $providers    = [];
         $providerList = ['google', 'discord', 'github', 'facebook'];
 
         foreach ($providerList as $provider) {
             $enabled = Setting::get("oauth_{$provider}_enabled", false);
             if ($enabled) {
                 // Only include if credentials are configured
-                $clientId = Setting::get("oauth_{$provider}_client_id");
+                $clientId     = Setting::get("oauth_{$provider}_client_id");
                 $clientSecret = Setting::get("oauth_{$provider}_client_secret");
 
                 if ($clientId && $clientSecret) {
@@ -244,59 +249,9 @@ class SettingsController extends Controller
     public function performanceSettings(): JsonResponse
     {
         return response()->json([
-            'lazy_loading'       => \App\Services\LazyLoadingService::getSettings(),
-            'image_optimization' => \App\Services\ImageOptimizationService::getSettings(),
+            'lazy_loading'       => LazyLoadingService::getSettings(),
+            'image_optimization' => ImageOptimizationService::getSettings(),
         ]);
-    }
-
-    /**
-     * Ensure settings have proper PHP types for JSON encoding.
-     */
-    private function ensureProperTypes(array $settings): array
-    {
-        // Known boolean settings
-        $booleanKeys = [
-            'maintenance_mode', 'language_change_enabled', 'locale_auto_detect',
-            'login_branding_enabled', 'indexing_enabled', 'sitemap_enabled',
-            'cookie_consent_enabled', 'cookie_analytics_default', 'cookie_marketing_default',
-            'cookie_functional_default', 'anonymize_ip', 'tracking_production_only',
-            'third_party_embeds_enabled', 'homepage_builder_enabled', 'homepage_menu_enabled',
-            'blog_enabled', 'comments_enabled', 'comments_moderation_required',
-            'user_registration_enabled', 'email_verification_required',
-            'password_require_special_char', 'password_require_number',
-            'password_require_uppercase', 'two_factor_enabled',
-            'admin_notifications_enabled', 'cache_enabled', 'cdn_enabled',
-            'image_optimization_enabled', 'lazy_loading_enabled', 'debug_mode',
-            'right_to_be_forgotten_enabled', 'age_confirmation_required',
-            'api_keys_enabled', 'background_jobs_enabled', 'custom_footer_enabled',
-            'oauth_google_enabled', 'oauth_discord_enabled', 'oauth_github_enabled',
-            'oauth_facebook_enabled', 'oauth_allow_registration', 'oauth_auto_verify_email',
-            'sandbox_enabled', 'sandbox_public_enabled', 'sandbox_collaboration_enabled',
-            'irc_comic_chat_enabled',
-            'feature_timeline_enabled', 'feature_chat_enabled', 'feature_events_enabled',
-            'feature_wiki_enabled', 'feature_forum_enabled', 'feature_irc_enabled',
-            'feature_gallery_enabled', 'feature_tickets_enabled',
-        ];
-
-        foreach ($booleanKeys as $key) {
-            if (isset($settings[$key])) {
-                // Convert to actual boolean
-                $settings[$key] = (bool) filter_var($settings[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            }
-        }
-
-        // Known JSON settings
-        $jsonKeys = ['sandbox_role_limits'];
-        foreach ($jsonKeys as $key) {
-            if (isset($settings[$key]) && is_string($settings[$key])) {
-                $decoded = json_decode($settings[$key], true);
-                if (json_last_error() === JSON_ERROR_NONE) {
-                    $settings[$key] = $decoded;
-                }
-            }
-        }
-
-        return $settings;
     }
 
     /**
@@ -319,11 +274,11 @@ class SettingsController extends Controller
         }
 
         // Additional validation for specific setting values
-        $settings = $request->input('settings', []);
+        $settings    = $request->input('settings', []);
         $valueErrors = [];
 
         foreach ($settings as $index => $setting) {
-            $key = $setting['key'];
+            $key   = $setting['key'];
             $value = $setting['value'];
 
             // Skip null/empty values - no validation needed for empty fields
@@ -333,7 +288,7 @@ class SettingsController extends Controller
 
             // Email validation (only if not empty)
             if (in_array($key, ['contact_email', 'admin_email', 'support_email', 'email_sender_address'])) {
-                if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                if ( ! filter_var($value, FILTER_VALIDATE_EMAIL)) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid email address."];
                 }
             }
@@ -341,7 +296,7 @@ class SettingsController extends Controller
             // URL validation for external URLs that must be full URLs
             $requiresFullUrl = ['site_url', 'cdn_url', 'canonical_url'];
             if (in_array($key, $requiresFullUrl)) {
-                if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                if ( ! filter_var($value, FILTER_VALIDATE_URL)) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid URL (e.g., https://example.com)."];
                 }
             }
@@ -351,9 +306,9 @@ class SettingsController extends Controller
             if (in_array($key, $allowsRelativePath)) {
                 // Accept relative paths starting with / or full URLs
                 $isRelativePath = str_starts_with($value, '/');
-                $isFullUrl = filter_var($value, FILTER_VALIDATE_URL);
+                $isFullUrl      = filter_var($value, FILTER_VALIDATE_URL);
 
-                if (!$isRelativePath && !$isFullUrl) {
+                if ( ! $isRelativePath && ! $isFullUrl) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid URL (https://example.com/privacy) or path (/privacy-policy)."];
                 }
             }
@@ -369,7 +324,7 @@ class SettingsController extends Controller
                 'warning_color_dark', 'info_color_dark', 'success_color_dark',
             ];
             if (in_array($key, $colorFields)) {
-                if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $value)) {
+                if ( ! preg_match('/^#[0-9A-Fa-f]{6}$/', $value)) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid hex color (e.g., #1976D2)."];
                 }
             }
@@ -382,16 +337,16 @@ class SettingsController extends Controller
                 'sandbox_autosave_interval',
             ])) {
                 if ($key === 'sandbox_autosave_interval') {
-                    if (!ctype_digit((string) $value) || (int) $value < 5 || (int) $value > 3600) {
+                    if ( ! ctype_digit((string) $value) || (int) $value < 5 || (int) $value > 3600) {
                         $valueErrors["settings.{$index}.value"] = ["The {$key} must be an integer between 5 and 3600."];
                     }
-                } elseif (!is_numeric($value) || $value < 0) {
+                } elseif ( ! is_numeric($value) || $value < 0) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a positive number."];
                 }
             }
         }
 
-        if (!empty($valueErrors)) {
+        if ( ! empty($valueErrors)) {
             return response()->json([
                 'message' => __('messages.error.validation'),
                 'errors'  => $valueErrors,
@@ -399,7 +354,7 @@ class SettingsController extends Controller
         }
 
         foreach ($request->input('settings', []) as $setting) {
-            $type = $setting['type'] ?? 'string';
+            $type  = $setting['type'] ?? 'string';
             $value = $setting['value'];
 
             // Handle different value types
@@ -409,7 +364,7 @@ class SettingsController extends Controller
             } elseif (is_array($value)) {
                 // Handle array/json values
                 $value = json_encode($value);
-                $type = 'json';
+                $type  = 'json';
             } elseif ($type === 'integer') {
                 $value = (string) (int) $value;
             } elseif ($type === 'float') {
@@ -446,7 +401,7 @@ class SettingsController extends Controller
         try {
             $file = $request->file('logo');
 
-            if (!$file || !$file->isValid()) {
+            if ( ! $file || ! $file->isValid()) {
                 return response()->json([
                     'message' => __('messages.media.invalid_upload'),
                 ], 422);
@@ -460,8 +415,8 @@ class SettingsController extends Controller
 
             // Store new logo with original extension using file contents (Windows compatible)
             $extension = $file->getClientOriginalExtension();
-            $filename = uniqid('logo_').'.'.$extension;
-            $path = 'logos/'.$filename;
+            $filename  = uniqid('logo_') . '.' . $extension;
+            $path      = 'logos/' . $filename;
 
             // Read file contents and put to storage (bypasses path issues on Windows)
             Storage::disk('public')->put($path, file_get_contents($file->getRealPath() ?: $file->getPathname()));
@@ -528,9 +483,9 @@ class SettingsController extends Controller
 
         try {
             $file = $request->file('image');
-            $key = $request->input('key');
+            $key  = $request->input('key');
 
-            if (!$file || !$file->isValid()) {
+            if ( ! $file || ! $file->isValid()) {
                 return response()->json([
                     'message' => __('messages.media.invalid_upload'),
                 ], 422);
@@ -538,10 +493,10 @@ class SettingsController extends Controller
 
             // Special validation for PWA app icon
             if ($key === 'app_icon') {
-                $mimeType = $file->getMimeType();
+                $mimeType   = $file->getMimeType();
                 $validMimes = ['image/png', 'image/webp', 'image/svg+xml'];
 
-                if (!in_array($mimeType, $validMimes)) {
+                if ( ! in_array($mimeType, $validMimes)) {
                     return response()->json([
                         'message' => __('messages.error.validation'),
                         'errors'  => [
@@ -555,7 +510,7 @@ class SettingsController extends Controller
                     $imagePath = $file->getRealPath() ?: $file->getPathname();
                     $imageInfo = @getimagesize($imagePath);
 
-                    if (!$imageInfo) {
+                    if ( ! $imageInfo) {
                         return response()->json([
                             'message' => __('messages.error.validation'),
                             'errors'  => [
@@ -564,7 +519,7 @@ class SettingsController extends Controller
                         ], 422);
                     }
 
-                    $width = $imageInfo[0];
+                    $width  = $imageInfo[0];
                     $height = $imageInfo[1];
 
                     // Check minimum dimensions
@@ -604,8 +559,8 @@ class SettingsController extends Controller
 
             // Store new file
             $extension = $file->getClientOriginalExtension();
-            $filename = uniqid($key.'_').'.'.$extension;
-            $path = 'images/'.$filename;
+            $filename  = uniqid($key . '_') . '.' . $extension;
+            $path      = 'images/' . $filename;
 
             Storage::disk('public')->put($path, file_get_contents($file->getRealPath() ?: $file->getPathname()));
 
@@ -613,7 +568,7 @@ class SettingsController extends Controller
             $optimizableExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
             if (in_array(strtolower($extension), $optimizableExtensions)) {
                 $fullPath = Storage::disk('public')->path($path);
-                \App\Services\ImageOptimizationService::optimize($fullPath, [
+                ImageOptimizationService::optimize($fullPath, [
                     'quality'    => 85,
                     'max_width'  => $key === 'background_light' || $key === 'background_dark' ? 1920 : null,
                     'max_height' => $key === 'background_light' || $key === 'background_dark' ? 1080 : null,
@@ -654,7 +609,7 @@ class SettingsController extends Controller
         }
 
         try {
-            $key = $request->input('key');
+            $key     = $request->input('key');
             $oldFile = Setting::get($key);
 
             if ($oldFile && is_string($oldFile) && trim($oldFile) !== '' && Storage::disk('public')->exists($oldFile)) {
@@ -693,12 +648,12 @@ class SettingsController extends Controller
 
         try {
             $recipient = $request->input('recipient');
-            $appName = Setting::get('app_name', config('app.name'));
+            $appName   = Setting::get('app_name', config('app.name'));
 
-            \Illuminate\Support\Facades\Mail::raw(
-                "This is a test email from {$appName}.\n\n".
-                "If you received this email, your email configuration is working correctly.\n\n".
-                'Sent at: '.now()->format('Y-m-d H:i:s'),
+            Mail::raw(
+                "This is a test email from {$appName}.\n\n" .
+                "If you received this email, your email configuration is working correctly.\n\n" .
+                'Sent at: ' . now()->format('Y-m-d H:i:s'),
                 function ($message) use ($recipient, $appName) {
                     $message->to($recipient)
                         ->subject("Test Email from {$appName}");
@@ -721,18 +676,18 @@ class SettingsController extends Controller
      */
     public function cacheStatus(): JsonResponse
     {
-        $cacheEnabled = Setting::isCacheEnabled();
+        $cacheEnabled  = Setting::isCacheEnabled();
         $cacheLifetime = Setting::getCacheLifetime();
 
         // Get cache driver info
         $cacheDriver = config('cache.default');
-        $cacheStore = config("cache.stores.{$cacheDriver}.driver", $cacheDriver);
+        $cacheStore  = config("cache.stores.{$cacheDriver}.driver", $cacheDriver);
 
         // Check if cache driver supports tags
         $supportsTags = false;
 
         try {
-            $supportsTags = \Illuminate\Support\Facades\Cache::supportsTags();
+            $supportsTags = Cache::supportsTags();
         } catch (\Exception $e) {
             // Driver doesn't support tags
         }
@@ -762,8 +717,8 @@ class SettingsController extends Controller
         $type = $request->input('type', 'all');
 
         try {
-            $cleared = [];
-            $cacheService = new \App\Services\CacheService();
+            $cleared      = [];
+            $cacheService = new CacheService;
 
             switch ($type) {
                 case 'settings':
@@ -789,7 +744,7 @@ class SettingsController extends Controller
                     break;
 
                 case 'application':
-                    \Illuminate\Support\Facades\Cache::flush();
+                    Cache::flush();
                     $cleared[] = 'application cache';
                     break;
 
@@ -826,7 +781,7 @@ class SettingsController extends Controller
                     \Artisan::call('view:clear');
                     \Artisan::call('route:clear');
                     \Artisan::call('config:clear');
-                    \Illuminate\Support\Facades\Cache::flush();
+                    Cache::flush();
                     $cleared = ['settings', 'views', 'routes', 'config', 'application cache', 'http responses'];
                     break;
             }
@@ -849,14 +804,14 @@ class SettingsController extends Controller
     protected function clearHttpCache(): void
     {
         // Clear all http_cache keys
-        $cache = \Illuminate\Support\Facades\Cache::getStore();
+        $cache = Cache::getStore();
 
         // If using Redis or similar, we can use pattern matching
         if (method_exists($cache, 'connection')) {
             try {
-                $redis = $cache->connection();
+                $redis  = $cache->connection();
                 $prefix = config('cache.prefix', 'laravel_cache');
-                $keys = $redis->keys("{$prefix}:http_cache:*");
+                $keys   = $redis->keys("{$prefix}:http_cache:*");
                 foreach ($keys as $key) {
                     $redis->del($key);
                 }
@@ -864,5 +819,55 @@ class SettingsController extends Controller
                 // Fallback: the full cache flush will handle it
             }
         }
+    }
+
+    /**
+     * Ensure settings have proper PHP types for JSON encoding.
+     */
+    private function ensureProperTypes(array $settings): array
+    {
+        // Known boolean settings
+        $booleanKeys = [
+            'maintenance_mode', 'language_change_enabled', 'locale_auto_detect',
+            'login_branding_enabled', 'indexing_enabled', 'sitemap_enabled',
+            'cookie_consent_enabled', 'cookie_analytics_default', 'cookie_marketing_default',
+            'cookie_functional_default', 'anonymize_ip', 'tracking_production_only',
+            'third_party_embeds_enabled', 'homepage_builder_enabled', 'homepage_menu_enabled',
+            'blog_enabled', 'comments_enabled', 'comments_moderation_required',
+            'user_registration_enabled', 'email_verification_required',
+            'password_require_special_char', 'password_require_number',
+            'password_require_uppercase', 'two_factor_enabled',
+            'admin_notifications_enabled', 'cache_enabled', 'cdn_enabled',
+            'image_optimization_enabled', 'lazy_loading_enabled', 'debug_mode',
+            'right_to_be_forgotten_enabled', 'age_confirmation_required',
+            'api_keys_enabled', 'background_jobs_enabled', 'custom_footer_enabled',
+            'oauth_google_enabled', 'oauth_discord_enabled', 'oauth_github_enabled',
+            'oauth_facebook_enabled', 'oauth_allow_registration', 'oauth_auto_verify_email',
+            'sandbox_enabled', 'sandbox_public_enabled', 'sandbox_collaboration_enabled',
+            'irc_comic_chat_enabled',
+            'feature_timeline_enabled', 'feature_chat_enabled', 'feature_events_enabled',
+            'feature_wiki_enabled', 'feature_forum_enabled', 'feature_irc_enabled',
+            'feature_gallery_enabled', 'feature_tickets_enabled',
+        ];
+
+        foreach ($booleanKeys as $key) {
+            if (isset($settings[$key])) {
+                // Convert to actual boolean
+                $settings[$key] = (bool) filter_var($settings[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            }
+        }
+
+        // Known JSON settings
+        $jsonKeys = ['sandbox_role_limits'];
+        foreach ($jsonKeys as $key) {
+            if (isset($settings[$key]) && is_string($settings[$key])) {
+                $decoded = json_decode($settings[$key], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $settings[$key] = $decoded;
+                }
+            }
+        }
+
+        return $settings;
     }
 }

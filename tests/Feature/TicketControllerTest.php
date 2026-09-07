@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class TicketControllerTest extends TestCase
@@ -16,14 +17,16 @@ class TicketControllerTest extends TestCase
     use WithFaker;
 
     protected User $admin;
+
     protected User $user;
+
     protected TicketType $ticketType;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->app->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
         Role::create(['name' => 'admin', 'guard_name' => 'api', 'display_name' => 'Admin']);
 

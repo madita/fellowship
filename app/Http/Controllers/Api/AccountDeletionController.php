@@ -108,7 +108,7 @@ class AccountDeletionController extends Controller
     {
         // Check if feature is enabled
         $enabled = (bool) Setting::get('right_to_be_forgotten_enabled', false);
-        if (!$enabled) {
+        if ( ! $enabled) {
             return response()->json([
                 'message' => __('messages.account.deletion_disabled'),
             ], 403);
@@ -123,7 +123,7 @@ class AccountDeletionController extends Controller
         $user = $request->user();
 
         // Verify password
-        if (!Hash::check($request->password, $user->password)) {
+        if ( ! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => __('messages.account.incorrect_password'),
                 'errors'  => ['password' => [__('messages.account.password_incorrect')]],
@@ -143,12 +143,12 @@ class AccountDeletionController extends Controller
         if ($adminEmail) {
             try {
                 Mail::raw(
-                    "User account deletion requested:\n\n".
-                    "User ID: {$user->id}\n".
-                    "Username: {$user->username}\n".
-                    "Email: {$user->email}\n".
-                    'Reason: '.($request->reason ?: 'Not provided')."\n".
-                    'Requested at: '.now()->toISOString(),
+                    "User account deletion requested:\n\n" .
+                    "User ID: {$user->id}\n" .
+                    "Username: {$user->username}\n" .
+                    "Email: {$user->email}\n" .
+                    'Reason: ' . ($request->reason ?: 'Not provided') . "\n" .
+                    'Requested at: ' . now()->toISOString(),
                     function ($message) use ($adminEmail, $user) {
                         $message->to($adminEmail)
                             ->subject(__('messages.account.deletion_subject', ['username' => $user->username]));

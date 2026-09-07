@@ -17,10 +17,10 @@ class TermController extends DataTableController
     {
         $parent = $request->get('tag_taxonomy_id') ?? 0;
 
-        $name = $request->get('name');
+        $name     = $request->get('name');
         $taxonomy = $request->get('taxonomy');
 
-        if (!$taxonomy || !$name) {
+        if ( ! $taxonomy || ! $name) {
             return response()->json(['message' => 'error']);
         }
 
@@ -31,7 +31,7 @@ class TermController extends DataTableController
 
     public function getUpdatableColumns()
     {
-        return  [
+        return [
             'name',
             'taxonomy',
             'tag_taxonomy_id',
@@ -62,8 +62,8 @@ class TermController extends DataTableController
         ];
     }
 
-//    public function update($id, TaxonomyRequest $request)
-//    {
-//        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
-//    }
+    //    public function update($id, TaxonomyRequest $request)
+    //    {
+    //        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
+    //    }
 }

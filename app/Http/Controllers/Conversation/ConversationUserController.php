@@ -12,10 +12,10 @@ class ConversationUserController extends Controller
 {
     public function store(StoreConversationUserRequest $request, Conversation $conversation)
     {
-        //$this->authorize('affect', $conversation);
+        // $this->authorize('affect', $conversation);
 
         $conversation->users()->syncWithoutDetaching($request->recipients);
-        //$conversation->users()->sync($recipientsIds);
+        // $conversation->users()->sync($recipientsIds);
 
         $conversation->load(['users']);
 
@@ -27,7 +27,7 @@ class ConversationUserController extends Controller
              ->transformWith(new ConversationTransformer)
              ->toArray();*/
         return response()->json([
-            //'data' => $this->transformConversation($conversation, [ 'users', 'replies', 'replies.user'])
+            // 'data' => $this->transformConversation($conversation, [ 'users', 'replies', 'replies.user'])
             'data' => $conversation,
         ], 201);
     }

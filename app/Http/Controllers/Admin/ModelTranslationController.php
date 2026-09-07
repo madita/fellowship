@@ -86,14 +86,6 @@ class ModelTranslationController extends Controller
     ];
 
     /**
-     * Get available locales from config.
-     */
-    protected function getLocales(): array
-    {
-        return config('translatable.locales', ['en', 'de']);
-    }
-
-    /**
      * List all translatable models with their counts.
      */
     public function index(): JsonResponse
@@ -102,7 +94,7 @@ class ModelTranslationController extends Controller
 
         foreach ($this->translatableModels as $key => $config) {
             $modelClass = $config['model'];
-            $count = $modelClass::withoutGlobalScopes()->count();
+            $count      = $modelClass::withoutGlobalScopes()->count();
 
             $models[] = [
                 'key'        => $key,
@@ -124,16 +116,16 @@ class ModelTranslationController extends Controller
      */
     public function show(string $modelType, int $id): JsonResponse
     {
-        if (!isset($this->translatableModels[$modelType])) {
+        if ( ! isset($this->translatableModels[$modelType])) {
             return response()->json(['error' => 'Invalid model type'], 404);
         }
 
-        $config = $this->translatableModels[$modelType];
+        $config     = $this->translatableModels[$modelType];
         $modelClass = $config['model'];
 
         $item = $modelClass::withoutGlobalScopes()->with('translations')->find($id);
 
-        if (!$item) {
+        if ( ! $item) {
             return response()->json(['error' => 'Item not found'], 404);
         }
 
@@ -159,16 +151,16 @@ class ModelTranslationController extends Controller
      */
     public function update(Request $request, string $modelType, int $id): JsonResponse
     {
-        if (!isset($this->translatableModels[$modelType])) {
+        if ( ! isset($this->translatableModels[$modelType])) {
             return response()->json(['error' => 'Invalid model type'], 404);
         }
 
-        $config = $this->translatableModels[$modelType];
+        $config     = $this->translatableModels[$modelType];
         $modelClass = $config['model'];
 
         $item = $modelClass::withoutGlobalScopes()->find($id);
 
-        if (!$item) {
+        if ( ! $item) {
             return response()->json(['error' => 'Item not found'], 404);
         }
 
@@ -178,7 +170,7 @@ class ModelTranslationController extends Controller
 
         try {
             foreach ($translations as $locale => $fields) {
-                if (!in_array($locale, $this->getLocales())) {
+                if ( ! in_array($locale, $this->getLocales())) {
                     continue;
                 }
 
@@ -189,7 +181,7 @@ class ModelTranslationController extends Controller
                     }
                 }
 
-                if (!empty($data)) {
+                if ( ! empty($data)) {
                     $item->translateOrNew($locale)->fill($data);
                 }
             }
@@ -216,77 +208,11 @@ class ModelTranslationController extends Controller
     }
 
     /**
-     * Sync wiki translations when a wikiable model's translations are updated.
-     */
-    protected function syncWikiTranslations($item, array $translations): void
-    {
-        // Check if the model uses the Wikiable trait (has wikiable() method)
-        if (!method_exists($item, 'wikiable')) {
-            return;
-        }
-
-        // Get the wikiable field mapping using reflection (it's a protected property)
-        $wikiableMapping = $this->getWikiableMapping($item);
-
-        if (empty($wikiableMapping)) {
-            return;
-        }
-
-        // Get associated wiki entries
-        $wikis = $item->wikiable()->get();
-
-        if ($wikis->isEmpty()) {
-            return;
-        }
-
-        foreach ($wikis as $wiki) {
-            foreach ($translations as $locale => $fields) {
-                $wikiData = [];
-
-                // Map fields from parent model to wiki based on wikiable config
-                foreach ($wikiableMapping as $parentField => $wikiField) {
-                    // Only sync translatable wiki fields (currently just 'title')
-                    if ($wikiField === 'title' && array_key_exists($parentField, $fields)) {
-                        $wikiData[$wikiField] = $fields[$parentField];
-                    }
-                }
-
-                if (!empty($wikiData)) {
-                    $wiki->translateOrNew($locale)->fill($wikiData);
-                }
-            }
-
-            $wiki->save();
-        }
-    }
-
-    /**
-     * Get the wikiable mapping from a model using reflection.
-     */
-    protected function getWikiableMapping($item): array
-    {
-        try {
-            $reflection = new \ReflectionClass($item);
-
-            if (!$reflection->hasProperty('wikiable')) {
-                return [];
-            }
-
-            $property = $reflection->getProperty('wikiable');
-            $property->setAccessible(true);
-
-            return $property->getValue($item) ?? [];
-        } catch (\ReflectionException $e) {
-            return [];
-        }
-    }
-
-    /**
      * Get translation coverage statistics.
      */
     public function stats(): JsonResponse
     {
-        $stats = [];
+        $stats   = [];
         $locales = $this->getLocales();
 
         foreach ($this->translatableModels as $key => $config) {
@@ -321,7 +247,7 @@ class ModelTranslationController extends Controller
         // Calculate overall stats
         $overall = [];
         foreach ($locales as $locale) {
-            $totalItems = 0;
+            $totalItems      = 0;
             $translatedItems = 0;
 
             foreach ($stats as $modelStats) {
@@ -349,7 +275,7 @@ class ModelTranslationController extends Controller
      */
     public function missing(string $locale): JsonResponse
     {
-        if (!in_array($locale, $this->getLocales())) {
+        if ( ! in_array($locale, $this->getLocales())) {
             return response()->json(['error' => 'Invalid locale'], 400);
         }
 
@@ -392,7 +318,7 @@ class ModelTranslationController extends Controller
      */
     public function listItems(Request $request, string $modelType): JsonResponse
     {
-        if (!isset($this->translatableModels[$modelType])) {
+        if ( ! isset($this->translatableModels[$modelType])) {
             return response()->json(['error' => 'Invalid model type'], 404);
         }
 
@@ -402,12 +328,12 @@ class ModelTranslationController extends Controller
             app()->setLocale($requestLocale);
         }
 
-        $config = $this->translatableModels[$modelType];
+        $config     = $this->translatableModels[$modelType];
         $modelClass = $config['model'];
-        $locales = $this->getLocales();
+        $locales    = $this->getLocales();
 
         $perPage = $request->input('per_page', 25);
-        $search = $request->input('search', '');
+        $search  = $request->input('search', '');
 
         $query = $modelClass::withoutGlobalScopes()->with('translations');
 
@@ -428,8 +354,8 @@ class ModelTranslationController extends Controller
             }
 
             return [
-                'id'                 => $item->id,
-                'identifier'         => $item->{$config['identifier']}
+                'id'         => $item->id,
+                'identifier' => $item->{$config['identifier']}
                     ?? $item->getTranslation('en')?->{$config['identifier']}
                     ?? "#{$item->id}",
                 'translation_status' => $translationStatus,
@@ -450,16 +376,16 @@ class ModelTranslationController extends Controller
      */
     public function bulkUpdate(Request $request, string $modelType): JsonResponse
     {
-        if (!isset($this->translatableModels[$modelType])) {
+        if ( ! isset($this->translatableModels[$modelType])) {
             return response()->json(['error' => 'Invalid model type'], 404);
         }
 
-        $config = $this->translatableModels[$modelType];
+        $config     = $this->translatableModels[$modelType];
         $modelClass = $config['model'];
-        $items = $request->input('items', []);
+        $items      = $request->input('items', []);
 
         $updated = 0;
-        $errors = [];
+        $errors  = [];
 
         DB::beginTransaction();
 
@@ -467,14 +393,15 @@ class ModelTranslationController extends Controller
             foreach ($items as $itemData) {
                 $item = $modelClass::withoutGlobalScopes()->find($itemData['id']);
 
-                if (!$item) {
+                if ( ! $item) {
                     $errors[] = "Item #{$itemData['id']} not found";
+
                     continue;
                 }
 
                 if (isset($itemData['translations'])) {
                     foreach ($itemData['translations'] as $locale => $fields) {
-                        if (!in_array($locale, $this->getLocales())) {
+                        if ( ! in_array($locale, $this->getLocales())) {
                             continue;
                         }
 
@@ -485,7 +412,7 @@ class ModelTranslationController extends Controller
                             }
                         }
 
-                        if (!empty($data)) {
+                        if ( ! empty($data)) {
                             $item->translateOrNew($locale)->fill($data);
                         }
                     }
@@ -513,6 +440,80 @@ class ModelTranslationController extends Controller
                 'error'   => 'Failed to update translations',
                 'message' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /**
+     * Get available locales from config.
+     */
+    protected function getLocales(): array
+    {
+        return config('translatable.locales', ['en', 'de']);
+    }
+
+    /**
+     * Sync wiki translations when a wikiable model's translations are updated.
+     */
+    protected function syncWikiTranslations($item, array $translations): void
+    {
+        // Check if the model uses the Wikiable trait (has wikiable() method)
+        if ( ! method_exists($item, 'wikiable')) {
+            return;
+        }
+
+        // Get the wikiable field mapping using reflection (it's a protected property)
+        $wikiableMapping = $this->getWikiableMapping($item);
+
+        if (empty($wikiableMapping)) {
+            return;
+        }
+
+        // Get associated wiki entries
+        $wikis = $item->wikiable()->get();
+
+        if ($wikis->isEmpty()) {
+            return;
+        }
+
+        foreach ($wikis as $wiki) {
+            foreach ($translations as $locale => $fields) {
+                $wikiData = [];
+
+                // Map fields from parent model to wiki based on wikiable config
+                foreach ($wikiableMapping as $parentField => $wikiField) {
+                    // Only sync translatable wiki fields (currently just 'title')
+                    if ($wikiField === 'title' && array_key_exists($parentField, $fields)) {
+                        $wikiData[$wikiField] = $fields[$parentField];
+                    }
+                }
+
+                if ( ! empty($wikiData)) {
+                    $wiki->translateOrNew($locale)->fill($wikiData);
+                }
+            }
+
+            $wiki->save();
+        }
+    }
+
+    /**
+     * Get the wikiable mapping from a model using reflection.
+     */
+    protected function getWikiableMapping($item): array
+    {
+        try {
+            $reflection = new \ReflectionClass($item);
+
+            if ( ! $reflection->hasProperty('wikiable')) {
+                return [];
+            }
+
+            $property = $reflection->getProperty('wikiable');
+            $property->setAccessible(true);
+
+            return $property->getValue($item) ?? [];
+        } catch (\ReflectionException $e) {
+            return [];
         }
     }
 }

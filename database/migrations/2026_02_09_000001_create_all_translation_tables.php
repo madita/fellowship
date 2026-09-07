@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Consolidated migration for all translation tables.
- * 
+ *
  * This replaces the following individual migrations:
  * - 2026_02_09_000001_create_page_translations_table.php
  * - 2026_02_09_000002_create_post_translations_table.php
@@ -17,7 +17,8 @@ use Illuminate\Support\Facades\Schema;
  * - 2026_02_09_000007_create_taxonomy_translations_table.php
  * - 2026_12_10_232752_create_settings_translations.php (partial)
  */
-return new class() extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         // Page translations

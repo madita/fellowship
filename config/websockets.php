@@ -1,6 +1,8 @@
 <?php
 
+use BeyondCode\LaravelWebSockets\Apps\ConfigAppProvider;
 use BeyondCode\LaravelWebSockets\Dashboard\Http\Middleware\Authorize;
+use BeyondCode\LaravelWebSockets\Statistics\Logger\HttpStatisticsLogger;
 use BeyondCode\LaravelWebSockets\Statistics\Models\WebSocketsStatisticsEntry;
 use BeyondCode\LaravelWebSockets\WebSockets\Channels\ChannelManagers\ArrayChannelManager;
 
@@ -25,14 +27,14 @@ return [
      */
     'apps' => [
         [
-            'id' => env('PUSHER_APP_ID'),
-            'name' => env('APP_NAME'),
-            'key' => env('PUSHER_APP_KEY'),
-            'secret' => env('PUSHER_APP_SECRET'),
-            'path' => env('PUSHER_APP_PATH'),
-            'capacity' => null,
+            'id'                     => env('PUSHER_APP_ID'),
+            'name'                   => env('APP_NAME'),
+            'key'                    => env('PUSHER_APP_KEY'),
+            'secret'                 => env('PUSHER_APP_SECRET'),
+            'path'                   => env('PUSHER_APP_PATH'),
+            'capacity'               => null,
             'enable_client_messages' => false,
-            'enable_statistics' => true,
+            'enable_statistics'      => true,
         ],
     ],
 
@@ -43,7 +45,7 @@ return [
      * You can create a custom provider by implementing the
      * `AppProvider` interface.
      */
-    'app_provider' => BeyondCode\LaravelWebSockets\Apps\ConfigAppProvider::class,
+    'app_provider' => ConfigAppProvider::class,
 
     /*
      * This array contains the hosts of which you want to allow incoming requests.
@@ -87,7 +89,7 @@ return [
          * The Statistics Logger will, by default, handle the incoming statistics, store them
          * and then release them into the database on each interval defined below.
          */
-        'logger' => BeyondCode\LaravelWebSockets\Statistics\Logger\HttpStatisticsLogger::class,
+        'logger' => HttpStatisticsLogger::class,
 
         /*
          * Here you can specify the interval in seconds at which statistics should be logged.

@@ -45,7 +45,7 @@ trait Approvable
 
     public function isPending(): bool
     {
-        return !$this->isApproved();
+        return ! $this->isApproved();
     }
 
     public function approver(): ?User
@@ -61,10 +61,14 @@ trait Approvable
     public function shouldAutoApprove(?User $user = null): bool
     {
         $user = $user ?? auth()->user();
-        if (!$user) return false;
+        if ( ! $user) {
+            return false;
+        }
 
         $roles = Setting::get(static::getAutoApproveSettingKey(), []);
-        if (empty($roles)) return false;
+        if (empty($roles)) {
+            return false;
+        }
 
         return $user->hasAnyRole($roles);
     }

@@ -47,7 +47,7 @@ class LoginController extends Controller
 
     public function username()
     {
-        $field = (filter_var(request()->email, FILTER_VALIDATE_EMAIL) || !request()->email) ? 'email' : 'username';
+        $field = (filter_var(request()->email, FILTER_VALIDATE_EMAIL) || ! request()->email) ? 'email' : 'username';
         request()->merge([$field => request()->email]);
 
         return $field;
@@ -57,8 +57,8 @@ class LoginController extends Controller
     {
         $user->update([
             'previous_login_at' => $user->last_login_at,
-            'last_login_at' => Carbon::now()->toDateTimeString(),
-            'last_login_ip' => $request->getClientIp(),
+            'last_login_at'     => Carbon::now()->toDateTimeString(),
+            'last_login_ip'     => $request->getClientIp(),
         ]);
     }
 }

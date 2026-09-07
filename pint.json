@@ -1,0 +1,77 @@
+{
+    "preset": "laravel",
+    "exclude": [
+        "bootstrap",
+        "node_modules",
+        "public",
+        "resources",
+        "storage",
+        "vendor",
+        "tests"
+    ],
+    "notPath": [
+        "bootstrap/cache",
+        "database/migrations",
+        "database/seeds"
+    ],
+    "notName": [
+        "*Stub.php",
+        "*.blade.php"
+    ],
+    "rules": {
+        "binary_operator_spaces": {
+            "default": "single_space",
+            "operators": {
+                "=>": "align",
+                "=": "align"
+            }
+        },
+        "class_attributes_separation": {
+            "elements": {
+                "method": "one",
+                "trait_import": "none"
+            }
+        },
+        "concat_space": {
+            "spacing": "one"
+        },
+        "no_extra_blank_lines": {
+            "tokens": [
+                "extra",
+                "throw",
+                "use",
+                "curly_brace_block"
+            ]
+        },
+        "not_operator_with_space": true,
+        "not_operator_with_successor_space": false,
+        "ordered_class_elements": {
+            "order": [
+                "use_trait",
+                "case",
+                "constant_public",
+                "constant_protected",
+                "constant_private",
+                "property_public",
+                "property_protected",
+                "property_private",
+                "construct",
+                "destruct",
+                "magic",
+                "phpunit",
+                "method_public",
+                "method_protected",
+                "method_private"
+            ]
+        },
+        "phpdoc_order": {
+            "order": [
+                "param",
+                "throws",
+                "return"
+            ]
+        },
+        "phpdoc_summary": true,
+        "single_line_empty_body": false
+    }
+}

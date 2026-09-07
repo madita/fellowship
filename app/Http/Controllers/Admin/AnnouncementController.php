@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-//use App\Helpers\WebhookHelper;
+// use App\Helpers\WebhookHelper;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\Announcement;
@@ -21,7 +21,7 @@ class AnnouncementController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @param Request $request
+     *
      *
      * @throws AuthorizationException
      *
@@ -34,7 +34,7 @@ class AnnouncementController extends Controller
 
     public function create()
     {
-        //return View('admin.annoucement.create');
+        // return View('admin.annoucement.create');
     }
 
     public function store(Request $request)
@@ -46,7 +46,7 @@ class AnnouncementController extends Controller
         ]);
 
         $message = $request->all();
-        $users = User::all();
+        $users   = User::all();
 
         $announcement = new Announcement($message);
         Notification::send($users, $announcement);

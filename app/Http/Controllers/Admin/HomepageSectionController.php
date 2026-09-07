@@ -59,7 +59,7 @@ class HomepageSectionController extends Controller
             'enabled'   => 'boolean',
             'order'     => 'integer|min:0',
             'config'    => 'nullable|array',
-            'anchor_id' => 'nullable|string|max:255|unique:sections,anchor_id,'.$id.'|regex:/^[a-z0-9-]+$/',
+            'anchor_id' => 'nullable|string|max:255|unique:sections,anchor_id,' . $id . '|regex:/^[a-z0-9-]+$/',
         ]);
 
         if ($validator->fails()) {
@@ -87,8 +87,8 @@ class HomepageSectionController extends Controller
      */
     public function toggle($id)
     {
-        $section = Section::findOrFail($id);
-        $section->enabled = !$section->enabled;
+        $section          = Section::findOrFail($id);
+        $section->enabled = ! $section->enabled;
         $section->save();
 
         return response()->json($section);

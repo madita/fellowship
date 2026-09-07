@@ -13,7 +13,9 @@ class SandboxNotificationTest extends TestCase
     use RefreshDatabase;
 
     protected User $owner;
+
     protected User $actor;
+
     protected Sandbox $sandbox;
 
     protected function setUp(): void
@@ -50,7 +52,7 @@ class SandboxNotificationTest extends TestCase
         $this->assertEquals('Sandbox shared with you', $data['subject']);
         $this->assertStringContainsString($this->actor->username, $data['body']);
         $this->assertStringContainsString('editor', $data['body']);
-        $this->assertEquals('/sandbox/' . $this->sandbox->uuid, $data['url']);
+        $this->assertEquals('/sandbox/'.$this->sandbox->uuid, $data['url']);
         $this->assertEquals('editor', $data['role']);
     }
 
@@ -115,7 +117,7 @@ class SandboxNotificationTest extends TestCase
         $notification = new SandboxNotification($this->sandbox, 'shared', $this->actor);
         $data = $notification->toArray($this->owner);
 
-        $this->assertEquals('/sandbox/' . $this->sandbox->uuid, $data['url']);
+        $this->assertEquals('/sandbox/'.$this->sandbox->uuid, $data['url']);
     }
 
     public function test_extra_data_merged_into_notification()

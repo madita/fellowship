@@ -23,8 +23,8 @@ class TicketType extends Model
     ];
 
     protected $casts = [
-        'config' => 'array',
-        'is_active' => 'boolean',
+        'config'      => 'array',
+        'is_active'   => 'boolean',
         'auto_create' => 'boolean',
     ];
 

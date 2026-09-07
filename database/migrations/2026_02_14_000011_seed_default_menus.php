@@ -97,7 +97,7 @@ return new class extends Migration
             $item['target'] = '_self';
             $item['created_at'] = now();
             $item['updated_at'] = now();
-            
+
             $parentId = DB::table('menu_items')->insertGetId($item);
 
             // Add Feedback submenu

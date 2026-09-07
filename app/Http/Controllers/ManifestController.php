@@ -13,11 +13,11 @@ class ManifestController extends Controller
      */
     public function generate(): JsonResponse
     {
-        $appName = Setting::get('app_name', config('app.name', 'Fellowship'));
-        $appDescription = Setting::get('meta_description', 'Your awesome community platform');
-        $primaryColor = Setting::get('primary_color', '#1976D2');
+        $appName         = Setting::get('app_name', config('app.name', 'Fellowship'));
+        $appDescription  = Setting::get('meta_description', 'Your awesome community platform');
+        $primaryColor    = Setting::get('primary_color', '#1976D2');
         $backgroundColor = Setting::get('secondary_color', '#FFFFFF');
-        $themeColor = Setting::get('primary_color', '#1976D2');
+        $themeColor      = Setting::get('primary_color', '#1976D2');
 
         // Get app icon path
         $appIconPath = Setting::get('app_icon');
@@ -39,7 +39,7 @@ class ManifestController extends Controller
 
                     // Only add if it's PNG, WebP, or SVG (required for PWA)
                     if (in_array($mimeType, ['image/png', 'image/webp', 'image/svg+xml'])) {
-                        $width = $imageInfo[0];
+                        $width  = $imageInfo[0];
                         $height = $imageInfo[1];
 
                         // Check if square or nearly square
@@ -49,7 +49,7 @@ class ManifestController extends Controller
                             // Square icon suitable for PWA
                             $icons[] = [
                                 'src'     => $iconUrl,
-                                'sizes'   => $width.'x'.$height,
+                                'sizes'   => $width . 'x' . $height,
                                 'type'    => $mimeType,
                                 'purpose' => 'any',
                             ];
@@ -57,7 +57,7 @@ class ManifestController extends Controller
                             // Non-square but large enough
                             $icons[] = [
                                 'src'     => $iconUrl,
-                                'sizes'   => $width.'x'.$height,
+                                'sizes'   => $width . 'x' . $height,
                                 'type'    => $mimeType,
                                 'purpose' => 'any',
                             ];
@@ -70,14 +70,14 @@ class ManifestController extends Controller
         // Add favicon as fallback icon (if PNG/WebP/SVG)
         if ($faviconPath && Storage::disk('public')->exists($faviconPath)) {
             $faviconUrl = Storage::url($faviconPath);
-            $fullPath = Storage::disk('public')->path($faviconPath);
+            $fullPath   = Storage::disk('public')->path($faviconPath);
 
             if (file_exists($fullPath)) {
                 $imageInfo = @getimagesize($fullPath);
                 if ($imageInfo && in_array($imageInfo['mime'], ['image/png', 'image/webp', 'image/svg+xml'])) {
                     $icons[] = [
                         'src'     => $faviconUrl,
-                        'sizes'   => $imageInfo[0].'x'.$imageInfo[1],
+                        'sizes'   => $imageInfo[0] . 'x' . $imageInfo[1],
                         'type'    => $imageInfo['mime'],
                         'purpose' => 'any',
                     ];

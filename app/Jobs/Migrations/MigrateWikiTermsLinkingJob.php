@@ -34,13 +34,13 @@ class MigrateWikiTermsLinkingJob extends BaseMigrationJob
                 $term = Term::where('slug', Str::slug($matches[1][$key]))->first();
 
                 if ($term === null) {
-                    $tag = Str::replace("_", " ", $matches[1][$key]);
+                    $tag  = Str::replace('_', ' ', $matches[1][$key]);
                     $term = Term::firstOrCreateByTitle(trim($tag));
                 }
 
-                $title = isset($matches[3][$key]) && trim($matches[3][$key]) != "" ? $matches[3][$key] : $term->title;
-                $alternative = isset($matches[3][$key]) && trim($matches[3][$key]) != "" ? $matches[3][$key] : null;
-                $replace = "<a style=\"font-weight:600\" term-id=\"{$term->id}\" data-tag=\"{$term->title}\" data-linked-resource-type=\"terms\" alternative=\"{$alternative}\" href=\"/wiki/category/{$term->slug}\" contenteditable=\"false\">#{$title}</a>";
+                $title       = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : $term->title;
+                $alternative = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : null;
+                $replace     = "<a style=\"font-weight:600\" term-id=\"{$term->id}\" data-tag=\"{$term->title}\" data-linked-resource-type=\"terms\" alternative=\"{$alternative}\" href=\"/wiki/category/{$term->slug}\" contenteditable=\"false\">#{$title}</a>";
                 $description = Str::replace($item, $replace, $description);
             }
 
@@ -48,15 +48,15 @@ class MigrateWikiTermsLinkingJob extends BaseMigrationJob
             preg_match_all("/\[\[(.*?)(\|(.*?))?\]\]/", $description, $matches);
 
             foreach ($matches[0] as $key => $item) {
-                $titleParts = explode("#", $matches[1][$key]);
+                $titleParts = explode('#', $matches[1][$key]);
                 // title lives in page_translations — match via the translation.
                 $page = Page::whereTranslation('title', $titleParts[0])->first();
 
                 if ($page) {
-                    $title = isset($matches[3][$key]) && trim($matches[3][$key]) != "" ? $matches[3][$key] : $page->title;
-                    $alternative = isset($matches[3][$key]) && trim($matches[3][$key]) != "" ? $matches[3][$key] : null;
+                    $title       = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : $page->title;
+                    $alternative = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : null;
 
-                    $replace = "<a wiki-id=\"{$page->id}\" data-title=\"{$page->title}\" data-linked-resource-type=\"wikiable\" alternative=\"{$alternative}\" href=\"/wiki/{$page->slug}\" contenteditable=\"false\">{$title}</a>";
+                    $replace     = "<a wiki-id=\"{$page->id}\" data-title=\"{$page->title}\" data-linked-resource-type=\"wikiable\" alternative=\"{$alternative}\" href=\"/wiki/{$page->slug}\" contenteditable=\"false\">{$title}</a>";
                     $description = Str::replace($item, $replace, $description);
                 }
             }

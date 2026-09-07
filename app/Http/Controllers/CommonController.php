@@ -13,7 +13,7 @@ class CommonController extends Controller
     {
         $foreignKeyField = $request->get('foreign_key');
 
-        if (!$foreignKeyField) {
+        if ( ! $foreignKeyField) {
             return response()->json(['error' => __('messages.common.invalid_params')], 400);
         }
 
@@ -31,11 +31,11 @@ class CommonController extends Controller
             $fieldParts = explode('_', $fieldWithoutId);
             if (count($fieldParts) === 1) {
                 // Single part (e.g., user_id -> User)
-                $relatedModelName = Str::studly($fieldParts[0]);
+                $relatedModelName  = Str::studly($fieldParts[0]);
                 $relatedModelClass = "App\\Models\\$relatedModelName";
             } else {
                 // Multiple parts (e.g., event_type_id -> App\Models\Event\Type)
-                $namespacePart = ucfirst($fieldParts[0]);
+                $namespacePart    = ucfirst($fieldParts[0]);
                 $relatedModelName = Str::studly(str_replace('_id', '', $foreignKeyField));
                 if ($namespacePart === 'Tag') {
                     $relatedModelName = Str::replaceFirst($namespacePart, '', $relatedModelName);
@@ -47,7 +47,7 @@ class CommonController extends Controller
         }
 
         // Check if the related model class exists
-        if (!class_exists($relatedModelClass)) {
+        if ( ! class_exists($relatedModelClass)) {
             return response()->json(['error' => __('messages.common.model_not_found')], 404);
         }
 

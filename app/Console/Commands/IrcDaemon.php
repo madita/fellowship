@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Redis;
 
 class IrcDaemon extends Command
 {
-    protected $signature = 'irc:daemon';
+    protected $signature   = 'irc:daemon';
     protected $description = 'Run the IRC connection daemon that manages real IRC server connections';
 
     private IrcConnectionManager $manager;
@@ -21,12 +21,12 @@ class IrcDaemon extends Command
         $this->info('IRC Daemon starting...');
         Log::info('[IRC Daemon] Starting');
 
-        $this->manager = new IrcConnectionManager();
+        $this->manager = new IrcConnectionManager;
         $this->manager->setBroadcastCallback(function (string $type, int $connectionId, array $data) {
             $this->broadcastEvent($type, $connectionId, $data);
         });
         $this->manager->setOutputCallback(function (string $message) {
-            $this->line("[" . date('H:i:s') . "] {$message}");
+            $this->line('[' . date('H:i:s') . "] {$message}");
         });
 
         // Handle graceful shutdown
@@ -68,7 +68,7 @@ class IrcDaemon extends Command
             }
 
             // Small sleep if no active connections to prevent CPU spin
-            if (!$this->manager->hasActiveConnections()) {
+            if ( ! $this->manager->hasActiveConnections()) {
                 usleep(200000); // 200ms
             }
         }
@@ -82,6 +82,7 @@ class IrcDaemon extends Command
         }
 
         Log::info('[IRC Daemon] Stopped');
+
         return self::SUCCESS;
     }
 
@@ -91,13 +92,14 @@ class IrcDaemon extends Command
         $maxCommands = 10; // Process up to 10 commands per loop
         for ($i = 0; $i < $maxCommands; $i++) {
             $raw = Redis::lpop('irc:commands');
-            if (!$raw) {
+            if ( ! $raw) {
                 break;
             }
 
             $command = json_decode($raw, true);
-            if (!$command || !isset($command['type'])) {
+            if ( ! $command || ! isset($command['type'])) {
                 Log::warning('[IRC Daemon] Invalid command received: ' . $raw);
+
                 continue;
             }
 
@@ -107,10 +109,10 @@ class IrcDaemon extends Command
 
     private function handleCommand(array $command): void
     {
-        $type = $command['type'];
+        $type         = $command['type'];
         $connectionId = $command['connection_id'] ?? null;
 
-        $this->line("[" . date('H:i:s') . "] Command: {$type}" . ($connectionId ? " (conn {$connectionId})" : '') . " " . json_encode(array_diff_key($command, ['type' => 1, 'connection_id' => 1])));
+        $this->line('[' . date('H:i:s') . "] Command: {$type}" . ($connectionId ? " (conn {$connectionId})" : '') . ' ' . json_encode(array_diff_key($command, ['type' => 1, 'connection_id' => 1])));
 
         switch ($type) {
             case 'connect':
@@ -144,7 +146,7 @@ class IrcDaemon extends Command
                 break;
 
             case 'send':
-                $target = $command['target'] ?? '';
+                $target  = $command['target'] ?? '';
                 $message = $command['message'] ?? '';
                 if ($target && $message) {
                     // Handle /me actions
@@ -184,18 +186,18 @@ class IrcDaemon extends Command
     private function broadcastEvent(string $type, int $connectionId, array $data): void
     {
         $connection = IrcConnection::find($connectionId);
-        $userId = $connection?->user_id;
+        $userId     = $connection?->user_id;
 
-        if (!$userId) {
+        if ( ! $userId) {
             return;
         }
 
         $payload = json_encode([
-            'type' => $type,
+            'type'          => $type,
             'connection_id' => $connectionId,
-            'user_id' => $userId,
-            'data' => $data,
-            'timestamp' => now()->toISOString(),
+            'user_id'       => $userId,
+            'data'          => $data,
+            'timestamp'     => now()->toISOString(),
         ]);
 
         // Push to a per-user Redis list that the frontend can poll

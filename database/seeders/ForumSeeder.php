@@ -15,49 +15,49 @@ class ForumSeeder extends Seeder
     {
         $categories = [
             [
-                'title' => 'General Discussion',
+                'title'       => 'General Discussion',
                 'description' => 'Chat about anything and everything with the community.',
-                'sort' => 1,
+                'sort'        => 1,
             ],
             [
-                'title' => 'Announcements',
+                'title'       => 'Announcements',
                 'description' => 'Official news and updates from the team.',
-                'sort' => 2,
-                'is_locked' => true,
+                'sort'        => 2,
+                'is_locked'   => true,
             ],
             [
-                'title' => 'Help & Support',
+                'title'       => 'Help & Support',
                 'description' => 'Need help? Ask your questions here.',
-                'sort' => 3,
-                'children' => [
+                'sort'        => 3,
+                'children'    => [
                     [
-                        'title' => 'Technical Issues',
+                        'title'       => 'Technical Issues',
                         'description' => 'Report bugs and technical problems.',
-                        'sort' => 1,
+                        'sort'        => 1,
                     ],
                     [
-                        'title' => 'Getting Started',
+                        'title'       => 'Getting Started',
                         'description' => 'New here? Start with these guides and tips.',
-                        'sort' => 2,
+                        'sort'        => 2,
                     ],
                 ],
             ],
             [
-                'title' => 'Feedback & Suggestions',
+                'title'       => 'Feedback & Suggestions',
                 'description' => 'Share your ideas and suggestions for improvements.',
-                'sort' => 4,
+                'sort'        => 4,
             ],
             [
-                'title' => 'Off-Topic',
+                'title'       => 'Off-Topic',
                 'description' => 'Anything that doesn\'t fit in the other categories.',
-                'sort' => 5,
+                'sort'        => 5,
             ],
         ];
 
         foreach ($categories as $data) {
             $taxonomy = $this->createCategory($data);
 
-            if (!empty($data['children'])) {
+            if ( ! empty($data['children'])) {
                 foreach ($data['children'] as $childData) {
                     $this->createCategory($childData, $taxonomy->id);
                 }
@@ -82,7 +82,7 @@ class ForumSeeder extends Seeder
             ],
         ]);
 
-        if (!empty($data['description'])) {
+        if ( ! empty($data['description'])) {
             $taxonomy->description = $data['description'];
             $taxonomy->save();
         }

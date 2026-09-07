@@ -45,7 +45,7 @@ class ApiKeyController extends Controller
                     'id'            => $key->id,
                     'name'          => $key->name,
                     'key'           => $key->key,
-                    'key_preview'   => substr($key->key, 0, 12).'...',
+                    'key_preview'   => substr($key->key, 0, 12) . '...',
                     'abilities'     => $key->abilities,
                     'is_active'     => $key->is_active,
                     'last_used_at'  => $key->last_used_at?->toISOString(),
@@ -229,7 +229,7 @@ class ApiKeyController extends Controller
     {
         $enabled = (bool) Setting::get('api_keys_enabled', false);
 
-        if (!$enabled) {
+        if ( ! $enabled) {
             abort(403, __('messages.api_keys.disabled'));
         }
     }

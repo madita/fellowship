@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -36,7 +37,7 @@ class UserController extends Controller
 
         $query = User::where('id', '!=', auth()->id());
 
-        if (!empty($q)) {
+        if ( ! empty($q)) {
             $search = '%' . Str::lower($q) . '%';
             $query->where(function ($sub) use ($search) {
                 $sub->whereRaw('LOWER(username) LIKE ?', [$search])
@@ -60,9 +61,8 @@ class UserController extends Controller
     /**
      * Update user preferences (timezone, date format, theme, language).
      *
-     * @param Request $request
      *
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function updatePreferences(Request $request)
     {

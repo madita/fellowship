@@ -20,10 +20,10 @@ class HomepageImageController extends Controller
         ]);
 
         try {
-            $file = $request->file('image');
+            $file       = $request->file('image');
             $collection = $request->input('collection', 'home');
 
-            if (!$file || !$file->isValid()) {
+            if ( ! $file || ! $file->isValid()) {
                 return response()->json([
                     'success' => false,
                     'message' => __('messages.media.invalid_upload'),
@@ -32,8 +32,8 @@ class HomepageImageController extends Controller
 
             // Generate filename
             $extension = $file->getClientOriginalExtension();
-            $filename = uniqid('widget_').'_'.Str::random(10).'.'.$extension;
-            $path = $collection.'/'.$filename;
+            $filename  = uniqid('widget_') . '_' . Str::random(10) . '.' . $extension;
+            $path      = $collection . '/' . $filename;
 
             // Store file (Windows-compatible method)
             Storage::disk('public')->put($path, file_get_contents($file->getRealPath() ?: $file->getPathname()));
@@ -59,7 +59,7 @@ class HomepageImageController extends Controller
         $path = $request->input('path');
 
         // Don't try to delete if path is empty or invalid
-        if (empty($path) || !is_string($path) || trim($path) === '') {
+        if (empty($path) || ! is_string($path) || trim($path) === '') {
             return response()->json([
                 'success' => true,
                 'message' => __('messages.homepage.no_image'),

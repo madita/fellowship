@@ -55,7 +55,7 @@ class FooterWidgetController extends Controller
 
         // Set default order if not provided
         $data = $validator->validated();
-        if (!isset($data['order'])) {
+        if ( ! isset($data['order'])) {
             $data['order'] = FooterWidget::max('order') + 1;
         }
 
@@ -109,8 +109,8 @@ class FooterWidgetController extends Controller
      */
     public function toggle($id): JsonResponse
     {
-        $widget = FooterWidget::findOrFail($id);
-        $widget->enabled = !$widget->enabled;
+        $widget          = FooterWidget::findOrFail($id);
+        $widget->enabled = ! $widget->enabled;
         $widget->save();
 
         return response()->json([

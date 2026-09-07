@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Models\SocialAccount;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
@@ -21,21 +22,20 @@ class SocialLoginController extends Controller
     /**
      * Redirect the user to the OAuth Provider.
      *
-     * @param string $provider
-     *
-     * @return \Illuminate\Http\RedirectResponse
+     * @param  string  $provider
+     * @return RedirectResponse
      */
     public function redirect($provider)
     {
         // Validate provider
-        if (!in_array($provider, self::PROVIDERS)) {
+        if ( ! in_array($provider, self::PROVIDERS)) {
             return redirect('/auth/signin')->with('error', 'Invalid OAuth provider');
         }
 
         // Check if the provider is enabled
         $enabled = Setting::get("oauth_{$provider}_enabled", false);
-        if (!$enabled) {
-            return redirect('/auth/signin')->with('error', ucfirst($provider).' login is currently disabled');
+        if ( ! $enabled) {
+            return redirect('/auth/signin')->with('error', ucfirst($provider) . ' login is currently disabled');
         }
 
         try {
@@ -50,7 +50,7 @@ class SocialLoginController extends Controller
 
             return $driver->redirect();
         } catch (\Exception $e) {
-            \Log::error('OAuth redirect error: '.$e->getMessage());
+            \Log::error('OAuth redirect error: ' . $e->getMessage());
 
             return redirect('/auth/signin')->with('error', 'OAuth configuration error. Please contact administrator.');
         }
@@ -59,28 +59,27 @@ class SocialLoginController extends Controller
     /**
      * Obtain the user information from the OAuth Provider.
      *
-     * @param string $provider
-     *
-     * @return \Illuminate\Http\RedirectResponse
+     * @param  string  $provider
+     * @return RedirectResponse
      */
     public function callback($provider)
     {
         // Validate provider
-        if (!in_array($provider, self::PROVIDERS)) {
+        if ( ! in_array($provider, self::PROVIDERS)) {
             return redirect('/auth/signin')->with('error', 'Invalid OAuth provider');
         }
 
         // Log any error from the OAuth provider
         if (request()->has('error')) {
-            \Log::error('OAuth error from '.$provider.': '.request()->get('error').' - '.request()->get('error_description'));
+            \Log::error('OAuth error from ' . $provider . ': ' . request()->get('error') . ' - ' . request()->get('error_description'));
 
-            return redirect('/auth/signin')->with('error', 'OAuth error: '.request()->get('error_description', request()->get('error')));
+            return redirect('/auth/signin')->with('error', 'OAuth error: ' . request()->get('error_description', request()->get('error')));
         }
 
         // Check if the provider is enabled
         $enabled = Setting::get("oauth_{$provider}_enabled", false);
-        if (!$enabled) {
-            return redirect('/auth/signin')->with('error', ucfirst($provider).' login is currently disabled');
+        if ( ! $enabled) {
+            return redirect('/auth/signin')->with('error', ucfirst($provider) . ' login is currently disabled');
         }
 
         try {
@@ -97,10 +96,10 @@ class SocialLoginController extends Controller
             $oauthUser = $driver->user();
 
             // Validate that we have an email (required for account creation)
-            if (!$oauthUser->getEmail()) {
-                \Log::error('OAuth callback: No email provided by '.$provider.' for user '.$oauthUser->getId());
+            if ( ! $oauthUser->getEmail()) {
+                \Log::error('OAuth callback: No email provided by ' . $provider . ' for user ' . $oauthUser->getId());
 
-                return redirect('/auth/signin')->with('error', 'Unable to get email from '.ucfirst($provider).'. Please ensure your email is public or try another login method.');
+                return redirect('/auth/signin')->with('error', 'Unable to get email from ' . ucfirst($provider) . '. Please ensure your email is public or try another login method.');
             }
 
             // Find or create user and social account
@@ -112,17 +111,17 @@ class SocialLoginController extends Controller
             // Update last login info
             $user->update([
                 'previous_login_at' => $user->last_login_at,
-                'last_login_at' => Carbon::now()->toDateTimeString(),
-                'last_login_ip' => request()->getClientIp(),
+                'last_login_at'     => Carbon::now()->toDateTimeString(),
+                'last_login_ip'     => request()->getClientIp(),
             ]);
 
             // Create Sanctum token for API authentication
             $token = $user->createToken('oauth-login')->plainTextToken;
 
             // Redirect to frontend with token (frontend will handle auth state sync)
-            return redirect('/?token='.$token);
+            return redirect('/?token=' . $token);
         } catch (\Exception $e) {
-            \Log::error('OAuth callback error for '.$provider.': '.$e->getMessage(), [
+            \Log::error('OAuth callback error for ' . $provider . ': ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
             ]);
 
@@ -133,9 +132,8 @@ class SocialLoginController extends Controller
     /**
      * Find existing user or create new user from OAuth data.
      *
-     * @param \Laravel\Socialite\Contracts\User $oauthUser
-     * @param string                            $provider
-     *
+     * @param  \Laravel\Socialite\Contracts\User  $oauthUser
+     * @param  string  $provider
      * @return User
      */
     private function findOrCreateUser($oauthUser, $provider)
@@ -159,10 +157,10 @@ class SocialLoginController extends Controller
         // Check if user exists with same email
         $user = User::where('email', $oauthUser->getEmail())->first();
 
-        if (!$user) {
+        if ( ! $user) {
             // Check if new user registration via OAuth is allowed
             $allowRegistration = Setting::get('oauth_allow_registration', true);
-            if (!$allowRegistration) {
+            if ( ! $allowRegistration) {
                 throw new \Exception('New user registration via OAuth is currently disabled. Please create an account first or contact an administrator.');
             }
 
@@ -194,8 +192,7 @@ class SocialLoginController extends Controller
     /**
      * Generate a unique username from OAuth user data.
      *
-     * @param \Laravel\Socialite\Contracts\User $oauthUser
-     *
+     * @param  \Laravel\Socialite\Contracts\User  $oauthUser
      * @return string
      */
     private function generateUniqueUsername($oauthUser)
@@ -204,7 +201,7 @@ class SocialLoginController extends Controller
         $username = $oauthUser->getNickname();
 
         // If no nickname, generate from name or email
-        if (!$username) {
+        if ( ! $username) {
             $username = $oauthUser->getName()
                 ? Str::slug($oauthUser->getName(), '_')
                 : explode('@', $oauthUser->getEmail())[0];
@@ -215,15 +212,15 @@ class SocialLoginController extends Controller
 
         // Ensure minimum length
         if (strlen($username) < 3) {
-            $username = 'user'.$username;
+            $username = 'user' . $username;
         }
 
         // Make unique by appending numbers if needed
         $originalUsername = $username;
-        $counter = 1;
+        $counter          = 1;
 
         while (User::where('username', $username)->exists()) {
-            $username = $originalUsername.$counter;
+            $username = $originalUsername . $counter;
             $counter++;
         }
 

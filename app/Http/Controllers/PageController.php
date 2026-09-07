@@ -21,7 +21,6 @@ class PageController extends Controller
     /**
      * view landing pages.
      *
-     * @param $slug
      *
      * @return JsonResponse|never
      */
@@ -30,13 +29,13 @@ class PageController extends Controller
         $page = Page::where('slug', '=', $slug)->with(['children', 'translations'])->first();
 
         $parent = null;
-        //$pages = Page::all();
+        // $pages = Page::all();
 
-        if (!$page || !$page->published) {
+        if ( ! $page || ! $page->published) {
             return abort(404);
         }
 
-        if ($page->sign_in_only && !auth()->check()) {
+        if ($page->sign_in_only && ! auth()->check()) {
             return abort(403);
         }
 
@@ -57,7 +56,7 @@ class PageController extends Controller
 
     public function show(Page $page)
     {
-        if (!$page) {
+        if ( ! $page) {
             return abort(404);
         }
 
@@ -76,24 +75,24 @@ class PageController extends Controller
             ->json(['page' => $page, 'parent' => $page->parent, 'taxonomies' => $tax]);
     }
 
-//    public function showWithCategory($taxonomy, $category)
-//    {
-//
-//        $pages = Page::withTerm($category, 'tags')->where('published', true)->get();
-//
-//        return response()
-//            ->json(['pages' => $pages]);
-//    }
+    //    public function showWithCategory($taxonomy, $category)
+    //    {
+    //
+    //        $pages = Page::withTerm($category, 'tags')->where('published', true)->get();
+    //
+    //        return response()
+    //            ->json(['pages' => $pages]);
+    //    }
 
     public function history(Page $page)
     {
-//        $page = Page::where('slug', '=', $slug)->first();
+        //        $page = Page::where('slug', '=', $slug)->first();
 
-        if (!$page || !$page->published) {
+        if ( ! $page || ! $page->published) {
             return abort(404);
         }
 
-        if ($page->sign_in_only && !auth()->check()) {
+        if ($page->sign_in_only && ! auth()->check()) {
             return abort(403);
         }
 

@@ -49,7 +49,7 @@ class SourceQuery
         foreach (self::wheres($mapping) as $where) {
             if (($where['compare'] ?? 'value') === 'column') {
                 $other = (string) ($where['value'] ?? '');
-                if (!preg_match(self::IDENTIFIER_PATTERN, $other)) {
+                if ( ! preg_match(self::IDENTIFIER_PATTERN, $other)) {
                     throw new \InvalidArgumentException("Filter compares against \"{$other}\", which is not a column name");
                 }
                 $query->whereColumn($where['column'], $where['operator'] ?? '=', $other);
@@ -59,7 +59,7 @@ class SourceQuery
         }
 
         $orderBy = $mapping->options['order_by'] ?? null;
-        if (is_array($orderBy) && !empty($orderBy['column']) && preg_match(self::IDENTIFIER_PATTERN, $orderBy['column'])) {
+        if (is_array($orderBy) && ! empty($orderBy['column']) && preg_match(self::IDENTIFIER_PATTERN, $orderBy['column'])) {
             $query->orderBy($orderBy['column'], strtolower($orderBy['direction'] ?? 'asc') === 'desc' ? 'desc' : 'asc');
         }
 
@@ -73,7 +73,7 @@ class SourceQuery
     {
         return array_values(array_filter(
             $mapping->options['joins'] ?? [],
-            fn ($join) => is_array($join) && !empty($join['table']) && !empty($join['first']) && !empty($join['second'])
+            fn ($join) => is_array($join) && ! empty($join['table']) && ! empty($join['first']) && ! empty($join['second'])
         ));
     }
 
@@ -84,7 +84,7 @@ class SourceQuery
     {
         return array_values(array_filter(
             $mapping->options['wheres'] ?? [],
-            fn ($where) => is_array($where) && !empty($where['column'])
+            fn ($where) => is_array($where) && ! empty($where['column'])
         ));
     }
 

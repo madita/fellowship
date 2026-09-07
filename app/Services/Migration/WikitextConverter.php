@@ -22,12 +22,12 @@ class WikitextConverter
     private const IMAGE_NAMESPACES = '(?:File|Image|Bild|Datei)';
 
     /**
-     * @param \Closure|null $imageResolver fn (string $filename, ?string $caption): ?string
-     *                                     returns HTML for an [[Image:…]] reference
-     *                                     (e.g. an <img> tag after attaching the
-     *                                     file as media), or null to drop it.
-     *                                     Without a resolver, image references
-     *                                     are stripped.
+     * @param  \Closure|null  $imageResolver  fn (string $filename, ?string $caption): ?string
+     *                                        returns HTML for an [[Image:…]] reference
+     *                                        (e.g. an <img> tag after attaching the
+     *                                        file as media), or null to drop it.
+     *                                        Without a resolver, image references
+     *                                        are stripped.
      */
     public function __construct(private ?\Closure $imageResolver = null)
     {
@@ -40,7 +40,7 @@ class WikitextConverter
     {
         return [
             'categories' => $this->extractCategories($wikitext),
-            'html' => $this->toHtml($wikitext),
+            'html'       => $this->toHtml($wikitext),
         ];
     }
 
@@ -126,11 +126,11 @@ class WikitextConverter
      */
     private function processTables(string $content): string
     {
-        if (!str_contains($content, '{|')) {
+        if ( ! str_contains($content, '{|')) {
             return $content;
         }
 
-        $out = [];
+        $out   = [];
         $stack = [];
 
         foreach (explode("\n", $content) as $line) {
@@ -138,17 +138,19 @@ class WikitextConverter
 
             if (str_starts_with($trim, '{|')) {
                 $stack[] = [
-                    'attrs' => $this->sanitizeAttributes(substr($trim, 2)),
-                    'caption' => null,
-                    'rows' => [],
+                    'attrs'    => $this->sanitizeAttributes(substr($trim, 2)),
+                    'caption'  => null,
+                    'rows'     => [],
                     'rowAttrs' => '',
-                    'cells' => [],
+                    'cells'    => [],
                 ];
+
                 continue;
             }
 
-            if (!$stack) {
+            if ( ! $stack) {
                 $out[] = $line;
+
                 continue;
             }
 
@@ -162,7 +164,7 @@ class WikitextConverter
                 if ($stack) {
                     // nested table becomes part of the parent's current cell
                     $parent = &$stack[count($stack) - 1];
-                    if (!$parent['cells']) {
+                    if ( ! $parent['cells']) {
                         $parent['cells'][] = ['td', '', ''];
                     }
                     $parent['cells'][count($parent['cells']) - 1][2] .= $html;
@@ -170,6 +172,7 @@ class WikitextConverter
                 } else {
                     $out[] = $html;
                 }
+
                 continue;
             }
 
@@ -188,7 +191,7 @@ class WikitextConverter
                 }
             } elseif ($trim !== '') {
                 // continuation of the previous cell's content
-                if (!$table['cells']) {
+                if ( ! $table['cells']) {
                     $table['cells'][] = ['td', '', ''];
                 }
                 $table['cells'][count($table['cells']) - 1][2] .= '<br>' . $trim;
@@ -211,7 +214,7 @@ class WikitextConverter
      */
     private function makeCell(string $tag, string $cell): array
     {
-        $attrs = '';
+        $attrs   = '';
         $content = trim($cell);
 
         // "class="unsortable"|Content" — text before the first pipe is
@@ -220,7 +223,7 @@ class WikitextConverter
         if ($pipe !== false) {
             $candidate = substr($content, 0, $pipe);
             if (preg_match('/^\s*(?:[\w-]+\s*=\s*("[^"]*"|\'[^\']*\'|[\w-]+)\s*)+$/', $candidate)) {
-                $attrs = $this->sanitizeAttributes($candidate);
+                $attrs   = $this->sanitizeAttributes($candidate);
                 $content = trim(substr($content, $pipe + 1));
             }
         }
@@ -241,7 +244,7 @@ class WikitextConverter
         foreach ($matches as $match) {
             $name = strtolower($match[1]);
             if (in_array($name, $allowed, true)) {
-                $value = $match[3] !== '' ? $match[3] : ($match[4] ?? '') . ($match[5] ?? '');
+                $value   = $match[3] !== '' ? $match[3] : ($match[4] ?? '') . ($match[5] ?? '');
                 $attrs[] = $name . '="' . htmlspecialchars($value, ENT_QUOTES) . '"';
             }
         }
@@ -250,7 +253,7 @@ class WikitextConverter
     }
 
     /**
-     * @param array{attrs:string,caption:?string,rows:array,rowAttrs:string,cells:array} $table
+     * @param  array{attrs:string,caption:?string,rows:array,rowAttrs:string,cells:array}  $table
      */
     private function renderTable(array $table): string
     {
@@ -277,7 +280,7 @@ class WikitextConverter
         if ($table['cells']) {
             $table['rows'][] = ['attrs' => $table['rowAttrs'], 'cells' => $table['cells']];
         }
-        $table['cells'] = [];
+        $table['cells']    = [];
         $table['rowAttrs'] = '';
     }
 
@@ -286,13 +289,13 @@ class WikitextConverter
         preg_match_all("/(^[ \t]*\*.*\n?)+/m", $content, $matches);
 
         foreach (array_unique($matches[0]) as $block) {
-            $list = '<ul>';
+            $list    = '<ul>';
             $sublist = false;
 
             foreach (preg_split("/\n/", $block) as $line) {
                 $line = trim($line);
                 if (Str::startsWith($line, '**')) {
-                    if (!$sublist) {
+                    if ( ! $sublist) {
                         $sublist = true;
                         $list .= '<ul>';
                     }
@@ -329,7 +332,7 @@ class WikitextConverter
             $name = trim(str_replace('_', ' ', $match[1]));
             $term = Term::where('slug', Str::slug($name))->first() ?? Term::firstOrCreateByTitle($name);
 
-            $label = isset($match[2]) && trim($match[2]) !== '' ? trim($match[2]) : $term->title;
+            $label       = isset($match[2]) && trim($match[2]) !== '' ? trim($match[2]) : $term->title;
             $alternative = isset($match[2]) && trim($match[2]) !== '' ? trim($match[2]) : null;
 
             $replace = "<a style=\"font-weight:600\" data-term-id=\"{$term->id}\" data-tag=\"{$term->title}\""
@@ -347,16 +350,16 @@ class WikitextConverter
         return preg_replace_callback(
             '/\[\[' . self::IMAGE_NAMESPACES . ':([^\]|]+)((?:\|[^\]]*)?)\]\]/u',
             function ($match) {
-                if (!$this->imageResolver) {
+                if ( ! $this->imageResolver) {
                     return '';
                 }
 
                 // Params like thumb|200px|left carry MediaWiki layout; the
                 // last non-layout param is the caption/alt text.
-                $params = array_filter(array_map('trim', explode('|', ltrim($match[2], '|'))));
+                $params  = array_filter(array_map('trim', explode('|', ltrim($match[2], '|'))));
                 $caption = null;
                 foreach (array_reverse($params) as $param) {
-                    if (!preg_match('/^(thumb|thumbnail|frame|frameless|border|left|right|center|none|\d+px|x\d+px|upright.*)$/i', $param)) {
+                    if ( ! preg_match('/^(thumb|thumbnail|frame|frameless|border|left|right|center|none|\d+px|x\d+px|upright.*)$/i', $param)) {
                         $caption = str_replace("'", '', $param);
                         break;
                     }
@@ -378,8 +381,8 @@ class WikitextConverter
 
         foreach ($matches as $match) {
             $target = trim(str_replace('_', ' ', $match[1]));
-            $label = isset($match[2]) && trim($match[2]) !== '' ? trim($match[2]) : $target;
-            $slug = Str::slug($target);
+            $label  = isset($match[2]) && trim($match[2]) !== '' ? trim($match[2]) : $target;
+            $slug   = Str::slug($target);
 
             $content = Str::replace($match[0], "<a href=\"/wiki/{$slug}\">{$label}</a>", $content);
         }

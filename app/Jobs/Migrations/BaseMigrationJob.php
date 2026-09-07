@@ -14,8 +14,8 @@ abstract class BaseMigrationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 3600; // 1 hour timeout
-    public int $tries = 1; // Don't retry failed jobs
+    public int $timeout        = 3600; // 1 hour timeout
+    public int $tries          = 1; // Don't retry failed jobs
     public bool $failOnTimeout = true;
 
     protected MigrationLog $log;
@@ -27,9 +27,6 @@ abstract class BaseMigrationJob implements ShouldQueue
         $this->batchId = $batchId;
         $this->onQueue('migrations');
     }
-
-    abstract protected function getMigrationKey(): string;
-    abstract protected function runMigration(): void;
 
     public function handle(): void
     {
@@ -66,6 +63,10 @@ abstract class BaseMigrationJob implements ShouldQueue
             $this->log->addLog('error', 'Job failed: ' . $exception->getMessage());
         }
     }
+
+    abstract protected function getMigrationKey(): string;
+
+    abstract protected function runMigration(): void;
 
     protected function log(string $type, string $message): void
     {
@@ -105,7 +106,7 @@ abstract class BaseMigrationJob implements ShouldQueue
 
         $status = MigrationLog::whereKey($this->log->id)->value('status');
         if ($status !== 'running') {
-            throw new MigrationCancelledException();
+            throw new MigrationCancelledException;
         }
     }
 }

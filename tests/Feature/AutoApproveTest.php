@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Wiki;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class AutoApproveTest extends TestCase
@@ -17,6 +18,7 @@ class AutoApproveTest extends TestCase
     use RefreshDatabase;
 
     protected User $admin;
+
     protected User $regularUser;
 
     protected function setUp(): void
@@ -24,7 +26,7 @@ class AutoApproveTest extends TestCase
         parent::setUp();
 
         // Ensure roles exist
-        $this->app->make(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->app->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
         Role::create(['name' => 'admin', 'guard_name' => 'api', 'display_name' => 'Admin']);
         Role::create(['name' => 'user', 'guard_name' => 'api', 'display_name' => 'User']);
@@ -262,7 +264,7 @@ class AutoApproveTest extends TestCase
         Wiki::withoutEvents(function () use (&$wiki) {
             $wiki = Wiki::create([
                 'title' => 'Test Wiki',
-                'slug' => 'test-wiki-' . uniqid(),
+                'slug' => 'test-wiki-'.uniqid(),
                 'status' => 'published',
                 'wikiable_type' => 'App\\Models\\User',
                 'wikiable_id' => 1,

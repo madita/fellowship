@@ -3,6 +3,7 @@
 namespace App\Events\Conversations;
 
 use App\Models\Conversation\ConversationMessage;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -45,19 +46,19 @@ class MessageAdded implements ShouldBroadcast
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * @return Channel|array
      */
     public function broadcastOn()
     {
         $channels = [
-            new PrivateChannel('conversations.'.$this->message->conversation->uuid),
+            new PrivateChannel('conversations.' . $this->message->conversation->uuid),
         ];
 
         // Also broadcast to individual user channels for those not actively viewing the conversation
         $this->message->conversation->load('users');
         foreach ($this->message->conversation->users as $user) {
             if ($user->id !== $this->message->user_id) {
-                $channels[] = new PrivateChannel('user.'.$user->id);
+                $channels[] = new PrivateChannel('user.' . $user->id);
             }
         }
 
