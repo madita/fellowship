@@ -62,6 +62,31 @@
             </template>
 
             <template v-if="previewResult?.found">
+                <v-row dense>
+                    <v-col cols="12" md="6">
+                        <v-text-field
+                            v-model="legacyEmail"
+                            :label="$t('account.legacyClaim.emailLabel')"
+                            :hint="$t('account.legacyClaim.emailHint')"
+                            persistent-hint
+                            type="email"
+                            variant="outlined"
+                            density="compact"
+                            class="mb-3"
+                        />
+                    </v-col>
+                    <v-col cols="12" md="6">
+                        <v-text-field
+                            v-model="legacyUserId"
+                            :label="$t('account.legacyClaim.idLabel')"
+                            :hint="$t('account.legacyClaim.idHint')"
+                            persistent-hint
+                            variant="outlined"
+                            density="compact"
+                            class="mb-3"
+                        />
+                    </v-col>
+                </v-row>
                 <v-textarea
                     v-model="message"
                     :label="$t('account.legacyClaim.messageLabel')"
@@ -93,6 +118,8 @@ import { ref } from 'vue';
 import axios from 'axios';
 
 const legacyUsername = ref('');
+const legacyEmail = ref('');
+const legacyUserId = ref('');
 const message = ref('');
 const previewing = ref(false);
 const submitting = ref(false);
@@ -123,6 +150,8 @@ const submit = async () => {
     try {
         const { data } = await axios.post('/api/account/legacy-claim', {
             legacy_username: legacyUsername.value,
+            legacy_email: legacyEmail.value || null,
+            legacy_user_id: legacyUserId.value || null,
             message: message.value || null,
         });
         result.value = data.message;

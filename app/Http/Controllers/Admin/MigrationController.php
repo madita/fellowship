@@ -654,32 +654,19 @@ class MigrationController extends Controller
             $assignedId = $types->pluck('assigned_user_id')->filter()->first();
             $entry = $directory->get($legacySource . '|' . $legacyUsername);
             $suggested = $entry?->email ? $registeredByEmail->get(mb_strtolower($entry->email)) : null;
-            // A claim matches when its username matches and it either names
-            // this source or none (claims cover all systems by default).
-            $claim = $claims->first(function ($ticket) use ($legacySource, $legacyUsername) {
-                $claimSource = $ticket->metadata['legacy_source'] ?? null;
-
-                return mb_strtolower($ticket->metadata['legacy_username'] ?? '') === mb_strtolower($legacyUsername)
-                    && ($claimSource === null || $claimSource === $legacySource);
-            });
+            $claim = $this->matchClaim($claims, $legacySource, $legacyUsername, $entry);
 
             return [
                 'legacy_source' => $legacySource,
                 'legacy_username' => $legacyUsername,
                 'email' => $entry?->email,
+                'legacy_user_id' => $entry?->legacy_user_id,
                 'items' => $types->sum('items'),
                 'types' => $types->mapWithKeys(fn ($row) => [class_basename($row->attributable_type) => (int) $row->items]),
                 'assigned_user' => $assignedId ? $assignedUsers->get($assignedId)?->only(['id', 'username']) : ($entry?->assignedUser?->only(['id', 'username'])),
                 'assigned_at' => $types->pluck('assigned_at')->filter()->first(),
                 'suggested_user' => $suggested?->only(['id', 'username']),
-                'claim' => $claim ? [
-                    'ticket_id' => $claim->id,
-                    'user' => $claim->creator?->only(['id', 'username']),
-                    // Strong signal: the claimant's registered e-mail matches
-                    // the e-mail of the legacy account (from the directory).
-                    'email_verified' => (bool) ($entry?->email && $claim->creator
-                        && mb_strtolower($claim->creator->email) === mb_strtolower($entry->email)),
-                ] : null,
+                'claim' => $this->claimPayload($claim, $entry),
             ];
         });
 
@@ -690,28 +677,19 @@ class MigrationController extends Controller
         // keys, not the (source|username) collection keys used here.
         $directoryOnly = $directory->toBase()->except($covered->all())->map(function ($entry) use ($registeredByEmail, $claims) {
             $suggested = $entry->email ? $registeredByEmail->get(mb_strtolower($entry->email)) : null;
-            $claim = $claims->first(function ($ticket) use ($entry) {
-                $claimSource = $ticket->metadata['legacy_source'] ?? null;
-
-                return mb_strtolower($ticket->metadata['legacy_username'] ?? '') === mb_strtolower($entry->username)
-                    && ($claimSource === null || $claimSource === $entry->legacy_source);
-            });
+            $claim = $this->matchClaim($claims, $entry->legacy_source, $entry->username, $entry);
 
             return [
                 'legacy_source' => $entry->legacy_source,
                 'legacy_username' => $entry->username,
                 'email' => $entry->email,
+                'legacy_user_id' => $entry->legacy_user_id,
                 'items' => 0,
                 'types' => (object) [],
                 'assigned_user' => $entry->assignedUser?->only(['id', 'username']),
                 'assigned_at' => $entry->assigned_user_id ? $entry->updated_at : null,
                 'suggested_user' => $suggested?->only(['id', 'username']),
-                'claim' => $claim ? [
-                    'ticket_id' => $claim->id,
-                    'user' => $claim->creator?->only(['id', 'username']),
-                    'email_verified' => (bool) ($entry->email && $claim->creator
-                        && mb_strtolower($claim->creator->email) === mb_strtolower($entry->email)),
-                ] : null,
+                'claim' => $this->claimPayload($claim, $entry),
             ];
         })->values();
 
@@ -721,6 +699,64 @@ class MigrationController extends Controller
         ])->values();
 
         return response()->json(['legacyUsers' => $legacyUsers]);
+    }
+
+    /**
+     * A claim matches an identity by claimed username — or, when the
+     * claimant provided the old e-mail / member id, by those matching the
+     * directory entry (covers misremembered usernames).
+     */
+    private function matchClaim($claims, string $legacySource, string $legacyUsername, ?MigrationLegacyUser $entry): ?Ticket
+    {
+        return $claims->first(function ($ticket) use ($legacySource, $legacyUsername, $entry) {
+            $meta = $ticket->metadata ?? [];
+            $claimSource = $meta['legacy_source'] ?? null;
+            if ($claimSource !== null && $claimSource !== $legacySource) {
+                return false;
+            }
+
+            if (mb_strtolower($meta['legacy_username'] ?? '') === mb_strtolower($legacyUsername)) {
+                return true;
+            }
+
+            if ($entry?->email && !empty($meta['legacy_email'])
+                && mb_strtolower($meta['legacy_email']) === mb_strtolower($entry->email)) {
+                return true;
+            }
+
+            return $entry?->legacy_user_id && !empty($meta['legacy_user_id'])
+                && (string) $meta['legacy_user_id'] === (string) $entry->legacy_user_id;
+        });
+    }
+
+    /**
+     * Claim info for the listing, incl. how well the provided proof
+     * matches the legacy-user directory.
+     */
+    private function claimPayload(?Ticket $claim, ?MigrationLegacyUser $entry): ?array
+    {
+        if (!$claim) {
+            return null;
+        }
+
+        $meta = $claim->metadata ?? [];
+        $claimEmail = $meta['legacy_email'] ?? null;
+
+        return [
+            'ticket_id' => $claim->id,
+            'user' => $claim->creator?->only(['id', 'username']),
+            'legacy_email' => $claimEmail,
+            'legacy_user_id' => $meta['legacy_user_id'] ?? null,
+            // The claimant's registered e-mail OR the provided legacy e-mail
+            // matches the directory entry.
+            'email_verified' => (bool) ($entry?->email && (
+                ($claim->creator && mb_strtolower($claim->creator->email) === mb_strtolower($entry->email))
+                || ($claimEmail && mb_strtolower($claimEmail) === mb_strtolower($entry->email))
+            )),
+            // The provided member id matches the directory entry.
+            'id_verified' => (bool) ($entry?->legacy_user_id && !empty($meta['legacy_user_id'])
+                && (string) $meta['legacy_user_id'] === (string) $entry->legacy_user_id),
+        ];
     }
 
     /**

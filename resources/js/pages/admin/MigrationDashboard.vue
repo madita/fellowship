@@ -53,7 +53,7 @@
         </v-window-item>
 
         <v-window-item value="legacyUsers">
-            <migration-legacy-users @notify="onNotify" />
+            <migration-legacy-users :initial-search="legacyUsersSearch" @notify="onNotify" />
         </v-window-item>
 
         <v-window-item value="runs">
@@ -307,6 +307,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import axios from 'axios';
 import MigrationSources from '@/components/admin/migration/MigrationSources.vue';
 import MigrationMappings from '@/components/admin/migration/MigrationMappings.vue';
@@ -336,8 +337,10 @@ const MigrationStatusChip = {
     },
 };
 
-// State
-const tab = ref('runs');
+// State — deep-linkable: /admin/migrations?tab=legacyUsers&search=Name
+const route = useRoute();
+const tab = ref(['runs', 'sources', 'mappings', 'legacyUsers'].includes(route.query.tab) ? route.query.tab : 'runs');
+const legacyUsersSearch = ref(typeof route.query.search === 'string' ? route.query.search : '');
 const migrations = ref([]);
 const groups = ref([]);
 const selectedMigrations = ref([]);

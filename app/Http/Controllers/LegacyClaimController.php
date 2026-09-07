@@ -57,6 +57,11 @@ class LegacyClaimController extends Controller
     {
         $data = $request->validate([
             'legacy_username' => 'required|string|max:255',
+            // Extra proof helping the admin verify the claim: the e-mail
+            // used on the old site and/or its member id (e.g. the waechter
+            // id that links the legacy tables).
+            'legacy_email' => 'nullable|email|max:255',
+            'legacy_user_id' => 'nullable|string|max:64',
             'message' => 'nullable|string|max:2000',
         ]);
 
@@ -94,14 +99,18 @@ class LegacyClaimController extends Controller
             'title' => "Legacy account claim: {$data['legacy_username']}",
             'description' => trim(
                 "User \"{$user->username}\" claims the legacy account \"{$data['legacy_username']}\"."
-                . ($data['message'] ? "\n\n" . $data['message'] : '')
+                . (!empty($data['legacy_email']) ? "\nLegacy e-mail: {$data['legacy_email']}" : '')
+                . (!empty($data['legacy_user_id']) ? "\nLegacy member id: {$data['legacy_user_id']}" : '')
+                . (!empty($data['message']) ? "\n\n" . $data['message'] : '')
             ),
             'status' => 'open',
             'priority' => 'normal',
-            'metadata' => [
+            'metadata' => array_filter([
                 'legacy_username' => $data['legacy_username'],
+                'legacy_email' => $data['legacy_email'] ?? null,
+                'legacy_user_id' => $data['legacy_user_id'] ?? null,
                 'claiming_user_id' => $user->id,
-            ],
+            ], fn ($value) => $value !== null),
         ]);
 
         return response()->json([

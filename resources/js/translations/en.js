@@ -3917,6 +3917,7 @@ export default {
         'legacyUsername': 'Legacy username',
         'legacySource': 'Legacy system',
         'claimEmailVerified': 'Claimant e-mail matches the legacy account e-mail',
+        'claimIdVerified': 'Provided member id matches the legacy account',
         'suggestedByEmail': 'Registered user with the same e-mail as the legacy account',
         'forumArchive': 'Archive imported forum',
         'forumArchiveHint': 'Moves all forum categories created by the import under the category below (created if missing), keeping their internal hierarchy. Optionally locks the imported threads so the archive is read-only.',
@@ -4502,6 +4503,10 @@ export default {
     'tickets': {
         'title': 'Tickets',
         'subtitle': 'Manage support requests, bugs, and content approvals',
+        'legacyClaim': {
+            'title': 'Legacy account claim',
+            'open': 'Open in Legacy Users'
+        },
         'myTickets': 'My Tickets',
         'myTicketsSubtitle': 'View tickets you have created',
         'viewRelated': 'View related content',
@@ -4769,6 +4774,10 @@ export default {
             'check': 'Check',
             'found': '{total} imported items found for "{name}":',
             'notFound': 'No unassigned imported content found for "{name}". Check the spelling, or it may already be assigned.',
+            'emailLabel': 'E-mail used on the old site (optional)',
+            'emailHint': 'Helps the admin verify the account is yours',
+            'idLabel': 'Old member id (optional)',
+            'idHint': 'e.g. your Wächter id, if you know it',
             'messageLabel': 'Message for the admin (optional)',
             'messageHint': 'Anything that helps verify the account is yours',
             'submit': 'Request transfer'

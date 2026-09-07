@@ -33,6 +33,7 @@
                         <td>
                             <strong>{{ row.legacy_username }}</strong>
                             <div v-if="row.email" class="text-caption text-medium-emphasis">{{ row.email }}</div>
+                            <div v-if="row.legacy_user_id" class="text-caption text-medium-emphasis">ID: {{ row.legacy_user_id }}</div>
                         </td>
                         <td>
                             <v-chip size="x-small" variant="outlined" prepend-icon="mdi-database-outline">
@@ -54,10 +55,10 @@
                             <v-chip
                                 v-if="row.claim"
                                 size="small"
-                                :color="row.claim.email_verified ? 'success' : 'warning'"
+                                :color="(row.claim.email_verified || row.claim.id_verified) ? 'success' : 'warning'"
                                 variant="tonal"
-                                :prepend-icon="row.claim.email_verified ? 'mdi-email-check' : 'mdi-ticket-account'"
-                                :title="row.claim.email_verified ? $t('migrationTool.claimEmailVerified') : ''"
+                                :prepend-icon="row.claim.id_verified ? 'mdi-card-account-details-outline' : (row.claim.email_verified ? 'mdi-email-check' : 'mdi-ticket-account')"
+                                :title="row.claim.id_verified ? $t('migrationTool.claimIdVerified') : (row.claim.email_verified ? $t('migrationTool.claimEmailVerified') : '')"
                             >
                                 {{ row.claim.user?.username }}
                             </v-chip>
@@ -137,9 +138,13 @@ import axios from 'axios';
 
 const { t } = useI18n();
 const emit = defineEmits(['notify']);
+const props = defineProps({
+    // Pre-fill the search, e.g. deep-linked from a claim ticket.
+    initialSearch: { type: String, default: '' },
+});
 
 const rows = ref([]);
-const search = ref('');
+const search = ref(props.initialSearch || '');
 const dialog = ref(false);
 const assigning = ref(null);
 const assignUser = ref('');
@@ -152,8 +157,12 @@ const filtered = computed(() => {
     return rows.value.filter(row =>
         row.legacy_username.toLowerCase().includes(query)
         || row.legacy_source.toLowerCase().includes(query)
+        || row.email?.toLowerCase().includes(query)
+        || String(row.legacy_user_id || '').toLowerCase() === query
         || row.assigned_user?.username?.toLowerCase().includes(query)
         || row.claim?.user?.username?.toLowerCase().includes(query)
+        || row.claim?.legacy_email?.toLowerCase().includes(query)
+        || String(row.claim?.legacy_user_id || '').toLowerCase() === query
     );
 });
 

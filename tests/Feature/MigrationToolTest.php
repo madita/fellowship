@@ -645,7 +645,12 @@ class MigrationToolTest extends TestCase
         $this->assertSame(1, $preview['sources']['forum']['total']);
 
         $this->actingAs($vimes, 'sanctum')
-            ->postJson('/api/account/legacy-claim', ['legacy_username' => 'OldVimes', 'message' => 'That was me!'])
+            ->postJson('/api/account/legacy-claim', [
+                'legacy_username' => 'OldVimes',
+                'legacy_email' => 'old-vimes@example.org',
+                'legacy_user_id' => '4711',
+                'message' => 'That was me!',
+            ])
             ->assertStatus(201);
 
         // Duplicate claims are rejected.
@@ -661,6 +666,7 @@ class MigrationToolTest extends TestCase
             'legacy_source' => 'treffen',
             'username' => 'OldVimes',
             'email' => $vimes->email,
+            'legacy_user_id' => '4711',
         ]);
 
         // The admin sees one row PER SYSTEM, both showing the open claim…
@@ -677,6 +683,12 @@ class MigrationToolTest extends TestCase
         // Directory data: e-mail shown, claim verified, match suggested.
         $this->assertSame($vimes->email, $treffenRow['email']);
         $this->assertTrue($treffenRow['claim']['email_verified']);
+        // The provided member id matches the directory → id-verified, and
+        // the proof travels with the claim for the admin to see.
+        $this->assertTrue($treffenRow['claim']['id_verified']);
+        $this->assertSame('4711', $treffenRow['claim']['legacy_user_id']);
+        $this->assertSame('old-vimes@example.org', $treffenRow['claim']['legacy_email']);
+        $this->assertSame('4711', $treffenRow['legacy_user_id']);
         $this->assertSame('vimes', $treffenRow['suggested_user']['username']);
         // The forum identity has no directory entry — nothing verified there.
         $forumRow = $rows->firstWhere('legacy_source', 'forum');

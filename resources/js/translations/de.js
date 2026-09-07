@@ -4085,6 +4085,7 @@ export default {
         'legacyUsername': 'Alter Benutzername',
         'legacySource': 'Altes System',
         'claimEmailVerified': 'E-Mail des Anfragenden stimmt mit der E-Mail des alten Kontos überein',
+        'claimIdVerified': 'Angegebene Mitglieds-ID stimmt mit dem alten Konto überein',
         'suggestedByEmail': 'Registrierter Benutzer mit derselben E-Mail wie das alte Konto',
         'forumArchive': 'Importiertes Forum archivieren',
         'forumArchiveHint': 'Verschiebt alle vom Import erstellten Forenkategorien unter die unten angegebene Kategorie (wird bei Bedarf erstellt), die interne Hierarchie bleibt erhalten. Optional werden die importierten Themen gesperrt, sodass das Archiv nur lesbar ist.',
@@ -4686,6 +4687,10 @@ export default {
     'tickets': {
         'title': 'Tickets',
         'subtitle': 'Supportanfragen, Fehler und Inhaltsgenehmigungen verwalten',
+        'legacyClaim': {
+            'title': 'Anfrage: Altes Konto',
+            'open': 'In „Alte Benutzer" öffnen'
+        },
         'myTickets': 'Meine Tickets',
         'myTicketsSubtitle': 'Ihre erstellten Tickets anzeigen',
         'viewRelated': 'Verknüpften Inhalt anzeigen',
@@ -4953,6 +4958,10 @@ export default {
             'check': 'Prüfen',
             'found': '{total} importierte Einträge für „{name}" gefunden:',
             'notFound': 'Keine nicht zugewiesenen Inhalte für „{name}" gefunden. Prüfe die Schreibweise — oder sie wurden bereits zugewiesen.',
+            'emailLabel': 'E-Mail auf der alten Seite (optional)',
+            'emailHint': 'Hilft dem Admin zu bestätigen, dass das Konto dir gehört',
+            'idLabel': 'Alte Mitglieds-ID (optional)',
+            'idHint': 'z. B. deine Wächter-ID, falls bekannt',
             'messageLabel': 'Nachricht an den Admin (optional)',
             'messageHint': 'Alles, was hilft zu bestätigen, dass das Konto dir gehört',
             'submit': 'Übertragung anfragen'
