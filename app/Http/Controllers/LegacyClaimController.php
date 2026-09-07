@@ -3,16 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\MigrationAttribution;
+use App\Models\MigrationLegacyUser;
 use App\Models\Ticket\Ticket;
 use App\Models\Ticket\TicketType;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 /**
  * Lets a registered user request their content from the old site: they
- * name their legacy username, a "legacy-account-claim" ticket is created,
- * and an admin verifies + assigns it on the migration dashboard (which
- * resolves the ticket and moves the content to their account).
+ * name their legacy username (or the e-mail they used there, resolved
+ * through the imported legacy-user directory), a "legacy-account-claim"
+ * ticket is created, and an admin verifies + assigns it on the migration
+ * dashboard (which resolves the ticket and moves the content to their
+ * account).
  */
 class LegacyClaimController extends Controller
 {
@@ -22,14 +26,19 @@ class LegacyClaimController extends Controller
     }
 
     /**
-     * What a legacy username still has unassigned — so users can check
-     * before filing a claim.
+     * What a legacy account still has unassigned — so users can check
+     * before filing a claim. Identified by username, or by the e-mail
+     * used on the old site (looked up in the legacy-user directory).
      */
     public function preview(Request $request): JsonResponse
     {
-        $data = $request->validate(['legacy_username' => 'required|string|max:255']);
+        $data = $request->validate([
+            'legacy_username' => 'nullable|required_without:legacy_email|string|max:255',
+            'legacy_email' => 'nullable|required_without:legacy_username|email|max:255',
+        ]);
+        $usernames = $this->resolveUsernames($data);
 
-        $rows = MigrationAttribution::where('legacy_username', $data['legacy_username'])
+        $rows = $usernames->isEmpty() ? collect() : MigrationAttribution::whereIn('legacy_username', $usernames)
             ->whereNull('assigned_user_id')
             ->selectRaw('legacy_source, attributable_type, COUNT(*) as items')
             ->groupBy('legacy_source', 'attributable_type')
@@ -44,7 +53,12 @@ class LegacyClaimController extends Controller
         ]);
 
         return response()->json([
-            'legacy_username' => $data['legacy_username'],
+            'legacy_username' => $usernames->first(),
+            'legacy_usernames' => $usernames->values(),
+            'legacy_email' => $data['legacy_email'] ?? null,
+            // Only meaningful for e-mail lookups: whether the directory
+            // knows an account with that e-mail at all.
+            'email_known' => empty($data['legacy_username']) ? $usernames->isNotEmpty() : null,
             'found' => $rows->isNotEmpty(),
             'sources' => $sources,
             'types' => $rows->groupBy(fn ($row) => class_basename($row->attributable_type))
@@ -56,14 +70,24 @@ class LegacyClaimController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'legacy_username' => 'required|string|max:255',
-            // Extra proof helping the admin verify the claim: the e-mail
-            // used on the old site and/or its member id (e.g. the waechter
-            // id that links the legacy tables).
-            'legacy_email' => 'nullable|email|max:255',
+            'legacy_username' => 'nullable|required_without:legacy_email|string|max:255',
+            // The e-mail used on the old site: identifies the account when
+            // no username is given, and otherwise is extra proof helping
+            // the admin verify the claim — like the member id (e.g. the
+            // waechter id that links the legacy tables).
+            'legacy_email' => 'nullable|required_without:legacy_username|email|max:255',
             'legacy_user_id' => 'nullable|string|max:64',
             'message' => 'nullable|string|max:2000',
         ]);
+
+        $usernames = $this->resolveUsernames($data);
+        if ($usernames->isEmpty()) {
+            return response()->json([
+                'message' => __('messages.migrations.claim_email_unknown', ['email' => $data['legacy_email']]),
+            ], 422);
+        }
+        // Resolved from the e-mail: the claim names the directory account.
+        $data['legacy_username'] = $usernames->first();
 
         $user = $request->user();
 
@@ -79,12 +103,18 @@ class LegacyClaimController extends Controller
             ]
         );
 
-        // One open claim per user and legacy name.
+        // One open claim per user and legacy account (by name or e-mail).
         $existing = Ticket::where('ticket_type_id', $type->id)
             ->where('created_by_user_id', $user->id)
             ->whereIn('status', ['open', 'in_progress', 'pending'])
             ->get()
-            ->first(fn ($ticket) => mb_strtolower($ticket->metadata['legacy_username'] ?? '') === mb_strtolower($data['legacy_username']));
+            ->first(function ($ticket) use ($data) {
+                $meta = $ticket->metadata ?? [];
+
+                return mb_strtolower($meta['legacy_username'] ?? '') === mb_strtolower($data['legacy_username'])
+                    || (!empty($data['legacy_email']) && !empty($meta['legacy_email'])
+                        && mb_strtolower($meta['legacy_email']) === mb_strtolower($data['legacy_email']));
+            });
 
         if ($existing) {
             return response()->json([
@@ -117,5 +147,22 @@ class LegacyClaimController extends Controller
             'message' => __('messages.migrations.claim_created'),
             'ticket' => $ticket,
         ], 201);
+    }
+
+    /**
+     * The legacy usernames a claim is about: the given one, or — when
+     * only an e-mail was given — every directory account using it (the
+     * same person may have had different names in different systems).
+     */
+    private function resolveUsernames(array $data): Collection
+    {
+        if (!empty($data['legacy_username'])) {
+            return collect([$data['legacy_username']]);
+        }
+
+        return MigrationLegacyUser::whereRaw('LOWER(email) = ?', [mb_strtolower($data['legacy_email'])])
+            ->pluck('username')
+            ->unique(fn ($name) => mb_strtolower($name))
+            ->values();
     }
 }

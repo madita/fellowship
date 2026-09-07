@@ -6,8 +6,9 @@
                 {{ $t('account.legacyClaim.intro') }}
             </p>
 
+            <!-- Username OR e-mail identifies the old account — one is enough. -->
             <v-row dense>
-                <v-col cols="12" md="6">
+                <v-col cols="12" md="5">
                     <v-text-field
                         v-model="legacyUsername"
                         :label="$t('account.legacyClaim.usernameLabel')"
@@ -16,11 +17,24 @@
                         @keyup.enter="preview"
                     />
                 </v-col>
-                <v-col cols="12" md="3">
+                <v-col cols="12" md="5">
+                    <v-text-field
+                        v-model="legacyEmail"
+                        :label="$t('account.legacyClaim.emailLabel')"
+                        :hint="$t('account.legacyClaim.emailHint')"
+                        persistent-hint
+                        type="email"
+                        variant="outlined"
+                        density="compact"
+                        @keyup.enter="preview"
+                    />
+                </v-col>
+                <v-col cols="12" md="2">
                     <v-btn
                         variant="tonal"
+                        block
                         :loading="previewing"
-                        :disabled="!legacyUsername"
+                        :disabled="!legacyUsername && !legacyEmail"
                         @click="preview"
                     >
                         {{ $t('account.legacyClaim.check') }}
@@ -36,7 +50,10 @@
                     density="compact"
                     class="mb-3"
                 >
-                    {{ $t('account.legacyClaim.found', { total: previewResult.total, name: previewResult.legacy_username }) }}
+                    {{ $t('account.legacyClaim.found', { total: previewResult.total, name: previewName }) }}
+                    <div v-if="resolvedFromEmail" class="text-caption mt-1">
+                        {{ $t('account.legacyClaim.resolvedFromEmail', { email: previewResult.legacy_email }) }}
+                    </div>
                     <div
                         v-for="(source, name) in previewResult.sources"
                         :key="name"
@@ -56,25 +73,16 @@
                         </v-chip>
                     </div>
                 </v-alert>
+                <v-alert v-else-if="previewResult.email_known === false" type="info" variant="tonal" density="compact" class="mb-3">
+                    {{ $t('account.legacyClaim.emailUnknown', { email: previewResult.legacy_email }) }}
+                </v-alert>
                 <v-alert v-else type="info" variant="tonal" density="compact" class="mb-3">
-                    {{ $t('account.legacyClaim.notFound', { name: previewResult.legacy_username }) }}
+                    {{ $t('account.legacyClaim.notFound', { name: previewName }) }}
                 </v-alert>
             </template>
 
             <template v-if="previewResult?.found">
                 <v-row dense>
-                    <v-col cols="12" md="6">
-                        <v-text-field
-                            v-model="legacyEmail"
-                            :label="$t('account.legacyClaim.emailLabel')"
-                            :hint="$t('account.legacyClaim.emailHint')"
-                            persistent-hint
-                            type="email"
-                            variant="outlined"
-                            density="compact"
-                            class="mb-3"
-                        />
-                    </v-col>
                     <v-col cols="12" md="6">
                         <v-text-field
                             v-model="legacyUserId"
@@ -114,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import axios from 'axios';
 
 const legacyUsername = ref('');
@@ -127,14 +135,27 @@ const previewResult = ref(null);
 const result = ref('');
 const resultType = ref('success');
 
+// The account was looked up by e-mail (no username typed).
+const resolvedFromEmail = computed(() => !!previewResult.value && previewResult.value.email_known !== null);
+// What to call the account in messages: the resolved username(s), or
+// whatever was typed.
+const previewName = computed(() => {
+    const names = previewResult.value?.legacy_usernames || [];
+    return names.length ? names.join(', ') : (previewResult.value?.legacy_username || previewResult.value?.legacy_email || '');
+});
+
+const identity = () => ({
+    legacy_username: legacyUsername.value || null,
+    legacy_email: legacyEmail.value || null,
+});
+
 const preview = async () => {
+    if (!legacyUsername.value && !legacyEmail.value) return;
     previewing.value = true;
     result.value = '';
     previewResult.value = null;
     try {
-        const { data } = await axios.post('/api/account/legacy-claim/preview', {
-            legacy_username: legacyUsername.value,
-        });
+        const { data } = await axios.post('/api/account/legacy-claim/preview', identity());
         previewResult.value = data;
     } catch (e) {
         result.value = e.response?.data?.message || e.message;
@@ -149,8 +170,7 @@ const submit = async () => {
     result.value = '';
     try {
         const { data } = await axios.post('/api/account/legacy-claim', {
-            legacy_username: legacyUsername.value,
-            legacy_email: legacyEmail.value || null,
+            ...identity(),
             legacy_user_id: legacyUserId.value || null,
             message: message.value || null,
         });

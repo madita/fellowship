@@ -211,6 +211,7 @@ return [
         'user_not_found'        => 'Kein registrierter Benutzer „:user" (Benutzername oder E-Mail)',
         'legacy_user_not_found' => 'Kein importierter Inhalt ist „:name" zugeordnet',
         'legacy_assigned'       => 'Inhalte von „:name" wurden :user zugewiesen',
+        'claim_email_unknown'   => 'Kein altes Konto mit der E-Mail „:email" bekannt — versuche es mit deinem alten Benutzernamen',
         'claim_exists'          => 'Du hast bereits eine offene Anfrage für dieses alte Konto',
         'claim_created'         => 'Anfrage eingereicht — ein Admin prüft sie und weist dir deine alten Inhalte zu',
         'forum_archive_nothing' => 'Keine importierten Foreninhalte zum Archivieren gefunden',

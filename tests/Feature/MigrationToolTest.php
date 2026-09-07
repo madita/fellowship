@@ -669,6 +669,49 @@ class MigrationToolTest extends TestCase
             'legacy_user_id' => '4711',
         ]);
 
+        // Users can identify the old account by its e-mail instead of the
+        // username: the directory resolves it to "OldVimes" (case-insensitive).
+        $byEmail = $this->actingAs($vimes, 'sanctum')
+            ->postJson('/api/account/legacy-claim/preview', ['legacy_email' => mb_strtoupper($vimes->email)])
+            ->assertStatus(200)
+            ->json();
+        $this->assertTrue($byEmail['found']);
+        $this->assertTrue($byEmail['email_known']);
+        $this->assertSame('OldVimes', $byEmail['legacy_username']);
+        $this->assertSame(3, $byEmail['total']);
+        // An e-mail nobody used on the old site resolves to nothing…
+        $unknown = $this->actingAs($vimes, 'sanctum')
+            ->postJson('/api/account/legacy-claim/preview', ['legacy_email' => 'nobody@example.org'])
+            ->assertStatus(200)
+            ->json();
+        $this->assertFalse($unknown['found']);
+        $this->assertFalse($unknown['email_known']);
+        $this->assertNull($unknown['legacy_username']);
+        // …and cannot be claimed; neither username nor e-mail is rejected.
+        $this->actingAs($vimes, 'sanctum')
+            ->postJson('/api/account/legacy-claim', ['legacy_email' => 'nobody@example.org'])
+            ->assertStatus(422);
+        $this->actingAs($vimes, 'sanctum')
+            ->postJson('/api/account/legacy-claim', ['message' => 'no identity'])
+            ->assertStatus(422);
+        // An e-mail-only claim for the same account is the same claim (409).
+        $this->actingAs($vimes, 'sanctum')
+            ->postJson('/api/account/legacy-claim', ['legacy_email' => $vimes->email])
+            ->assertStatus(409);
+        // An e-mail-only claim for another directory account names the
+        // resolved username on the ticket, e-mail kept as proof.
+        \App\Models\MigrationLegacyUser::create([
+            'legacy_source' => 'forum',
+            'username' => 'OldCarrot',
+            'email' => 'carrot-old@example.org',
+        ]);
+        $carrotClaim = $this->actingAs($vimes, 'sanctum')
+            ->postJson('/api/account/legacy-claim', ['legacy_email' => 'Carrot-Old@example.org'])
+            ->assertStatus(201)
+            ->json('ticket');
+        $this->assertSame('OldCarrot', $carrotClaim['metadata']['legacy_username']);
+        $this->assertSame('Carrot-Old@example.org', $carrotClaim['metadata']['legacy_email']);
+
         // The admin sees one row PER SYSTEM, both showing the open claim…
         $listing = $this->actingAs($this->admin, 'sanctum')
             ->getJson('/api/admin/migrations/legacy-users')
