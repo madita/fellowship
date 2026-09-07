@@ -22,8 +22,8 @@ class Poll extends Model
     ];
 
     protected $casts = [
-        'anonymous' => 'boolean',
-        'closes_at' => 'datetime',
+        'anonymous'  => 'boolean',
+        'closes_at'  => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -66,7 +66,7 @@ class Poll extends Model
 
     public function hasVoted(?User $user): bool
     {
-        if (! $user) {
+        if ( ! $user) {
             return false;
         }
 
@@ -77,7 +77,7 @@ class Poll extends Model
 
     public function userVotes(?User $user): array
     {
-        if (! $user) {
+        if ( ! $user) {
             return [];
         }
 
@@ -92,14 +92,14 @@ class Poll extends Model
         $totalVotes = $this->total_votes;
 
         return $this->options->map(function ($option) use ($totalVotes) {
-            $voteCount = $option->votes()->count();
+            $voteCount  = $option->votes()->count();
             $percentage = $totalVotes > 0 ? ($voteCount / $totalVotes) * 100 : 0;
 
             return [
-                'id' => $option->id,
+                'id'          => $option->id,
                 'option_text' => $option->option_text,
-                'votes' => $voteCount,
-                'percentage' => round($percentage, 1),
+                'votes'       => $voteCount,
+                'percentage'  => round($percentage, 1),
             ];
         })->toArray();
     }

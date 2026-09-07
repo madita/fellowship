@@ -19,29 +19,30 @@ class SandboxPresenceEvent implements ShouldBroadcast
         public User $user,
         public string $action, // 'joined', 'left', 'cursor', 'selection'
         public ?array $data = null
-    ) {}
+    ) {
+    }
 
     public function broadcastOn(): array
     {
         return [
-            new PresenceChannel('sandbox.'.$this->sandbox->id),
+            new PresenceChannel('sandbox.' . $this->sandbox->id),
         ];
     }
 
     public function broadcastAs(): string
     {
-        return 'presence.'.$this->action;
+        return 'presence.' . $this->action;
     }
 
     public function broadcastWith(): array
     {
         return [
             'user' => [
-                'id' => $this->user->id,
+                'id'       => $this->user->id,
                 'username' => $this->user->username,
             ],
-            'action' => $this->action,
-            'data' => $this->data,
+            'action'    => $this->action,
+            'data'      => $this->data,
             'timestamp' => now()->toISOString(),
         ];
     }

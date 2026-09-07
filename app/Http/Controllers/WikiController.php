@@ -20,7 +20,9 @@ class WikiController extends Controller
      *
      * @return void
      */
-    public function __construct() {}
+    public function __construct()
+    {
+    }
 
     public function getUpdatableColumns($type)
     {
@@ -43,8 +45,8 @@ class WikiController extends Controller
     public function index(Request $request)
     {
         $perPage = 9;
-        $query = $request->get('q');
-        $user = Auth::user();
+        $query   = $request->get('q');
+        $user    = Auth::user();
         $isAdmin = $user && $user->isAdmin();
 
         $page = request()->input('page', 1); // Current page number, default to 1
@@ -52,12 +54,12 @@ class WikiController extends Controller
         $wikiQuery = Wiki::where('status', null);
 
         // Non-admins only see approved pages
-        if (! $isAdmin) {
+        if ( ! $isAdmin) {
             $wikiQuery->approved();
         }
 
         if ($query !== null && $query !== '') {
-            $wikiQuery->whereTranslationLike('title', '%'.$query.'%');
+            $wikiQuery->whereTranslationLike('title', '%' . $query . '%');
         }
 
         $wikidata = $wikiQuery->with('approval')->orderBy('created_at', 'desc')->paginate($perPage);
@@ -66,19 +68,19 @@ class WikiController extends Controller
 
         $wiki = $wikidata->getCollection()->map(function (Wiki $wiki) {
             $model = $wiki->wikiable_type;
-            $data = $model::where('id', $wiki->wikiable_id)->first();
+            $data  = $model::where('id', $wiki->wikiable_id)->first();
 
             $taxonomies = $data->getCategories('wiki')->unique();
-            $tags = $data->getCategories('tags')->unique();
+            $tags       = $data->getCategories('tags')->unique();
 
             return [
-                'title' => $wiki->title,
-                'slug' => $wiki->slug,
-                'type' => Str::lower(Str::afterLast($wiki->wikiable_type, '\\')),
-                'model' => $wiki->wikiable_type,
-                'data' => $data,
-                'taxonomies' => $taxonomies,
-                'tags' => $tags,
+                'title'       => $wiki->title,
+                'slug'        => $wiki->slug,
+                'type'        => Str::lower(Str::afterLast($wiki->wikiable_type, '\\')),
+                'model'       => $wiki->wikiable_type,
+                'data'        => $data,
+                'taxonomies'  => $taxonomies,
+                'tags'        => $tags,
                 'is_approved' => $wiki->isApproved(),
                 'approved_at' => $wiki->approval?->approved_at,
             ];
@@ -99,23 +101,23 @@ class WikiController extends Controller
         for ($cnt = $page; $cnt <= $page + 5; $cnt++) {
             $links[] = [
                 'active' => $cnt === $page ? true : false,
-                'label' => $cnt,
-                'url' => request()->url()."?page{$cnt}&q={$query}",
+                'label'  => $cnt,
+                'url'    => request()->url() . "?page{$cnt}&q={$query}",
             ];
         }
 
         return response()->json([
-            'data' => $paginator->values(),
-            'total' => $total,
-            'to' => $perPage * $page,
-            'per_page' => $perPage,
-            'current_page' => $page,
-            'first_page' => $paginator->url(1),
-            'last_page' => $paginator->lastPage(),
+            'data'          => $paginator->values(),
+            'total'         => $total,
+            'to'            => $perPage * $page,
+            'per_page'      => $perPage,
+            'current_page'  => $page,
+            'first_page'    => $paginator->url(1),
+            'last_page'     => $paginator->lastPage(),
             'next_page_url' => $paginator->nextPageUrl(),
             'prev_page_url' => $paginator->previousPageUrl(),
-            'path' => request()->url(),
-            'links' => $links,
+            'path'          => request()->url(),
+            'links'         => $links,
         ]);
 
         //        $wiki->total = $wikidata->total;
@@ -126,7 +128,7 @@ class WikiController extends Controller
 
     public function getPages()
     {
-        $user = Auth::user();
+        $user    = Auth::user();
         $isAdmin = $user && $user->isAdmin();
 
         $wikidata = $isAdmin ? Wiki::all() : Wiki::approved()->get();
@@ -140,11 +142,12 @@ class WikiController extends Controller
      * @param  $slug
      * @return JsonResponse|never
      */
-    public function view($wikiable, $id) {}
+    public function view($wikiable, $id)
+    {
+    }
 
     public function show($slug)
     {
-
         $wiki = Wiki::where('slug', '=', $slug)->first();
 
         if ($wiki === null) {
@@ -155,7 +158,7 @@ class WikiController extends Controller
 
         // Block unapproved pages for non-admins
         $currentUser = Auth::user();
-        $isAdmin = $currentUser && $currentUser->isAdmin();
+        $isAdmin     = $currentUser && $currentUser->isAdmin();
         if ($wiki->isPending() && ! $isAdmin) {
             abort(403, 'This page is pending approval.');
         }
@@ -175,8 +178,8 @@ class WikiController extends Controller
         foreach ($matches[0] as $key => $item) {
             // [[Target#anchor|Label]] — the link points at Target; the label
             // is only what gets displayed.
-            $target = explode('#', $matches[1][$key])[0];
-            $label = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : $target;
+            $target      = explode('#', $matches[1][$key])[0];
+            $label       = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : $target;
             $alternative = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : null;
 
             // title lives in page_translations — match via translation or slug,
@@ -190,56 +193,58 @@ class WikiController extends Controller
             $content = Str::replace($item, $replace, $content);
         }
         $data->content = $content;
-        $taxonomies = $data->getCategories('wiki')->unique();
-        $terms = $data->getCategories('tags')->unique();
-        $user = $data->user;
+        $taxonomies    = $data->getCategories('wiki')->unique();
+        $terms         = $data->getCategories('tags')->unique();
+        $user          = $data->user;
 
         $approval = $wiki->approval;
 
         return response()->json([
-            'page' => $data,
-            'user' => $user,
-            'wiki' => $wiki,
-            'parent' => $wiki->parent,
-            'children' => $wiki->children,
-            'terms' => $taxonomies,
-            'tags' => $terms,
+            'page'        => $data,
+            'user'        => $user,
+            'wiki'        => $wiki,
+            'parent'      => $wiki->parent,
+            'children'    => $wiki->children,
+            'terms'       => $taxonomies,
+            'tags'        => $terms,
             'is_approved' => $approval !== null,
             'approved_at' => $approval?->approved_at,
             'approved_by' => $approval?->approver?->name,
         ]);
     }
 
-    public function history($wikiable, $id) {}
+    public function history($wikiable, $id)
+    {
+    }
 
     public function store(Request $request)
     {
         // Authorization check
-        if (! auth()->check()) {
+        if ( ! auth()->check()) {
             abort(401, 'Authentication required to create wiki pages');
         }
 
         // Input validation
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'slug' => 'nullable|string|max:255|unique:wikiables,slug',
-            'parent_id' => 'nullable|array',
+            'title'      => 'required|string|max:255',
+            'content'    => 'required|string',
+            'slug'       => 'nullable|string|max:255|unique:wikiables,slug',
+            'parent_id'  => 'nullable|array',
             'categories' => 'nullable|array',
-            'terms' => 'nullable|array',
+            'terms'      => 'nullable|array',
         ]);
 
-        $parent = $request->get('parent_id');
+        $parent    = $request->get('parent_id');
         $parent_id = $parent['id'] ?? 0;
 
         // Sanitize content (strip potentially dangerous tags/attributes)
         $content = strip_tags($validated['content'], '<p><br><strong><em><u><a><ul><ol><li><h1><h2><h3><h4><h5><h6><blockquote><code><pre><img><table><thead><tbody><tr><td><th>');
 
         $page = auth()->user()->pages()->create([
-            'title' => $validated['title'],
-            'content' => $content,
+            'title'        => $validated['title'],
+            'content'      => $content,
             'sign_in_only' => 0,
-            'published' => 1]);
+            'published'    => 1]);
 
         if ($request->get('categories')) {
             //            $taxonomy = $request->get('taxonomy');
@@ -265,8 +270,8 @@ class WikiController extends Controller
             }
         }
         $wiki = new Wiki([
-            'title' => $page->title,
-            'slug' => $request->get('slug') ?: Str::slug($validated['title']),
+            'title'     => $page->title,
+            'slug'      => $request->get('slug') ?: Str::slug($validated['title']),
             'parent_id' => $parent_id,
         ]);
 
@@ -278,14 +283,14 @@ class WikiController extends Controller
     public function update(Request $request, $slug)
     {
         // Authorization check
-        if (! auth()->check()) {
+        if ( ! auth()->check()) {
             abort(401, 'Authentication required to update wiki pages');
         }
 
         $wiki = Wiki::where('slug', '=', $slug)->firstOrFail();
 
         $model = $wiki->wikiable_type;
-        $data = $model::where('id', $wiki->wikiable_id)->firstOrFail();
+        $data  = $model::where('id', $wiki->wikiable_id)->firstOrFail();
 
         // Check if user is the owner or admin
         if ($data->user_id !== auth()->id() && ! auth()->user()->isAdmin()) {
@@ -294,14 +299,14 @@ class WikiController extends Controller
 
         // Input validation
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'string',
-            'parent_id' => 'nullable|array',
+            'title'      => 'required|string|max:255',
+            'content'    => 'string',
+            'parent_id'  => 'nullable|array',
             'categories' => 'nullable|array',
-            'terms' => 'nullable|array',
+            'terms'      => 'nullable|array',
         ]);
 
-        $parent = $request->get('parent_id');
+        $parent    = $request->get('parent_id');
         $parent_id = $parent['id'] ?? 0;
 
         $wiki->update(['title' => $validated['title'], 'parent_id' => $parent_id]);
@@ -371,7 +376,7 @@ class WikiController extends Controller
     public function approve($slug): JsonResponse
     {
         $user = Auth::user();
-        if (! $user || ! $user->isAdmin()) {
+        if ( ! $user || ! $user->isAdmin()) {
             abort(403, 'Only admins can approve wiki pages.');
         }
 
@@ -392,7 +397,7 @@ class WikiController extends Controller
     public function unapprove($slug): JsonResponse
     {
         $user = Auth::user();
-        if (! $user || ! $user->isAdmin()) {
+        if ( ! $user || ! $user->isAdmin()) {
             abort(403, 'Only admins can unapprove wiki pages.');
         }
 
@@ -405,21 +410,21 @@ class WikiController extends Controller
     public function storeCategory(Request $request)
     {
         // Authorization check - only admins can create wiki categories
-        if (! auth()->check() || ! auth()->user()->isAdmin()) {
+        if ( ! auth()->check() || ! auth()->user()->isAdmin()) {
             abort(403, 'Only administrators can create wiki categories');
         }
 
         // Input validation
         $validated = $request->validate([
-            'term' => 'required|string|max:255',
+            'term'    => 'required|string|max:255',
             'content' => 'nullable|string',
-            'parent' => 'nullable|array',
+            'parent'  => 'nullable|array',
         ]);
 
         $term = Term::firstOrCreateByTitle($validated['term']);
 
         $taxonomy = Taxonomy::firstOrNew(['taxonomy' => 'wiki', 'term_id' => $term->id]);
-        $parent = $request->get('parent');
+        $parent   = $request->get('parent');
 
         if ($parent['parent_id']) {
             $taxonomy->parent_id = $parent['parent_id'];
@@ -436,28 +441,28 @@ class WikiController extends Controller
     public function updateCategory(Request $request, $slug)
     {
         // Authorization check - only admins can update wiki categories
-        if (! auth()->check() || ! auth()->user()->isAdmin()) {
+        if ( ! auth()->check() || ! auth()->user()->isAdmin()) {
             abort(403, 'Only administrators can update wiki categories');
         }
 
         // Input validation
         $validated = $request->validate([
             'category' => 'required|array',
-            'old' => 'required|array',
-            'parent' => 'nullable|array',
-            'term' => 'nullable|string',
-            'content' => 'nullable|string',
+            'old'      => 'required|array',
+            'parent'   => 'nullable|array',
+            'term'     => 'nullable|string',
+            'content'  => 'nullable|string',
         ]);
 
         $termNew = $validated['category'];
         $termOld = $validated['old'];
-        $parent = $request->get('parent');
-        $title = $request->get('term');
+        $parent  = $request->get('parent');
+        $title   = $request->get('term');
 
         $term = Term::find($termNew['term']['id']);
         if ($term->title != $termOld['term']['title']) {
             $term->title = $termNew['term']['title'];
-            $term->slug = Str::slug($termNew['term']['title']);
+            $term->slug  = Str::slug($termNew['term']['title']);
             $term->update();
         }
 
@@ -482,14 +487,14 @@ class WikiController extends Controller
     public function destroy($slug)
     {
         // Authorization check
-        if (! auth()->check()) {
+        if ( ! auth()->check()) {
             abort(401, 'Authentication required to delete wiki pages');
         }
 
         $wiki = Wiki::where('slug', '=', $slug)->firstOrFail();
 
         $model = $wiki->wikiable_type;
-        $data = $model::where('id', $wiki->wikiable_id)->firstOrFail();
+        $data  = $model::where('id', $wiki->wikiable_id)->firstOrFail();
 
         // Check if user is the owner or admin
         if ($data->user_id !== auth()->id() && ! auth()->user()->isAdmin()) {

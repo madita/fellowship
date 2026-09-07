@@ -14,19 +14,19 @@ class TicketFactory extends Factory
     public function definition(): array
     {
         return [
-            'ticket_type_id' => TicketType::factory(),
+            'ticket_type_id'     => TicketType::factory(),
             'created_by_user_id' => User::factory(),
-            'title' => $this->faker->sentence(4),
-            'description' => $this->faker->paragraph(),
-            'status' => 'open',
-            'priority' => $this->faker->randomElement(['low', 'normal', 'high', 'urgent']),
+            'title'              => $this->faker->sentence(4),
+            'description'        => $this->faker->paragraph(),
+            'status'             => 'open',
+            'priority'           => $this->faker->randomElement(['low', 'normal', 'high', 'urgent']),
         ];
     }
 
     public function resolved(): static
     {
         return $this->state(fn () => [
-            'status' => 'resolved',
+            'status'      => 'resolved',
             'resolved_at' => now(),
         ]);
     }
@@ -34,7 +34,7 @@ class TicketFactory extends Factory
     public function closed(): static
     {
         return $this->state(fn () => [
-            'status' => 'closed',
+            'status'    => 'closed',
             'closed_at' => now(),
         ]);
     }
@@ -43,7 +43,7 @@ class TicketFactory extends Factory
     {
         return $this->state(fn () => [
             'assigned_to_user_id' => $user->id,
-            'status' => 'in_progress',
+            'status'              => 'in_progress',
         ]);
     }
 

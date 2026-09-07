@@ -29,12 +29,12 @@ class CacheControl
      * Routes that should be cached with their tags.
      */
     protected array $cacheableRoutes = [
-        'api/wiki/*' => 'wiki',
-        'api/pages/*' => 'pages',
-        'api/posts/*' => 'posts',
-        'api/homepage/*' => 'widgets',
+        'api/wiki/*'          => 'wiki',
+        'api/pages/*'         => 'pages',
+        'api/posts/*'         => 'posts',
+        'api/homepage/*'      => 'widgets',
         'api/settings/public' => 'settings',
-        'api/footer/*' => 'settings',
+        'api/footer/*'        => 'settings',
     ];
 
     /**
@@ -43,14 +43,14 @@ class CacheControl
     public function handle(Request $request, Closure $next, ?string $ttl = null): Response
     {
         // Check if OpenSSL is available (required for Laravel's encryption)
-        if (! function_exists('openssl_cipher_iv_length')) {
+        if ( ! function_exists('openssl_cipher_iv_length')) {
             Log::warning('CacheControl middleware skipped: OpenSSL extension is not available');
 
             return $next($request)->header('X-Cache-Status', 'openssl-missing');
         }
 
         // Only cache GET and HEAD requests
-        if (! in_array($request->method(), ['GET', 'HEAD'])) {
+        if ( ! in_array($request->method(), ['GET', 'HEAD'])) {
             $response = $this->handleMutatingRequest($request, $next);
 
             return $response->header('X-Cache-Middleware', 'active');
@@ -58,7 +58,7 @@ class CacheControl
 
         try {
             // Check if caching is enabled
-            if (! CacheService::isEnabled()) {
+            if ( ! CacheService::isEnabled()) {
                 $response = $next($request);
 
                 return $this->addNoCacheHeaders($response)
@@ -88,11 +88,11 @@ class CacheControl
             return $this->handleCachedRequest($request, $next, $ttl);
         } catch (\Exception $e) {
             // If caching fails, just return the response without caching
-            Log::warning('CacheControl middleware error: '.$e->getMessage());
+            Log::warning('CacheControl middleware error: ' . $e->getMessage());
             $response = $next($request);
 
             return $response
-                ->header('X-Cache-Status', 'error: '.$e->getMessage())
+                ->header('X-Cache-Status', 'error: ' . $e->getMessage())
                 ->header('X-Cache-Middleware', 'active');
         }
     }
@@ -103,7 +103,7 @@ class CacheControl
     protected function handleCachedRequest(Request $request, Closure $next, ?string $ttl): Response
     {
         $cacheKey = $this->getCacheKey($request);
-        $tags = $this->getTagsForRoute($request);
+        $tags     = $this->getTagsForRoute($request);
         $lifetime = $ttl ? (int) $ttl * 60 : CacheService::getLifetime();
 
         // Try to get from cache
@@ -129,7 +129,7 @@ class CacheControl
         if ($response->isSuccessful()) {
             $cacheData = [
                 'content' => $response->getContent(),
-                'status' => $response->getStatusCode(),
+                'status'  => $response->getStatusCode(),
                 'headers' => $this->getCacheableHeaders($response),
             ];
 
@@ -154,7 +154,7 @@ class CacheControl
         // If request was successful, clear relevant cache
         if ($response->isSuccessful()) {
             $tags = $this->getTagsForRoute($request);
-            if (! empty($tags)) {
+            if ( ! empty($tags)) {
                 CacheService::flushTags($tags);
             }
         }
@@ -183,10 +183,10 @@ class CacheControl
      */
     protected function getCacheKey(Request $request): string
     {
-        $url = $request->fullUrl();
+        $url    = $request->fullUrl();
         $locale = app()->getLocale();
 
-        return 'http_cache:'.md5($url.':'.$locale);
+        return 'http_cache:' . md5($url . ':' . $locale);
     }
 
     /**
@@ -238,7 +238,7 @@ class CacheControl
 
         $response->headers->set('Cache-Control', "public, max-age={$lifetime}, s-maxage={$lifetime}");
         $response->headers->set('Pragma', 'cache');
-        $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + $lifetime).' GMT');
+        $response->headers->set('Expires', gmdate('D, d M Y H:i:s', time() + $lifetime) . ' GMT');
 
         return $response;
     }

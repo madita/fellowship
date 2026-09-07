@@ -26,7 +26,7 @@ class SandboxCommentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canView($user)) {
+        if ( ! $sandbox->canView($user)) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -44,18 +44,18 @@ class SandboxCommentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canView($user)) {
+        if ( ! $sandbox->canView($user)) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         $validated = $request->validate([
-            'quote' => 'nullable|string|max:5000',
+            'quote'   => 'nullable|string|max:5000',
             'content' => 'required|string|max:5000',
         ]);
 
         $thread = $sandbox->threads()->create([
             'user_id' => $user->id,
-            'quote' => $validated['quote'] ?? null,
+            'quote'   => $validated['quote'] ?? null,
         ]);
 
         $thread->comments()->create([
@@ -68,8 +68,8 @@ class SandboxCommentController extends Controller
         // Notify sandbox owner + collaborators (except the commenter)
         $this->notifySandboxParticipants($sandbox, $user, 'comment', [
             'thread_id' => $thread->id,
-            'quote' => Str::limit($validated['quote'] ?? '', 80),
-            'excerpt' => Str::limit($validated['content'], 100),
+            'quote'     => Str::limit($validated['quote'] ?? '', 80),
+            'excerpt'   => Str::limit($validated['content'], 100),
         ]);
 
         return response()->json(['thread' => $thread], 201);
@@ -82,7 +82,7 @@ class SandboxCommentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canView($user)) {
+        if ( ! $sandbox->canView($user)) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -122,7 +122,7 @@ class SandboxCommentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canEdit($user) && $thread->user_id !== $user->id) {
+        if ( ! $sandbox->canEdit($user) && $thread->user_id !== $user->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -142,7 +142,7 @@ class SandboxCommentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canView($user)) {
+        if ( ! $sandbox->canView($user)) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -164,7 +164,7 @@ class SandboxCommentController extends Controller
         // Notify thread creator + other commenters (except the replier)
         $this->notifyThreadParticipants($sandbox, $thread, $user, [
             'thread_id' => $thread->id,
-            'excerpt' => Str::limit($validated['content'], 100),
+            'excerpt'   => Str::limit($validated['content'], 100),
         ]);
 
         return response()->json(['comment' => $comment], 201);
@@ -202,7 +202,7 @@ class SandboxCommentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$sandbox->canEdit($user) && $comment->user_id !== $user->id) {
+        if ( ! $sandbox->canEdit($user) && $comment->user_id !== $user->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -226,12 +226,12 @@ class SandboxCommentController extends Controller
             ->toArray();
 
         // Include sandbox owner
-        if (!in_array($sandbox->user_id, $recipientIds)) {
+        if ( ! in_array($sandbox->user_id, $recipientIds)) {
             $recipientIds[] = $sandbox->user_id;
         }
 
         // Exclude the actor
-        $recipientIds = array_filter($recipientIds, fn($id) => $id !== $actor->id);
+        $recipientIds = array_filter($recipientIds, fn ($id) => $id !== $actor->id);
 
         $recipients = User::whereIn('id', $recipientIds)->get();
         foreach ($recipients as $recipient) {
@@ -249,7 +249,7 @@ class SandboxCommentController extends Controller
             ->pluck('user_id')
             ->push($thread->user_id)
             ->unique()
-            ->reject(fn($id) => $id === $actor->id)
+            ->reject(fn ($id) => $id === $actor->id)
             ->values()
             ->toArray();
 

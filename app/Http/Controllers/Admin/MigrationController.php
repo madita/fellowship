@@ -7,14 +7,17 @@ use App\Jobs\Migrations\GenericImportJob;
 use App\Jobs\Migrations\MigrateLinkGalleryJob;
 use App\Jobs\Migrations\MigrateWikiLinkingJob;
 use App\Jobs\Migrations\MigrateWikiTermsLinkingJob;
+use App\Models\Forum\ForumPost;
+use App\Models\Forum\ForumThread;
 use App\Models\MigrationAttribution;
 use App\Models\MigrationIdMap;
 use App\Models\MigrationLegacyUser;
 use App\Models\MigrationLog;
 use App\Models\MigrationMapping;
 use App\Models\MigrationSource;
+use App\Models\Tag\Taxonomy;
+use App\Models\Tag\Term;
 use App\Models\Ticket\Ticket;
-use App\Models\Ticket\TicketType;
 use App\Models\User;
 use App\Services\Migration\MigrationTargets;
 use App\Services\Migration\RowMapper;
@@ -26,6 +29,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class MigrationController extends Controller
 {
@@ -102,11 +106,11 @@ class MigrationController extends Controller
         ]);
 
         $requestedMigrations = $request->input('migrations');
-        $batchId = Str::uuid()->toString();
+        $batchId             = Str::uuid()->toString();
 
         // Validate all requested migrations exist
         foreach ($requestedMigrations as $key) {
-            if (!array_key_exists($key, $this->migrations)) {
+            if ( ! array_key_exists($key, $this->migrations)) {
                 return response()->json([
                     'error' => __('messages.migrations.unknown', ['key' => $key]),
                 ], 400);
@@ -128,7 +132,7 @@ class MigrationController extends Controller
 
             // Dispatch job with delay to ensure sequential processing
             $jobClass = $migration['job'];
-            $job = new $jobClass($batchId, $log->id);
+            $job      = new $jobClass($batchId, $log->id);
 
             // Add delay for sequential processing (each job starts 1 second after previous)
             dispatch($job)->delay(now()->addSeconds($index));
@@ -171,11 +175,11 @@ class MigrationController extends Controller
         });
 
         // Calculate overall status
-        $pending = $logs->where('status', 'pending')->count();
-        $running = $logs->where('status', 'running')->count();
+        $pending   = $logs->where('status', 'pending')->count();
+        $running   = $logs->where('status', 'running')->count();
         $completed = $logs->where('status', 'completed')->count();
-        $failed = $logs->where('status', 'failed')->count();
-        $total = $logs->count();
+        $failed    = $logs->where('status', 'failed')->count();
+        $total     = $logs->count();
 
         $overallStatus = 'pending';
         if ($running > 0) {
@@ -207,7 +211,7 @@ class MigrationController extends Controller
             ->where('migration_key', $migrationKey)
             ->first();
 
-        if (!$log) {
+        if ( ! $log) {
             return response()->json(['error' => __('messages.migrations.log_not_found')], 404);
         }
 
@@ -291,24 +295,6 @@ class MigrationController extends Controller
         ]);
     }
 
-    // ------------------------------------------------------------------
-    // Generic migration tool: sources, schema introspection, mappings
-    // ------------------------------------------------------------------
-
-    private function sourceRules(bool $creating = true): array
-    {
-        return [
-            'name' => ($creating ? 'required' : 'sometimes').'|string|max:255',
-            'driver' => [$creating ? 'required' : 'sometimes', Rule::in(MigrationSource::DRIVERS)],
-            'host' => 'nullable|string|max:255',
-            'port' => 'nullable|integer|min:1|max:65535',
-            'database' => ($creating ? 'required' : 'sometimes').'|string|max:1024',
-            'username' => 'nullable|string|max:255',
-            'password' => 'nullable|string|max:1024',
-            'charset' => 'nullable|string|max:64',
-        ];
-    }
-
     public function sources(): JsonResponse
     {
         return response()->json(
@@ -350,12 +336,12 @@ class MigrationController extends Controller
             $tables = $this->tableNames($source);
 
             return response()->json([
-                'ok' => true,
+                'ok'     => true,
                 'tables' => count($tables),
             ]);
         } catch (\Throwable $e) {
             return response()->json([
-                'ok' => false,
+                'ok'    => false,
                 'error' => $e->getMessage(),
             ], 422);
         }
@@ -375,12 +361,12 @@ class MigrationController extends Controller
         try {
             // The table name ends up in identifier position — only accept
             // names that actually exist in the source schema.
-            if (!in_array($table, $this->tableNames($source), true)) {
+            if ( ! in_array($table, $this->tableNames($source), true)) {
                 return response()->json(['error' => 'Unknown table'], 404);
             }
 
             $connection = $source->connectionName();
-            $columns = collect(Schema::connection($connection)->getColumns($table))
+            $columns    = collect(Schema::connection($connection)->getColumns($table))
                 ->map(fn ($column) => [
                     'name' => $column['name'],
                     'type' => $column['type_name'] ?? $column['type'] ?? null,
@@ -390,8 +376,8 @@ class MigrationController extends Controller
             $sample = (array) DB::connection($connection)->table($table)->first();
 
             return response()->json([
-                'columns' => $columns,
-                'sample' => $sample,
+                'columns'  => $columns,
+                'sample'   => $sample,
                 'rowCount' => DB::connection($connection)->table($table)->count(),
             ]);
         } catch (\Throwable $e) {
@@ -407,42 +393,6 @@ class MigrationController extends Controller
                 ->values(),
             'transforms' => RowMapper::TRANSFORMS,
         ]);
-    }
-
-    private function mappingRules(bool $creating = true): array
-    {
-        $required = $creating ? 'required' : 'sometimes';
-
-        return [
-            'migration_source_id' => [$required, 'integer', Rule::exists('migration_sources', 'id')],
-            'name' => "{$required}|string|max:255",
-            'target' => [$required, Rule::in(array_keys(MigrationTargets::all()))],
-            'source_table' => "{$required}|string|max:255",
-            'field_map' => "{$required}|array",
-            'field_map.*' => 'array',
-            'field_map.*.source' => 'nullable|string|max:255',
-            'field_map.*.transform' => ['nullable', Rule::in(RowMapper::TRANSFORMS)],
-            'field_map.*.format' => 'nullable|string|max:64',
-            'field_map.*.template' => 'nullable|string|max:1024',
-            'options' => 'nullable|array',
-            'options.locale' => 'nullable|string|max:10|regex:/^[a-z]{2}(-[A-Za-z]{2,4})?$/',
-            'options.joins' => 'nullable|array',
-            'options.joins.*' => 'array',
-            'options.joins.*.table' => 'required|string|max:255|regex:/^[A-Za-z0-9_]+$/',
-            'options.joins.*.type' => ['nullable', Rule::in(SourceQuery::JOIN_TYPES)],
-            'options.joins.*.first' => ['required', 'string', 'max:255', 'regex:'.SourceQuery::IDENTIFIER_PATTERN],
-            'options.joins.*.operator' => ['nullable', Rule::in(SourceQuery::OPERATORS)],
-            'options.joins.*.second' => ['required', 'string', 'max:255', 'regex:'.SourceQuery::IDENTIFIER_PATTERN],
-            'options.wheres' => 'nullable|array',
-            'options.wheres.*' => 'array',
-            'options.wheres.*.column' => ['required', 'string', 'max:255', 'regex:'.SourceQuery::IDENTIFIER_PATTERN],
-            'options.wheres.*.operator' => ['nullable', Rule::in(SourceQuery::OPERATORS)],
-            'options.wheres.*.value' => 'nullable|string|max:1024',
-            'options.wheres.*.compare' => ['nullable', Rule::in(['value', 'column'])],
-            'options.order_by' => 'nullable|array',
-            'options.order_by.column' => ['required_with:options.order_by', 'string', 'max:255', 'regex:'.SourceQuery::IDENTIFIER_PATTERN],
-            'options.order_by.direction' => ['nullable', Rule::in(['asc', 'desc'])],
-        ];
     }
 
     public function mappings(): JsonResponse
@@ -482,12 +432,12 @@ class MigrationController extends Controller
 
         return response()->json([
             'mappings' => $mappings->map(fn ($mapping) => array_filter([
-                'source' => $mapping->source?->name,
-                'name' => $mapping->name,
-                'target' => $mapping->target,
+                'source'       => $mapping->source?->name,
+                'name'         => $mapping->name,
+                'target'       => $mapping->target,
                 'source_table' => $mapping->source_table,
-                'field_map' => $mapping->field_map,
-                'options' => $mapping->options,
+                'field_map'    => $mapping->field_map,
+                'options'      => $mapping->options,
             ], fn ($value) => $value !== null)),
         ]);
     }
@@ -500,23 +450,24 @@ class MigrationController extends Controller
     public function importMappings(Request $request): JsonResponse
     {
         $request->validate([
-            'mappings' => 'required|array|min:1',
-            'mappings.*' => 'array',
+            'mappings'          => 'required|array|min:1',
+            'mappings.*'        => 'array',
             'mappings.*.source' => 'nullable|string|max:255',
         ]);
 
         $created = 0;
         $updated = 0;
-        $errors = [];
+        $errors  = [];
 
         foreach ($request->input('mappings') as $index => $item) {
             $label = is_array($item) ? ($item['name'] ?? "#{$index}") : "#{$index}";
 
             // Resolve the source by name unless an id is given directly.
-            if (empty($item['migration_source_id']) && !empty($item['source'])) {
+            if (empty($item['migration_source_id']) && ! empty($item['source'])) {
                 $source = MigrationSource::where('name', $item['source'])->first();
-                if (!$source) {
+                if ( ! $source) {
                     $errors[] = "{$label}: unknown source \"{$item['source']}\" — create it on the Sources tab first";
+
                     continue;
                 }
                 $item['migration_source_id'] = $source->id;
@@ -526,6 +477,7 @@ class MigrationController extends Controller
             $validator = Validator::make($item, $this->mappingRules());
             if ($validator->fails()) {
                 $errors[] = "{$label}: " . implode(' ', $validator->errors()->all());
+
                 continue;
             }
             $data = $validator->validated();
@@ -545,7 +497,7 @@ class MigrationController extends Controller
         return response()->json([
             'created' => $created,
             'updated' => $updated,
-            'errors' => $errors,
+            'errors'  => $errors,
         ], $failedCompletely ? 422 : 200);
     }
 
@@ -558,15 +510,15 @@ class MigrationController extends Controller
         try {
             $available = $this->tableNames($mapping->source);
             foreach (SourceQuery::tables($mapping) as $table) {
-                if (!in_array($table, $available, true)) {
+                if ( ! in_array($table, $available, true)) {
                     return response()->json(['error' => "Source table \"{$table}\" no longer exists"], 422);
                 }
             }
 
             $mapper = new RowMapper($mapping->field_map);
-            $query = SourceQuery::build($mapping);
+            $query  = SourceQuery::build($mapping);
 
-            $rows = (clone $query)->limit(10)->get();
+            $rows    = (clone $query)->limit(10)->get();
             $preview = $rows->map(function ($row) use ($mapper, $mapping) {
                 $mapped = $mapper->map((array) $row);
 
@@ -578,7 +530,7 @@ class MigrationController extends Controller
 
             return response()->json([
                 'total' => (clone $query)->count(),
-                'rows' => $preview,
+                'rows'  => $preview,
             ]);
         } catch (\Throwable $e) {
             return response()->json(['error' => $e->getMessage()], 422);
@@ -594,11 +546,11 @@ class MigrationController extends Controller
         $batchId = Str::uuid()->toString();
 
         $log = MigrationLog::create([
-            'batch_id' => $batchId,
-            'migration_key' => GenericImportJob::migrationKeyFor($mapping->id),
+            'batch_id'       => $batchId,
+            'migration_key'  => GenericImportJob::migrationKeyFor($mapping->id),
             'migration_name' => $mapping->name,
-            'status' => 'pending',
-            'logs' => [['type' => 'info', 'message' => __('messages.migrations.queued'), 'timestamp' => now()->toIso8601String()]],
+            'status'         => 'pending',
+            'logs'           => [['type' => 'info', 'message' => __('messages.migrations.queued'), 'timestamp' => now()->toIso8601String()]],
         ]);
 
         dispatch(new GenericImportJob($batchId, $log->id, $mapping->id));
@@ -606,7 +558,7 @@ class MigrationController extends Controller
         return response()->json([
             'message' => __('messages.migrations.queued_all'),
             'batchId' => $batchId,
-            'count' => 1,
+            'count'   => 1,
         ]);
     }
 
@@ -649,24 +601,24 @@ class MigrationController extends Controller
         )->get(['id', 'username', 'email'])->keyBy(fn ($user) => mb_strtolower($user->email));
 
         $legacyUsers = $rows->map(function ($types) use ($assignedUsers, $claims, $directory, $registeredByEmail) {
-            $legacySource = $types->first()->legacy_source;
+            $legacySource   = $types->first()->legacy_source;
             $legacyUsername = $types->first()->legacy_username;
-            $assignedId = $types->pluck('assigned_user_id')->filter()->first();
-            $entry = $directory->get($legacySource . '|' . $legacyUsername);
-            $suggested = $entry?->email ? $registeredByEmail->get(mb_strtolower($entry->email)) : null;
-            $claim = $this->matchClaim($claims, $legacySource, $legacyUsername, $entry);
+            $assignedId     = $types->pluck('assigned_user_id')->filter()->first();
+            $entry          = $directory->get($legacySource . '|' . $legacyUsername);
+            $suggested      = $entry?->email ? $registeredByEmail->get(mb_strtolower($entry->email)) : null;
+            $claim          = $this->matchClaim($claims, $legacySource, $legacyUsername, $entry);
 
             return [
-                'legacy_source' => $legacySource,
+                'legacy_source'   => $legacySource,
                 'legacy_username' => $legacyUsername,
-                'email' => $entry?->email,
-                'legacy_user_id' => $entry?->legacy_user_id,
-                'items' => $types->sum('items'),
-                'types' => $types->mapWithKeys(fn ($row) => [class_basename($row->attributable_type) => (int) $row->items]),
-                'assigned_user' => $assignedId ? $assignedUsers->get($assignedId)?->only(['id', 'username']) : ($entry?->assignedUser?->only(['id', 'username'])),
-                'assigned_at' => $types->pluck('assigned_at')->filter()->first(),
-                'suggested_user' => $suggested?->only(['id', 'username']),
-                'claim' => $this->claimPayload($claim, $entry),
+                'email'           => $entry?->email,
+                'legacy_user_id'  => $entry?->legacy_user_id,
+                'items'           => $types->sum('items'),
+                'types'           => $types->mapWithKeys(fn ($row) => [class_basename($row->attributable_type) => (int) $row->items]),
+                'assigned_user'   => $assignedId ? $assignedUsers->get($assignedId)?->only(['id', 'username']) : ($entry?->assignedUser?->only(['id', 'username'])),
+                'assigned_at'     => $types->pluck('assigned_at')->filter()->first(),
+                'suggested_user'  => $suggested?->only(['id', 'username']),
+                'claim'           => $this->claimPayload($claim, $entry),
             ];
         });
 
@@ -677,19 +629,19 @@ class MigrationController extends Controller
         // keys, not the (source|username) collection keys used here.
         $directoryOnly = $directory->toBase()->except($covered->all())->map(function ($entry) use ($registeredByEmail, $claims) {
             $suggested = $entry->email ? $registeredByEmail->get(mb_strtolower($entry->email)) : null;
-            $claim = $this->matchClaim($claims, $entry->legacy_source, $entry->username, $entry);
+            $claim     = $this->matchClaim($claims, $entry->legacy_source, $entry->username, $entry);
 
             return [
-                'legacy_source' => $entry->legacy_source,
+                'legacy_source'   => $entry->legacy_source,
                 'legacy_username' => $entry->username,
-                'email' => $entry->email,
-                'legacy_user_id' => $entry->legacy_user_id,
-                'items' => 0,
-                'types' => (object) [],
-                'assigned_user' => $entry->assignedUser?->only(['id', 'username']),
-                'assigned_at' => $entry->assigned_user_id ? $entry->updated_at : null,
-                'suggested_user' => $suggested?->only(['id', 'username']),
-                'claim' => $this->claimPayload($claim, $entry),
+                'email'           => $entry->email,
+                'legacy_user_id'  => $entry->legacy_user_id,
+                'items'           => 0,
+                'types'           => (object) [],
+                'assigned_user'   => $entry->assignedUser?->only(['id', 'username']),
+                'assigned_at'     => $entry->assigned_user_id ? $entry->updated_at : null,
+                'suggested_user'  => $suggested?->only(['id', 'username']),
+                'claim'           => $this->claimPayload($claim, $entry),
             ];
         })->values();
 
@@ -702,64 +654,6 @@ class MigrationController extends Controller
     }
 
     /**
-     * A claim matches an identity by claimed username — or, when the
-     * claimant provided the old e-mail / member id, by those matching the
-     * directory entry (covers misremembered usernames).
-     */
-    private function matchClaim($claims, string $legacySource, string $legacyUsername, ?MigrationLegacyUser $entry): ?Ticket
-    {
-        return $claims->first(function ($ticket) use ($legacySource, $legacyUsername, $entry) {
-            $meta = $ticket->metadata ?? [];
-            $claimSource = $meta['legacy_source'] ?? null;
-            if ($claimSource !== null && $claimSource !== $legacySource) {
-                return false;
-            }
-
-            if (mb_strtolower($meta['legacy_username'] ?? '') === mb_strtolower($legacyUsername)) {
-                return true;
-            }
-
-            if ($entry?->email && !empty($meta['legacy_email'])
-                && mb_strtolower($meta['legacy_email']) === mb_strtolower($entry->email)) {
-                return true;
-            }
-
-            return $entry?->legacy_user_id && !empty($meta['legacy_user_id'])
-                && (string) $meta['legacy_user_id'] === (string) $entry->legacy_user_id;
-        });
-    }
-
-    /**
-     * Claim info for the listing, incl. how well the provided proof
-     * matches the legacy-user directory.
-     */
-    private function claimPayload(?Ticket $claim, ?MigrationLegacyUser $entry): ?array
-    {
-        if (!$claim) {
-            return null;
-        }
-
-        $meta = $claim->metadata ?? [];
-        $claimEmail = $meta['legacy_email'] ?? null;
-
-        return [
-            'ticket_id' => $claim->id,
-            'user' => $claim->creator?->only(['id', 'username']),
-            'legacy_email' => $claimEmail,
-            'legacy_user_id' => $meta['legacy_user_id'] ?? null,
-            // The claimant's registered e-mail OR the provided legacy e-mail
-            // matches the directory entry.
-            'email_verified' => (bool) ($entry?->email && (
-                ($claim->creator && mb_strtolower($claim->creator->email) === mb_strtolower($entry->email))
-                || ($claimEmail && mb_strtolower($claimEmail) === mb_strtolower($entry->email))
-            )),
-            // The provided member id matches the directory entry.
-            'id_verified' => (bool) ($entry?->legacy_user_id && !empty($meta['legacy_user_id'])
-                && (string) $meta['legacy_user_id'] === (string) $entry->legacy_user_id),
-        ];
-    }
-
-    /**
      * Assign a legacy username to a registered user: every attributed
      * record's ownership moves to that user, and an open claim ticket for
      * it is resolved.
@@ -768,14 +662,14 @@ class MigrationController extends Controller
     {
         $data = $request->validate([
             'legacy_username' => 'required|string|max:255',
-            'legacy_source' => 'required|string|max:255',
-            'user' => 'required|string|max:255',
+            'legacy_source'   => 'required|string|max:255',
+            'user'            => 'required|string|max:255',
         ]);
 
         $user = User::where('username', $data['user'])
             ->orWhere('email', $data['user'])
             ->first();
-        if (!$user) {
+        if ( ! $user) {
             return response()->json(['message' => __('messages.migrations.user_not_found', ['user' => $data['user']])], 422);
         }
 
@@ -787,7 +681,7 @@ class MigrationController extends Controller
         $directoryEntry = MigrationLegacyUser::where('legacy_source', $data['legacy_source'])
             ->where('username', $data['legacy_username'])
             ->first();
-        if ($attributions->isEmpty() && !$directoryEntry) {
+        if ($attributions->isEmpty() && ! $directoryEntry) {
             return response()->json(['message' => __('messages.migrations.legacy_user_not_found', ['name' => $data['legacy_username']])], 404);
         }
 
@@ -797,7 +691,7 @@ class MigrationController extends Controller
             foreach ($attributions->groupBy('attributable_type') as $type => $group) {
                 $ids = $group->pluck('attributable_id')->all();
 
-                if ($type === \Spatie\MediaLibrary\MediaCollections\Models\Media::class) {
+                if ($type === Media::class) {
                     // Media has no user_id column — record the owner as a
                     // custom property instead.
                     foreach ($type::whereIn('id', $ids)->cursor() as $media) {
@@ -805,12 +699,12 @@ class MigrationController extends Controller
                         $media->save();
                     }
                 } else {
-                    $model = new $type();
+                    $model = new $type;
                     $type::whereIn($model->getKeyName(), $ids)->update(['user_id' => $user->id]);
 
                     // Forum content displayed the legacy author's name as a
                     // placeholder — the real account takes over now.
-                    if (in_array($type, [\App\Models\Forum\ForumThread::class, \App\Models\Forum\ForumPost::class], true)) {
+                    if (in_array($type, [ForumThread::class, ForumPost::class], true)) {
                         foreach ($type::whereIn($model->getKeyName(), $ids)->whereNotNull('meta')->cursor() as $record) {
                             $meta = $record->meta;
                             unset($meta['legacy_author']);
@@ -834,7 +728,7 @@ class MigrationController extends Controller
             $stillUnassigned = MigrationAttribution::where('legacy_username', $data['legacy_username'])
                 ->whereNull('assigned_user_id')
                 ->exists();
-            if (!$stillUnassigned) {
+            if ( ! $stillUnassigned) {
                 Ticket::whereHas('ticketType', fn ($q) => $q->where('slug', 'legacy-account-claim'))
                     ->whereIn('status', ['open', 'in_progress', 'pending'])
                     ->get()
@@ -844,7 +738,7 @@ class MigrationController extends Controller
         });
 
         return response()->json([
-            'message' => __('messages.migrations.legacy_assigned', ['name' => $data['legacy_username'], 'user' => $user->username]),
+            'message'    => __('messages.migrations.legacy_assigned', ['name' => $data['legacy_username'], 'user' => $user->username]),
             'reassigned' => $reassigned,
         ]);
     }
@@ -857,38 +751,38 @@ class MigrationController extends Controller
     public function archiveForumImport(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'category' => 'required|string|max:255',
+            'category'     => 'required|string|max:255',
             'lock_threads' => 'nullable|boolean',
         ]);
 
         // Everything the forum import created, via the id maps.
         $categoryIds = MigrationIdMap::where('context', 'forum_category')
-            ->where('mappable_type', \App\Models\Tag\Taxonomy::class)
+            ->where('mappable_type', Taxonomy::class)
             ->pluck('mappable_id');
         $threadIds = MigrationIdMap::where('context', 'forum_topic')
-            ->where('mappable_type', \App\Models\Forum\ForumThread::class)
+            ->where('mappable_type', ForumThread::class)
             ->pluck('mappable_id');
 
         // Categories created implicitly by thread imports (no category
         // mapping) count too.
-        $threadCategoryIds = \App\Models\Forum\ForumThread::whereIn('id', $threadIds)->distinct()->pluck('taxonomy_id');
-        $allCategoryIds = $categoryIds->concat($threadCategoryIds)->unique()->values();
+        $threadCategoryIds = ForumThread::whereIn('id', $threadIds)->distinct()->pluck('taxonomy_id');
+        $allCategoryIds    = $categoryIds->concat($threadCategoryIds)->unique()->values();
 
         if ($allCategoryIds->isEmpty()) {
             return response()->json(['message' => __('messages.migrations.forum_archive_nothing')], 404);
         }
 
-        $archiveTerm = \App\Models\Tag\Term::firstOrCreateByTitle(trim($data['category']));
-        $archive = \App\Models\Tag\Taxonomy::firstOrCreate(
+        $archiveTerm = Term::firstOrCreateByTitle(trim($data['category']));
+        $archive     = Taxonomy::firstOrCreate(
             ['term_id' => $archiveTerm->id, 'taxonomy' => 'forum_cat'],
             ['sort' => 0, 'visible' => true, 'searchable' => true, 'properties' => []]
         );
 
-        $moved = 0;
+        $moved  = 0;
         $locked = 0;
 
         DB::transaction(function () use ($allCategoryIds, $archive, $threadIds, $data, &$moved, &$locked) {
-            $categories = \App\Models\Tag\Taxonomy::whereIn('id', $allCategoryIds)
+            $categories = Taxonomy::whereIn('id', $allCategoryIds)
                 ->where('id', '!=', $archive->id)
                 ->get();
             $idSet = $categories->pluck('id')->all();
@@ -898,7 +792,7 @@ class MigrationController extends Controller
                 // categories (parent not imported itself) move under the
                 // archive.
                 $parentIsImported = $category->parent_id && in_array($category->parent_id, $idSet, true);
-                if (!$parentIsImported && $category->parent_id !== $archive->id) {
+                if ( ! $parentIsImported && $category->parent_id !== $archive->id) {
                     $category->parent_id = $archive->id;
                     $category->save();
                     $moved++;
@@ -906,17 +800,129 @@ class MigrationController extends Controller
             }
 
             if ($data['lock_threads'] ?? false) {
-                $locked = \App\Models\Forum\ForumThread::whereIn('id', $threadIds)
+                $locked = ForumThread::whereIn('id', $threadIds)
                     ->where('is_locked', false)
                     ->update(['is_locked' => true]);
             }
         });
 
         return response()->json([
-            'message' => __('messages.migrations.forum_archived', ['category' => $archiveTerm->title]),
+            'message'          => __('messages.migrations.forum_archived', ['category' => $archiveTerm->title]),
             'moved_categories' => $moved,
-            'locked_threads' => $locked,
+            'locked_threads'   => $locked,
         ]);
+    }
+
+    // ------------------------------------------------------------------
+    // Generic migration tool: sources, schema introspection, mappings
+    // ------------------------------------------------------------------
+
+    private function sourceRules(bool $creating = true): array
+    {
+        return [
+            'name'     => ($creating ? 'required' : 'sometimes') . '|string|max:255',
+            'driver'   => [$creating ? 'required' : 'sometimes', Rule::in(MigrationSource::DRIVERS)],
+            'host'     => 'nullable|string|max:255',
+            'port'     => 'nullable|integer|min:1|max:65535',
+            'database' => ($creating ? 'required' : 'sometimes') . '|string|max:1024',
+            'username' => 'nullable|string|max:255',
+            'password' => 'nullable|string|max:1024',
+            'charset'  => 'nullable|string|max:64',
+        ];
+    }
+
+    private function mappingRules(bool $creating = true): array
+    {
+        $required = $creating ? 'required' : 'sometimes';
+
+        return [
+            'migration_source_id'        => [$required, 'integer', Rule::exists('migration_sources', 'id')],
+            'name'                       => "{$required}|string|max:255",
+            'target'                     => [$required, Rule::in(array_keys(MigrationTargets::all()))],
+            'source_table'               => "{$required}|string|max:255",
+            'field_map'                  => "{$required}|array",
+            'field_map.*'                => 'array',
+            'field_map.*.source'         => 'nullable|string|max:255',
+            'field_map.*.transform'      => ['nullable', Rule::in(RowMapper::TRANSFORMS)],
+            'field_map.*.format'         => 'nullable|string|max:64',
+            'field_map.*.template'       => 'nullable|string|max:1024',
+            'options'                    => 'nullable|array',
+            'options.locale'             => 'nullable|string|max:10|regex:/^[a-z]{2}(-[A-Za-z]{2,4})?$/',
+            'options.joins'              => 'nullable|array',
+            'options.joins.*'            => 'array',
+            'options.joins.*.table'      => 'required|string|max:255|regex:/^[A-Za-z0-9_]+$/',
+            'options.joins.*.type'       => ['nullable', Rule::in(SourceQuery::JOIN_TYPES)],
+            'options.joins.*.first'      => ['required', 'string', 'max:255', 'regex:' . SourceQuery::IDENTIFIER_PATTERN],
+            'options.joins.*.operator'   => ['nullable', Rule::in(SourceQuery::OPERATORS)],
+            'options.joins.*.second'     => ['required', 'string', 'max:255', 'regex:' . SourceQuery::IDENTIFIER_PATTERN],
+            'options.wheres'             => 'nullable|array',
+            'options.wheres.*'           => 'array',
+            'options.wheres.*.column'    => ['required', 'string', 'max:255', 'regex:' . SourceQuery::IDENTIFIER_PATTERN],
+            'options.wheres.*.operator'  => ['nullable', Rule::in(SourceQuery::OPERATORS)],
+            'options.wheres.*.value'     => 'nullable|string|max:1024',
+            'options.wheres.*.compare'   => ['nullable', Rule::in(['value', 'column'])],
+            'options.order_by'           => 'nullable|array',
+            'options.order_by.column'    => ['required_with:options.order_by', 'string', 'max:255', 'regex:' . SourceQuery::IDENTIFIER_PATTERN],
+            'options.order_by.direction' => ['nullable', Rule::in(['asc', 'desc'])],
+        ];
+    }
+
+    /**
+     * A claim matches an identity by claimed username — or, when the
+     * claimant provided the old e-mail / member id, by those matching the
+     * directory entry (covers misremembered usernames).
+     */
+    private function matchClaim($claims, string $legacySource, string $legacyUsername, ?MigrationLegacyUser $entry): ?Ticket
+    {
+        return $claims->first(function ($ticket) use ($legacySource, $legacyUsername, $entry) {
+            $meta        = $ticket->metadata ?? [];
+            $claimSource = $meta['legacy_source'] ?? null;
+            if ($claimSource !== null && $claimSource !== $legacySource) {
+                return false;
+            }
+
+            if (mb_strtolower($meta['legacy_username'] ?? '') === mb_strtolower($legacyUsername)) {
+                return true;
+            }
+
+            if ($entry?->email && ! empty($meta['legacy_email'])
+                && mb_strtolower($meta['legacy_email']) === mb_strtolower($entry->email)) {
+                return true;
+            }
+
+            return $entry?->legacy_user_id && ! empty($meta['legacy_user_id'])
+                && (string) $meta['legacy_user_id'] === (string) $entry->legacy_user_id;
+        });
+    }
+
+    /**
+     * Claim info for the listing, incl. how well the provided proof
+     * matches the legacy-user directory.
+     */
+    private function claimPayload(?Ticket $claim, ?MigrationLegacyUser $entry): ?array
+    {
+        if ( ! $claim) {
+            return null;
+        }
+
+        $meta       = $claim->metadata ?? [];
+        $claimEmail = $meta['legacy_email'] ?? null;
+
+        return [
+            'ticket_id'      => $claim->id,
+            'user'           => $claim->creator?->only(['id', 'username']),
+            'legacy_email'   => $claimEmail,
+            'legacy_user_id' => $meta['legacy_user_id'] ?? null,
+            // The claimant's registered e-mail OR the provided legacy e-mail
+            // matches the directory entry.
+            'email_verified' => (bool) ($entry?->email && (
+                ($claim->creator && mb_strtolower($claim->creator->email) === mb_strtolower($entry->email))
+                || ($claimEmail && mb_strtolower($claimEmail) === mb_strtolower($entry->email))
+            )),
+            // The provided member id matches the directory entry.
+            'id_verified' => (bool) ($entry?->legacy_user_id && ! empty($meta['legacy_user_id'])
+                && (string) $meta['legacy_user_id'] === (string) $entry->legacy_user_id),
+        ];
     }
 
     /**
@@ -932,7 +938,7 @@ class MigrationController extends Controller
                 // can see — including this app's own tables. Only tables of
                 // the configured source database are usable (they are queried
                 // unqualified), so hide the rest.
-                if (!in_array($source->driver, ['mysql', 'mariadb'], true)) {
+                if ( ! in_array($source->driver, ['mysql', 'mariadb'], true)) {
                     return true;
                 }
 

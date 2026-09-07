@@ -11,9 +11,9 @@ class Widget extends Model implements TranslatableContract
 {
     use Translatable;
 
-    protected $table = 'widgets';
-
     public $translatedAttributes = ['title', 'content'];
+
+    protected $table = 'widgets';
 
     protected $fillable = [
         'location',
@@ -28,9 +28,9 @@ class Widget extends Model implements TranslatableContract
 
     protected $casts = [
         'enabled' => 'boolean',
-        'order' => 'integer',
-        'column' => 'integer',
-        'config' => 'array',
+        'order'   => 'integer',
+        'column'  => 'integer',
+        'config'  => 'array',
     ];
 
     protected $attributes = [

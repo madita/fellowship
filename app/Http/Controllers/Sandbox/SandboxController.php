@@ -22,61 +22,6 @@ class SandboxController extends Controller
     }
 
     /**
-     * Get the sandbox limits for a user based on their highest role.
-     */
-    protected function getUserLimits(User $user): array
-    {
-        $defaults = ['max_sandboxes' => 0, 'max_collaborators' => 0, 'max_versions' => 0];
-        $keys = ['max_sandboxes', 'max_collaborators', 'max_versions'];
-
-        $roleLimits = Setting::get('sandbox_role_limits', '{}');
-        if (is_string($roleLimits)) {
-            $roleLimits = json_decode($roleLimits, true) ?: [];
-        }
-
-        $userRoles = $user->getRoleNames()->toArray();
-        $matchedRoles = array_intersect($userRoles, array_keys($roleLimits));
-
-        // If user has no roles with configured limits, use config defaults
-        if (empty($matchedRoles)) {
-            $configDefaults = config('sandbox.default_role_limits.user', $defaults);
-
-            return array_merge($defaults, $configDefaults);
-        }
-
-        // Start with null (unresolved) and merge across matched roles
-        // picking the most permissive value (0 = unlimited wins over any number)
-        $resolved = ['max_sandboxes' => null, 'max_collaborators' => null, 'max_versions' => null];
-
-        foreach ($matchedRoles as $role) {
-            foreach ($keys as $key) {
-                $roleValue = (int) ($roleLimits[$role][$key] ?? 0);
-                $currentValue = $resolved[$key];
-
-                if ($currentValue === null) {
-                    // First matched role — take its value directly
-                    $resolved[$key] = $roleValue;
-                } elseif ($roleValue === 0 || $currentValue === 0) {
-                    // 0 means unlimited — most permissive wins
-                    $resolved[$key] = 0;
-                } else {
-                    // Both are limited — take the higher (more permissive) value
-                    $resolved[$key] = max($currentValue, $roleValue);
-                }
-            }
-        }
-
-        // Replace any still-null values with defaults (shouldn't happen, but safety)
-        foreach ($keys as $key) {
-            if ($resolved[$key] === null) {
-                $resolved[$key] = 0;
-            }
-        }
-
-        return $resolved;
-    }
-
-    /**
      * List sandboxes accessible by the current user.
      */
     public function index(Request $request): JsonResponse
@@ -135,12 +80,12 @@ class SandboxController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title'       => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'visibility' => 'nullable|in:private,members,public',
+            'visibility'  => 'nullable|in:private,members,public',
         ]);
 
-        $user = auth()->user();
+        $user   = auth()->user();
         $limits = $this->getUserLimits($user);
 
         // Enforce max_sandboxes limit
@@ -161,14 +106,14 @@ class SandboxController extends Controller
         }
 
         $sandbox = Sandbox::create([
-            'title' => $validated['title'],
+            'title'       => $validated['title'],
             'description' => $validated['description'] ?? null,
-            'user_id' => auth()->id(),
-            'visibility' => $visibility,
-            'settings' => [
+            'user_id'     => auth()->id(),
+            'visibility'  => $visibility,
+            'settings'    => [
                 'allowComments' => true,
-                'showCursors' => true,
-                'autoSave' => true,
+                'showCursors'   => true,
+                'autoSave'      => true,
             ],
         ]);
 
@@ -193,16 +138,16 @@ class SandboxController extends Controller
 
         // Public sandboxes can be viewed anonymously; everything else must pass canView()
         if ($sandbox->visibility !== 'public') {
-            if (! $user || ! $sandbox->canView($user)) {
+            if ( ! $user || ! $sandbox->canView($user)) {
                 return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
             }
         }
 
         $response = [
-            'sandbox' => $sandbox,
-            'canEdit' => $user ? $sandbox->canEdit($user) : false,
+            'sandbox'   => $sandbox,
+            'canEdit'   => $user ? $sandbox->canEdit($user) : false,
             'canManage' => $user ? $sandbox->canManage($user) : false,
-            'role' => $user ? $sandbox->getUserRole($user) : 'guest',
+            'role'      => $user ? $sandbox->getUserRole($user) : 'guest',
         ];
 
         return response()->json($response);
@@ -215,15 +160,15 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (! $sandbox->canManage($user)) {
+        if ( ! $sandbox->canManage($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
         $validated = $request->validate([
-            'title' => 'sometimes|string|max:255',
+            'title'       => 'sometimes|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'visibility' => 'sometimes|in:private,members,public',
-            'settings' => 'sometimes|array',
+            'visibility'  => 'sometimes|in:private,members,public',
+            'settings'    => 'sometimes|array',
         ]);
 
         // Enforce public sandbox setting
@@ -263,12 +208,12 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (! $sandbox->canView($user)) {
+        if ( ! $sandbox->canView($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
         return response()->json([
-            'content' => $sandbox->content,
+            'content'      => $sandbox->content,
             'lastEditedAt' => $sandbox->last_edited_at,
             'lastEditedBy' => $sandbox->lastEditor?->username,
         ]);
@@ -281,14 +226,14 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (! $sandbox->canEdit($user)) {
+        if ( ! $sandbox->canEdit($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
         $validated = $request->validate([
-            'content' => 'required|string',
+            'content'       => 'required|string',
             'createVersion' => 'sometimes|boolean',
-            'versionTitle' => 'sometimes|string|max:255',
+            'versionTitle'  => 'sometimes|string|max:255',
         ]);
 
         // Create version snapshot if requested
@@ -306,14 +251,14 @@ class SandboxController extends Controller
 
             SandboxVersion::create([
                 'sandbox_id' => $sandbox->id,
-                'user_id' => $user->id,
-                'title' => $validated['versionTitle'] ?? 'Auto-save',
-                'content' => Purify::config('sandbox')->clean($sandbox->content ?? ''),
+                'user_id'    => $user->id,
+                'title'      => $validated['versionTitle'] ?? 'Auto-save',
+                'content'    => Purify::config('sandbox')->clean($sandbox->content ?? ''),
             ]);
         }
 
         $sandbox->update([
-            'content' => Purify::config('sandbox')->clean($validated['content']),
+            'content'        => Purify::config('sandbox')->clean($validated['content']),
             'last_edited_at' => now(),
             'last_edited_by' => $user->id,
         ]);
@@ -328,13 +273,13 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (! $sandbox->canManage($user)) {
+        if ( ! $sandbox->canManage($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'role' => 'sometimes|in:viewer,editor,admin',
+            'role'    => 'sometimes|in:viewer,editor,admin',
         ]);
 
         if ($validated['user_id'] == $sandbox->user_id) {
@@ -356,8 +301,8 @@ class SandboxController extends Controller
 
         $sandbox->collaborators()->syncWithoutDetaching([
             $validated['user_id'] => [
-                'role' => $role,
-                'invited_at' => now(),
+                'role'        => $role,
+                'invited_at'  => now(),
                 'accepted_at' => now(),
             ],
         ]);
@@ -371,7 +316,7 @@ class SandboxController extends Controller
         }
 
         return response()->json([
-            'message' => __('messages.sandbox.collaborator_added'),
+            'message'       => __('messages.sandbox.collaborator_added'),
             'collaborators' => $sandbox->collaborators()->get(['users.id', 'username']),
         ]);
     }
@@ -383,11 +328,11 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (! $sandbox->canManage($user) && $user->id !== $collaborator->id) {
+        if ( ! $sandbox->canManage($user) && $user->id !== $collaborator->id) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
-        if (! $sandbox->collaborators()->where('users.id', $collaborator->id)->exists()) {
+        if ( ! $sandbox->collaborators()->where('users.id', $collaborator->id)->exists()) {
             return response()->json(['error' => __('messages.sandbox.not_a_collaborator')], 404);
         }
 
@@ -415,7 +360,7 @@ class SandboxController extends Controller
             ->whereNull('accepted_at')
             ->first();
 
-        if (! $collaborator) {
+        if ( ! $collaborator) {
             return response()->json(['error' => __('messages.sandbox.no_invite')], 404);
         }
 
@@ -436,7 +381,7 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (! $sandbox->canView($user)) {
+        if ( ! $sandbox->canView($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
@@ -459,7 +404,7 @@ class SandboxController extends Controller
             return response()->json(['error' => __('messages.sandbox.not_found')], 404);
         }
 
-        if (! $sandbox->canEdit($user)) {
+        if ( ! $sandbox->canEdit($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
@@ -477,15 +422,15 @@ class SandboxController extends Controller
         // Save current state as a version first
         SandboxVersion::create([
             'sandbox_id' => $sandbox->id,
-            'user_id' => $user->id,
-            'title' => 'Before restore',
-            'content' => Purify::config('sandbox')->clean($sandbox->content ?? ''),
+            'user_id'    => $user->id,
+            'title'      => 'Before restore',
+            'content'    => Purify::config('sandbox')->clean($sandbox->content ?? ''),
         ]);
 
         // Restore the selected version (clear yjs_state so Yjs doc reinitializes from HTML)
         $sandbox->update([
-            'content' => Purify::config('sandbox')->clean($version->content),
-            'yjs_state' => null,
+            'content'        => Purify::config('sandbox')->clean($version->content),
+            'yjs_state'      => null,
             'last_edited_at' => now(),
             'last_edited_by' => $user->id,
         ]);
@@ -507,7 +452,7 @@ class SandboxController extends Controller
             return response()->json(['error' => __('messages.sandbox.not_found')], 404);
         }
 
-        if (! $sandbox->canView($user)) {
+        if ( ! $sandbox->canView($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
@@ -523,7 +468,7 @@ class SandboxController extends Controller
     {
         $user = auth()->user();
 
-        if (! $sandbox->canView($user)) {
+        if ( ! $sandbox->canView($user)) {
             return response()->json(['error' => __('messages.sandbox.unauthorized')], 403);
         }
 
@@ -538,14 +483,69 @@ class SandboxController extends Controller
             unset($diff['content']);
 
             return [
-                'id' => $revision->id,
-                'action' => $revision->action,
-                'executor' => $revision->executor,
-                'diff' => $diff,
+                'id'         => $revision->id,
+                'action'     => $revision->action,
+                'executor'   => $revision->executor,
+                'diff'       => $diff,
                 'created_at' => $revision->created_at,
             ];
         });
 
         return response()->json($data);
+    }
+
+    /**
+     * Get the sandbox limits for a user based on their highest role.
+     */
+    protected function getUserLimits(User $user): array
+    {
+        $defaults = ['max_sandboxes' => 0, 'max_collaborators' => 0, 'max_versions' => 0];
+        $keys     = ['max_sandboxes', 'max_collaborators', 'max_versions'];
+
+        $roleLimits = Setting::get('sandbox_role_limits', '{}');
+        if (is_string($roleLimits)) {
+            $roleLimits = json_decode($roleLimits, true) ?: [];
+        }
+
+        $userRoles    = $user->getRoleNames()->toArray();
+        $matchedRoles = array_intersect($userRoles, array_keys($roleLimits));
+
+        // If user has no roles with configured limits, use config defaults
+        if (empty($matchedRoles)) {
+            $configDefaults = config('sandbox.default_role_limits.user', $defaults);
+
+            return array_merge($defaults, $configDefaults);
+        }
+
+        // Start with null (unresolved) and merge across matched roles
+        // picking the most permissive value (0 = unlimited wins over any number)
+        $resolved = ['max_sandboxes' => null, 'max_collaborators' => null, 'max_versions' => null];
+
+        foreach ($matchedRoles as $role) {
+            foreach ($keys as $key) {
+                $roleValue    = (int) ($roleLimits[$role][$key] ?? 0);
+                $currentValue = $resolved[$key];
+
+                if ($currentValue === null) {
+                    // First matched role — take its value directly
+                    $resolved[$key] = $roleValue;
+                } elseif ($roleValue === 0 || $currentValue === 0) {
+                    // 0 means unlimited — most permissive wins
+                    $resolved[$key] = 0;
+                } else {
+                    // Both are limited — take the higher (more permissive) value
+                    $resolved[$key] = max($currentValue, $roleValue);
+                }
+            }
+        }
+
+        // Replace any still-null values with defaults (shouldn't happen, but safety)
+        foreach ($keys as $key) {
+            if ($resolved[$key] === null) {
+                $resolved[$key] = 0;
+            }
+        }
+
+        return $resolved;
     }
 }

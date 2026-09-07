@@ -15,58 +15,58 @@ class HomepageSeeder extends Seeder
     {
         // Create sections first with unique anchors
         $section1 = Section::create([
-            'title' => 'Hero Section',
-            'layout' => '1-col',
-            'enabled' => true,
-            'order' => 1,
+            'title'     => 'Hero Section',
+            'layout'    => '1-col',
+            'enabled'   => true,
+            'order'     => 1,
             'anchor_id' => 'hero',
-            'config' => [],
+            'config'    => [],
         ]);
 
         $section2 = Section::create([
-            'title' => 'Partners',
-            'layout' => '1-col',
-            'enabled' => true,
-            'order' => 2,
+            'title'     => 'Partners',
+            'layout'    => '1-col',
+            'enabled'   => true,
+            'order'     => 2,
             'anchor_id' => 'partners',
-            'config' => [
-                'background' => 'grey-lighten-4',
-                'backgroundColor' => '',
-                'fullWidth' => true,
-                'showDecoration' => true,
-                'decorationStyle' => 'wave1',
-                'decorationColor' => '#f2f5f8',
-                'decorationBackgroundType' => 'theme',
+            'config'    => [
+                'background'                => 'grey-lighten-4',
+                'backgroundColor'           => '',
+                'fullWidth'                 => true,
+                'showDecoration'            => true,
+                'decorationStyle'           => 'wave1',
+                'decorationColor'           => '#f2f5f8',
+                'decorationBackgroundType'  => 'theme',
                 'decorationBackgroundColor' => '',
                 'decorationBackgroundTheme' => 'background',
             ],
         ]);
 
         $section3 = Section::create([
-            'title' => 'Stats & Showcase',
-            'layout' => '2-col',
-            'enabled' => true,
-            'order' => 3,
+            'title'     => 'Stats & Showcase',
+            'layout'    => '2-col',
+            'enabled'   => true,
+            'order'     => 3,
             'anchor_id' => 'about',
-            'config' => [],
+            'config'    => [],
         ]);
 
         $section4 = Section::create([
-            'title' => 'Features',
-            'layout' => '1-col',
-            'enabled' => true,
-            'order' => 4,
+            'title'     => 'Features',
+            'layout'    => '1-col',
+            'enabled'   => true,
+            'order'     => 4,
             'anchor_id' => 'features',
-            'config' => ['background' => 'grey-lighten-5'],
+            'config'    => ['background' => 'grey-lighten-5'],
         ]);
 
         $section5 = Section::create([
-            'title' => 'Call to Action',
-            'layout' => '1-col',
-            'enabled' => true,
-            'order' => 5,
+            'title'     => 'Call to Action',
+            'layout'    => '1-col',
+            'enabled'   => true,
+            'order'     => 5,
             'anchor_id' => 'contact',
-            'config' => ['background' => 'primary'],
+            'config'    => ['background' => 'primary'],
         ]);
 
         // Now create widgets assigned to sections
@@ -74,14 +74,14 @@ class HomepageSeeder extends Seeder
             // Section 1: Hero
             [
                 'section_id' => $section1->id,
-                'column' => 1,
-                'type' => 'hero',
-                'title' => 'Hero Section',
-                'enabled' => true,
-                'order' => 1,
-                'content' => [
-                    'title' => 'Your awesome community',
-                    'subtitle' => 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Commodi ex facilis ad atque natus tenetur debitis qui quisquam iure amet.',
+                'column'     => 1,
+                'type'       => 'hero',
+                'title'      => 'Hero Section',
+                'enabled'    => true,
+                'order'      => 1,
+                'content'    => [
+                    'title'         => 'Your awesome community',
+                    'subtitle'      => 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Commodi ex facilis ad atque natus tenetur debitis qui quisquam iure amet.',
                     'primaryButton' => [
                         'text' => 'Join Now!',
                         'link' => '/auth/signup',
@@ -93,38 +93,38 @@ class HomepageSeeder extends Seeder
                 ],
                 'config' => [
                     'background' => 'default',
-                    'alignment' => 'center',
+                    'alignment'  => 'center',
                 ],
             ],
             // Section 2: Partners (decoration is at section level, no widget needed)
             // Section 3, Column 1: Stats
             [
                 'section_id' => $section3->id,
-                'column' => 1,
-                'type' => 'stats',
-                'title' => 'Statistics',
-                'enabled' => true,
-                'order' => 1,
-                'content' => [
+                'column'     => 1,
+                'type'       => 'stats',
+                'title'      => 'Statistics',
+                'enabled'    => true,
+                'order'      => 1,
+                'content'    => [
                     'stats' => [
                         [
-                            'title' => 'Projects',
-                            'value' => '4,253',
+                            'title'       => 'Projects',
+                            'value'       => '4,253',
                             'description' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit.',
                         ],
                         [
-                            'title' => 'API Requests',
-                            'value' => '1,283,787',
+                            'title'       => 'API Requests',
+                            'value'       => '1,283,787',
                             'description' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit.',
                         ],
                         [
-                            'title' => 'Subscribers',
-                            'value' => '1,348',
+                            'title'       => 'Subscribers',
+                            'value'       => '1,348',
                             'description' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit.',
                         ],
                         [
-                            'title' => 'Businesses',
-                            'value' => '331,234',
+                            'title'       => 'Businesses',
+                            'value'       => '331,234',
                             'description' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse expedita fugit.',
                         ],
                     ],
@@ -136,17 +136,17 @@ class HomepageSeeder extends Seeder
             // Section 3, Column 2: Feature Showcase
             [
                 'section_id' => $section3->id,
-                'column' => 2,
-                'type' => 'feature_showcase',
-                'title' => 'Feature Showcase',
-                'enabled' => true,
-                'order' => 1,
-                'content' => [
-                    'subtitle' => 'Work with us',
-                    'title' => 'Get your startup ready for business',
+                'column'     => 2,
+                'type'       => 'feature_showcase',
+                'title'      => 'Feature Showcase',
+                'enabled'    => true,
+                'order'      => 1,
+                'content'    => [
+                    'subtitle'    => 'Work with us',
+                    'title'       => 'Get your startup ready for business',
                     'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-                    'image' => null,
-                    'features' => [],
+                    'image'       => null,
+                    'features'    => [],
                 ],
                 'config' => [
                     'layout' => 'image-right',
@@ -155,31 +155,31 @@ class HomepageSeeder extends Seeder
             // Section 4: Feature Grid
             [
                 'section_id' => $section4->id,
-                'column' => 1,
-                'type' => 'feature_grid',
-                'title' => 'Features Grid',
-                'enabled' => true,
-                'order' => 1,
-                'content' => [
+                'column'     => 1,
+                'type'       => 'feature_grid',
+                'title'      => 'Features Grid',
+                'enabled'    => true,
+                'order'      => 1,
+                'content'    => [
                     'features' => [
                         [
-                            'icon' => 'mdi-account-check-outline',
-                            'title' => 'Account Verification',
+                            'icon'        => 'mdi-account-check-outline',
+                            'title'       => 'Account Verification',
                             'description' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit.',
                         ],
                         [
-                            'icon' => 'mdi-lifebuoy',
-                            'title' => 'Dedicated Support',
+                            'icon'        => 'mdi-lifebuoy',
+                            'title'       => 'Dedicated Support',
                             'description' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit.',
                         ],
                         [
-                            'icon' => 'mdi-email-outline',
-                            'title' => 'Email Integration',
+                            'icon'        => 'mdi-email-outline',
+                            'title'       => 'Email Integration',
                             'description' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit.',
                         ],
                         [
-                            'icon' => 'mdi-clock-outline',
-                            'title' => 'Save Time',
+                            'icon'        => 'mdi-clock-outline',
+                            'title'       => 'Save Time',
                             'description' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit.',
                         ],
                     ],
@@ -191,16 +191,16 @@ class HomepageSeeder extends Seeder
             // Section 5: Call to Action
             [
                 'section_id' => $section5->id,
-                'column' => 1,
-                'type' => 'cta',
-                'title' => 'Call to Action',
-                'enabled' => true,
-                'order' => 1,
-                'content' => [
-                    'title' => 'Ready to talk? Our team is here to help',
+                'column'     => 1,
+                'type'       => 'cta',
+                'title'      => 'Call to Action',
+                'enabled'    => true,
+                'order'      => 1,
+                'content'    => [
+                    'title'       => 'Ready to talk? Our team is here to help',
                     'description' => 'Get in touch with us today.',
-                    'buttonText' => 'Contact Us',
-                    'buttonLink' => '/contact',
+                    'buttonText'  => 'Contact Us',
+                    'buttonLink'  => '/contact',
                 ],
                 'config' => [
                     'background' => 'primary',

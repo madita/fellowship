@@ -36,10 +36,10 @@ class LazyLoadingService
     public static function getSettings(): array
     {
         return [
-            'enabled' => static::isEnabled(),
-            'loading_attribute' => static::getLoadingAttribute(),
+            'enabled'                => static::isEnabled(),
+            'loading_attribute'      => static::getLoadingAttribute(),
             'intersection_threshold' => 0.1, // 10% visible before loading
-            'root_margin' => '50px', // Start loading 50px before entering viewport
+            'root_margin'            => '50px', // Start loading 50px before entering viewport
         ];
     }
 
@@ -51,7 +51,7 @@ class LazyLoadingService
      */
     public static function processHtml(string $html): string
     {
-        if (! static::isEnabled()) {
+        if ( ! static::isEnabled()) {
             return $html;
         }
 
@@ -72,7 +72,7 @@ class LazyLoadingService
                 }
 
                 // Add loading="lazy"
-                return '<img loading="lazy" '.$attributes.'>';
+                return '<img loading="lazy" ' . $attributes . '>';
             },
             $html
         );
@@ -86,7 +86,7 @@ class LazyLoadingService
      */
     public static function processIframes(string $html): string
     {
-        if (! static::isEnabled()) {
+        if ( ! static::isEnabled()) {
             return $html;
         }
 
@@ -100,7 +100,7 @@ class LazyLoadingService
                     return $matches[0];
                 }
 
-                return '<iframe loading="lazy" '.$attributes.'>';
+                return '<iframe loading="lazy" ' . $attributes . '>';
             },
             $html
         );

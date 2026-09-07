@@ -15,15 +15,15 @@ class HomepageImageController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // 2MB max
+            'image'      => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // 2MB max
             'collection' => 'nullable|string|in:home',
         ]);
 
         try {
-            $file = $request->file('image');
+            $file       = $request->file('image');
             $collection = $request->input('collection', 'home');
 
-            if (! $file || ! $file->isValid()) {
+            if ( ! $file || ! $file->isValid()) {
                 return response()->json([
                     'success' => false,
                     'message' => __('messages.media.invalid_upload'),
@@ -32,16 +32,16 @@ class HomepageImageController extends Controller
 
             // Generate filename
             $extension = $file->getClientOriginalExtension();
-            $filename = uniqid('widget_').'_'.Str::random(10).'.'.$extension;
-            $path = $collection.'/'.$filename;
+            $filename  = uniqid('widget_') . '_' . Str::random(10) . '.' . $extension;
+            $path      = $collection . '/' . $filename;
 
             // Store file (Windows-compatible method)
             Storage::disk('public')->put($path, file_get_contents($file->getRealPath() ?: $file->getPathname()));
 
             return response()->json([
                 'success' => true,
-                'path' => $path,
-                'url' => Storage::url($path),
+                'path'    => $path,
+                'url'     => Storage::url($path),
             ]);
         } catch (\Exception $e) {
             return response()->json([

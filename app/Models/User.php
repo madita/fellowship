@@ -107,7 +107,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         if ($this->name) {
             $initials = explode(' ', strtoupper($this->name));
-            $initial = substr($initials[0], 0, 1);
+            $initial  = substr($initials[0], 0, 1);
             if (count($initials) > 1) {
                 $initial .= substr($initials[count($initials) - 1], 0, 1);
             }
@@ -125,7 +125,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function getAvatar()
     {
-        if (! count($this->getMedia('avatars'))) {
+        if ( ! count($this->getMedia('avatars'))) {
             return '';
         }
 
@@ -261,7 +261,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function receivesBroadcastNotificationsOn()
     {
-        return 'users.'.$this->id;
+        return 'users.' . $this->id;
     }
 
     public function pages()

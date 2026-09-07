@@ -32,7 +32,7 @@ trait HasCache
     {
         return property_exists($this, 'cacheTag')
             ? $this->cacheTag
-            : strtolower(class_basename($this)).'s';
+            : strtolower(class_basename($this)) . 's';
     }
 
     /**
@@ -61,8 +61,8 @@ trait HasCache
     public static function findCached($id)
     {
         $model = new static;
-        $key = CacheService::modelKey(class_basename($model), $id);
-        $tag = $model->getCacheTag();
+        $key   = CacheService::modelKey(class_basename($model), $id);
+        $tag   = $model->getCacheTag();
 
         return CacheService::remember($key, function () use ($id) {
             return static::find($id);
@@ -75,8 +75,8 @@ trait HasCache
     public static function findBySlugCached(string $slug)
     {
         $model = new static;
-        $key = CacheService::modelKey(class_basename($model), 'slug:'.$slug);
-        $tag = $model->getCacheTag();
+        $key   = CacheService::modelKey(class_basename($model), 'slug:' . $slug);
+        $tag   = $model->getCacheTag();
 
         return CacheService::remember($key, function () use ($slug) {
             return static::where('slug', $slug)->first();
@@ -89,8 +89,8 @@ trait HasCache
     public static function allCached()
     {
         $model = new static;
-        $key = CacheService::listKey(class_basename($model));
-        $tag = $model->getCacheTag();
+        $key   = CacheService::listKey(class_basename($model));
+        $tag   = $model->getCacheTag();
 
         return CacheService::remember($key, function () {
             return static::all();
@@ -102,11 +102,11 @@ trait HasCache
      */
     public static function paginateCached(int $perPage = 15, array $params = [])
     {
-        $model = new static;
-        $page = request()->get('page', 1);
+        $model       = new static;
+        $page        = request()->get('page', 1);
         $cacheParams = array_merge($params, ['page' => $page, 'per_page' => $perPage]);
-        $key = CacheService::listKey(class_basename($model), $cacheParams);
-        $tag = $model->getCacheTag();
+        $key         = CacheService::listKey(class_basename($model), $cacheParams);
+        $tag         = $model->getCacheTag();
 
         return CacheService::remember($key, function () use ($perPage) {
             return static::paginate($perPage);

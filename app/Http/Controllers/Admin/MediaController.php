@@ -14,11 +14,11 @@ class MediaController extends Controller
      * Context labels for human-readable model type names.
      */
     protected array $contextLabels = [
-        'App\Models\User' => 'Users',
-        'App\Models\Collection' => 'Collections',
-        'App\Models\Page' => 'Pages',
-        'App\Models\Post' => 'Posts',
-        'App\Models\Event' => 'Events',
+        'App\Models\User'         => 'Users',
+        'App\Models\Collection'   => 'Collections',
+        'App\Models\Page'         => 'Pages',
+        'App\Models\Post'         => 'Posts',
+        'App\Models\Event'        => 'Events',
         'App\Models\MediaLibrary' => 'Media Library',
     ];
 
@@ -26,11 +26,11 @@ class MediaController extends Controller
      * Icons for contexts.
      */
     protected array $contextIcons = [
-        'App\Models\User' => 'mdi-account',
-        'App\Models\Collection' => 'mdi-folder-multiple-image',
-        'App\Models\Page' => 'mdi-file-document',
-        'App\Models\Post' => 'mdi-post',
-        'App\Models\Event' => 'mdi-calendar',
+        'App\Models\User'         => 'mdi-account',
+        'App\Models\Collection'   => 'mdi-folder-multiple-image',
+        'App\Models\Page'         => 'mdi-file-document',
+        'App\Models\Post'         => 'mdi-post',
+        'App\Models\Event'        => 'mdi-calendar',
         'App\Models\MediaLibrary' => 'mdi-image-multiple',
     ];
 
@@ -39,7 +39,7 @@ class MediaController extends Controller
      */
     protected array $collectionLabels = [
         'avatars' => 'Avatars',
-        'images' => 'Images',
+        'images'  => 'Images',
         'gallery' => 'Gallery',
         'default' => 'Default',
     ];
@@ -61,30 +61,30 @@ class MediaController extends Controller
             ->get();
 
         // Build hierarchical folder structure
-        $structure = [];
+        $structure  = [];
         $totalCount = 0;
-        $totalSize = 0;
+        $totalSize  = 0;
 
         foreach ($folders as $folder) {
-            $modelType = $folder->model_type;
+            $modelType      = $folder->model_type;
             $collectionName = $folder->collection_name;
 
-            if (! isset($structure[$modelType])) {
+            if ( ! isset($structure[$modelType])) {
                 $structure[$modelType] = [
-                    'model_type' => $modelType,
-                    'label' => $this->contextLabels[$modelType] ?? $this->formatModelType($modelType),
-                    'icon' => $this->contextIcons[$modelType] ?? 'mdi-folder',
-                    'count' => 0,
-                    'total_size' => 0,
+                    'model_type'  => $modelType,
+                    'label'       => $this->contextLabels[$modelType] ?? $this->formatModelType($modelType),
+                    'icon'        => $this->contextIcons[$modelType] ?? 'mdi-folder',
+                    'count'       => 0,
+                    'total_size'  => 0,
                     'collections' => [],
                 ];
             }
 
             $structure[$modelType]['collections'][$collectionName] = [
-                'name' => $collectionName,
-                'label' => $this->collectionLabels[$collectionName] ?? ucfirst($collectionName),
-                'count' => $folder->count,
-                'total_size' => $folder->total_size,
+                'name'           => $collectionName,
+                'label'          => $this->collectionLabels[$collectionName] ?? ucfirst($collectionName),
+                'count'          => $folder->count,
+                'total_size'     => $folder->total_size,
                 'size_formatted' => $this->formatBytes($folder->total_size),
             ];
 
@@ -97,14 +97,14 @@ class MediaController extends Controller
         // Format sizes for contexts
         foreach ($structure as &$context) {
             $context['size_formatted'] = $this->formatBytes($context['total_size']);
-            $context['collections'] = array_values($context['collections']);
+            $context['collections']    = array_values($context['collections']);
         }
 
         return response()->json([
             'folders' => array_values($structure),
-            'total' => [
-                'count' => $totalCount,
-                'total_size' => $totalSize,
+            'total'   => [
+                'count'          => $totalCount,
+                'total_size'     => $totalSize,
                 'size_formatted' => $this->formatBytes($totalSize),
             ],
         ]);
@@ -115,10 +115,10 @@ class MediaController extends Controller
      */
     public function modelItems(Request $request): JsonResponse
     {
-        $modelType = $request->input('model_type');
+        $modelType      = $request->input('model_type');
         $collectionName = $request->input('collection');
 
-        if (! $modelType) {
+        if ( ! $modelType) {
             return response()->json(['error' => 'model_type is required'], 400);
         }
 
@@ -139,22 +139,22 @@ class MediaController extends Controller
             $modelName = $this->getModelNameById($item->model_type, $item->model_id);
 
             return [
-                'model_id' => $item->model_id,
-                'model_type' => $item->model_type,
+                'model_id'        => $item->model_id,
+                'model_type'      => $item->model_type,
                 'collection_name' => $item->collection_name,
-                'model_name' => $modelName,
-                'count' => $item->count,
-                'total_size' => $item->total_size,
-                'size_formatted' => $this->formatBytes($item->total_size),
-                'first_upload' => $item->first_upload,
-                'last_upload' => $item->last_upload,
+                'model_name'      => $modelName,
+                'count'           => $item->count,
+                'total_size'      => $item->total_size,
+                'size_formatted'  => $this->formatBytes($item->total_size),
+                'first_upload'    => $item->first_upload,
+                'last_upload'     => $item->last_upload,
             ];
         });
 
         return response()->json([
-            'items' => $enrichedItems,
+            'items'      => $enrichedItems,
             'model_type' => $modelType,
-            'label' => $this->contextLabels[$modelType] ?? $this->formatModelType($modelType),
+            'label'      => $this->contextLabels[$modelType] ?? $this->formatModelType($modelType),
             'collection' => $collectionName,
         ]);
     }
@@ -188,7 +188,7 @@ class MediaController extends Controller
 
         // Filter by mime type prefix (e.g., 'image', 'application')
         if ($request->filled('mime_type')) {
-            $query->where('mime_type', 'like', $request->input('mime_type').'%');
+            $query->where('mime_type', 'like', $request->input('mime_type') . '%');
         }
 
         // Search by file name
@@ -209,12 +209,12 @@ class MediaController extends Controller
         }
 
         // Sorting
-        $sortBy = $request->input('sort_by', 'created_at');
+        $sortBy  = $request->input('sort_by', 'created_at');
         $sortDir = $request->input('sort_dir', 'desc');
 
         // Validate sort column
         $allowedSortColumns = ['created_at', 'size', 'file_name', 'name'];
-        if (! in_array($sortBy, $allowedSortColumns)) {
+        if ( ! in_array($sortBy, $allowedSortColumns)) {
             $sortBy = 'created_at';
         }
 
@@ -222,7 +222,7 @@ class MediaController extends Controller
 
         // Pagination
         $perPage = min((int) $request->input('per_page', 24), 100);
-        $media = $query->paginate($perPage);
+        $media   = $query->paginate($perPage);
 
         // Transform the data
         $data = $media->getCollection()->map(function (Media $item) {
@@ -233,11 +233,11 @@ class MediaController extends Controller
             'data' => $data,
             'meta' => [
                 'current_page' => $media->currentPage(),
-                'last_page' => $media->lastPage(),
-                'per_page' => $media->perPage(),
-                'total' => $media->total(),
-                'from' => $media->firstItem(),
-                'to' => $media->lastItem(),
+                'last_page'    => $media->lastPage(),
+                'per_page'     => $media->perPage(),
+                'total'        => $media->total(),
+                'from'         => $media->firstItem(),
+                'to'           => $media->lastItem(),
             ],
         ]);
     }
@@ -266,7 +266,7 @@ class MediaController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to delete media',
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
@@ -277,12 +277,12 @@ class MediaController extends Controller
     public function bulkDestroy(Request $request): JsonResponse
     {
         $request->validate([
-            'ids' => 'required|array',
+            'ids'   => 'required|array',
             'ids.*' => 'required|integer|exists:media,id',
         ]);
 
         try {
-            $ids = $request->input('ids');
+            $ids     = $request->input('ids');
             $deleted = Media::whereIn('id', $ids)->delete();
 
             return response()->json([
@@ -292,7 +292,7 @@ class MediaController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to delete media',
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
@@ -303,14 +303,14 @@ class MediaController extends Controller
     public function upload(Request $request): JsonResponse
     {
         $request->validate([
-            'files' => 'required|array|min:1',
-            'files.*' => 'required|file|mimes:jpeg,jpg,png,gif,webp,svg,pdf|max:10240',
+            'files'      => 'required|array|min:1',
+            'files.*'    => 'required|file|mimes:jpeg,jpg,png,gif,webp,svg,pdf|max:10240',
             'collection' => 'nullable|string|in:images,documents',
         ]);
 
-        $library = MediaLibrary::getLibrary();
+        $library    = MediaLibrary::getLibrary();
         $collection = $request->input('collection', 'images');
-        $uploaded = [];
+        $uploaded   = [];
 
         foreach ($request->file('files') as $file) {
             try {
@@ -320,15 +320,15 @@ class MediaController extends Controller
                 $uploaded[] = $this->transformMedia($media);
             } catch (\Exception $e) {
                 return response()->json([
-                    'message' => 'Failed to upload file: '.$file->getClientOriginalName(),
-                    'error' => $e->getMessage(),
+                    'message' => 'Failed to upload file: ' . $file->getClientOriginalName(),
+                    'error'   => $e->getMessage(),
                 ], 500);
             }
         }
 
         return response()->json([
-            'message' => count($uploaded).' file(s) uploaded successfully',
-            'data' => $uploaded,
+            'message' => count($uploaded) . ' file(s) uploaded successfully',
+            'data'    => $uploaded,
         ]);
     }
 
@@ -338,7 +338,7 @@ class MediaController extends Controller
     public function libraryImages(Request $request): JsonResponse
     {
         $perPage = min((int) $request->input('per_page', 24), 100);
-        $search = $request->input('search');
+        $search  = $request->input('search');
 
         $query = Media::where('model_type', MediaLibrary::class);
 
@@ -353,12 +353,12 @@ class MediaController extends Controller
 
         $data = $media->getCollection()->map(function (Media $item) {
             return [
-                'id' => $item->id,
-                'uuid' => $item->uuid,
+                'id'        => $item->id,
+                'uuid'      => $item->uuid,
                 'file_name' => $item->file_name,
-                'name' => $item->name,
+                'name'      => $item->name,
                 'mime_type' => $item->mime_type,
-                'url' => $item->getUrl(),
+                'url'       => $item->getUrl(),
                 'thumb_url' => $this->getThumbUrl($item),
             ];
         });
@@ -367,9 +367,9 @@ class MediaController extends Controller
             'data' => $data,
             'meta' => [
                 'current_page' => $media->currentPage(),
-                'last_page' => $media->lastPage(),
-                'per_page' => $media->perPage(),
-                'total' => $media->total(),
+                'last_page'    => $media->lastPage(),
+                'per_page'     => $media->perPage(),
+                'total'        => $media->total(),
             ],
         ]);
     }
@@ -380,7 +380,7 @@ class MediaController extends Controller
     public function stats(): JsonResponse
     {
         $totalCount = Media::count();
-        $totalSize = Media::sum('size');
+        $totalSize  = Media::sum('size');
 
         // Breakdown by context (model_type)
         $byContext = Media::selectRaw('model_type, COUNT(*) as count, SUM(size) as total_size')
@@ -388,10 +388,10 @@ class MediaController extends Controller
             ->get()
             ->map(function ($item) {
                 return [
-                    'model_type' => $item->model_type,
-                    'label' => $this->contextLabels[$item->model_type] ?? $this->formatModelType($item->model_type),
-                    'count' => $item->count,
-                    'total_size' => $item->total_size,
+                    'model_type'     => $item->model_type,
+                    'label'          => $this->contextLabels[$item->model_type] ?? $this->formatModelType($item->model_type),
+                    'count'          => $item->count,
+                    'total_size'     => $item->total_size,
                     'size_formatted' => $this->formatBytes($item->total_size),
                 ];
             });
@@ -413,9 +413,9 @@ class MediaController extends Controller
             ->get()
             ->map(function ($item) {
                 return [
-                    'type' => $item->file_type,
-                    'count' => $item->count,
-                    'total_size' => $item->total_size,
+                    'type'           => $item->file_type,
+                    'count'          => $item->count,
+                    'total_size'     => $item->total_size,
                     'size_formatted' => $this->formatBytes($item->total_size),
                 ];
             });
@@ -426,20 +426,20 @@ class MediaController extends Controller
             ->get()
             ->map(function ($item) {
                 return [
-                    'collection' => $item->collection_name,
-                    'count' => $item->count,
-                    'total_size' => $item->total_size,
+                    'collection'     => $item->collection_name,
+                    'count'          => $item->count,
+                    'total_size'     => $item->total_size,
                     'size_formatted' => $this->formatBytes($item->total_size),
                 ];
             });
 
         return response()->json([
-            'total_count' => $totalCount,
-            'total_size' => $totalSize,
+            'total_count'    => $totalCount,
+            'total_size'     => $totalSize,
             'size_formatted' => $this->formatBytes($totalSize),
-            'by_context' => $byContext,
-            'by_type' => $byType,
-            'by_collection' => $byCollection,
+            'by_context'     => $byContext,
+            'by_type'        => $byType,
+            'by_collection'  => $byCollection,
         ]);
     }
 
@@ -470,7 +470,7 @@ class MediaController extends Controller
             });
 
         return response()->json([
-            'contexts' => $contexts,
+            'contexts'    => $contexts,
             'collections' => $collections,
         ]);
     }
@@ -481,30 +481,30 @@ class MediaController extends Controller
     protected function transformMedia(Media $media, bool $detailed = false): array
     {
         $data = [
-            'id' => $media->id,
-            'uuid' => $media->uuid,
-            'file_name' => $media->file_name,
-            'name' => $media->name,
-            'mime_type' => $media->mime_type,
-            'size' => $media->size,
-            'size_formatted' => $this->formatBytes($media->size),
-            'url' => $media->getUrl(),
-            'thumb_url' => $this->getThumbUrl($media),
-            'collection_name' => $media->collection_name,
-            'model_type' => $media->model_type,
+            'id'               => $media->id,
+            'uuid'             => $media->uuid,
+            'file_name'        => $media->file_name,
+            'name'             => $media->name,
+            'mime_type'        => $media->mime_type,
+            'size'             => $media->size,
+            'size_formatted'   => $this->formatBytes($media->size),
+            'url'              => $media->getUrl(),
+            'thumb_url'        => $this->getThumbUrl($media),
+            'collection_name'  => $media->collection_name,
+            'model_type'       => $media->model_type,
             'model_type_label' => $this->contextLabels[$media->model_type] ?? $this->formatModelType($media->model_type),
-            'model_id' => $media->model_id,
-            'created_at' => $media->created_at?->toIso8601String(),
+            'model_id'         => $media->model_id,
+            'created_at'       => $media->created_at?->toIso8601String(),
         ];
 
         // Add model name if possible
         $data['model_name'] = $this->getModelName($media);
 
         if ($detailed) {
-            $data['custom_properties'] = $media->custom_properties;
+            $data['custom_properties']     = $media->custom_properties;
             $data['generated_conversions'] = $media->generated_conversions;
-            $data['disk'] = $media->disk;
-            $data['updated_at'] = $media->updated_at?->toIso8601String();
+            $data['disk']                  = $media->disk;
+            $data['updated_at']            = $media->updated_at?->toIso8601String();
 
             // Try to get image dimensions
             if (str_starts_with($media->mime_type, 'image/')) {
@@ -513,7 +513,7 @@ class MediaController extends Controller
                     if (file_exists($path)) {
                         $imageInfo = @getimagesize($path);
                         if ($imageInfo) {
-                            $data['width'] = $imageInfo[0];
+                            $data['width']  = $imageInfo[0];
                             $data['height'] = $imageInfo[1];
                         }
                     }
@@ -561,12 +561,12 @@ class MediaController extends Controller
     protected function getModelNameById(string $modelType, int $modelId): ?string
     {
         try {
-            if (! class_exists($modelType)) {
+            if ( ! class_exists($modelType)) {
                 return "#{$modelId}";
             }
 
             $model = $modelType::find($modelId);
-            if (! $model) {
+            if ( ! $model) {
                 return "#{$modelId} (deleted)";
             }
 
@@ -603,11 +603,11 @@ class MediaController extends Controller
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
 
         $bytes = max($bytes, 0);
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
+        $pow   = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow   = min($pow, count($units) - 1);
 
         $bytes /= (1 << (10 * $pow));
 
-        return round($bytes, $precision).' '.$units[$pow];
+        return round($bytes, $precision) . ' ' . $units[$pow];
     }
 }

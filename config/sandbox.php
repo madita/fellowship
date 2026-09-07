@@ -20,10 +20,10 @@ return [
     | Default values for sandbox settings (overridden by DB settings).
     |
     */
-    'enabled' => env('SANDBOX_ENABLED', true),
-    'public_enabled' => env('SANDBOX_PUBLIC_ENABLED', true),
+    'enabled'               => env('SANDBOX_ENABLED', true),
+    'public_enabled'        => env('SANDBOX_PUBLIC_ENABLED', true),
     'collaboration_enabled' => env('SANDBOX_COLLABORATION_ENABLED', true),
-    'autosave_interval' => env('SANDBOX_AUTOSAVE_INTERVAL', 30),
+    'autosave_interval'     => env('SANDBOX_AUTOSAVE_INTERVAL', 30),
 
     /*
     |--------------------------------------------------------------------------
@@ -36,14 +36,14 @@ return [
     */
     'default_role_limits' => [
         'admin' => [
-            'max_sandboxes' => 0,
+            'max_sandboxes'     => 0,
             'max_collaborators' => 0,
-            'max_versions' => 0,
+            'max_versions'      => 0,
         ],
         'user' => [
-            'max_sandboxes' => 0,
+            'max_sandboxes'     => 0,
             'max_collaborators' => 0,
-            'max_versions' => 0,
+            'max_versions'      => 0,
         ],
     ],
 ];

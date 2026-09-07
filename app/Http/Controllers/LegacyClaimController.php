@@ -34,7 +34,7 @@ class LegacyClaimController extends Controller
     {
         $data = $request->validate([
             'legacy_username' => 'nullable|required_without:legacy_email|string|max:255',
-            'legacy_email' => 'nullable|required_without:legacy_username|email|max:255',
+            'legacy_email'    => 'nullable|required_without:legacy_username|email|max:255',
         ]);
         $usernames = $this->resolveUsernames($data);
 
@@ -53,15 +53,15 @@ class LegacyClaimController extends Controller
         ]);
 
         return response()->json([
-            'legacy_username' => $usernames->first(),
+            'legacy_username'  => $usernames->first(),
             'legacy_usernames' => $usernames->values(),
-            'legacy_email' => $data['legacy_email'] ?? null,
+            'legacy_email'     => $data['legacy_email'] ?? null,
             // Only meaningful for e-mail lookups: whether the directory
             // knows an account with that e-mail at all.
             'email_known' => empty($data['legacy_username']) ? $usernames->isNotEmpty() : null,
-            'found' => $rows->isNotEmpty(),
-            'sources' => $sources,
-            'types' => $rows->groupBy(fn ($row) => class_basename($row->attributable_type))
+            'found'       => $rows->isNotEmpty(),
+            'sources'     => $sources,
+            'types'       => $rows->groupBy(fn ($row) => class_basename($row->attributable_type))
                 ->map(fn ($group) => (int) $group->sum('items')),
             'total' => $rows->sum('items'),
         ]);
@@ -75,9 +75,9 @@ class LegacyClaimController extends Controller
             // no username is given, and otherwise is extra proof helping
             // the admin verify the claim — like the member id (e.g. the
             // waechter id that links the legacy tables).
-            'legacy_email' => 'nullable|required_without:legacy_username|email|max:255',
+            'legacy_email'   => 'nullable|required_without:legacy_username|email|max:255',
             'legacy_user_id' => 'nullable|string|max:64',
-            'message' => 'nullable|string|max:2000',
+            'message'        => 'nullable|string|max:2000',
         ]);
 
         $usernames = $this->resolveUsernames($data);
@@ -94,11 +94,11 @@ class LegacyClaimController extends Controller
         $type = TicketType::firstOrCreate(
             ['slug' => 'legacy-account-claim'],
             [
-                'name' => 'Legacy Account Claim',
+                'name'        => 'Legacy Account Claim',
                 'description' => 'A user requests the content of their account from the old site.',
-                'icon' => 'mdi-account-convert',
-                'color' => '#7E57C2',
-                'is_active' => true,
+                'icon'        => 'mdi-account-convert',
+                'color'       => '#7E57C2',
+                'is_active'   => true,
                 'auto_create' => true,
             ]
         );
@@ -112,40 +112,40 @@ class LegacyClaimController extends Controller
                 $meta = $ticket->metadata ?? [];
 
                 return mb_strtolower($meta['legacy_username'] ?? '') === mb_strtolower($data['legacy_username'])
-                    || (!empty($data['legacy_email']) && !empty($meta['legacy_email'])
+                    || ( ! empty($data['legacy_email']) && ! empty($meta['legacy_email'])
                         && mb_strtolower($meta['legacy_email']) === mb_strtolower($data['legacy_email']));
             });
 
         if ($existing) {
             return response()->json([
                 'message' => __('messages.migrations.claim_exists'),
-                'ticket' => $existing,
+                'ticket'  => $existing,
             ], 409);
         }
 
         $ticket = Ticket::create([
-            'ticket_type_id' => $type->id,
+            'ticket_type_id'     => $type->id,
             'created_by_user_id' => $user->id,
-            'title' => "Legacy account claim: {$data['legacy_username']}",
-            'description' => trim(
+            'title'              => "Legacy account claim: {$data['legacy_username']}",
+            'description'        => trim(
                 "User \"{$user->username}\" claims the legacy account \"{$data['legacy_username']}\"."
-                . (!empty($data['legacy_email']) ? "\nLegacy e-mail: {$data['legacy_email']}" : '')
-                . (!empty($data['legacy_user_id']) ? "\nLegacy member id: {$data['legacy_user_id']}" : '')
-                . (!empty($data['message']) ? "\n\n" . $data['message'] : '')
+                . ( ! empty($data['legacy_email']) ? "\nLegacy e-mail: {$data['legacy_email']}" : '')
+                . ( ! empty($data['legacy_user_id']) ? "\nLegacy member id: {$data['legacy_user_id']}" : '')
+                . ( ! empty($data['message']) ? "\n\n" . $data['message'] : '')
             ),
-            'status' => 'open',
+            'status'   => 'open',
             'priority' => 'normal',
             'metadata' => array_filter([
-                'legacy_username' => $data['legacy_username'],
-                'legacy_email' => $data['legacy_email'] ?? null,
-                'legacy_user_id' => $data['legacy_user_id'] ?? null,
+                'legacy_username'  => $data['legacy_username'],
+                'legacy_email'     => $data['legacy_email'] ?? null,
+                'legacy_user_id'   => $data['legacy_user_id'] ?? null,
                 'claiming_user_id' => $user->id,
             ], fn ($value) => $value !== null),
         ]);
 
         return response()->json([
             'message' => __('messages.migrations.claim_created'),
-            'ticket' => $ticket,
+            'ticket'  => $ticket,
         ], 201);
     }
 
@@ -156,7 +156,7 @@ class LegacyClaimController extends Controller
      */
     private function resolveUsernames(array $data): Collection
     {
-        if (!empty($data['legacy_username'])) {
+        if ( ! empty($data['legacy_username'])) {
             return collect([$data['legacy_username']]);
         }
 

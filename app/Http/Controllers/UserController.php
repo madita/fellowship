@@ -37,8 +37,8 @@ class UserController extends Controller
 
         $query = User::where('id', '!=', auth()->id());
 
-        if (! empty($q)) {
-            $search = '%'.Str::lower($q).'%';
+        if ( ! empty($q)) {
+            $search = '%' . Str::lower($q) . '%';
             $query->where(function ($sub) use ($search) {
                 $sub->whereRaw('LOWER(username) LIKE ?', [$search])
                     ->orWhereRaw('LOWER(name) LIKE ?', [$search])
@@ -48,11 +48,11 @@ class UserController extends Controller
 
         return $query->get()->map(function ($user) {
             return [
-                'id' => $user->id,
+                'id'       => $user->id,
                 'username' => $user->username,
-                'name' => $user->name,
-                'email' => $user->email,
-                'avatar' => $user->avatar,
+                'name'     => $user->name,
+                'email'    => $user->email,
+                'avatar'   => $user->avatar,
                 'initials' => $user->initials,
             ];
         });
@@ -67,11 +67,11 @@ class UserController extends Controller
     public function updatePreferences(Request $request)
     {
         $validated = $request->validate([
-            'timezone' => 'nullable|string|timezone',
+            'timezone'    => 'nullable|string|timezone',
             'date_format' => 'nullable|string|in:Y-m-d,d/m/Y,m/d/Y,d.m.Y',
             'time_format' => 'nullable|string|in:H:i:s,h:i:s A,H:i,h:i A',
-            'theme_mode' => 'nullable|string|in:light,dark,system',
-            'language' => 'nullable|string|in:en,de,es,fr,it,pt,ja,zh',
+            'theme_mode'  => 'nullable|string|in:light,dark,system',
+            'language'    => 'nullable|string|in:en,de,es,fr,it,pt,ja,zh',
         ]);
 
         $user = auth()->user();
@@ -79,7 +79,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => __('messages.user.preferences_updated'),
-            'user' => $user,
+            'user'    => $user,
         ]);
     }
 }

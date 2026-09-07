@@ -17,10 +17,10 @@ class TermController extends DataTableController
     {
         $parent = $request->get('tag_taxonomy_id') ?? 0;
 
-        $name = $request->get('name');
+        $name     = $request->get('name');
         $taxonomy = $request->get('taxonomy');
 
-        if (! $taxonomy || ! $name) {
+        if ( ! $taxonomy || ! $name) {
             return response()->json(['message' => 'error']);
         }
 
@@ -43,9 +43,9 @@ class TermController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'name' => 'input',
-            'desc' => 'textarea',
-            'taxonomy' => 'model',
+            'name'            => 'input',
+            'desc'            => 'textarea',
+            'taxonomy'        => 'model',
             'tag_taxonomy_id' => 'model',
         ];
     }

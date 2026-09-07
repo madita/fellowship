@@ -42,14 +42,14 @@ class Sandbox extends Model
         'last_edited_by',
     ];
 
-    protected static function booted(): void
-    {
-        static::creating(function (Sandbox $sandbox) {
-            if (empty($sandbox->uuid)) {
-                $sandbox->uuid = (string) Str::uuid();
-            }
-        });
-    }
+    protected $casts = [
+        'settings'       => 'array',
+        'last_edited_at' => 'datetime',
+    ];
+
+    protected $hidden = [
+        'yjs_state', // Don't include binary data in JSON responses
+    ];
 
     /**
      * Use uuid for route model binding.
@@ -58,15 +58,6 @@ class Sandbox extends Model
     {
         return 'uuid';
     }
-
-    protected $casts = [
-        'settings' => 'array',
-        'last_edited_at' => 'datetime',
-    ];
-
-    protected $hidden = [
-        'yjs_state', // Don't include binary data in JSON responses
-    ];
 
     public function sluggable(): array
     {
@@ -201,6 +192,15 @@ class Sandbox extends Model
                     $q->where('user_id', $user->id)
                         ->whereNotNull('accepted_at');
                 });
+        });
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Sandbox $sandbox) {
+            if (empty($sandbox->uuid)) {
+                $sandbox->uuid = (string) Str::uuid();
+            }
         });
     }
 }

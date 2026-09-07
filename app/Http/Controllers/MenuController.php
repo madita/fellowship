@@ -29,14 +29,14 @@ class MenuController extends Controller
     {
         $menu = Menu::getByLocation($location);
 
-        if (! $menu) {
+        if ( ! $menu) {
             return response()->json([
                 'items' => [],
             ]);
         }
 
         return response()->json([
-            'menu' => $menu->only(['name', 'slug', 'location']),
+            'menu'  => $menu->only(['name', 'slug', 'location']),
             'items' => $this->filterMenuItems($menu->rootItems, Auth::user()),
         ]);
     }
@@ -48,37 +48,14 @@ class MenuController extends Controller
     {
         $menu = Menu::getBySlug($slug);
 
-        if (! $menu) {
+        if ( ! $menu) {
             return response()->json(['message' => 'Menu not found'], 404);
         }
 
         return response()->json([
-            'menu' => $menu->only(['name', 'slug', 'location', 'description']),
+            'menu'  => $menu->only(['name', 'slug', 'location', 'description']),
             'items' => $this->filterMenuItems($menu->rootItems, Auth::user()),
         ]);
-    }
-
-    /**
-     * Recursively filter menu items by per-item visibility rules.
-     */
-    protected function filterMenuItems($items, $user): array
-    {
-        return $items
-            ->filter(fn ($item) => $item->canView($user))
-            ->map(function ($item) use ($user) {
-                $data = $item->only([
-                    'id', 'label', 'type', 'href', 'icon',
-                    'target', 'order', 'metadata',
-                ]);
-
-                if ($item->children->isNotEmpty()) {
-                    $data['children'] = $this->filterMenuItems($item->children, $user);
-                }
-
-                return $data;
-            })
-            ->values()
-            ->toArray();
     }
 
     /**
@@ -102,7 +79,7 @@ class MenuController extends Controller
 
         return response()->json([
             'message' => 'Menu created successfully',
-            'menu' => $menu,
+            'menu'    => $menu,
         ], 201);
     }
 
@@ -117,7 +94,7 @@ class MenuController extends Controller
 
         return response()->json([
             'message' => 'Menu updated successfully',
-            'menu' => $menu,
+            'menu'    => $menu,
         ]);
     }
 
@@ -158,7 +135,7 @@ class MenuController extends Controller
 
         return response()->json([
             'message' => 'Menu item added successfully',
-            'item' => $item,
+            'item'    => $item,
         ], 201);
     }
 
@@ -173,7 +150,7 @@ class MenuController extends Controller
 
         return response()->json([
             'message' => 'Menu item updated successfully',
-            'item' => $item,
+            'item'    => $item,
         ]);
     }
 
@@ -195,15 +172,15 @@ class MenuController extends Controller
     public function reorderItems(Request $request, Menu $menu): JsonResponse
     {
         $request->validate([
-            'items' => 'required|array',
-            'items.*.id' => 'required|exists:menu_items,id',
-            'items.*.order' => 'required|integer',
+            'items'             => 'required|array',
+            'items.*.id'        => 'required|exists:menu_items,id',
+            'items.*.order'     => 'required|integer',
             'items.*.parent_id' => 'nullable|exists:menu_items,id',
         ]);
 
         foreach ($request->items as $itemData) {
             MenuItem::where('id', $itemData['id'])->update([
-                'order' => $itemData['order'],
+                'order'     => $itemData['order'],
                 'parent_id' => $itemData['parent_id'] ?? null,
             ]);
         }
@@ -214,19 +191,42 @@ class MenuController extends Controller
     }
 
     /**
+     * Recursively filter menu items by per-item visibility rules.
+     */
+    protected function filterMenuItems($items, $user): array
+    {
+        return $items
+            ->filter(fn ($item) => $item->canView($user))
+            ->map(function ($item) use ($user) {
+                $data = $item->only([
+                    'id', 'label', 'type', 'href', 'icon',
+                    'target', 'order', 'metadata',
+                ]);
+
+                if ($item->children->isNotEmpty()) {
+                    $data['children'] = $this->filterMenuItems($item->children, $user);
+                }
+
+                return $data;
+            })
+            ->values()
+            ->toArray();
+    }
+
+    /**
      * Validation rules for a Menu. Pass the existing menu for an update
      * (so the slug-unique rule can ignore it).
      */
     private function menuRules(?Menu $menu = null): array
     {
-        $slug = 'string|max:255|unique:menus,slug'.($menu ? ','.$menu->id : '');
+        $slug = 'string|max:255|unique:menus,slug' . ($menu ? ',' . $menu->id : '');
 
         return [
-            'name' => ($menu ? '' : 'required|').'string|max:255',
-            'slug' => ($menu ? '' : 'required|').$slug,
-            'location' => 'nullable|string|max:255',
+            'name'        => ($menu ? '' : 'required|') . 'string|max:255',
+            'slug'        => ($menu ? '' : 'required|') . $slug,
+            'location'    => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'is_active' => 'boolean',
+            'is_active'   => 'boolean',
         ];
     }
 
@@ -239,20 +239,20 @@ class MenuController extends Controller
         $req = $creating ? 'required|' : '';
 
         return [
-            'label' => $req.'string|max:255',
-            'type' => $req.'in:custom,page,route,external',
-            'url' => 'nullable|string',
-            'route' => 'nullable|string',
-            'icon' => 'nullable|string',
-            'parent_id' => 'nullable|exists:menu_items,id',
-            'target' => 'string|in:_self,_blank',
-            'permission' => 'nullable|string',
-            'role' => 'nullable|string',
+            'label'         => $req . 'string|max:255',
+            'type'          => $req . 'in:custom,page,route,external',
+            'url'           => 'nullable|string',
+            'route'         => 'nullable|string',
+            'icon'          => 'nullable|string',
+            'parent_id'     => 'nullable|exists:menu_items,id',
+            'target'        => 'string|in:_self,_blank',
+            'permission'    => 'nullable|string',
+            'role'          => 'nullable|string',
             'auth_required' => 'boolean',
-            'guest_only' => 'boolean',
-            'order' => 'integer',
-            'is_active' => 'boolean',
-            'metadata' => 'nullable|array',
+            'guest_only'    => 'boolean',
+            'order'         => 'integer',
+            'is_active'     => 'boolean',
+            'metadata'      => 'nullable|array',
         ];
     }
 }

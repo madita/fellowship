@@ -40,7 +40,7 @@ class Setting extends Model
 
         try {
             // Direct database query to avoid recursion
-            $setting = static::where('key', 'cache_enabled')->first();
+            $setting              = static::where('key', 'cache_enabled')->first();
             static::$cacheEnabled = $setting ? static::castValue($setting->value, $setting->type) : true;
         } catch (\Exception $e) {
             static::$cacheEnabled = true; // Default to enabled
@@ -61,8 +61,8 @@ class Setting extends Model
 
         try {
             // Direct database query to avoid recursion
-            $setting = static::where('key', 'cache_lifetime_minutes')->first();
-            $minutes = $setting ? (int) $setting->value : 60;
+            $setting               = static::where('key', 'cache_lifetime_minutes')->first();
+            $minutes               = $setting ? (int) $setting->value : 60;
             static::$cacheLifetime = $minutes * 60; // Convert to seconds
         } catch (\Exception $e) {
             static::$cacheLifetime = static::$defaultCacheLifetime;
@@ -76,7 +76,7 @@ class Setting extends Model
      */
     public static function resetCacheConfig(): void
     {
-        static::$cacheEnabled = null;
+        static::$cacheEnabled  = null;
         static::$cacheLifetime = null;
     }
 
@@ -86,9 +86,9 @@ class Setting extends Model
     public static function get(string $key, $default = null)
     {
         // If caching is disabled, fetch directly from database
-        if (! static::isCacheEnabled()) {
+        if ( ! static::isCacheEnabled()) {
             $setting = static::where('key', $key)->first();
-            if (! $setting) {
+            if ( ! $setting) {
                 return $default;
             }
 
@@ -100,7 +100,7 @@ class Setting extends Model
         return Cache::remember("setting.{$key}", $lifetime, function () use ($key, $default) {
             $setting = static::where('key', $key)->first();
 
-            if (! $setting) {
+            if ( ! $setting) {
                 return $default;
             }
 
@@ -132,9 +132,9 @@ class Setting extends Model
     public static function getAllSettings(): array
     {
         // If caching is disabled, fetch directly from database
-        if (! static::isCacheEnabled()) {
+        if ( ! static::isCacheEnabled()) {
             $settings = static::query()->get();
-            $result = [];
+            $result   = [];
             foreach ($settings as $setting) {
                 $result[$setting->key] = static::castValue($setting->value, $setting->type);
             }
@@ -146,7 +146,7 @@ class Setting extends Model
 
         return Cache::remember('settings.all', $lifetime, function () {
             $settings = static::query()->get();
-            $result = [];
+            $result   = [];
 
             foreach ($settings as $setting) {
                 $result[$setting->key] = static::castValue($setting->value, $setting->type);
@@ -222,7 +222,7 @@ class Setting extends Model
         return match ($type) {
             'boolean' => in_array($value, ['1', 1, true, 'true', 'yes', 'on'], true),
             'integer' => (int) $value,
-            'float' => (float) $value,
+            'float'   => (float) $value,
             'array', 'json' => json_decode($value, true),
             default => $value,
         };

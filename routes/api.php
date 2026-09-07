@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\MigrationController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\CommonController;
 use App\Http\Controllers\RelateableController;
@@ -84,9 +85,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 Route::get('/settings/oauth-providers', 'App\Http\Controllers\Admin\SettingsController@getEnabledOAuthProviders');
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    $user = $request->user();
+    $user        = $request->user();
     $permissions = $user->getAllPermissions()->pluck('name');
-    $roles = $user->roles()->pluck('name');
+    $roles       = $user->roles()->pluck('name');
 
     return ['user' => $user, 'roles' => $roles, 'permissions' => $permissions];
 });
@@ -308,9 +309,9 @@ Route::get('/common/items', [CommonController::class, 'getItems']);
 // Cache test route
 Route::get('/cache-test', function () {
     return response()->json([
-        'cache_enabled' => Setting::isCacheEnabled(),
+        'cache_enabled'  => Setting::isCacheEnabled(),
         'cache_lifetime' => Setting::getCacheLifetime(),
-        'time' => now()->toDateTimeString(),
+        'time'           => now()->toDateTimeString(),
     ]);
 })->middleware('cache.control');
 
@@ -356,9 +357,9 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api.key', 'api.rate']], functi
     // Example: Get current user info via API key
     Route::get('/me', function (Request $request) {
         return response()->json([
-            'user' => $request->user()->only(['id', 'name', 'username', 'email']),
+            'user'    => $request->user()->only(['id', 'name', 'username', 'email']),
             'api_key' => [
-                'id' => $request->attributes->get('api_key')->id,
+                'id'   => $request->attributes->get('api_key')->id,
                 'name' => $request->attributes->get('api_key')->name,
             ],
         ]);
@@ -451,7 +452,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
 
     // Migration Dashboard — the controller and its jobs are intentionally
     // not in the repo yet; only register the routes where they exist.
-    if (class_exists(\App\Http\Controllers\Admin\MigrationController::class)) {
+    if (class_exists(MigrationController::class)) {
         Route::get('/migrations', 'App\Http\Controllers\Admin\MigrationController@index');
         Route::post('/migrations/start', 'App\Http\Controllers\Admin\MigrationController@start');
         Route::get('/migrations/status/{batchId}', 'App\Http\Controllers\Admin\MigrationController@status');
@@ -521,13 +522,13 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
 
 Route::post('/login', function (Request $request) {
     $data = $request->validate([
-        'email' => 'required|email',
+        'email'    => 'required|email',
         'password' => 'required',
     ]);
 
     $user = User::where('email', $request->email)->first();
 
-    if (! $user || ! Hash::check($request->password, $user->password)) {
+    if ( ! $user || ! Hash::check($request->password, $user->password)) {
         return response([
             'message' => ['These credentials do not match our records.'],
         ], 404);
@@ -535,14 +536,14 @@ Route::post('/login', function (Request $request) {
 
     $user->update([
         'previous_login_at' => $user->last_login_at,
-        'last_login_at' => now()->toDateTimeString(),
-        'last_login_ip' => $request->getClientIp(),
+        'last_login_at'     => now()->toDateTimeString(),
+        'last_login_ip'     => $request->getClientIp(),
     ]);
 
     $token = $user->createToken('my-app-token')->plainTextToken;
 
     $response = [
-        'user' => $user,
+        'user'  => $user,
         'token' => $token,
     ];
 

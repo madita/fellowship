@@ -57,12 +57,12 @@ class Announcement extends Notification
     public function toArray($notifiable)
     {
         return [
-            'subject' => $this->message['subject'],
-            'body' => $this->message['body'],
+            'subject'  => $this->message['subject'],
+            'body'     => $this->message['body'],
             'notifier' => auth()->user(),
-            'url' => $this->message['url'],
-            'action' => $this->message['action'],
-            'thanks' => $this->message['thanks'],
+            'url'      => $this->message['url'],
+            'action'   => $this->message['action'],
+            'thanks'   => $this->message['thanks'],
         ];
     }
 }

@@ -45,6 +45,17 @@ class Page extends Model implements CanHaveTaxonomies, HasMedia, TranslatableCon
 
     protected $table = 'pages';
 
+    protected $wikiable = [
+        'title' => 'title',
+        'slug'  => 'slug',
+    ];
+
+    protected $revisionable = [
+        'title',
+        'slug',
+        'content',
+    ];
+
     public function sluggable(): array
     {
         return [
@@ -53,17 +64,6 @@ class Page extends Model implements CanHaveTaxonomies, HasMedia, TranslatableCon
             ],
         ];
     }
-
-    protected $wikiable = [
-        'title' => 'title',
-        'slug' => 'slug',
-    ];
-
-    protected $revisionable = [
-        'title',
-        'slug',
-        'content',
-    ];
 
     public function user()
     {
@@ -91,7 +91,7 @@ class Page extends Model implements CanHaveTaxonomies, HasMedia, TranslatableCon
 
         $parent = $this->parent;
 
-        while (! is_null($parent)) {
+        while ( ! is_null($parent)) {
             $parents->push($parent);
             $parent = $parent->parent;
         }

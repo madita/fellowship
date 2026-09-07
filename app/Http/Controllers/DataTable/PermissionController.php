@@ -57,7 +57,7 @@ class PermissionController extends DataTableController
     public function getCustomColumnsNames()
     {
         return [
-            'name' => 'Name',
+            'name'         => 'Name',
             'display_name' => 'Display Name',
         ];
     }

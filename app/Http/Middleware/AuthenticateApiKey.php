@@ -24,7 +24,7 @@ class AuthenticateApiKey
     {
         // Check if API keys are enabled
         $apiKeysEnabled = Setting::get('api_keys_enabled', false);
-        if (! $apiKeysEnabled) {
+        if ( ! $apiKeysEnabled) {
             return response()->json([
                 'message' => __('messages.api_keys.auth_disabled'),
             ], 403);
@@ -33,31 +33,31 @@ class AuthenticateApiKey
         // Try to extract API credentials
         $credentials = $this->extractCredentials($request);
 
-        if (! $credentials) {
+        if ( ! $credentials) {
             return response()->json([
                 'message' => __('messages.api_keys.auth_required'),
-                'hint' => 'Provide X-API-Key and X-API-Secret headers, or Authorization: Bearer {key}:{secret}',
+                'hint'    => 'Provide X-API-Key and X-API-Secret headers, or Authorization: Bearer {key}:{secret}',
             ], 401);
         }
 
         // Find the API key
         $apiKey = ApiKey::findByKey($credentials['key']);
 
-        if (! $apiKey) {
+        if ( ! $apiKey) {
             return response()->json([
                 'message' => __('messages.api_keys.invalid_key'),
             ], 401);
         }
 
         // Verify secret
-        if (! $apiKey->verifySecret($credentials['secret'])) {
+        if ( ! $apiKey->verifySecret($credentials['secret'])) {
             return response()->json([
                 'message' => __('messages.api_keys.invalid_secret'),
             ], 401);
         }
 
         // Check if key is valid (active and not expired)
-        if (! $apiKey->isValid()) {
+        if ( ! $apiKey->isValid()) {
             return response()->json([
                 'message' => __('messages.api_keys.inactive_or_expired'),
             ], 401);
@@ -88,7 +88,7 @@ class AuthenticateApiKey
     protected function extractCredentials(Request $request): ?array
     {
         // Method 1: X-API-Key and X-API-Secret headers
-        $key = $request->header('X-API-Key');
+        $key    = $request->header('X-API-Key');
         $secret = $request->header('X-API-Secret');
 
         if ($key && $secret) {

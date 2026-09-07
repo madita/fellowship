@@ -42,27 +42,27 @@ class IrcController extends Controller
     public function createConnection(Request $request): JsonResponse
     {
         $request->validate([
-            'irc_server_id' => 'required|exists:irc_servers,id',
-            'nickname' => 'required|string|max:30',
-            'username' => 'nullable|string|max:30',
-            'realname' => 'nullable|string|max:100',
-            'auto_connect' => 'boolean',
+            'irc_server_id'      => 'required|exists:irc_servers,id',
+            'nickname'           => 'required|string|max:30',
+            'username'           => 'nullable|string|max:30',
+            'realname'           => 'nullable|string|max:100',
+            'auto_connect'       => 'boolean',
             'auto_join_channels' => 'nullable|array',
         ]);
 
         $connection = IrcConnection::create([
-            'user_id' => Auth::id(),
-            'irc_server_id' => $request->irc_server_id,
-            'nickname' => $request->nickname,
-            'username' => $request->username ?? $request->nickname,
-            'realname' => $request->realname ?? $request->nickname,
-            'auto_connect' => $request->auto_connect ?? false,
+            'user_id'            => Auth::id(),
+            'irc_server_id'      => $request->irc_server_id,
+            'nickname'           => $request->nickname,
+            'username'           => $request->username ?? $request->nickname,
+            'realname'           => $request->realname ?? $request->nickname,
+            'auto_connect'       => $request->auto_connect ?? false,
             'auto_join_channels' => $request->auto_join_channels ?? [],
-            'status' => 'disconnected',
+            'status'             => 'disconnected',
         ]);
 
         return response()->json([
-            'message' => 'IRC connection created',
+            'message'    => 'IRC connection created',
             'connection' => $connection->load('server'),
         ], 201);
     }
@@ -75,13 +75,13 @@ class IrcController extends Controller
         $this->authorize('update', $connection);
 
         $request->validate([
-            'nickname' => 'string|max:30',
-            'username' => 'nullable|string|max:30',
-            'realname' => 'nullable|string|max:100',
-            'auto_connect' => 'boolean',
+            'nickname'           => 'string|max:30',
+            'username'           => 'nullable|string|max:30',
+            'realname'           => 'nullable|string|max:100',
+            'auto_connect'       => 'boolean',
             'auto_join_channels' => 'nullable|array',
-            'comic_character' => 'nullable|string|in:cat,dog,robot,alien,wizard,ninja,pirate,knight',
-            'comic_view_mode' => 'nullable|string|in:classic,comic',
+            'comic_character'    => 'nullable|string|in:cat,dog,robot,alien,wizard,ninja,pirate,knight',
+            'comic_view_mode'    => 'nullable|string|in:classic,comic',
         ]);
 
         $connection->update($request->only([
@@ -95,7 +95,7 @@ class IrcController extends Controller
         ]));
 
         return response()->json([
-            'message' => 'Connection updated',
+            'message'    => 'Connection updated',
             'connection' => $connection,
         ]);
     }
@@ -123,7 +123,7 @@ class IrcController extends Controller
 
         // Without a running daemon the queued command is never consumed and
         // the connection would hang in "connecting" forever.
-        if (! IrcConnectionManager::isDaemonRunning()) {
+        if ( ! IrcConnectionManager::isDaemonRunning()) {
             return response()->json([
                 'message' => 'The IRC daemon is not running — connecting is currently unavailable.',
             ], 503);
@@ -132,12 +132,12 @@ class IrcController extends Controller
         $connection->update(['status' => 'connecting']);
 
         Redis::rpush('irc:commands', json_encode([
-            'type' => 'connect',
+            'type'          => 'connect',
             'connection_id' => $connection->id,
         ]));
 
         return response()->json([
-            'message' => 'Connecting to IRC server...',
+            'message'    => 'Connecting to IRC server...',
             'connection' => $connection->fresh('server'),
         ]);
     }
@@ -152,23 +152,23 @@ class IrcController extends Controller
         // With no daemon to consume the command, mark the connection
         // disconnected directly so the client doesn't stay "connected"
         // (or "connecting") forever.
-        if (! IrcConnectionManager::isDaemonRunning()) {
+        if ( ! IrcConnectionManager::isDaemonRunning()) {
             $connection->update([
-                'status' => 'disconnected',
+                'status'          => 'disconnected',
                 'disconnected_at' => now(),
             ]);
             $connection->channels()->update(['is_joined' => false]);
 
             return response()->json([
-                'message' => 'IRC daemon is not running — connection marked as disconnected.',
+                'message'    => 'IRC daemon is not running — connection marked as disconnected.',
                 'connection' => $connection->fresh('server'),
             ]);
         }
 
         Redis::rpush('irc:commands', json_encode([
-            'type' => 'disconnect',
+            'type'          => 'disconnect',
             'connection_id' => $connection->id,
-            'message' => 'Leaving',
+            'message'       => 'Leaving',
         ]));
 
         return response()->json([
@@ -188,14 +188,14 @@ class IrcController extends Controller
         ]);
 
         $channelName = $request->channel;
-        if (! str_starts_with($channelName, '#')) {
-            $channelName = '#'.$channelName;
+        if ( ! str_starts_with($channelName, '#')) {
+            $channelName = '#' . $channelName;
         }
 
         $channel = IrcChannel::firstOrCreate(
             [
                 'irc_connection_id' => $connection->id,
-                'name' => $channelName,
+                'name'              => $channelName,
             ],
             [
                 'is_joined' => false,
@@ -205,9 +205,9 @@ class IrcController extends Controller
 
         // Send JOIN command to IRC daemon
         Redis::rpush('irc:commands', json_encode([
-            'type' => 'join',
+            'type'          => 'join',
             'connection_id' => $connection->id,
-            'channel' => $channelName,
+            'channel'       => $channelName,
         ]));
 
         return response()->json([
@@ -224,9 +224,9 @@ class IrcController extends Controller
         $this->authorize('update', $channel->connection);
 
         Redis::rpush('irc:commands', json_encode([
-            'type' => 'part',
+            'type'          => 'part',
             'connection_id' => $channel->irc_connection_id,
-            'channel' => $channel->name,
+            'channel'       => $channel->name,
         ]));
 
         return response()->json([
@@ -241,7 +241,7 @@ class IrcController extends Controller
     {
         $this->authorize('view', $channel->connection);
 
-        $limit = $request->get('limit', 100);
+        $limit  = $request->get('limit', 100);
         $before = $request->get('before'); // Message ID for pagination
 
         // Get the latest N messages, then sort chronologically
@@ -268,39 +268,39 @@ class IrcController extends Controller
         $this->authorize('update', $channel->connection);
 
         $request->validate([
-            'message' => 'required|string',
-            'type' => 'nullable|string|in:message,action',
-            'emotion' => 'nullable|string',
-            'gesture' => 'nullable|string',
+            'message'     => 'required|string',
+            'type'        => 'nullable|string|in:message,action',
+            'emotion'     => 'nullable|string',
+            'gesture'     => 'nullable|string',
             'bubble_type' => 'nullable|string',
         ]);
 
         $msgType = $request->type ?? 'message';
 
         $message = IrcMessage::create([
-            'irc_channel_id' => $channel->id,
+            'irc_channel_id'    => $channel->id,
             'irc_connection_id' => $channel->irc_connection_id,
-            'type' => $msgType,
-            'from_nick' => $channel->connection->nickname,
-            'message' => $request->message,
-            'emotion' => $request->emotion ?? 'normal',
-            'gesture' => $request->gesture ?? 'none',
-            'bubble_type' => $request->bubble_type ?? 'speech',
-            'sent_at' => now(),
+            'type'              => $msgType,
+            'from_nick'         => $channel->connection->nickname,
+            'message'           => $request->message,
+            'emotion'           => $request->emotion ?? 'normal',
+            'gesture'           => $request->gesture ?? 'none',
+            'bubble_type'       => $request->bubble_type ?? 'speech',
+            'sent_at'           => now(),
         ]);
 
         // Send to actual IRC server via daemon
         Redis::rpush('irc:commands', json_encode([
-            'type' => 'send',
+            'type'          => 'send',
             'connection_id' => $channel->irc_connection_id,
-            'target' => $channel->name,
-            'message' => $request->message,
-            'msg_type' => $msgType,
+            'target'        => $channel->name,
+            'message'       => $request->message,
+            'msg_type'      => $msgType,
         ]));
 
         return response()->json([
             'message' => 'Message sent',
-            'data' => $message,
+            'data'    => $message,
         ], 201);
     }
 
@@ -369,7 +369,7 @@ class IrcController extends Controller
 
         // Read from Redis (populated by the IRC daemon)
         $redisKey = "irc:channel_users:{$channel->id}";
-        $cached = Redis::get($redisKey);
+        $cached   = Redis::get($redisKey);
 
         if ($cached) {
             return response()->json(json_decode($cached, true));
@@ -382,9 +382,9 @@ class IrcController extends Controller
             [
                 'nickname' => $connection->nickname,
                 'isOnline' => $connection->status === 'connected',
-                'isOp' => false,
-                'isVoice' => false,
-                'prefix' => '',
+                'isOp'     => false,
+                'isVoice'  => false,
+                'prefix'   => '',
             ],
         ]);
     }
@@ -409,7 +409,7 @@ class IrcController extends Controller
     public function pollEvents(): JsonResponse
     {
         $userId = Auth::id();
-        $key = "irc:events:{$userId}";
+        $key    = "irc:events:{$userId}";
 
         // Get all pending events and clear them
         $events = Redis::lrange($key, 0, -1);
@@ -432,9 +432,9 @@ class IrcController extends Controller
         ]);
 
         Redis::rpush('irc:commands', json_encode([
-            'type' => 'nick',
+            'type'          => 'nick',
             'connection_id' => $connection->id,
-            'nickname' => $request->nickname,
+            'nickname'      => $request->nickname,
         ]));
 
         return response()->json([
@@ -450,7 +450,7 @@ class IrcController extends Controller
         $this->authorize('update', $connection);
 
         $request->validate([
-            'nick' => 'required|string|max:30',
+            'nick'    => 'required|string|max:30',
             'message' => 'nullable|string',
         ]);
 
@@ -460,34 +460,34 @@ class IrcController extends Controller
         $channel = IrcChannel::firstOrCreate(
             [
                 'irc_connection_id' => $connection->id,
-                'name' => $nick,
+                'name'              => $nick,
             ],
             [
-                'is_joined' => true,
+                'is_joined'  => true,
                 'is_private' => true,
-                'joined_at' => now(),
+                'joined_at'  => now(),
             ]
         );
 
         if ($request->message) {
             // Store the outgoing message
             IrcMessage::create([
-                'irc_channel_id' => $channel->id,
+                'irc_channel_id'    => $channel->id,
                 'irc_connection_id' => $connection->id,
-                'type' => 'message',
-                'from_nick' => $connection->nickname,
-                'message' => $request->message,
-                'is_private' => true,
-                'sent_at' => now(),
+                'type'              => 'message',
+                'from_nick'         => $connection->nickname,
+                'message'           => $request->message,
+                'is_private'        => true,
+                'sent_at'           => now(),
             ]);
 
             // Send via IRC daemon
             Redis::rpush('irc:commands', json_encode([
-                'type' => 'send',
+                'type'          => 'send',
                 'connection_id' => $connection->id,
-                'target' => $nick,
-                'message' => $request->message,
-                'msg_type' => 'message',
+                'target'        => $nick,
+                'message'       => $request->message,
+                'msg_type'      => 'message',
             ]));
         }
 

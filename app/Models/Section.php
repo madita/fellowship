@@ -13,9 +13,9 @@ class Section extends Model implements TranslatableContract
     use HasFactory;
     use Translatable;
 
-    protected $table = 'sections';
-
     public $translatedAttributes = ['title'];
+
+    protected $table = 'sections';
 
     protected $fillable = [
         'location',
@@ -28,8 +28,8 @@ class Section extends Model implements TranslatableContract
 
     protected $casts = [
         'enabled' => 'boolean',
-        'order' => 'integer',
-        'config' => 'array',
+        'order'   => 'integer',
+        'config'  => 'array',
     ];
 
     protected $attributes = [
@@ -89,6 +89,36 @@ class Section extends Model implements TranslatableContract
     }
 
     /**
+     * Get the number of columns for this section's layout.
+     */
+    public function getColumnCountAttribute()
+    {
+        return match ($this->layout) {
+            '1-col' => 1,
+            '2-col', '2-1-col', '1-2-col' => 2,
+            '3-col' => 3,
+            '4-col' => 4,
+            default => 1,
+        };
+    }
+
+    /**
+     * Get the column widths for this layout.
+     */
+    public function getColumnWidthsAttribute()
+    {
+        return match ($this->layout) {
+            '1-col'   => [12],
+            '2-col'   => [6, 6],
+            '3-col'   => [4, 4, 4],
+            '4-col'   => [3, 3, 3, 3],
+            '2-1-col' => [8, 4], // 66% / 33%
+            '1-2-col' => [4, 8], // 33% / 66%
+            default   => [12],
+        };
+    }
+
+    /**
      * Boot method to clear cache on save/delete.
      */
     protected static function boot()
@@ -112,35 +142,5 @@ class Section extends Model implements TranslatableContract
         static::deleted(function () {
             self::clearCache();
         });
-    }
-
-    /**
-     * Get the number of columns for this section's layout.
-     */
-    public function getColumnCountAttribute()
-    {
-        return match ($this->layout) {
-            '1-col' => 1,
-            '2-col', '2-1-col', '1-2-col' => 2,
-            '3-col' => 3,
-            '4-col' => 4,
-            default => 1,
-        };
-    }
-
-    /**
-     * Get the column widths for this layout.
-     */
-    public function getColumnWidthsAttribute()
-    {
-        return match ($this->layout) {
-            '1-col' => [12],
-            '2-col' => [6, 6],
-            '3-col' => [4, 4, 4],
-            '4-col' => [3, 3, 3, 3],
-            '2-1-col' => [8, 4], // 66% / 33%
-            '1-2-col' => [4, 8], // 33% / 66%
-            default => [12],
-        };
     }
 }

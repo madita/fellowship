@@ -50,7 +50,7 @@ class Taxonomy extends Model implements TranslatableContract
 
     /** {@inheritdoc} */
     protected $casts = [
-        'visible' => 'boolean',
+        'visible'    => 'boolean',
         'searchable' => 'boolean',
         'properties' => 'array',
 
@@ -62,37 +62,19 @@ class Taxonomy extends Model implements TranslatableContract
         'term',
     ];
 
+    protected $hidden = [''];
+
+    /**
+     * {@inheritdoc}
+     */
+    protected $dates = ['deleted_at'];
+
     /** {@inheritdoc} */
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
 
         $this->table = config('lecturize.taxonomies.taxonomies.table', 'taxonomies');
-    }
-
-    /** {@inheritdoc} */
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function (Taxonomy $model) {
-            if ($model->getConnection()
-                ->getSchemaBuilder()
-                ->hasColumn($model->getTable(), 'uuid')) {
-                $model->uuid = Str::uuid()->toString();
-            }
-        });
-
-        static::saving(function (Taxonomy $model) {
-            if (isset($model->term) && $model->term->title && ! $model->description) {
-                $model->description = $model->term->title;
-            }
-
-            if (! $model->sort) {
-                $sort = ($siblings = $model->siblings()->get()) ? $siblings->max('sort') : 0;
-                $model->sort = ($sort + 1);
-            }
-        });
     }
 
     /**
@@ -154,7 +136,7 @@ class Taxonomy extends Model implements TranslatableContract
         ])->rememberForever($key, function () use ($exclude_self) {
             $parameters = $this->getParentBreadcrumbs();
 
-            if (! $exclude_self) {
+            if ( ! $exclude_self) {
                 $parameters->push($this->taxonomy);
             }
 
@@ -172,8 +154,8 @@ class Taxonomy extends Model implements TranslatableContract
         }
 
         $parameters->push([
-            'title' => $this->term->title,
-            'slug' => $this->term->slug,
+            'title'  => $this->term->title,
+            'slug'   => $this->term->slug,
             'params' => $this->getRouteParameters(),
         ]);
 
@@ -195,7 +177,7 @@ class Taxonomy extends Model implements TranslatableContract
         return maybe_tagged_cache(['taxonomies', 'taxonomies:taxonomy', "taxonomies:taxonomy:$this->id"])->rememberForever($key, function () use ($exclude_taxonomy) {
             $parameters = $this->getParentSlugs();
 
-            if (! $exclude_taxonomy) {
+            if ( ! $exclude_taxonomy) {
                 $parameters[] = $this->taxonomy;
             }
 
@@ -259,7 +241,7 @@ class Taxonomy extends Model implements TranslatableContract
     public function scopeSearch(Builder $query, string $term, string $taxonomy): Builder
     {
         return $query->whereHas('term', function (Builder $q) use ($term) {
-            $q->where('title', 'like', '%'.$term.'%');
+            $q->where('title', 'like', '%' . $term . '%');
         });
     }
 
@@ -278,13 +260,6 @@ class Taxonomy extends Model implements TranslatableContract
     {
         return $query->where('searchable', 1);
     }
-
-    protected $hidden = [''];
-
-    /**
-     * {@inheritdoc}
-     */
-    protected $dates = ['deleted_at'];
 
     //    public function getTaxableTitle()
     //    {
@@ -445,7 +420,7 @@ class Taxonomy extends Model implements TranslatableContract
             $categories = explode('|', $categories);
         }
 
-        $terms = collect();
+        $terms      = collect();
         $taxonomies = collect();
 
         if (count($categories) > 0) {
@@ -453,8 +428,7 @@ class Taxonomy extends Model implements TranslatableContract
                 if (is_string($category)) {
                     $term = Term::firstOrCreateByTitle($category);
                 } else {
-
-                    $term = Term::firstOrCreateByTitle($category['title']);
+                    $term        = Term::firstOrCreateByTitle($category['title']);
                     $term->color = $category['color'];
                 }
 
@@ -465,7 +439,7 @@ class Taxonomy extends Model implements TranslatableContract
 
         foreach ($terms as $term) {
             $tax = Taxonomy::firstOrNew([
-                'term_id' => $term->id,
+                'term_id'  => $term->id,
                 'taxonomy' => $taxonomy,
             ]);
 
@@ -485,5 +459,30 @@ class Taxonomy extends Model implements TranslatableContract
         }
 
         return $taxonomies;
+    }
+
+    /** {@inheritdoc} */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function (Taxonomy $model) {
+            if ($model->getConnection()
+                ->getSchemaBuilder()
+                ->hasColumn($model->getTable(), 'uuid')) {
+                $model->uuid = Str::uuid()->toString();
+            }
+        });
+
+        static::saving(function (Taxonomy $model) {
+            if (isset($model->term) && $model->term->title && ! $model->description) {
+                $model->description = $model->term->title;
+            }
+
+            if ( ! $model->sort) {
+                $sort        = ($siblings = $model->siblings()->get()) ? $siblings->max('sort') : 0;
+                $model->sort = ($sort + 1);
+            }
+        });
     }
 }

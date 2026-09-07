@@ -60,42 +60,42 @@ class RelateableController extends Controller
     public function relateModels(Request $request)
     {
         $request->validate([
-            'data.sourceType' => 'required|string',
-            'data.sourceId' => 'required|integer',
+            'data.sourceType'  => 'required|string',
+            'data.sourceId'    => 'required|integer',
             'data.relatedType' => 'required|string',
-            'data.relatedId' => 'required|integer',
+            'data.relatedId'   => 'required|integer',
         ]);
 
         $data = $request->get('data');
 
-        $sourceType = $data['sourceType'];
+        $sourceType  = $data['sourceType'];
         $relatedType = $data['relatedType'];
 
         // SECURITY: Validate model types against whitelist to prevent arbitrary class instantiation
-        if (! in_array($sourceType, self::ALLOWED_RELATEABLE_TYPES, true)) {
+        if ( ! in_array($sourceType, self::ALLOWED_RELATEABLE_TYPES, true)) {
             Log::warning('Relateable: Invalid source type attempted', [
                 'sourceType' => $sourceType,
-                'user_id' => auth()->id(),
-                'ip' => $request->ip(),
+                'user_id'    => auth()->id(),
+                'ip'         => $request->ip(),
             ]);
 
             return response()->json(['error' => __('messages.common.invalid_model_type')], 400);
         }
 
-        if (! in_array($relatedType, self::ALLOWED_RELATEABLE_TYPES, true)) {
+        if ( ! in_array($relatedType, self::ALLOWED_RELATEABLE_TYPES, true)) {
             Log::warning('Relateable: Invalid related type attempted', [
                 'relatedType' => $relatedType,
-                'user_id' => auth()->id(),
-                'ip' => $request->ip(),
+                'user_id'     => auth()->id(),
+                'ip'          => $request->ip(),
             ]);
 
             return response()->json(['error' => __('messages.common.invalid_model_type')], 400);
         }
 
-        $sourceItem = $sourceType::find($data['sourceId']);
+        $sourceItem  = $sourceType::find($data['sourceId']);
         $relatedItem = $relatedType::find($data['relatedId']);
 
-        if (! $sourceItem || ! $relatedItem) {
+        if ( ! $sourceItem || ! $relatedItem) {
             return response()->json(['error' => __('messages.common.item_not_found')], 404);
         }
 
@@ -110,22 +110,22 @@ class RelateableController extends Controller
     public function unrelateModels(Request $request)
     {
         $request->validate([
-            'data' => 'required|array',
-            'data.sourceType' => 'required|string',
-            'data.sourceId' => 'required|integer',
+            'data'             => 'required|array',
+            'data.sourceType'  => 'required|string',
+            'data.sourceId'    => 'required|integer',
             'data.relatedType' => 'required|string',
-            'data.relatedId' => 'required|integer',
+            'data.relatedId'   => 'required|integer',
         ]);
 
         $data = $request->get('data');
 
-        $source = $data['sourceType'];
+        $source     = $data['sourceType'];
         $sourceItem = $source::where('id', $data['sourceId'])->first();
 
-        $related = $data['relatedType'];
+        $related     = $data['relatedType'];
         $relatedItem = $related::where('id', $data['relatedId'])->first();
 
-        if (! $sourceItem || ! $relatedItem) {
+        if ( ! $sourceItem || ! $relatedItem) {
             return response()->json(['message' => 'Source or related item not found'], 404);
         }
 
@@ -140,18 +140,18 @@ class RelateableController extends Controller
     {
         $request->validate([
             'modelType' => 'required|string',
-            'modelId' => 'required|integer',
+            'modelId'   => 'required|integer',
         ]);
 
         $modelType = $request->get('modelType');
-        $modelId = $request->get('modelId');
+        $modelId   = $request->get('modelId');
 
         // SECURITY: Validate model type against whitelist
-        if (! in_array($modelType, self::ALLOWED_RELATEABLE_TYPES, true)) {
+        if ( ! in_array($modelType, self::ALLOWED_RELATEABLE_TYPES, true)) {
             Log::warning('Relateable: Invalid model type in getRelatedItems', [
                 'modelType' => $modelType,
-                'user_id' => auth()->id(),
-                'ip' => $request->ip(),
+                'user_id'   => auth()->id(),
+                'ip'        => $request->ip(),
             ]);
 
             return response()->json(['error' => __('messages.common.invalid_model_type')], 400);
@@ -176,16 +176,16 @@ class RelateableController extends Controller
 
             return [
                 'source' => [
-                    'id' => $item->source->id,
-                    'type' => $item->source_type,
+                    'id'    => $item->source->id,
+                    'type'  => $item->source_type,
                     'title' => $this->getModelLabel($item->source),
-                    'slug' => $item->source->slug,
+                    'slug'  => $item->source->slug,
                 ],
                 'related' => [
-                    'id' => $relatedModel->id,
-                    'type' => $item->related_type,
-                    'title' => $this->getModelLabel($relatedModel),
-                    'slug' => $relatedModel->slug,
+                    'id'         => $relatedModel->id,
+                    'type'       => $item->related_type,
+                    'title'      => $this->getModelLabel($relatedModel),
+                    'slug'       => $relatedModel->slug,
                     'coverImage' => $coverImage, // Include the coverImage for related items
                 ],
             ];

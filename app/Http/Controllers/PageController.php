@@ -14,7 +14,9 @@ class PageController extends Controller
      *
      * @return void
      */
-    public function __construct() {}
+    public function __construct()
+    {
+    }
 
     /**
      * view landing pages.
@@ -29,7 +31,7 @@ class PageController extends Controller
         $parent = null;
         // $pages = Page::all();
 
-        if (! $page || ! $page->published) {
+        if ( ! $page || ! $page->published) {
             return abort(404);
         }
 
@@ -40,9 +42,9 @@ class PageController extends Controller
         $tax = $page->taxonomies()->get()->groupBy('taxonomy')->map(function ($items) {
             return $items->filter(fn ($t) => $t->term)->map(function ($t) {
                 return [
-                    'id' => $t->term->id,
-                    'name' => $t->term->title,
-                    'slug' => $t->term->slug,
+                    'id'    => $t->term->id,
+                    'name'  => $t->term->title,
+                    'slug'  => $t->term->slug,
                     'color' => $t->color,
                 ];
             })->values();
@@ -54,16 +56,16 @@ class PageController extends Controller
 
     public function show(Page $page)
     {
-        if (! $page) {
+        if ( ! $page) {
             return abort(404);
         }
 
         $tax = $page->taxonomies()->get()->groupBy('taxonomy')->map(function ($items) {
             return $items->filter(fn ($t) => $t->term)->map(function ($t) {
                 return [
-                    'id' => $t->term->id,
+                    'id'    => $t->term->id,
                     'title' => $t->term->title,
-                    'slug' => $t->term->slug,
+                    'slug'  => $t->term->slug,
                     'color' => $t->color,
                 ];
             })->values();
@@ -86,7 +88,7 @@ class PageController extends Controller
     {
         //        $page = Page::where('slug', '=', $slug)->first();
 
-        if (! $page || ! $page->published) {
+        if ( ! $page || ! $page->published) {
             return abort(404);
         }
 

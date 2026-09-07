@@ -40,6 +40,23 @@ abstract class DataTableController extends Controller
     protected $builder;
 
     /**
+     * Create the controller, check builder method and assign
+     * to the builder property.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        if ( ! method_exists($this, 'builder')) {
+            throw new Exception('No entity builder method defined.');
+        }
+
+        if ( ! ($this->builder = $this->builder()) instanceof Builder) {
+            throw new Exception('Entity builder not instance of Builder.');
+        }
+    }
+
+    /**
      * Get the columns that are allowed to be displayed.
      *
      * @return array
@@ -67,37 +84,20 @@ abstract class DataTableController extends Controller
         return [];
     }
 
-    /**
-     * Create the controller, check builder method and assign
-     * to the builder property.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        if (! method_exists($this, 'builder')) {
-            throw new Exception('No entity builder method defined.');
-        }
-
-        if (! ($this->builder = $this->builder()) instanceof Builder) {
-            throw new Exception('Entity builder not instance of Builder.');
-        }
-    }
-
     public function getHeaders()
     {
         $columnNames = $this->getCustomColumnsNames();
 
         return collect($this->getDisplayableColumns())->map(function ($column) use ($columnNames) {
             return [
-                'text' => isset($columnNames[$column]) ? $columnNames[$column] : $column,
+                'text'     => isset($columnNames[$column]) ? $columnNames[$column] : $column,
                 'sortable' => false,
-                'value' => $column,
+                'value'    => $column,
             ];
         })->add([
-            'text' => 'Actions',
+            'text'     => 'Actions',
             'sortable' => false,
-            'value' => 'actions',
+            'value'    => 'actions',
         ]);
     }
 
@@ -117,7 +117,7 @@ abstract class DataTableController extends Controller
 
         try {
             // if model has appended attributes and append attributes  not in displayable colimns...forget them
-            $forget = array_diff($this->getAppends(), $this->getDisplayableColumns());
+            $forget     = array_diff($this->getAppends(), $this->getDisplayableColumns());
             $pagination = (int) $request->get('itemsPerPage') <= 0 ? (int) $request->get('itemsLength') : (int) $request->get('itemsPerPage');
 
             if ($pagination === 0) {
@@ -137,19 +137,19 @@ abstract class DataTableController extends Controller
     {
         return response()->json([
             'data' => [
-                'table' => $this->builder->getModel()->getTable(),
-                'headers' => $this->getHeaders(),
-                'records' => $this->getRecords($request),
-                'updatable' => array_values($this->getUpdatableColumns()),
-                'displayable' => array_values($this->getDisplayableColumns()),
-                'column_map' => $this->getCustomColumnsNames(),
-                'column_fields' => $this->getCustomInputFields(),
-                'json_fields' => $this->getCustomJsonFields(),
-                'filter_fields' => $this->getFilterFields(),
+                'table'           => $this->builder->getModel()->getTable(),
+                'headers'         => $this->getHeaders(),
+                'records'         => $this->getRecords($request),
+                'updatable'       => array_values($this->getUpdatableColumns()),
+                'displayable'     => array_values($this->getDisplayableColumns()),
+                'column_map'      => $this->getCustomColumnsNames(),
+                'column_fields'   => $this->getCustomInputFields(),
+                'json_fields'     => $this->getCustomJsonFields(),
+                'filter_fields'   => $this->getFilterFields(),
                 'taxonomy_fields' => $this->getTaxonomyFields(),
-                'toggle_filters' => $this->getToggleFilters(),
-                'allow' => [
-                    'hasForm' => $this->hasForm,
+                'toggle_filters'  => $this->getToggleFilters(),
+                'allow'           => [
+                    'hasForm'  => $this->hasForm,
                     'creation' => $this->allowCreation,
                     'deletion' => $this->allowDeletion,
                 ],
@@ -174,7 +174,7 @@ abstract class DataTableController extends Controller
      */
     public function store(Request $request)
     {
-        if (! $this->allowCreation) {
+        if ( ! $this->allowCreation) {
             return;
         }
 
@@ -200,19 +200,11 @@ abstract class DataTableController extends Controller
      */
     public function destroy($ids, Request $request)
     {
-        if (! $this->allowDeletion) {
+        if ( ! $this->allowDeletion) {
             return;
         }
 
         $this->builder->whereIn('id', explode(',', $ids))->delete();
-    }
-
-    /**
-     * Get the database column names for the entity.
-     */
-    protected function getDatabaseColumnNames(): array
-    {
-        return array_merge(Schema::getColumnListing($this->builder->getModel()->getTable()), $this->getAppends());
     }
 
     public function getCustomInputFields()
@@ -240,6 +232,24 @@ abstract class DataTableController extends Controller
         return [];
     }
 
+    public function getAppends()
+    {
+        return [];
+    }
+
+    public function getCategories($taxonomy)
+    {
+        $this->builder->getModel()->getCategories($taxonomy);
+    }
+
+    /**
+     * Get the database column names for the entity.
+     */
+    protected function getDatabaseColumnNames(): array
+    {
+        return array_merge(Schema::getColumnListing($this->builder->getModel()->getTable()), $this->getAppends());
+    }
+
     /**
      * If the request has the columns required to search.
      *
@@ -262,35 +272,35 @@ abstract class DataTableController extends Controller
         return Arr::get([
             'equals' => [
                 'operator' => '=',
-                'value' => $value,
+                'value'    => $value,
             ],
             'contains' => [
                 'operator' => 'LIKE',
-                'value' => "%{$value}%",
+                'value'    => "%{$value}%",
             ],
             'starts_with' => [
                 'operator' => 'LIKE',
-                'value' => "{$value}%",
+                'value'    => "{$value}%",
             ],
             'ends_with' => [
                 'operator' => 'LIKE',
-                'value' => "%{$value}",
+                'value'    => "%{$value}",
             ],
             'greater_than' => [
                 'operator' => '>',
-                'value' => $value,
+                'value'    => $value,
             ],
             'less_than' => [
                 'operator' => '<',
-                'value' => $value,
+                'value'    => $value,
             ],
             'greater_than_or_equal_to' => [
                 'operator' => '>=',
-                'value' => $value,
+                'value'    => $value,
             ],
             'less_than_or_equal_to' => [
                 'operator' => '<=',
-                'value' => $value,
+                'value'    => $value,
             ],
         ], $operator);
     }
@@ -311,15 +321,5 @@ abstract class DataTableController extends Controller
             $queryParts['operator'],
             $queryParts['value']
         );
-    }
-
-    public function getAppends()
-    {
-        return [];
-    }
-
-    public function getCategories($taxonomy)
-    {
-        $this->builder->getModel()->getCategories($taxonomy);
     }
 }

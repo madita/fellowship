@@ -26,8 +26,8 @@ class PageController extends DataTableController
     {
         //        dd($request);
 
-        $data = $request->only($this->getUpdatableColumns());
-        $data['published'] = ! empty($data['published']) ? 1 : 0;
+        $data                 = $request->only($this->getUpdatableColumns());
+        $data['published']    = ! empty($data['published']) ? 1 : 0;
         $data['sign_in_only'] = ! empty($data['sign_in_only']) ? 1 : 0;
 
         $page = auth()->user()->pages()->create($data);
@@ -40,7 +40,7 @@ class PageController extends DataTableController
         }
 
         if ($request->get('categories')) {
-            $taxonomy = $request->get('taxonomy');
+            $taxonomy     = $request->get('taxonomy');
             $taxonomyName = is_array($taxonomy) ? ($taxonomy['taxonomy'] ?? 'category') : ($taxonomy ?? 'category');
             $page->addCategories($request->get('categories'), $taxonomyName);
         }
@@ -66,7 +66,7 @@ class PageController extends DataTableController
         $page->detachCategories();
 
         if ($request->get('categories')) {
-            $taxonomy = $request->get('taxonomy');
+            $taxonomy     = $request->get('taxonomy');
             $taxonomyName = is_array($taxonomy) ? ($taxonomy['taxonomy'] ?? 'category') : ($taxonomy ?? 'category');
             $page->addCategories($request->get('categories'), $taxonomyName);
         }
@@ -81,13 +81,13 @@ class PageController extends DataTableController
         return [
             'categories' => [
                 'taxonomy' => 'category',
-                'label' => 'Categories',
+                'label'    => 'Categories',
                 'multiple' => true,
                 'endpoint' => '/api/tag/terms/category',
             ],
             'terms' => [
                 'taxonomy' => 'tags',
-                'label' => 'Tags',
+                'label'    => 'Tags',
                 'multiple' => true,
                 'endpoint' => '/api/tag/terms/tags',
             ],
@@ -100,7 +100,7 @@ class PageController extends DataTableController
         $data = $page->toArray();
 
         $data['categories'] = $page->getCategories('category')->pluck('title')->toArray();
-        $data['terms'] = $page->getCategories('tags')->pluck('title')->toArray();
+        $data['terms']      = $page->getCategories('tags')->pluck('title')->toArray();
 
         return response()->json($data);
     }
@@ -117,8 +117,8 @@ class PageController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'content' => 'wysiwyg',
-            'published' => 'checkbox',
+            'content'      => 'wysiwyg',
+            'published'    => 'checkbox',
             'sign_in_only' => 'checkbox', ];
     }
 

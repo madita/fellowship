@@ -28,23 +28,23 @@ class ForumPostController extends Controller
     ): JsonResponse {
         $user = Auth::user();
 
-        if (! $user) {
+        if ( ! $user) {
             abort(401, 'You must be logged in to reply.');
         }
 
-        if (! $thread->canReply($user)) {
+        if ( ! $thread->canReply($user)) {
             abort(403, 'You do not have permission to reply to this thread.');
         }
 
         $validated = $request->validate([
-            'body' => 'required|string',
+            'body'      => 'required|string',
             'parent_id' => 'nullable|exists:forum_posts,id,deleted_at,NULL',
         ]);
 
         // Verify parent_id belongs to this thread if provided
-        if (! empty($validated['parent_id'])) {
+        if ( ! empty($validated['parent_id'])) {
             $parentPost = ForumPost::find($validated['parent_id']);
-            if (! $parentPost) {
+            if ( ! $parentPost) {
                 abort(400, 'Parent post not found.');
             }
             if ($parentPost->thread_id !== $thread->id) {
@@ -63,7 +63,7 @@ class ForumPostController extends Controller
             // The 'sandbox' config matches the TipTap editor's output
             // (tables, code blocks, blockquotes, …) — the default config
             // would silently strip those elements.
-            'body' => Purify::config('sandbox')->clean($validated['body']),
+            'body'      => Purify::config('sandbox')->clean($validated['body']),
             'parent_id' => $validated['parent_id'] ?? null,
         ]);
 
@@ -108,7 +108,7 @@ class ForumPostController extends Controller
     {
         $user = Auth::user();
 
-        if (! $post->canEdit($user)) {
+        if ( ! $post->canEdit($user)) {
             abort(403, 'You do not have permission to edit this post.');
         }
 
@@ -129,7 +129,7 @@ class ForumPostController extends Controller
     {
         $user = Auth::user();
 
-        if (! $post->canDelete($user)) {
+        if ( ! $post->canDelete($user)) {
             abort(403, 'You do not have permission to delete this post.');
         }
 
@@ -145,7 +145,7 @@ class ForumPostController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user) {
+        if ( ! $user) {
             abort(401, 'You must be logged in.');
         }
 
@@ -153,11 +153,11 @@ class ForumPostController extends Controller
 
         // Only thread author, admin, or users with moderate roles can mark solutions
         $canMark = $user->id === $thread->user_id || $user->isAdmin();
-        if (! $canMark) {
+        if ( ! $canMark) {
             $moderateRoles = $thread->category->properties['moderate_roles'] ?? [];
-            $canMark = ! empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
+            $canMark       = ! empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
         }
-        if (! $canMark) {
+        if ( ! $canMark) {
             abort(403, 'Only the thread author or a moderator can mark a solution.');
         }
 
@@ -173,7 +173,7 @@ class ForumPostController extends Controller
 
         return response()->json([
             'message' => 'Post marked as solution',
-            'post' => $post->fresh(),
+            'post'    => $post->fresh(),
         ]);
     }
 }

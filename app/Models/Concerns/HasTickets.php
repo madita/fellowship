@@ -31,38 +31,20 @@ trait HasTickets
     {
         $ticketType = TicketType::findAutoCreateBySlug($typeSlug);
 
-        if (! $ticketType) {
+        if ( ! $ticketType) {
             return null;
         }
 
         $defaultData = [
-            'ticket_type_id' => $ticketType->id,
+            'ticket_type_id'     => $ticketType->id,
             'created_by_user_id' => $data['created_by_user_id'] ?? auth()->id(),
-            'title' => $data['title'] ?? $this->getTicketTitle(),
-            'description' => $data['description'] ?? $this->getTicketDescription(),
-            'status' => 'open',
-            'priority' => $data['priority'] ?? 'normal',
+            'title'              => $data['title'] ?? $this->getTicketTitle(),
+            'description'        => $data['description'] ?? $this->getTicketDescription(),
+            'status'             => 'open',
+            'priority'           => $data['priority'] ?? 'normal',
         ];
 
         return $this->createTicket(array_merge($defaultData, $data));
-    }
-
-    /**
-     * Get default ticket title (override in model if needed).
-     */
-    protected function getTicketTitle(): string
-    {
-        $modelName = class_basename($this);
-
-        return "New {$modelName}: ".($this->title ?? $this->name ?? $this->id);
-    }
-
-    /**
-     * Get default ticket description (override in model if needed).
-     */
-    protected function getTicketDescription(): string
-    {
-        return '';
     }
 
     /**
@@ -79,5 +61,23 @@ trait HasTickets
     public function openTicketsCount(): int
     {
         return $this->tickets()->open()->count();
+    }
+
+    /**
+     * Get default ticket title (override in model if needed).
+     */
+    protected function getTicketTitle(): string
+    {
+        $modelName = class_basename($this);
+
+        return "New {$modelName}: " . ($this->title ?? $this->name ?? $this->id);
+    }
+
+    /**
+     * Get default ticket description (override in model if needed).
+     */
+    protected function getTicketDescription(): string
+    {
+        return '';
     }
 }

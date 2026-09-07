@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\DB;
 
 class MigrationSource extends Model
 {
-    protected $fillable = [
+    public const DRIVERS = ['mysql', 'mariadb', 'pgsql', 'sqlite', 'sqlsrv'];
+    protected $fillable  = [
         'name',
         'driver',
         'host',
@@ -23,10 +24,8 @@ class MigrationSource extends Model
 
     protected $casts = [
         'password' => 'encrypted',
-        'port' => 'integer',
+        'port'     => 'integer',
     ];
-
-    public const DRIVERS = ['mysql', 'mariadb', 'pgsql', 'sqlite', 'sqlsrv'];
 
     public function mappings(): HasMany
     {
@@ -55,31 +54,31 @@ class MigrationSource extends Model
     {
         if ($this->driver === 'sqlite') {
             return [
-                'driver' => 'sqlite',
-                'database' => $this->database,
-                'prefix' => '',
+                'driver'                  => 'sqlite',
+                'database'                => $this->database,
+                'prefix'                  => '',
                 'foreign_key_constraints' => false,
             ];
         }
 
         return [
-            'driver' => $this->driver,
-            'host' => $this->host,
-            'port' => $this->port ?: $this->defaultPort(),
+            'driver'   => $this->driver,
+            'host'     => $this->host,
+            'port'     => $this->port ?: $this->defaultPort(),
             'database' => $this->database,
             'username' => $this->username,
             'password' => $this->password,
-            'charset' => $this->charset ?: 'utf8mb4',
-            'prefix' => '',
+            'charset'  => $this->charset ?: 'utf8mb4',
+            'prefix'   => '',
         ];
     }
 
     private function defaultPort(): int
     {
         return match ($this->driver) {
-            'pgsql' => 5432,
+            'pgsql'  => 5432,
             'sqlsrv' => 1433,
-            default => 3306,
+            default  => 3306,
         };
     }
 }

@@ -23,9 +23,9 @@ class AnnouncementController extends Controller
      *
      *
      *
-     * @return Response
-     *
      * @throws AuthorizationException
+     *
+     * @return Response
      */
     public function index(Request $request)
     {
@@ -41,18 +41,18 @@ class AnnouncementController extends Controller
     {
         $request->validate([
             'subject' => 'required|max:255',
-            'body' => 'required|max:255',
-            'thanks' => 'required|max:255',
+            'body'    => 'required|max:255',
+            'thanks'  => 'required|max:255',
         ]);
 
         $message = $request->all();
-        $users = User::all();
+        $users   = User::all();
 
         $announcement = new Announcement($message);
         Notification::send($users, $announcement);
 
         return response()->json([
-            'success' => true,
+            'success'      => true,
             'announcement' => $announcement,
         ]);
     }

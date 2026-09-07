@@ -23,7 +23,7 @@ class TranslationException extends Exception
         parent::__construct($message, $code, $previous);
         $this->sourceLocale = $sourceLocale;
         $this->targetLocale = $targetLocale;
-        $this->provider = $provider;
+        $this->provider     = $provider;
     }
 
     public function getSourceLocale(): string

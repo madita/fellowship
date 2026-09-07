@@ -18,7 +18,7 @@ class MigrationMapping extends Model
 
     protected $casts = [
         'field_map' => 'array',
-        'options' => 'array',
+        'options'   => 'array',
     ];
 
     public function source(): BelongsTo

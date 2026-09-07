@@ -25,7 +25,7 @@ class Status extends Model implements HasMedia
     ];
 
     protected $casts = [
-        'likes_count' => 'integer',
+        'likes_count'    => 'integer',
         'comments_count' => 'integer',
     ];
 
@@ -46,18 +46,6 @@ class Status extends Model implements HasMedia
     public function getMediaUrlsAttribute(): array
     {
         return $this->getMedia('images')->map(fn ($media) => $media->getUrl())->toArray();
-    }
-
-    /**
-     * Boot the model.
-     */
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::created(function ($status) {
-            // Could trigger notifications here
-        });
     }
 
     /**
@@ -97,7 +85,7 @@ class Status extends Model implements HasMedia
      */
     public function getIsLikedByMeAttribute(): bool
     {
-        if (! auth()->check()) {
+        if ( ! auth()->check()) {
             return false;
         }
 
@@ -129,7 +117,7 @@ class Status extends Model implements HasMedia
         }
 
         $this->likes()->create([
-            'user_id' => $user->id,
+            'user_id'       => $user->id,
             'reaction_type' => $reactionType,
         ]);
         $this->increment('likes_count');
@@ -143,8 +131,8 @@ class Status extends Model implements HasMedia
     public function addComment(User $user, string $content, ?int $parentId = null): StatusComment
     {
         $comment = $this->comments()->create([
-            'user_id' => $user->id,
-            'content' => $content,
+            'user_id'   => $user->id,
+            'content'   => $content,
             'parent_id' => $parentId,
         ]);
 
@@ -158,7 +146,7 @@ class Status extends Model implements HasMedia
      */
     public function canEdit(?User $user = null): bool
     {
-        if (! $user) {
+        if ( ! $user) {
             return false;
         }
 
@@ -170,7 +158,7 @@ class Status extends Model implements HasMedia
      */
     public function canDelete(?User $user = null): bool
     {
-        if (! $user) {
+        if ( ! $user) {
             return false;
         }
 
@@ -191,5 +179,17 @@ class Status extends Model implements HasMedia
     public function scopeRecent($query)
     {
         return $query->orderByDesc('created_at');
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($status) {
+            // Could trigger notifications here
+        });
     }
 }

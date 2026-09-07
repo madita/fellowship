@@ -41,15 +41,17 @@ class ForumThread extends Model
     ];
 
     protected $casts = [
-        'is_pinned' => 'boolean',
-        'is_locked' => 'boolean',
-        'view_count' => 'integer',
-        'reply_count' => 'integer',
+        'is_pinned'    => 'boolean',
+        'is_locked'    => 'boolean',
+        'view_count'   => 'integer',
+        'reply_count'  => 'integer',
         'last_post_at' => 'datetime',
-        'meta' => 'array',
+        'meta'         => 'array',
     ];
 
     protected $appends = ['url', 'display_author'];
+
+    protected $with = ['author'];
 
     /**
      * Name to show as the author: imported content keeps its original
@@ -59,31 +61,6 @@ class ForumThread extends Model
     public function getDisplayAuthorAttribute(): ?string
     {
         return $this->meta['legacy_author'] ?? $this->author?->username;
-    }
-
-    protected $with = ['author'];
-
-    /**
-     * Boot the model.
-     */
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($thread) {
-            if (empty($thread->slug)) {
-                $thread->slug = Str::slug($thread->title);
-
-                // Ensure slug is unique
-                $count = 1;
-                while (static::where('slug', $thread->slug)->exists()) {
-                    $thread->slug = Str::slug($thread->title).'-'.$count++;
-                }
-            }
-
-            $thread->last_post_at = now();
-            $thread->last_post_user_id = $thread->user_id;
-        });
     }
 
     /**
@@ -161,7 +138,7 @@ class ForumThread extends Model
      */
     public function canEdit(?User $user = null): bool
     {
-        if (! $user) {
+        if ( ! $user) {
             return false;
         }
 
@@ -179,7 +156,7 @@ class ForumThread extends Model
      */
     public function canDelete(?User $user = null): bool
     {
-        if (! $user) {
+        if ( ! $user) {
             return false;
         }
 
@@ -210,7 +187,7 @@ class ForumThread extends Model
      */
     public function isSubscribedBy(?User $user): bool
     {
-        if (! $user) {
+        if ( ! $user) {
             return false;
         }
 
@@ -239,10 +216,10 @@ class ForumThread extends Model
     public function updateAfterNewPost(ForumPost $post): void
     {
         $this->update([
-            'reply_count' => $this->posts()->count(),
-            'last_post_id' => $post->id,
+            'reply_count'       => $this->posts()->count(),
+            'last_post_id'      => $post->id,
             'last_post_user_id' => $post->user_id,
-            'last_post_at' => $post->created_at,
+            'last_post_at'      => $post->created_at,
         ]);
     }
 
@@ -256,23 +233,46 @@ class ForumThread extends Model
         $this->loadMissing(['author', 'category.term']);
 
         return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'body' => strip_tags($this->body),
-            'slug' => $this->slug,
-            'author_name' => $this->author?->username ?? '',
+            'id'            => $this->id,
+            'title'         => $this->title,
+            'body'          => strip_tags($this->body),
+            'slug'          => $this->slug,
+            'author_name'   => $this->author?->username ?? '',
             'category_name' => $this->category?->term?->title ?? '',
             'category_slug' => $this->category?->term?->slug ?? '',
-            'taxonomy_id' => $this->taxonomy_id,
-            'is_pinned' => $this->is_pinned,
-            'reply_count' => $this->reply_count ?? 0,
-            'view_count' => $this->view_count ?? 0,
-            'created_at' => $this->created_at?->timestamp,
+            'taxonomy_id'   => $this->taxonomy_id,
+            'is_pinned'     => $this->is_pinned,
+            'reply_count'   => $this->reply_count ?? 0,
+            'view_count'    => $this->view_count ?? 0,
+            'created_at'    => $this->created_at?->timestamp,
         ];
     }
 
     public function shouldBeSearchable(): bool
     {
         return ! $this->trashed();
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($thread) {
+            if (empty($thread->slug)) {
+                $thread->slug = Str::slug($thread->title);
+
+                // Ensure slug is unique
+                $count = 1;
+                while (static::where('slug', $thread->slug)->exists()) {
+                    $thread->slug = Str::slug($thread->title) . '-' . $count++;
+                }
+            }
+
+            $thread->last_post_at      = now();
+            $thread->last_post_user_id = $thread->user_id;
+        });
     }
 }

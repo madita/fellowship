@@ -38,33 +38,33 @@ class BbcodeConverter
         $xml = preg_replace('/<E>(.*?)<\/E>/s', '$1', $xml);
 
         $replacements = [
-            '/<QUOTE author="([^"]*)">/s' => '<blockquote><p><strong>$1:</strong></p>',
-            '/<QUOTE>/' => '<blockquote>',
-            '/<\/QUOTE>/' => '</blockquote>',
-            '/<URL url="([^"]*)">/s' => '<a href="$1">',
-            '/<\/URL>/' => '</a>',
-            '/<EMAIL email="([^"]*)">/s' => '<a href="mailto:$1">',
-            '/<\/EMAIL>/' => '</a>',
+            '/<QUOTE author="([^"]*)">/s'      => '<blockquote><p><strong>$1:</strong></p>',
+            '/<QUOTE>/'                        => '<blockquote>',
+            '/<\/QUOTE>/'                      => '</blockquote>',
+            '/<URL url="([^"]*)">/s'           => '<a href="$1">',
+            '/<\/URL>/'                        => '</a>',
+            '/<EMAIL email="([^"]*)">/s'       => '<a href="mailto:$1">',
+            '/<\/EMAIL>/'                      => '</a>',
             '/<IMG src="([^"]*)">.*?<\/IMG>/s' => '<img src="$1" alt="">',
-            '/<CODE>/' => '<pre><code>',
-            '/<\/CODE>/' => '</code></pre>',
-            '/<LIST type="decimal">/' => '<ol>',
-            '/<LIST[^>]*>/' => '<ul>',
-            '/<\/LIST>/' => '</ul>',
-            '/<LI>/' => '<li>',
-            '/<\/LI>/' => '</li>',
-            '/<B>/' => '<strong>',
-            '/<\/B>/' => '</strong>',
-            '/<I>/' => '<em>',
-            '/<\/I>/' => '</em>',
-            '/<U>/' => '<u>',
-            '/<\/U>/' => '</u>',
-            '/<S>/' => '<s>',
-            '/<\/S>/' => '</s>',
-            '/<SIZE[^>]*>/' => '',
-            '/<\/SIZE>/' => '',
-            '/<COLOR color="([^"]*)">/' => '<span style="color:$1">',
-            '/<\/COLOR>/' => '</span>',
+            '/<CODE>/'                         => '<pre><code>',
+            '/<\/CODE>/'                       => '</code></pre>',
+            '/<LIST type="decimal">/'          => '<ol>',
+            '/<LIST[^>]*>/'                    => '<ul>',
+            '/<\/LIST>/'                       => '</ul>',
+            '/<LI>/'                           => '<li>',
+            '/<\/LI>/'                         => '</li>',
+            '/<B>/'                            => '<strong>',
+            '/<\/B>/'                          => '</strong>',
+            '/<I>/'                            => '<em>',
+            '/<\/I>/'                          => '</em>',
+            '/<U>/'                            => '<u>',
+            '/<\/U>/'                          => '</u>',
+            '/<S>/'                            => '<s>',
+            '/<\/S>/'                          => '</s>',
+            '/<SIZE[^>]*>/'                    => '',
+            '/<\/SIZE>/'                       => '',
+            '/<COLOR color="([^"]*)">/'        => '<span style="color:$1">',
+            '/<\/COLOR>/'                      => '</span>',
         ];
         $xml = preg_replace(array_keys($replacements), array_values($replacements), $xml);
 
@@ -91,20 +91,20 @@ class BbcodeConverter
 
         $replacements = [
             '/\[quote="?([^"\]]*)"?\](.*?)\[\/quote\]/s' => '<blockquote><p><strong>$1:</strong></p>$2</blockquote>',
-            '/\[quote\](.*?)\[\/quote\]/s' => '<blockquote>$1</blockquote>',
-            '/\[b\](.*?)\[\/b\]/s' => '<strong>$1</strong>',
-            '/\[i\](.*?)\[\/i\]/s' => '<em>$1</em>',
-            '/\[u\](.*?)\[\/u\]/s' => '<u>$1</u>',
-            '/\[s\](.*?)\[\/s\]/s' => '<s>$1</s>',
-            '/\[url=([^\]]+)\](.*?)\[\/url\]/s' => '<a href="$1">$2</a>',
-            '/\[url\](.*?)\[\/url\]/s' => '<a href="$1">$1</a>',
-            '/\[img\](.*?)\[\/img\]/s' => '<img src="$1" alt="">',
-            '/\[code\](.*?)\[\/code\]/s' => '<pre><code>$1</code></pre>',
-            '/\[list=1\](.*?)\[\/list\]/s' => '<ol>$1</ol>',
-            '/\[list[^\]]*\](.*?)\[\/list\]/s' => '<ul>$1</ul>',
-            '/\[\*\](.*?)(?=\[\*\]|<\/[ou]l>|$)/s' => '<li>$1</li>',
-            '/\[size=[^\]]*\](.*?)\[\/size\]/s' => '$1',
-            '/\[color=([^\]]+)\](.*?)\[\/color\]/s' => '<span style="color:$1">$2</span>',
+            '/\[quote\](.*?)\[\/quote\]/s'               => '<blockquote>$1</blockquote>',
+            '/\[b\](.*?)\[\/b\]/s'                       => '<strong>$1</strong>',
+            '/\[i\](.*?)\[\/i\]/s'                       => '<em>$1</em>',
+            '/\[u\](.*?)\[\/u\]/s'                       => '<u>$1</u>',
+            '/\[s\](.*?)\[\/s\]/s'                       => '<s>$1</s>',
+            '/\[url=([^\]]+)\](.*?)\[\/url\]/s'          => '<a href="$1">$2</a>',
+            '/\[url\](.*?)\[\/url\]/s'                   => '<a href="$1">$1</a>',
+            '/\[img\](.*?)\[\/img\]/s'                   => '<img src="$1" alt="">',
+            '/\[code\](.*?)\[\/code\]/s'                 => '<pre><code>$1</code></pre>',
+            '/\[list=1\](.*?)\[\/list\]/s'               => '<ol>$1</ol>',
+            '/\[list[^\]]*\](.*?)\[\/list\]/s'           => '<ul>$1</ul>',
+            '/\[\*\](.*?)(?=\[\*\]|<\/[ou]l>|$)/s'       => '<li>$1</li>',
+            '/\[size=[^\]]*\](.*?)\[\/size\]/s'          => '$1',
+            '/\[color=([^\]]+)\](.*?)\[\/color\]/s'      => '<span style="color:$1">$2</span>',
         ];
 
         do {
@@ -122,7 +122,7 @@ class BbcodeConverter
         $html = preg_replace("/\n{2,}/", '</p><p>', $html);
         $html = nl2br($html, false);
 
-        if ($html !== '' && !str_starts_with($html, '<p>') && !preg_match('/^<(blockquote|pre|ul|ol)/', $html)) {
+        if ($html !== '' && ! str_starts_with($html, '<p>') && ! preg_match('/^<(blockquote|pre|ul|ol)/', $html)) {
             $html = '<p>' . $html . '</p>';
         }
 

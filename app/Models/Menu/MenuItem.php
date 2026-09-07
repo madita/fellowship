@@ -31,10 +31,10 @@ class MenuItem extends Model
 
     protected $casts = [
         'auth_required' => 'boolean',
-        'guest_only' => 'boolean',
-        'is_active' => 'boolean',
-        'metadata' => 'array',
-        'order' => 'integer',
+        'guest_only'    => 'boolean',
+        'is_active'     => 'boolean',
+        'metadata'      => 'array',
+        'order'         => 'integer',
     ];
 
     protected $appends = ['href'];
@@ -73,7 +73,7 @@ class MenuItem extends Model
         return match ($this->type) {
             'route' => $this->route,
             'custom', 'external' => $this->url,
-            'page' => $this->url, // Could resolve to page slug
+            'page'  => $this->url, // Could resolve to page slug
             default => '#',
         };
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Irc\IrcChannel;
 use App\Models\Irc\IrcConnection;
+use App\Models\Irc\IrcMessage;
 use App\Models\Irc\IrcServer;
 use App\Services\Irc\IrcConnectionManager;
 use Illuminate\Http\JsonResponse;
@@ -32,6 +33,7 @@ class IrcAdminController extends Controller
                 // server — reuse the last checkServer() result instead.
                 // null means "not checked yet".
                 $server->is_reachable = Cache::get($this->reachableCacheKey($server));
+
                 return $server;
             });
 
@@ -41,14 +43,14 @@ class IrcAdminController extends Controller
     public function storeServer(Request $request): JsonResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'host' => 'required|string|max:255',
-            'port' => 'required|integer|min:1|max:65535',
-            'use_ssl' => 'boolean',
-            'password' => 'nullable|string|max:255',
+            'name'        => 'required|string|max:255',
+            'host'        => 'required|string|max:255',
+            'port'        => 'required|integer|min:1|max:65535',
+            'use_ssl'     => 'boolean',
+            'password'    => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'is_active' => 'boolean',
-            'order' => 'integer',
+            'is_active'   => 'boolean',
+            'order'       => 'integer',
         ]);
 
         $server = IrcServer::create($request->all());
@@ -59,14 +61,14 @@ class IrcAdminController extends Controller
     public function updateServer(Request $request, IrcServer $server): JsonResponse
     {
         $request->validate([
-            'name' => 'string|max:255',
-            'host' => 'string|max:255',
-            'port' => 'integer|min:1|max:65535',
-            'use_ssl' => 'boolean',
-            'password' => 'nullable|string|max:255',
+            'name'        => 'string|max:255',
+            'host'        => 'string|max:255',
+            'port'        => 'integer|min:1|max:65535',
+            'use_ssl'     => 'boolean',
+            'password'    => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'is_active' => 'boolean',
-            'order' => 'integer',
+            'is_active'   => 'boolean',
+            'order'       => 'integer',
         ]);
 
         $server->update($request->all());
@@ -94,14 +96,9 @@ class IrcAdminController extends Controller
 
         return response()->json([
             'is_reachable' => $reachable,
-            'host' => $server->host,
-            'port' => $server->port,
+            'host'         => $server->host,
+            'port'         => $server->port,
         ]);
-    }
-
-    private function reachableCacheKey(IrcServer $server): string
-    {
-        return "irc:server_reachable:{$server->id}";
     }
 
     // --- Connections ---
@@ -120,9 +117,9 @@ class IrcAdminController extends Controller
     {
         // With no daemon to consume the command, mark the connection
         // disconnected directly instead of queueing into the void.
-        if (! IrcConnectionManager::isDaemonRunning()) {
+        if ( ! IrcConnectionManager::isDaemonRunning()) {
             $connection->update([
-                'status' => 'disconnected',
+                'status'          => 'disconnected',
                 'disconnected_at' => now(),
             ]);
             $connection->channels()->update(['is_joined' => false]);
@@ -131,9 +128,9 @@ class IrcAdminController extends Controller
         }
 
         Redis::rpush('irc:commands', json_encode([
-            'type' => 'disconnect',
+            'type'          => 'disconnect',
             'connection_id' => $connection->id,
-            'message' => 'Disconnected by admin',
+            'message'       => 'Disconnected by admin',
         ]));
 
         return response()->json(['message' => 'Disconnect command sent']);
@@ -143,9 +140,9 @@ class IrcAdminController extends Controller
     {
         if ($connection->status === 'connected' && IrcConnectionManager::isDaemonRunning()) {
             Redis::rpush('irc:commands', json_encode([
-                'type' => 'disconnect',
+                'type'          => 'disconnect',
                 'connection_id' => $connection->id,
-                'message' => 'Deleted by admin',
+                'message'       => 'Deleted by admin',
             ]));
         }
 
@@ -159,10 +156,10 @@ class IrcAdminController extends Controller
     public function getDaemonStatus(): JsonResponse
     {
         $activeConnections = IrcConnection::where('status', 'connected')->count();
-        $connectingCount = IrcConnection::where('status', 'connecting')->count();
-        $totalConnections = IrcConnection::count();
-        $totalChannels = IrcChannel::where('is_joined', true)->count();
-        $totalServers = IrcServer::where('is_active', true)->count();
+        $connectingCount   = IrcConnection::where('status', 'connecting')->count();
+        $totalConnections  = IrcConnection::count();
+        $totalChannels     = IrcChannel::where('is_joined', true)->count();
+        $totalServers      = IrcServer::where('is_active', true)->count();
 
         // Check if daemon is responsive by looking at Redis command queue length
         $pendingCommands = Redis::llen('irc:commands') ?: 0;
@@ -172,14 +169,14 @@ class IrcAdminController extends Controller
         $daemonRunning = IrcConnectionManager::isDaemonRunning();
 
         return response()->json([
-            'daemon_running' => $daemonRunning,
-            'last_heartbeat' => $lastHeartbeat ? date('Y-m-d H:i:s', (int) $lastHeartbeat) : null,
+            'daemon_running'     => $daemonRunning,
+            'last_heartbeat'     => $lastHeartbeat ? date('Y-m-d H:i:s', (int) $lastHeartbeat) : null,
             'active_connections' => $activeConnections,
-            'connecting_count' => $connectingCount,
-            'total_connections' => $totalConnections,
-            'joined_channels' => $totalChannels,
-            'active_servers' => $totalServers,
-            'pending_commands' => $pendingCommands,
+            'connecting_count'   => $connectingCount,
+            'total_connections'  => $totalConnections,
+            'joined_channels'    => $totalChannels,
+            'active_servers'     => $totalServers,
+            'pending_commands'   => $pendingCommands,
         ]);
     }
 
@@ -187,19 +184,23 @@ class IrcAdminController extends Controller
 
     public function getStats(): JsonResponse
     {
-        $totalMessages = \App\Models\Irc\IrcMessage::count();
-        $todayMessages = \App\Models\Irc\IrcMessage::whereDate('sent_at', today())->count();
-        $uniqueUsers = IrcConnection::distinct('user_id')->count();
-        $serverStats = IrcServer::withCount(['connections' => function ($q) {
+        $totalMessages = IrcMessage::count();
+        $todayMessages = IrcMessage::whereDate('sent_at', today())->count();
+        $uniqueUsers   = IrcConnection::distinct('user_id')->count();
+        $serverStats   = IrcServer::withCount(['connections' => function ($q) {
             $q->where('status', 'connected');
         }])->where('is_active', true)->get();
 
         return response()->json([
             'total_messages' => $totalMessages,
             'today_messages' => $todayMessages,
-            'unique_users' => $uniqueUsers,
-            'server_stats' => $serverStats,
+            'unique_users'   => $uniqueUsers,
+            'server_stats'   => $serverStats,
         ]);
     }
 
+    private function reachableCacheKey(IrcServer $server): string
+    {
+        return "irc:server_reachable:{$server->id}";
+    }
 }

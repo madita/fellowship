@@ -97,7 +97,7 @@ trait HasRelateableContent
             $this->relate($values['id'], $values['type']);
         });
 
-        if (! $detaching) {
+        if ( ! $detaching) {
             return;
         }
 
@@ -116,7 +116,7 @@ trait HasRelateableContent
             return $items->map(function (Model $item): array {
                 return [
                     'type' => $item->getMorphClass(),
-                    'id' => $item->getKey(),
+                    'id'   => $item->getKey(),
                 ];
             });
         }
@@ -130,16 +130,16 @@ trait HasRelateableContent
      */
     protected function getRelateableValues($item, string $type = ''): array
     {
-        if (! $item instanceof Model && empty($type)) {
+        if ( ! $item instanceof Model && empty($type)) {
             throw new InvalidArgumentException(
                 'If an id is specified as an item, the type isn\'t allowed to be empty.'
             );
         }
 
         return [
-            'source_id' => $this->getKey(),
-            'source_type' => $this->getMorphClass(),
-            'related_id' => $item instanceof Model ? $item->getKey() : $item,
+            'source_id'    => $this->getKey(),
+            'source_type'  => $this->getMorphClass(),
+            'related_id'   => $item instanceof Model ? $item->getKey() : $item,
             'related_type' => $item instanceof Model ? $item->getMorphClass() : $type,
         ];
     }

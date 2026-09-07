@@ -23,7 +23,7 @@ class RunMigrationMapping extends Command
 
     public function handle(): int
     {
-        $key = $this->argument('mapping');
+        $key     = $this->argument('mapping');
         $mapping = MigrationMapping::query()
             ->when(
                 is_numeric($key),
@@ -32,7 +32,7 @@ class RunMigrationMapping extends Command
             )
             ->first();
 
-        if (!$mapping) {
+        if ( ! $mapping) {
             $this->error("Mapping \"{$key}\" not found. Available:");
             MigrationMapping::orderBy('id')->get(['id', 'name'])
                 ->each(fn ($m) => $this->line("  {$m->id}: {$m->name}"));
@@ -41,12 +41,12 @@ class RunMigrationMapping extends Command
         }
 
         $batchId = Str::uuid()->toString();
-        $log = MigrationLog::create([
-            'batch_id' => $batchId,
-            'migration_key' => GenericImportJob::migrationKeyFor($mapping->id),
+        $log     = MigrationLog::create([
+            'batch_id'       => $batchId,
+            'migration_key'  => GenericImportJob::migrationKeyFor($mapping->id),
             'migration_name' => $mapping->name,
-            'status' => 'pending',
-            'logs' => [['type' => 'info', 'message' => 'Started from CLI', 'timestamp' => now()->toIso8601String()]],
+            'status'         => 'pending',
+            'logs'           => [['type' => 'info', 'message' => 'Started from CLI', 'timestamp' => now()->toIso8601String()]],
         ]);
 
         $this->info("Running \"{$mapping->name}\" (batch {$batchId}) — progress is visible on the dashboard's Runs tab.");

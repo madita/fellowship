@@ -45,15 +45,15 @@ class StatusController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user) {
+        if ( ! $user) {
             abort(401, 'You must be logged in to post a status.');
         }
 
         $validated = $request->validate([
-            'content' => 'required|string|max:5000',
-            'images' => 'array|max:10',
+            'content'  => 'required|string|max:5000',
+            'images'   => 'array|max:10',
             'images.*' => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
-            'feeling' => 'nullable|string|max:50',
+            'feeling'  => 'nullable|string|max:50',
         ]);
 
         $status = Status::create([
@@ -64,7 +64,7 @@ class StatusController extends Controller
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $filename = Str::uuid().'.'.$image->getClientOriginalExtension();
+                $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
 
                 $status->addMedia($image)
                     ->usingFileName($filename)
@@ -82,16 +82,16 @@ class StatusController extends Controller
     {
         $user = Auth::user();
 
-        if (! $status->canEdit($user)) {
+        if ( ! $status->canEdit($user)) {
             abort(403, 'You do not have permission to edit this status.');
         }
 
         $validated = $request->validate([
-            'content' => 'sometimes|string|max:5000',
-            'remove_media_ids' => 'array',
+            'content'            => 'sometimes|string|max:5000',
+            'remove_media_ids'   => 'array',
             'remove_media_ids.*' => 'integer',
-            'images' => 'array',
-            'images.*' => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+            'images'             => 'array',
+            'images.*'           => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
         ]);
 
         if ($request->has('content')) {
@@ -99,7 +99,7 @@ class StatusController extends Controller
         }
 
         // Remove images the user deleted (scoped to this status only)
-        if (! empty($validated['remove_media_ids'])) {
+        if ( ! empty($validated['remove_media_ids'])) {
             $status->media()
                 ->whereIn('id', $validated['remove_media_ids'])
                 ->get()
@@ -116,7 +116,7 @@ class StatusController extends Controller
                     break;
                 }
 
-                $filename = Str::uuid().'.'.$image->getClientOriginalExtension();
+                $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
 
                 $status->addMedia($image)
                     ->usingFileName($filename)
@@ -136,7 +136,7 @@ class StatusController extends Controller
     {
         $user = Auth::user();
 
-        if (! $status->canDelete($user)) {
+        if ( ! $status->canDelete($user)) {
             abort(403, 'You do not have permission to delete this status.');
         }
 
@@ -152,14 +152,14 @@ class StatusController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user) {
+        if ( ! $user) {
             abort(401, 'You must be logged in to like a status.');
         }
 
         $liked = $status->toggleLike($user);
 
         return response()->json([
-            'liked' => $liked,
+            'liked'       => $liked,
             'likes_count' => $status->fresh()->likes_count,
         ]);
     }
@@ -181,12 +181,12 @@ class StatusController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user) {
+        if ( ! $user) {
             abort(401, 'You must be logged in to comment.');
         }
 
         $validated = $request->validate([
-            'content' => 'required|string|max:2000',
+            'content'   => 'required|string|max:2000',
             'parent_id' => 'nullable|exists:status_comments,id',
         ]);
 

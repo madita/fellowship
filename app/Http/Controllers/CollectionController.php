@@ -23,9 +23,9 @@ class CollectionController extends Controller
             $collection->coverImage = $coverMedia ? $coverMedia->getUrl() : null;
 
             $collection->media->each(function ($media) {
-                $media->caption = $media->getCustomProperty('caption');
+                $media->caption  = $media->getCustomProperty('caption');
                 $media->uploader = $media->getCustomProperty('uploader');
-                $media->url = $media->getUrl();
+                $media->url      = $media->getUrl();
             });
         });
 
@@ -40,7 +40,7 @@ class CollectionController extends Controller
 
         // Add custom properties to each media item
         $collection->media->each(function ($media) {
-            $media->caption = $media->getCustomProperty('caption');
+            $media->caption  = $media->getCustomProperty('caption');
             $media->uploader = $media->getCustomProperty('uploader');
         });
 
@@ -50,7 +50,7 @@ class CollectionController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
+            'name'        => 'required|string|max:255',
             'taxonomy_id' => 'required|integer|exists:taxonomies,id', // Validates that taxonomy exists
         ]);
 
@@ -71,9 +71,9 @@ class CollectionController extends Controller
         $this->authorize('uploadMedia', $collection);
 
         $request->validate([
-            'files' => 'required|array', // Ensure files is an array
-            'files.*' => 'file|mimes:jpg,jpeg,png,gif|max:2048', // Validate each file
-            'captions' => 'nullable|array', // Optional captions
+            'files'      => 'required|array', // Ensure files is an array
+            'files.*'    => 'file|mimes:jpg,jpeg,png,gif|max:2048', // Validate each file
+            'captions'   => 'nullable|array', // Optional captions
             'captions.*' => 'nullable|string|max:255', // Validate each caption
         ]);
 
@@ -82,8 +82,8 @@ class CollectionController extends Controller
         foreach ($request->file('files') as $index => $file) {
             // Add each media item to the collection
 
-            $extension = $file->getClientOriginalExtension();
-            $newFilename = Str::uuid().'.'.$extension;
+            $extension   = $file->getClientOriginalExtension();
+            $newFilename = Str::uuid() . '.' . $extension;
             /** @var User $user */
             $user = auth()->user();
 
@@ -100,14 +100,14 @@ class CollectionController extends Controller
             }
 
             $uploadedMedia[] = [
-                'id' => $media->id,
-                'url' => $media->getUrl(),
+                'id'      => $media->id,
+                'url'     => $media->getUrl(),
                 'caption' => $media->getCustomProperty('caption', null),
             ];
         }
 
         return response()->json([
-            'message' => __('messages.media.uploaded'),
+            'message'        => __('messages.media.uploaded'),
             'uploaded_media' => $uploadedMedia,
         ]);
     }
@@ -171,7 +171,7 @@ class CollectionController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to delete collection',
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
@@ -193,7 +193,7 @@ class CollectionController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to delete media',
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }

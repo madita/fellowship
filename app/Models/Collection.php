@@ -21,6 +21,8 @@ class Collection extends Model implements HasMedia, TranslatableContract
 
     public $translatedAttributes = ['name'];
 
+    protected $fillable = ['taxonomy_id', 'user_id'];
+
     public function sluggable(): array
     {
         return [
@@ -29,8 +31,6 @@ class Collection extends Model implements HasMedia, TranslatableContract
             ],
         ];
     }
-
-    protected $fillable = ['taxonomy_id', 'user_id'];
 
     public function taxonomy()
     {
@@ -48,7 +48,7 @@ class Collection extends Model implements HasMedia, TranslatableContract
         $media = $this->getMedia('images')->first(fn ($item) => $item->getCustomProperty('is_cover', false));
 
         // Fallback to the first media item if no cover is explicitly set
-        if (! $media) {
+        if ( ! $media) {
             $media = $this->getFirstMedia('images');
         }
 

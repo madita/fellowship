@@ -44,12 +44,12 @@ class ConversationUpdated implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        if (! $this->conversation->relationLoaded('users')) {
+        if ( ! $this->conversation->relationLoaded('users')) {
             $this->conversation->load('users');
         }
 
         return $this->conversation->users->map(function ($user) {
-            return new PrivateChannel('user.'.$user->id);
+            return new PrivateChannel('user.' . $user->id);
         })
             ->toArray();
     }

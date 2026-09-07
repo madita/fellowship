@@ -23,11 +23,11 @@ class IrcServer extends Model
     ];
 
     protected $casts = [
-        'port' => 'integer',
-        'use_ssl' => 'boolean',
+        'port'      => 'integer',
+        'use_ssl'   => 'boolean',
         'is_active' => 'boolean',
-        'order' => 'integer',
-        'metadata' => 'array',
+        'order'     => 'integer',
+        'metadata'  => 'array',
     ];
 
     /**

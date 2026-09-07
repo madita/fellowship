@@ -7,14 +7,13 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Relateable extends Model
 {
+    /** @var bool */
+    public $incrementing = false;
     /** @var array */
     protected $guarded = [];
 
     /** @var string|null */
     protected $primaryKey = null;
-
-    /** @var bool */
-    public $incrementing = false;
 
     public function related(): MorphTo
     {
@@ -30,7 +29,7 @@ class Relateable extends Model
     {
         return [
             'type' => $this->related_type,
-            'id' => $this->related_id,
+            'id'   => $this->related_id,
         ];
     }
 }

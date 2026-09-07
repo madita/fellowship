@@ -30,7 +30,7 @@ class OAuthConfigServiceProvider extends ServiceProvider
 
         try {
             // Check if settings table exists
-            if (! \Schema::hasTable('settings')) {
+            if ( ! \Schema::hasTable('settings')) {
                 return;
             }
 
@@ -45,16 +45,16 @@ class OAuthConfigServiceProvider extends ServiceProvider
 
                 // Only configure if provider is enabled
                 if ($enabled) {
-                    $clientId = Setting::get("oauth_{$provider}_client_id");
+                    $clientId     = Setting::get("oauth_{$provider}_client_id");
                     $clientSecret = Setting::get("oauth_{$provider}_client_secret");
 
                     // Only set config if credentials exist
                     if ($clientId && $clientSecret) {
                         $redirectUrl = "{$siteUrl}/auth/{$provider}/callback";
                         config([
-                            "services.{$provider}.client_id" => $clientId,
+                            "services.{$provider}.client_id"     => $clientId,
                             "services.{$provider}.client_secret" => $clientSecret,
-                            "services.{$provider}.redirect" => $redirectUrl,
+                            "services.{$provider}.redirect"      => $redirectUrl,
                         ]);
                         \Log::debug("OAuth {$provider} redirect URL configured: {$redirectUrl}");
                     }
@@ -63,7 +63,7 @@ class OAuthConfigServiceProvider extends ServiceProvider
         } catch (\Exception $e) {
             // Silently fail if database isn't ready yet
             // This prevents errors during initial setup/migrations
-            \Log::debug('OAuth config loading skipped: '.$e->getMessage());
+            \Log::debug('OAuth config loading skipped: ' . $e->getMessage());
         }
     }
 }

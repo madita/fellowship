@@ -39,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
                 $perPage,
                 $page,
                 [
-                    'path' => LengthAwarePaginator::resolveCurrentPath(),
+                    'path'     => LengthAwarePaginator::resolveCurrentPath(),
                     'pageName' => $pageName,
                 ]
             );

@@ -24,12 +24,13 @@ class MigrateWikiLinkingJob extends BaseMigrationJob
         foreach ($wikis as $wiki) {
             $data = Page::where('slug', $wiki->slug)->first();
 
-            if (!$data) {
+            if ( ! $data) {
                 $this->progress($wiki->slug);
+
                 continue;
             }
 
-            $content = $data->content;
+            $content         = $data->content;
             $originalContent = $content;
 
             // Process internal wiki links [[Page Title|Display Text]]
@@ -37,13 +38,13 @@ class MigrateWikiLinkingJob extends BaseMigrationJob
 
             foreach ($matches[0] as $key => $item) {
                 // Get anchor part if exists
-                $titleParts = explode("#", $matches[1][$key]);
+                $titleParts = explode('#', $matches[1][$key]);
                 // title lives in page_translations — match via the translation.
                 $page = Page::whereTranslation('title', $titleParts[0])->first();
 
                 if ($page) {
-                    $title = isset($matches[3][$key]) && trim($matches[3][$key]) != "" ? $matches[3][$key] : $page->title;
-                    $alternative = isset($matches[3][$key]) && trim($matches[3][$key]) != "" ? $matches[3][$key] : null;
+                    $title       = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : $page->title;
+                    $alternative = isset($matches[3][$key]) && trim($matches[3][$key]) != '' ? $matches[3][$key] : null;
 
                     $replace = "<a wiki-id=\"{$page->id}\" data-title=\"{$page->title}\" data-linked-resource-type=\"wikiable\" alternative=\"{$alternative}\" href=\"/wiki/{$page->slug}\" contenteditable=\"false\">{$title}</a>";
                     $content = Str::replace($item, $replace, $content);
@@ -55,7 +56,7 @@ class MigrateWikiLinkingJob extends BaseMigrationJob
             preg_match_all("/\[(https?:\/\/[^\s\]]+)\s(.*?)\]/", $content, $matches);
 
             foreach ($matches[0] as $key => $item) {
-                $link = "<a href=\"{$matches[1][$key]}\">{$matches[2][$key]}</a>";
+                $link    = "<a href=\"{$matches[1][$key]}\">{$matches[2][$key]}</a>";
                 $content = Str::replace($item, $link, $content);
             }
 

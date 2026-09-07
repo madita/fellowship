@@ -14,14 +14,14 @@ class PollVoteController extends Controller
     public function vote(Request $request, Poll $poll): JsonResponse
     {
         // Check if poll is open
-        if (! $poll->is_open) {
+        if ( ! $poll->is_open) {
             return response()->json([
                 'message' => 'This poll is closed',
             ], 422);
         }
 
         $validated = $request->validate([
-            'option_ids' => 'required|array|min:1',
+            'option_ids'   => 'required|array|min:1',
             'option_ids.*' => 'integer|exists:poll_options,id',
         ]);
 
@@ -53,9 +53,9 @@ class PollVoteController extends Controller
             // Create new votes
             foreach ($validated['option_ids'] as $optionId) {
                 PollVote::create([
-                    'poll_id' => $poll->id,
+                    'poll_id'        => $poll->id,
                     'poll_option_id' => $optionId,
-                    'user_id' => $user->id,
+                    'user_id'        => $user->id,
                 ]);
             }
 
@@ -66,12 +66,12 @@ class PollVoteController extends Controller
 
             return response()->json([
                 'message' => 'Vote recorded successfully',
-                'poll' => [
-                    'id' => $poll->id,
+                'poll'    => [
+                    'id'          => $poll->id,
                     'total_votes' => $poll->total_votes,
-                    'results' => $poll->results(),
-                    'user_votes' => $poll->userVotes($user),
-                    'has_voted' => $poll->hasVoted($user),
+                    'results'     => $poll->results(),
+                    'user_votes'  => $poll->userVotes($user),
+                    'has_voted'   => $poll->hasVoted($user),
                 ],
             ]);
         } catch (\Exception $e) {
@@ -79,7 +79,7 @@ class PollVoteController extends Controller
             Log::error('Failed to record vote', [
                 'poll_id' => $poll->id,
                 'user_id' => $user->id,
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -91,7 +91,7 @@ class PollVoteController extends Controller
     public function unvote(Request $request, Poll $poll): JsonResponse
     {
         // Check if poll is still open for unvoting
-        if (! $poll->is_open) {
+        if ( ! $poll->is_open) {
             return response()->json([
                 'message' => 'Cannot remove vote from a closed poll',
             ], 422);
@@ -114,12 +114,12 @@ class PollVoteController extends Controller
 
         return response()->json([
             'message' => 'Vote removed successfully',
-            'poll' => [
-                'id' => $poll->id,
+            'poll'    => [
+                'id'          => $poll->id,
                 'total_votes' => $poll->total_votes,
-                'results' => $poll->results(),
-                'user_votes' => $poll->userVotes($user),
-                'has_voted' => $poll->hasVoted($user),
+                'results'     => $poll->results(),
+                'user_votes'  => $poll->userVotes($user),
+                'has_voted'   => $poll->hasVoted($user),
             ],
         ]);
     }

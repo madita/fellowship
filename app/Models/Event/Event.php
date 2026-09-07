@@ -16,9 +16,9 @@ class Event extends Model implements TranslatableContract
     use SoftDeletes;
     use Translatable;
 
-    protected $table = 'events';
-
     public $translatedAttributes = ['title', 'description'];
+
+    protected $table = 'events';
 
     protected $fillable = [
         'user_id',
@@ -61,7 +61,7 @@ class Event extends Model implements TranslatableContract
     public function getImage()
     {
         if ($this->image) {
-            return '/uploads/'.$this->image;
+            return '/uploads/' . $this->image;
         } else {
             return 'img/cover.jpeg';
         }

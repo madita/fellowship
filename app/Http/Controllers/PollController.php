@@ -28,7 +28,7 @@ class PollController extends Controller
         // Filter by pollable type and ID if provided
         if ($request->has('pollable_type') && $request->has('pollable_id')) {
             // Validate pollable_type is in allowed list
-            if (! in_array($request->pollable_type, $this->allowedPollableTypes)) {
+            if ( ! in_array($request->pollable_type, $this->allowedPollableTypes)) {
                 return response()->json([
                     'message' => 'Invalid pollable type',
                 ], 422);
@@ -47,9 +47,9 @@ class PollController extends Controller
             }),
             'meta' => [
                 'current_page' => $polls->currentPage(),
-                'last_page' => $polls->lastPage(),
-                'per_page' => $polls->perPage(),
-                'total' => $polls->total(),
+                'last_page'    => $polls->lastPage(),
+                'per_page'     => $polls->perPage(),
+                'total'        => $polls->total(),
             ],
         ]);
     }
@@ -66,20 +66,20 @@ class PollController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'pollable_type' => 'required|string|in:' . implode(',', $this->allowedPollableTypes),
-            'pollable_id' => 'required|integer',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'type' => 'required|in:single,multiple',
-            'anonymous' => 'boolean',
-            'closes_at' => 'nullable|date|after:now',
-            'options' => 'required|array|min:2|max:20',
+            'pollable_type'         => 'required|string|in:' . implode(',', $this->allowedPollableTypes),
+            'pollable_id'           => 'required|integer',
+            'title'                 => 'required|string|max:255',
+            'description'           => 'nullable|string|max:1000',
+            'type'                  => 'required|in:single,multiple',
+            'anonymous'             => 'boolean',
+            'closes_at'             => 'nullable|date|after:now',
+            'options'               => 'required|array|min:2|max:20',
             'options.*.option_text' => 'required|string|max:255',
         ]);
 
         // Verify the pollable model exists
         $pollableClass = $validated['pollable_type'];
-        if (! class_exists($pollableClass) || ! $pollableClass::find($validated['pollable_id'])) {
+        if ( ! class_exists($pollableClass) || ! $pollableClass::find($validated['pollable_id'])) {
             return response()->json([
                 'message' => 'The specified model does not exist',
             ], 422);
@@ -90,19 +90,19 @@ class PollController extends Controller
         try {
             $poll = Poll::create([
                 'pollable_type' => $pollableClass,
-                'pollable_id' => $validated['pollable_id'],
-                'title' => $validated['title'],
-                'description' => $validated['description'] ?? null,
-                'type' => $validated['type'],
-                'anonymous' => $validated['anonymous'] ?? false,
-                'closes_at' => $validated['closes_at'] ?? null,
-                'created_by' => $request->user()->id,
+                'pollable_id'   => $validated['pollable_id'],
+                'title'         => $validated['title'],
+                'description'   => $validated['description'] ?? null,
+                'type'          => $validated['type'],
+                'anonymous'     => $validated['anonymous'] ?? false,
+                'closes_at'     => $validated['closes_at'] ?? null,
+                'created_by'    => $request->user()->id,
             ]);
 
             foreach ($validated['options'] as $index => $option) {
                 $poll->options()->create([
                     'option_text' => $option['option_text'],
-                    'position' => $index,
+                    'position'    => $index,
                 ]);
             }
 
@@ -111,14 +111,14 @@ class PollController extends Controller
             $poll->load(['creator', 'options']);
 
             return response()->json([
-                'poll' => $this->formatPoll($poll, $request->user()),
+                'poll'    => $this->formatPoll($poll, $request->user()),
                 'message' => 'Poll created successfully',
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to create poll', [
                 'user_id' => $request->user()->id,
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -144,12 +144,12 @@ class PollController extends Controller
         }
 
         $validated = $request->validate([
-            'title' => 'sometimes|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'type' => 'sometimes|in:single,multiple',
-            'anonymous' => 'sometimes|boolean',
-            'closes_at' => 'nullable|date|after:now',
-            'options' => 'sometimes|array|min:2|max:20',
+            'title'                 => 'sometimes|string|max:255',
+            'description'           => 'nullable|string|max:1000',
+            'type'                  => 'sometimes|in:single,multiple',
+            'anonymous'             => 'sometimes|boolean',
+            'closes_at'             => 'nullable|date|after:now',
+            'options'               => 'sometimes|array|min:2|max:20',
             'options.*.option_text' => 'required_with:options|string|max:255',
         ]);
 
@@ -163,7 +163,7 @@ class PollController extends Controller
                 foreach ($validated['options'] as $index => $option) {
                     $poll->options()->create([
                         'option_text' => $option['option_text'],
-                        'position' => $index,
+                        'position'    => $index,
                     ]);
                 }
             }
@@ -173,7 +173,7 @@ class PollController extends Controller
             $poll->load(['creator', 'options']);
 
             return response()->json([
-                'poll' => $this->formatPoll($poll, $request->user()),
+                'poll'    => $this->formatPoll($poll, $request->user()),
                 'message' => 'Poll updated successfully',
             ]);
         } catch (\Exception $e) {
@@ -181,7 +181,7 @@ class PollController extends Controller
             Log::error('Failed to update poll', [
                 'poll_id' => $poll->id,
                 'user_id' => $request->user()->id,
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ]);
 
             return response()->json([
@@ -209,30 +209,30 @@ class PollController extends Controller
     protected function formatPoll(Poll $poll, $user): array
     {
         return [
-            'id' => $poll->id,
+            'id'            => $poll->id,
             'pollable_type' => $poll->pollable_type,
-            'pollable_id' => $poll->pollable_id,
-            'title' => $poll->title,
-            'description' => $poll->description,
-            'type' => $poll->type,
-            'anonymous' => $poll->anonymous,
-            'closes_at' => $poll->closes_at?->toIso8601String(),
-            'is_open' => $poll->is_open,
-            'total_votes' => $poll->total_votes,
-            'creator' => [
-                'id' => $poll->creator->id,
+            'pollable_id'   => $poll->pollable_id,
+            'title'         => $poll->title,
+            'description'   => $poll->description,
+            'type'          => $poll->type,
+            'anonymous'     => $poll->anonymous,
+            'closes_at'     => $poll->closes_at?->toIso8601String(),
+            'is_open'       => $poll->is_open,
+            'total_votes'   => $poll->total_votes,
+            'creator'       => [
+                'id'   => $poll->creator->id,
                 'name' => $poll->creator->name,
             ],
             'options' => $poll->options->map(function ($option) {
                 return [
-                    'id' => $option->id,
+                    'id'          => $option->id,
                     'option_text' => $option->option_text,
-                    'position' => $option->position,
+                    'position'    => $option->position,
                 ];
             }),
-            'results' => $poll->results(),
+            'results'    => $poll->results(),
             'user_votes' => $poll->userVotes($user),
-            'has_voted' => $poll->hasVoted($user),
+            'has_voted'  => $poll->hasVoted($user),
             'created_at' => $poll->created_at->toIso8601String(),
             'updated_at' => $poll->updated_at->toIso8601String(),
         ];

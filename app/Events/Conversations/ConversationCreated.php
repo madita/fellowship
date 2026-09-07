@@ -31,12 +31,12 @@ class ConversationCreated implements ShouldBroadcast
     public function broadcastWith()
     {
         // Load relationships if not already loaded
-        if (! $this->conversation->relationLoaded('users')) {
+        if ( ! $this->conversation->relationLoaded('users')) {
             $this->conversation->load('users');
         }
 
         // Load creator relationship - may be null for old conversations
-        if (! $this->conversation->relationLoaded('creator')) {
+        if ( ! $this->conversation->relationLoaded('creator')) {
             $this->conversation->load('creator');
         }
 
@@ -44,17 +44,17 @@ class ConversationCreated implements ShouldBroadcast
 
         return [
             'conversation' => [
-                'uuid' => $this->conversation->uuid,
+                'uuid'    => $this->conversation->uuid,
                 'creator' => $creator ? [
-                    'id' => $creator->id,
+                    'id'       => $creator->id,
                     'username' => $creator->username ?? $creator->email,
-                    'avatar' => $creator->avatar ?? null,
+                    'avatar'   => $creator->avatar ?? null,
                 ] : null,
                 'users' => $this->conversation->users->map(function ($user) {
                     return [
-                        'id' => $user->id,
+                        'id'       => $user->id,
                         'username' => $user->username ?? $user->email,
-                        'avatar' => $user->avatar ?? null,
+                        'avatar'   => $user->avatar ?? null,
                     ];
                 })->toArray(),
             ],
@@ -78,7 +78,7 @@ class ConversationCreated implements ShouldBroadcast
     public function broadcastOn()
     {
         $channels = [
-            new PrivateChannel('conversations.'.$this->conversation->uuid),
+            new PrivateChannel('conversations.' . $this->conversation->uuid),
         ];
 
         // Also broadcast to individual user channels for those not actively viewing the conversation
@@ -86,7 +86,7 @@ class ConversationCreated implements ShouldBroadcast
         foreach ($this->conversation->users as $user) {
             // Don't send to the creator of the conversation
             if ($user->id !== $this->conversation->creator_id) {
-                $channels[] = new PrivateChannel('user.'.$user->id);
+                $channels[] = new PrivateChannel('user.' . $user->id);
             }
         }
 

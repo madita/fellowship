@@ -29,7 +29,7 @@ class UserAdded implements ShouldBroadcast
     public function __construct(Conversation $conversation, User $user)
     {
         $this->conversation = $conversation;
-        $this->user = $user;
+        $this->user         = $user;
     }
 
     public function broadcastWith()
@@ -48,6 +48,6 @@ class UserAdded implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        return new PrivateChannel('conversations.'.$this->conversation->uuid);
+        return new PrivateChannel('conversations.' . $this->conversation->uuid);
     }
 }

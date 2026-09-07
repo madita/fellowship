@@ -64,12 +64,12 @@ class EventTypeController extends DataTableController
         // simple options
         return [
             'answers' => ['going' => 'Yes', 'notgoing' => 'No'],
-            'max' => ['going' => '10'],
+            'max'     => ['going' => '10'],
             //            'profile_details' => ['food'=>'tags','journey'=>'tags'],
-            'guest' => ['approval', 'rsp', 'hasMax'],
-            'permissions' => ['edit', 'view'],
-            'profile' => ['going'],
-            'location' => ['custom', 'real', 'virtual'],
+            'guest'           => ['approval', 'rsp', 'hasMax'],
+            'permissions'     => ['edit', 'view'],
+            'profile'         => ['going'],
+            'location'        => ['custom', 'real', 'virtual'],
             'showAttributtes' => ['allDay', 'image', 'endDate', 'startTime', 'endTime', 'location', 'hasMedia'],
 
         ];
@@ -88,9 +88,9 @@ class EventTypeController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'color' => 'color',
+            'color'            => 'color',
             'event_profile_id' => 'model',
-            'options' => 'json',
+            'options'          => 'json',
         ];
     }
 

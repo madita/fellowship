@@ -89,7 +89,7 @@ class JobDispatcher
      */
     public static function getQueueConnection(): string
     {
-        if (! static::isBackgroundJobsEnabled()) {
+        if ( ! static::isBackgroundJobsEnabled()) {
             return 'sync';
         }
 

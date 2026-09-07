@@ -23,9 +23,9 @@ class SocialAccountController extends Controller
 
         $accounts = $user->socialAccounts()->get()->map(function ($account) {
             return [
-                'provider' => $account->provider,
-                'provider_id' => $account->provider_id,
-                'avatar' => $account->avatar,
+                'provider'     => $account->provider,
+                'provider_id'  => $account->provider_id,
+                'avatar'       => $account->avatar,
                 'connected_at' => $account->created_at->diffForHumans(),
             ];
         });
@@ -36,8 +36,8 @@ class SocialAccountController extends Controller
         })->values();
 
         return response()->json([
-            'connected' => $accounts,
-            'available' => $availableProviders,
+            'connected'    => $accounts,
+            'available'    => $availableProviders,
             'has_password' => ! is_null($user->password),
         ]);
     }
@@ -49,7 +49,7 @@ class SocialAccountController extends Controller
      */
     public function disconnect(Request $request, $provider): JsonResponse
     {
-        if (! in_array($provider, self::PROVIDERS)) {
+        if ( ! in_array($provider, self::PROVIDERS)) {
             return response()->json(['error' => __('messages.oauth.invalid_provider')], 400);
         }
 
@@ -57,7 +57,7 @@ class SocialAccountController extends Controller
 
         // Check if user has password or other social accounts
         $connectedAccounts = $user->socialAccounts()->count();
-        $hasPassword = ! is_null($user->password);
+        $hasPassword       = ! is_null($user->password);
 
         if ($connectedAccounts === 1 && ! $hasPassword) {
             return response()->json([
@@ -68,7 +68,7 @@ class SocialAccountController extends Controller
         // Delete the social account
         $deleted = $user->socialAccounts()->where('provider', $provider)->delete();
 
-        if (! $deleted) {
+        if ( ! $deleted) {
             return response()->json(['error' => __('messages.oauth.provider_not_connected')], 404);
         }
 
@@ -85,7 +85,7 @@ class SocialAccountController extends Controller
      */
     public function link(Request $request, $provider)
     {
-        if (! in_array($provider, self::PROVIDERS)) {
+        if ( ! in_array($provider, self::PROVIDERS)) {
             return redirect('/')->with('error', 'Invalid OAuth provider');
         }
 
@@ -102,7 +102,7 @@ class SocialAccountController extends Controller
 
             return Socialite::driver($provider)->redirect();
         } catch (\Exception $e) {
-            \Log::error('OAuth link error: '.$e->getMessage());
+            \Log::error('OAuth link error: ' . $e->getMessage());
 
             return redirect('/')->with('error', 'OAuth configuration error');
         }

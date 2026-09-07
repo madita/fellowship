@@ -17,20 +17,20 @@ class TicketCommentController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user) {
+        if ( ! $user) {
             abort(401, 'You must be logged in to comment.');
         }
 
         // Check permission
-        $isAdmin = $user->isAdmin();
+        $isAdmin   = $user->isAdmin();
         $isCreator = $ticket->created_by_user_id === $user->id;
 
-        if (! $isAdmin && ! $isCreator) {
+        if ( ! $isAdmin && ! $isCreator) {
             abort(403, 'You do not have permission to comment on this ticket.');
         }
 
         $validated = $request->validate([
-            'comment' => 'required|string',
+            'comment'     => 'required|string',
             'is_internal' => 'boolean',
         ]);
 
@@ -40,8 +40,8 @@ class TicketCommentController extends Controller
         }
 
         $comment = $ticket->comments()->create([
-            'user_id' => $user->id,
-            'comment' => $validated['comment'],
+            'user_id'     => $user->id,
+            'comment'     => $validated['comment'],
             'is_internal' => $validated['is_internal'] ?? false,
         ]);
 
@@ -55,7 +55,7 @@ class TicketCommentController extends Controller
     {
         $user = Auth::user();
 
-        if (! $comment->canEdit($user)) {
+        if ( ! $comment->canEdit($user)) {
             abort(403, 'You do not have permission to edit this comment.');
         }
 
@@ -75,7 +75,7 @@ class TicketCommentController extends Controller
     {
         $user = Auth::user();
 
-        if (! $comment->canDelete($user)) {
+        if ( ! $comment->canDelete($user)) {
             abort(403, 'You do not have permission to delete this comment.');
         }
 

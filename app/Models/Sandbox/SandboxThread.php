@@ -24,15 +24,6 @@ class SandboxThread extends Model
         'resolved_at' => 'datetime',
     ];
 
-    protected static function booted(): void
-    {
-        static::creating(function (SandboxThread $thread) {
-            if (empty($thread->uuid)) {
-                $thread->uuid = (string) Str::uuid();
-            }
-        });
-    }
-
     public function sandbox(): BelongsTo
     {
         return $this->belongsTo(Sandbox::class);
@@ -46,5 +37,14 @@ class SandboxThread extends Model
     public function comments(): HasMany
     {
         return $this->hasMany(SandboxComment::class, 'thread_id')->orderBy('created_at', 'asc');
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (SandboxThread $thread) {
+            if (empty($thread->uuid)) {
+                $thread->uuid = (string) Str::uuid();
+            }
+        });
     }
 }

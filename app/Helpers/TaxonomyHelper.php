@@ -28,7 +28,7 @@ class TaxonomyHelper
         if (count($terms) > 0) {
             $found = Term::whereIn('title', $terms)->pluck('title')->all();
 
-            if (! is_array($found)) {
+            if ( ! is_array($found)) {
                 $found = [];
             }
 
@@ -37,7 +37,7 @@ class TaxonomyHelper
                     continue;
                 }
 
-                $term = new Term;
+                $term        = new Term;
                 $term->title = $title;
                 $term->save();
             }
@@ -64,9 +64,9 @@ class TaxonomyHelper
                     continue;
                 }
 
-                $model = new Taxonomy;
+                $model           = new Taxonomy;
                 $model->taxonomy = $taxonomy;
-                $model->term_id = $term_id;
+                $model->term_id  = $term_id;
                 if ($parent > 0) {
                     $model->parent_id = $parent;
                 }
@@ -107,7 +107,7 @@ class TaxonomyHelper
             ->get())->map(function (Taxonomy $taxonomy) {
                 return [
                     'name' => $taxonomy->taxonomy,
-                    'id' => $taxonomy->taxonomy,
+                    'id'   => $taxonomy->taxonomy,
                 ];
             });
 

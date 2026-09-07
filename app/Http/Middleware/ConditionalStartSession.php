@@ -55,7 +55,7 @@ class ConditionalStartSession extends StartSession
     protected function shouldSaveSessionCookie(Request $request): bool
     {
         // If cookie consent feature is disabled, always save
-        if (! $this->isCookieConsentEnabled()) {
+        if ( ! $this->isCookieConsentEnabled()) {
             return true;
         }
 

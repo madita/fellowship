@@ -26,11 +26,13 @@ class ForumPost extends Model
 
     protected $casts = [
         'is_solution' => 'boolean',
-        'like_count' => 'integer',
-        'meta' => 'array',
+        'like_count'  => 'integer',
+        'meta'        => 'array',
     ];
 
     protected $appends = ['display_author'];
+
+    protected $with = ['author'];
 
     /**
      * Name to show as the author: imported posts keep their original
@@ -40,26 +42,6 @@ class ForumPost extends Model
     public function getDisplayAuthorAttribute(): ?string
     {
         return $this->meta['legacy_author'] ?? $this->author?->username;
-    }
-
-    protected $with = ['author'];
-
-    /**
-     * Boot the model.
-     */
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::created(function ($post) {
-            $post->thread->updateAfterNewPost($post);
-        });
-
-        static::deleted(function ($post) {
-            $post->thread->update([
-                'reply_count' => $post->thread->posts()->count(),
-            ]);
-        });
     }
 
     /**
@@ -99,7 +81,7 @@ class ForumPost extends Model
      */
     public function canEdit(?User $user = null): bool
     {
-        if (! $user) {
+        if ( ! $user) {
             return false;
         }
 
@@ -124,7 +106,7 @@ class ForumPost extends Model
      */
     public function canDelete(?User $user = null): bool
     {
-        if (! $user) {
+        if ( ! $user) {
             return false;
         }
 
@@ -151,7 +133,7 @@ class ForumPost extends Model
      */
     public function isLikedBy(?User $user): bool
     {
-        if (! $user) {
+        if ( ! $user) {
             return false;
         }
 
@@ -163,7 +145,7 @@ class ForumPost extends Model
      */
     public function like(User $user): void
     {
-        if (! $this->isLikedBy($user)) {
+        if ( ! $this->isLikedBy($user)) {
             $this->likes()->create(['user_id' => $user->id]);
             $this->increment('like_count');
         }
@@ -201,22 +183,40 @@ class ForumPost extends Model
         $this->loadMissing(['author', 'thread.category.term']);
 
         return [
-            'id' => $this->id,
-            'body' => strip_tags($this->body),
-            'author_name' => $this->author?->username ?? '',
-            'thread_id' => $this->thread_id,
-            'thread_title' => $this->thread?->title ?? '',
-            'thread_slug' => $this->thread?->slug ?? '',
+            'id'            => $this->id,
+            'body'          => strip_tags($this->body),
+            'author_name'   => $this->author?->username ?? '',
+            'thread_id'     => $this->thread_id,
+            'thread_title'  => $this->thread?->title ?? '',
+            'thread_slug'   => $this->thread?->slug ?? '',
             'category_name' => $this->thread?->category?->term?->title ?? '',
             'category_slug' => $this->thread?->category?->term?->slug ?? '',
-            'taxonomy_id' => $this->thread?->taxonomy_id,
-            'is_solution' => $this->is_solution,
-            'created_at' => $this->created_at?->timestamp,
+            'taxonomy_id'   => $this->thread?->taxonomy_id,
+            'is_solution'   => $this->is_solution,
+            'created_at'    => $this->created_at?->timestamp,
         ];
     }
 
     public function shouldBeSearchable(): bool
     {
         return ! $this->trashed();
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($post) {
+            $post->thread->updateAfterNewPost($post);
+        });
+
+        static::deleted(function ($post) {
+            $post->thread->update([
+                'reply_count' => $post->thread->posts()->count(),
+            ]);
+        });
     }
 }

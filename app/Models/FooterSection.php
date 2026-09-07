@@ -12,13 +12,13 @@ class FooterSection extends Model implements TranslatableContract
 {
     use Translatable;
 
-    protected $table = 'sections';
-
     public $translatedAttributes = ['title'];
 
     public $translationModel = SectionTranslation::class;
 
     public $translationForeignKey = 'section_id';
+
+    protected $table = 'sections';
 
     protected $fillable = [
         'location',
@@ -30,8 +30,8 @@ class FooterSection extends Model implements TranslatableContract
 
     protected $casts = [
         'enabled' => 'boolean',
-        'order' => 'integer',
-        'config' => 'array',
+        'order'   => 'integer',
+        'config'  => 'array',
     ];
 
     protected $attributes = [

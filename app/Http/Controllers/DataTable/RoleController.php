@@ -18,7 +18,7 @@ class RoleController extends DataTableController
     public function getCustomColumnsNames()
     {
         return [
-            'name' => 'Name',
+            'name'         => 'Name',
             'display_name' => 'Display Name',
         ];
     }
@@ -49,11 +49,11 @@ class RoleController extends DataTableController
      */
     public function store(Request $request)
     {
-        if (! $this->allowCreation) {
+        if ( ! $this->allowCreation) {
             return;
         }
 
-        $create = $request->only($this->getUpdatableColumns());
+        $create               = $request->only($this->getUpdatableColumns());
         $create['guard_name'] = 'api';
 
         $this->builder->create($create);

@@ -14,14 +14,6 @@ use Psy\VarDumper\Presenter;
 trait Revisionable
 {
     /**
-     * Boot the trait for a model.
-     */
-    protected static function bootRevisionable()
-    {
-        static::observe(RevisionListener::class);
-    }
-
-    /**
      * Get record version at given timestamp.
      *
      * @param  DateTime|string  $timestamp  DateTime|Carbon object or parsable date string @see strtotime()
@@ -101,36 +93,6 @@ trait Revisionable
     }
 
     /**
-     * Stringify revisionable attributes.
-     *
-     *
-     * @return array
-     */
-    protected function prepareAttributes(array $attributes)
-    {
-        return array_map(function ($attribute) {
-            return ($attribute instanceof DateTime)
-                ? $this->fromDateTime($attribute)
-                : (string) $attribute;
-        }, $attributes);
-    }
-
-    /**
-     * Get an array of revisionable attributes.
-     *
-     *
-     * @return array
-     */
-    protected function getRevisionableItems(array $values)
-    {
-        if (count($this->getRevisionable()) > 0) {
-            return array_intersect_key($values, array_flip($this->getRevisionable()));
-        }
-
-        return array_diff_key($values, array_flip($this->getNonRevisionable()));
-    }
-
-    /**
      * Attributes being revisioned.
      *
      * @var array
@@ -181,7 +143,7 @@ trait Revisionable
      */
     public function getRevisionsAttribute()
     {
-        if (! $this->relationLoaded('revisions')) {
+        if ( ! $this->relationLoaded('revisions')) {
             $this->load('revisions');
         }
 
@@ -197,7 +159,7 @@ trait Revisionable
      */
     public function getLatestRevisionAttribute()
     {
-        if (! $this->relationLoaded('latestRevision')) {
+        if ( ! $this->relationLoaded('latestRevision')) {
             $this->load('latestRevision');
         }
 
@@ -226,7 +188,7 @@ trait Revisionable
      */
     public function getRevisionPresenter()
     {
-        if (! property_exists($this, 'revisionPresenter')) {
+        if ( ! property_exists($this, 'revisionPresenter')) {
             return null;
         }
 
@@ -247,11 +209,49 @@ trait Revisionable
 
             return [
                 'created_at' => (string) $revision->created_at,
-                'user_id' => $revision->executor->id ?? null,
+                'user_id'    => $revision->executor->id ?? null,
                 'user_email' => $revision->executor->email ?? null,
-                'old_value' => $revision->old_value($field),
-                'new_value' => $revision->new_value($field),
+                'old_value'  => $revision->old_value($field),
+                'new_value'  => $revision->new_value($field),
             ];
         })->filter()->values();
+    }
+
+    /**
+     * Boot the trait for a model.
+     */
+    protected static function bootRevisionable()
+    {
+        static::observe(RevisionListener::class);
+    }
+
+    /**
+     * Stringify revisionable attributes.
+     *
+     *
+     * @return array
+     */
+    protected function prepareAttributes(array $attributes)
+    {
+        return array_map(function ($attribute) {
+            return ($attribute instanceof DateTime)
+                ? $this->fromDateTime($attribute)
+                : (string) $attribute;
+        }, $attributes);
+    }
+
+    /**
+     * Get an array of revisionable attributes.
+     *
+     *
+     * @return array
+     */
+    protected function getRevisionableItems(array $values)
+    {
+        if (count($this->getRevisionable()) > 0) {
+            return array_intersect_key($values, array_flip($this->getRevisionable()));
+        }
+
+        return array_diff_key($values, array_flip($this->getNonRevisionable()));
     }
 }

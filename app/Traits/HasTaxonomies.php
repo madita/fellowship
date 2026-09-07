@@ -43,7 +43,7 @@ trait HasTaxonomies
      */
     public function attachTaxonomy(int $taxonomy_id): void
     {
-        if (! $this->taxonomies()->where('id', $taxonomy_id)->first()) {
+        if ( ! $this->taxonomies()->where('id', $taxonomy_id)->first()) {
             $this->taxonomies()->attach($taxonomy_id);
         }
     }
@@ -190,7 +190,7 @@ trait HasTaxonomies
      */
     public function detachCategory(string $term_title, string $taxonomy = ''): ?int
     {
-        if (! $term = $this->getCategory($term_title, $taxonomy)) {
+        if ( ! $term = $this->getCategory($term_title, $taxonomy)) {
             return null;
         }
 
@@ -249,9 +249,9 @@ trait HasTaxonomies
     public function scopeCategorized(Builder $query, string $category, string $taxonomy): Builder
     {
         $term_ids = Taxonomy::where('taxonomy', $taxonomy)->pluck('term_id');
-        $term = Term::whereIn('id', $term_ids)->where('title', $category)->first();
+        $term     = Term::whereIn('id', $term_ids)->where('title', $category)->first();
 
-        if (! $term) {
+        if ( ! $term) {
             return $query->whereRaw('0 = 1'); // Return empty result set
         }
 

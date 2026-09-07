@@ -46,7 +46,7 @@ class TicketComment extends Model
      */
     public function canEdit(?User $user = null): bool
     {
-        if (! $user) {
+        if ( ! $user) {
             return false;
         }
 
@@ -61,7 +61,7 @@ class TicketComment extends Model
      */
     public function canDelete(?User $user = null): bool
     {
-        if (! $user) {
+        if ( ! $user) {
             return false;
         }
 

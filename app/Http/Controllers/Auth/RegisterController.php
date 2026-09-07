@@ -52,14 +52,14 @@ class RegisterController extends Controller
     {
         $rules = [
             'username' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
 
         // Check if age confirmation is required
         $ageConfirmationRequired = Setting::get('age_confirmation_required', false);
         if ($ageConfirmationRequired === 'true' || $ageConfirmationRequired === true || $ageConfirmationRequired === '1') {
-            $ageMinimum = Setting::get('age_minimum', 18);
+            $ageMinimum             = Setting::get('age_minimum', 18);
             $rules['age_confirmed'] = ['required', 'accepted'];
         }
 
@@ -78,9 +78,9 @@ class RegisterController extends Controller
     protected function create(array $data)
     {
         return User::create([
-            'name' => $data['name'],
+            'name'     => $data['name'],
             'username' => $data['username'],
-            'email' => $data['email'],
+            'email'    => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
     }

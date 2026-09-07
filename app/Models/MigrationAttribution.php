@@ -37,10 +37,10 @@ class MigrationAttribution extends Model
     }
 
     /**
-     * @param string|null $legacySource the legacy system the username comes
-     *                                  from (e.g. "wiki", "forum") — the same
-     *                                  name in different systems can belong
-     *                                  to different people
+     * @param  string|null  $legacySource  the legacy system the username comes
+     *                                     from (e.g. "wiki", "forum") — the same
+     *                                     name in different systems can belong
+     *                                     to different people
      */
     public static function record(Model $model, ?string $legacyUsername, ?string $legacySource = null): void
     {
@@ -51,9 +51,9 @@ class MigrationAttribution extends Model
 
         static::firstOrCreate([
             'attributable_type' => get_class($model),
-            'attributable_id' => $model->getKey(),
-            'legacy_source' => trim((string) $legacySource) ?: 'legacy',
-            'legacy_username' => $legacyUsername,
+            'attributable_id'   => $model->getKey(),
+            'legacy_source'     => trim((string) $legacySource) ?: 'legacy',
+            'legacy_username'   => $legacyUsername,
         ]);
     }
 }

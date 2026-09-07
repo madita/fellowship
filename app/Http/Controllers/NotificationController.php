@@ -10,8 +10,8 @@ class NotificationController extends Controller
 {
     public function index()
     {
-        $userId = Auth::id();
-        $user = User::find($userId);
+        $userId        = Auth::id();
+        $user          = User::find($userId);
         $notifications = $user->notifications;
 
         return response($notifications);
@@ -37,9 +37,9 @@ class NotificationController extends Controller
     public function notificationdelete(Request $request)
     {
         /** @var User $user */
-        $user = auth()->user();
+        $user         = auth()->user();
         $notification = $user->notifications()->find($request->id);
-        if (! $notification) {
+        if ( ! $notification) {
             return ['message' => __('messages.notifications.not_found')];
         }
 
@@ -51,10 +51,10 @@ class NotificationController extends Controller
     public function notificationsingleread(Request $request)
     {
         /** @var User $user */
-        $user = auth()->user();
+        $user         = auth()->user();
         $notification = $user->notifications()->find($request->id);
 
-        if (! $notification) {
+        if ( ! $notification) {
             return ['message' => __('messages.notifications.not_found')];
         }
         $notification->markAsRead();

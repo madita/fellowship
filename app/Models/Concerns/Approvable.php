@@ -55,13 +55,13 @@ trait Approvable
 
     public static function getAutoApproveSettingKey(): string
     {
-        return 'auto_approve_roles_'.Str::snake(class_basename(static::class));
+        return 'auto_approve_roles_' . Str::snake(class_basename(static::class));
     }
 
     public function shouldAutoApprove(?User $user = null): bool
     {
         $user = $user ?? auth()->user();
-        if (! $user) {
+        if ( ! $user) {
             return false;
         }
 

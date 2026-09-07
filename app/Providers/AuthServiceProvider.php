@@ -19,7 +19,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         IrcConnection::class => IrcConnectionPolicy::class,
-        Collection::class => CollectionPolicy::class,
+        Collection::class    => CollectionPolicy::class,
     ];
 
     /**
@@ -36,7 +36,7 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         ResetPassword::createUrlUsing(function ($user, string $token) {
-            return env('APP_URL').'/auth/reset-password/'.$token.'?email='.urlencode($user->email);
+            return env('APP_URL') . '/auth/reset-password/' . $token . '?email=' . urlencode($user->email);
         });
     }
 }

@@ -34,9 +34,9 @@ class MessageAdded implements ShouldBroadcast
 
         return [
             'message' => array_merge($this->message->toArray(), [
-                'self_owned' => false,
+                'self_owned'       => false,
                 'created_at_human' => $this->message->created_at->diffForHumans(),
-                'conversation' => [
+                'conversation'     => [
                     'uuid' => $this->message->conversation->uuid,
                 ],
             ]),
@@ -51,14 +51,14 @@ class MessageAdded implements ShouldBroadcast
     public function broadcastOn()
     {
         $channels = [
-            new PrivateChannel('conversations.'.$this->message->conversation->uuid),
+            new PrivateChannel('conversations.' . $this->message->conversation->uuid),
         ];
 
         // Also broadcast to individual user channels for those not actively viewing the conversation
         $this->message->conversation->load('users');
         foreach ($this->message->conversation->users as $user) {
             if ($user->id !== $this->message->user_id) {
-                $channels[] = new PrivateChannel('user.'.$user->id);
+                $channels[] = new PrivateChannel('user.' . $user->id);
             }
         }
 

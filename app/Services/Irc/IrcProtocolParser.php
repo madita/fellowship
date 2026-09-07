@@ -13,29 +13,29 @@ class IrcProtocolParser
     {
         $line = trim($line, "\r\n");
 
-        $prefix = null;
-        $command = null;
-        $params = [];
+        $prefix   = null;
+        $command  = null;
+        $params   = [];
         $trailing = null;
 
         // Extract prefix
         if (str_starts_with($line, ':')) {
             $spacePos = strpos($line, ' ');
-            $prefix = substr($line, 1, $spacePos - 1);
-            $line = substr($line, $spacePos + 1);
+            $prefix   = substr($line, 1, $spacePos - 1);
+            $line     = substr($line, $spacePos + 1);
         }
 
         // Extract trailing (after " :")
         $trailingPos = strpos($line, ' :');
         if ($trailingPos !== false) {
             $trailing = substr($line, $trailingPos + 2);
-            $line = substr($line, 0, $trailingPos);
+            $line     = substr($line, 0, $trailingPos);
         }
 
         // Split remaining into command and params
-        $parts = explode(' ', $line);
+        $parts   = explode(' ', $line);
         $command = strtoupper(array_shift($parts));
-        $params = array_filter($parts, fn ($p) => $p !== '');
+        $params  = array_filter($parts, fn ($p) => $p !== '');
 
         if ($trailing !== null) {
             $params[] = $trailing;
@@ -55,13 +55,13 @@ class IrcProtocolParser
         }
 
         return [
-            'raw' => $line,
-            'prefix' => $prefix,
-            'nick' => $nick,
-            'user' => $user,
-            'host' => $host,
+            'raw'     => $line,
+            'prefix'  => $prefix,
+            'nick'    => $nick,
+            'user'    => $user,
+            'host'    => $host,
             'command' => $command,
-            'params' => $params,
+            'params'  => $params,
         ];
     }
 
@@ -72,7 +72,7 @@ class IrcProtocolParser
     {
         $line = $command;
 
-        if (!empty($params)) {
+        if ( ! empty($params)) {
             $line .= ' ' . implode(' ', $params);
         }
 
@@ -89,6 +89,7 @@ class IrcProtocolParser
     public static function getNickFromPrefix(string $prefix): string
     {
         $bangPos = strpos($prefix, '!');
+
         return $bangPos !== false ? substr($prefix, 0, $bangPos) : $prefix;
     }
 

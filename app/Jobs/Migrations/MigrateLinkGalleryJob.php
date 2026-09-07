@@ -19,7 +19,7 @@ class MigrateLinkGalleryJob extends BaseMigrationJob
         $this->setTotal($events->count());
         $this->log('info', 'Linking galleries to ' . $events->count() . ' events');
 
-        $linked = 0;
+        $linked   = 0;
         $notFound = 0;
 
         foreach ($events as $event) {

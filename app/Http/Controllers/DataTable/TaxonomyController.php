@@ -21,7 +21,6 @@ class TaxonomyController extends DataTableController
 
     public function update($id, Request $request)
     {
-
         $taxonomy = Taxonomy::find($id);
 
         $taxonomy->update($request->only($this->getUpdatableColumns()));
@@ -47,10 +46,10 @@ class TaxonomyController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'content' => 'wysiwyg',
+            'content'     => 'wysiwyg',
             'description' => 'textarea',
-            'color' => 'color',
-            'parent_id' => 'parent', ];
+            'color'       => 'color',
+            'parent_id'   => 'parent', ];
     }
 
     public function getDisplayableColumns()
