@@ -6,35 +6,25 @@
                 {{ $t('account.legacyClaim.intro') }}
             </p>
 
-            <!-- Username OR e-mail identifies the old account — one is enough. -->
+            <!-- One field: the old username, or the e-mail used there (detected by the "@"). -->
             <v-row dense>
-                <v-col cols="12" md="5">
+                <v-col cols="12" md="8">
                     <v-text-field
-                        v-model="legacyUsername"
-                        :label="$t('account.legacyClaim.usernameLabel')"
-                        variant="outlined"
-                        density="compact"
-                        @keyup.enter="preview"
-                    />
-                </v-col>
-                <v-col cols="12" md="5">
-                    <v-text-field
-                        v-model="legacyEmail"
-                        :label="$t('account.legacyClaim.emailLabel')"
-                        :hint="$t('account.legacyClaim.emailHint')"
+                        v-model="legacyIdentity"
+                        :label="$t('account.legacyClaim.identityLabel')"
+                        :hint="$t('account.legacyClaim.identityHint')"
                         persistent-hint
-                        type="email"
+                        :prepend-inner-icon="isEmail ? 'mdi-email-outline' : 'mdi-account-outline'"
                         variant="outlined"
                         density="compact"
                         @keyup.enter="preview"
                     />
                 </v-col>
-                <v-col cols="12" md="2">
+                <v-col cols="12" md="3">
                     <v-btn
                         variant="tonal"
-                        block
                         :loading="previewing"
-                        :disabled="!legacyUsername && !legacyEmail"
+                        :disabled="!legacyIdentity.trim()"
                         @click="preview"
                     >
                         {{ $t('account.legacyClaim.check') }}
@@ -125,8 +115,7 @@
 import { ref, computed } from 'vue';
 import axios from 'axios';
 
-const legacyUsername = ref('');
-const legacyEmail = ref('');
+const legacyIdentity = ref('');
 const legacyUserId = ref('');
 const message = ref('');
 const previewing = ref(false);
@@ -144,13 +133,15 @@ const previewName = computed(() => {
     return names.length ? names.join(', ') : (previewResult.value?.legacy_username || previewResult.value?.legacy_email || '');
 });
 
+// The single input is an e-mail when it contains an "@", a username otherwise.
+const isEmail = computed(() => legacyIdentity.value.includes('@'));
 const identity = () => ({
-    legacy_username: legacyUsername.value || null,
-    legacy_email: legacyEmail.value || null,
+    legacy_username: isEmail.value ? null : (legacyIdentity.value.trim() || null),
+    legacy_email: isEmail.value ? legacyIdentity.value.trim() : null,
 });
 
 const preview = async () => {
-    if (!legacyUsername.value && !legacyEmail.value) return;
+    if (!legacyIdentity.value.trim()) return;
     previewing.value = true;
     result.value = '';
     previewResult.value = null;
