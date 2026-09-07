@@ -298,6 +298,15 @@ const dialogModelValueUpdate = (val) => {
     emit('update:isDrawerOpen', val);
 };
 
+// Jump to the migration dashboard's Legacy Users tab, pre-searching the
+// claimed identity (username, or the provided member id / e-mail).
+const openLegacyUsers = () => {
+    const meta = localTicket.value?.metadata || {};
+    const search = meta.legacy_username || meta.legacy_user_id || meta.legacy_email || '';
+    dialogModelValueUpdate(false);
+    router.push({ path: '/admin/migrations', query: { tab: 'legacyUsers', search } });
+};
+
 const handleConfirmation = (isConfirmed) => {
     if (isConfirmed) {
         removeTicket();
@@ -643,6 +652,43 @@ onMounted(() => {
                                 {{ formatDateUtil(localTicket?.created_at) }}
                             </div>
                         </div>
+                    </v-card-text>
+                </v-card>
+
+                <!-- Legacy account claim details -->
+                <v-card
+                    flat
+                    class="description-card mb-4"
+                    v-if="isAdmin && localTicket?.metadata?.legacy_username"
+                >
+                    <v-card-text>
+                        <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.legacyClaim.title') }}</h3>
+                        <div class="d-flex flex-wrap align-center mb-3" style="gap: 6px;">
+                            <v-chip size="small" variant="tonal" prepend-icon="mdi-account-clock">
+                                {{ localTicket.metadata.legacy_username }}
+                            </v-chip>
+                            <v-chip
+                                v-if="localTicket.metadata.legacy_email"
+                                size="small" variant="tonal" prepend-icon="mdi-email-outline"
+                            >
+                                {{ localTicket.metadata.legacy_email }}
+                            </v-chip>
+                            <v-chip
+                                v-if="localTicket.metadata.legacy_user_id"
+                                size="small" variant="tonal" prepend-icon="mdi-identifier"
+                            >
+                                {{ localTicket.metadata.legacy_user_id }}
+                            </v-chip>
+                        </div>
+                        <v-btn
+                            color="primary"
+                            variant="tonal"
+                            size="small"
+                            prepend-icon="mdi-account-convert"
+                            @click="openLegacyUsers"
+                        >
+                            {{ t('tickets.legacyClaim.open') }}
+                        </v-btn>
                     </v-card-text>
                 </v-card>
 

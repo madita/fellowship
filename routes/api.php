@@ -97,6 +97,10 @@ Route::post('/users/search', "\App\Http\Controllers\UserController@searchUsers")
 
 //
 Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 'account.'], function () {
+    // Claim content from the old site (creates a legacy-account-claim ticket)
+    Route::post('/legacy-claim/preview', 'App\Http\Controllers\LegacyClaimController@preview');
+    Route::post('/legacy-claim', 'App\Http\Controllers\LegacyClaimController@store');
+
     Route::get('/notifications', 'App\Http\Controllers\NotificationController@index')->name('notification.index');
     Route::get('/notification', 'App\Http\Controllers\NotificationController@notification')->name('notification.unread');
     Route::delete('/notification/delete/{id}', 'App\Http\Controllers\NotificationController@notificationdelete');
@@ -445,14 +449,38 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::delete('/media/{media}', 'App\Http\Controllers\Admin\MediaController@destroy');
     Route::post('/media/bulk-delete', 'App\Http\Controllers\Admin\MediaController@bulkDestroy');
 
-    // Migration Dashboard
-    Route::get('/migrations', 'App\Http\Controllers\Admin\MigrationController@index');
-    Route::post('/migrations/start', 'App\Http\Controllers\Admin\MigrationController@start');
-    Route::get('/migrations/status/{batchId}', 'App\Http\Controllers\Admin\MigrationController@status');
-    Route::get('/migrations/logs/{batchId}/{migrationKey}', 'App\Http\Controllers\Admin\MigrationController@logs');
-    Route::post('/migrations/cancel/{batchId}', 'App\Http\Controllers\Admin\MigrationController@cancel');
-    Route::get('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@history');
-    Route::delete('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@clearHistory');
+    // Migration Dashboard — the controller and its jobs are intentionally
+    // not in the repo yet; only register the routes where they exist.
+    if (class_exists(\App\Http\Controllers\Admin\MigrationController::class)) {
+        Route::get('/migrations', 'App\Http\Controllers\Admin\MigrationController@index');
+        Route::post('/migrations/start', 'App\Http\Controllers\Admin\MigrationController@start');
+        Route::get('/migrations/status/{batchId}', 'App\Http\Controllers\Admin\MigrationController@status');
+        Route::get('/migrations/logs/{batchId}/{migrationKey}', 'App\Http\Controllers\Admin\MigrationController@logs');
+        Route::post('/migrations/cancel/{batchId}', 'App\Http\Controllers\Admin\MigrationController@cancel');
+        Route::get('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@history');
+        Route::delete('/migrations/history', 'App\Http\Controllers\Admin\MigrationController@clearHistory');
+
+        // Generic migration tool: sources, schema introspection, mappings
+        Route::get('/migrations/sources', 'App\Http\Controllers\Admin\MigrationController@sources');
+        Route::post('/migrations/sources', 'App\Http\Controllers\Admin\MigrationController@storeSource');
+        Route::patch('/migrations/sources/{source}', 'App\Http\Controllers\Admin\MigrationController@updateSource');
+        Route::delete('/migrations/sources/{source}', 'App\Http\Controllers\Admin\MigrationController@deleteSource');
+        Route::post('/migrations/sources/{source}/test', 'App\Http\Controllers\Admin\MigrationController@testSource');
+        Route::get('/migrations/sources/{source}/tables', 'App\Http\Controllers\Admin\MigrationController@sourceTables');
+        Route::get('/migrations/sources/{source}/tables/{table}/columns', 'App\Http\Controllers\Admin\MigrationController@sourceColumns');
+        Route::get('/migrations/targets', 'App\Http\Controllers\Admin\MigrationController@targets');
+        Route::get('/migrations/legacy-users', 'App\Http\Controllers\Admin\MigrationController@legacyUsers');
+        Route::post('/migrations/forum/archive', 'App\Http\Controllers\Admin\MigrationController@archiveForumImport');
+        Route::post('/migrations/legacy-users/assign', 'App\Http\Controllers\Admin\MigrationController@assignLegacyUser');
+        Route::get('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@mappings');
+        Route::get('/migrations/mappings/export', 'App\Http\Controllers\Admin\MigrationController@exportMappings');
+        Route::post('/migrations/mappings/import', 'App\Http\Controllers\Admin\MigrationController@importMappings');
+        Route::post('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@storeMapping');
+        Route::patch('/migrations/mappings/{mapping}', 'App\Http\Controllers\Admin\MigrationController@updateMapping');
+        Route::delete('/migrations/mappings/{mapping}', 'App\Http\Controllers\Admin\MigrationController@deleteMapping');
+        Route::post('/migrations/mappings/{mapping}/preview', 'App\Http\Controllers\Admin\MigrationController@previewMapping');
+        Route::post('/migrations/mappings/{mapping}/run', 'App\Http\Controllers\Admin\MigrationController@runMapping');
+    }
 
     // Translation Management
     Route::get('/translations/locales', 'App\Http\Controllers\Admin\TranslationController@locales');
@@ -535,6 +563,7 @@ Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {
     Route::post('/connections/{connection}/disconnect', 'App\Http\Controllers\IrcController@disconnect');
 
     // Channels
+    Route::get('/available-channels', 'App\Http\Controllers\IrcController@availableChannels');
     Route::get('/connections/{connection}/channels', 'App\Http\Controllers\IrcController@getServerChannels');
     Route::post('/connections/{connection}/join', 'App\Http\Controllers\IrcController@joinChannel');
     Route::post('/channels/{channel}/part', 'App\Http\Controllers\IrcController@partChannel');

@@ -151,7 +151,10 @@ class ForumThreadController extends Controller
         $thread = $category->forumThreads()->create([
             'user_id' => $user->id,
             'title' => $validated['title'],
-            'body' => Purify::clean($validated['body']),
+            // The 'sandbox' config matches the TipTap editor's output
+            // (tables, code blocks, blockquotes, …) — the default config
+            // would silently strip those elements.
+            'body' => Purify::config('sandbox')->clean($validated['body']),
         ]);
 
         // Auto-subscribe thread author
@@ -192,7 +195,7 @@ class ForumThreadController extends Controller
         }
 
         if (isset($validated['body'])) {
-            $validated['body'] = Purify::clean($validated['body']);
+            $validated['body'] = Purify::config('sandbox')->clean($validated['body']);
         }
 
         $thread->update($validated);

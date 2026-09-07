@@ -43,6 +43,7 @@
             <v-tab value="info">Information</v-tab>
             <v-tab value="social">Social Accounts</v-tab>
             <v-tab value="api-keys">API Keys</v-tab>
+            <v-tab value="legacy">{{ $t('account.legacyClaim.tab') }}</v-tab>
         </v-tabs>
 
         <v-card>
@@ -63,6 +64,10 @@
                 <v-window-item value="api-keys">
                     <api-keys-tab></api-keys-tab>
                 </v-window-item>
+
+                <v-window-item value="legacy">
+                    <legacy-claim-tab></legacy-claim-tab>
+                </v-window-item>
             </v-window>
         </v-card-text>
         </v-card>
@@ -79,6 +84,7 @@ import AccountTab from './EditUser/AccountTab.vue';
 import InformationTab from './EditUser/InformationTab.vue';
 import SocialAccountsTab from './EditUser/SocialAccountsTab.vue';
 import ApiKeysTab from './EditUser/ApiKeysTab.vue';
+import LegacyClaimTab from './EditUser/LegacyClaimTab.vue';
 
 export default {
     components: {
@@ -87,6 +93,7 @@ export default {
         InformationTab,
         SocialAccountsTab,
         ApiKeysTab,
+        LegacyClaimTab,
     },
     setup() {
         const authStore = useAuthStore();

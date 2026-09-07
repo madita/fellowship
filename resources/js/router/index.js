@@ -134,6 +134,16 @@ router.beforeEach(async (to, from, next) => {
         return next({ name: 'access-denied' })
     }
 
+    // Block routes of deactivated features (Admin → Settings → Features)
+    const { FEATURES } = await import('@/configs/features.js')
+    const blockedFeature = FEATURES.find(feature =>
+        feature.routePrefixes.some(prefix => to.path === prefix || to.path.startsWith(prefix + '/'))
+        && !settingsStore.isFeatureEnabled(feature.key)
+    )
+    if (blockedFeature) {
+        return next({ name: 'access-denied' })
+    }
+
     // Continue with route-specific middleware
     if (!to.meta.middleware) {
         return next()

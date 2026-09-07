@@ -2,35 +2,21 @@
   <div class="comic-chat-view" :class="`bg-${background}`">
     <!-- Comic Panels Container -->
     <div ref="comicContainer" class="comic-panels-container">
-      <!-- Group messages into panels -->
+      <!-- Comic strip: panels flow left-to-right in rows. Each panel shows
+           its speakers standing in the scene with their bubbles above them,
+           like classic comic chat — not a vertical chat log. -->
       <div
         v-for="(panel, panelIndex) in comicPanels"
         :key="panelIndex"
         class="comic-panel"
       >
-        <div class="panel-background">
+        <!-- Speech bubbles, aligned toward their speaker -->
+        <div class="panel-bubbles">
           <div
-            v-for="(message, msgIndex) in panel"
+            v-for="message in panel"
             :key="message.id"
-            :class="getMessagePositionClass(msgIndex, panel.length)"
+            :class="['bubble-row', speakerIndex(panel, message.from_nick) === 0 ? 'bubble-align-left' : 'bubble-align-right']"
           >
-            <!-- Character Avatar (inline SVG) -->
-            <div class="character-container">
-              <svg
-                viewBox="0 0 100 140"
-                class="character-avatar"
-                :class="getEmotionClass(message.emotion)"
-              >
-                <comic-character
-                  :character="getCharacterType(message.from_nick)"
-                  :emotion="message.emotion || 'normal'"
-                  :color="getNickHue(message.from_nick)"
-                />
-              </svg>
-              <div class="character-name">{{ message.from_nick }}</div>
-            </div>
-
-            <!-- Speech Bubble -->
             <div :class="['speech-bubble', getBubbleClass(message)]">
               <div class="bubble-content">
                 <span v-if="showTimestamps" class="bubble-timestamp">
@@ -45,6 +31,34 @@
                 </span>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- The speakers of this panel, standing side by side -->
+        <div class="panel-characters">
+          <div
+            v-for="speaker in panelSpeakers(panel)"
+            :key="speaker.nick"
+            class="character-container"
+          >
+            <div class="character-figure">
+              <svg
+                viewBox="0 0 100 140"
+                class="character-avatar"
+                :class="getEmotionClass(speaker.emotion)"
+              >
+                <comic-character
+                  :character="getCharacterType(speaker.nick)"
+                  :emotion="speaker.emotion"
+                  :color="getNickHue(speaker.nick)"
+                />
+              </svg>
+              <span
+                v-if="speaker.gesture && speaker.gesture !== 'none'"
+                class="character-gesture"
+              >{{ getGestureEmoji(speaker.gesture) }}</span>
+            </div>
+            <div class="character-name">{{ speaker.nick }}</div>
           </div>
         </div>
       </div>
@@ -86,13 +100,25 @@ export default {
     };
   },
   computed: {
+    // Group consecutive messages into strip panels. A panel closes when it
+    // reaches messagesPerPanel messages or a third speaker would enter —
+    // classic comic panels show at most two characters talking.
     comicPanels() {
-      const panels = [];
       const msgs = this.messages.filter(m => m.type === 'message' || m.type === 'action');
-      const copy = [...msgs];
-      while (copy.length > 0) {
-        panels.push(copy.splice(0, this.messagesPerPanel));
+      const panels = [];
+      let panel = [];
+      let speakers = new Set();
+      for (const message of msgs) {
+        const isNewSpeaker = !speakers.has(message.from_nick);
+        if (panel.length >= this.messagesPerPanel || (isNewSpeaker && speakers.size >= 2)) {
+          panels.push(panel);
+          panel = [];
+          speakers = new Set();
+        }
+        panel.push(message);
+        speakers.add(message.from_nick);
       }
+      if (panel.length) panels.push(panel);
       return panels;
     },
   },
@@ -102,6 +128,23 @@ export default {
     },
   },
   methods: {
+    // Unique speakers of a panel in speaking order, each carrying the
+    // emotion/gesture of their latest message so the standing character
+    // reflects what they last did.
+    panelSpeakers(panel) {
+      const speakers = new Map();
+      for (const message of panel) {
+        speakers.set(message.from_nick, {
+          nick: message.from_nick,
+          emotion: message.emotion || 'normal',
+          gesture: message.gesture || 'none',
+        });
+      }
+      return [...speakers.values()];
+    },
+    speakerIndex(panel, nick) {
+      return this.panelSpeakers(panel).findIndex(s => s.nick === nick);
+    },
     getCharacterType(nick) {
       // Use selected character for current user, hash-based for others
       if (this.myNick && nick.toLowerCase() === this.myNick.toLowerCase()) {
@@ -122,10 +165,6 @@ export default {
       if (message.bubble_type === 'whisper' || message.gesture === 'whisper') return 'whisper';
       if (message.type === 'action') return 'action-bubble';
       return 'speech';
-    },
-    getMessagePositionClass(index) {
-      const positions = ['message-position-left', 'message-position-right'];
-      return `comic-message ${positions[index % positions.length]}`;
     },
     getGestureEmoji(gesture) {
       return { wave: '👋', laugh: '😂', think: '💭', shout: '📢', whisper: '🤫' }[gesture] || '';
@@ -205,42 +244,54 @@ export default {
   background: linear-gradient(180deg, #b3e5fc 0%, #b3e5fc 40%, #ffe0b2 40%, #ffcc80 100%);
 }
 
+/* Comic strip: panels flow left-to-right, wrapping into rows */
 .comic-panels-container {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
+  align-content: start;
 }
 
 .comic-panel {
   background: white;
   border: 3px solid #222;
   border-radius: 6px;
-  padding: 16px;
+  padding: 12px;
   box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.15);
-}
-
-.panel-background {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  justify-content: space-between;
+  min-height: 260px;
 }
 
-.comic-message {
+.panel-bubbles {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 8px;
+  margin-bottom: 8px;
 }
 
-.message-position-left {
+.bubble-row {
+  display: flex;
+}
+
+.bubble-align-left {
   justify-content: flex-start;
 }
 
-.message-position-right {
+.bubble-align-right {
   justify-content: flex-end;
-  flex-direction: row-reverse;
+}
+
+/* The speakers stand side by side at the bottom of the panel */
+.panel-characters {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .character-container {
@@ -248,6 +299,17 @@ export default {
   flex-direction: column;
   align-items: center;
   flex-shrink: 0;
+}
+
+.character-figure {
+  position: relative;
+}
+
+.character-gesture {
+  position: absolute;
+  top: -6px;
+  right: -14px;
+  font-size: 20px;
 }
 
 .character-avatar {
@@ -274,10 +336,33 @@ export default {
   border: 2px solid #222;
   border-radius: 18px;
   padding: 10px 14px;
-  max-width: 360px;
+  max-width: 85%;
   min-width: 60px;
   font-family: 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
   box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* Tail pointing down toward the speaker standing below */
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  border-width: 10px 8px 0 8px;
+  border-style: solid;
+  border-color: #222 transparent transparent transparent;
+}
+
+.bubble-align-left .speech-bubble::after {
+  left: 24px;
+}
+
+.bubble-align-right .speech-bubble::after {
+  right: 24px;
+}
+
+/* Thought bubbles have no tail (classic comic convention) */
+.speech-bubble.thought::after {
+  display: none;
 }
 
 .speech-bubble.thought {
@@ -336,6 +421,7 @@ export default {
 }
 
 .empty-comic {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   align-items: center;

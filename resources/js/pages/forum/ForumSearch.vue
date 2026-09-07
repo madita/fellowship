@@ -96,7 +96,7 @@
                                     <v-row align="center" no-gutters>
                                         <v-col cols="12" md="7">
                                             <div class="d-flex align-center">
-                                                <UserAvatar v-if="thread.author" :user="thread.author" />
+                                                <UserAvatar v-if="thread.author || thread.meta?.legacy_author" :user="thread.author" :legacy-name="thread.meta?.legacy_author" />
                                                 <div class="ml-3">
                                                     <div class="d-flex align-center gap-2 mb-1">
                                                         <v-icon v-if="thread.is_pinned" size="16" color="primary">mdi-pin</v-icon>
@@ -106,7 +106,7 @@
                                                         </v-chip>
                                                     </div>
                                                     <div class="text-caption text-medium-emphasis">
-                                                        {{ thread.author?.username }}
+                                                        {{ thread.display_author || thread.author?.username }}
                                                         &middot; {{ formatDateDistance(thread.created_at) }}
                                                     </div>
                                                     <div class="text-body-2 text-medium-emphasis mt-1 body-snippet">
@@ -160,10 +160,10 @@
                             >
                                 <v-card-text>
                                     <div class="d-flex align-center">
-                                        <UserAvatar v-if="post.author" :user="post.author" />
+                                        <UserAvatar v-if="post.author || post.meta?.legacy_author" :user="post.author" :legacy-name="post.meta?.legacy_author" />
                                         <div class="ml-3 flex-grow-1">
                                             <div class="d-flex align-center gap-2 mb-1">
-                                                <span class="font-weight-medium">{{ post.author?.username }}</span>
+                                                <span class="font-weight-medium">{{ post.display_author || post.author?.username }}</span>
                                                 <span class="text-caption text-medium-emphasis">
                                                     {{ $t('forum.replyIn') }}
                                                 </span>

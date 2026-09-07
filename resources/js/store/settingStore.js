@@ -140,6 +140,25 @@ export const useSettingsStore = defineStore({
             return value === true;
         },
         maintenanceMessage: (state) => state.appSettings.maintenance_message || 'We are currently performing scheduled maintenance. Please check back soon.',
+        // Comic chat inside the IRC client (Admin → Settings → IRC → Client).
+        // Disabled unless explicitly turned on.
+        ircComicChatEnabled: (state) => {
+            const value = state.appSettings.irc_comic_chat_enabled;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value === true;
+        },
+        // Feature toggles (Admin → Settings → Features). Unset means enabled,
+        // so existing installs keep their features until turned off.
+        isFeatureEnabled: (state) => (featureKey) => {
+            const value = state.appSettings[`feature_${featureKey}_enabled`];
+            if (value === undefined || value === null) return true;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value !== false;
+        },
         sandboxEnabled: (state) => {
             const value = state.appSettings.sandbox_enabled;
             if (typeof value === 'string') {

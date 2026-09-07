@@ -38,10 +38,13 @@ const isExcludedEndpoint = (url) => {
 /**
  * Trigger the session timeout modal
  */
-const triggerSessionTimeout = () => {
+// Returns true if this call actually triggered the timeout, false if it was
+// already in progress. Callers use the return value to ensure only the first
+// expired request schedules the logout/redirect.
+export const triggerSessionTimeout = () => {
     if (sessionTimeoutTriggered) {
         log.log('Session timeout already triggered, skipping');
-        return;
+        return false;
     }
 
     sessionTimeoutTriggered = true;
@@ -49,6 +52,8 @@ const triggerSessionTimeout = () => {
 
     // Dispatch custom event that SessionTimeoutModal listens for
     window.dispatchEvent(new CustomEvent('session-timeout'));
+
+    return true;
 };
 
 /**

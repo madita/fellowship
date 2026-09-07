@@ -21,12 +21,26 @@ class ForumPost extends Model
         'body',
         'is_solution',
         'like_count',
+        'meta',
     ];
 
     protected $casts = [
         'is_solution' => 'boolean',
         'like_count' => 'integer',
+        'meta' => 'array',
     ];
+
+    protected $appends = ['display_author'];
+
+    /**
+     * Name to show as the author: imported posts keep their original
+     * poster's name (meta.legacy_author) until the legacy account is
+     * assigned to a registered user.
+     */
+    public function getDisplayAuthorAttribute(): ?string
+    {
+        return $this->meta['legacy_author'] ?? $this->author?->username;
+    }
 
     protected $with = ['author'];
 

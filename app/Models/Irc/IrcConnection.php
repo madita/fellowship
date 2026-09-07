@@ -18,6 +18,8 @@ class IrcConnection extends Model
         'nickname',
         'username',
         'realname',
+        'comic_character',
+        'comic_view_mode',
         'status',
         'auto_connect',
         'auto_join_channels',

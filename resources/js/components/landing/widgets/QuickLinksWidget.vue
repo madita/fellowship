@@ -57,20 +57,18 @@
           :target="link.external ? '_blank' : undefined"
           class="quick-link-list-item"
         >
-          <v-list-item-icon v-if="link.icon">
+          <template v-if="link.icon" #prepend>
             <v-icon :color="link.color || config.iconColor">{{ link.icon }}</v-icon>
-          </v-list-item-icon>
-          <v-list-item-content>
-            <v-list-item-title>{{ link.title }}</v-list-item-title>
-            <v-list-item-subtitle v-if="link.description">
-              {{ link.description }}
-            </v-list-item-subtitle>
-          </v-list-item-content>
-          <v-list-item-action v-if="link.badge">
-            <v-chip :color="link.badgeColor || 'primary'" small>
+          </template>
+          <v-list-item-title>{{ link.title }}</v-list-item-title>
+          <v-list-item-subtitle v-if="link.description">
+            {{ link.description }}
+          </v-list-item-subtitle>
+          <template v-if="link.badge" #append>
+            <v-chip :color="link.badgeColor || 'primary'" size="small">
               {{ link.badge }}
             </v-chip>
-          </v-list-item-action>
+          </template>
         </v-list-item>
 
         <v-btn

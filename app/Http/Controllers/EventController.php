@@ -4,17 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Helpers\TaxonomyHelper;
 use App\Models\Event\Event;
+use App\Models\Event\EventDetail;
 use App\Models\Event\EventGuest;
 use App\Models\Event\EventProfile;
 use App\Models\Event\EventType;
+use App\Models\Irc\IrcChannel;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use App\Models\User;
 use DateTime;
-// use Lecturize\Taxonomies\Models\Taxonomy;
-// use Lecturize\Taxonomies\Models\Term;
+//use Lecturize\Taxonomies\Models\Taxonomy;
+//use Lecturize\Taxonomies\Models\Term;
+use App\Models\Irc\IrcConnection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class EventController extends Controller
 {
@@ -29,14 +33,168 @@ class EventController extends Controller
     }
 
     /**
+     * Normalise the location payload sent under extendedProps.location.
+     *
+     * The event type's options.location array declares which modes a type
+     * allows (real / virtual / custom); the client sends a structured object.
+     *
+     * Returns:
+     *  - false  => no location key was sent, leave any existing value alone
+     *  - null   => an empty location was sent, clear the stored value
+     *  - array  => a sanitised location to persist
+     *
+     * @return array<string,mixed>|null|false
+     */
+    private function extractLocation(Request $request)
+    {
+        $props = $request->get('extendedProps');
+        if (! is_array($props) || ! array_key_exists('location', $props)) {
+            return false;
+        }
+
+        $loc = $props['location'];
+
+        // Legacy shape: a plain string was a free-text "custom" location.
+        if (is_string($loc)) {
+            return trim($loc) === '' ? null : ['type' => 'custom', 'text' => $loc];
+        }
+
+        if (! is_array($loc) || empty($loc['type'])) {
+            return null;
+        }
+
+        switch ($loc['type']) {
+            case 'real':
+                $clean = ['type' => 'real', 'address' => (string) ($loc['address'] ?? '')];
+                if (isset($loc['lat'], $loc['lng']) && $loc['lat'] !== '' && $loc['lng'] !== '') {
+                    $clean['lat'] = $loc['lat'];
+                    $clean['lng'] = $loc['lng'];
+                }
+
+                return $clean['address'] === '' && ! isset($clean['lat']) ? null : $clean;
+
+            case 'virtual':
+                $mode = ($loc['virtualMode'] ?? 'url') === 'irc' ? 'irc' : 'url';
+                if ($mode === 'irc') {
+                    $channelId = $loc['irc_channel_id'] ?? null;
+
+                    return $channelId ? ['type' => 'virtual', 'virtualMode' => 'irc', 'irc_channel_id' => (int) $channelId] : null;
+                }
+                $url = trim((string) ($loc['url'] ?? ''));
+                // The URL is rendered as a link for every viewer — only plain
+                // web URLs may be stored (no javascript:, data:, …).
+                if (! preg_match('#^https?://#i', $url)) {
+                    return null;
+                }
+
+                return ['type' => 'virtual', 'virtualMode' => 'url', 'url' => $url];
+
+            case 'custom':
+            default:
+                $text = (string) ($loc['text'] ?? '');
+
+                return trim($text) === '' ? null : ['type' => 'custom', 'text' => $text];
+        }
+    }
+
+    /**
+     * Persist (or clear) an event's location on its event_details row.
+     *
+     * @param  array<string,mixed>|null|false  $location
+     */
+    private function saveEventLocation(Event $event, $location): void
+    {
+        if ($location === false) {
+            return; // key absent — don't touch existing details
+        }
+
+        // The details row and its options JSON also carry data written by
+        // other code paths (legacy imports store albumName/creator/lastEditedBy
+        // and coordinates here), so only ever touch the "location" key —
+        // never delete the row or replace the whole JSON.
+        $details = $event->details()->first();
+        $options = ($details && $details->options) ? (json_decode($details->options, true) ?: []) : [];
+
+        if ($location === null) {
+            if (! $details || ! array_key_exists('location', $options)) {
+                return;
+            }
+            unset($options['location']);
+            $details->options = json_encode($options);
+            $details->save();
+
+            return;
+        }
+
+        $details ??= $event->details()->make();
+        $options['location'] = $location;
+        $details->options = json_encode($options);
+        if (isset($location['lat'], $location['lng'])) {
+            $details->lat = $location['lat'];
+            $details->lng = $location['lng'];
+        }
+        $details->save();
+    }
+
+    /**
+     * Build the location object returned to the client, resolving an IRC
+     * channel id to a display name so the frontend can render a link.
+     *
+     * @return array<string,mixed>|null
+     */
+    private function resolveLocation(?EventDetail $details): ?array
+    {
+        if (! $details || ! $details->options) {
+            return null;
+        }
+
+        $opts = json_decode($details->options, true);
+        $loc = $opts['location'] ?? null;
+
+        if (! is_array($loc) || empty($loc['type'])) {
+            return null;
+        }
+
+        if (($loc['type'] === 'virtual') && (($loc['virtualMode'] ?? null) === 'irc') && ! empty($loc['irc_channel_id'])) {
+            $channel = IrcChannel::find($loc['irc_channel_id']);
+            $loc['irc_channel'] = $channel?->name;
+        }
+
+        return $loc;
+    }
+
+    /**
+     * Validation rules for the location payload, shared by store() and
+     * update(). The IRC channel must belong to one of the submitting user's
+     * own connections — an unscoped exists check would let any user attach
+     * (and thereby publish) other users' channel and DM-window names.
+     *
+     * @return array<string,mixed>
+     */
+    private function locationRules(): array
+    {
+        return [
+            'extendedProps.location.url' => 'nullable|string|max:2048|url:http,https',
+            'extendedProps.location.irc_channel_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('irc_channels', 'id')->where(
+                    fn ($q) => $q->where('is_private', false)
+                        ->whereIn('irc_connection_id', IrcConnection::where('user_id', auth()->id())->select('id'))
+                ),
+            ],
+        ];
+    }
+
+    /**
      * Show the application dashboard.
      *
      * @return JsonResponse
      */
     public function index()
     {
-        $events = Event::all();
-        //        $events = DB::select('select * from events');
+        $events = Event::with('details')->get();
+//        $events = DB::select('select * from events');
         $eventTypes = EventType::all()->keyBy('id')->map(function (EventType $type) {
             $modified = clone $type;
             $modified->options = json_decode($modified->options);
@@ -70,44 +228,44 @@ class EventController extends Controller
             $start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
             $end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
 
-            //            $extendedProps = [
-            //                'calendar' => 'Treffen'
-            //            ];
+//            $extendedProps = [
+//                'calendar' => 'Treffen'
+//            ];
 
-            //            $eventType = $event->type()->first();
+//            $eventType = $event->type()->first();
 
             $originDate = [
                 'startDate' => $event->startDate,
                 'startTime' => $event->startTime,
-                'endDate' => $event->endDate,
-                'endTime' => $event->endTime,
-                'start' => $start,
-                'end' => $end, ];
+                'endDate'   => $event->endDate,
+                'endTime'   => $event->endTime,
+                'start'     => $start,
+                'end'       => $end, ];
 
             // Handle null event_type_id for legacy events
             $eventType = $event->event_type_id ? ($eventTypes[$event->event_type_id] ?? null) : null;
 
             return [
-                'id' => $event->id,
-                'title' => $event->title,
+                'id'          => $event->id,
+                'title'       => $event->title,
                 'description' => $event->description,
-                'user_id' => $event->user_id,
-                'start' => $start,
-                'end' => $end,
-                'originDate' => $originDate,
-                'location' => '',
-                'type' => $eventType['name'] ?? null,
-                'event_type_id' => $event->event_type_id,
-                'allDay' => ($event->startTime === null) ? true : false,
-                'colorName' => $eventType['color'] ?? null,
-                'color' => $eventType['color'] ?? null,
-                'event_profile_id' => $eventType['event_profile_id'] ?? null,
+                'user_id'     => $event->user_id,
+                'start'       => $start,
+                'end'         => $end,
+                'originDate'  => $originDate,
+                'location'                  => $this->resolveLocation($event->details),
+                'type'                      => $eventType['name'] ?? null,
+                'event_type_id'             => $event->event_type_id,
+                'allDay'                    => ($event->startTime === null) ? true : false,
+                'colorName'                 => $eventType['color'] ?? null,
+                'color'                     => $eventType['color'] ?? null,
+                'event_profile_id'          => $eventType['event_profile_id'] ?? null,
             ];
         });
 
         return response()->json([
             'data' => [
-                'types' => $eventTypes,
+                'types'  => $eventTypes,
                 'events' => $eventsMapped, ], ]);
     }
 
@@ -120,9 +278,11 @@ class EventController extends Controller
             'start' => 'nullable|date|required_with:end',
             'end' => 'nullable|date|required_with:start|after_or_equal:start',
             'image' => 'nullable|string|max:500',
+            ...$this->locationRules(),
         ]);
 
-        $event = new Event;
+
+        $event = new Event();
         $event->title = request()->get('title');
         $event->description = request()->get('description');
 
@@ -137,7 +297,7 @@ class EventController extends Controller
         $user = auth()->user();
         $event->user_id = $user->id;
 
-        //        $event->type = request()->get('type');
+//        $event->type = request()->get('type');
 
         if (request()->filled('start') && request()->filled('end')) {
             $event->startDate = date('Y-m-d', strtotime(request()->get('start')));
@@ -149,9 +309,16 @@ class EventController extends Controller
             }
         }
 
-        if ($props = request()->get('extendedProps')) {
-            $event->event_type_id = $props['event_type_id'];
-            $event->description = $props['description'];
+        $event->event_type_id = request()->get('event_type_id');
+
+        // extendedProps may hold only a subset of keys (e.g. just location
+        // for list-opened events) — never read its entries unguarded.
+        $props = request()->get('extendedProps');
+        if (is_array($props)) {
+            $event->event_type_id = $props['event_type_id'] ?? $event->event_type_id;
+            if (array_key_exists('description', $props)) {
+                $event->description = $props['description'];
+            }
         }
 
         if ($date = request()->get('date')) {
@@ -169,16 +336,19 @@ class EventController extends Controller
 
         $event->save();
 
+        $this->saveEventLocation($event, $this->extractLocation($request));
+
         return response()->json([
             'data' => [
                 'message' => __('messages.events.created'),
-                'event' => $event, ], ]);
+                'event'   => $event, ], ]);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  int  $id
+     * @param int $id
+     *
      * @return JsonResponse
      */
     public function show(Event $event, $slug = null)
@@ -194,11 +364,11 @@ class EventController extends Controller
 
             if ($guestRecord !== null) {
                 $isGoing = (object) [
-                    'id' => $guestRecord->pivot->id ?? null,
-                    'event_id' => $guestRecord->pivot->event_id ?? $event->id,
-                    'user_id' => $user->id,
-                    'type' => $guestRecord->pivot->type ?? null,
-                    'profile' => json_decode($guestRecord->pivot->profile ?? '{}'),
+                    'id'         => $guestRecord->pivot->id ?? null,
+                    'event_id'   => $guestRecord->pivot->event_id ?? $event->id,
+                    'user_id'    => $user->id,
+                    'type'       => $guestRecord->pivot->type ?? null,
+                    'profile'    => json_decode($guestRecord->pivot->profile ?? '{}'),
                     'created_at' => $guestRecord->pivot->created_at ?? null,
                     'updated_at' => $guestRecord->pivot->updated_at ?? null,
                 ];
@@ -235,12 +405,15 @@ class EventController extends Controller
             $endTemp = $event->endDate.' 23:59:59';
         }
 
-        //        $start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
-        // /        $end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
-        //
+//        $start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
+        ///        $end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
+//
 
         $event->start = (new DateTime($startTemp))->format('Y-m-d\TH:i:s\Z');
         $event->end = (new DateTime($endTemp))->format('Y-m-d\TH:i:s\Z');
+
+        $event->load('details');
+        $event->location = $this->resolveLocation($event->details);
 
         $eventType = $event->event_type_id ? EventType::find($event->event_type_id) : null;
 
@@ -255,10 +428,10 @@ class EventController extends Controller
         }
 
         $data = [
-            'event' => $event,
+            'event'   => $event,
             'isGoing' => $isGoing,
             'answers' => $answers,
-            'guests' => $eventGuests,
+            'guests'  => $eventGuests,
         ];
 
         return response()->json($data);
@@ -276,7 +449,7 @@ class EventController extends Controller
         // Authorization check - only owner or admin can update
         /** @var User $user */
         $user = auth()->user();
-        if ($event->user_id !== $user->id && ! $user->can('manage-posts')) {
+        if ($event->user_id !== $user->id && !$user->can('manage-posts')) {
             return response()->json(['message' => __('messages.events.unauthorized')], 403);
         }
 
@@ -286,10 +459,15 @@ class EventController extends Controller
             'event_type_id' => 'required|integer|exists:event_types,id',
             'start' => 'nullable|date|required_with:end',
             'end' => 'nullable|date|required_with:start|after_or_equal:start',
+            ...$this->locationRules(),
         ]);
 
         $event->title = request()->get('title');
-        $event->description = request()->get('description');
+        // FullCalendar-opened events carry the description only inside
+        // extendedProps — don't null it when the top-level key is absent.
+        if (request()->has('description')) {
+            $event->description = request()->get('description');
+        }
 
         if (request()->get('image')) {
             $event->image = request()->get('image');
@@ -301,8 +479,16 @@ class EventController extends Controller
 
         // Note: Preserve original owner - don't reassign user_id on update
 
-        if ($extendedProps = request()->get('extendedProps')) {
-            $event->event_type_id = $extendedProps['event_type_id'];
+        $event->event_type_id = request()->get('event_type_id');
+
+        // extendedProps may hold only a subset of keys (e.g. just location
+        // for list-opened events) — never read its entries unguarded.
+        $extendedProps = request()->get('extendedProps');
+        if (is_array($extendedProps)) {
+            $event->event_type_id = $extendedProps['event_type_id'] ?? $event->event_type_id;
+            if (array_key_exists('description', $extendedProps)) {
+                $event->description = $extendedProps['description'];
+            }
         }
 
         if (request()->filled('start') && request()->filled('end')) {
@@ -330,6 +516,8 @@ class EventController extends Controller
 
         $event->update();
 
+        $this->saveEventLocation($event, $this->extractLocation($request));
+
         return response()->json([
             'data' => [
                 'event' => $event, ], ]);
@@ -338,7 +526,8 @@ class EventController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int  $id
+     * @param int $id
+     *
      * @return JsonResponse
      */
     public function destroy(Event $event)
@@ -346,7 +535,7 @@ class EventController extends Controller
         // Authorization check - only owner or admin can delete
         /** @var User $user */
         $user = auth()->user();
-        if ($event->user_id !== $user->id && ! $user->can('manage-posts')) {
+        if ($event->user_id !== $user->id && !$user->can('manage-posts')) {
             return response()->json(['message' => __('messages.events.unauthorized')], 403);
         }
 
@@ -357,7 +546,7 @@ class EventController extends Controller
 
     public function isGoing(Event $event, $answer)
     {
-        // ToDo get just the guests???
+        //ToDo get just the guests???
         /** @var User $user */
         $user = auth()->user();
 
@@ -419,7 +608,7 @@ class EventController extends Controller
                         $parentId = null;
 
                         // Check if item has options property
-                        if (! isset($item->options)) {
+                        if (!isset($item->options)) {
                             continue;
                         }
 
@@ -429,7 +618,7 @@ class EventController extends Controller
                         }
 
                         // Skip if the field doesn't exist in the submitted data
-                        if (! isset($json[$item->name]) || ! is_array($json[$item->name])) {
+                        if (!isset($json[$item->name]) || !is_array($json[$item->name])) {
                             continue;
                         }
 
@@ -446,9 +635,9 @@ class EventController extends Controller
                                 }
 
                                 $jsonTerm = [
-                                    'id' => $term->id,
-                                    'title' => $term->title,
-                                    'slug' => $term->slug,
+                                    'id'        => $term->id,
+                                    'title'     => $term->title,
+                                    'slug'      => $term->slug,
                                     'parent_id' => $parentId,
                                 ];
 
@@ -500,11 +689,11 @@ class EventController extends Controller
         // First, validate the request
         $request->validate([
             'guestId' => 'required|integer',
-            'action' => 'required|string|in:approve,reject',
+            'action'  => 'required|string|in:approve,reject',
         ]);
 
         // Then check authorization
-        if ($event->user_id !== auth()->id() && ! auth()->user()->can('manage-posts')) {
+        if ($event->user_id !== auth()->id() && !auth()->user()->can('manage-posts')) {
             return response()->json(['message' => __('messages.events.unauthorized_approve')], 403);
         }
 
@@ -514,7 +703,7 @@ class EventController extends Controller
             ->first();
 
         // If no guest is found, return a 404 error
-        if (! $guest) {
+        if (!$guest) {
             return response()->json(['message' => __('messages.events.guest_not_found')], 404);
         }
 

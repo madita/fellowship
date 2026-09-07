@@ -7,7 +7,7 @@ export const forum = [
         name: 'forum-index',
         component: () => import(/* webpackChunkName: "forum-index" */ '@/pages/forum/ForumIndex.vue'),
         meta: {
-            layout: 'landing'
+            layout: 'default'
         }
     },
     {
@@ -15,7 +15,7 @@ export const forum = [
         name: 'forum-search',
         component: () => import(/* webpackChunkName: "forum-search" */ '@/pages/forum/ForumSearch.vue'),
         meta: {
-            layout: 'landing'
+            layout: 'default'
         }
     },
     {
@@ -23,7 +23,7 @@ export const forum = [
         name: 'forum-category',
         component: () => import(/* webpackChunkName: "forum-category" */ '@/pages/forum/ForumCategory.vue'),
         meta: {
-            layout: 'landing'
+            layout: 'default'
         }
     },
     {
@@ -31,7 +31,7 @@ export const forum = [
         name: 'forum-thread',
         component: () => import(/* webpackChunkName: "forum-thread" */ '@/pages/forum/ForumThread.vue'),
         meta: {
-            layout: 'landing'
+            layout: 'default'
         }
     },
     {
@@ -39,7 +39,7 @@ export const forum = [
         name: 'forum-new-thread',
         component: () => import(/* webpackChunkName: "forum-new-thread" */ '@/pages/forum/ForumNewThread.vue'),
         meta: {
-            layout: 'landing',
+            layout: 'default',
             middleware: [
                 auth, verified
             ]

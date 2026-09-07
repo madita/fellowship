@@ -30,6 +30,8 @@ return new class extends Migration
             $table->string('nickname');
             $table->string('username')->nullable();
             $table->string('realname')->nullable();
+            $table->string('comic_character')->default('cat');
+            $table->string('comic_view_mode')->default('classic');
             $table->string('status')->default('disconnected'); // disconnected, connecting, connected
             $table->boolean('auto_connect')->default(false);
             $table->json('auto_join_channels')->nullable();
@@ -66,9 +68,9 @@ return new class extends Migration
             $table->string('from_nick')->nullable();
             $table->string('to_nick')->nullable();
             $table->text('message');
-            $table->string('emotion')->default('normal');
-            $table->string('gesture')->default('none');
-            $table->string('bubble_type')->default('speech');
+            $table->string('emotion')->default('normal');// normal, happy, sad, angry, confused, etc.
+            $table->string('gesture')->default('none');// none, wave, laugh, think, shout, whisper
+            $table->string('bubble_type')->default('speech');// speech, thought, whisper, shout
             $table->boolean('is_private')->default(false);
             $table->boolean('is_mention')->default(false);
             $table->timestamp('sent_at');
@@ -83,6 +85,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('theme')->default('dark');
+            $table->string('default_view_mode')->default('classic');
+            $table->string('comic_background')->default('room');
+            $table->boolean('show_emotions')->default(true);
             $table->boolean('show_join_part')->default(true);
             $table->boolean('show_timestamps')->default(true);
             $table->boolean('desktop_notifications')->default(true);

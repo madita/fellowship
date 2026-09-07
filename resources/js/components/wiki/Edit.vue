@@ -932,20 +932,8 @@ export default {
         };
 
 
-        function getWikiPage() {
-            loading.value = true
-
-            return axios.get(`/api/wiki/${slug.value}`).then((response) => {
-                wikipage.value = response.data.page
-        }
-
         const focusContent = () => {
-            // editor.commands.focus()
-            editorRef.value?.C()
-            // nextTick(() => {
-            //     const contentEditor = document.querySelector('#text-content')
-            //     if (contentEditor) contentEditor.focus()
-            // })
+            editorRef.value?.focusEditor()
         }
 
         const discardChanges = () => {
@@ -1102,6 +1090,8 @@ export default {
         function updateContent(content) {
             console.log('updatecontent',content)
             wikipage.value.content = content
+        }
+
         const saveCategory = async () => {
             if (!newCategory.value) return
 

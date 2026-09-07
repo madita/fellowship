@@ -16,7 +16,10 @@
           <!-- Connections List -->
           <v-list>
             <div v-for="connection in connections" :key="connection.id">
-              <v-list-item>
+              <v-list-item
+                :active="activeServerLog?.id === connection.id"
+                @click="selectServerLog(connection)"
+              >
                 <template #prepend>
                   <v-icon :color="getStatusColor(connection.status)">
                     {{ getStatusIcon(connection.status) }}
@@ -29,7 +32,7 @@
                 <template #append>
                   <v-menu>
                     <template #activator="{ props }">
-                      <v-btn icon size="small" v-bind="props">
+                      <v-btn icon size="small" v-bind="props" @click.stop>
                         <v-icon>mdi-dots-vertical</v-icon>
                       </v-btn>
                     </template>
@@ -43,8 +46,8 @@
                       <v-list-item @click="showJoinDialog(connection)">
                         <v-list-item-title>Join Channel</v-list-item-title>
                       </v-list-item>
-                      <v-divider />
-                      <v-list-item @click="showCharacterSelector(connection)">
+                      <v-divider v-if="comicChatEnabled" />
+                      <v-list-item v-if="comicChatEnabled" @click="showCharacterSelector(connection)">
                         <v-list-item-title>Choose Character</v-list-item-title>
                       </v-list-item>
                       <v-list-item @click="editConnection(connection)">
@@ -170,7 +173,7 @@
             </div>
             <div class="d-flex gap-2 align-center">
               <!-- View Mode Toggle -->
-              <v-btn-toggle v-model="viewMode" mandatory density="compact">
+              <v-btn-toggle v-if="comicChatEnabled" v-model="viewMode" mandatory density="compact">
                 <v-btn value="classic" size="small">
                   <v-icon>mdi-format-align-left</v-icon>
                   <v-tooltip activator="parent" location="bottom">
@@ -186,7 +189,7 @@
               </v-btn-toggle>
 
               <!-- Users Toggle -->
-              <v-btn icon size="small" :color="showUserList ? 'primary' : undefined" @click="showUserList = !showUserList">
+              <v-btn icon size="small" :color="showUserList ? 'primary' : undefined" @click="toggleUserList()">
                 <v-icon>mdi-account-group</v-icon>
                 <v-tooltip activator="parent" location="bottom">
                   {{ showUserList ? 'Hide' : 'Show' }} Users
@@ -203,7 +206,7 @@
 
           <!-- Classic IRC View -->
           <v-card-text
-            v-if="viewMode === 'classic'"
+            v-if="!isComicMode"
             ref="messagesContainer"
             class="messages-container flex-grow-1"
             style="overflow-y: auto; min-height: 0;"
@@ -228,6 +231,16 @@
                     &lt;{{ message.from_nick }}&gt;
                   </span>
                   <span class="message-text">{{ message.message }}</span>
+                  <!-- Comic-mode gestures/emotions also show up in the text view -->
+                  <span
+                    v-if="comicChatEnabled && message.gesture && message.gesture !== 'none'"
+                    class="gesture-note"
+                  >* {{ message.from_nick }} {{ getGestureVerb(message.gesture) }} {{ getGestureEmoji(message.gesture) }}</span>
+                  <span
+                    v-if="comicChatEnabled && message.emotion && message.emotion !== 'normal'"
+                    class="emotion-note"
+                    :title="message.emotion"
+                  >{{ getEmotionEmoji(message.emotion) }}</span>
                 </template>
               </div>
             </div>
@@ -258,7 +271,7 @@
           <v-card-actions class="pa-2 flex-shrink-0">
             <v-row dense>
               <!-- Emotion/Gesture Bar (Comic Mode Only) -->
-              <v-col v-if="viewMode === 'comic'" cols="12">
+              <v-col v-if="isComicMode" cols="12">
                 <div class="d-flex gap-2 flex-wrap">
                   <v-chip-group v-model="selectedEmotion" mandatory>
                     <v-chip size="small" value="normal">Normal</v-chip>
@@ -308,11 +321,89 @@
           </v-card-actions>
         </v-card>
 
-        <!-- No Channel Selected -->
+        <!-- Server Console (connection log) -->
+        <v-card v-else-if="activeServerLog" flat class="d-flex flex-column flex-grow-1" style="min-height: 0;">
+          <v-card-title class="d-flex justify-space-between align-center flex-shrink-0">
+            <div class="d-flex align-center">
+              <v-icon :color="getStatusColor(activeServerLog.status)" class="mr-2">
+                {{ getStatusIcon(activeServerLog.status) }}
+              </v-icon>
+              <span class="text-h6">{{ activeServerLog.server.name }}</span>
+              <span class="text-caption text-grey ml-3">
+                {{ activeServerLog.server.host }}:{{ activeServerLog.server.port }} · {{ activeServerLog.status }}
+              </span>
+            </div>
+            <v-btn
+              v-if="activeServerLog.status === 'disconnected'"
+              size="small"
+              color="primary"
+              variant="tonal"
+              prepend-icon="mdi-power"
+              @click="connect(activeServerLog)"
+            >
+              Connect
+            </v-btn>
+            <v-btn
+              v-else
+              size="small"
+              variant="tonal"
+              prepend-icon="mdi-power-off"
+              @click="disconnect(activeServerLog)"
+            >
+              Disconnect
+            </v-btn>
+          </v-card-title>
+
+          <v-divider />
+
+          <v-card-text
+            ref="serverLogContainer"
+            class="messages-container server-log flex-grow-1"
+            style="overflow-y: auto; min-height: 0;"
+          >
+            <div v-for="entry in currentServerLog" :key="entry.id" class="message">
+              <div class="message-line">
+                <span class="timestamp text-caption text-grey">{{ formatTime(entry.sent_at) }}</span>
+                <span class="system-message">***</span>
+                <span class="message-text system-text">{{ entry.message }}</span>
+              </div>
+            </div>
+            <div v-if="!currentServerLog.length" class="text-center text-grey py-8">
+              No server messages yet
+            </div>
+          </v-card-text>
+
+          <v-divider />
+          <v-card-actions class="pa-2 flex-shrink-0">
+            <v-text-field
+              v-model="newMessage"
+              placeholder="Server console — use /join #channel, /nick <name>, /help ..."
+              variant="outlined"
+              density="compact"
+              hide-details
+              @keydown.enter="sendMessage"
+            >
+              <template #append-inner>
+                <v-btn
+                  icon
+                  size="small"
+                  color="primary"
+                  :disabled="!newMessage.trim()"
+                  @click="sendMessage"
+                >
+                  <v-icon>mdi-send</v-icon>
+                </v-btn>
+              </template>
+            </v-text-field>
+          </v-card-actions>
+        </v-card>
+
+        <!-- Nothing Selected -->
         <v-card v-else flat class="d-flex align-center justify-center flex-grow-1">
           <div class="text-center">
             <v-icon size="64" color="grey-lighten-1">mdi-chat-outline</v-icon>
             <p class="text-h6 mt-4">Select a channel to start chatting</p>
+            <p class="text-body-2 text-grey">Or click a server to open its connection log</p>
           </div>
         </v-card>
       </v-col>
@@ -325,7 +416,7 @@
               <v-icon size="small" class="mr-1">mdi-account-group</v-icon>
               Users ({{ channelUsers.length }})
             </span>
-            <v-btn icon size="x-small" @click="showUserList = false">
+            <v-btn icon size="x-small" @click="toggleUserList()">
               <v-icon size="small">mdi-close</v-icon>
             </v-btn>
           </v-card-title>
@@ -383,6 +474,7 @@
 
 <script>
 import axios from 'axios';
+import { useSettingsStore } from '@/store/settingStore.js';
 import IrcConnectionDialog from './IrcConnectionDialog.vue';
 import IrcJoinDialog from './IrcJoinDialog.vue';
 import ComicChatView from './ComicChatView.vue';
@@ -401,6 +493,7 @@ export default {
       connections: [],
       servers: [],
       activeChannel: null,
+      activeServerLog: null,
       messages: [],
       newMessage: '',
       showConnectionDialog: false,
@@ -413,24 +506,55 @@ export default {
       viewMode: 'classic', // classic or comic
       selectedEmotion: 'normal',
       selectedGesture: 'none',
-      comicBackground: 'room',
-      showUserList: false,
+      comicBackground: localStorage.getItem('irc:comicBackground') || 'room',
+      // Visible by default; the user hides it explicitly and the choice sticks.
+      showUserList: localStorage.getItem('irc:showUserList') !== '0',
       channelUsers: [],
       containerHeight: '100%',
-      serverMessages: [],
+      // Per-connection console log: status changes, notices, raw server lines.
+      serverLogs: {},
+      serverLogId: 0,
+      layoutObserver: null,
     };
   },
   computed: {
+    // Comic chat can be turned off in Admin → Settings → IRC → Client.
+    comicChatEnabled() {
+      return useSettingsStore().ircComicChatEnabled;
+    },
+    isComicMode() {
+      return this.comicChatEnabled && this.viewMode === 'comic';
+    },
     currentConnection() {
-      if (!this.activeChannel) return null;
-      return this.connections.find(c => c.id === this.activeChannel.irc_connection_id);
+      if (this.activeChannel) {
+        return this.connections.find(c => c.id === this.activeChannel.irc_connection_id);
+      }
+      return this.activeServerLog;
+    },
+    currentServerLog() {
+      return this.activeServerLog ? (this.serverLogs[this.activeServerLog.id] || []) : [];
+    },
+  },
+  watch: {
+    // Deep links (e.g. an event's location link) target /irc?channel=<id>.
+    '$route.query.channel'() {
+      this.openChannelFromRoute();
     },
   },
   mounted() {
     this.calculateHeight();
     window.addEventListener('resize', this.calculateHeight);
+    // The app bar/fonts settle after mount and shift our top offset — a
+    // one-shot measure leaves the client taller than the viewport, pushing
+    // the send input below the fold. Re-measure when the layout changes.
+    if (typeof ResizeObserver !== 'undefined') {
+      this.layoutObserver = new ResizeObserver(() => this.calculateHeight());
+      this.layoutObserver.observe(document.body);
+    } else {
+      setTimeout(() => this.calculateHeight(), 300);
+    }
     this.fetchServers();
-    this.fetchConnections();
+    this.fetchConnections().then(() => this.openChannelFromRoute());
     this.startEventPolling();
   },
   beforeUnmount() {
@@ -438,14 +562,27 @@ export default {
       clearInterval(this.eventPolling);
     }
     window.removeEventListener('resize', this.calculateHeight);
+    if (this.layoutObserver) {
+      this.layoutObserver.disconnect();
+    }
   },
   methods: {
     calculateHeight() {
       this.$nextTick(() => {
         const el = this.$el;
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          this.containerHeight = `${window.innerHeight - rect.top}px`;
+        if (!el) return;
+        // Measure the top offset as if scrolled to the top, so a scrolled
+        // page doesn't yield an oversized (or looping) height.
+        const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+        const top = el.getBoundingClientRect().top + scrollTop;
+        // The app footer is fixed at the viewport bottom — without
+        // subtracting it, the client is one footer-height too tall and the
+        // send input hides behind it.
+        const footer = document.querySelector('.v-footer');
+        const footerHeight = footer ? footer.offsetHeight : 0;
+        const next = `${Math.max(320, window.innerHeight - top - footerHeight)}px`;
+        if (next !== this.containerHeight) {
+          this.containerHeight = next;
         }
       });
     },
@@ -473,9 +610,11 @@ export default {
           const conn = this.connections.find(c => c.id === connection_id);
           if (conn) {
             conn.status = data.status;
-            if (data.error) {
-              this.addSystemMessage(`Connection error: ${data.error}`);
-            }
+          }
+          this.logServer(connection_id, `Status: ${data.status}`);
+          if (data.error) {
+            this.logServer(connection_id, `Connection error: ${data.error}`);
+            this.addSystemMessage(`Connection error: ${data.error}`);
           }
           if (data.status === 'connected') {
             this.fetchConnections();
@@ -509,15 +648,16 @@ export default {
           break;
         }
         case 'notice': {
-          this.addSystemMessage(`[${data.from}] ${data.message}`);
+          this.logServer(connection_id, `[${data.from}] ${data.message}`);
+          if (this.activeChannel) {
+            this.addSystemMessage(`[${data.from}] ${data.message}`);
+          }
           break;
         }
         case 'server_message': {
-          this.serverMessages.push(data.message);
-          // Show as system message if no channel is active
-          if (!this.activeChannel) {
-            this.addSystemMessage(data.message);
-          }
+          // Persist in the connection's console log instead of flashing it
+          // into the channel message list where the next fetch erases it.
+          this.logServer(connection_id, data.message);
           break;
         }
       }
@@ -544,19 +684,48 @@ export default {
         console.error('Error fetching connections:', error);
       }
     },
+    logServer(connectionId, text) {
+      if (!connectionId) return;
+      const log = this.serverLogs[connectionId] || (this.serverLogs[connectionId] = []);
+      log.push({
+        id: ++this.serverLogId,
+        message: text,
+        sent_at: new Date().toISOString(),
+      });
+      if (log.length > 500) log.splice(0, log.length - 500);
+      if (this.activeServerLog?.id === connectionId) {
+        this.$nextTick(() => this.scrollToBottom());
+      }
+    },
+    selectServerLog(connection) {
+      this.activeServerLog = connection;
+      this.activeChannel = null;
+      this.messages = [];
+      this.$nextTick(() => this.scrollToBottom());
+    },
+    toggleUserList() {
+      this.showUserList = !this.showUserList;
+      localStorage.setItem('irc:showUserList', this.showUserList ? '1' : '0');
+    },
     async connect(connection) {
       try {
-        await axios.post(`/api/irc/connections/${connection.id}/connect`);
+        this.logServer(connection.id, `Connecting to ${connection.server?.host}:${connection.server?.port}...`);
+        const { data } = await axios.post(`/api/irc/connections/${connection.id}/connect`);
+        if (data?.message) this.logServer(connection.id, data.message);
         this.fetchConnections();
       } catch (error) {
+        this.logServer(connection.id, `Error connecting: ${error.response?.data?.message || error.message}`);
         console.error('Error connecting:', error);
       }
     },
     async disconnect(connection) {
       try {
-        await axios.post(`/api/irc/connections/${connection.id}/disconnect`);
+        this.logServer(connection.id, 'Disconnecting...');
+        const { data } = await axios.post(`/api/irc/connections/${connection.id}/disconnect`);
+        if (data?.message) this.logServer(connection.id, data.message);
         this.fetchConnections();
       } catch (error) {
+        this.logServer(connection.id, `Error disconnecting: ${error.response?.data?.message || error.message}`);
         console.error('Error disconnecting:', error);
       }
     },
@@ -578,14 +747,29 @@ export default {
           this.activeChannel = null;
           this.messages = [];
         }
+        if (this.activeServerLog?.id === connection.id) {
+          this.activeServerLog = null;
+        }
       } catch (error) {
         console.error('Error deleting connection:', error);
       }
     },
     async selectChannel(channel) {
       this.activeChannel = channel;
+      this.activeServerLog = null;
       await this.fetchMessages(channel);
       this.fetchChannelUsers(channel);
+    },
+    openChannelFromRoute() {
+      const channelId = Number(this.$route?.query?.channel);
+      if (!channelId || this.activeChannel?.id === channelId) return;
+      for (const connection of this.connections) {
+        const channel = (connection.channels || []).find(c => c.id === channelId);
+        if (channel) {
+          this.selectChannel(channel);
+          return;
+        }
+      }
     },
     async fetchChannelUsers(channel) {
       try {
@@ -616,7 +800,13 @@ export default {
         return;
       }
 
-      if (!this.activeChannel) return;
+      if (!this.activeChannel) {
+        if (this.activeServerLog) {
+          this.logServer(this.activeServerLog.id, 'The console only takes commands — join a channel to chat (/join #channel).');
+          this.newMessage = '';
+        }
+        return;
+      }
 
       try {
         const payload = {
@@ -624,7 +814,7 @@ export default {
         };
 
         // Add comic chat metadata if in comic mode
-        if (this.viewMode === 'comic') {
+        if (this.isComicMode) {
           payload.emotion = this.selectedEmotion;
           payload.gesture = this.selectedGesture;
           payload.bubble_type = this.getBubbleType();
@@ -781,6 +971,12 @@ export default {
       }
     },
     addSystemMessage(text) {
+      // In the server console, feedback belongs in the persistent log —
+      // the channel message list is not rendered there.
+      if (!this.activeChannel && this.activeServerLog) {
+        this.logServer(this.activeServerLog.id, text);
+        return;
+      }
       this.messages.push({
         id: Date.now(),
         type: 'system',
@@ -843,9 +1039,12 @@ export default {
       this.fetchConnections();
     },
     scrollToBottom() {
-      const container = this.$refs.messagesContainer;
-      if (container) {
-        container.scrollTop = container.scrollHeight;
+      // Refs on Vuetify components resolve to component instances — scroll
+      // their root element, not the instance (a no-op on the proxy).
+      const ref = this.activeServerLog ? this.$refs.serverLogContainer : this.$refs.messagesContainer;
+      const el = ref?.$el ?? ref;
+      if (el) {
+        el.scrollTop = el.scrollHeight;
       }
     },
     getStatusColor(status) {
@@ -868,6 +1067,28 @@ export default {
       if (message.type === 'action') classes.push('action');
       else if (message.type === 'system') classes.push('system');
       return classes.join(' ');
+    },
+    getGestureVerb(gesture) {
+      return {
+        wave: 'waves',
+        laugh: 'laughs',
+        think: 'thinks',
+        shout: 'shouts',
+        whisper: 'whispers',
+      }[gesture] || gesture;
+    },
+    getGestureEmoji(gesture) {
+      return { wave: '👋', laugh: '😂', think: '💭', shout: '📢', whisper: '🤫' }[gesture] || '';
+    },
+    getEmotionEmoji(emotion) {
+      return {
+        happy: '😊',
+        sad: '😢',
+        angry: '😠',
+        surprised: '😲',
+        confused: '😕',
+        excited: '🤩',
+      }[emotion] || '';
     },
     getNickColor(nick) {
       // Simple hash-based color generation
@@ -906,7 +1127,8 @@ export default {
           comic_character: data.character,
         });
         this.comicBackground = data.background;
-        this.fetchConnections();
+        localStorage.setItem('irc:comicBackground', data.background);
+        await this.fetchConnections();
         this.editingConnectionForCharacter = null;
       } catch (error) {
         console.error("Error saving character:", error);
@@ -1002,5 +1224,15 @@ export default {
 .user-prefix {
   color: #e53935;
   margin-right: 1px;
+}
+
+.gesture-note {
+  color: #9c27b0;
+  font-style: italic;
+  margin-left: 8px;
+}
+
+.emotion-note {
+  margin-left: 6px;
 }
 </style>
