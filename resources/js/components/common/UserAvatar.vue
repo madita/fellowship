@@ -2,7 +2,7 @@
     <v-tooltip location="bottom">
         <template #activator="{ props }">
             <v-avatar v-bind="props" :color="background" size="45">
-                <v-img v-if="user?.avatar" :src="user.avatar"></v-img>
+                <v-img v-if="!legacyName && user?.avatar" :src="user.avatar"></v-img>
                 <span
                     v-else
                     :style="styleObject"
@@ -12,7 +12,7 @@
         </span>
             </v-avatar>
         </template>
-        <span>{{ user?.username || '—' }}</span>
+        <span>{{ displayName }}</span>
     </v-tooltip>
 </template>
 
@@ -22,27 +22,42 @@ export default {
         user: {
             type: Object,
             default: null,
+        },
+        // Name of the original author from a legacy system (imported
+        // content). When set, the avatar shows initials generated from
+        // this name instead of the placeholder account's picture.
+        legacyName: {
+            type: String,
+            default: null,
         }
     },
     computed: {
+        displayName() {
+            return this.legacyName || this.user?.username || '—';
+        },
+
         // Generate initials if not provided
         initials() {
-            if (this.user?.initials) {
+            if (!this.legacyName && this.user?.initials) {
                 return this.user.initials;
             }
-            // Generate initials from username
-            if (this.user?.username) {
-                const parts = this.user.username.split(' ');
+
+            const name = this.legacyName || this.user?.username;
+            if (name) {
+                const parts = name.trim().split(/\s+/);
                 if (parts.length > 1) {
                     return (parts[0][0] + parts[1][0]).toUpperCase();
                 }
-                return this.user.username.substring(0, 2).toUpperCase();
+                return name.substring(0, 2).toUpperCase();
             }
             return '?';
         },
 
         // Background color with a fallback
         background() {
+            if (this.legacyName) {
+                return this.$helpers.randomBackgroundColor(this.legacyName.length, null);
+            }
             return this.user?.colour || this.$helpers.randomBackgroundColor(this.user?.username?.length || 0, null);
         },
 

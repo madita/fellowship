@@ -493,6 +493,24 @@ class ForumController extends Controller
     /**
      * Transform a Taxonomy into the forum category API shape.
      */
+    /**
+     * @param \App\Models\Forum\ForumThread|\App\Models\Forum\ForumPost $post
+     */
+    private function transformLastPost($post): array
+    {
+        return [
+            'author' => $post->author ? [
+                'id'       => $post->author->id,
+                'username' => $post->author->username,
+                'avatar'   => $post->author->avatar ?? null,
+            ] : null,
+            // Imported content keeps its original poster's name until the
+            // legacy account is assigned to a registered user.
+            'display_author' => $post->display_author,
+            'meta' => $post->meta,
+        ];
+    }
+
     private function transformCategory(Taxonomy $cat): array
     {
         return [
@@ -517,21 +535,9 @@ class ForumController extends Controller
                     ? $cat->latestThread->created_at
                     : null),
             'lastPost'      => $cat->latestPost
-                ? [
-                    'author' => $cat->latestPost->author ? [
-                        'id'       => $cat->latestPost->author->id,
-                        'username' => $cat->latestPost->author->username,
-                        'avatar'   => $cat->latestPost->author->avatar ?? null,
-                    ] : null,
-                ]
+                ? $this->transformLastPost($cat->latestPost)
                 : ($cat->relationLoaded('latestThread') && $cat->latestThread
-                    ? [
-                        'author' => $cat->latestThread->author ? [
-                            'id'       => $cat->latestThread->author->id,
-                            'username' => $cat->latestThread->author->username,
-                            'avatar'   => $cat->latestThread->author->avatar ?? null,
-                        ] : null,
-                    ]
+                    ? $this->transformLastPost($cat->latestThread)
                     : null),
             'children'      => $cat->relationLoaded('children')
                 ? $cat->children->map(fn($c) => $this->transformCategory($c))->values()

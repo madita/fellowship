@@ -151,7 +151,7 @@
                             <v-row align="center" no-gutters>
                                 <v-col cols="12" md="6">
                                     <div class="d-flex align-center">
-                                        <UserAvatar v-if="thread.author" :user="thread.author" />
+                                        <UserAvatar v-if="thread.author || thread.meta?.legacy_author" :user="thread.author" :legacy-name="thread.meta?.legacy_author" />
                                         <div class="ml-3">
                                             <div class="d-flex align-center gap-2 mb-1">
                                                 <v-icon size="16" color="primary">mdi-pin</v-icon>
@@ -164,7 +164,7 @@
                                                 </v-chip>
                                             </div>
                                             <div class="text-caption text-medium-emphasis">
-                                                {{ $t('forum.startedBy') }} {{ thread.author?.username }}
+                                                {{ $t('forum.startedBy') }} {{ thread.display_author || thread.author?.username }}
                                                 &middot; {{ formatDateDistance(thread.created_at) }}
                                             </div>
                                         </div>
@@ -204,7 +204,7 @@
                         <v-row align="center" no-gutters>
                             <v-col cols="12" md="6">
                                 <div class="d-flex align-center">
-                                    <UserAvatar v-if="thread.author" :user="thread.author" />
+                                    <UserAvatar v-if="thread.author || thread.meta?.legacy_author" :user="thread.author" :legacy-name="thread.meta?.legacy_author" />
                                     <div class="ml-3">
                                         <div class="d-flex align-center gap-2 mb-1">
                                             <span class="font-weight-bold">{{ thread.title }}</span>
@@ -216,7 +216,7 @@
                                             </v-chip>
                                         </div>
                                         <div class="text-caption text-medium-emphasis">
-                                            {{ $t('forum.startedBy') }} {{ thread.author?.username }}
+                                            {{ $t('forum.startedBy') }} {{ thread.display_author || thread.author?.username }}
                                             &middot; {{ formatDateDistance(thread.created_at) }}
                                         </div>
                                     </div>

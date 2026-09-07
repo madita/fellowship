@@ -24,6 +24,15 @@ export const admin = [{
     },
     component: () => import(/* webpackChunkName: "admin-pages-form" */ '@/pages/admin/PageForm.vue')
 }, {
+    path: '/admin/migrations',
+    name: 'admin-migrations',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-migrations" */ '@/pages/admin/MigrationDashboard.vue')
+}, {
     path: '/admin/posts',
     name: 'admin-posts',
     meta: {

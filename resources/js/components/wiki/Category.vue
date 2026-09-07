@@ -11,45 +11,49 @@
                 <h1>{{info.term.title}}</h1>
                 <p v-html="description"></p>
 
-                <div class="sub-category py-1 pt-lg-1" v-if="info.children.length > 0">
+                <div class="sub-category py-1 pt-lg-1" v-if="info.children?.length">
                     <h2>{{ $t('wiki.subcategories') }}</h2>
-                    <div :style="subCssVars">
-                    <v-list-group
-                        color="primary"
-                        v-for="(category, capital) in $helpers.groupTerms(this.info.children)"
-                        :key="`${capital}-${category}`"
-                    >{{capital.toUpperCase()}}
-                        <v-list-item
-                            v-for="(child) in category"
-                            :key="`${child.slug}`"
-                            @click="goToCategory(child.slug)"
+                    <div class="category-columns" :style="subCssVars">
+                        <div
+                            v-for="(category, capital) in $helpers.groupTerms(info.children)"
+                            :key="capital"
+                            class="category-group"
                         >
-                                <v-list-item-title v-text="child.title"></v-list-item-title>
-                        </v-list-item>
-                    </v-list-group>
+                            <v-list density="compact" class="bg-transparent">
+                                <v-list-subheader>{{ capital.toUpperCase() }}</v-list-subheader>
+                                <v-list-item
+                                    v-for="child in category"
+                                    :key="child.slug"
+                                    @click="goToCategory(child.slug)"
+                                >
+                                    <v-list-item-title v-text="child.title"></v-list-item-title>
+                                </v-list-item>
+                            </v-list>
+                        </div>
                     </div>
                 </div>
             </v-container>
 
 
             <v-container class="category py-6 pt-lg-5">
-                <h2>{{ $t('wiki.pagesInCategory', { category: info.term.title, count: categories.total }) }}</h2>
-                <div :style="catCssVars">
-                <v-list-group
-                    color="primary"
-                    v-for="(category, capital) in categories.capital"
-                    :key="`${capital}-${category}`"
-                >{{capital.toUpperCase()}}
-                    <v-list-item
-                        v-for="(model) in category"
-                        :key="`${model.data.slug}`"
-                        @click="goTo(model.data.slug, model.taxonomy[0].taxonomy)"
+                <h2>{{ $t('wiki.pagesInCategory', { category: info.term?.title, count: categories.total }) }}</h2>
+                <div class="category-columns" :style="catCssVars">
+                    <div
+                        v-for="(category, capital) in categories.capital"
+                        :key="capital"
+                        class="category-group"
                     >
-                        <v-list-item-content>
-                            <v-list-item-title v-text="model.taxable_title"></v-list-item-title>
-                        </v-list-item-content>
-                    </v-list-item>
-                </v-list-group>
+                        <v-list density="compact" class="bg-transparent">
+                            <v-list-subheader>{{ capital.toUpperCase() }}</v-list-subheader>
+                            <v-list-item
+                                v-for="model in category"
+                                :key="model.data.slug"
+                                @click="goTo(model.data.slug, model.taxonomy[0]?.taxonomy)"
+                            >
+                                <v-list-item-title v-text="model.taxable_title"></v-list-item-title>
+                            </v-list-item>
+                        </v-list>
+                    </div>
                 </div>
             </v-container>
         </v-sheet>
@@ -63,22 +67,23 @@
                 ></v-text-field></p>
             </v-container>
             <v-container class="category py-6 pt-lg-5">
-                <div :style="catCssVars">
-                <v-list-group
-                    color="primary"
-                    v-for="(category, capital) in catFilter"
-                    :key="`${capital}-${category}`"
-                >{{capital.toUpperCase()}}
-                    <v-list-item
-                        v-for="(term) in category"
-                        :key="`${term.slug}`"
-                        @click="goToCategory(term.slug)"
+                <div class="category-columns" :style="catCssVars">
+                    <div
+                        v-for="(category, capital) in catFilter"
+                        :key="capital"
+                        class="category-group"
                     >
-                        <v-list-item-content>
-                            <v-list-item-title v-text="term.title"></v-list-item-title>
-                        </v-list-item-content>
-                    </v-list-item>
-                </v-list-group>
+                        <v-list density="compact" class="bg-transparent">
+                            <v-list-subheader>{{ capital.toUpperCase() }}</v-list-subheader>
+                            <v-list-item
+                                v-for="term in category"
+                                :key="term.slug"
+                                @click="goToCategory(term.slug)"
+                            >
+                                <v-list-item-title v-text="term.title"></v-list-item-title>
+                            </v-list-item>
+                        </v-list>
+                    </div>
                 </div>
             </v-container>
         </v-sheet>
@@ -86,8 +91,7 @@
 </template>
 
 <script>
-
-// import {mapGetters} from "vuex";
+import { useAuthStore } from '@/store/authStore.js';
 
 export default {
     components: {
@@ -168,6 +172,13 @@ export default {
         goToCategory(slug) {
             this.$router.push({ name: 'wiki-category', params: { slug: slug } })
         },
+        // 1–4 columns depending on how many entries and letter groups there are.
+        columnCount(items, letters) {
+            if (items >= 30 || letters >= 12) return 4;
+            if (items >= 9 || letters >= 5) return 3;
+            if (items >= 4 || letters >= 2) return 2;
+            return 1;
+        },
     },
     computed: {
         authenticated() {
@@ -179,15 +190,15 @@ export default {
             return authStore.user;
         },
         catCssVars () {
+            const letters = Object.keys(this.categories?.capital || {}).length;
+            const total = this.catTotal || this.categories?.total || 0;
 
-            return {
-                'column-count': (this.catTotal  >= 9) || (Object.keys(this.categories.capital).length >= 5) ? 3: 1
-            }
+            return { 'column-count': this.columnCount(total, letters) }
         },
         subCssVars () {
-            return {
-                'column-count': this.info.children.length >= 5 ? 3: 1
-            }
+            const children = this.info.children?.length || 0;
+
+            return { 'column-count': this.columnCount(children, Math.ceil(children / 2)) }
         },
         catFilter: function() {
             var textSearch = this.textSearch;
@@ -238,13 +249,27 @@ export default {
 </script>
 
 <style>
-/*.category {*/
-/*    column-count: var(--cat-column-count);*/
-/*}*/
+.category-columns {
+    column-gap: 24px;
+}
 
-/*.sub-category {*/
-/*    column-count: var(--subcat-column-count);*/
-/*}*/
+/* Keep each letter group (header + its entries) in one column. */
+.category-columns .category-group {
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+}
+
+@media (max-width: 960px) {
+    .category-columns {
+        column-count: 2 !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .category-columns {
+        column-count: 1 !important;
+    }
+}
 
 .card-outter {
     position: relative;

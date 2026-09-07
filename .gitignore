@@ -44,3 +44,12 @@ tmpclaude-*
 
 # Runtime storage
 /storage/media-library/
+
+# php-cs-fixer toolchain dependencies (composer install in tools/php-cs-fixer)
+/tools/php-cs-fixer/vendor/
+
+# Local database dumps
+/*.sql
+
+# Local documentation & migration mapping sets (machine-specific paths)
+/docs/

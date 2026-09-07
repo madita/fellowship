@@ -74,9 +74,9 @@
 
                         <!-- Thread Author + Stats -->
                         <div class="d-flex align-center mb-4">
-                            <UserAvatar v-if="forumStore.currentThread.author" :user="forumStore.currentThread.author"/>
+                            <UserAvatar v-if="forumStore.currentThread.author || forumStore.currentThread.meta?.legacy_author" :user="forumStore.currentThread.author" :legacy-name="forumStore.currentThread.meta?.legacy_author"/>
                             <div class="ml-3">
-                                <span class="font-weight-medium">{{ forumStore.currentThread.author?.username }}</span>
+                                <span class="font-weight-medium">{{ forumStore.currentThread.display_author || forumStore.currentThread.author?.username }}</span>
                                 <div class="text-caption text-medium-emphasis">
                                     {{ formatDateDistance(forumStore.currentThread.created_at) }}
                                 </div>
