@@ -47,8 +47,16 @@ jobs:
           composer global require styleci/cli
           echo "$HOME/.composer/vendor/bin" >> $GITHUB_PATH
 
+      # The CLI submits the analysis to StyleCI and needs an API key
+      # (StyleCI account → API tokens) stored as the STYLECI_GITHUB_API_KEY
+      # repository secret. It applies the fixes locally but exits 0 even
+      # when it found violations, so the job fails on the resulting diff.
       - name: Run StyleCI Analysis
-        run: styleci analyse --verbose
+        env:
+          STYLECI_GITHUB_API_KEY: ${{ secrets.STYLECI_GITHUB_API_KEY }}
+        run: |
+          styleci analyze --no-interaction --verbose
+          git diff --exit-code || { echo "::error::StyleCI found code style issues — see the diff above"; exit 1; }
 
       - name: Comment on PR (if issues found)
         if: failure() && github.event_name == 'pull_request'
