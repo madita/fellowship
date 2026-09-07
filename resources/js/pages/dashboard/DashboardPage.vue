@@ -34,6 +34,16 @@
             </v-row>
         </div>
 
+        <!-- Empty dashboard -->
+        <v-card v-if="activeWidgets.length === 0" variant="tonal" class="pa-8 text-center mb-6">
+            <v-icon size="48" class="mb-3">mdi-view-dashboard-outline</v-icon>
+            <div class="text-h6 mb-1">{{ $t('dashboard.emptyTitle') }}</div>
+            <div class="text-body-2 text-medium-emphasis mb-4">{{ $t('dashboard.emptyHint') }}</div>
+            <v-btn color="primary" prepend-icon="mdi-widgets" @click="showWidgetPanel = true">
+                {{ $t('dashboard.addWidgets') }}
+            </v-btn>
+        </v-card>
+
         <!-- Drag & Drop Widget Grid -->
         <div
             ref="widgetGrid"
@@ -69,10 +79,10 @@
                     <!-- Widget Header -->
                     <v-card-title class="widget-header d-flex align-center pa-4 pb-2">
                         <v-avatar :color="widget.color" size="32" class="mr-3">
-                            <v-icon color="white" size="18">{{ widget.icon }}</v-icon>
+                            <v-icon color="white" size="18">{{ definition(widget).icon }}</v-icon>
                         </v-avatar>
                         <div class="flex-grow-1">
-                            <div class="text-subtitle-1 font-weight-bold">{{ widget.title }}</div>
+                            <div class="text-subtitle-1 font-weight-bold">{{ widgetTitle(widget) }}</div>
                             <div class="text-caption text-medium-emphasis">{{ widget.subtitle }}</div>
                         </div>
                         <v-menu>
@@ -105,30 +115,27 @@
                         </v-menu>
                     </v-card-title>
 
-                    <!-- Widget Content -->
+                    <!-- Widget Content: each widget loads its own live data -->
                     <v-card-text class="widget-content pa-4 pt-2">
                         <component
-                            :is="getWidgetComponent(widget.type)"
-                            :widget-data="widget.data"
+                            :is="definition(widget).component"
                             :widget-config="widget.config"
-                            @update-data="updateWidgetData(widget.id, $event)"
+                            :refresh-key="widget.refreshKey"
+                            @update-meta="updateWidgetMeta(widget.id, $event)"
                         />
                     </v-card-text>
 
-                    <!-- Widget Actions (if any) -->
-                    <v-card-actions v-if="widget.actions" class="pa-4 pt-0">
+                    <!-- Widget Action -->
+                    <v-card-actions v-if="definition(widget).action" class="pa-4 pt-0">
                         <v-btn
-                            v-for="action in widget.actions"
-                            :key="action.text"
-                            :color="action.color"
+                            :color="widget.color"
                             variant="elevated"
                             size="small"
-                            :prepend-icon="action.icon"
-                            :to="action.to"
-                            :href="action.href"
+                            :prepend-icon="definition(widget).action.icon"
+                            :to="definition(widget).action.to"
                             block
                         >
-                            {{ action.text }}
+                            {{ $t(`dashboard.widgets.${widget.type}.action`) }}
                         </v-btn>
                     </v-card-actions>
                 </v-card>
@@ -154,19 +161,20 @@
                                 class="widget-preview"
                                 variant="outlined"
                                 hover
-                                @click="addWidget(widget)"
+                                @click="addWidget(widget.type)"
                             >
                                 <v-card-text class="text-center pa-4">
                                     <v-avatar :color="widget.color" size="48" class="mb-3">
                                         <v-icon color="white" size="24">{{ widget.icon }}</v-icon>
                                     </v-avatar>
-                                    <div class="text-subtitle-1 font-weight-bold mb-1">{{ widget.title }}</div>
-                                    <div class="text-caption text-medium-emphasis mb-2">{{ widget.description }}</div>
-                                    <v-chip
-                                        :color="widget.category === 'core' ? 'primary' : 'secondary'"
-                                        size="small"
-                                    >
-                                        {{ widget.category }}
+                                    <div class="text-subtitle-1 font-weight-bold mb-1">
+                                        {{ $t(`dashboard.widgets.${widget.type}.title`) }}
+                                    </div>
+                                    <div class="text-caption text-medium-emphasis mb-2">
+                                        {{ $t(`dashboard.widgets.${widget.type}.description`) }}
+                                    </div>
+                                    <v-chip v-if="widget.count" color="primary" size="small">
+                                        {{ $t('dashboard.onDashboard', { count: widget.count }) }}
                                     </v-chip>
                                 </v-card-text>
                             </v-card>
@@ -185,7 +193,7 @@
         <v-dialog v-model="showWidgetSettings" max-width="600">
             <v-card v-if="selectedWidget">
                 <v-card-title class="pa-6">
-                    <span class="text-h5">{{ $t('dashboard.widgetSettings') }}: {{ selectedWidget.title }}</span>
+                    <span class="text-h5">{{ $t('dashboard.widgetSettings') }}: {{ widgetTitle(selectedWidget) }}</span>
                 </v-card-title>
 
                 <v-card-text class="pa-6">
@@ -193,7 +201,9 @@
                         <v-text-field
                             v-model="selectedWidget.title"
                             :label="$t('dashboard.widgetTitle')"
+                            :placeholder="$t(`dashboard.widgets.${selectedWidget.type}.title`)"
                             variant="outlined"
+                            clearable
                             class="mb-4"
                         ></v-text-field>
 
@@ -204,6 +214,17 @@
                             variant="outlined"
                             class="mb-4"
                         ></v-select>
+
+                        <v-text-field
+                            v-if="selectedWidget.type !== 'stats'"
+                            v-model.number="selectedWidget.config.limit"
+                            type="number"
+                            min="1"
+                            max="20"
+                            :label="$t('dashboard.widgetLimit')"
+                            variant="outlined"
+                            class="mb-4"
+                        ></v-text-field>
 
                         <v-color-picker
                             v-model="selectedWidget.color"
@@ -226,14 +247,22 @@
 
 <script>
 import { useUserStore } from '@/store/userStore.js';
+import { useSettingsStore } from '@/store/settingStore.js';
+import { WIDGET_TYPES, DEFAULT_LAYOUT, LAYOUT_STORAGE_KEY } from '@/configs/dashboardWidgets.js';
 import EventsWidget from '@/components/dashboard/EventsWidget.vue';
 import WikiWidget from '@/components/dashboard/WikiWidget.vue';
 import NotificationsWidget from '@/components/dashboard/NotificationsWidget.vue';
 import StatsWidget from '@/components/dashboard/StatsWidget.vue';
-import TasksWidget from '@/components/dashboard/TasksWidget.vue';
-import WeatherWidget from '@/components/dashboard/WeatherWidget.vue';
+import TicketsWidget from '@/components/dashboard/TicketsWidget.vue';
+import ForumWidget from '@/components/dashboard/ForumWidget.vue';
 import ConversationsWidget from '@/components/dashboard/ConversationsWidget.vue';
 
+/**
+ * Personal dashboard: a drag & drop grid of widgets, each showing live
+ * data of one feature (see configs/dashboardWidgets.js). The layout —
+ * which widgets, where, how big, with which settings — is kept in
+ * localStorage per browser.
+ */
 export default {
     name: 'DynamicDashboard',
     components: {
@@ -241,8 +270,8 @@ export default {
         WikiWidget,
         NotificationsWidget,
         StatsWidget,
-        TasksWidget,
-        WeatherWidget,
+        TicketsWidget,
+        ForumWidget,
         ConversationsWidget
     },
     data() {
@@ -252,192 +281,56 @@ export default {
             selectedWidget: null,
             draggingWidgetId: null,
             dragTargetId: null,
-
-            widgetSizes: [
-                { title: 'Small', value: 'small' },
-                { title: 'Medium', value: 'medium' },
-                { title: 'Large', value: 'large' },
-                { title: 'Extra Large', value: 'xl' }
-            ],
-
-            // Active widgets on dashboard
-            activeWidgets: [
-                {
-                    id: 'events-1',
-                    type: 'events',
-                    title: 'Upcoming Events',
-                    subtitle: '8 events scheduled',
-                    icon: 'mdi-calendar-clock',
-                    color: 'primary',
-                    size: 'medium',
-                    position: { x: 0, y: 0 },
-                    actions: [{ text: 'View All Events', color: 'primary', icon: 'mdi-calendar-multiple', to: '/events' }],
-                    data: {
-                        nextEvent: {
-                            title: 'Monthly Community Meeting',
-                            date: 'June 15, 2025 at 7:00 PM',
-                            timeUntil: 'in 12 days'
-                        },
-                        upcomingEvents: [
-                            { id: 1, title: 'Developer Workshop', date: 'June 20, 2025' },
-                            { id: 2, title: 'Community Cleanup', date: 'June 25, 2025' },
-                            { id: 3, title: 'Summer BBQ', date: 'July 2, 2025' }
-                        ]
-                    }
-                },
-                {
-                    id: 'wiki-1',
-                    type: 'wiki',
-                    title: 'Wiki Updates',
-                    subtitle: '3 recent changes',
-                    icon: 'mdi-book-edit',
-                    color: 'warning',
-                    size: 'small',
-                    position: { x: 1, y: 0 },
-                    actions: [{ text: 'View Wiki', color: 'warning', icon: 'mdi-book-open-variant', to: '/wiki' }],
-                    data: {
-                        recentChanges: [
-                            { id: 1, type: 'edit', page: 'Community Guidelines', author: 'Admin', date: '1 hour ago' },
-                            { id: 2, type: 'new', page: 'Event Planning Guide', author: 'John Doe', date: '6 hours ago' },
-                            { id: 3, type: 'edit', page: 'FAQ', author: 'Jane Smith', date: '1 day ago' }
-                        ]
-                    }
-                },
-                {
-                    id: 'notifications-1',
-                    type: 'notifications',
-                    title: 'Notifications',
-                    subtitle: '5 unread',
-                    icon: 'mdi-bell',
-                    color: 'info',
-                    size: 'medium',
-                    position: { x: 2, y: 0 },
-                    data: {
-                        recent: [
-                            { id: 1, type: 'info', message: 'New member joined', time: '2m ago', read: false },
-                            { id: 2, type: 'warning', message: 'Server maintenance scheduled', time: '1h ago', read: false },
-                            { id: 3, type: 'success', message: 'Event published successfully', time: '3h ago', read: true }
-                        ]
-                    }
-                },
-                {
-                    id: 'conversations-1',
-                    type: 'conversations',
-                    title: 'Messages',
-                    subtitle: 'Recent conversations',
-                    icon: 'mdi-message-text',
-                    color: 'teal',
-                    size: 'medium',
-                    position: { x: 0, y: 1 },
-                    actions: [{ text: 'View All Conversations', color: 'teal', icon: 'mdi-message-text-outline', to: '/conversations' }],
-                    data: {},
-                    config: { maxItems: 5 }
-                }
-            ],
-
-            // Available widgets to add
-            availableWidgets: [
-                {
-                    type: 'events',
-                    title: 'Events',
-                    description: 'Show upcoming events and meetings',
-                    icon: 'mdi-calendar-clock',
-                    color: 'primary',
-                    category: 'core'
-                },
-                {
-                    type: 'wiki',
-                    title: 'Wiki Changes',
-                    description: 'Recent wiki page updates and edits',
-                    icon: 'mdi-book-edit',
-                    color: 'warning',
-                    category: 'core'
-                },
-                {
-                    type: 'notifications',
-                    title: 'Notifications',
-                    description: 'System and community notifications',
-                    icon: 'mdi-bell',
-                    color: 'info',
-                    category: 'core'
-                },
-                {
-                    type: 'stats',
-                    title: 'Statistics',
-                    description: 'Key metrics and numbers',
-                    icon: 'mdi-chart-line',
-                    color: 'success',
-                    category: 'analytics'
-                },
-                {
-                    type: 'tasks',
-                    title: 'Tasks',
-                    description: 'Personal and team task management',
-                    icon: 'mdi-check-circle',
-                    color: 'purple',
-                    category: 'productivity'
-                },
-                {
-                    type: 'weather',
-                    title: 'Weather',
-                    description: 'Current weather conditions',
-                    icon: 'mdi-weather-partly-cloudy',
-                    color: 'blue',
-                    category: 'utility'
-                },
-                {
-                    type: 'analytics',
-                    title: 'Analytics',
-                    description: 'Traffic and engagement metrics',
-                    icon: 'mdi-google-analytics',
-                    color: 'orange',
-                    category: 'analytics'
-                },
-                {
-                    type: 'social',
-                    title: 'Social Feed',
-                    description: 'Recent posts and social activity',
-                    icon: 'mdi-account-group',
-                    color: 'pink',
-                    category: 'social'
-                },
-                {
-                    type: 'calendar',
-                    title: 'Calendar',
-                    description: 'Monthly calendar view',
-                    icon: 'mdi-calendar-month',
-                    color: 'indigo',
-                    category: 'utility'
-                },
-                {
-                    type: 'conversations',
-                    title: 'Conversations',
-                    description: 'Recent messages and chats',
-                    icon: 'mdi-message-text',
-                    color: 'teal',
-                    category: 'social'
-                }
-            ]
+            activeWidgets: [],
         }
     },
     computed: {
         user() {
-            const userStore = useUserStore();
-            return userStore.user;
+            return useUserStore().user;
+        },
+        widgetSizes() {
+            return [
+                { title: this.$t('dashboard.small'), value: 'small' },
+                { title: this.$t('dashboard.medium'), value: 'medium' },
+                { title: this.$t('dashboard.large'), value: 'large' },
+                { title: this.$t('dashboard.extraLarge'), value: 'xl' }
+            ];
+        },
+        // Widgets of enabled features, with how many of each are already placed.
+        availableWidgets() {
+            const settings = useSettingsStore();
+            return Object.entries(WIDGET_TYPES)
+                .filter(([, def]) => !def.feature || settings.isFeatureEnabled(def.feature))
+                .map(([type, def]) => ({
+                    type,
+                    icon: def.icon,
+                    color: def.color,
+                    count: this.activeWidgets.filter(w => w.type === type).length,
+                }));
         }
     },
     methods: {
-        getWidgetComponent(type) {
-            const components = {
-                events: 'EventsWidget',
-                wiki: 'WikiWidget',
-                notifications: 'NotificationsWidget',
-                stats: 'StatsWidget',
-                tasks: 'TasksWidget',
-                weather: 'WeatherWidget',
-                conversations: 'ConversationsWidget'
+        definition(widget) {
+            return WIDGET_TYPES[widget.type];
+        },
+
+        widgetTitle(widget) {
+            return widget.title || this.$t(`dashboard.widgets.${widget.type}.title`);
+        },
+
+        createWidget(type, saved = {}) {
+            const def = WIDGET_TYPES[type];
+            return {
+                id: saved.id || `${type}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                type,
+                title: saved.title || null,
+                subtitle: '',
+                color: saved.color || def.color,
+                size: saved.size || def.size,
+                position: saved.position || this.findAvailablePosition(),
+                config: { limit: 5, ...(saved.config || {}) },
+                refreshKey: 0,
             };
-            return components[type] || 'div';
         },
 
         getWidgetStyle(widget) {
@@ -557,27 +450,17 @@ export default {
 
                 // Add visual feedback for the swap
                 this.$nextTick(() => {
-                    const occupyingElement = document.querySelector(`[data-widget-id="${occupyingWidget.id}"]`);
-                    const draggedElement = document.querySelector(`[data-widget-id="${draggedWidget.id}"]`);
-
-                    if (occupyingElement) {
-                        occupyingElement.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-                        occupyingElement.style.transform = 'scale(1.05)';
-                        setTimeout(() => {
-                            occupyingElement.style.transform = '';
-                        }, 200);
-                    }
-
-                    if (draggedElement) {
-                        draggedElement.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-                        draggedElement.style.transform = 'scale(1.05)';
-                        setTimeout(() => {
-                            draggedElement.style.transform = '';
-                        }, 200);
-                    }
+                    [occupyingWidget, draggedWidget].forEach(widget => {
+                        const element = document.querySelector(`[data-widget-id="${widget.id}"]`);
+                        if (element) {
+                            element.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                            element.style.transform = 'scale(1.05)';
+                            setTimeout(() => {
+                                element.style.transform = '';
+                            }, 200);
+                        }
+                    });
                 });
-
-                console.log(`Swapped positions: ${draggedWidget.title} ↔ ${occupyingWidget.title}`);
             } else {
                 // Position is free, just move there
                 draggedWidget.position = newPosition;
@@ -586,30 +469,8 @@ export default {
             this.saveLayout();
         },
 
-        addWidget(widgetTemplate) {
-            const newWidget = {
-                id: `${widgetTemplate.type}-${Date.now()}`,
-                type: widgetTemplate.type,
-                title: widgetTemplate.title,
-                subtitle: widgetTemplate.description,
-                icon: widgetTemplate.icon,
-                color: widgetTemplate.color,
-                size: 'medium',
-                position: this.findAvailablePosition(),
-                data: this.getDefaultWidgetData(widgetTemplate.type),
-                config: {}
-            };
-
-            // Add actions based on widget type
-            if (widgetTemplate.type === 'events') {
-                newWidget.actions = [{ text: 'View All Events', color: 'primary', icon: 'mdi-calendar-multiple', to: '/events' }];
-            } else if (widgetTemplate.type === 'wiki') {
-                newWidget.actions = [{ text: 'View Wiki', color: 'warning', icon: 'mdi-book-open-variant', to: '/wiki' }];
-            } else if (widgetTemplate.type === 'conversations') {
-                newWidget.actions = [{ text: 'View All Conversations', color: 'teal', icon: 'mdi-message-text-outline', to: '/conversations' }];
-            }
-
-            this.activeWidgets.push(newWidget);
+        addWidget(type) {
+            this.activeWidgets.push(this.createWidget(type));
             this.showWidgetPanel = false;
             this.saveLayout();
         },
@@ -622,12 +483,11 @@ export default {
             }
         },
 
+        // Widgets reload their data when their refresh counter changes.
         refreshWidget(widgetId) {
             const widget = this.activeWidgets.find(w => w.id === widgetId);
             if (widget) {
-                // Simulate refresh by updating data
-                widget.data = this.getDefaultWidgetData(widget.type);
-                console.log(`Refreshing widget: ${widget.title}`);
+                widget.refreshKey++;
             }
         },
 
@@ -637,12 +497,23 @@ export default {
         },
 
         saveWidgetSettings() {
+            if (this.selectedWidget) {
+                const limit = parseInt(this.selectedWidget.config.limit, 10);
+                this.selectedWidget.config.limit = limit > 0 ? Math.min(limit, 20) : 5;
+                if (!this.selectedWidget.title?.trim()) {
+                    this.selectedWidget.title = null;
+                }
+            }
             this.showWidgetSettings = false;
             this.saveLayout();
         },
 
+        // Back to the default widget set and grid order.
         resetLayout() {
-            // Reset to default layout
+            this.activeWidgets = [];
+            DEFAULT_LAYOUT
+                .filter(type => this.availableWidgets.some(w => w.type === type))
+                .forEach(type => this.activeWidgets.push(this.createWidget(type)));
             this.activeWidgets.forEach((widget, index) => {
                 widget.position = { x: index % 3, y: Math.floor(index / 3) };
             });
@@ -667,91 +538,50 @@ export default {
             return { x: 0, y: maxY + 1 };
         },
 
-        getDefaultWidgetData(type) {
-            const defaultData = {
-                events: {
-                    nextEvent: {
-                        title: 'Sample Event',
-                        date: 'Coming Soon',
-                        timeUntil: 'TBD'
-                    },
-                    upcomingEvents: []
-                },
-                wiki: {
-                    recentChanges: [
-                        { id: 1, type: 'new', page: 'New Page', author: 'System', date: 'Just now' }
-                    ]
-                },
-                notifications: {
-                    recent: [
-                        { id: 1, type: 'info', message: 'Welcome to your new widget!', time: 'now', read: false }
-                    ]
-                },
-                stats: {
-                    value: '0',
-                    label: 'New Metric',
-                    trend: 0
-                },
-                tasks: {
-                    completed: 0,
-                    total: 1,
-                    recent: [
-                        { id: 1, title: 'Configure this widget', completed: false, dueDate: 'Today' }
-                    ]
-                },
-                weather: {
-                    temperature: '22',
-                    condition: 'Sunny',
-                    location: 'Your Location',
-                    icon: 'mdi-weather-sunny'
-                },
-                conversations: {
-                    // This will be populated by the widget component from the store
-                }
-            };
-
-            return defaultData[type] || {};
-        },
-
-        updateWidgetData(widgetId, newData) {
+        updateWidgetMeta(widgetId, meta) {
             const widget = this.activeWidgets.find(w => w.id === widgetId);
-            if (widget) {
-                widget.data = { ...widget.data, ...newData };
+            if (widget && meta?.subtitle !== undefined) {
+                widget.subtitle = meta.subtitle;
             }
         },
 
         saveLayout() {
-            // Save layout to localStorage or send to API
             const layout = this.activeWidgets.map(w => ({
                 id: w.id,
                 type: w.type,
+                title: w.title,
+                color: w.color,
                 position: w.position,
                 size: w.size,
                 config: w.config
             }));
 
-            localStorage.setItem('dashboardLayout', JSON.stringify(layout));
-            console.log('Layout saved');
+            try {
+                localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
+            } catch (e) {
+                console.warn('Could not save dashboard layout', e);
+            }
         },
 
+        // Restore the saved layout; widgets of unknown (retired) or disabled
+        // types are dropped. Without a saved layout the defaults are used.
         loadLayout() {
-            // Load layout from localStorage or API
-            const savedLayout = localStorage.getItem('dashboardLayout');
-            if (savedLayout) {
-                try {
-                    const layout = JSON.parse(savedLayout);
-                    // Apply saved positions and configurations
-                    layout.forEach(saved => {
-                        const widget = this.activeWidgets.find(w => w.id === saved.id);
-                        if (widget) {
-                            widget.position = saved.position;
-                            widget.size = saved.size;
-                            widget.config = saved.config || {};
-                        }
-                    });
-                } catch (e) {
-                    console.error('Failed to load layout:', e);
-                }
+            let layout = null;
+            try {
+                layout = JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY));
+            } catch (e) {
+                layout = null;
+            }
+
+            if (Array.isArray(layout) && layout.length) {
+                const enabled = new Set(this.availableWidgets.map(w => w.type));
+                layout
+                    .filter(saved => saved?.type && enabled.has(saved.type))
+                    .forEach(saved => this.activeWidgets.push(this.createWidget(saved.type, saved)));
+            }
+
+            if (this.activeWidgets.length === 0 && !Array.isArray(layout)) {
+                this.resetLayout();
             }
         }
     },
@@ -761,6 +591,7 @@ export default {
     }
 }
 </script>
+
 
 <style scoped>
 .dashboard-container {

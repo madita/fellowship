@@ -1,0 +1,194 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Event\Event;
+use App\Models\Event\EventType;
+use App\Models\Forum\ForumThread;
+use App\Models\Page;
+use App\Models\Tag\Taxonomy;
+use App\Models\Tag\Term;
+use App\Models\Ticket\Ticket;
+use App\Models\Ticket\TicketType;
+use App\Models\User;
+use App\Models\Wiki;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
+use Tests\TestCase;
+
+/**
+ * The endpoints feeding the dashboard widgets return live data of the
+ * features: upcoming events, recent wiki changes and community stats.
+ */
+class DashboardWidgetsTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected User $admin;
+
+    protected User $member;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Role::create(['name' => 'admin', 'guard_name' => 'api', 'display_name' => 'Admin']);
+        $this->admin = User::factory()->create();
+        $this->admin->assignRole('admin');
+        $this->member = User::factory()->create();
+    }
+
+    private function createEvent(string $title, string $startDate, ?string $startTime = null, ?string $endDate = null): Event
+    {
+        $type = EventType::firstOrCreate(['name' => 'Meetup'], ['color' => '#123456', 'options' => '{}']);
+
+        return Event::create([
+            'title'         => $title,
+            'user_id'       => $this->admin->id,
+            'event_type_id' => $type->id,
+            'startDate'     => $startDate,
+            'startTime'     => $startTime,
+            'endDate'       => $endDate ?? $startDate,
+        ]);
+    }
+
+    private function createWikiPage(string $title, string $slug, User $author, bool $approved = true): Page
+    {
+        $locale = app()->getLocale();
+        $page   = new Page(['user_id' => $author->id, 'slug' => $slug]);
+        $page->translateOrNew($locale)->title   = $title;
+        $page->translateOrNew($locale)->content = '<p>' . $title . '</p>';
+        $page->save();
+
+        $wiki = new Wiki(['slug' => $slug]);
+        $wiki->translateOrNew($locale)->title = $title;
+        $page->wikiable()->save($wiki);
+        if ($approved) {
+            $wiki->approve($this->admin);
+        }
+
+        return $page;
+    }
+
+    public function test_upcoming_events_are_sorted_and_limited(): void
+    {
+        $this->createEvent('Long ago', now()->subDays(30)->toDateString());
+        $this->createEvent('Yesterday', now()->subDay()->toDateString());
+        // Started yesterday but still running today.
+        $this->createEvent('Festival', now()->subDay()->toDateString(), null, now()->addDay()->toDateString());
+        $this->createEvent('Tonight', now()->toDateString(), '19:00:00');
+        $this->createEvent('Today all day', now()->toDateString());
+        $this->createEvent('Next week', now()->addDays(7)->toDateString());
+        $this->createEvent('Next year', now()->addDays(200)->toDateString());
+
+        $data = $this->actingAs($this->member, 'sanctum')
+            ->getJson('/api/events/upcoming?limit=3')
+            ->assertStatus(200)
+            ->json('data');
+
+        // Within the default 30-day window: Festival, Today all day, Tonight, Next week.
+        $this->assertSame(4, $data['total']);
+        $this->assertSame(['Festival', 'Today all day', 'Tonight'], array_column($data['events'], 'title'));
+        $this->assertTrue($data['events'][1]['allDay']);
+        $this->assertFalse($data['events'][2]['allDay']);
+        $this->assertSame('Meetup', $data['events'][0]['type']);
+        $this->assertSame('/events/' . $data['events'][0]['id'], $data['events'][0]['url']);
+
+        // A wider window includes next year's event.
+        $this->assertSame(5, $this->actingAs($this->member, 'sanctum')
+            ->getJson('/api/events/upcoming?days=365')
+            ->json('data.total'));
+    }
+
+    public function test_recent_wiki_changes_come_from_revisions_of_visible_pages(): void
+    {
+        $this->actingAs($this->admin);
+        $old = $this->createWikiPage('Old page', 'old-page', $this->admin);
+        $this->createWikiPage('Pending page', 'pending-page', $this->admin, approved: false);
+
+        $this->actingAs($this->member);
+        $this->createWikiPage('Member page', 'member-page', $this->member);
+        // Editing produces an "updated" revision that supersedes the creation.
+        $old->translateOrNew(app()->getLocale())->content = '<p>Edited</p>';
+        $old->touch();
+        $old->revisions()->create([
+            'revisionable_type' => $old->getTable(),
+            'action'            => 'updated',
+            'user_id'           => $this->member->id,
+            'created_at'        => now()->addMinute(),
+        ]);
+
+        $changes = $this->actingAs($this->member, 'sanctum')
+            ->getJson('/api/wiki/recent-changes')
+            ->assertStatus(200)
+            ->json('data');
+
+        // One entry per page, newest change first; the unapproved page is hidden.
+        $this->assertSame(['Old page', 'Member page'], array_column($changes, 'title'));
+        $this->assertSame('updated', $changes[0]['action']);
+        $this->assertSame($this->member->username, $changes[0]['author']['username']);
+        $this->assertSame('/wiki/old-page', $changes[0]['url']);
+        $this->assertSame('created', $changes[1]['action']);
+
+        // Admins also see pending pages.
+        $adminChanges = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/wiki/recent-changes?limit=2')
+            ->json('data');
+        $this->assertCount(2, $adminChanges);
+        $this->assertContains('Pending page', array_column(
+            $this->actingAs($this->admin, 'sanctum')->getJson('/api/wiki/recent-changes')->json('data'),
+            'title'
+        ));
+    }
+
+    public function test_stats_count_live_community_data_and_own_open_tickets(): void
+    {
+        $this->createEvent('Past', now()->subDays(3)->toDateString());
+        $this->createEvent('Soon', now()->addDays(3)->toDateString());
+        $this->actingAs($this->admin);
+        $this->createWikiPage('Approved', 'approved', $this->admin);
+        $this->createWikiPage('Pending', 'pending', $this->admin, approved: false);
+
+        $term     = Term::firstOrCreateByTitle('General');
+        $category = Taxonomy::create([
+            'term_id'    => $term->id,
+            'taxonomy'   => 'forum_cat',
+            'sort'       => 0,
+            'visible'    => true,
+            'searchable' => true,
+            'properties' => [],
+        ]);
+        ForumThread::create([
+            'taxonomy_id' => $category->id,
+            'user_id'     => $this->member->id,
+            'title'       => 'Hello',
+            'body'        => '<p>First thread</p>',
+        ]);
+
+        $type = TicketType::firstOrCreate(['slug' => 'dashboard-test'], ['name' => 'Dashboard test', 'is_active' => true]);
+        foreach ([['open', $this->member], ['resolved', $this->member], ['open', $this->admin]] as [$status, $creator]) {
+            Ticket::create([
+                'ticket_type_id'     => $type->id,
+                'created_by_user_id' => $creator->id,
+                'title'              => "Ticket {$status}",
+                'status'             => $status,
+                'priority'           => 'normal',
+            ]);
+        }
+
+        $stats = $this->actingAs($this->member, 'sanctum')
+            ->getJson('/api/account/dashboard/stats')
+            ->assertStatus(200)
+            ->json('data');
+
+        $this->assertSame(2, $stats['members']);
+        $this->assertSame(1, $stats['upcoming_events']);
+        $this->assertSame(1, $stats['wiki_pages']);
+        $this->assertSame(1, $stats['forum_threads']);
+        $this->assertSame(1, $stats['my_open_tickets']);
+    }
+
+    public function test_stats_require_authentication(): void
+    {
+        $this->getJson('/api/account/dashboard/stats')->assertStatus(401);
+    }
+}

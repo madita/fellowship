@@ -248,8 +248,71 @@ export default {
         'medium': 'Mittel',
         'large': 'Groß',
         'extraLarge': 'Extra groß',
-        'tasksCompleted': '{completed}/{total} Aufgaben erledigt',
-        'thisWeek': '{percent}% diese Woche'
+        'widgetLimit': 'Anzahl Einträge',
+        'onDashboard': '{count} auf dem Dashboard',
+        'emptyTitle': 'Dein Dashboard ist leer',
+        'emptyHint': 'Füge Widgets hinzu, um kommende Events, Benachrichtigungen, Wiki-Änderungen und mehr auf einen Blick zu sehen.',
+        'loadFailed': 'Widget konnte nicht geladen werden',
+        'widgets': {
+            'events': {
+                'title': 'Kommende Events',
+                'description': 'Die nächsten Events im Kalender',
+                'action': 'Alle Events anzeigen',
+                'subtitle': '{count} bevorstehend',
+                'next': 'NÄCHSTES',
+                'empty': 'Keine kommenden Events'
+            },
+            'notifications': {
+                'title': 'Benachrichtigungen',
+                'description': 'Deine ungelesenen Benachrichtigungen',
+                'action': 'Alle Benachrichtigungen',
+                'subtitle': '{count} ungelesen',
+                'empty': 'Keine ungelesenen Benachrichtigungen',
+                'markRead': 'Als gelesen markieren',
+                'markAllRead': 'Alle als gelesen markieren'
+            },
+            'wiki': {
+                'title': 'Wiki-Änderungen',
+                'description': 'Kürzlich erstellte und bearbeitete Wiki-Seiten',
+                'action': 'Wiki anzeigen',
+                'subtitle': '{count} aktuelle Änderungen',
+                'created': 'neu',
+                'edited': 'bearbeitet',
+                'by': 'von {name}',
+                'empty': 'Keine aktuellen Wiki-Änderungen'
+            },
+            'conversations': {
+                'title': 'Nachrichten',
+                'description': 'Deine letzten Unterhaltungen',
+                'action': 'Alle Unterhaltungen anzeigen'
+            },
+            'tickets': {
+                'title': 'Meine Tickets',
+                'description': 'Deine offenen Tickets und Anfragen',
+                'action': 'Tickets anzeigen',
+                'subtitle': '{count} offen',
+                'empty': 'Keine offenen Tickets'
+            },
+            'forum': {
+                'title': 'Forum',
+                'description': 'Die neuesten Forenthemen',
+                'action': 'Zum Forum',
+                'subtitle': '{count} ungelesene Themen',
+                'replies': '{count} Antworten',
+                'empty': 'Noch keine Forenthemen'
+            },
+            'stats': {
+                'title': 'Community',
+                'description': 'Aktuelle Community-Zahlen',
+                'subtitle': 'Aktuelle Zahlen',
+                'members': 'Mitglieder',
+                'upcoming_events': 'Kommende Events',
+                'wiki_pages': 'Wiki-Seiten',
+                'forum_threads': 'Themen',
+                'forum_posts': 'Beiträge',
+                'my_open_tickets': 'Meine offenen Tickets'
+            }
+        }
     },
     'usermenu': {
         'profile': 'Profil',

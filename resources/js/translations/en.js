@@ -248,8 +248,71 @@ export default {
         'medium': 'Medium',
         'large': 'Large',
         'extraLarge': 'Extra Large',
-        'tasksCompleted': '{completed}/{total} tasks completed',
-        'thisWeek': '{percent}% this week'
+        'widgetLimit': 'Items to show',
+        'onDashboard': '{count} on dashboard',
+        'emptyTitle': 'Your dashboard is empty',
+        'emptyHint': 'Add widgets to see upcoming events, notifications, wiki changes and more at a glance.',
+        'loadFailed': 'Could not load this widget',
+        'widgets': {
+            'events': {
+                'title': 'Upcoming Events',
+                'description': 'The next events on the calendar',
+                'action': 'View All Events',
+                'subtitle': '{count} upcoming',
+                'next': 'NEXT',
+                'empty': 'No upcoming events'
+            },
+            'notifications': {
+                'title': 'Notifications',
+                'description': 'Your unread notifications',
+                'action': 'All Notifications',
+                'subtitle': '{count} unread',
+                'empty': 'No unread notifications',
+                'markRead': 'Mark as read',
+                'markAllRead': 'Mark all as read'
+            },
+            'wiki': {
+                'title': 'Wiki Changes',
+                'description': 'Recently created and edited wiki pages',
+                'action': 'View Wiki',
+                'subtitle': '{count} recent changes',
+                'created': 'new',
+                'edited': 'edit',
+                'by': 'by {name}',
+                'empty': 'No recent wiki changes'
+            },
+            'conversations': {
+                'title': 'Messages',
+                'description': 'Your recent conversations',
+                'action': 'View All Conversations'
+            },
+            'tickets': {
+                'title': 'My Tickets',
+                'description': 'Your open tickets and requests',
+                'action': 'View Tickets',
+                'subtitle': '{count} open',
+                'empty': 'No open tickets'
+            },
+            'forum': {
+                'title': 'Forum',
+                'description': 'The newest forum threads',
+                'action': 'Go to Forum',
+                'subtitle': '{count} unread threads',
+                'replies': '{count} replies',
+                'empty': 'No forum threads yet'
+            },
+            'stats': {
+                'title': 'Community',
+                'description': 'Live community numbers',
+                'subtitle': 'Live numbers',
+                'members': 'Members',
+                'upcoming_events': 'Upcoming events',
+                'wiki_pages': 'Wiki pages',
+                'forum_threads': 'Threads',
+                'forum_posts': 'Posts',
+                'my_open_tickets': 'My open tickets'
+            }
+        }
     },
     'usermenu': {
         'profile': 'Profile',
