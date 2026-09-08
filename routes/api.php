@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public cacheable routes
 Route::middleware(['cache.control'])->group(function () {
+    Route::get('wiki/recent-changes', "\App\Http\Controllers\WikiController@recentChanges");
     Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['index', 'show']);
     Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
 
@@ -103,6 +104,11 @@ Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 
     Route::post('/legacy-claim', 'App\Http\Controllers\LegacyClaimController@store');
 
     Route::get('/notifications', 'App\Http\Controllers\NotificationController@index')->name('notification.index');
+    // Dashboard widgets
+    Route::get('/dashboard/stats', 'App\Http\Controllers\DashboardController@stats');
+    Route::get('/dashboard/tickets', 'App\Http\Controllers\DashboardController@tickets');
+    Route::get('/dashboard/layout', 'App\Http\Controllers\DashboardController@layout');
+    Route::put('/dashboard/layout', 'App\Http\Controllers\DashboardController@saveLayout');
     Route::get('/notification', 'App\Http\Controllers\NotificationController@notification')->name('notification.unread');
     Route::delete('/notification/delete/{id}', 'App\Http\Controllers\NotificationController@notificationdelete');
     Route::get('/notification/allasread', 'App\Http\Controllers\NotificationController@notificationread');
@@ -189,6 +195,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     Route::get('/events/{event}/going/{answer}', "\App\Http\Controllers\EventController@isGoing");
     Route::get('/events/types', "\App\Http\Controllers\EventController@getTypes");
+    Route::get('/events/upcoming', "\App\Http\Controllers\EventController@upcoming");
     Route::post('/events/{event}/answer', "\App\Http\Controllers\EventController@joinEvent");
     //    Route::resource('events', "\App\Http\Controllers\EventController");
     Route::get('events/create', ['as' => 'event.create', 'uses' => "\App\Http\Controllers\EventController@create"]);
@@ -202,6 +209,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 });
 
 // Collections (Photo Gallery)
+Route::get('/collections/recent', [CollectionController::class, 'recent']); // Newest albums (dashboard widget)
 Route::get('/collections', [CollectionController::class, 'index']); // Fetch all collections
 Route::get('/collections/{collection}', [CollectionController::class, 'show']); // Fetch media for a specific collection
 Route::post('/collections', [CollectionController::class, 'store']); // Create a new collection
@@ -371,6 +379,9 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api.key', 'api.rate']], functi
 
 // Admin Settings Routes
 Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
+    // Admin overview
+    Route::get('/dashboard', 'App\Http\Controllers\Admin\AdminDashboardController@index');
+
     // Settings
     Route::get('/settings', 'App\Http\Controllers\Admin\SettingsController@index');
     Route::post('/settings', 'App\Http\Controllers\Admin\SettingsController@update');

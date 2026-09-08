@@ -22,6 +22,7 @@ export default {
             key: 'menu.admin',
             role: 'admin',
             items: [
+                {icon: 'mdi-view-dashboard-outline', key: 'menu.adminDashboard', text: 'Dashboard', link: '/admin/dashboard'},
                 {permission: 'manage-role', icon: 'mdi-shield-account-outline', key: 'menu.adminRoles', text: 'Roles', link: '/admin/roles'},
                 {permission: 'manage-role', icon: 'mdi-key-outline', key: 'menu.adminPermission', text: 'Permissions', link: '/admin/permissions'},
                 {icon: 'mdi-account-group-outline', key: 'menu.adminUsers', text: 'Users', link: '/admin/users'},

@@ -4,7 +4,16 @@ import permission from "./middleware/permission";
 
 export const admin = [{
     path: '/admin',
-    redirect: 'users-list',
+    redirect: { name: 'admin-dashboard' },
+}, {
+    path: '/admin/dashboard',
+    name: 'admin-dashboard',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-dashboard" */ '@/pages/admin/AdminDashboard.vue')
 }, {
     path: '/admin/pages',
     name: 'admin-pages',

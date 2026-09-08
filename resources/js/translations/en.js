@@ -248,8 +248,134 @@ export default {
         'medium': 'Medium',
         'large': 'Large',
         'extraLarge': 'Extra Large',
-        'tasksCompleted': '{completed}/{total} tasks completed',
-        'thisWeek': '{percent}% this week'
+        'widgetLimit': 'Items to show',
+        'onDashboard': '{count} on dashboard',
+        'emptyTitle': 'Your dashboard is empty',
+        'emptyHint': 'Add widgets to see upcoming events, notifications, wiki changes and more at a glance.',
+        'loadFailed': 'Could not load this widget',
+        'saveFailed': 'Your dashboard layout could not be saved: {error}',
+        'widgets': {
+            'events': {
+                'title': 'Upcoming Events',
+                'description': 'The next events on the calendar',
+                'action': 'View All Events',
+                'subtitle': '{count} upcoming',
+                'next': 'NEXT',
+                'empty': 'No upcoming events'
+            },
+            'notifications': {
+                'title': 'Notifications',
+                'description': 'Your unread notifications',
+                'action': 'All Notifications',
+                'subtitle': '{count} unread',
+                'empty': 'No unread notifications',
+                'markRead': 'Mark as read',
+                'markAllRead': 'Mark all as read'
+            },
+            'wiki': {
+                'title': 'Wiki Changes',
+                'description': 'Recently created and edited wiki pages',
+                'action': 'View Wiki',
+                'subtitle': '{count} recent changes',
+                'created': 'new',
+                'edited': 'edit',
+                'by': 'by {name}',
+                'empty': 'No recent wiki changes'
+            },
+            'conversations': {
+                'title': 'Messages',
+                'description': 'Your recent conversations',
+                'action': 'View All Conversations'
+            },
+            'tickets': {
+                'title': 'Ticket Queue',
+                'description': 'A list of open tickets: yours, assigned to you, unassigned or all',
+                'action': 'View Tickets',
+                'subtitle': {
+                    'mine': '{count} of yours open',
+                    'assigned': '{count} assigned to you',
+                    'unassigned': '{count} unassigned',
+                    'all': '{count} open'
+                },
+                'empty': {
+                    'mine': 'You have no open tickets',
+                    'assigned': 'Nothing assigned to you',
+                    'unassigned': 'No unassigned tickets',
+                    'all': 'No open tickets'
+                },
+                'settings': {
+                    'scope': {
+                        'label': 'Queue',
+                        'items': {
+                            'mine': 'My tickets (created by or assigned to me)',
+                            'assigned': 'Assigned to me',
+                            'unassigned': 'Unassigned',
+                            'all': 'All open tickets'
+                        }
+                    },
+                    'sort': {
+                        'label': 'Order',
+                        'items': {
+                            'updated_at': 'Recently updated',
+                            'due_date': 'Due date',
+                            'created_at': 'Newest',
+                            'priority': 'Priority'
+                        }
+                    }
+                }
+            },
+            'ticketOverview': {
+                'title': 'Ticket Overview',
+                'description': 'How many tickets are assigned to you, unassigned, overdue or due soon',
+                'action': 'View Tickets',
+                'subtitle': '{count} open',
+                'assigned_to_me': 'Assigned to me',
+                'created_by_me': 'Created by me',
+                'unassigned': 'Unassigned',
+                'overdue': 'Overdue',
+                'due_this_week': 'Due this week',
+                'resolved7Days': '{count} resolved in 7 days'
+            },
+            'forum': {
+                'title': 'Forum',
+                'description': 'The newest forum threads',
+                'action': 'Go to Forum',
+                'subtitle': '{count} unread threads',
+                'replies': '{count} replies',
+                'empty': 'No forum threads yet'
+            },
+            'sandbox': {
+                'title': 'Sandboxes',
+                'description': 'Documents you own or collaborate on',
+                'action': 'All Sandboxes',
+                'subtitle': '{count} available',
+                'owner': 'Yours',
+                'shared': 'Shared by {name}',
+                'public': 'Public · {name}',
+                'members': 'Members · {name}',
+                'collaborators': '{count} collaborators',
+                'empty': 'No sandboxes yet'
+            },
+            'gallery': {
+                'title': 'Gallery',
+                'description': 'The newest photo albums',
+                'action': 'Open Gallery',
+                'subtitle': '{count} albums',
+                'images': '{count} images',
+                'empty': 'No albums yet'
+            },
+            'stats': {
+                'title': 'Community',
+                'description': 'Live community numbers',
+                'subtitle': 'Live numbers',
+                'members': 'Members',
+                'upcoming_events': 'Upcoming events',
+                'wiki_pages': 'Wiki pages',
+                'forum_threads': 'Threads',
+                'forum_posts': 'Posts',
+                'my_open_tickets': 'My open tickets'
+            }
+        }
     },
     'usermenu': {
         'profile': 'Profile',
@@ -477,9 +603,79 @@ export default {
         'adminMedia': 'Media Center',
         'adminTickets': 'Tickets',
         'adminTranslations': 'Translations',
+        'adminDashboard': 'Dashboard',
         'myTickets': 'My Tickets'
     },
     'admin': {
+        'dashboard': {
+            'title': 'Admin Dashboard',
+            'subtitle': 'What needs attention, how the community is doing and whether the system is healthy',
+            'updated': 'updated {time}',
+            'manage': 'Manage',
+            'settings': 'Settings',
+            'quickLinks': 'Quick links',
+            'attention': {
+                'title': 'Needs attention',
+                'allClear': 'Nothing is waiting for you — all queues are empty.',
+                'pending_wiki': 'Wiki pages awaiting approval',
+                'pending_event_guests': 'Event guests awaiting approval',
+                'unassigned_tickets': 'Unassigned tickets',
+                'overdue_tickets': 'Overdue tickets',
+                'legacy_claims': 'Open legacy account claims',
+                'unverified_users': 'Users with unverified e-mail',
+                'failed_jobs': 'Failed queue jobs'
+            },
+            'users': {
+                'title': 'Community',
+                'total': 'Members',
+                'new_7d': 'New (7 days)',
+                'new_30d': 'New (30 days)',
+                'active_24h': 'Logged in (24 h)',
+                'active_7d': 'Logged in (7 days)',
+                'admins': 'Admins',
+                'latest': 'Latest registrations',
+                'registered': 'registered {time}',
+                'unverified': 'unverified'
+            },
+            'content': {
+                'title': 'Content',
+                'thisWeek': 'this week',
+                'wiki_pages': 'Wiki pages',
+                'forum_threads': 'Forum threads',
+                'forum_posts': 'Forum posts',
+                'events_upcoming': 'Upcoming events',
+                'open_tickets': 'Open tickets',
+                'albums': 'Gallery albums',
+                'media_files': 'Media files',
+                'sandboxes': 'Sandboxes',
+                'messages_7d': 'Messages this week'
+            },
+            'tickets': {
+                'title': 'Unassigned tickets',
+                'empty': 'Every open ticket has an assignee.'
+            },
+            'activity': {
+                'title': 'Recent activity',
+                'empty': 'No activity recorded yet.'
+            },
+            'system': {
+                'title': 'System',
+                'on': 'on',
+                'off': 'off',
+                'environment': 'Environment',
+                'debug': 'Debug',
+                'maintenance': 'Maintenance mode',
+                'php': 'PHP',
+                'laravel': 'Laravel',
+                'cache': 'Cache',
+                'queue': 'Queue',
+                'sandbox': 'Sandbox',
+                'media': 'Media storage',
+                'ircDaemon': 'IRC daemon',
+                'disk': 'Disk free',
+                'lastMigration': 'Last data import: {name} — {status}, {time}.'
+            }
+        },
         'forums': {
             'title': 'Forum Management',
             'subtitle': 'Create and manage forum categories and sub-forums.',

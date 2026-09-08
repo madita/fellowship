@@ -3,6 +3,7 @@ import { useUserStore } from "@/store/userStore.js";
 export default function permission({ to, next }) {
     const userStore = useUserStore();
     const permissionsMap = {
+        "admin-dashboard": "manage-user",
         "admin-users": "manage-user",
         "admin-roles": "manage-role",
         "admin-permissions": "manage-role",

@@ -248,8 +248,134 @@ export default {
         'medium': 'Mittel',
         'large': 'Groß',
         'extraLarge': 'Extra groß',
-        'tasksCompleted': '{completed}/{total} Aufgaben erledigt',
-        'thisWeek': '{percent}% diese Woche'
+        'widgetLimit': 'Anzahl Einträge',
+        'onDashboard': '{count} auf dem Dashboard',
+        'emptyTitle': 'Dein Dashboard ist leer',
+        'emptyHint': 'Füge Widgets hinzu, um kommende Events, Benachrichtigungen, Wiki-Änderungen und mehr auf einen Blick zu sehen.',
+        'loadFailed': 'Widget konnte nicht geladen werden',
+        'saveFailed': 'Dein Dashboard-Layout konnte nicht gespeichert werden: {error}',
+        'widgets': {
+            'events': {
+                'title': 'Kommende Events',
+                'description': 'Die nächsten Events im Kalender',
+                'action': 'Alle Events anzeigen',
+                'subtitle': '{count} bevorstehend',
+                'next': 'NÄCHSTES',
+                'empty': 'Keine kommenden Events'
+            },
+            'notifications': {
+                'title': 'Benachrichtigungen',
+                'description': 'Deine ungelesenen Benachrichtigungen',
+                'action': 'Alle Benachrichtigungen',
+                'subtitle': '{count} ungelesen',
+                'empty': 'Keine ungelesenen Benachrichtigungen',
+                'markRead': 'Als gelesen markieren',
+                'markAllRead': 'Alle als gelesen markieren'
+            },
+            'wiki': {
+                'title': 'Wiki-Änderungen',
+                'description': 'Kürzlich erstellte und bearbeitete Wiki-Seiten',
+                'action': 'Wiki anzeigen',
+                'subtitle': '{count} aktuelle Änderungen',
+                'created': 'neu',
+                'edited': 'bearbeitet',
+                'by': 'von {name}',
+                'empty': 'Keine aktuellen Wiki-Änderungen'
+            },
+            'conversations': {
+                'title': 'Nachrichten',
+                'description': 'Deine letzten Unterhaltungen',
+                'action': 'Alle Unterhaltungen anzeigen'
+            },
+            'tickets': {
+                'title': 'Ticket-Warteschlange',
+                'description': 'Eine Liste offener Tickets: deine, dir zugewiesene, nicht zugewiesene oder alle',
+                'action': 'Tickets anzeigen',
+                'subtitle': {
+                    'mine': '{count} von deinen offen',
+                    'assigned': '{count} dir zugewiesen',
+                    'unassigned': '{count} nicht zugewiesen',
+                    'all': '{count} offen'
+                },
+                'empty': {
+                    'mine': 'Du hast keine offenen Tickets',
+                    'assigned': 'Dir ist nichts zugewiesen',
+                    'unassigned': 'Keine nicht zugewiesenen Tickets',
+                    'all': 'Keine offenen Tickets'
+                },
+                'settings': {
+                    'scope': {
+                        'label': 'Warteschlange',
+                        'items': {
+                            'mine': 'Meine Tickets (von mir erstellt oder mir zugewiesen)',
+                            'assigned': 'Mir zugewiesen',
+                            'unassigned': 'Nicht zugewiesen',
+                            'all': 'Alle offenen Tickets'
+                        }
+                    },
+                    'sort': {
+                        'label': 'Reihenfolge',
+                        'items': {
+                            'updated_at': 'Zuletzt aktualisiert',
+                            'due_date': 'Fälligkeitsdatum',
+                            'created_at': 'Neueste',
+                            'priority': 'Priorität'
+                        }
+                    }
+                }
+            },
+            'ticketOverview': {
+                'title': 'Ticket-Übersicht',
+                'description': 'Wie viele Tickets dir zugewiesen, nicht zugewiesen, überfällig oder bald fällig sind',
+                'action': 'Tickets anzeigen',
+                'subtitle': '{count} offen',
+                'assigned_to_me': 'Mir zugewiesen',
+                'created_by_me': 'Von mir erstellt',
+                'unassigned': 'Nicht zugewiesen',
+                'overdue': 'Überfällig',
+                'due_this_week': 'Diese Woche fällig',
+                'resolved7Days': '{count} in 7 Tagen gelöst'
+            },
+            'forum': {
+                'title': 'Forum',
+                'description': 'Die neuesten Forenthemen',
+                'action': 'Zum Forum',
+                'subtitle': '{count} ungelesene Themen',
+                'replies': '{count} Antworten',
+                'empty': 'Noch keine Forenthemen'
+            },
+            'sandbox': {
+                'title': 'Sandboxes',
+                'description': 'Dokumente, die dir gehören oder an denen du mitarbeitest',
+                'action': 'Alle Sandboxes',
+                'subtitle': '{count} verfügbar',
+                'owner': 'Deine',
+                'shared': 'Geteilt von {name}',
+                'public': 'Öffentlich · {name}',
+                'members': 'Mitglieder · {name}',
+                'collaborators': '{count} Mitarbeitende',
+                'empty': 'Noch keine Sandboxes'
+            },
+            'gallery': {
+                'title': 'Galerie',
+                'description': 'Die neuesten Fotoalben',
+                'action': 'Galerie öffnen',
+                'subtitle': '{count} Alben',
+                'images': '{count} Bilder',
+                'empty': 'Noch keine Alben'
+            },
+            'stats': {
+                'title': 'Community',
+                'description': 'Aktuelle Community-Zahlen',
+                'subtitle': 'Aktuelle Zahlen',
+                'members': 'Mitglieder',
+                'upcoming_events': 'Kommende Events',
+                'wiki_pages': 'Wiki-Seiten',
+                'forum_threads': 'Themen',
+                'forum_posts': 'Beiträge',
+                'my_open_tickets': 'Meine offenen Tickets'
+            }
+        }
     },
     'usermenu': {
         'profile': 'Profil',
@@ -477,9 +603,79 @@ export default {
         'adminMedia': 'Mediencenter',
         'adminTickets': 'Tickets',
         'adminTranslations': 'Übersetzungen',
+        'adminDashboard': 'Dashboard',
         'myTickets': 'Meine Tickets'
     },
     'admin': {
+        'dashboard': {
+            'title': 'Admin-Dashboard',
+            'subtitle': 'Was Aufmerksamkeit braucht, wie es der Community geht und ob das System gesund ist',
+            'updated': 'aktualisiert {time}',
+            'manage': 'Verwalten',
+            'settings': 'Einstellungen',
+            'quickLinks': 'Schnellzugriff',
+            'attention': {
+                'title': 'Braucht Aufmerksamkeit',
+                'allClear': 'Nichts wartet auf dich — alle Warteschlangen sind leer.',
+                'pending_wiki': 'Wiki-Seiten zur Freigabe',
+                'pending_event_guests': 'Event-Gäste zur Freigabe',
+                'unassigned_tickets': 'Nicht zugewiesene Tickets',
+                'overdue_tickets': 'Überfällige Tickets',
+                'legacy_claims': 'Offene Anfragen zu alten Konten',
+                'unverified_users': 'Benutzer ohne bestätigte E-Mail',
+                'failed_jobs': 'Fehlgeschlagene Queue-Jobs'
+            },
+            'users': {
+                'title': 'Community',
+                'total': 'Mitglieder',
+                'new_7d': 'Neu (7 Tage)',
+                'new_30d': 'Neu (30 Tage)',
+                'active_24h': 'Angemeldet (24 h)',
+                'active_7d': 'Angemeldet (7 Tage)',
+                'admins': 'Admins',
+                'latest': 'Neueste Registrierungen',
+                'registered': 'registriert {time}',
+                'unverified': 'unbestätigt'
+            },
+            'content': {
+                'title': 'Inhalte',
+                'thisWeek': 'diese Woche',
+                'wiki_pages': 'Wiki-Seiten',
+                'forum_threads': 'Forenthemen',
+                'forum_posts': 'Forenbeiträge',
+                'events_upcoming': 'Kommende Events',
+                'open_tickets': 'Offene Tickets',
+                'albums': 'Galerie-Alben',
+                'media_files': 'Mediendateien',
+                'sandboxes': 'Sandboxes',
+                'messages_7d': 'Nachrichten diese Woche'
+            },
+            'tickets': {
+                'title': 'Nicht zugewiesene Tickets',
+                'empty': 'Jedes offene Ticket hat eine zuständige Person.'
+            },
+            'activity': {
+                'title': 'Letzte Aktivität',
+                'empty': 'Noch keine Aktivität aufgezeichnet.'
+            },
+            'system': {
+                'title': 'System',
+                'on': 'an',
+                'off': 'aus',
+                'environment': 'Umgebung',
+                'debug': 'Debug',
+                'maintenance': 'Wartungsmodus',
+                'php': 'PHP',
+                'laravel': 'Laravel',
+                'cache': 'Cache',
+                'queue': 'Queue',
+                'sandbox': 'Sandbox',
+                'media': 'Medienspeicher',
+                'ircDaemon': 'IRC-Daemon',
+                'disk': 'Freier Speicher',
+                'lastMigration': 'Letzter Datenimport: {name} — {status}, {time}.'
+            }
+        },
         'forums': {
             'title': 'Forenverwaltung',
             'subtitle': 'Erstelle und verwalte Forenkategorien und Unterforen.',

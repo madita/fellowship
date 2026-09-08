@@ -562,6 +562,57 @@ class EventController extends Controller
     }
 
     /**
+     * Upcoming events (starting today or later, or still running), soonest
+     * first — for the dashboard widget and calendar sidebar.
+     *
+     * Query: days (default 30, max 365) limits how far ahead to look,
+     * limit (default 5, max 20) caps the list.
+     */
+    public function upcoming(Request $request): JsonResponse
+    {
+        $days  = max(1, min((int) $request->get('days', 30), 365));
+        $limit = max(1, min((int) $request->get('limit', 5), 20));
+        $today = now()->toDateString();
+        $until = now()->addDays($days)->toDateString();
+
+        $eventTypes = EventType::all()->keyBy('id');
+
+        $query = Event::with('details')
+            ->where(function ($q) use ($today) {
+                $q->whereDate('startDate', '>=', $today)
+                    ->orWhereDate('endDate', '>=', $today);
+            })
+            ->whereDate('startDate', '<=', $until)
+            ->orderBy('startDate')
+            // All-day events first, then by start time.
+            ->orderByRaw('startTime IS NOT NULL')
+            ->orderBy('startTime');
+
+        $total  = (clone $query)->count();
+        $events = $query->limit($limit)->get()->map(function (Event $event) use ($eventTypes) {
+            $type = $event->event_type_id ? $eventTypes->get($event->event_type_id) : null;
+
+            return [
+                'id'        => $event->id,
+                'title'     => $event->title,
+                'slug'      => $event->slug,
+                'startDate' => $event->startDate,
+                'startTime' => $event->startTime,
+                'endDate'   => $event->endDate ?? $event->startDate,
+                'endTime'   => $event->endTime,
+                'allDay'    => $event->startTime === null,
+                'start'     => $event->startDate . ($event->startTime ? 'T' . $event->startTime : ''),
+                'location'  => $this->resolveLocation($event->details),
+                'type'      => $type?->name,
+                'color'     => $type?->color,
+                'url'       => '/events/' . $event->id,
+            ];
+        })->values();
+
+        return response()->json(['data' => ['events' => $events, 'total' => $total]]);
+    }
+
+    /**
      * Normalise the location payload sent under extendedProps.location.
      *
      * The event type's options.location array declares which modes a type

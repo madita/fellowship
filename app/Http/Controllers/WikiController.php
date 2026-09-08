@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
+use App\Models\Revision;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use App\Models\Ticket\Ticket;
@@ -124,6 +125,62 @@ class WikiController extends Controller
         //        $wiki->to = $wiki->per_page*$wiki->current_page;
 
         //        return response()->json($paginator);
+    }
+
+    /**
+     * Recently created or edited wiki pages, newest change first — one entry
+     * per page, drawn from the revision log. Non-admins only see approved
+     * pages. Query: limit (default 5, max 20).
+     */
+    public function recentChanges(Request $request): JsonResponse
+    {
+        $limit   = max(1, min((int) $request->get('limit', 5), 20));
+        $user    = Auth::user();
+        $isAdmin = $user && $user->isAdmin();
+
+        // Latest revision per page. The morph relation stores the class name;
+        // older rows may carry the table name the listener passes.
+        $revisions = Revision::with('executor')
+            ->whereIn('revisionable_type', [(new Page)->getMorphClass(), (new Page)->getTable()])
+            ->whereIn('action', ['created', 'updated'])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->limit($limit * 10)
+            ->get()
+            ->unique('revisionable_id')
+            ->take($limit * 2);
+
+        $pageIds = $revisions->pluck('revisionable_id');
+
+        $wikis = Wiki::where('wikiable_type', Page::class)
+            ->whereIn('wikiable_id', $pageIds)
+            ->whereNull('status')
+            ->when( ! $isAdmin, fn ($q) => $q->approved())
+            ->get()
+            ->keyBy('wikiable_id');
+
+        $pages = Page::whereIn('id', $pageIds)->get()->keyBy('id');
+
+        $changes = $revisions
+            ->filter(fn (Revision $revision) => $wikis->has($revision->revisionable_id) && $pages->has($revision->revisionable_id))
+            ->take($limit)
+            ->map(function (Revision $revision) use ($wikis, $pages) {
+                $page = $pages->get($revision->revisionable_id);
+                $wiki = $wikis->get($revision->revisionable_id);
+
+                return [
+                    'id'     => $revision->id,
+                    'action' => $revision->action,
+                    'title'  => $page->title,
+                    'slug'   => $wiki->slug,
+                    'url'    => '/wiki/' . $wiki->slug,
+                    'author' => $revision->executor?->only(['id', 'username']),
+                    'date'   => $revision->created_at,
+                ];
+            })
+            ->values();
+
+        return response()->json(['data' => $changes]);
     }
 
     public function getPages()

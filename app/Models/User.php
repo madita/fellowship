@@ -72,6 +72,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        // Only the owner reads it, through the dashboard layout endpoint.
+        'dashboard_layout',
     ];
 
     /**
@@ -81,6 +83,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'dashboard_layout'  => 'array',
     ];
 
     /**

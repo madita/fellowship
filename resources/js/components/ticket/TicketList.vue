@@ -38,13 +38,18 @@ const relatedContent = ref(null);
 const relatedContentLoading = ref(false);
 const relatedContentType = ref(null); // 'wiki' | 'page' | null
 
-// Filters
+// Filters — deep-linkable: /account/tickets?status=in_progress&assigned_to=me&priority=urgent
+const queryFilter = (key) => (typeof route.query[key] === 'string' && route.query[key] !== '' ? route.query[key] : null);
 const filters = ref({
-    status: 'open',
-    type: null,
-    assigned_to: null,
-    priority: null,
-    search: '',
+    status: queryFilter('status') || (route.query.status === undefined ? 'open' : null),
+    type: queryFilter('type'),
+    assigned_to: queryFilter('assigned_to'),
+    priority: queryFilter('priority'),
+    search: queryFilter('search') || '',
+    // Dashboard deep links only (no UI control): mine=1, created_by=me, due=overdue|week
+    mine: queryFilter('mine'),
+    created_by: queryFilter('created_by'),
+    due: queryFilter('due'),
 });
 
 const pagination = ref({
