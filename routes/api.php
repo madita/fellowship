@@ -377,6 +377,9 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api.key', 'api.rate']], functi
 
 // Admin Settings Routes
 Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
+    // Admin overview
+    Route::get('/dashboard', 'App\Http\Controllers\Admin\AdminDashboardController@index');
+
     // Settings
     Route::get('/settings', 'App\Http\Controllers\Admin\SettingsController@index');
     Route::post('/settings', 'App\Http\Controllers\Admin\SettingsController@update');

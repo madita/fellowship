@@ -602,9 +602,79 @@ export default {
         'adminMedia': 'Media Center',
         'adminTickets': 'Tickets',
         'adminTranslations': 'Translations',
+        'adminDashboard': 'Dashboard',
         'myTickets': 'My Tickets'
     },
     'admin': {
+        'dashboard': {
+            'title': 'Admin Dashboard',
+            'subtitle': 'What needs attention, how the community is doing and whether the system is healthy',
+            'updated': 'updated {time}',
+            'manage': 'Manage',
+            'settings': 'Settings',
+            'quickLinks': 'Quick links',
+            'attention': {
+                'title': 'Needs attention',
+                'allClear': 'Nothing is waiting for you — all queues are empty.',
+                'pending_wiki': 'Wiki pages awaiting approval',
+                'pending_event_guests': 'Event guests awaiting approval',
+                'unassigned_tickets': 'Unassigned tickets',
+                'overdue_tickets': 'Overdue tickets',
+                'legacy_claims': 'Open legacy account claims',
+                'unverified_users': 'Users with unverified e-mail',
+                'failed_jobs': 'Failed queue jobs'
+            },
+            'users': {
+                'title': 'Community',
+                'total': 'Members',
+                'new_7d': 'New (7 days)',
+                'new_30d': 'New (30 days)',
+                'active_24h': 'Logged in (24 h)',
+                'active_7d': 'Logged in (7 days)',
+                'admins': 'Admins',
+                'latest': 'Latest registrations',
+                'registered': 'registered {time}',
+                'unverified': 'unverified'
+            },
+            'content': {
+                'title': 'Content',
+                'thisWeek': 'this week',
+                'wiki_pages': 'Wiki pages',
+                'forum_threads': 'Forum threads',
+                'forum_posts': 'Forum posts',
+                'events_upcoming': 'Upcoming events',
+                'open_tickets': 'Open tickets',
+                'albums': 'Gallery albums',
+                'media_files': 'Media files',
+                'sandboxes': 'Sandboxes',
+                'messages_7d': 'Messages this week'
+            },
+            'tickets': {
+                'title': 'Unassigned tickets',
+                'empty': 'Every open ticket has an assignee.'
+            },
+            'activity': {
+                'title': 'Recent activity',
+                'empty': 'No activity recorded yet.'
+            },
+            'system': {
+                'title': 'System',
+                'on': 'on',
+                'off': 'off',
+                'environment': 'Environment',
+                'debug': 'Debug',
+                'maintenance': 'Maintenance mode',
+                'php': 'PHP',
+                'laravel': 'Laravel',
+                'cache': 'Cache',
+                'queue': 'Queue',
+                'sandbox': 'Sandbox',
+                'media': 'Media storage',
+                'ircDaemon': 'IRC daemon',
+                'disk': 'Disk free',
+                'lastMigration': 'Last data import: {name} — {status}, {time}.'
+            }
+        },
         'forums': {
             'title': 'Forum Management',
             'subtitle': 'Create and manage forum categories and sub-forums.',
