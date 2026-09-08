@@ -10,6 +10,37 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class CollectionController extends Controller
 {
+    /**
+     * The newest albums with cover thumbnail and image count — a light
+     * listing for the dashboard widget. Query: limit (default 6, max 20).
+     */
+    public function recent(Request $request)
+    {
+        $limit = max(1, min((int) $request->get('limit', 6), 20));
+
+        $albums = Collection::with('media')
+            ->withCount('media')
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get()
+            ->map(function (Collection $collection) {
+                $cover = $collection->media->first(fn ($media) => $media->getCustomProperty('is_cover', false))
+                    ?? $collection->media->first();
+
+                return [
+                    'id'          => $collection->id,
+                    'name'        => $collection->name,
+                    'slug'        => $collection->slug,
+                    'url'         => '/gallery/' . $collection->slug,
+                    'cover'       => $cover ? ($cover->hasGeneratedConversion('thumb') ? $cover->getUrl('thumb') : $cover->getUrl()) : null,
+                    'media_count' => $collection->media_count,
+                    'created_at'  => $collection->created_at,
+                ];
+            });
+
+        return response()->json(['data' => $albums, 'total' => Collection::count()]);
+    }
+
     public function index()
     {
         // Get all collections with their related media

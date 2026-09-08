@@ -53,6 +53,24 @@ export const WIDGET_TYPES = {
         size: 'medium',
         action: { icon: 'mdi-forum-outline', to: '/forum' },
     },
+    sandbox: {
+        component: 'SandboxWidget',
+        feature: null,
+        // The sandbox has its own on/off setting instead of a feature toggle.
+        enabled: settings => settings.sandboxEnabled,
+        icon: 'mdi-file-document-edit',
+        color: 'indigo',
+        size: 'medium',
+        action: { icon: 'mdi-file-document-multiple-outline', to: '/sandbox' },
+    },
+    gallery: {
+        component: 'GalleryWidget',
+        feature: 'gallery',
+        icon: 'mdi-image-multiple',
+        color: 'deep-orange',
+        size: 'medium',
+        action: { icon: 'mdi-image-multiple-outline', to: '/gallery' },
+    },
     stats: {
         component: 'StatsWidget',
         feature: null,
@@ -62,6 +80,11 @@ export const WIDGET_TYPES = {
         action: null,
     },
 };
+
+/** Whether a widget type's feature is switched on. */
+export const isWidgetEnabled = (definition, settings) =>
+    (!definition.feature || settings.isFeatureEnabled(definition.feature))
+    && (!definition.enabled || definition.enabled(settings));
 
 /** Widgets a fresh dashboard starts with. */
 export const DEFAULT_LAYOUT = ['events', 'notifications', 'wiki', 'conversations'];

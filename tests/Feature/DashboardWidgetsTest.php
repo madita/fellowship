@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Collection;
 use App\Models\Event\Event;
 use App\Models\Event\EventType;
 use App\Models\Forum\ForumThread;
@@ -190,5 +191,35 @@ class DashboardWidgetsTest extends TestCase
     public function test_stats_require_authentication(): void
     {
         $this->getJson('/api/account/dashboard/stats')->assertStatus(401);
+    }
+
+    public function test_recent_albums_are_newest_first_with_cover_and_counts(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        foreach (['First album', 'Second album', 'Third album'] as $i => $name) {
+            $collection       = new Collection(['user_id' => $this->admin->id]);
+            $collection->name = $name;
+            $collection->save();
+            $collection->created_at = now()->subDays(3 - $i);
+            $collection->save();
+        }
+        $second = Collection::whereTranslation('name', 'Second album')->first();
+        $second->addMedia(\Illuminate\Http\UploadedFile::fake()->image('cover.jpg', 40, 30))
+            ->withCustomProperties(['is_cover' => true])
+            ->toMediaCollection('images');
+        $second->addMedia(\Illuminate\Http\UploadedFile::fake()->image('other.jpg', 40, 30))->toMediaCollection('images');
+
+        $response = $this->getJson('/api/collections/recent?limit=2')
+            ->assertStatus(200)
+            ->json();
+
+        $this->assertSame(3, $response['total']);
+        $this->assertSame(['Third album', 'Second album'], array_column($response['data'], 'name'));
+        $this->assertNull($response['data'][0]['cover']);
+        $this->assertSame(0, $response['data'][0]['media_count']);
+        $this->assertSame(2, $response['data'][1]['media_count']);
+        $this->assertStringContainsString('cover', $response['data'][1]['cover']);
+        $this->assertSame('/gallery/' . $second->slug, $response['data'][1]['url']);
     }
 }

@@ -206,6 +206,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 });
 
 // Collections (Photo Gallery)
+Route::get('/collections/recent', [CollectionController::class, 'recent']); // Newest albums (dashboard widget)
 Route::get('/collections', [CollectionController::class, 'index']); // Fetch all collections
 Route::get('/collections/{collection}', [CollectionController::class, 'show']); // Fetch media for a specific collection
 Route::post('/collections', [CollectionController::class, 'store']); // Create a new collection

@@ -301,6 +301,26 @@ export default {
                 'replies': '{count} Antworten',
                 'empty': 'Noch keine Forenthemen'
             },
+            'sandbox': {
+                'title': 'Sandboxes',
+                'description': 'Dokumente, die dir gehören oder an denen du mitarbeitest',
+                'action': 'Alle Sandboxes',
+                'subtitle': '{count} verfügbar',
+                'owner': 'Deine',
+                'shared': 'Geteilt von {name}',
+                'public': 'Öffentlich · {name}',
+                'members': 'Mitglieder · {name}',
+                'collaborators': '{count} Mitarbeitende',
+                'empty': 'Noch keine Sandboxes'
+            },
+            'gallery': {
+                'title': 'Galerie',
+                'description': 'Die neuesten Fotoalben',
+                'action': 'Galerie öffnen',
+                'subtitle': '{count} Alben',
+                'images': '{count} Bilder',
+                'empty': 'Noch keine Alben'
+            },
             'stats': {
                 'title': 'Community',
                 'description': 'Aktuelle Community-Zahlen',

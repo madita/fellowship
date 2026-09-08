@@ -248,7 +248,7 @@
 <script>
 import { useUserStore } from '@/store/userStore.js';
 import { useSettingsStore } from '@/store/settingStore.js';
-import { WIDGET_TYPES, DEFAULT_LAYOUT, LAYOUT_STORAGE_KEY } from '@/configs/dashboardWidgets.js';
+import { WIDGET_TYPES, DEFAULT_LAYOUT, LAYOUT_STORAGE_KEY, isWidgetEnabled } from '@/configs/dashboardWidgets.js';
 import EventsWidget from '@/components/dashboard/EventsWidget.vue';
 import WikiWidget from '@/components/dashboard/WikiWidget.vue';
 import NotificationsWidget from '@/components/dashboard/NotificationsWidget.vue';
@@ -256,6 +256,8 @@ import StatsWidget from '@/components/dashboard/StatsWidget.vue';
 import TicketsWidget from '@/components/dashboard/TicketsWidget.vue';
 import ForumWidget from '@/components/dashboard/ForumWidget.vue';
 import ConversationsWidget from '@/components/dashboard/ConversationsWidget.vue';
+import SandboxWidget from '@/components/dashboard/SandboxWidget.vue';
+import GalleryWidget from '@/components/dashboard/GalleryWidget.vue';
 
 /**
  * Personal dashboard: a drag & drop grid of widgets, each showing live
@@ -272,7 +274,9 @@ export default {
         StatsWidget,
         TicketsWidget,
         ForumWidget,
-        ConversationsWidget
+        ConversationsWidget,
+        SandboxWidget,
+        GalleryWidget
     },
     data() {
         return {
@@ -300,7 +304,7 @@ export default {
         availableWidgets() {
             const settings = useSettingsStore();
             return Object.entries(WIDGET_TYPES)
-                .filter(([, def]) => !def.feature || settings.isFeatureEnabled(def.feature))
+                .filter(([, def]) => isWidgetEnabled(def, settings))
                 .map(([type, def]) => ({
                     type,
                     icon: def.icon,

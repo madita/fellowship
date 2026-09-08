@@ -301,6 +301,26 @@ export default {
                 'replies': '{count} replies',
                 'empty': 'No forum threads yet'
             },
+            'sandbox': {
+                'title': 'Sandboxes',
+                'description': 'Documents you own or collaborate on',
+                'action': 'All Sandboxes',
+                'subtitle': '{count} available',
+                'owner': 'Yours',
+                'shared': 'Shared by {name}',
+                'public': 'Public · {name}',
+                'members': 'Members · {name}',
+                'collaborators': '{count} collaborators',
+                'empty': 'No sandboxes yet'
+            },
+            'gallery': {
+                'title': 'Gallery',
+                'description': 'The newest photo albums',
+                'action': 'Open Gallery',
+                'subtitle': '{count} albums',
+                'images': '{count} images',
+                'empty': 'No albums yet'
+            },
             'stats': {
                 'title': 'Community',
                 'description': 'Live community numbers',
