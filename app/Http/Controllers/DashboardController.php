@@ -25,6 +25,48 @@ class DashboardController extends Controller
     }
 
     /**
+     * The user's saved dashboard layout (null until first customised).
+     */
+    public function layout(Request $request): JsonResponse
+    {
+        return response()->json(['data' => $request->user()->dashboard_layout]);
+    }
+
+    /**
+     * Replace the user's dashboard layout: the placed widgets with their
+     * type, optional custom title and colour, size, grid position and
+     * per-widget settings. An empty list is a valid (empty) dashboard.
+     */
+    public function saveLayout(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'layout'              => 'present|array|max:30',
+            'layout.*.id'         => 'required|string|max:64',
+            'layout.*.type'       => 'required|string|alpha_num|max:32',
+            'layout.*.title'      => 'nullable|string|max:100',
+            'layout.*.color'      => 'nullable|string|max:32',
+            'layout.*.size'       => 'required|string|in:small,medium,large,xl',
+            'layout.*.position'   => 'required|array',
+            'layout.*.position.x' => 'required|integer|min:0|max:20',
+            'layout.*.position.y' => 'required|integer|min:0|max:50',
+            'layout.*.config'     => 'nullable|array',
+        ]);
+
+        // Widget settings are flat key/value pairs (limit, scope, sort …).
+        $layout = array_map(function (array $widget) {
+            $widget['config'] = array_filter($widget['config'] ?? [], fn ($value) => is_scalar($value) || $value === null);
+
+            return $widget;
+        }, $data['layout']);
+
+        $user                   = $request->user();
+        $user->dashboard_layout = array_values($layout);
+        $user->save();
+
+        return response()->json(['data' => $user->dashboard_layout]);
+    }
+
+    /**
      * Ticket counters for the ticket overview widget. Non-admins see their
      * own tickets (created by or assigned to them); admins see everything,
      * plus the unassigned queue.

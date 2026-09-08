@@ -253,6 +253,7 @@ export default {
         'emptyTitle': 'Your dashboard is empty',
         'emptyHint': 'Add widgets to see upcoming events, notifications, wiki changes and more at a glance.',
         'loadFailed': 'Could not load this widget',
+        'saveFailed': 'Your dashboard layout could not be saved: {error}',
         'widgets': {
             'events': {
                 'title': 'Upcoming Events',

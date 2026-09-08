@@ -193,6 +193,57 @@ class DashboardWidgetsTest extends TestCase
         $this->getJson('/api/account/dashboard/stats')->assertStatus(401);
     }
 
+    public function test_dashboard_layout_is_saved_per_user(): void
+    {
+        $this->getJson('/api/account/dashboard/layout')->assertStatus(401);
+
+        // Nothing saved yet → null, so the frontend applies its defaults.
+        $this->actingAs($this->member, 'sanctum')
+            ->getJson('/api/account/dashboard/layout')
+            ->assertStatus(200)
+            ->assertJson(['data' => null]);
+
+        $layout = [[
+            'id'       => 'events-1',
+            'type'     => 'events',
+            'title'    => 'What is on',
+            'color'    => 'primary',
+            'size'     => 'large',
+            'position' => ['x' => 1, 'y' => 0],
+            'config'   => ['limit' => 3, 'nested' => ['not' => 'allowed']],
+        ], [
+            'id'       => 'tickets-1',
+            'type'     => 'tickets',
+            'title'    => null,
+            'color'    => 'purple',
+            'size'     => 'medium',
+            'position' => ['x' => 0, 'y' => 0],
+            'config'   => ['limit' => 5, 'scope' => 'assigned', 'sort' => 'due_date'],
+        ]];
+
+        $saved = $this->putJson('/api/account/dashboard/layout', ['layout' => $layout])
+            ->assertStatus(200)
+            ->json('data');
+        $this->assertCount(2, $saved);
+        $this->assertSame(['limit' => 3], $saved[0]['config']);
+        $this->assertSame('assigned', $saved[1]['config']['scope']);
+
+        // It survives a fresh session and is not visible in the user's public JSON.
+        $this->assertSame('What is on', $this->member->fresh()->dashboard_layout[0]['title']);
+        $this->assertArrayNotHasKey('dashboard_layout', $this->member->fresh()->toArray());
+        $this->getJson('/api/account/dashboard/layout')->assertJsonPath('data.1.config.sort', 'due_date');
+
+        // Other users have their own.
+        $this->actingAs($this->admin, 'sanctum')->getJson('/api/account/dashboard/layout')->assertJson(['data' => null]);
+
+        // Invalid entries are rejected, an empty dashboard is fine.
+        $this->actingAs($this->member, 'sanctum');
+        $this->putJson('/api/account/dashboard/layout', ['layout' => [['id' => 'x', 'type' => 'events', 'size' => 'huge', 'position' => ['x' => 0, 'y' => 0]]]])
+            ->assertStatus(422);
+        $this->putJson('/api/account/dashboard/layout', ['layout' => []])->assertStatus(200)->assertJson(['data' => []]);
+        $this->assertSame([], $this->member->fresh()->dashboard_layout);
+    }
+
     private function createTicket(User $creator, array $attributes = []): Ticket
     {
         $type = TicketType::firstOrCreate(['slug' => 'dashboard-test'], ['name' => 'Dashboard test', 'is_active' => true]);

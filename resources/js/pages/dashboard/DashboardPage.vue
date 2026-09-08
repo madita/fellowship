@@ -34,8 +34,16 @@
             </v-row>
         </div>
 
+        <v-alert v-if="saveError" type="warning" variant="tonal" density="compact" class="mb-4" closable @click:close="saveError = null">
+            {{ $t('dashboard.saveFailed', { error: saveError }) }}
+        </v-alert>
+
+        <div v-if="loadingLayout" class="text-center py-12">
+            <v-progress-circular size="40" indeterminate color="primary" />
+        </div>
+
         <!-- Empty dashboard -->
-        <v-card v-if="activeWidgets.length === 0" variant="tonal" class="pa-8 text-center mb-6">
+        <v-card v-else-if="activeWidgets.length === 0" variant="tonal" class="pa-8 text-center mb-6">
             <v-icon size="48" class="mb-3">mdi-view-dashboard-outline</v-icon>
             <div class="text-h6 mb-1">{{ $t('dashboard.emptyTitle') }}</div>
             <div class="text-body-2 text-medium-emphasis mb-4">{{ $t('dashboard.emptyHint') }}</div>
@@ -256,6 +264,7 @@
 </template>
 
 <script>
+import axios from 'axios';
 import { useUserStore } from '@/store/userStore.js';
 import { useSettingsStore } from '@/store/settingStore.js';
 import { WIDGET_TYPES, DEFAULT_LAYOUT, LAYOUT_STORAGE_KEY, isWidgetEnabled } from '@/configs/dashboardWidgets.js';
@@ -298,6 +307,9 @@ export default {
             draggingWidgetId: null,
             dragTargetId: null,
             activeWidgets: [],
+            loadingLayout: true,
+            saveTimer: null,
+            saveError: null,
         }
     },
     computed: {
@@ -578,8 +590,8 @@ export default {
             }
         },
 
-        saveLayout() {
-            const layout = this.activeWidgets.map(w => ({
+        serializeLayout() {
+            return this.activeWidgets.map(w => ({
                 id: w.id,
                 type: w.type,
                 title: w.title,
@@ -588,34 +600,61 @@ export default {
                 size: w.size,
                 config: w.config
             }));
-
-            try {
-                localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
-            } catch (e) {
-                console.warn('Could not save dashboard layout', e);
-            }
         },
 
-        // Restore the saved layout; widgets of unknown (retired) or disabled
-        // types are dropped. Without a saved layout the defaults are used.
-        loadLayout() {
+        // The layout is stored on the user's account so it follows them
+        // across browsers and logins. Saves are coalesced (drag & drop
+        // fires many) and the last one wins.
+        saveLayout() {
+            clearTimeout(this.saveTimer);
+            this.saveTimer = setTimeout(async () => {
+                try {
+                    await axios.put('/api/account/dashboard/layout', { layout: this.serializeLayout() });
+                    this.saveError = null;
+                } catch (e) {
+                    this.saveError = e.response?.data?.message || e.message;
+                }
+            }, 400);
+        },
+
+        applyLayout(layout) {
+            const enabled = new Set(this.availableWidgets.map(w => w.type));
+            layout
+                .filter(saved => saved?.type && enabled.has(saved.type))
+                .forEach(saved => this.activeWidgets.push(this.createWidget(saved.type, saved)));
+        },
+
+        // Restore the account's layout; widgets of unknown (retired) or
+        // disabled types are dropped. A layout left in this browser by the
+        // previous localStorage-only version is adopted once, then the
+        // defaults are used.
+        async loadLayout() {
+            this.loadingLayout = true;
             let layout = null;
             try {
-                layout = JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY));
+                const { data } = await axios.get('/api/account/dashboard/layout');
+                layout = data.data;
             } catch (e) {
-                layout = null;
+                this.saveError = e.response?.data?.message || e.message;
             }
 
-            if (Array.isArray(layout) && layout.length) {
-                const enabled = new Set(this.availableWidgets.map(w => w.type));
-                layout
-                    .filter(saved => saved?.type && enabled.has(saved.type))
-                    .forEach(saved => this.activeWidgets.push(this.createWidget(saved.type, saved)));
+            if (!Array.isArray(layout)) {
+                try {
+                    layout = JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY));
+                    localStorage.removeItem(LAYOUT_STORAGE_KEY);
+                } catch (e) {
+                    layout = null;
+                }
+                if (Array.isArray(layout)) {
+                    this.applyLayout(layout);
+                    this.saveLayout();
+                } else {
+                    this.resetLayout();
+                }
+            } else {
+                this.applyLayout(layout);
             }
-
-            if (this.activeWidgets.length === 0 && !Array.isArray(layout)) {
-                this.resetLayout();
-            }
+            this.loadingLayout = false;
         }
     },
 

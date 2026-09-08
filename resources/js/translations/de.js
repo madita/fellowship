@@ -253,6 +253,7 @@ export default {
         'emptyTitle': 'Dein Dashboard ist leer',
         'emptyHint': 'Füge Widgets hinzu, um kommende Events, Benachrichtigungen, Wiki-Änderungen und mehr auf einen Blick zu sehen.',
         'loadFailed': 'Widget konnte nicht geladen werden',
+        'saveFailed': 'Dein Dashboard-Layout konnte nicht gespeichert werden: {error}',
         'widgets': {
             'events': {
                 'title': 'Kommende Events',
