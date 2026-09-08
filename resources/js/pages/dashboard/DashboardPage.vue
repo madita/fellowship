@@ -215,6 +215,16 @@
                             class="mb-4"
                         ></v-select>
 
+                        <v-select
+                            v-for="setting in widgetSettings(selectedWidget)"
+                            :key="setting.key"
+                            v-model="selectedWidget.config[setting.key]"
+                            :items="setting.items"
+                            :label="$t(`dashboard.widgets.${selectedWidget.type}.settings.${setting.key}.label`)"
+                            variant="outlined"
+                            class="mb-4"
+                        ></v-select>
+
                         <v-text-field
                             v-if="selectedWidget.type !== 'stats'"
                             v-model.number="selectedWidget.config.limit"
@@ -258,6 +268,7 @@ import ForumWidget from '@/components/dashboard/ForumWidget.vue';
 import ConversationsWidget from '@/components/dashboard/ConversationsWidget.vue';
 import SandboxWidget from '@/components/dashboard/SandboxWidget.vue';
 import GalleryWidget from '@/components/dashboard/GalleryWidget.vue';
+import TicketOverviewWidget from '@/components/dashboard/TicketOverviewWidget.vue';
 
 /**
  * Personal dashboard: a drag & drop grid of widgets, each showing live
@@ -276,7 +287,8 @@ export default {
         ForumWidget,
         ConversationsWidget,
         SandboxWidget,
-        GalleryWidget
+        GalleryWidget,
+        TicketOverviewWidget
     },
     data() {
         return {
@@ -324,6 +336,8 @@ export default {
 
         createWidget(type, saved = {}) {
             const def = WIDGET_TYPES[type];
+            // Widget-specific options start at their declared defaults.
+            const defaults = Object.fromEntries((def.settings || []).map(s => [s.key, s.default]));
             return {
                 id: saved.id || `${type}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                 type,
@@ -332,9 +346,24 @@ export default {
                 color: saved.color || def.color,
                 size: saved.size || def.size,
                 position: saved.position || this.findAvailablePosition(),
-                config: { limit: 5, ...(saved.config || {}) },
+                config: { limit: 5, ...defaults, ...(saved.config || {}) },
                 refreshKey: 0,
             };
+        },
+
+        // Options of a widget type for the settings dialog, without the
+        // choices reserved for admins.
+        widgetSettings(widget) {
+            const isAdmin = useUserStore().hasRole('admin');
+            return (WIDGET_TYPES[widget.type].settings || []).map(setting => ({
+                ...setting,
+                items: setting.items
+                    .filter(item => !item.adminOnly || isAdmin)
+                    .map(item => ({
+                        value: item.value,
+                        title: this.$t(`dashboard.widgets.${widget.type}.settings.${setting.key}.items.${item.value}`),
+                    })),
+            }));
         },
 
         getWidgetStyle(widget) {

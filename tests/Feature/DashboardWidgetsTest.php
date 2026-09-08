@@ -193,6 +193,85 @@ class DashboardWidgetsTest extends TestCase
         $this->getJson('/api/account/dashboard/stats')->assertStatus(401);
     }
 
+    private function createTicket(User $creator, array $attributes = []): Ticket
+    {
+        $type = TicketType::firstOrCreate(['slug' => 'dashboard-test'], ['name' => 'Dashboard test', 'is_active' => true]);
+
+        return Ticket::create(array_merge([
+            'ticket_type_id'     => $type->id,
+            'created_by_user_id' => $creator->id,
+            'title'              => 'Ticket ' . uniqid(),
+            'status'             => 'open',
+            'priority'           => 'normal',
+        ], $attributes));
+    }
+
+    public function test_ticket_overview_counts_queues_for_members_and_admins(): void
+    {
+        $other = User::factory()->create();
+
+        $this->createTicket($this->member);                                                              // mine, open
+        $this->createTicket($other, ['assigned_to_user_id' => $this->member->id, 'due_date' => now()->subDay(), 'priority' => 'urgent']); // assigned to me, overdue
+        $this->createTicket($other, ['assigned_to_user_id' => $this->member->id, 'due_date' => now()->addDays(3), 'status' => 'in_progress']); // assigned, due soon
+        $this->createTicket($this->member, ['status' => 'resolved']);                                    // resolved recently
+        $this->createTicket($other, ['status' => 'pending']);                                            // not mine, unassigned
+        $this->createTicket($other, ['assigned_to_user_id' => $this->admin->id]);                        // not mine
+
+        $member = $this->actingAs($this->member, 'sanctum')
+            ->getJson('/api/account/dashboard/tickets')
+            ->assertStatus(200)
+            ->json('data');
+
+        $this->assertFalse($member['is_admin']);
+        $this->assertSame(3, $member['open']);
+        $this->assertSame(2, $member['assigned_to_me']);
+        $this->assertSame(1, $member['created_by_me']);
+        $this->assertNull($member['unassigned']);
+        $this->assertSame(1, $member['overdue']);
+        $this->assertSame(1, $member['due_this_week']);
+        $this->assertSame(1, $member['resolved_7_days']);
+        $this->assertSame(['open' => 2, 'in_progress' => 1, 'pending' => 0], $member['by_status']);
+        $this->assertSame(1, $member['by_priority']['urgent']);
+
+        $admin = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/account/dashboard/tickets')
+            ->json('data');
+
+        $this->assertTrue($admin['is_admin']);
+        $this->assertSame(5, $admin['open']);
+        $this->assertSame(1, $admin['assigned_to_me']);
+        $this->assertSame(0, $admin['created_by_me']);
+        $this->assertSame(2, $admin['unassigned']);
+        $this->assertSame(['open' => 3, 'in_progress' => 1, 'pending' => 1], $admin['by_status']);
+    }
+
+    public function test_members_see_tickets_assigned_to_them_and_can_filter_queues(): void
+    {
+        $other    = User::factory()->create();
+        $assigned = $this->createTicket($other, ['assigned_to_user_id' => $this->member->id, 'title' => 'Assigned to member']);
+        $created  = $this->createTicket($this->member, ['title' => 'Created by member', 'due_date' => now()->subDay()]);
+        $this->createTicket($other, ['title' => 'Someone else']);
+
+        $this->actingAs($this->member, 'sanctum');
+
+        $titles = fn (array $params) => array_column($this->getJson('/api/tickets?' . http_build_query($params))->assertStatus(200)->json('data'), 'title');
+
+        $this->assertEqualsCanonicalizing(['Assigned to member', 'Created by member'], $titles(['status' => 'open']));
+        $this->assertSame(['Assigned to member'], $titles(['status' => 'open', 'assigned_to' => 'me']));
+        $this->assertSame(['Created by member'], $titles(['status' => 'open', 'created_by' => 'me']));
+        $this->assertSame(['Created by member'], $titles(['status' => 'open', 'due' => 'overdue']));
+        $this->assertSame([], $titles(['status' => 'open', 'due' => 'week']));
+
+        $this->getJson('/api/tickets/' . $assigned->id)->assertStatus(200);
+        $this->getJson('/api/tickets/' . $created->id)->assertStatus(200);
+
+        // Admins can narrow to their own set with mine=1.
+        $this->createTicket($other, ['assigned_to_user_id' => $this->admin->id, 'title' => 'Admin queue']);
+        $this->actingAs($this->admin, 'sanctum');
+        $this->assertSame(['Admin queue'], $titles(['status' => 'open', 'mine' => 1]));
+        $this->assertCount(4, $titles(['status' => 'open']));
+    }
+
     public function test_recent_albums_are_newest_first_with_cover_and_counts(): void
     {
         \Illuminate\Support\Facades\Storage::fake('public');

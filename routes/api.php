@@ -106,6 +106,7 @@ Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 
     Route::get('/notifications', 'App\Http\Controllers\NotificationController@index')->name('notification.index');
     // Dashboard widgets
     Route::get('/dashboard/stats', 'App\Http\Controllers\DashboardController@stats');
+    Route::get('/dashboard/tickets', 'App\Http\Controllers\DashboardController@tickets');
     Route::get('/notification', 'App\Http\Controllers\NotificationController@notification')->name('notification.unread');
     Route::delete('/notification/delete/{id}', 'App\Http\Controllers\NotificationController@notificationdelete');
     Route::get('/notification/allasread', 'App\Http\Controllers\NotificationController@notificationread');

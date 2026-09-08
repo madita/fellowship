@@ -44,6 +44,33 @@ export const WIDGET_TYPES = {
         color: 'purple',
         size: 'medium',
         action: { icon: 'mdi-ticket-outline', to: '/account/tickets' },
+        // Per-widget options shown in the settings dialog; labels come from
+        // dashboard.widgets.tickets.settings.<key>.{label,items.<value>}.
+        settings: [
+            {
+                key: 'scope',
+                default: 'mine',
+                items: [
+                    { value: 'mine' },
+                    { value: 'assigned' },
+                    { value: 'unassigned', adminOnly: true },
+                    { value: 'all', adminOnly: true },
+                ],
+            },
+            {
+                key: 'sort',
+                default: 'updated_at',
+                items: [{ value: 'updated_at' }, { value: 'due_date' }, { value: 'created_at' }, { value: 'priority' }],
+            },
+        ],
+    },
+    ticketOverview: {
+        component: 'TicketOverviewWidget',
+        feature: 'tickets',
+        icon: 'mdi-ticket-account',
+        color: 'deep-purple',
+        size: 'medium',
+        action: { icon: 'mdi-ticket-outline', to: '/account/tickets' },
     },
     forum: {
         component: 'ForumWidget',

@@ -287,11 +287,53 @@ export default {
                 'action': 'View All Conversations'
             },
             'tickets': {
-                'title': 'My Tickets',
-                'description': 'Your open tickets and requests',
+                'title': 'Ticket Queue',
+                'description': 'A list of open tickets: yours, assigned to you, unassigned or all',
+                'action': 'View Tickets',
+                'subtitle': {
+                    'mine': '{count} of yours open',
+                    'assigned': '{count} assigned to you',
+                    'unassigned': '{count} unassigned',
+                    'all': '{count} open'
+                },
+                'empty': {
+                    'mine': 'You have no open tickets',
+                    'assigned': 'Nothing assigned to you',
+                    'unassigned': 'No unassigned tickets',
+                    'all': 'No open tickets'
+                },
+                'settings': {
+                    'scope': {
+                        'label': 'Queue',
+                        'items': {
+                            'mine': 'My tickets (created by or assigned to me)',
+                            'assigned': 'Assigned to me',
+                            'unassigned': 'Unassigned',
+                            'all': 'All open tickets'
+                        }
+                    },
+                    'sort': {
+                        'label': 'Order',
+                        'items': {
+                            'updated_at': 'Recently updated',
+                            'due_date': 'Due date',
+                            'created_at': 'Newest',
+                            'priority': 'Priority'
+                        }
+                    }
+                }
+            },
+            'ticketOverview': {
+                'title': 'Ticket Overview',
+                'description': 'How many tickets are assigned to you, unassigned, overdue or due soon',
                 'action': 'View Tickets',
                 'subtitle': '{count} open',
-                'empty': 'No open tickets'
+                'assigned_to_me': 'Assigned to me',
+                'created_by_me': 'Created by me',
+                'unassigned': 'Unassigned',
+                'overdue': 'Overdue',
+                'due_this_week': 'Due this week',
+                'resolved7Days': '{count} resolved in 7 days'
             },
             'forum': {
                 'title': 'Forum',

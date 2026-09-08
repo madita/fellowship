@@ -27,9 +27,13 @@ class TicketController extends Controller
 
         $query = Ticket::with(['ticketType', 'creator', 'assignee', 'ticketable']);
 
-        // Non-admins can only see their own tickets
-        if ( ! $user->isAdmin()) {
-            $query->where('created_by_user_id', $user->id);
+        // Non-admins can only see their own tickets: created by or assigned
+        // to them. Admins can narrow to the same set with ?mine=1.
+        if ( ! $user->isAdmin() || $request->boolean('mine')) {
+            $query->where(function ($q) use ($user) {
+                $q->where('created_by_user_id', $user->id)
+                    ->orWhere('assigned_to_user_id', $user->id);
+            });
         }
 
         // Filter by status
@@ -60,6 +64,18 @@ class TicketController extends Controller
         // Filter by priority
         if ($request->has('priority')) {
             $query->where('priority', $request->priority);
+        }
+
+        // Filter by creator (dashboard deep links)
+        if ($request->created_by === 'me') {
+            $query->where('created_by_user_id', $user->id);
+        }
+
+        // Filter by due date: overdue, or due within the next 7 days
+        if ($request->due === 'overdue') {
+            $query->where('due_date', '<', now());
+        } elseif ($request->due === 'week') {
+            $query->whereBetween('due_date', [now(), now()->addDays(7)]);
         }
 
         // Search by title or description
@@ -103,8 +119,8 @@ class TicketController extends Controller
         $user = Auth::user();
 
         if ( ! $user || ! $user->isAdmin()) {
-            // Users can only view their own tickets
-            if ( ! $user || $ticket->created_by_user_id !== $user->id) {
+            // Users can only view their own tickets (created by or assigned to them)
+            if ( ! $user || ($ticket->created_by_user_id !== $user->id && $ticket->assigned_to_user_id !== $user->id)) {
                 abort(403, 'You do not have permission to view this ticket.');
             }
         }

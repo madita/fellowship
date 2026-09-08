@@ -287,11 +287,53 @@ export default {
                 'action': 'Alle Unterhaltungen anzeigen'
             },
             'tickets': {
-                'title': 'Meine Tickets',
-                'description': 'Deine offenen Tickets und Anfragen',
+                'title': 'Ticket-Warteschlange',
+                'description': 'Eine Liste offener Tickets: deine, dir zugewiesene, nicht zugewiesene oder alle',
+                'action': 'Tickets anzeigen',
+                'subtitle': {
+                    'mine': '{count} von deinen offen',
+                    'assigned': '{count} dir zugewiesen',
+                    'unassigned': '{count} nicht zugewiesen',
+                    'all': '{count} offen'
+                },
+                'empty': {
+                    'mine': 'Du hast keine offenen Tickets',
+                    'assigned': 'Dir ist nichts zugewiesen',
+                    'unassigned': 'Keine nicht zugewiesenen Tickets',
+                    'all': 'Keine offenen Tickets'
+                },
+                'settings': {
+                    'scope': {
+                        'label': 'Warteschlange',
+                        'items': {
+                            'mine': 'Meine Tickets (von mir erstellt oder mir zugewiesen)',
+                            'assigned': 'Mir zugewiesen',
+                            'unassigned': 'Nicht zugewiesen',
+                            'all': 'Alle offenen Tickets'
+                        }
+                    },
+                    'sort': {
+                        'label': 'Reihenfolge',
+                        'items': {
+                            'updated_at': 'Zuletzt aktualisiert',
+                            'due_date': 'Fälligkeitsdatum',
+                            'created_at': 'Neueste',
+                            'priority': 'Priorität'
+                        }
+                    }
+                }
+            },
+            'ticketOverview': {
+                'title': 'Ticket-Übersicht',
+                'description': 'Wie viele Tickets dir zugewiesen, nicht zugewiesen, überfällig oder bald fällig sind',
                 'action': 'Tickets anzeigen',
                 'subtitle': '{count} offen',
-                'empty': 'Keine offenen Tickets'
+                'assigned_to_me': 'Mir zugewiesen',
+                'created_by_me': 'Von mir erstellt',
+                'unassigned': 'Nicht zugewiesen',
+                'overdue': 'Überfällig',
+                'due_this_week': 'Diese Woche fällig',
+                'resolved7Days': '{count} in 7 Tagen gelöst'
             },
             'forum': {
                 'title': 'Forum',
