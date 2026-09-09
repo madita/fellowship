@@ -77,8 +77,15 @@
                 </v-list-item-title>
             </v-list-item>
 
+            <!-- Load failure: the same inline state the other widgets show -->
+            <v-list-item v-else-if="error">
+                <v-alert type="error" variant="tonal" density="compact" class="text-caption w-100">
+                    {{ error }}
+                </v-alert>
+            </v-list-item>
+
             <!-- Empty state -->
-            <v-list-item v-if="!loading && recentConversations.length === 0">
+            <v-list-item v-else-if="!loading && recentConversations.length === 0">
                 <v-list-item-title class="text-center text-medium-emphasis">
                     <v-icon size="32" color="grey-lighten-2" class="mb-2">mdi-message-outline</v-icon>
                     <div class="text-caption">No conversations yet</div>
@@ -111,6 +118,7 @@ const props = defineProps({
 const conversationsStore = useConversationsStore()
 const userStore = useUserStore()
 const loading = ref(false)
+const error = ref(null)
 
 const conversations = computed(() => conversationsStore.allConversations || [])
 
@@ -172,10 +180,12 @@ function openConversation(conversation) {
 
 onMounted(async () => {
     loading.value = true
+    error.value = null
     try {
         await conversationsStore.fetchConversations()
-    } catch (error) {
-        console.error('Failed to load conversations:', error)
+    } catch (e) {
+        console.error('Failed to load conversations:', e)
+        error.value = e.response?.data?.message || e.message
     } finally {
         loading.value = false
     }

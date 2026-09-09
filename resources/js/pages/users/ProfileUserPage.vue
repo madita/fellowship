@@ -171,7 +171,7 @@
                                             <v-list-item-title>{{ $t('userProfile.viewActivity') }}</v-list-item-title>
                                         </v-list-item>
                                         <v-divider />
-                                        <v-list-item @click="confirmResetPassword" class="text-warning">
+                                        <v-list-item @click="confirmResetPassword" :disabled="confirming" class="text-warning">
                                             <template #prepend>
                                                 <v-icon color="warning">mdi-lock-reset</v-icon>
                                             </template>
@@ -469,6 +469,7 @@
                             variant="outlined"
                             prepend-icon="mdi-account-minus"
                             class="mb-3"
+                            :loading="confirming"
                             @click="confirmRemoveAdmin"
                         >
                             {{ $t('userProfile.removeAdminPrivileges') }}
@@ -486,31 +487,6 @@
                 <v-card-actions>
                     <v-spacer />
                     <v-btn variant="text" @click="showAdminSettings = false">{{ $t('common.close') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <!-- Confirmation Dialog -->
-        <v-dialog v-model="showConfirmDialog" max-width="500">
-            <v-card>
-                <v-card-title class="d-flex align-center">
-                    <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
-                    {{ $t('userProfile.confirmAction') }}
-                </v-card-title>
-                <v-card-text>
-                    {{ confirmMessage }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" @click="showConfirmDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn
-                        color="primary"
-                        variant="elevated"
-                        @click="confirmAction"
-                        :loading="confirming"
-                    >
-                        {{ $t('common.confirm') }}
-                    </v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -549,6 +525,7 @@ import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
 import { useAuthStore } from '@/store/authStore.js'
 import { useUserStore } from '@/store/userStore.js'
+import { useDialog } from '@/composables/useDialog.js'
 import { formatDate, formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import CopyLabel from '../../components/common/CopyLabel.vue'
 import AccountTab from './EditUser/AccountTab.vue'
@@ -575,11 +552,8 @@ export default {
         const saving = ref(false)
         const confirming = ref(false)
         const showAdminSettings = ref(false)
-        const showConfirmDialog = ref(false)
         const showSuccess = ref(false)
         const showError = ref(false)
-        const confirmMessage = ref('')
-        const confirmCallback = ref(null)
         const successMessage = ref('')
         const errorMessage = ref('')
 
@@ -593,6 +567,8 @@ export default {
         const { mobile } = useDisplay()
         const authStore = useAuthStore()
         const userStore = useUserStore()
+        // Confirmations of the admin actions are modal
+        const dialog = useDialog()
 
         // Computed properties
         const authenticated = computed(() => authStore.isLoggedIn)
@@ -647,6 +623,7 @@ export default {
 
         // Methods
         const refreshUser = async () => {
+            if (refreshing.value) return
             refreshing.value = true
             try {
                 await userStore.fetchUser()
@@ -696,10 +673,16 @@ export default {
             activeTab.value = 'activity'
         }
 
-        const confirmResetPassword = () => {
-            confirmMessage.value = t('userProfile.passwordResetConfirm', { name: user.value?.name || t('userProfile.unknownUser') })
-            confirmCallback.value = resetPassword
-            showConfirmDialog.value = true
+        const confirmResetPassword = async () => {
+            if (confirming.value) return
+            const confirmed = await dialog.confirm({
+                title: t('userProfile.confirmAction'),
+                content: t('userProfile.passwordResetConfirm', { name: user.value?.name || t('userProfile.unknownUser') }),
+                color: 'warning',
+            })
+            if (confirmed) {
+                await resetPassword()
+            }
         }
 
         const resetPassword = async () => {
@@ -709,7 +692,6 @@ export default {
                 await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
                 successMessage.value = t('userProfile.passwordResetSent')
                 showSuccess.value = true
-                showConfirmDialog.value = false
             } catch (error) {
                 errorMessage.value = t('userProfile.passwordResetFailed')
                 showError.value = true
@@ -718,10 +700,16 @@ export default {
             }
         }
 
-        const confirmRemoveAdmin = () => {
-            confirmMessage.value = t('userProfile.removeAdminConfirm', { name: user.value?.name || t('userProfile.unknownUser') })
-            confirmCallback.value = removeAdminPrivileges
-            showConfirmDialog.value = true
+        const confirmRemoveAdmin = async () => {
+            if (confirming.value) return
+            const confirmed = await dialog.confirm({
+                title: t('userProfile.confirmAction'),
+                content: t('userProfile.removeAdminConfirm', { name: user.value?.name || t('userProfile.unknownUser') }),
+                confirmationText: t('userProfile.removeAdminPrivileges'),
+            })
+            if (confirmed) {
+                await removeAdminPrivileges()
+            }
         }
 
         const removeAdminPrivileges = async () => {
@@ -732,7 +720,6 @@ export default {
                 successMessage.value = t('userProfile.adminRemoved')
                 showSuccess.value = true
                 showAdminSettings.value = false
-                showConfirmDialog.value = false
             } catch (error) {
                 errorMessage.value = t('userProfile.adminRemoveFailed')
                 showError.value = true
@@ -744,12 +731,6 @@ export default {
         const viewAdminHistory = () => {
             // Implement admin history view
             console.log('Viewing admin history for user:', user.value?.id)
-        }
-
-        const confirmAction = () => {
-            if (confirmCallback.value) {
-                confirmCallback.value()
-            }
         }
 
         // Change handlers
@@ -806,6 +787,7 @@ export default {
         }
 
         const saveAllChanges = async () => {
+            if (saving.value) return
             saving.value = true
             try {
                 const promises = []
@@ -847,10 +829,8 @@ export default {
             saving,
             confirming,
             showAdminSettings,
-            showConfirmDialog,
             showSuccess,
             showError,
-            confirmMessage,
             successMessage,
             errorMessage,
             hasAccountChanges,
@@ -879,7 +859,6 @@ export default {
             confirmResetPassword,
             confirmRemoveAdmin,
             viewAdminHistory,
-            confirmAction,
             onAccountChange,
             onInfoChange,
             onPermissionChange,

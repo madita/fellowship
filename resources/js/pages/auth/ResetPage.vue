@@ -1,16 +1,8 @@
 <template>
     <v-card class="pa-2" elevation="4">
-        <v-alert
-            v-for="(message,index) in errorMessages"
-            :key="`error-${index}`"
-            type="error">
-            {{ message[0] }}
-        </v-alert>
         <v-card-title class="justify-center display-1 mb-2">{{ $t('auth.setNewPassword') }}</v-card-title>
         <div class="overline">{{ status }}</div>
-<!--        <div class="error&#45;&#45;text mt-2 mb-4">{{ error }}</div>-->
 
-<!--        <a v-if="error" href="/">Back to Sign In</a>-->
         <v-form ref="form" v-model="isFormValid" lazy-validation @submit.prevent="submit">
             <v-text-field
                 v-model="newPassword"
@@ -23,8 +15,9 @@
                 :label="$t('auth.newPassword')"
                 variant="outlined"
                 class="mt-4"
+                :disabled="isLoading"
                 @change="resetErrors"
-                @keyup.enter="confirmPasswordReset"
+                @keyup.enter="submit"
                 @click:append="showPassword = !showPassword"
             ></v-text-field>
 
@@ -37,6 +30,7 @@
                 :label="$t('register.password')"
                 name="password_confirmation"
                 variant="outlined"
+                :disabled="isLoading"
                 @change="resetErrors"
                 @keyup.enter="submit"
             ></v-text-field>
@@ -53,7 +47,6 @@
     </v-card>
 </template>
 
-this.$router.push('/auth/verify-email')
 <script>
 /*
 |---------------------------------------------------------------------
@@ -75,26 +68,17 @@ export default {
             token:'',
             email:'',
 
-            showNewPassword: true,
             newPassword: '',
             passwordConfirmation: '',
 
-            // form error
+            // form error (shown next to the password fields)
             errorNewPassword: false,
             errorNewPasswordMessage: '',
-
-            // form error
-            // errorNewPassword: false,
-            errorMessages: {},
-
-            errorEmailMessage: '',
-            errorTokenMessage: '',
 
             // show password field
             showPassword: false,
 
             status: this.$t ? this.$t('auth.resettingPassword') : 'Resetting password',
-            error: null,
 
             // input rules
             rules: {
@@ -104,6 +88,7 @@ export default {
     },
     methods: {
         async confirmPasswordReset() {
+            if (this.isLoading) return
             this.isLoading = true
 
             let data = {
@@ -113,24 +98,34 @@ export default {
                 password_confirmation: this.passwordConfirmation
             }
 
-            await axios.post('/password/reset', data).then(response => {
-                this.message = response.message
-            }).catch(({response: {data}}) => {
-                this.errorMessages = data.errors
-                if (data.errors.email !== undefined) {
-                    this.error = true
-                    this.errorEmailMessage = data.errors.email[0]
+            try {
+                const response = await axios.post('/password/reset', data)
+                await this.$dialog.success(response.data?.message || this.$t('auth.passwordResetDone'))
+                this.$router.push('/auth/signin')
+            } catch (e) {
+                const errors = e.response?.data?.errors
+                if (errors?.password !== undefined) {
+                    // Validation error of the field: stays inline
+                    this.errorNewPassword = true
+                    this.errorNewPasswordMessage = errors.password[0]
+                } else if (errors) {
+                    // Invalid token / e-mail: nothing to fix in the form
+                    await this.$dialog.error(Object.values(errors).flat().join('\n'))
+                } else {
+                    await this.$dialog.requestError(e)
                 }
-            }).finally(() => {
+            } finally {
                 this.isLoading = false
-            })
+            }
         },
-        submit() {
+        async submit() {
+            if (this.isLoading) return
             this.token = this.$route.params.token
             this.email = this.$route.query.email
 
-            if (this.$refs.form.validate()) {
-                this.confirmPasswordReset(this.email)
+            const { valid } = await this.$refs.form.validate()
+            if (valid) {
+                this.confirmPasswordReset()
             }
         },
         resetErrors() {

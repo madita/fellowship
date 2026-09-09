@@ -158,6 +158,9 @@ const resetErrors = () => {
 }
 
 const submit = async () => {
+    // Enter and the button can both trigger this; ignore while a request runs.
+    if (isLoading.value) return
+
     // Reset errors before attempting login
     resetErrors()
 

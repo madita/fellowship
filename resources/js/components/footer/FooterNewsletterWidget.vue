@@ -14,6 +14,7 @@
                 density="compact"
                 class="mr-sm-2 mb-2 mb-sm-0"
                 :error-messages="error"
+                :disabled="loading"
                 @keyup.enter="subscribe"
             ></v-text-field>
             <v-btn
@@ -25,10 +26,6 @@
                 {{ config.buttonText || $t('common.subscribe') }}
             </v-btn>
         </div>
-
-        <v-alert v-if="success" type="success" variant="tonal" density="compact" class="mt-2">
-            {{ successMessage }}
-        </v-alert>
     </div>
 </template>
 
@@ -37,8 +34,12 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import FooterWidgetHeading from './FooterWidgetHeading.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+// The outcome of the subscription is shown as a modal; the field keeps
+// its inline validation error.
+const dialog = useDialog();
 
 defineProps({
     config: {
@@ -50,12 +51,10 @@ defineProps({
 const email = ref('');
 const loading = ref(false);
 const error = ref('');
-const success = ref(false);
-const successMessage = ref('');
 
 async function subscribe() {
+    if (loading.value) return;
     error.value = '';
-    success.value = false;
 
     if (!email.value || !email.value.includes('@')) {
         error.value = t('newsletter.invalidEmail');
@@ -69,16 +68,16 @@ async function subscribe() {
             email: email.value
         });
 
-        success.value = true;
-        successMessage.value = response.data.message || t('newsletter.thankYou');
         email.value = '';
-
-        setTimeout(() => {
-            success.value = false;
-        }, 5000);
+        await dialog.success(response.data.message || t('newsletter.thankYou'));
     } catch (err) {
         console.error('Newsletter subscription error:', err);
-        error.value = err.response?.data?.message || t('newsletter.failedToSubscribe');
+        const validation = err.response?.status === 422 ? err.response.data?.errors?.email?.[0] : null;
+        if (validation) {
+            error.value = validation;
+        } else {
+            await dialog.requestError(err, t('newsletter.failedToSubscribe'));
+        }
     } finally {
         loading.value = false;
     }

@@ -1,8 +1,5 @@
 <template>
     <div>
-        <v-alert v-if="message" type="success">
-            {{ message }}
-        </v-alert>
         <v-card class="text-center pa-1" elevation="4">
             <v-card-title class="justify-center display-1 mb-2">{{ $t('forgot.title') }}</v-card-title>
             <v-card-subtitle>
@@ -21,6 +18,7 @@
                         :label="$t('forgot.email')"
                         name="email"
                         variant="outlined"
+                        :disabled="isLoading"
                         @keyup.enter="submit"
                         @change="resetErrors"
                     ></v-text-field>
@@ -70,39 +68,44 @@ export default {
             // form error
             error: false,
             errorMessages: '',
-            message: '',
 
             // input rules
             rules: {
-                required: (value) => (value && Boolean(value)) || 'Required',
+                required: (value) => (value && Boolean(value)) || this.$t('validation.required'),
                 email: value => {
                     const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-                    return pattern.test(value) || 'Invalid e-mail.'
+                    return pattern.test(value) || this.$t('validation.email')
                 },
             }
         }
     },
     methods: {
         async forgotPassword(email) {
+            if (this.isLoading) return
             this.isLoading = true
-            await axios.post('/password/email', {email: email}).then(response => {
-                this.message = response.data.message
-            }).catch(({response: {data}}) => {
-                if (data.errors.email !== undefined) {
+            try {
+                const response = await axios.post('/password/email', {email: email})
+                await this.$dialog.success(response.data?.message || this.$t('forgot.sent'))
+            } catch (e) {
+                const errors = e.response?.data?.errors
+                if (errors?.email !== undefined) {
+                    // Validation error: stays next to the field
                     this.error = true
-                    this.errorMessages = data.errors.email[0]
+                    this.errorMessages = errors.email[0]
+                } else {
+                    await this.$dialog.requestError(e)
                 }
-            }).finally(() => {
+            } finally {
                 this.isLoading = false
-            })
-        },
-        submit(e) {
-            this.resetErrors();
-            if (this.$refs.form.validate()) {
-                this.forgotPassword(this.email)
             }
         },
-        resetEmail(email, password) {
+        async submit() {
+            if (this.isLoading) return
+            this.resetErrors();
+            const { valid } = await this.$refs.form.validate()
+            if (valid) {
+                this.forgotPassword(this.email)
+            }
         },
         resetErrors() {
             this.error = false

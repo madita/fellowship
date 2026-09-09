@@ -1,17 +1,12 @@
 <template>
     <div>
+        <!-- Persistent state banner: the account is already verified -->
         <v-alert v-if="isVerified" type="warning">
-            You are alredy veryfied :)
-        </v-alert>
-        <v-alert v-if="error" type="error">
-            Oops! Something went wrong!
-        </v-alert>
-        <v-alert v-if="message" type="success">
-            {{ message }}
+            {{ $t('auth.alreadyVerified') }}
         </v-alert>
         <v-card class="pa-2" elevation="4">
-            <h1>Please verify the email</h1>
-            <div class="mb-6 overline">Please check your email for the link to verify the email.</div>
+            <h1>{{ $t('auth.verifyEmailTitle') }}</h1>
+            <div class="mb-6 overline">{{ $t('auth.verifyEmailHint') }}</div>
 
             <v-btn
                 :loading="isLoading"
@@ -21,7 +16,7 @@
                 size="large"
                 color="primary"
                 @click="submit"
-            >Re-send email {{ seconds }}
+            >{{ $t('auth.resendEmail') }} {{ seconds }}
             </v-btn>
         </v-card>
     </div>
@@ -40,7 +35,6 @@
 
 import axios from "axios";
 import {useAuthStore} from "@/store/authStore.js";
-// import {mapGetters} from "vuex";
 
 const TIMEOUT = 10
 
@@ -53,11 +47,9 @@ export default {
             resendInterval: null,
             secondsToEnable: TIMEOUT,
             seconds: '',
-            error: false,
-            message: ''
         }
     },
-    beforeDestroy() {
+    beforeUnmount() {
         clearInterval(this.resendInterval)
     },
     mounted() {
@@ -65,28 +57,24 @@ export default {
     },
     methods: {
         async resend() {
+            if (this.isLoading) return
             this.isLoading = true
-            await axios.post('/email/resend').then(() => {
-                this.message = "Email was sent!"
-            }).catch(({response: {data}}) => {
-                if (data.errors.email !== undefined) {
-                    this.error = true
-                    this.errorMessages = data.errors.email[0]
-                }
-            }).finally(() => {
+            try {
+                await axios.post('/email/resend')
+                await this.$dialog.success(this.$t('auth.verificationSent'))
+            } catch (e) {
+                await this.$dialog.requestError(e)
+            } finally {
                 this.isLoading = false
-            })
+            }
         },
         submit() {
+            if (this.isLoading || this.disabled) return
             this.setTimer()
             this.resend()
         },
 
-        // async resend() {
-        //   this.setTimer()
-        // },
         setTimer() {
-            this.message = "";
             this.disabled = true
             this.times++
             this.secondsToEnable = TIMEOUT * this.times

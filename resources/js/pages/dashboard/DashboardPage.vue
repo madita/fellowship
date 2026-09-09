@@ -34,10 +34,6 @@
             </v-row>
         </div>
 
-        <v-alert v-if="saveError" type="warning" variant="tonal" density="compact" class="mb-4" closable @click:close="saveError = null">
-            {{ $t('dashboard.saveFailed', { error: saveError }) }}
-        </v-alert>
-
         <div v-if="loadingLayout" class="text-center py-12">
             <v-progress-circular size="40" indeterminate color="primary" />
         </div>
@@ -282,8 +278,8 @@ import TicketOverviewWidget from '@/components/dashboard/TicketOverviewWidget.vu
 /**
  * Personal dashboard: a drag & drop grid of widgets, each showing live
  * data of one feature (see configs/dashboardWidgets.js). The layout —
- * which widgets, where, how big, with which settings — is kept in
- * localStorage per browser.
+ * which widgets, where, how big, with which settings — is stored on the
+ * user's account. Confirmations and feedback use the app-wide `$dialog`.
  */
 export default {
     name: 'DynamicDashboard',
@@ -309,7 +305,9 @@ export default {
             activeWidgets: [],
             loadingLayout: true,
             saveTimer: null,
-            saveError: null,
+            // Saving is automatic, so a failure is reported once and not on
+            // every following auto-save until one succeeds again.
+            saveErrorShown: false,
         }
     },
     computed: {
@@ -520,7 +518,15 @@ export default {
             this.saveLayout();
         },
 
-        removeWidget(widgetId) {
+        async removeWidget(widgetId) {
+            const widget = this.activeWidgets.find(w => w.id === widgetId);
+            if (!widget) return;
+            const confirmed = await this.$dialog.confirmDelete(
+                this.$t('dashboard.confirmRemove', { title: this.widgetTitle(widget) }),
+                { title: this.$t('dashboard.remove'), confirmationText: this.$t('dialogs.confirm.remove') }
+            );
+            if (!confirmed) return;
+
             const index = this.activeWidgets.findIndex(w => w.id === widgetId);
             if (index > -1) {
                 this.activeWidgets.splice(index, 1);
@@ -553,8 +559,21 @@ export default {
             this.saveLayout();
         },
 
-        // Back to the default widget set and grid order.
-        resetLayout() {
+        // Back to the default widget set and grid order — after confirming,
+        // since it discards the user's customised layout.
+        async resetLayout() {
+            const confirmed = await this.$dialog.confirm({
+                title: this.$t('dashboard.resetLayout'),
+                content: this.$t('dashboard.confirmReset'),
+                confirmationText: this.$t('dialogs.confirm.confirm'),
+                color: 'warning',
+            });
+            if (confirmed) {
+                this.applyDefaultLayout();
+            }
+        },
+
+        applyDefaultLayout() {
             this.activeWidgets = [];
             DEFAULT_LAYOUT
                 .filter(type => this.availableWidgets.some(w => w.type === type))
@@ -610,9 +629,11 @@ export default {
             this.saveTimer = setTimeout(async () => {
                 try {
                     await axios.put('/api/account/dashboard/layout', { layout: this.serializeLayout() });
-                    this.saveError = null;
+                    this.saveErrorShown = false;
                 } catch (e) {
-                    this.saveError = e.response?.data?.message || e.message;
+                    if (this.saveErrorShown) return;
+                    this.saveErrorShown = true;
+                    this.$dialog.warning(this.$t('dashboard.saveFailed', { error: e.response?.data?.message || e.message }));
                 }
             }, 400);
         },
@@ -635,7 +656,7 @@ export default {
                 const { data } = await axios.get('/api/account/dashboard/layout');
                 layout = data.data;
             } catch (e) {
-                this.saveError = e.response?.data?.message || e.message;
+                this.$dialog.error(this.$t('dashboard.layoutLoadFailed', { error: e.response?.data?.message || e.message }));
             }
 
             if (!Array.isArray(layout)) {
@@ -649,7 +670,7 @@ export default {
                     this.applyLayout(layout);
                     this.saveLayout();
                 } else {
-                    this.resetLayout();
+                    this.applyDefaultLayout();
                 }
             } else {
                 this.applyLayout(layout);

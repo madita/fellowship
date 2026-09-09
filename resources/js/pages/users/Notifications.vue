@@ -43,7 +43,15 @@
 
                         <template v-slot:append>
                             <div class="justify-self-end">
-                                <v-icon @click="deleteNotification(item.id)" color="red darken-3">mdi-delete</v-icon>
+                                <v-btn
+                                    icon="mdi-delete"
+                                    variant="text"
+                                    color="red-darken-3"
+                                    size="small"
+                                    :loading="deleting.includes(item.id)"
+                                    :disabled="deleting.length > 0 && !deleting.includes(item.id)"
+                                    @click="deleteNotification(item.id)"
+                                />
                             </div>
                         </template>
                     </v-list-item>
@@ -76,7 +84,10 @@
 <script>
 import { ref, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import axios from 'axios';
 import UserAvatar from "@/components/common/UserAvatar.vue";
+import { useDialog } from '@/composables/useDialog.js';
 
 export default {
     components: {UserAvatar},
@@ -99,7 +110,11 @@ export default {
         const notificationModel = ref(null);
         const isLoading = ref(false);
         const notifications = ref({});
+        // Ids of notifications with a delete request in flight
+        const deleting = ref([]);
         const route = useRoute();
+        const { t } = useI18n();
+        const dialog = useDialog();
 
 
         // Watch for changes in route params
@@ -132,17 +147,18 @@ export default {
         };
 
         const deleteNotification = async (id) => {
+            if (deleting.value.length) return;
+            if (!(await dialog.confirmDelete(t('notifications.confirmDelete')))) return;
+
+            deleting.value.push(id);
             try {
-                axios.delete('/api/account/notification/delete/' + id).then(() => {
-                    getAllNotifications();
-                }).catch(err => {
-                    if (err.response.status === 404) {
-                        throw new Error(`${err.config.url} not found`);
-                    }
-                    throw err;
-                })
+                await axios.delete('/api/account/notification/delete/' + id);
+                await getAllNotifications();
             } catch (error) {
-                console.warn(error)
+                console.warn(error);
+                await dialog.requestError(error, t('notifications.deleteFailed'));
+            } finally {
+                deleting.value = deleting.value.filter(d => d !== id);
             }
         };
 
@@ -150,6 +166,7 @@ export default {
             notificationModel,
             isLoading,
             notifications,
+            deleting,
             getAllNotifications,
             deleteNotification
         };

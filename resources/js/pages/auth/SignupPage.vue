@@ -182,9 +182,14 @@
 
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from "@/store/authStore.js"
 import { useSettingsStore } from "@/store/settingStore.js"
+import { useDialog } from '@/composables/useDialog.js'
 import axios from 'axios'
+
+const { t } = useI18n()
+const dialog = useDialog()
 
 // Router
 const router = useRouter()
@@ -248,10 +253,10 @@ const providers = ref([
 
 // Input validation rules
 const rules = {
-    required: (value) => (value && Boolean(value)) || 'Required',
+    required: (value) => (value && Boolean(value)) || t('validation.required'),
     email: value => {
         const pattern = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-        return pattern.test(value) || 'Invalid e-mail.'
+        return pattern.test(value) || t('validation.email')
     }
 }
 
@@ -307,9 +312,10 @@ const register = async () => {
                 errorAgeConfirmation.value = true
                 errorAgeConfirmationMessage.value = errors.age_confirmed[0]
             }
+        } else {
+            // Not a validation problem of the form (server / network error)
+            await dialog.requestError(error, t('register.failed'))
         }
-
-        //console.log("Registration error:", error)
     } finally {
         isLoading.value = false
         isSignUpDisabled.value = false
@@ -317,10 +323,13 @@ const register = async () => {
 }
 
 const submit = () => {
+    // Enter and the button can both trigger this; ignore while a request runs.
+    if (isLoading.value) return
+
     // Validate age confirmation if required
     if (ageConfirmationRequired.value && !ageConfirmed.value) {
         errorAgeConfirmation.value = true
-        errorAgeConfirmationMessage.value = 'You must confirm your age to register'
+        errorAgeConfirmationMessage.value = t('register.ageRequired')
         return
     }
 

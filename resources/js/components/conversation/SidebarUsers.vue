@@ -11,7 +11,7 @@
         </v-chip>
       </div>
       <div class="d-flex align-center">
-        <v-btn icon variant="text" size="small" @click="refresh">
+        <v-btn icon variant="text" size="small" :loading="refreshing" @click="refresh">
           <v-icon>mdi-refresh</v-icon>
         </v-btn>
         <v-btn icon variant="text" size="small" @click="collapsed = !collapsed">
@@ -197,16 +197,20 @@ import eventBus from '../common/eventBus.js'
 import { useUserStore } from '@/store/userStore.js'
 import { useConversationsStore } from '@/store/conversationsStore.js'
 import { useOnlineUsers } from '@/composables/conversation/useOnlineUsers'
+import { useDialog } from '@/composables/useDialog.js'
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import axios from 'axios'
 
 const emit = defineEmits(['close'])
 
 const { t } = useI18n()
+const dialog = useDialog()
 
 const allUsers = ref([])
 const collapsed = ref(false)
 const loading = ref(false)
+// The header's refresh button reloads users and conversations
+const refreshing = ref(false)
 const activeTab = ref('conversations')
 
 const userStore = useUserStore()
@@ -302,6 +306,7 @@ async function fetchAllUsers() {
   } catch (error) {
     console.error('Failed to fetch users:', error)
     allUsers.value = []
+    throw error
   } finally {
     loading.value = false
   }
@@ -311,10 +316,18 @@ function makeConversationWith(user) {
   eventBus.emit('chat.open', { user })
 }
 
-function refresh() {
-  fetchAllUsers()
-  conversationsStore.fetchConversations()
-  eventBus.emit('users.refresh')
+// Explicit reload: shows a loader and reports a failure once.
+async function refresh() {
+  if (refreshing.value) return
+  refreshing.value = true
+  try {
+    await Promise.all([fetchAllUsers(), conversationsStore.fetchConversations()])
+    eventBus.emit('users.refresh')
+  } catch (error) {
+    await dialog.requestError(error, t('messaging.loadUsersFailed'))
+  } finally {
+    refreshing.value = false
+  }
 }
 
 let cleanupOnlineListeners = null
@@ -323,8 +336,9 @@ onMounted(() => {
   // Setup online users tracking
   cleanupOnlineListeners = setupOnlineListeners()
 
-  // Fetch all users and conversations
-  fetchAllUsers()
+  // Fetch all users and conversations (the initial load stays silent on failure;
+  // the empty states cover it and the refresh button reports errors)
+  fetchAllUsers().catch(() => {})
   conversationsStore.fetchConversations()
 })
 

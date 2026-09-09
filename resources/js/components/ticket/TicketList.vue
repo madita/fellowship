@@ -9,11 +9,14 @@ import TicketKanban from './TicketKanban.vue';
 import { useUserStore } from '@/store/userStore.js';
 import { useDateFormat } from '@/plugins/formatDate.js';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
+import { useDialog } from '@/composables/useDialog.js';
 import { sanitizeHtml } from '@/utils/sanitize.js';
 
 const { t } = useI18n();
 const route = useRoute();
 const userStore = useUserStore();
+// Outcome of create/update/delete is shown as a modal
+const dialog = useDialog();
 const { formatDate: formatDateUtil } = useDateFormat();
 const {
     getStatusColor,
@@ -26,6 +29,8 @@ const {
 const tickets = ref([]);
 const ticketTypes = ref([]);
 const loading = ref(false);
+// A create / update / delete request of the sidebar is in flight
+const saving = ref(false);
 const showFilters = ref(false);
 const selectedTicket = ref(null);
 const isDrawerOpen = ref(false);
@@ -106,6 +111,7 @@ const loadTickets = async () => {
         };
     } catch (err) {
         console.error('Failed to load tickets:', err);
+        await dialog.requestError(err, t('tickets.messages.loadFailed'));
     } finally {
         loading.value = false;
     }
@@ -185,19 +191,31 @@ const createNewTicket = () => {
     isDrawerOpen.value = true;
 };
 
+// The sidebar stays open (with a loader) until the request is done, so a
+// failure leaves the form as it was.
 const handleAddTicket = async (ticketData) => {
+    if (saving.value) return;
+    saving.value = true;
     try {
         const response = await axios.post('/api/tickets', ticketData);
         tickets.value.unshift(response.data);
         pagination.value.total++;
         selectedTicket.value = response.data;
         loadRelatedContent(response.data);
+        editMode.value = false;
+        isDrawerOpen.value = false;
+        await dialog.success(t('tickets.messages.created'));
     } catch (err) {
         console.error('Failed to create ticket:', err);
+        await dialog.requestError(err, t('tickets.messages.createFailed'));
+    } finally {
+        saving.value = false;
     }
 };
 
 const handleUpdateTicket = async (ticketData) => {
+    if (saving.value) return;
+    saving.value = true;
     try {
         const response = await axios.patch(`/api/tickets/${ticketData.id}`, ticketData);
         const index = tickets.value.findIndex(t => t.id === ticketData.id);
@@ -205,12 +223,20 @@ const handleUpdateTicket = async (ticketData) => {
             tickets.value[index] = response.data;
         }
         selectedTicket.value = response.data;
+        editMode.value = false;
+        isDrawerOpen.value = false;
+        await dialog.success(t('tickets.messages.updated'));
     } catch (err) {
         console.error('Failed to update ticket:', err);
+        await dialog.requestError(err, t('tickets.messages.updateFailed'));
+    } finally {
+        saving.value = false;
     }
 };
 
 const handleRemoveTicket = async (ticketId) => {
+    if (saving.value) return;
+    saving.value = true;
     try {
         await axios.delete(`/api/tickets/${ticketId}`);
         tickets.value = tickets.value.filter(t => t.id !== parseInt(ticketId));
@@ -218,8 +244,13 @@ const handleRemoveTicket = async (ticketId) => {
         selectedTicket.value = null;
         relatedContent.value = null;
         relatedContentType.value = null;
+        isDrawerOpen.value = false;
+        await dialog.success(t('tickets.messages.deleted'));
     } catch (err) {
         console.error('Failed to delete ticket:', err);
+        await dialog.requestError(err, t('tickets.messages.deleteFailed'));
+    } finally {
+        saving.value = false;
     }
 };
 
@@ -459,7 +490,7 @@ onMounted(() => {
 
                 <!-- Ticket List -->
                 <div class="ticket-list-items flex-grow-1 overflow-y-auto">
-                    <v-progress-linear v-if="loading" indeterminate color="primary" />
+                    <v-progress-linear v-if="loading || saving" indeterminate color="primary" />
 
                     <v-list v-if="tickets.length > 0" class="pa-0" density="compact">
                         <v-list-item
@@ -656,6 +687,7 @@ onMounted(() => {
             v-model:is-drawer-open="isDrawerOpen"
             :edit-mode="editMode"
             :ticket="selectedTicket"
+            :saving="saving"
             @add-ticket="handleAddTicket"
             @update-ticket="handleUpdateTicket"
             @remove-ticket="handleRemoveTicket"

@@ -167,10 +167,13 @@ import ConversationMessages from "@/components/conversation/ConversationMessages
 import { useUserSearch } from "@/composables/conversation/useUserSearch";
 import { useOnlineUsers } from "@/composables/conversation/useOnlineUsers";
 import { useScrollToBottom } from "@/composables/conversation/useScrollToBottom";
+import { useDialog } from '@/composables/useDialog.js'
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import {useUserStore} from "@/store/userStore.js";
 
 const { t } = useI18n()
+// Failures to send or load are reported as a modal
+const dialog = useDialog()
 
 
 // Props
@@ -249,6 +252,7 @@ const handleSend = async () => {
         }
     } catch (error) {
         console.error('Error sending message:', error)
+        await dialog.requestError(error, t('conversation.sendFailed'))
     } finally {
         isSending.value = false
     }
@@ -328,6 +332,7 @@ const fetchConversation = async (uuid) => {
         return response.data
     } catch (error) {
         console.error('[ConversationBox] Failed to fetch conversation:', error)
+        dialog.requestError(error, t('conversation.loadFailed'))
         throw error
     } finally {
         loading.value = false
@@ -441,7 +446,8 @@ watch(() => props.initialConversationUuid, (newConversationUuid, oldConversation
     if (newConversationUuid && newConversationUuid !== conversationUuid.value) {
         console.log('[ConversationBox] UUID changed, fetching:', newConversationUuid)
         conversationUuid.value = newConversationUuid
-        fetchConversation(newConversationUuid)
+        // The failure is already reported by fetchConversation
+        fetchConversation(newConversationUuid).catch(() => {})
         // scrollToBottom will be triggered by conversation watcher
     }
 }, { immediate: true })

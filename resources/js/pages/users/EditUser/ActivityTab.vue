@@ -219,6 +219,8 @@
                                         variant="text"
                                         size="small"
                                         icon="mdi-logout"
+                                        :loading="loggingOut === device.id"
+                                        :disabled="loggingOut !== null && loggingOut !== device.id"
                                         @click="logoutDevice(device.id)"
                                         class="logout-btn"
                                     />
@@ -258,7 +260,9 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { formatDate, formatDateDistanceToNow } from '@/plugins/formatDate.js'
+import { useDialog } from '@/composables/useDialog.js'
 
 export default {
     name: 'ActivityTab',
@@ -269,9 +273,14 @@ export default {
         }
     },
     setup() {
+        const { t } = useI18n()
+        const dialog = useDialog()
+
         // Reactive data
         const timeFilter = ref('week')
         const loadingMore = ref(false)
+        // Id of the device being signed out
+        const loggingOut = ref(null)
         const activities = ref([])
         const logins = ref([])
         const devices = ref([])
@@ -429,6 +438,7 @@ export default {
         }
 
         const loadMoreActivities = async () => {
+            if (loadingMore.value) return
             loadingMore.value = true
             try {
                 // Simulate API call
@@ -436,18 +446,25 @@ export default {
                 // Add more activities...
             } catch (error) {
                 console.error('Failed to load more activities:', error)
+                await dialog.requestError(error)
             } finally {
                 loadingMore.value = false
             }
         }
 
         const logoutDevice = async (deviceId) => {
+            if (loggingOut.value !== null) return
+            if (!(await dialog.confirm({ content: t('userProfile.logoutDeviceConfirm'), color: 'warning' }))) return
+
+            loggingOut.value = deviceId
             try {
                 // Implement device logout API call
-                console.log('Logging out device:', deviceId)
                 devices.value = devices.value.filter(device => device.id !== deviceId)
             } catch (error) {
                 console.error('Failed to logout device:', error)
+                await dialog.requestError(error)
+            } finally {
+                loggingOut.value = null
             }
         }
 
@@ -462,6 +479,7 @@ export default {
             // Reactive data
             timeFilter,
             loadingMore,
+            loggingOut,
 
             // Computed
             loginCount,

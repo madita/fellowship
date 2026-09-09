@@ -6,9 +6,12 @@ import axios from 'axios';
 import UserAvatar from '../common/UserAvatar.vue';
 import { useUserStore } from '@/store/userStore.js';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
 const userStore = useUserStore();
+// Failures of the drag & drop status change are reported as a modal
+const dialog = useDialog();
 const {
     statusOptions,
     getStatusColor,
@@ -20,6 +23,8 @@ const {
 const emit = defineEmits(['open-ticket', 'ticket-updated']);
 
 const loading = ref(false);
+// Ids of tickets whose status change is being saved
+const updatingIds = ref([]);
 const columns = ref([]);
 
 const user = computed(() => userStore.user || { id: null });
@@ -58,6 +63,7 @@ const loadTickets = async () => {
         } while (page <= lastPage);
     } catch (err) {
         console.error('Failed to load tickets:', err);
+        await dialog.requestError(err, t('tickets.messages.loadFailed'));
     } finally {
         loading.value = false;
     }
@@ -69,8 +75,9 @@ const onDragChange = async (evt, targetStatus) => {
     const ticket = evt.added.element;
     const oldStatus = ticket.status;
 
-    if (oldStatus === targetStatus) return;
+    if (oldStatus === targetStatus || updatingIds.value.includes(ticket.id)) return;
 
+    updatingIds.value = [...updatingIds.value, ticket.id];
     try {
         // Update status
         await axios.patch(`/api/tickets/${ticket.id}`, {
@@ -91,7 +98,11 @@ const onDragChange = async (evt, targetStatus) => {
         emit('ticket-updated');
     } catch (err) {
         console.error('Failed to update ticket:', err);
+        await dialog.requestError(err, t('tickets.messages.updateFailed'));
+        // Put the card back where the server has it
         loadTickets();
+    } finally {
+        updatingIds.value = updatingIds.value.filter(id => id !== ticket.id);
     }
 };
 
@@ -108,7 +119,7 @@ onMounted(() => {
 
 <template>
     <div class="kanban-board">
-        <v-progress-linear v-if="loading" indeterminate color="primary" />
+        <v-progress-linear v-if="loading || updatingIds.length > 0" indeterminate color="primary" />
 
         <div class="kanban-columns">
             <div
@@ -143,10 +154,12 @@ onMounted(() => {
                     <template #item="{ element }">
                         <v-card
                             class="kanban-card mb-2"
+                            :class="{ 'kanban-card--busy': updatingIds.includes(element.id) }"
                             variant="outlined"
                             role="button"
                             tabindex="0"
                             :aria-label="`Open ticket: ${element.title}`"
+                            :loading="updatingIds.includes(element.id)"
                             @click="openTicket(element)"
                             @keydown.enter="openTicket(element)"
                             @keydown.space.prevent="openTicket(element)"
@@ -256,6 +269,11 @@ onMounted(() => {
 
 .kanban-card:active {
     cursor: grabbing;
+}
+
+.kanban-card--busy {
+    opacity: 0.6;
+    pointer-events: none;
 }
 
 .kanban-card-title {

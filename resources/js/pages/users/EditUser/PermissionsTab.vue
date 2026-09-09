@@ -132,6 +132,7 @@
                             prepend-icon="mdi-refresh"
                             @click="refreshAvailableRoles"
                             :loading="refreshing"
+                            :disabled="assigning"
                         >
                             {{ $t('users.edit.refresh') }}
                         </v-btn>
@@ -174,7 +175,7 @@
                                     variant="elevated"
                                     prepend-icon="mdi-plus"
                                     @click="assignRole"
-                                    :disabled="!selectedRole"
+                                    :disabled="!selectedRole || refreshing"
                                     :loading="assigning"
                                 >
                                     {{ $t('users.edit.assignRole') }}
@@ -192,8 +193,10 @@
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
     user: {
@@ -224,19 +227,21 @@ const getRoleIcon = (roleName) => {
 };
 
 const refreshAvailableRoles = async () => {
+    if (refreshing.value) return;
     refreshing.value = true;
     try {
         const response = await axios.get('/api/roles');
         availableRoles.value = response.data;
     } catch (error) {
         console.error('Failed to refresh roles:', error);
-        // Add user-friendly error notification
-        // e.g., this.$toast.error('Failed to load roles. Please try again.');
+        await dialog.requestError(error, t('users.edit.rolesLoadFailed'));
+    } finally {
+        refreshing.value = false;
     }
-    refreshing.value = false;
 };
 
 const assignRole = async () => {
+    if (assigning.value) return;
     assigning.value = true;
     try {
         // Implement role assignment API call
@@ -245,8 +250,10 @@ const assignRole = async () => {
         selectedRole.value = null;
     } catch (error) {
         console.error('Failed to assign role:', error);
+        await dialog.requestError(error);
+    } finally {
+        assigning.value = false;
     }
-    assigning.value = false;
 };
 
 const confirmRemoveRole = (role) => {

@@ -20,30 +20,6 @@
                     <v-progress-circular indeterminate color="primary"></v-progress-circular>
                 </div>
 
-                <!-- Error State -->
-                <v-alert
-                    v-if="error"
-                    type="error"
-                    variant="tonal"
-                    dismissible
-                    @click:close="error = null"
-                    class="mb-4"
-                >
-                    {{ error }}
-                </v-alert>
-
-                <!-- Success Message -->
-                <v-alert
-                    v-if="successMessage"
-                    type="success"
-                    variant="tonal"
-                    dismissible
-                    @click:close="successMessage = null"
-                    class="mb-4"
-                >
-                    {{ successMessage }}
-                </v-alert>
-
                 <!-- Connected Accounts -->
                 <div v-if="!loading && connectedAccounts.length > 0">
                     <div class="text-subtitle-2 font-weight-bold mb-3">{{ $t('socialAccounts.connectedAccounts') }}</div>
@@ -72,7 +48,7 @@
                                     color="error"
                                     size="small"
                                     :loading="disconnecting === account.provider"
-                                    :disabled="!canDisconnect"
+                                    :disabled="!canDisconnect || (disconnecting && disconnecting !== account.provider) || !!connecting"
                                     @click="disconnectProvider(account.provider)"
                                 >
                                     {{ $t('socialAccounts.disconnect') }}
@@ -108,6 +84,7 @@
                                 :color="getProviderColor(provider)"
                                 :prepend-icon="getProviderIcon(provider)"
                                 :loading="connecting === provider"
+                                :disabled="(connecting && connecting !== provider) || !!disconnecting"
                                 @click="connectProvider(provider)"
                             >
                                 {{ $t('socialAccounts.connect', { provider: getProviderLabel(provider) }) }}
@@ -127,21 +104,6 @@
                 </v-alert>
             </v-card-text>
         </v-card>
-
-        <!-- Confirmation Dialog -->
-        <v-dialog v-model="confirmDialog" max-width="400">
-            <v-card>
-                <v-card-title class="headline">{{ $t('socialAccounts.disconnectConfirm', { provider: getProviderLabel(providerToDisconnect) }) }}</v-card-title>
-                <v-card-text>
-                    {{ $t('socialAccounts.disconnectMessage', { provider: getProviderLabel(providerToDisconnect) }) }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn @click="confirmDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="error" @click="confirmDisconnect">{{ $t('socialAccounts.disconnect') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
     </div>
 </template>
 
@@ -149,6 +111,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
 
 export default {
     props: {
@@ -158,18 +121,16 @@ export default {
     },
     setup(props) {
         const { t } = useI18n();
+        // Confirmations and the outcome of connect/disconnect are modal
+        const dialog = useDialog();
 
         // State
         const loading = ref(false);
-        const error = ref(null);
-        const successMessage = ref(null);
         const connectedAccounts = ref([]);
         const availableProviders = ref([]);
         const hasPassword = ref(true);
         const connecting = ref(null);
         const disconnecting = ref(null);
-        const confirmDialog = ref(false);
-        const providerToDisconnect = ref(null);
 
         // Provider configuration
         const providerConfig = {
@@ -215,7 +176,6 @@ export default {
 
         const fetchSocialAccounts = async () => {
             loading.value = true;
-            error.value = null;
 
             try {
                 const response = await axios.get('/api/account/social-accounts');
@@ -223,47 +183,42 @@ export default {
                 availableProviders.value = response.data.available || [];
                 hasPassword.value = response.data.has_password || false;
             } catch (err) {
-                error.value = t('socialAccounts.loadFailed');
                 console.error('Error fetching social accounts:', err);
+                await dialog.requestError(err, t('socialAccounts.loadFailed'));
             } finally {
                 loading.value = false;
             }
         };
 
         const connectProvider = (provider) => {
+            if (connecting.value || disconnecting.value) return;
             connecting.value = provider;
             // Redirect to OAuth link endpoint
             window.location.href = `/api/account/social-accounts/${provider}/link`;
         };
 
-        const disconnectProvider = (provider) => {
-            providerToDisconnect.value = provider;
-            confirmDialog.value = true;
-        };
+        const disconnectProvider = async (provider) => {
+            if (disconnecting.value || connecting.value) return;
 
-        const confirmDisconnect = async () => {
-            const provider = providerToDisconnect.value;
-            confirmDialog.value = false;
+            const confirmed = await dialog.confirm({
+                title: t('socialAccounts.disconnectConfirm', { provider: getProviderLabel(provider) }),
+                content: t('socialAccounts.disconnectMessage', { provider: getProviderLabel(provider) }),
+                confirmationText: t('socialAccounts.disconnect'),
+                color: 'warning',
+            });
+            if (!confirmed) return;
+
             disconnecting.value = provider;
-            error.value = null;
-            successMessage.value = null;
-
             try {
                 const response = await axios.delete(`/api/account/social-accounts/${provider}`);
-                successMessage.value = response.data.message || t('socialAccounts.disconnectedSuccess', { provider: getProviderLabel(provider) });
-
                 // Refresh the list
                 await fetchSocialAccounts();
+                await dialog.success(response.data.message || t('socialAccounts.disconnectedSuccess', { provider: getProviderLabel(provider) }));
             } catch (err) {
-                if (err.response?.data?.error) {
-                    error.value = err.response.data.error;
-                } else {
-                    error.value = t('socialAccounts.disconnectFailed', { provider: getProviderLabel(provider) });
-                }
                 console.error('Error disconnecting provider:', err);
+                await dialog.requestError(err, t('socialAccounts.disconnectFailed', { provider: getProviderLabel(provider) }));
             } finally {
                 disconnecting.value = null;
-                providerToDisconnect.value = null;
             }
         };
 
@@ -274,22 +229,17 @@ export default {
 
         return {
             loading,
-            error,
-            successMessage,
             connectedAccounts,
             availableProviders,
             hasPassword,
             connecting,
             disconnecting,
-            confirmDialog,
-            providerToDisconnect,
             canDisconnect,
             getProviderLabel,
             getProviderIcon,
             getProviderColor,
             connectProvider,
             disconnectProvider,
-            confirmDisconnect,
         };
     }
 };
