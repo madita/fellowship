@@ -5,7 +5,7 @@
         <h2 v-if="content.title" class="text-h3 text-md-h2 font-weight-bold mb-4">
           {{ content.title }}
         </h2>
-        <p v-if="content.description" class="text-h6 text-grey">
+        <p v-if="content.description" class="text-h6 text-medium-emphasis">
           {{ content.description }}
         </p>
       </div>
@@ -22,15 +22,18 @@
                 allowfullscreen
                 class="video-iframe"
               ></iframe>
-              <div v-else class="video-placeholder pa-8 text-center">
-                <v-icon size="64" color="grey">mdi-video-off</v-icon>
-                <p class="text-h6 text-grey mt-4">No video URL provided</p>
-              </div>
+              <empty-state
+                v-else
+                compact
+                class="video-placeholder"
+                icon="mdi-video-off"
+                :title="t('widgets.landing.noVideo')"
+              />
             </div>
           </v-card>
 
           <div v-if="content.caption" class="text-center mt-4">
-            <p class="text-body-1 text-grey">{{ content.caption }}</p>
+            <p class="text-body-1 text-medium-emphasis">{{ content.caption }}</p>
           </div>
         </v-col>
       </v-row>
@@ -40,6 +43,10 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import EmptyState from '@/components/common/EmptyState.vue';
+
+const { t } = useI18n();
 
 const props = defineProps({
   content: {
@@ -115,6 +122,6 @@ const embedUrl = computed(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(var(--v-theme-on-surface), 0.05);
 }
 </style>

@@ -15,7 +15,7 @@
             </v-avatar>
             <div>
               <div class="font-weight-bold">{{ testimonial.author }}</div>
-              <div class="text-caption text-grey">{{ testimonial.role }}</div>
+              <div class="text-caption text-medium-emphasis">{{ testimonial.role }}</div>
             </div>
           </div>
           <p class="text-body-1 font-italic">"{{ testimonial.quote }}"</p>

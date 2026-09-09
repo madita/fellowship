@@ -1,6 +1,6 @@
 <template>
     <div class="forum-post-item" :class="{ 'is-solution': post.is_solution }">
-        <v-card variant="outlined" class="mb-3" :color="post.is_solution ? 'success' : undefined">
+        <v-card variant="outlined" rounded="lg" class="mb-3" :color="post.is_solution ? 'success' : undefined">
             <!-- Post Header -->
             <v-card-text class="pb-2">
                 <div class="d-flex align-center mb-3">
@@ -15,6 +15,7 @@
                     <v-chip
                         v-if="post.is_solution"
                         color="success"
+                        variant="tonal"
                         size="small"
                         prepend-icon="mdi-check-circle"
                     >
@@ -28,9 +29,10 @@
                 <!-- Post Body (edit mode) -->
                 <div v-else>
                     <Tiptap v-model="editBody" type="simple" />
-                    <div class="d-flex gap-2 mt-2">
+                    <div class="d-flex ga-2 mt-2">
                         <v-btn
                             color="primary"
+                            variant="flat"
                             size="small"
                             :loading="busy"
                             @click="saveEdit"
@@ -54,7 +56,7 @@
                 <v-btn
                     size="small"
                     variant="text"
-                    :color="post.is_liked ? 'red' : undefined"
+                    :color="post.is_liked ? 'error' : undefined"
                     :prepend-icon="post.is_liked ? 'mdi-heart' : 'mdi-heart-outline'"
                     :loading="busy && busyAction === 'like'"
                     :disabled="busy && busyAction !== 'like'"
@@ -261,9 +263,5 @@ export default {
     font-size: 0.85em;
     margin-bottom: 4px;
     color: rgb(var(--v-theme-primary));
-}
-
-.gap-2 {
-    gap: 8px;
 }
 </style>

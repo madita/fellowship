@@ -38,11 +38,11 @@
                 {{ member.role }}
               </p>
 
-              <p v-if="member.bio" class="text-body-2 text-grey-darken-1 mb-4">
+              <p v-if="member.bio" class="text-body-2 text-medium-emphasis mb-4">
                 {{ member.bio }}
               </p>
 
-              <div class="d-flex justify-center gap-2">
+              <div class="d-flex justify-center ga-2">
                 <v-btn
                   v-if="member.email"
                   icon
@@ -122,7 +122,4 @@ const props = defineProps({
   transform: translateY(-8px);
 }
 
-.gap-2 {
-  gap: 8px;
-}
 </style>

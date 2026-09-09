@@ -1,18 +1,31 @@
 <template>
     <div>
+        <loading-state v-if="loading" />
 
-        <v-sheet v-if="slug.length > 0 && !loading">
-            <v-alert v-if="categories === null" type="info">{{ $t('wiki.categoryNotExists') }}</v-alert>
-            <v-container class="py-2 pt-lg-5">
-<!--                <v-alert>{{message}}</v-alert>-->
-                <v-btn v-if="authenticated" class="text-right mx-1" :to="`/wiki/category/${slug}/${mode}`">
-                    {{mode}}
-                </v-btn>
-                <h1>{{info.term.title}}</h1>
-                <p v-html="description"></p>
+        <template v-else-if="slug.length > 0">
+            <page-header
+                :title="info.term?.title || slug"
+                icon="mdi-folder-outline"
+                back-to="/wiki/category"
+            >
+                <template v-if="authenticated" #actions>
+                    <v-btn
+                        color="primary"
+                        variant="elevated"
+                        :prepend-icon="mode === 'edit' ? 'mdi-pencil' : 'mdi-plus'"
+                        :to="`/wiki/category/${slug}/${mode}`"
+                    >
+                        {{ mode === 'edit' ? $t('wiki.editCategory') : $t('wiki.createCategory') }}
+                    </v-btn>
+                </template>
 
-                <div class="sub-category py-1 pt-lg-1" v-if="info.children?.length">
-                    <h2>{{ $t('wiki.subcategories') }}</h2>
+                <v-alert v-if="categories === null" type="info" class="mb-4">{{ $t('wiki.categoryNotExists') }}</v-alert>
+                <p v-if="description" class="text-body-1 mb-0" v-html="description"></p>
+            </page-header>
+
+            <v-container fluid>
+                <div class="sub-category mb-6" v-if="info.children?.length">
+                    <h2 class="text-h6 mb-2">{{ $t('wiki.subcategories') }}</h2>
                     <div class="category-columns" :style="subCssVars">
                         <div
                             v-for="(category, capital) in $helpers.groupTerms(info.children)"
@@ -32,42 +45,60 @@
                         </div>
                     </div>
                 </div>
-            </v-container>
 
-
-            <v-container class="category py-6 pt-lg-5">
-                <h2>{{ $t('wiki.pagesInCategory', { category: info.term?.title, count: categories.total }) }}</h2>
-                <div class="category-columns" :style="catCssVars">
-                    <div
-                        v-for="(category, capital) in categories.capital"
-                        :key="capital"
-                        class="category-group"
-                    >
-                        <v-list density="compact" class="bg-transparent">
-                            <v-list-subheader>{{ capital.toUpperCase() }}</v-list-subheader>
-                            <v-list-item
-                                v-for="model in category"
-                                :key="model.data.slug"
-                                @click="goTo(model.data.slug, model.taxonomy[0]?.taxonomy)"
-                            >
-                                <v-list-item-title v-text="model.taxable_title"></v-list-item-title>
-                            </v-list-item>
-                        </v-list>
+                <div class="category">
+                    <h2 class="text-h6 mb-2">{{ $t('wiki.pagesInCategory', { category: info.term?.title, count: categories.total }) }}</h2>
+                    <empty-state
+                        v-if="!categories.total"
+                        icon="mdi-file-document-outline"
+                        :title="$t('wiki.noPages')"
+                        :text="$t('wiki.noPagesHint')"
+                    />
+                    <div v-else class="category-columns" :style="catCssVars">
+                        <div
+                            v-for="(category, capital) in categories.capital"
+                            :key="capital"
+                            class="category-group"
+                        >
+                            <v-list density="compact" class="bg-transparent">
+                                <v-list-subheader>{{ capital.toUpperCase() }}</v-list-subheader>
+                                <v-list-item
+                                    v-for="model in category"
+                                    :key="model.data.slug"
+                                    @click="goTo(model.data.slug, model.taxonomy[0]?.taxonomy)"
+                                >
+                                    <v-list-item-title v-text="model.taxable_title"></v-list-item-title>
+                                </v-list-item>
+                            </v-list>
+                        </div>
                     </div>
                 </div>
             </v-container>
-        </v-sheet>
-        <v-sheet v-if="!slug.length && !loading">
-            <v-container class="py-2 pt-lg-5">
-                <h1>{{ $t('wiki.categories') }}</h1>
-                <p><v-text-field
+        </template>
+
+        <template v-else>
+            <page-header
+                :title="$t('wiki.categories')"
+                :subtitle="$t('wiki.categoriesSubtitle')"
+                icon="mdi-folder-multiple-outline"
+                back-to="/wiki"
+            >
+                <v-text-field
                     :label="$t('common.search')"
                     v-model="textSearch"
+                    prepend-inner-icon="mdi-magnify"
                     hide-details="auto"
-                ></v-text-field></p>
-            </v-container>
-            <v-container class="category py-6 pt-lg-5">
-                <div class="category-columns" :style="catCssVars">
+                ></v-text-field>
+            </page-header>
+
+            <v-container fluid>
+                <empty-state
+                    v-if="!Object.keys(catFilter).length"
+                    icon="mdi-folder-search-outline"
+                    :title="$t('wiki.noCategories')"
+                    :text="textSearch ? $t('wiki.noCategoriesHint') : ''"
+                />
+                <div v-else class="category-columns" :style="catCssVars">
                     <div
                         v-for="(category, capital) in catFilter"
                         :key="capital"
@@ -86,15 +117,21 @@
                     </div>
                 </div>
             </v-container>
-        </v-sheet>
+        </template>
     </div>
 </template>
 
 <script>
 import { useAuthStore } from '@/store/authStore.js';
+import PageHeader from '../common/PageHeader.vue';
+import EmptyState from '../common/EmptyState.vue';
+import LoadingState from '../common/LoadingState.vue';
 
 export default {
     components: {
+        PageHeader,
+        EmptyState,
+        LoadingState,
     },
     data() {
         return {
@@ -270,15 +307,4 @@ export default {
         column-count: 1 !important;
     }
 }
-
-.card-outter {
-    position: relative;
-    padding-bottom: 50px;
-}
-.card-actions {
-    position: absolute;
-    bottom: 0;
-}
 </style>
-
-

@@ -1,56 +1,64 @@
 <template>
-    <div class="d-flex flex-grow-1 flex-row mt-2">
-        <v-container class="mb-15">
-<!--            <template v-if="authenticated">-->
-<!--                <v-btn text class="mx-1" :to="`/wiki/${slug}`">-->
-<!--                    Cancel-->
-<!--                </v-btn>-->
-<!--            </template>-->
+    <div>
+        <page-header
+            :title="$t('wiki.createCategory')"
+            :subtitle="slug ? $t('wiki.creatingCategory', { slug: slug }) : ''"
+            icon="mdi-folder-plus-outline"
+            :back-to="slug ? `/wiki/category/${slug}` : '/wiki/category'"
+        >
+            <template #actions>
+                <v-btn
+                    variant="tonal"
+                    :to="slug ? `/wiki/category/${slug}` : '/wiki/category'"
+                    :disabled="saving"
+                >
+                    {{ $t('common.cancel') }}
+                </v-btn>
+                <v-btn
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-content-save"
+                    :loading="saving"
+                    @click="saveCategory"
+                >
+                    {{ $t('common.save') }}
+                </v-btn>
+            </template>
 
             <v-alert type="info">{{ $t('wiki.categoryNotExistsFillForm') }}</v-alert>
+        </page-header>
+
+        <v-container class="mb-15">
             <v-row>
-                <v-col
-                    cols="8">
+                <v-col cols="12" md="8">
                     <v-text-field
                         :label="$t('common.title')"
                         v-model="newCategory"
                         :disabled="saving"
                     ></v-text-field>
 
-                    <!--                    <simple-editor v-model="page.body" :value="page.body" id="text-body" name="content"></simple-editor>-->
                     <tiptap v-model="content" :model-value="content" id="text-content" name="content"/>
-
                 </v-col>
-                <v-col
-                    cols="4">
-
-
-                    <template>
-                        <v-combobox
-                            v-model="parentValue"
-                            :items="parents"
-                            item-title="title"
-                            :label="$t('wiki.parentCategory')"
-                            chips
-                            clearable
-                        ></v-combobox>
-                        <v-combobox
-                            v-model="colorsValue"
-                            :items="colors"
-                            item-title="title"
-                            :label="$t('wiki.colors')"
-                            chips
-                            clearable
-                        ></v-combobox>
-
-                    </template>
-
-                    <v-btn :loading="saving" @click="saveCategory">{{ $t('common.save') }}</v-btn>
+                <v-col cols="12" md="4">
+                    <v-combobox
+                        v-model="parentValue"
+                        :items="parents"
+                        item-title="title"
+                        :label="$t('wiki.parentCategory')"
+                        chips
+                        clearable
+                    ></v-combobox>
+                    <v-combobox
+                        v-model="colorsValue"
+                        :items="colors"
+                        item-title="title"
+                        :label="$t('wiki.colors')"
+                        chips
+                        clearable
+                    ></v-combobox>
                 </v-col>
             </v-row>
-
         </v-container>
-
     </div>
 </template>
 
@@ -58,11 +66,13 @@
 
 // import {mapGetters} from "vuex";
 import Tiptap from '../common/tiptap/Tiptap.vue'
+import PageHeader from '../common/PageHeader.vue'
 import { useAuthStore } from '@/store/authStore.js';
 
 export default {
     components: {
-        Tiptap
+        Tiptap,
+        PageHeader
     },
     data() {
         return {
@@ -176,16 +186,3 @@ export default {
     }
 }
 </script>
-
-<style>
-.card-outter {
-    position: relative;
-    padding-bottom: 50px;
-}
-.card-actions {
-    position: absolute;
-    bottom: 0;
-}
-</style>
-
-

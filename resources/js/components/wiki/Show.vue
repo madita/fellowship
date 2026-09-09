@@ -1,134 +1,108 @@
 <template>
     <div class="wiki-page-container">
         <!-- Loading State -->
-        <div v-if="loading" class="loading-container">
-            <v-container class="text-center py-16">
-                <v-progress-circular
-                    size="80"
-                    width="4"
-                    color="primary"
-                    indeterminate
-                    class="mb-4"
-                />
-                <h3 class="text-h6 text-medium-emphasis">{{ $t('wiki.loadingPage') }}</h3>
-            </v-container>
-        </div>
+        <loading-state v-if="loading" :text="$t('wiki.loadingPage')" />
 
         <!-- Content -->
         <div v-else class="wiki-content">
-            <v-container class="py-8">
-                <!-- Header Section -->
-                <div class="wiki-header mb-8">
-                    <v-row align="center">
-                        <v-col cols="12" md="8">
-                            <!-- Redirect Notice -->
-                            <div v-if="redirect.length > 0 && redirect !== 'no'" class="redirect-notice mb-4">
-                                <v-alert
-                                    type="info"
-                                    variant="tonal"
-                                    density="compact"
-                                    class="redirect-alert"
-                                >
-                                    <template v-slot:prepend>
-                                        <v-icon>mdi-arrow-right</v-icon>
-                                    </template>
-                                    {{ $t('wiki.redirectedFrom') }}
-                                    <v-btn
-                                        :href="`/wiki/${redirect}?redirect=no`"
-                                        variant="text"
-                                        size="small"
-                                        class="text-decoration-underline ml-1"
-                                    >
-                                        {{ redirect }}
-                                    </v-btn>
-                                </v-alert>
-                            </div>
+            <page-header
+                :title="wikipage.title || $t('wiki.untitledPage')"
+                :subtitle="pageSubtitle"
+                icon="mdi-book-open-page-variant-outline"
+                :back-to="{ name: 'wiki-index' }"
+            >
+                <template v-if="isAdmin || (authStore.isLoggedIn && mode)" #actions>
+                    <v-chip
+                        v-if="isAdmin"
+                        :color="isApproved ? 'success' : 'warning'"
+                        size="small"
+                        variant="tonal"
+                    >
+                        {{ isApproved ? $t('wiki.approved') : $t('wiki.pendingApproval') }}
+                    </v-chip>
+                    <v-btn
+                        v-if="authStore.isLoggedIn && mode"
+                        color="primary"
+                        variant="elevated"
+                        :prepend-icon="mode === 'edit' ? 'mdi-pencil' : 'mdi-plus'"
+                        :to="`/wiki/${slug}/${mode}`"
+                    >
+                        {{ mode === 'edit' ? $t('wiki.editPage') : $t('wiki.createPage') }}
+                    </v-btn>
+                </template>
 
-                            <!-- Pending Approval Banner (admin only) -->
-                            <v-alert
-                                v-if="isAdmin && !isApproved"
-                                type="warning"
-                                variant="tonal"
-                                class="mb-4"
+                <template v-if="(redirect.length > 0 && redirect !== 'no') || (isAdmin && !isApproved) || message">
+                    <!-- Redirect Notice -->
+                    <v-alert
+                        v-if="redirect.length > 0 && redirect !== 'no'"
+                        type="info"
+                        density="compact"
+                        class="mb-3"
+                    >
+                        <template v-slot:prepend>
+                            <v-icon>mdi-arrow-right</v-icon>
+                        </template>
+                        {{ $t('wiki.redirectedFrom') }}
+                        <v-btn
+                            :href="`/wiki/${redirect}?redirect=no`"
+                            variant="text"
+                            size="small"
+                            class="text-decoration-underline ml-1"
+                        >
+                            {{ redirect }}
+                        </v-btn>
+                    </v-alert>
+
+                    <!-- Pending Approval Banner (admin only) -->
+                    <v-alert
+                        v-if="isAdmin && !isApproved"
+                        type="warning"
+                        class="mb-3"
+                    >
+                        <template v-slot:prepend>
+                            <v-icon>mdi-clock-alert-outline</v-icon>
+                        </template>
+                        <div class="d-flex align-center justify-space-between flex-wrap ga-2">
+                            <span>{{ $t('wiki.pendingApproval') }}</span>
+                            <v-btn
+                                color="success"
+                                variant="flat"
+                                size="small"
+                                :loading="approving"
+                                prepend-icon="mdi-check"
+                                @click="approveWiki"
                             >
-                                <template v-slot:prepend>
-                                    <v-icon>mdi-clock-alert-outline</v-icon>
-                                </template>
-                                <div class="d-flex align-center justify-space-between">
-                                    <span>{{ $t('wiki.pendingApproval') }}</span>
-                                    <v-btn
-                                        color="success"
-                                        variant="elevated"
-                                        size="small"
-                                        :loading="approving"
-                                        prepend-icon="mdi-check"
-                                        class="ml-3"
-                                        @click="approveWiki"
-                                    >
-                                        {{ $t('wiki.approve') }}
-                                    </v-btn>
-                                </div>
-                            </v-alert>
+                                {{ $t('wiki.approve') }}
+                            </v-btn>
+                        </div>
+                    </v-alert>
 
-                            <!-- Page Title -->
-                            <div class="page-title-section">
-                                <h1 class="page-title text-h3 font-weight-bold mb-2">
-                                    {{ wikipage.title || $t('wiki.untitledPage') }}
-                                    <v-chip
-                                        v-if="isAdmin"
-                                        :color="isApproved ? 'success' : 'warning'"
-                                        size="small"
-                                        variant="tonal"
-                                        class="ml-2"
-                                    >
-                                        {{ isApproved ? $t('wiki.approved') : $t('wiki.pendingApproval') }}
-                                    </v-chip>
-                                </h1>
+                    <!-- Status Message -->
+                    <v-alert
+                        v-if="message"
+                        :type="mode === 'create' ? 'warning' : 'info'"
+                        class="mb-0"
+                    >
+                        <template v-slot:prepend>
+                            <v-icon>{{ mode === 'create' ? 'mdi-plus-circle' : 'mdi-information' }}</v-icon>
+                        </template>
+                        {{ message }}
+                        <template v-if="mode === 'create'">
+                            <v-btn
+                                color="warning"
+                                variant="flat"
+                                size="small"
+                                class="ml-3"
+                                :to="`/wiki/${slug}/create`"
+                            >
+                                {{ $t('wiki.createPage') }}
+                            </v-btn>
+                        </template>
+                    </v-alert>
+                </template>
+            </page-header>
 
-                                <!-- Status Message -->
-                                <v-alert
-                                    v-if="message"
-                                    :type="mode === 'create' ? 'warning' : 'info'"
-                                    variant="tonal"
-                                    class="mb-4"
-                                >
-                                    <template v-slot:prepend>
-                                        <v-icon>{{ mode === 'create' ? 'mdi-plus-circle' : 'mdi-information' }}</v-icon>
-                                    </template>
-                                    {{ message }}
-                                    <template v-if="mode === 'create'">
-                                        <v-btn
-                                            color="warning"
-                                            variant="elevated"
-                                            size="small"
-                                            class="ml-3"
-                                            :to="`/wiki/${slug}/create`"
-                                        >
-                                            {{ $t('wiki.createPage') }}
-                                        </v-btn>
-                                    </template>
-                                </v-alert>
-                            </div>
-                        </v-col>
-
-                        <!-- Action Buttons -->
-                        <v-col cols="12" md="4" class="text-right">
-                            <div class="action-buttons">
-                                <v-btn
-                                    v-if="authStore.isLoggedIn && mode"
-                                    color="primary"
-                                    variant="elevated"
-                                    :prepend-icon="mode === 'edit' ? 'mdi-pencil' : 'mdi-plus'"
-                                    :to="`/wiki/${slug}/${mode}`"
-                                    class="action-btn"
-                                >
-                                    {{ mode === 'edit' ? $t('wiki.editPage') : $t('wiki.createPage') }}
-                                </v-btn>
-                            </div>
-                        </v-col>
-                    </v-row>
-                </div>
-
+            <v-container fluid>
                 <!-- Main Content Area -->
                 <v-row>
                     <!-- Article Content -->
@@ -156,7 +130,7 @@
                         <div class="sidebar-content">
                             <!-- Categories Section -->
                             <v-card v-if="terms && terms.length > 0" class="mb-4" elevation="1" rounded="lg">
-                                <v-card-title class="text-h6 pb-2">
+                                <v-card-title class="text-subtitle-1 font-weight-medium pb-2">
                                     <v-icon class="mr-2" color="primary">mdi-folder-outline</v-icon>
                                     {{ $t('wiki.categories') }}
                                 </v-card-title>
@@ -183,7 +157,7 @@
 
                             <!-- Tags Section -->
                             <v-card v-if="tags && tags.length > 0" class="mb-4" elevation="1" rounded="lg">
-                                <v-card-title class="text-h6 pb-2">
+                                <v-card-title class="text-subtitle-1 font-weight-medium pb-2">
                                     <v-icon class="mr-2" color="secondary">mdi-tag-outline</v-icon>
                                     {{ $t('wiki.tags') }}
                                 </v-card-title>
@@ -208,7 +182,7 @@
 
                             <!-- Page Info -->
                             <v-card elevation="1" rounded="lg">
-                                <v-card-title class="text-h6 pb-2">
+                                <v-card-title class="text-subtitle-1 font-weight-medium pb-2">
                                     <v-icon class="mr-2" color="success">mdi-information-outline</v-icon>
                                     {{ $t('wiki.pageInformation') }}
                                 </v-card-title>
@@ -246,6 +220,8 @@ import { useUserStore } from '@/store/userStore.js'
 import { useDateFormat } from '@/plugins/formatDate.js' // Adjust path as needed
 import axios from 'axios'
 import { useDialog } from '@/composables/useDialog.js'
+import PageHeader from '@/components/common/PageHeader.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
 
 const { t } = useI18n()
 const dialog = useDialog()
@@ -281,6 +257,14 @@ const approving = ref(false)
 const authenticated = computed(() => authStore.isLoggedIn)
 const user = computed(() => authStore.user)
 const isAdmin = computed(() => userStore.user?.isAdmin || false)
+const pageSubtitle = computed(() => {
+    if (mode.value !== 'edit') return ''
+    const parts = [`${t('wiki.author')}: ${wikiuser.value?.username || t('wiki.anonymous')}`]
+    if (wikipage.value?.updated_at) {
+        parts.push(`${t('wiki.lastModified')}: ${formatDate(wikipage.value.updated_at)}`)
+    }
+    return parts.join(' · ')
+})
 
 // Methods
 const getWikiPage = async () => {
@@ -385,57 +369,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.wiki-page-container {
-    min-height: 100vh;
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
-}
-
-.loading-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 60vh;
-}
-
-.wiki-header {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 51, 234, 0.05) 100%);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 32px;
-    border: 1px solid rgba(59, 130, 246, 0.1);
-}
-
-.page-title {
-    background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1.2;
-}
-
-.redirect-alert {
-    border-radius: 12px !important;
-}
-
-.action-buttons {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.action-btn {
-    border-radius: 12px !important;
-    text-transform: none !important;
-    font-weight: 600 !important;
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2) !important;
-}
-
 .content-card {
-    border: 1px solid rgba(var(--v-border-color), 0.2);
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     backdrop-filter: blur(10px);
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
 }
 
 .sidebar-content {
@@ -445,7 +381,7 @@ onUnmounted(() => {
 
 .category-chip:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.2);
 }
 
 .tag-chip {
@@ -454,7 +390,7 @@ onUnmounted(() => {
 
 .tag-chip:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(147, 51, 234, 0.2);
+    box-shadow: 0 4px 12px rgba(var(--v-theme-secondary), 0.2);
 }
 
 .info-item {
@@ -462,33 +398,8 @@ onUnmounted(() => {
     align-items: center;
 }
 
-.toc-placeholder {
-    font-style: italic;
-    padding: 16px 0;
-}
-
 /* Responsive design */
-@media (max-width: 1024px) {
-    .wiki-header {
-        padding: 16px;
-        margin-bottom: 24px;
-    }
-
-    .action-buttons {
-        justify-content: center;
-        margin-top: 16px;
-    }
-
-    .action-btn {
-        width: 100%;
-    }
-}
-
 @media (max-width: 768px) {
-    .page-title {
-        font-size: 1.75rem !important;
-    }
-
     .sidebar-content {
         position: static;
         margin-top: 24px;
@@ -591,7 +502,6 @@ onUnmounted(() => {
 
 .wiki-content-body a:hover {
     border-bottom-color: rgb(var(--v-theme-primary));
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
     padding: 0 2px;
     border-radius: 4px;
 }

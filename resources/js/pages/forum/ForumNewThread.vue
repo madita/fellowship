@@ -1,44 +1,20 @@
 <template>
-    <div class="forum-new-thread-container">
-        <!-- Header Section -->
-        <div class="forum-header">
-            <v-container>
-                <!-- Breadcrumbs -->
-                <v-breadcrumbs class="px-0 mb-4">
-                    <v-breadcrumbs-item :to="{ name: 'forum-index' }">
-                        {{ $t('forum.home') }}
-                    </v-breadcrumbs-item>
-                    <v-breadcrumbs-divider />
-                    <v-breadcrumbs-item :to="{ name: 'forum-index' }">
-                        {{ $t('forum.forums') }}
-                    </v-breadcrumbs-item>
-                    <v-breadcrumbs-divider />
-                    <v-breadcrumbs-item
-                        :to="{ name: 'forum-category', params: { slug: $route.params.slug } }"
-                    >
-                        {{ forumStore.currentForum?.name || $route.params.slug }}
-                    </v-breadcrumbs-item>
-                    <v-breadcrumbs-divider />
-                    <v-breadcrumbs-item disabled>
-                        {{ $t('forum.newThread') }}
-                    </v-breadcrumbs-item>
-                </v-breadcrumbs>
-
-                <h1 class="forum-title text-h4 font-weight-bold">
-                    {{ $t('forum.createThread') }}
-                </h1>
-            </v-container>
-        </div>
+    <div>
+        <page-header
+            :title="$t('forum.createThread')"
+            :subtitle="forumStore.currentForum?.name || ''"
+            icon="mdi-message-plus-outline"
+            :back-to="{ name: 'forum-category', params: { slug: $route.params.slug } }"
+        />
 
         <v-container>
-            <v-card class="new-thread-card" variant="elevated">
+            <v-card class="new-thread-card" variant="elevated" rounded="lg">
                 <v-card-text>
                     <!-- Title -->
                     <v-text-field
                         v-model="title"
                         :label="$t('forum.threadTitle')"
                         :placeholder="$t('forum.threadTitlePlaceholder')"
-                        variant="outlined"
                         density="comfortable"
                         :error-messages="titleErrors"
                         :disabled="forumStore.submitting"
@@ -83,10 +59,11 @@
 <script>
 import { useForumStore } from '@/store/forumStore.js'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 
 export default {
     name: 'ForumNewThread',
-    components: { Tiptap },
+    components: { Tiptap, PageHeader },
     setup() {
         const forumStore = useForumStore()
         return { forumStore }
@@ -161,32 +138,8 @@ export default {
 </script>
 
 <style scoped>
-.forum-new-thread-container {
-    min-height: 100vh;
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
-}
-
-.forum-header {
-    background: rgba(var(--v-theme-primary), 0.05);
-    padding: 16px 0;
-}
-
-.forum-title {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
 .new-thread-card {
-    border-radius: 16px !important;
     max-width: 900px;
-    margin: 24px auto;
-}
-
-@media (max-width: 960px) {
-    .forum-header {
-        padding: 12px 0;
-    }
+    margin: 0 auto;
 }
 </style>

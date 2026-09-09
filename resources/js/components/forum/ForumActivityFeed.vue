@@ -1,7 +1,7 @@
 <template>
-    <v-card variant="outlined" class="activity-feed">
-        <v-card-title class="text-h6">
-            <v-icon class="mr-2">mdi-pulse</v-icon>
+    <v-card variant="outlined" rounded="lg">
+        <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center ga-2">
+            <v-icon>mdi-pulse</v-icon>
             {{ $t('forum.recentActivity') }}
         </v-card-title>
         <v-card-text v-if="activities.length > 0" class="pa-0">
@@ -24,19 +24,18 @@
                 </v-list-item>
             </v-list>
         </v-card-text>
-        <v-card-text v-else class="text-center text-medium-emphasis py-6">
-            {{ $t('forum.noResults') }}
-        </v-card-text>
+        <empty-state v-else compact icon="mdi-pulse" :title="$t('forum.noActivity')" />
     </v-card>
 </template>
 
 <script>
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 
 export default {
     name: 'ForumActivityFeed',
-    components: { UserAvatar },
+    components: { UserAvatar, EmptyState },
     props: {
         activities: { type: Array, default: () => [] }
     },
@@ -65,10 +64,6 @@ export default {
 </script>
 
 <style scoped>
-.activity-feed {
-    border-radius: 12px !important;
-}
-
 .activity-item {
     border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }

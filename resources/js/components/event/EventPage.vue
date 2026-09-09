@@ -1,375 +1,386 @@
 <template>
-    <v-container fluid class="pa-0">
-        <v-row>
-            <v-col cols="12">
-                <v-card class="calendar-container elevation-3">
-                    <v-tabs
-                        v-model="activeTab"
-                        bg-color="primary"
-                        centered
-                        dark
-                        class="calendar-tabs"
-                    >
-                        <v-tab value="calendar">{{ $t('events.calendarView') }}</v-tab>
-                        <v-tab value="overview">{{ $t('events.eventsOverview') }}</v-tab>
-                    </v-tabs>
+    <div>
+        <page-header
+            :title="$t('events.title')"
+            :subtitle="$t('events.subtitle')"
+            icon="mdi-calendar-month"
+            fluid
+        >
+            <template #actions>
+                <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="createEvent">
+                    {{ $t('events.addNewEvent') }}
+                </v-btn>
+            </template>
+            <v-tabs v-model="activeTab" color="primary" class="calendar-tabs">
+                <v-tab value="calendar">{{ $t('events.calendarView') }}</v-tab>
+                <v-tab value="overview">{{ $t('events.eventsOverview') }}</v-tab>
+            </v-tabs>
+        </page-header>
 
-                    <v-window v-model="activeTab" class="mt-2">
-                        <!-- Calendar Tab -->
-                        <v-window-item value="calendar">
-                            <!-- Calendar View -->
-                            <v-layout style="z-index: 0;" v-if="!loading">
-                                <!-- Left Sidebar -->
-                                <v-navigation-drawer
-                                    v-model="isLeftSidebarOpen"
-                                    width="300"
-                                    absolute
-                                    touchless
-                                    location="start"
-                                    class="calendar-sidebar rounded-lg"
-                                    :temporary="$vuetify.display.mdAndDown"
-                                    elevation="3"
-                                >
-                                    <div class="pa-4">
+        <v-container fluid class="pa-0">
+            <v-card class="calendar-container" rounded="0" variant="flat">
+                <v-window v-model="activeTab">
+                    <!-- Calendar Tab -->
+                    <v-window-item value="calendar">
+                        <!-- Calendar View -->
+                        <v-layout style="z-index: 0;" v-if="!loading">
+                            <!-- Left Sidebar -->
+                            <v-navigation-drawer
+                                v-model="isLeftSidebarOpen"
+                                width="300"
+                                absolute
+                                touchless
+                                location="start"
+                                class="calendar-sidebar rounded-lg"
+                                :temporary="$vuetify.display.mdAndDown"
+                                elevation="3"
+                            >
+                                <div class="pa-4">
+                                    <v-btn
+                                        block
+                                        color="primary"
+                                        variant="tonal"
+                                        prepend-icon="mdi-plus"
+                                        @click="createEvent"
+                                    >
+                                        {{ $t('events.addNewEvent') }}
+                                    </v-btn>
+                                </div>
+
+                                <v-divider class="my-2" />
+
+                                <div class="d-flex align-center justify-center py-2">
+                                    <VueDatePicker
+                                    :locale="userLocale"
+                                    v-model="startTime"
+                                    :enable-time-picker="false"
+                                    :timezone="userTimezone"
+                                    inline
+                                    auto-apply
+                                    :preview-format="userDateFormat"
+                                    :format="userDateFormat"
+                                    @update:modelValue="jumpToDate"
+                                />
+                                </div>
+
+                                <v-divider class="my-2" />
+
+                                <div class="pa-4">
+                                    <div class="d-flex align-center justify-space-between mb-4">
+                                        <h5 class="text-h6 font-weight-bold">{{ $t('events.eventFilters') }}</h5>
                                         <v-btn
-                                            block
-                                            color="primary"
-                                            prepend-icon="ri-add-line"
-                                            @click="createEvent"
-                                            class="text-none font-weight-bold"
-                                            size="large"
-                                            rounded="lg"
-                                        >
-                                            {{ $t('events.addNewEvent') }}
-                                        </v-btn>
+                                            variant="text"
+                                            density="comfortable"
+                                            size="small"
+                                            @click="checkAll = !checkAll"
+                                        >{{ checkAll ? $t('events.clearAll') : $t('events.selectAll') }}</v-btn>
                                     </div>
 
-                                    <v-divider class="my-2" />
-
-                                    <div class="d-flex align-center justify-center py-2">
-                                        <VueDatePicker
-                                        :locale="userLocale"
-                                        v-model="startTime"
-                                        :enable-time-picker="false"
-                                        :timezone="userTimezone"
-                                        inline
-                                        auto-apply
-                                        :preview-format="userDateFormat"
-                                        :format="userDateFormat"
-                                        @update:modelValue="jumpToDate"
-                                    />
-                                    </div>
-
-                                    <v-divider class="my-2" />
-
-                                    <div class="pa-4">
-                                        <div class="d-flex align-center justify-space-between mb-4">
-                                            <h5 class="text-h6 font-weight-bold">{{ $t('events.eventFilters') }}</h5>
-                                            <v-btn
-                                                variant="text"
-                                                density="comfortable"
-                                                size="small"
-                                                @click="checkAll = !checkAll"
-                                            >{{ checkAll ? $t('events.clearAll') : $t('events.selectAll') }}</v-btn>
+                                    <v-fade-transition hide-on-leave>
+                                        <div class="d-flex flex-column calendars-checkbox">
+                                            <v-checkbox
+                                                v-model="checkAll"
+                                                :label="$t('events.viewAll')"
+                                                color="primary"
+                                                hide-details
+                                                density="compact"
+                                            />
+                                            <v-checkbox
+                                                v-for="type in calendarStore.eventTypes"
+                                                :key="type.name"
+                                                v-model="calendarStore.selectedEventTypes"
+                                                :value="type.name"
+                                                :color="type.color"
+                                                :label="translateTypeName(type.name)"
+                                                hide-details
+                                                density="compact"
+                                            />
                                         </div>
+                                    </v-fade-transition>
+                                </div>
 
-                                        <v-fade-transition hide-on-leave>
-                                            <div class="d-flex flex-column calendars-checkbox">
-                                                <v-checkbox
-                                                    v-model="checkAll"
-                                                    :label="$t('events.viewAll')"
-                                                    color="primary"
-                                                    hide-details
-                                                    density="compact"
-                                                />
-                                                <v-checkbox
-                                                    v-for="type in calendarStore.eventTypes"
-                                                    :key="type.name"
-                                                    v-model="calendarStore.selectedEventTypes"
-                                                    :value="type.name"
-                                                    :color="type.color"
-                                                    :label="translateTypeName(type.name)"
-                                                    hide-details
-                                                    density="compact"
-                                                />
-                                            </div>
-                                        </v-fade-transition>
+                                <v-divider class="my-2" />
+
+                                <!-- Quick Upcoming Events Preview -->
+                                <div class="pa-4">
+                                    <h5 class="text-h6 font-weight-bold mb-4">{{ $t('events.comingUpSoon') }}</h5>
+                                    <div v-if="upcomingEvents.length > 0">
+                                        <v-list lines="two" class="pa-0">
+                                            <v-list-item
+                                                v-for="event in upcomingEvents.slice(0, 3)"
+                                                :key="event.id"
+                                                rounded="lg"
+                                                class="mb-2"
+                                                :title="event.title"
+                                                :subtitle="formatEventTime(event)"
+                                                :prepend-icon="getEventIcon(event.type)"
+                                                :class="`event-item-${getEventClass(event.type)}`"
+                                                @click="viewEventDetails(event)"
+                                            >
+                                                <template v-slot:append>
+                                                    <v-chip
+                                                        size="small"
+                                                        :color="getEventColor(event.type)"
+                                                        class="text-white"
+                                                        variant="flat"
+                                                    >
+                                                        {{ event.type }}
+                                                    </v-chip>
+                                                </template>
+                                            </v-list-item>
+                                        </v-list>
+                                    </div>
+                                    <empty-state
+                                        v-else
+                                        icon="mdi-calendar-blank"
+                                        :title="$t('events.noUpcomingEvents')"
+                                        compact
+                                    />
+                                </div>
+                            </v-navigation-drawer>
+
+                            <!-- Main Calendar Content -->
+                            <v-main>
+                                <v-card
+                                    flat
+                                    class="pa-4 calendar-main"
+                                    rounded="lg"
+                                >
+                                    <div class="d-flex justify-space-between align-center mb-4">
+                                        <v-btn-toggle
+                                            v-model="calendarViewType"
+                                            color="primary"
+                                            rounded="lg"
+                                            mandatory
+                                            density="comfortable"
+                                        >
+                                            <v-btn value="dayGridMonth">{{ $t('events.month') }}</v-btn>
+                                            <v-btn value="timeGridWeek">{{ $t('events.week') }}</v-btn>
+                                            <v-btn value="timeGridDay">{{ $t('events.day') }}</v-btn>
+                                            <v-btn value="custom">{{ $t('events.list') }}</v-btn>
+                                        </v-btn-toggle>
+
+                                        <v-btn
+                                            :icon="isLeftSidebarOpen ? 'mdi-menu-open' : 'mdi-menu'"
+                                            variant="text"
+                                            class="d-md-none"
+                                            @click="isLeftSidebarOpen = !isLeftSidebarOpen"
+                                        />
                                     </div>
 
-                                    <v-divider class="my-2" />
+                                    <full-calendar
+                                        ref="refCalendar"
+                                        :key="userTimezone"
+                                        :options="calendarOptions"
+                                        class="calendar-component"
+                                    />
+                                </v-card>
+                            </v-main>
+                        </v-layout>
+                        <loading-state v-else />
+                    </v-window-item>
 
-                                    <!-- Quick Upcoming Events Preview -->
-                                    <div class="pa-4">
-                                        <h5 class="text-h6 font-weight-bold mb-4">{{ $t('events.comingUpSoon') }}</h5>
-                                        <div v-if="upcomingEvents.length > 0">
-                                            <v-list lines="two" class="pa-0">
+                    <!-- Overview Tab -->
+                    <v-window-item value="overview">
+                        <v-container fluid>
+                            <v-row>
+                                <!-- Upcoming Events Section -->
+                                <v-col cols="12" md="6">
+                                    <v-card rounded="lg" variant="elevated" class="h-100">
+                                        <v-card-title class="d-flex justify-space-between align-center py-4 px-6">
+                                            <div>
+                                                <h3 class="text-subtitle-1 font-weight-medium">{{ $t('events.upcomingEvents') }}</h3>
+                                                <span class="text-caption text-medium-emphasis">{{ $t('events.next7Days') }}</span>
+                                            </div>
+                                            <v-badge
+                                                :content="upcomingEvents.length"
+                                                :color="upcomingEvents.length > 0 ? 'primary' : 'secondary'"
+                                                offset-x="5"
+                                                offset-y="5"
+                                            >
+                                                <v-icon size="large" color="primary">mdi-calendar-clock</v-icon>
+                                            </v-badge>
+                                        </v-card-title>
+
+                                        <v-divider />
+
+                                        <v-card-text class="pa-0">
+                                            <v-list v-if="upcomingEvents.length > 0" class="py-0">
+                                                <v-list-subheader class="d-flex justify-space-between px-6">
+                                                    <span>{{ $t('events.event') }}</span>
+                                                    <span>{{ $t('events.dateAndTime') }}</span>
+                                                </v-list-subheader>
+
                                                 <v-list-item
-                                                    v-for="event in upcomingEvents.slice(0, 3)"
+                                                    v-for="event in upcomingEvents"
                                                     :key="event.id"
-                                                    rounded="lg"
-                                                    class="mb-2"
                                                     :title="event.title"
-                                                    :subtitle="formatEventTime(event)"
-                                                    :prepend-icon="getEventIcon(event.type)"
-                                                    :class="`event-item-${getEventClass(event.type)}`"
+                                                    :subtitle="formatEventLocation(event)"
+                                                    class="px-6 event-list-item"
                                                     @click="viewEventDetails(event)"
                                                 >
-                                                    <template v-slot:append>
-                                                        <v-chip
-                                                            size="small"
+                                                    <template v-slot:prepend>
+                                                        <v-avatar
                                                             :color="getEventColor(event.type)"
-                                                            class="text-white"
-                                                            variant="flat"
+                                                            size="36"
+                                                            class="text-white mr-3"
                                                         >
-                                                            {{ event.type }}
-                                                        </v-chip>
+                                                            <v-icon>{{ getEventIcon(event.type) }}</v-icon>
+                                                        </v-avatar>
+                                                    </template>
+
+                                                    <template v-slot:append>
+                                                        <div class="text-right">
+                                                            <div class="text-body-2">{{ formatEventDate(event) }}</div>
+                                                            <div class="text-caption text-medium-emphasis">{{ formatEventTime(event) }}</div>
+                                                        </div>
                                                     </template>
                                                 </v-list-item>
                                             </v-list>
-                                        </div>
-                                        <div v-else class="text-center pa-4 text-body-2 text-disabled">
-                                            {{ $t('events.noUpcomingEvents') }}
-                                        </div>
-                                    </div>
-                                </v-navigation-drawer>
 
-                                <!-- Main Calendar Content -->
-                                <v-main>
-                                    <v-card
-                                        flat
-                                        class="pa-4 calendar-main"
-                                        rounded="lg"
-                                    >
-                                        <div class="d-flex justify-space-between align-center mb-4">
-                                            <v-btn-toggle
-                                                v-model="calendarViewType"
-                                                color="primary"
-                                                rounded="lg"
-                                                mandatory
-                                                density="comfortable"
+                                            <empty-state
+                                                v-else
+                                                icon="mdi-calendar-blank"
+                                                :title="$t('events.noUpcomingEventsNext7Days')"
+                                                compact
                                             >
-                                                <v-btn value="dayGridMonth">{{ $t('events.month') }}</v-btn>
-                                                <v-btn value="timeGridWeek">{{ $t('events.week') }}</v-btn>
-                                                <v-btn value="timeGridDay">{{ $t('events.day') }}</v-btn>
-                                                <v-btn value="custom">{{ $t('events.list') }}</v-btn>
-                                            </v-btn-toggle>
-
-                                            <v-btn
-                                                icon
-                                                variant="text"
-                                                @click="isLeftSidebarOpen = !isLeftSidebarOpen"
-                                                class="d-md-none"
-                                            >
-                                                <v-icon>{{ isLeftSidebarOpen ? 'mdi-menu-open' : 'mdi-menu' }}</v-icon>
-                                            </v-btn>
-                                        </div>
-
-                                        <full-calendar
-                                            ref="refCalendar"
-                                            :key="userTimezone"
-                                            :options="calendarOptions"
-                                            class="calendar-component"
-                                        />
+                                                <template #actions>
+                                                    <v-btn color="primary" variant="tonal" prepend-icon="mdi-plus" @click="createEvent">
+                                                        {{ $t('events.addEvent') }}
+                                                    </v-btn>
+                                                </template>
+                                            </empty-state>
+                                        </v-card-text>
                                     </v-card>
-                                </v-main>
-                            </v-layout>
-                            <v-sheet v-else class="d-flex justify-center align-center" height="500">
-                                <v-progress-circular indeterminate color="primary" size="64" />
-                            </v-sheet>
-                        </v-window-item>
+                                </v-col>
 
-                        <!-- Overview Tab -->
-                        <v-window-item value="overview">
-                            <v-container>
-                                <v-row>
-                                    <!-- Upcoming Events Section -->
-                                    <v-col cols="12" md="6">
-                                        <v-card class="rounded-lg elevation-2 h-100">
-                                            <v-card-title class="d-flex justify-space-between align-center py-4 px-6">
-                                                <div>
-                                                    <h3 class="text-h5 font-weight-bold">{{ $t('events.upcomingEvents') }}</h3>
-                                                    <span class="text-caption text-medium-emphasis">{{ $t('events.next7Days') }}</span>
-                                                </div>
-                                                <v-badge
-                                                    :content="upcomingEvents.length"
-                                                    :color="upcomingEvents.length > 0 ? 'primary' : 'grey'"
-                                                    offset-x="5"
-                                                    offset-y="5"
-                                                >
-                                                    <v-icon size="large" color="primary">mdi-calendar-clock</v-icon>
-                                                </v-badge>
-                                            </v-card-title>
+                                <!-- All Events Section -->
+                                <v-col cols="12" md="6">
+                                    <v-card rounded="lg" variant="elevated" class="h-100">
+                                        <v-card-title class="d-flex justify-space-between align-center py-4 px-6">
+                                            <div>
+                                                <h3 class="text-subtitle-1 font-weight-medium">{{ $t('events.allEvents') }}</h3>
+                                                <span class="text-caption text-medium-emphasis">{{ $t('events.byCategory') }}</span>
+                                            </div>
+                                            <v-badge
+                                                :content="filterEvents.length"
+                                                :color="filterEvents.length > 0 ? 'primary' : 'secondary'"
+                                                offset-x="5"
+                                                offset-y="5"
+                                            >
+                                                <v-icon size="large" color="primary">mdi-calendar-month</v-icon>
+                                            </v-badge>
+                                        </v-card-title>
 
-                                            <v-divider />
+                                        <v-divider />
 
-                                            <v-card-text class="pa-0">
-                                                <v-list v-if="upcomingEvents.length > 0" class="py-0">
-                                                    <v-list-subheader class="d-flex justify-space-between px-6">
-                                                        <span>{{ $t('events.event') }}</span>
-                                                        <span>{{ $t('events.dateAndTime') }}</span>
-                                                    </v-list-subheader>
-
-                                                    <v-list-item
-                                                        v-for="event in upcomingEvents"
-                                                        :key="event.id"
-                                                        :title="event.title"
-                                                        :subtitle="formatEventLocation(event)"
-                                                        class="px-6 event-list-item"
-                                                        @click="viewEventDetails(event)"
+                                        <v-card-text class="pa-0">
+                                            <div v-if="filterEvents.length > 0">
+                                                <v-expansion-panels variant="accordion" class="event-panels">
+                                                    <v-expansion-panel
+                                                        v-for="(typeGroup, typeName) in groupedEvents"
+                                                        :key="typeName"
                                                     >
-                                                        <template v-slot:prepend>
-                                                            <v-avatar
-                                                                :color="getEventColor(event.type)"
-                                                                size="36"
-                                                                class="text-white mr-3"
-                                                            >
-                                                                <v-icon>{{ getEventIcon(event.type) }}</v-icon>
-                                                            </v-avatar>
-                                                        </template>
-
-                                                        <template v-slot:append>
-                                                            <div class="text-right">
-                                                                <div class="text-body-2">{{ formatEventDate(event) }}</div>
-                                                                <div class="text-caption text-medium-emphasis">{{ formatEventTime(event) }}</div>
-                                                            </div>
-                                                        </template>
-                                                    </v-list-item>
-                                                </v-list>
-
-                                                <v-sheet v-else class="d-flex flex-column justify-center align-center py-12">
-                                                    <v-icon size="64" color="grey-lighten-2">mdi-calendar-blank</v-icon>
-                                                    <span class="text-medium-emphasis mt-4">{{ $t('events.noUpcomingEventsNext7Days') }}</span>
-                                                    <v-btn variant="text" color="primary" class="mt-4" @click="createEvent">
-                                                        {{ $t('events.addEvent') }}
-                                                    </v-btn>
-                                                </v-sheet>
-                                            </v-card-text>
-                                        </v-card>
-                                    </v-col>
-
-                                    <!-- All Events Section -->
-                                    <v-col cols="12" md="6">
-                                        <v-card class="rounded-lg elevation-2 h-100">
-                                            <v-card-title class="d-flex justify-space-between align-center py-4 px-6">
-                                                <div>
-                                                    <h3 class="text-h5 font-weight-bold">{{ $t('events.allEvents') }}</h3>
-                                                    <span class="text-caption text-medium-emphasis">{{ $t('events.byCategory') }}</span>
-                                                </div>
-                                                <v-badge
-                                                    :content="filterEvents.length"
-                                                    :color="filterEvents.length > 0 ? 'primary' : 'grey'"
-                                                    offset-x="5"
-                                                    offset-y="5"
-                                                >
-                                                    <v-icon size="large" color="primary">mdi-calendar-month</v-icon>
-                                                </v-badge>
-                                            </v-card-title>
-
-                                            <v-divider />
-
-                                            <v-card-text class="pa-0">
-                                                <div v-if="filterEvents.length > 0">
-                                                    <v-expansion-panels variant="accordion" class="event-panels">
-                                                        <v-expansion-panel
-                                                            v-for="(typeGroup, typeName) in groupedEvents"
-                                                            :key="typeName"
-                                                        >
-                                                            <v-expansion-panel-title>
-                                                                <v-row no-gutters>
-                                                                    <v-col cols="2">
-                                                                        <v-avatar :color="getEventColor(typeName)" size="36" class="text-white">
-                                                                            <v-icon>{{ getEventIcon(typeName) }}</v-icon>
-                                                                        </v-avatar>
-                                                                    </v-col>
-                                                                    <v-col cols="8" class="d-flex align-center">
-                                                                        {{ translateTypeName(typeName) }}
-                                                                    </v-col>
-                                                                    <v-col cols="2" class="text-right">
-                                                                        <v-chip
-                                                                            size="small"
-                                                                            :color="getEventColor(typeName)"
-                                                                            variant="elevated"
-                                                                            class="text-white"
-                                                                        >
-                                                                            {{ typeGroup.length }}
-                                                                        </v-chip>
-                                                                    </v-col>
-                                                                </v-row>
-                                                            </v-expansion-panel-title>
-                                                            <v-expansion-panel-text>
-                                                                <v-list lines="two" class="pa-0">
-                                                                    <v-list-item
-                                                                        v-for="event in typeGroup"
-                                                                        :key="event.id"
-                                                                        :title="event.title"
-                                                                        :subtitle="formatEventDate(event)"
-                                                                        @click="viewEventDetails(event)"
-                                                                        class="event-list-item"
+                                                        <v-expansion-panel-title>
+                                                            <v-row no-gutters>
+                                                                <v-col cols="2">
+                                                                    <v-avatar :color="getEventColor(typeName)" size="36" class="text-white">
+                                                                        <v-icon>{{ getEventIcon(typeName) }}</v-icon>
+                                                                    </v-avatar>
+                                                                </v-col>
+                                                                <v-col cols="8" class="d-flex align-center">
+                                                                    {{ translateTypeName(typeName) }}
+                                                                </v-col>
+                                                                <v-col cols="2" class="text-right">
+                                                                    <v-chip
+                                                                        size="small"
+                                                                        :color="getEventColor(typeName)"
+                                                                        variant="elevated"
+                                                                        class="text-white"
                                                                     >
-                                                                        <template v-slot:append>
-                                                                            <v-btn
-                                                                                icon
-                                                                                variant="text"
-                                                                                size="small"
-                                                                                color="primary"
-                                                                                @click.stop="jumpToEventDate(event.start)"
-                                                                            >
-                                                                                <v-icon>mdi-calendar-arrow-right</v-icon>
-                                                                            </v-btn>
-                                                                        </template>
-                                                                    </v-list-item>
-                                                                </v-list>
-                                                            </v-expansion-panel-text>
-                                                        </v-expansion-panel>
-                                                    </v-expansion-panels>
-                                                </div>
+                                                                        {{ typeGroup.length }}
+                                                                    </v-chip>
+                                                                </v-col>
+                                                            </v-row>
+                                                        </v-expansion-panel-title>
+                                                        <v-expansion-panel-text>
+                                                            <v-list lines="two" class="pa-0">
+                                                                <v-list-item
+                                                                    v-for="event in typeGroup"
+                                                                    :key="event.id"
+                                                                    :title="event.title"
+                                                                    :subtitle="formatEventDate(event)"
+                                                                    @click="viewEventDetails(event)"
+                                                                    class="event-list-item"
+                                                                >
+                                                                    <template v-slot:append>
+                                                                        <v-btn
+                                                                            icon
+                                                                            variant="text"
+                                                                            size="small"
+                                                                            color="primary"
+                                                                            @click.stop="jumpToEventDate(event.start)"
+                                                                        >
+                                                                            <v-icon>mdi-calendar-arrow-right</v-icon>
+                                                                        </v-btn>
+                                                                    </template>
+                                                                </v-list-item>
+                                                            </v-list>
+                                                        </v-expansion-panel-text>
+                                                    </v-expansion-panel>
+                                                </v-expansion-panels>
+                                            </div>
 
-                                                <v-sheet v-else class="d-flex flex-column justify-center align-center py-12">
-                                                    <v-icon size="64" color="grey-lighten-2">mdi-calendar-blank</v-icon>
-                                                    <span class="text-medium-emphasis mt-4">{{ $t('events.noEventsFound') }}</span>
-                                                    <v-btn variant="text" color="primary" class="mt-4" @click="createEvent">
+                                            <empty-state
+                                                v-else
+                                                icon="mdi-calendar-blank"
+                                                :title="$t('events.noEventsFound')"
+                                                compact
+                                            >
+                                                <template #actions>
+                                                    <v-btn color="primary" variant="tonal" prepend-icon="mdi-plus" @click="createEvent">
                                                         {{ $t('events.addEvent') }}
                                                     </v-btn>
-                                                </v-sheet>
-                                            </v-card-text>
-                                        </v-card>
-                                    </v-col>
+                                                </template>
+                                            </empty-state>
+                                        </v-card-text>
+                                    </v-card>
+                                </v-col>
 
-                                    <!-- Event Statistics Card -->
-                                    <v-col cols="12">
-                                        <v-card class="rounded-lg elevation-2">
-                                            <v-card-title class="py-4 px-6">
-                                                <h3 class="text-h5 font-weight-bold">{{ $t('events.eventStatistics') }}</h3>
-                                            </v-card-title>
+                                <!-- Event Statistics Card -->
+                                <v-col cols="12">
+                                    <v-card rounded="lg" variant="elevated">
+                                        <v-card-title class="py-4 px-6">
+                                            <h3 class="text-subtitle-1 font-weight-medium">{{ $t('events.eventStatistics') }}</h3>
+                                        </v-card-title>
 
-                                            <v-divider />
+                                        <v-divider />
 
-                                            <v-card-text>
-                                                <v-row class="my-2">
-                                                    <v-col v-for="(stat, index) in eventStats" :key="index" cols="12" sm="6" md="3">
-                                                        <v-card flat class="pa-4 rounded-lg" :color="stat.color + '-lighten-5'">
-                                                            <div class="d-flex align-center">
-                                                                <v-avatar :color="stat.color" size="48" class="text-white mr-4">
-                                                                    <v-icon size="large">{{ stat.icon }}</v-icon>
-                                                                </v-avatar>
-                                                                <div>
-                                                                    <div class="text-h4 font-weight-bold">{{ stat.value }}</div>
-                                                                    <div class="text-caption text-medium-emphasis">{{ stat.title }}</div>
-                                                                </div>
+                                        <v-card-text>
+                                            <v-row class="my-2">
+                                                <v-col v-for="(stat, index) in eventStats" :key="index" cols="12" sm="6" md="3">
+                                                    <v-card variant="tonal" :color="stat.color" class="pa-4" rounded="lg">
+                                                        <div class="d-flex align-center">
+                                                            <v-avatar :color="stat.color" size="48" class="text-white mr-4">
+                                                                <v-icon size="large">{{ stat.icon }}</v-icon>
+                                                            </v-avatar>
+                                                            <div>
+                                                                <div class="text-h4 font-weight-bold">{{ stat.value }}</div>
+                                                                <div class="text-caption text-medium-emphasis">{{ stat.title }}</div>
                                                             </div>
-                                                        </v-card>
-                                                    </v-col>
-                                                </v-row>
-                                            </v-card-text>
-                                        </v-card>
-                                    </v-col>
-                                </v-row>
-                            </v-container>
-                        </v-window-item>
-                    </v-window>
-                </v-card>
-            </v-col>
-        </v-row>
+                                                        </div>
+                                                    </v-card>
+                                                </v-col>
+                                            </v-row>
+                                        </v-card-text>
+                                    </v-card>
+                                </v-col>
+                            </v-row>
+                        </v-container>
+                    </v-window-item>
+                </v-window>
+            </v-card>
+        </v-container>
 
         <!-- Event Handler Sidebar (kept from original) -->
         <CalendarEventHandler
@@ -381,7 +392,7 @@
             @update-event="updateEvent"
             @remove-event="removeEvent"
         />
-    </v-container>
+    </div>
 </template>
 
 <script setup>
@@ -405,6 +416,9 @@ import listPlugin from '@fullcalendar/list';
 import luxon3Plugin from '@fullcalendar/luxon3';
 import customViewPlugin from './custom-list-view.js';
 import CalendarEventHandler from "./CalendarEventHandler.vue";
+import PageHeader from '../common/PageHeader.vue';
+import EmptyState from '../common/EmptyState.vue';
+import LoadingState from '../common/LoadingState.vue';
 import { useCalendarStore } from '@/store/calendarStore.js';
 import { useUserStore } from '@/store/userStore.js';
 import { useSettingsStore } from '@/store/settingStore.js';
@@ -856,12 +870,11 @@ onUnmounted(() => {
 <style lang="scss">
 .calendar-container {
     overflow: hidden;
-    border-radius: 12px;
 }
 
 .calendar-sidebar {
     background-color: rgb(var(--v-theme-surface));
-    border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+    border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .calendar-datepicker {
@@ -874,11 +887,12 @@ onUnmounted(() => {
 .calendar-main {
     background-color: rgb(var(--v-theme-background));
     // Cap the calendar to the viewport so it scrolls internally instead of
-    // growing the page. The offset accounts for the app bar, tabs and the
-    // view-toggle row above; min-height keeps it usable on short screens.
+    // growing the page. The offset accounts for the app bar, the page header
+    // (with tabs) and the view-toggle row above; min-height keeps it usable
+    // on short screens.
     display: flex;
     flex-direction: column;
-    height: calc(100dvh - 180px);
+    height: calc(100dvh - 300px);
     min-height: 500px;
 
     // The view-toggle row is fixed height; the calendar fills the rest.
@@ -916,19 +930,19 @@ onUnmounted(() => {
             background-color: rgba(var(--v-theme-primary), 0.05) !important;
         }
 
-        // Dark mode specific styles
+        // Grid lines follow the theme border colour in light and dark mode
         .fc-scrollgrid {
-            border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+            border-color: rgba(var(--v-border-color), var(--v-border-opacity)) !important;
         }
 
         .fc-col-header-cell {
             background-color: rgb(var(--v-theme-surface));
-            border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+            border-color: rgba(var(--v-border-color), var(--v-border-opacity)) !important;
         }
 
         .fc-daygrid-day {
             background-color: rgb(var(--v-theme-background));
-            border-color: rgba(var(--v-theme-on-surface), 0.12) !important;
+            border-color: rgba(var(--v-border-color), var(--v-border-opacity)) !important;
         }
 
         .fc-timegrid-slot {
@@ -981,7 +995,7 @@ onUnmounted(() => {
     work: 'error'
 ) {
     .event-item-#{$type} {
-        border-left: 3px solid var(--v-theme-#{$color});
+        border-left: 3px solid rgb(var(--v-theme-#{$color}));
     }
 }
 </style>

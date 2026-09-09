@@ -11,16 +11,23 @@
         v-html="content.htmlContent"
       ></div>
 
-      <div v-else class="text-center py-8">
-        <v-icon size="64" color="grey">mdi-code-tags</v-icon>
-        <p class="text-h6 text-grey mt-4">No custom HTML content provided</p>
-        <p class="text-caption text-grey">Add your HTML content in the widget editor</p>
-      </div>
+      <empty-state
+        v-else
+        compact
+        icon="mdi-code-tags"
+        :title="t('widgets.landing.noHtml')"
+        :text="t('widgets.landing.noHtmlHint')"
+      />
     </v-container>
   </v-sheet>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
+import EmptyState from '@/components/common/EmptyState.vue';
+
+const { t } = useI18n();
+
 const props = defineProps({
   content: {
     type: Object,

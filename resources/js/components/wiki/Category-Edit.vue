@@ -1,19 +1,41 @@
 <template>
-    <div class="d-flex flex-grow-1 flex-row mt-2">
+    <div>
+        <page-header
+            :title="$t('wiki.editCategory')"
+            :subtitle="info?.term?.title ? $t('wiki.editing', { title: info.term.title }) : slug"
+            icon="mdi-folder-edit-outline"
+            :back-to="`/wiki/category/${slug}`"
+        >
+            <template #actions>
+                <v-btn
+                    variant="tonal"
+                    :to="`/wiki/category/${slug}`"
+                    :disabled="saving"
+                >
+                    {{ $t('common.cancel') }}
+                </v-btn>
+                <v-btn
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-content-save"
+                    :loading="saving"
+                    :disabled="loading || info == null"
+                    @click="updateCategory"
+                >
+                    {{ $t('common.save') }}
+                </v-btn>
+            </template>
+
+            <v-alert v-if="message" type="info">
+                {{ message }}
+            </v-alert>
+        </page-header>
+
         <v-container class="mb-15">
-<!--            <template v-if="authenticated">-->
-<!--                <v-btn text class="mx-1" :to="`/wiki/${slug}`">-->
-<!--                    Cancel-->
-<!--                </v-btn>-->
-<!--            </template>-->
+            <loading-state v-if="loading" />
 
-            <v-row v-if="!loading && info != null">
-                <v-col
-                    cols="8">
-                    <v-alert v-if="message" type="info">
-                        {{ message }}
-                    </v-alert>
-
+            <v-row v-else-if="info != null">
+                <v-col cols="12" md="8">
                     <v-text-field
                         :label="$t('common.title')"
                         v-model="info.term.title"
@@ -21,38 +43,27 @@
                     ></v-text-field>
 
                     <tiptap v-model="info.description" :value="info.description" id="text-content" name="content"/>
-
                 </v-col>
-                <v-col
-                    cols="4">
-
-
-                    <template>
-                        <v-combobox
-                            v-model="parentValue"
-                            :items="parents"
-                            item-title="title"
-                            :label="$t('wiki.parentCategory')"
-                            chips
-                            clearable
-                        ></v-combobox>
-                        <v-combobox
-                            v-model="colorsValue"
-                            :items="colors"
-                            item-title="title"
-                            :label="$t('wiki.colors')"
-                            chips
-                            clearable
-                        ></v-combobox>
-
-                    </template>
-
-                    <v-btn :loading="saving" @click="updateCategory">{{ $t('common.save') }}</v-btn>
+                <v-col cols="12" md="4">
+                    <v-combobox
+                        v-model="parentValue"
+                        :items="parents"
+                        item-title="title"
+                        :label="$t('wiki.parentCategory')"
+                        chips
+                        clearable
+                    ></v-combobox>
+                    <v-combobox
+                        v-model="colorsValue"
+                        :items="colors"
+                        item-title="title"
+                        :label="$t('wiki.colors')"
+                        chips
+                        clearable
+                    ></v-combobox>
                 </v-col>
             </v-row>
-
         </v-container>
-
     </div>
 </template>
 
@@ -60,11 +71,15 @@
 
 // import {mapGetters} from "vuex";
 import Tiptap from '../common/tiptap/Tiptap.vue'
+import PageHeader from '../common/PageHeader.vue'
+import LoadingState from '../common/LoadingState.vue'
 import { useAuthStore } from '@/store/authStore.js';
 
 export default {
     components: {
-        Tiptap
+        Tiptap,
+        PageHeader,
+        LoadingState
     },
     data() {
         return {
@@ -205,16 +220,3 @@ export default {
     }
 }
 </script>
-
-<style>
-.card-outter {
-    position: relative;
-    padding-bottom: 50px;
-}
-.card-actions {
-    position: absolute;
-    bottom: 0;
-}
-</style>
-
-

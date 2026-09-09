@@ -5,7 +5,7 @@
         <h2 class="text-h3 text-md-h2 font-weight-bold mb-4">
           {{ content.title }}
         </h2>
-        <p v-if="content.subtitle" class="text-h6 text-grey">
+        <p v-if="content.subtitle" class="text-h6 text-medium-emphasis">
           {{ content.subtitle }}
         </p>
       </div>
@@ -35,7 +35,7 @@
               />
               <div v-else class="client-logo-placeholder">
                 <v-icon size="48" color="grey">mdi-domain</v-icon>
-                <p class="text-caption text-grey mt-2">{{ logo.name }}</p>
+                <p class="text-caption text-medium-emphasis mt-2">{{ logo.name }}</p>
               </div>
             </a>
 
@@ -48,7 +48,7 @@
               />
               <div v-else class="client-logo-placeholder">
                 <v-icon size="48" color="grey">mdi-domain</v-icon>
-                <p class="text-caption text-grey mt-2">{{ logo.name }}</p>
+                <p class="text-caption text-medium-emphasis mt-2">{{ logo.name }}</p>
               </div>
             </div>
           </div>

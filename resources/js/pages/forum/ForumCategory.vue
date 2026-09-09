@@ -1,78 +1,50 @@
 <template>
-    <div class="forum-category-container">
-        <!-- Header Section -->
-        <div class="forum-header">
-            <v-container>
-                <!-- Breadcrumbs -->
-                <v-breadcrumbs class="px-0 mb-4">
-                    <v-breadcrumbs-item :to="{ name: 'forum-index' }">
-                        {{ $t('forum.home') }}
-                    </v-breadcrumbs-item>
-                    <v-breadcrumbs-divider />
-                    <v-breadcrumbs-item :to="{ name: 'forum-index' }">
-                        {{ $t('forum.forums') }}
-                    </v-breadcrumbs-item>
-                    <template v-if="forumStore.currentForum?.parent">
-                        <v-breadcrumbs-divider />
-                        <v-breadcrumbs-item
-                            :to="{ name: 'forum-category', params: { slug: forumStore.currentForum.parent.slug } }"
-                        >
-                            {{ forumStore.currentForum.parent.name }}
-                        </v-breadcrumbs-item>
-                    </template>
-                    <v-breadcrumbs-divider />
-                    <v-breadcrumbs-item disabled>
-                        {{ forumStore.currentForum?.name }}
-                    </v-breadcrumbs-item>
-                </v-breadcrumbs>
+    <div>
+        <page-header
+            :title="forumStore.currentForum?.name || $t('forum.forums')"
+            :subtitle="forumStore.currentForum?.description || ''"
+            icon="mdi-forum"
+            :back-to="backTo"
+        >
+            <template #actions>
+                <v-btn
+                    v-if="canCreateThread"
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-plus"
+                    @click="createThread"
+                >
+                    {{ $t('forum.newThread') }}
+                </v-btn>
+            </template>
+            <div
+                v-if="forumStore.currentForum?.is_locked || forumStore.currentForum?.is_private"
+                class="d-flex align-center flex-wrap ga-2"
+            >
+                <v-chip
+                    v-if="forumStore.currentForum?.is_locked"
+                    color="warning"
+                    variant="tonal"
+                    size="small"
+                    prepend-icon="mdi-lock"
+                >
+                    {{ $t('forum.locked') }}
+                </v-chip>
+                <v-chip
+                    v-if="forumStore.currentForum?.is_private"
+                    color="info"
+                    variant="tonal"
+                    size="small"
+                    prepend-icon="mdi-lock-outline"
+                >
+                    {{ $t('forum.private') }}
+                </v-chip>
+            </div>
+        </page-header>
 
-                <v-row align="center">
-                    <v-col cols="12" md="8">
-                        <h1 class="forum-title text-h3 font-weight-bold mb-2">
-                            {{ forumStore.currentForum?.name }}
-                        </h1>
-                        <p v-if="forumStore.currentForum?.description" class="text-subtitle-1 text-medium-emphasis">
-                            {{ forumStore.currentForum.description }}
-                        </p>
-                        <div class="d-flex align-center gap-2 mt-2">
-                            <v-chip
-                                v-if="forumStore.currentForum?.is_locked"
-                                color="warning"
-                                size="small"
-                                prepend-icon="mdi-lock"
-                            >
-                                {{ $t('forum.locked') }}
-                            </v-chip>
-                            <v-chip
-                                v-if="forumStore.currentForum?.is_private"
-                                color="info"
-                                size="small"
-                                prepend-icon="mdi-lock-outline"
-                            >
-                                {{ $t('forum.private') }}
-                            </v-chip>
-                        </div>
-                    </v-col>
-                    <v-col cols="12" md="4" class="text-right">
-                        <v-btn
-                            v-if="canCreateThread"
-                            color="primary"
-                            variant="elevated"
-                            size="large"
-                            prepend-icon="mdi-plus"
-                            class="create-btn"
-                            @click="createThread"
-                        >
-                            {{ $t('forum.newThread') }}
-                        </v-btn>
-                    </v-col>
-                </v-row>
-            </v-container>
-        </div>
-
-        <v-container>
+        <v-container fluid>
             <!-- Filter & Sort Controls -->
-            <div class="d-flex flex-wrap align-center gap-2 mb-4">
+            <div class="d-flex flex-wrap align-center ga-2 mb-4">
                 <v-chip
                     v-for="f in filters"
                     :key="f.value"
@@ -91,7 +63,6 @@
                     item-value="value"
                     :label="$t('forum.sortBy')"
                     density="compact"
-                    variant="outlined"
                     hide-details
                     style="max-width: 200px;"
                     @update:model-value="loadForum"
@@ -111,6 +82,7 @@
                     >
                         <v-card
                             variant="outlined"
+                            rounded="lg"
                             class="subforum-card"
                             @click="$router.push({ name: 'forum-category', params: { slug: child.slug } })"
                         >
@@ -130,11 +102,7 @@
                 </v-row>
             </div>
 
-            <!-- Loading State -->
-            <div v-if="forumStore.loading" class="text-center py-12">
-                <v-progress-circular size="64" width="4" color="primary" indeterminate class="mb-4" />
-                <p class="text-body-1 text-medium-emphasis">{{ $t('forum.loadingThreads') }}</p>
-            </div>
+            <loading-state v-if="forumStore.loading" :text="$t('forum.loadingThreads')" />
 
             <!-- Thread List -->
             <div v-else-if="forumStore.threads.length > 0">
@@ -145,6 +113,7 @@
                         :key="'pin-' + thread.id"
                         class="thread-card mb-2 pinned-thread"
                         variant="elevated"
+                        rounded="lg"
                         @click="goToThread(thread)"
                     >
                         <v-card-text class="py-3">
@@ -153,10 +122,10 @@
                                     <div class="d-flex align-center">
                                         <UserAvatar v-if="thread.author || thread.meta?.legacy_author" :user="thread.author" :legacy-name="thread.meta?.legacy_author" />
                                         <div class="ml-3">
-                                            <div class="d-flex align-center gap-2 mb-1">
+                                            <div class="d-flex align-center ga-2 mb-1">
                                                 <v-icon size="16" color="primary">mdi-pin</v-icon>
                                                 <span class="font-weight-bold">{{ thread.title }}</span>
-                                                <v-chip v-if="thread.is_locked" size="x-small" color="warning" prepend-icon="mdi-lock">
+                                                <v-chip v-if="thread.is_locked" size="x-small" color="warning" variant="tonal" prepend-icon="mdi-lock">
                                                     {{ $t('forum.locked') }}
                                                 </v-chip>
                                                 <v-chip v-if="isNewThread(thread)" size="x-small" color="success" variant="elevated">
@@ -198,6 +167,7 @@
                     :key="thread.id"
                     class="thread-card mb-2"
                     variant="elevated"
+                    rounded="lg"
                     @click="goToThread(thread)"
                 >
                     <v-card-text class="py-3">
@@ -206,9 +176,9 @@
                                 <div class="d-flex align-center">
                                     <UserAvatar v-if="thread.author || thread.meta?.legacy_author" :user="thread.author" :legacy-name="thread.meta?.legacy_author" />
                                     <div class="ml-3">
-                                        <div class="d-flex align-center gap-2 mb-1">
+                                        <div class="d-flex align-center ga-2 mb-1">
                                             <span class="font-weight-bold">{{ thread.title }}</span>
-                                            <v-chip v-if="thread.is_locked" size="x-small" color="warning" prepend-icon="mdi-lock">
+                                            <v-chip v-if="thread.is_locked" size="x-small" color="warning" variant="tonal" prepend-icon="mdi-lock">
                                                 {{ $t('forum.locked') }}
                                             </v-chip>
                                             <v-chip v-if="isNewThread(thread)" size="x-small" color="success" variant="elevated">
@@ -254,22 +224,18 @@
                 </div>
             </div>
 
-            <!-- Empty State -->
-            <div v-else-if="!forumStore.loading" class="empty-state text-center py-12">
-                <v-icon size="120" color="disabled" class="mb-4">mdi-message-text-outline</v-icon>
-                <h3 class="text-h5 font-weight-bold mb-2">{{ $t('forum.noThreads') }}</h3>
-                <p class="text-body-1 text-medium-emphasis mb-6">{{ $t('forum.noThreadsDescription') }}</p>
-                <v-btn
-                    v-if="canCreateThread"
-                    color="primary"
-                    variant="elevated"
-                    prepend-icon="mdi-plus"
-                    size="large"
-                    @click="createThread"
-                >
-                    {{ $t('forum.newThread') }}
-                </v-btn>
-            </div>
+            <empty-state
+                v-else
+                icon="mdi-message-text-outline"
+                :title="$t('forum.noThreads')"
+                :text="$t('forum.noThreadsDescription')"
+            >
+                <template v-if="canCreateThread" #actions>
+                    <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="createThread">
+                        {{ $t('forum.newThread') }}
+                    </v-btn>
+                </template>
+            </empty-state>
         </v-container>
     </div>
 </template>
@@ -280,10 +246,13 @@ import { useUserStore } from '@/store/userStore.js'
 import { useAuthStore } from '@/store/authStore.js'
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
 
 export default {
     name: 'ForumCategory',
-    components: { UserAvatar },
+    components: { UserAvatar, PageHeader, EmptyState, LoadingState },
     setup() {
         const forumStore = useForumStore()
         const userStore = useUserStore()
@@ -300,6 +269,13 @@ export default {
     computed: {
         canCreateThread() {
             return this.authStore.isAuthenticated && (this.forumStore.currentForum?.can_create_thread ?? false)
+        },
+        // Back button target: the parent forum when this is a sub-forum, else the forum index
+        backTo() {
+            const parent = this.forumStore.currentForum?.parent
+            return parent
+                ? { name: 'forum-category', params: { slug: parent.slug } }
+                : { name: 'forum-index' }
         },
         filters() {
             return [
@@ -375,34 +351,7 @@ export default {
 </script>
 
 <style scoped>
-.forum-category-container {
-    min-height: 100vh;
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
-}
-
-.forum-header {
-    background: rgba(var(--v-theme-primary), 0.1);
-    padding: 24px 0;
-    backdrop-filter: blur(10px);
-}
-
-.v-theme--light .forum-header {
-    background: linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(156, 39, 176, 0.1) 100%);
-}
-
-.v-theme--dark .forum-header {
-    background: linear-gradient(135deg, rgba(77, 166, 199, 0.15) 0%, rgba(124, 169, 186, 0.15) 100%);
-}
-
-.forum-title {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
 .thread-card {
-    border-radius: 12px !important;
     transition: all 0.2s ease;
     cursor: pointer;
 }
@@ -417,42 +366,11 @@ export default {
 }
 
 .subforum-card {
-    border-radius: 12px !important;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .subforum-card:hover {
     background: rgba(var(--v-theme-primary), 0.05);
-}
-
-.create-btn {
-    border-radius: 12px !important;
-    text-transform: none !important;
-    font-weight: 600 !important;
-}
-
-.gap-2 {
-    gap: 8px;
-}
-
-.empty-state {
-    max-width: 400px;
-    margin: 0 auto;
-}
-
-@media (max-width: 960px) {
-    .forum-header {
-        padding: 16px 0;
-    }
-
-    .text-right {
-        text-align: center !important;
-    }
-
-    .create-btn {
-        width: 100%;
-        margin-top: 16px;
-    }
 }
 </style>

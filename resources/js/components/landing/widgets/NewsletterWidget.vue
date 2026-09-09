@@ -22,15 +22,14 @@
             </p>
           </div>
 
-          <v-card class="pa-4" elevation="8">
+          <v-card class="pa-4" elevation="8" rounded="lg">
             <v-form @submit.prevent="handleSubscribe">
-              <div class="d-flex flex-column flex-sm-row gap-2">
+              <div class="d-flex flex-column flex-sm-row ga-2">
                 <v-text-field
                   v-model="email"
                   :label="content.emailPlaceholder || $t('newsletterWidget.emailPlaceholder')"
                   :required="true"
                   type="email"
-                  variant="outlined"
                   :disabled="isSubscribing"
                   hide-details="auto"
                   class="flex-grow-1"
@@ -47,7 +46,7 @@
                 </v-btn>
               </div>
 
-              <p v-if="content.privacyText" class="text-caption text-grey mt-3 text-center">
+              <p v-if="content.privacyText" class="text-caption text-medium-emphasis mt-3 text-center">
                 {{ content.privacyText }}
               </p>
             </v-form>
@@ -136,9 +135,6 @@ async function handleSubscribe() {
 </script>
 
 <style scoped>
-.gap-2 {
-  gap: 8px;
-}
 
 .subscribe-btn {
   min-width: 140px;

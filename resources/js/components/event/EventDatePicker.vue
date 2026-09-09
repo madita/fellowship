@@ -48,7 +48,7 @@
 </template>
 
 <script setup>
-import {ref, watch, computed, defineProps, defineEmits} from 'vue';
+import {ref, watch, computed} from 'vue';
 import VueDatePicker from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/dist/main.css';
 import { useUserStore } from '@/store/userStore.js';

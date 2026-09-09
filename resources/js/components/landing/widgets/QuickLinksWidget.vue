@@ -36,13 +36,14 @@
               {{ link.icon }}
             </v-icon>
             <div class="text-h6 font-weight-bold mb-2">{{ link.title }}</div>
-            <div v-if="link.description" class="text-body-2 text--secondary">
+            <div v-if="link.description" class="text-body-2 text-medium-emphasis">
               {{ link.description }}
             </div>
             <v-chip
               v-if="link.badge"
               :color="link.badgeColor || 'primary'"
-              small
+              variant="tonal"
+              size="small"
               class="mt-2"
             >
               {{ link.badge }}
@@ -65,7 +66,7 @@
             {{ link.description }}
           </v-list-item-subtitle>
           <template v-if="link.badge" #append>
-            <v-chip :color="link.badgeColor || 'primary'" size="small">
+            <v-chip :color="link.badgeColor || 'primary'" variant="tonal" size="small">
               {{ link.badge }}
             </v-chip>
           </template>
@@ -77,19 +78,18 @@
           :to="link.internal ? link.url : undefined"
           :target="link.external ? '_blank' : undefined"
           :color="link.color || config.buttonColor || 'primary'"
-          :outlined="config.outlined"
-          :text="config.text"
+          :variant="buttonVariant"
           :block="config.block"
-          :large="config.large"
-          :x-large="config.xlarge"
+          :size="buttonSize"
           class="quick-link-button mb-2"
         >
-          <v-icon v-if="link.icon" left>{{ link.icon }}</v-icon>
+          <v-icon v-if="link.icon" start>{{ link.icon }}</v-icon>
           {{ link.title }}
           <v-chip
             v-if="link.badge"
             :color="link.badgeColor || 'white'"
-            small
+            variant="tonal"
+            size="small"
             class="ml-2"
           >
             {{ link.badge }}
@@ -177,8 +177,20 @@ const titleClass = computed(() => {
   return props.config.titleClass || 'text-center'
 })
 
+const buttonVariant = computed(() => {
+  if (props.config.text) return 'text'
+  if (props.config.outlined) return 'outlined'
+  return 'elevated'
+})
+
+const buttonSize = computed(() => {
+  if (props.config.xlarge) return 'x-large'
+  if (props.config.large) return 'large'
+  return 'default'
+})
+
 const subtitleClass = computed(() => {
-  return props.config.subtitleClass || 'text-center text--secondary'
+  return props.config.subtitleClass || 'text-center text-medium-emphasis'
 })
 </script>
 
@@ -193,27 +205,27 @@ const subtitleClass = computed(() => {
 }
 
 .quick-link-card.border-blue {
-  border-left: 4px solid #2196F3;
+  border-left: 4px solid rgb(var(--v-theme-primary));
 }
 
 .quick-link-card.border-green {
-  border-left: 4px solid #4CAF50;
+  border-left: 4px solid rgb(var(--v-theme-success));
 }
 
 .quick-link-card.border-purple {
-  border-left: 4px solid #9C27B0;
+  border-left: 4px solid rgb(var(--v-theme-secondary));
 }
 
 .quick-link-card.border-red {
-  border-left: 4px solid #F44336;
+  border-left: 4px solid rgb(var(--v-theme-error));
 }
 
 .quick-link-card.border-orange {
-  border-left: 4px solid #FF9800;
+  border-left: 4px solid rgb(var(--v-theme-warning));
 }
 
 .quick-link-list-item {
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .quick-link-list-item:last-child {

@@ -11,7 +11,7 @@
       >
         <v-icon :icon="feature.icon" size="48" color="primary" class="mb-4" />
         <h3 class="text-h6 mb-2">{{ feature.title }}</h3>
-        <p class="text-body-2 text-grey">{{ feature.description }}</p>
+        <p class="text-body-2 text-medium-emphasis">{{ feature.description }}</p>
       </v-col>
     </v-row>
   </v-container>

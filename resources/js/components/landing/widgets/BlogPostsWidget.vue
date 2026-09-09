@@ -5,7 +5,7 @@
         <h2 class="text-h3 text-md-h2 font-weight-bold mb-4">
           {{ content.title }}
         </h2>
-        <p v-if="content.subtitle" class="text-h6 text-grey">
+        <p v-if="content.subtitle" class="text-h6 text-medium-emphasis">
           {{ content.subtitle }}
         </p>
       </div>

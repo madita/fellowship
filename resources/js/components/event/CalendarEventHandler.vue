@@ -639,9 +639,9 @@ onMounted(() => {
         @update:model-value="dialogModelValueUpdate"
     >
         <!-- Header Section -->
-        <div class="event-drawer-header" :class="{ 'edit-mode': localEditMode }">
+        <div class="event-drawer-header">
             <div v-if="localEditMode" class="d-flex align-center py-3 px-4">
-                <h5 class="text-h5 font-weight-medium">{{ localEvent?.id ? $t('events.updateEvent') : $t('events.addEvent') }}</h5>
+                <h5 class="text-h6">{{ localEvent?.id ? $t('events.updateEvent') : $t('events.addEvent') }}</h5>
                 <VSpacer/>
                 <VBtn
                     v-if="localEvent?.id"
@@ -656,9 +656,9 @@ onMounted(() => {
 
             <div v-else class="d-flex align-center py-3 px-4">
                 <div>
-                    <h5 class="text-h5 font-weight-medium mb-1">{{ localEvent?.title }}</h5>
+                    <h5 class="text-h6 mb-1">{{ localEvent?.title }}</h5>
                     <div class="text-subtitle-2 text-medium-emphasis">
-                        <v-icon size="small" class="me-1">mdi-calendar</v-icon>
+                        <v-icon size="small" start>mdi-calendar</v-icon>
                         {{ formatDateRange }}
                     </div>
                 </div>
@@ -667,15 +667,12 @@ onMounted(() => {
 
                 <slot name="beforeClose"/>
 
-                <div class="action-buttons">
-                    <!-- Removed the details icon from header -->
-
+                <div class="d-flex align-center ga-1">
                     <v-btn
                         icon="mdi-pencil"
                         variant="text"
                         color="primary"
                         density="comfortable"
-                        class="action-btn"
                         @click="localEditMode = true"
                         :title="$t('events.edit')"
                     />
@@ -685,7 +682,6 @@ onMounted(() => {
                         variant="text"
                         color="primary"
                         density="comfortable"
-                        class="action-btn"
                         @click="showRelateContentDialog = true"
                         :title="$t('events.relatedContent')"
                     />
@@ -695,7 +691,6 @@ onMounted(() => {
                         variant="text"
                         color="error"
                         density="comfortable"
-                        class="action-btn"
                         :loading="saving"
                         @click="removeEvent"
                         :title="$t('events.delete')"
@@ -705,7 +700,6 @@ onMounted(() => {
                         icon="mdi-close"
                         variant="text"
                         density="comfortable"
-                        class="action-btn"
                         :disabled="saving"
                         @click="dialogModelValueUpdate(false)"
                         :title="$t('common.close')"
@@ -914,22 +908,21 @@ onMounted(() => {
                                 </VCol>
                             </template>
 
-                            <VCol cols="12" class="d-flex justify-end">
+                            <VCol cols="12" class="d-flex justify-end ga-2">
                                 <VBtn
-                                    type="submit"
-                                    color="primary"
-                                    class="me-3"
-                                    :loading="saving"
-                                >
-                                    {{ $t('events.submit') }}
-                                </VBtn>
-                                <VBtn
-                                    variant="outlined"
-                                    color="secondary"
+                                    variant="text"
                                     :disabled="saving"
                                     @click="onCancel"
                                 >
                                     {{ $t('common.cancel') }}
+                                </VBtn>
+                                <VBtn
+                                    type="submit"
+                                    color="primary"
+                                    variant="flat"
+                                    :loading="saving"
+                                >
+                                    {{ $t('events.submit') }}
                                 </VBtn>
                             </VCol>
                         </VRow>
@@ -938,17 +931,17 @@ onMounted(() => {
             </VCard>
 
             <!-- View Mode Content -->
-            <div v-else class="event-view-content">
+            <div v-else class="pa-4">
                 <!-- Event Info Section -->
-                <v-card flat class="event-info-card mb-4">
+                <v-card flat rounded="lg" class="mb-4">
                     <v-card-text>
                         <!-- Location Info -->
-                        <div class="event-info-item mb-4">
-                            <div class="info-label">
-                                <v-icon color="primary" class="mr-2">mdi-map-marker</v-icon>
+                        <div class="mb-4">
+                            <div class="d-flex align-center font-weight-medium mb-1">
+                                <v-icon color="primary" start>mdi-map-marker</v-icon>
                                 <span>{{ $t('events.location') }}</span>
                             </div>
-                            <div class="info-content">
+                            <div class="pl-8">
                                 <template v-if="viewLocation">
                                     <a
                                         v-if="viewLocation.external"
@@ -975,12 +968,12 @@ onMounted(() => {
                         </div>
 
                         <!-- Description Info -->
-                        <div class="event-info-item" v-if="localEvent?.extendedProps?.description">
-                            <div class="info-label">
-                                <v-icon color="primary" class="mr-2">mdi-text-box-outline</v-icon>
+                        <div v-if="localEvent?.extendedProps?.description">
+                            <div class="d-flex align-center font-weight-medium mb-1">
+                                <v-icon color="primary" start>mdi-text-box-outline</v-icon>
                                 <span>{{ $t('common.description') }}</span>
                             </div>
-                            <div class="info-content description-content"
+                            <div class="pl-8 description-content"
                                  v-html="localEvent.extendedProps.description"></div>
                         </div>
                     </v-card-text>
@@ -990,19 +983,18 @@ onMounted(() => {
                 <v-card
                     v-if="canJoinEvent"
                     flat
-                    class="mb-4 response-card"
                     rounded="lg"
-                    elevation="0"
+                    class="mb-4"
                 >
                     <v-card-text>
                         <h3 class="text-h6 mb-3">{{ $t('events.areYouComing') }}</h3>
-                        <div class="d-flex flex-wrap gap-2">
+                        <div class="d-flex flex-wrap ga-2">
                             <VBtn
                                 v-for="(answer, value) in eventTypeOptions.answers"
                                 :key="`answer-${value}`"
                                 :color="['going', 'participant'].includes(answer.key) ? 'success' : answer.key === 'notgoing' ? 'error' : 'primary'"
-                                :variant="isGoing && isGoing.type === value ? 'elevated' : 'outlined'"
-                                class="response-btn mr-1"
+                                :variant="isGoing && isGoing.type === value ? 'elevated' : 'tonal'"
+                                class="response-btn"
                                 :loading="answering === answer.key"
                                 :disabled="!!answering && answering !== answer.key"
                                 @click="joinEvent(answer.key)"
@@ -1011,7 +1003,6 @@ onMounted(() => {
                                     v-if="isGoing && isGoing.type === value"
                                     size="small"
                                     start
-                                    class="me-1"
                                 >
                                     mdi-check-circle
                                 </v-icon>
@@ -1022,7 +1013,7 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Attendees Section -->
-                <v-card flat class="attendees-card mb-4" v-if="Object.keys(eventAnswers).length > 0">
+                <v-card flat rounded="lg" class="mb-4" v-if="Object.keys(eventAnswers).length > 0">
                     <v-card-text>
                         <div class="d-flex align-center justify-space-between mb-3">
                             <h3 class="text-h6">{{ $t('events.attendees') }}</h3>
@@ -1040,23 +1031,22 @@ onMounted(() => {
                         <div v-for="(guests, status) in filterGuestsByApproval(eventAnswers).approvedGuests"
                              :key="`status-${status}`"
                              class="mb-4">
-                            <div class="d-flex align-center mb-2">
+                            <div class="d-flex align-center ga-2 mb-2">
                                 <v-chip
                                     :color="['going', 'participant'].includes(status) ? 'success' : status === 'notgoing' ? 'error' : 'primary'"
                                     size="small"
-                                    class="me-2"
+                                    variant="tonal"
                                 >
                                     {{ te('events.rsvp.' + status) ? t('events.rsvp.' + status) : status }}
                                 </v-chip>
                                 <span class="text-subtitle-2">{{ $t('events.peopleCount', { count: guests.length }) }}</span>
                             </div>
 
-                            <div class="d-flex flex-wrap gap-1">
+                            <div class="d-flex flex-wrap ga-1">
                                 <UserAvatar
                                     v-for="guest in guests"
                                     :key="guest.id"
                                     :user="guest"
-                                    class="mr-1 mb-1"
                                 />
                             </div>
                         </div>
@@ -1066,7 +1056,8 @@ onMounted(() => {
                 <!-- Pending Approvals Section TODO only show if creator(done) or admin-->
                 <v-card
                     flat
-                    class="approval-card mb-4"
+                    rounded="lg"
+                    class="mb-4"
                     v-if="localEvent?.extendedProps?.user_id === user.id &&
                          eventTypeOptions.guest &&
                          eventTypeOptions.guest.includes('approval')"
@@ -1092,13 +1083,12 @@ onMounted(() => {
                                     <v-list-item-title>{{ guest.name }}</v-list-item-title>
 
                                     <template #append>
-                                        <div class="d-flex">
+                                        <div class="d-flex ga-1">
                                             <v-btn
                                                 size="small"
                                                 color="success"
                                                 variant="text"
                                                 icon="mdi-check"
-                                                class="me-1"
                                                 :loading="busyGuestId === guest.pivot.user_id"
                                                 :disabled="busyGuestId !== null && busyGuestId !== guest.pivot.user_id"
                                                 @click="approveGuest(guest.pivot.user_id, 'approve')"
@@ -1121,7 +1111,7 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Related Content Section -->
-                <v-card flat class="related-content-card" v-if="relatedItems.length > 0">
+                <v-card flat rounded="lg" v-if="relatedItems.length > 0">
                     <v-card-text>
                         <h3 class="text-h6 mb-3">{{ $t('events.relatedContent') }}</h3>
 
@@ -1194,68 +1184,17 @@ onMounted(() => {
 <style scoped>
 .event-drawer {
     max-height: 100%;
-    border-left: 1px solid rgba(0, 0, 0, 0.12);
+    border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .event-drawer-header {
-    /*background-color: rgb(var(--v-theme-surface));*/
     position: sticky;
     top: 0;
     z-index: 10;
 }
 
-.event-drawer-header.edit-mode {
-    /*background-color: rgb(var(--v-theme-surface-variant));*/
-}
-
 .event-drawer-content {
     height: calc(100vh - 65px);
-}
-
-.action-buttons {
-    display: flex;
-    align-items: center;
-}
-
-.action-btn {
-    margin-left: 4px;
-}
-
-.event-view-content {
-    padding: 16px;
-}
-
-.event-info-card,
-.attendees-card,
-.approval-card,
-.related-content-card {
-    /*border: 1px solid rgba(var(--v-theme-on-surface), 0.08);*/
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.response-card {
-    /*border: 1px solid rgba(var(--v-theme-primary), 0.15);*/
-    border-radius: 12px;
-    overflow: hidden;
-    /*background-color: rgba(var(--v-theme-primary), 0.03);*/
-}
-
-.event-info-item {
-    margin-bottom: 12px;
-}
-
-.info-label {
-    display: flex;
-    align-items: center;
-    font-weight: 500;
-    /*color: rgb(var(--v-theme-primary));*/
-    margin-bottom: 4px;
-}
-
-.info-content {
-    padding-left: 28px;
-    /*color: rgb(var(--v-theme-on-surface));*/
 }
 
 .description-content {
@@ -1281,7 +1220,7 @@ onMounted(() => {
 
 .related-item-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 8px 16px rgba(var(--v-theme-on-surface), 0.1) !important;
 }
 
 .related-item-image {
@@ -1292,9 +1231,5 @@ onMounted(() => {
 .pending-guest-item {
     border-radius: 8px;
     margin-bottom: 4px;
-}
-
-.pending-guest-item:hover {
-    /*background-color: rgba(var(--v-theme-on-surface), 0.04);*/
 }
 </style>

@@ -1,36 +1,16 @@
 <template>
     <div class="flex-grow-1 event-show">
-
-        <v-skeleton-loader
-            v-if="isLoading"
-            class="ma-10"
-            type="card-avatar, article, actions"
-        ></v-skeleton-loader>
+        <v-container v-if="isLoading">
+            <v-skeleton-loader type="heading, subtitle, article, actions" />
+        </v-container>
 
         <template v-else>
-            <v-sheet
-                class="event-hero"
-                color="primary"
-                width="100%"
-                height="50vh"
-            >
-
-                <v-container class="fill-height pa-9">
-                    <v-row>
-                        <v-col>
-                            <span>
-                                {{ formatDate(event.startDate) }}
-                                at {{ formatDate(event.startDate, userTimeFormat) }} - {{
-                                    formatDate(event.endDate)
-                                }} at {{ formatDate(event.endDate, userTimeFormat) }}
-                            </span>
-
-                            <h1 class="event-title">{{ event.title }}</h1>
-                        </v-col>
-                    </v-row>
-                </v-container>
-
-            </v-sheet>
+            <page-header
+                :title="event.title"
+                :subtitle="dateRange"
+                icon="mdi-calendar"
+                :back-to="{ name: 'events' }"
+            />
 
             <v-container>
                 <div class="calendar-day">
@@ -39,65 +19,71 @@
                 </div>
 
                 <v-row justify="center">
-                    <v-col cols="8">
+                    <v-col cols="12" md="8">
                         <div v-html="event.description"></div>
                     </v-col>
-                    <v-col cols="4" class="align-content-end">
-                        <div>{{ $t('events.areYouComing') }}</div>
-                        <v-btn
-                            color="primary"
-                            class="me-3"
-                            :loading="answering === 'going'"
-                            :disabled="getIsGoing('going') || (answering && answering !== 'going')"
-                            @click="register('going')"
-                        >
-                            {{ $t('events.yes') }}
-                        </v-btn>
-                        <v-btn
-                            variant="tonal"
-                            color="primary"
-                            class="me-3"
-                            :loading="answering === 'notgoing'"
-                            :disabled="getIsGoing('notgoing') || (answering && answering !== 'notgoing')"
-                            @click="register('notgoing')"
-                        >
-                            {{ $t('events.no') }}
-                        </v-btn>
-                        <v-btn
-                            variant="outlined"
-                            color="secondary"
-                            :loading="answering === 'maybe'"
-                            :disabled="getIsGoing('maybe') || (answering && answering !== 'maybe')"
-                            @click="register('maybe')"
-                        >
-                            {{ $t('events.maybe') }}
-                        </v-btn>
+                    <v-col cols="12" md="4">
+                        <h2 class="text-h6 mb-3">{{ $t('events.areYouComing') }}</h2>
+                        <div class="d-flex flex-wrap ga-2">
+                            <v-btn
+                                color="primary"
+                                variant="elevated"
+                                :loading="answering === 'going'"
+                                :disabled="getIsGoing('going') || (answering && answering !== 'going')"
+                                @click="register('going')"
+                            >
+                                {{ $t('events.yes') }}
+                            </v-btn>
+                            <v-btn
+                                variant="tonal"
+                                color="primary"
+                                :loading="answering === 'notgoing'"
+                                :disabled="getIsGoing('notgoing') || (answering && answering !== 'notgoing')"
+                                @click="register('notgoing')"
+                            >
+                                {{ $t('events.no') }}
+                            </v-btn>
+                            <v-btn
+                                variant="outlined"
+                                color="secondary"
+                                :loading="answering === 'maybe'"
+                                :disabled="getIsGoing('maybe') || (answering && answering !== 'maybe')"
+                                @click="register('maybe')"
+                            >
+                                {{ $t('events.maybe') }}
+                            </v-btn>
+                        </div>
 
                         <v-list-subheader>{{ $t('events.isGoing') }} ({{ eventData?.going?.length || 0 }})</v-list-subheader>
-                        <user-avatar
-                            v-for="user in eventData?.going || []"
-                            :key="`going-${user.id}`"
-                            :user="user"
-                        />
+                        <div class="d-flex flex-wrap ga-1">
+                            <user-avatar
+                                v-for="user in eventData?.going || []"
+                                :key="`going-${user.id}`"
+                                :user="user"
+                            />
+                        </div>
 
                         <v-list-subheader>{{ $t('events.maybeGoing') }} ({{ eventData?.maybe?.length || 0 }})</v-list-subheader>
-                        <user-avatar
-                            v-for="user in eventData?.maybe || []"
-                            :key="`maybe-${user.id}`"
-                            :user="user"
-                        />
+                        <div class="d-flex flex-wrap ga-1">
+                            <user-avatar
+                                v-for="user in eventData?.maybe || []"
+                                :key="`maybe-${user.id}`"
+                                :user="user"
+                            />
+                        </div>
 
                         <v-list-subheader>{{ $t('events.notGoing') }} ({{ eventData?.notgoing?.length || 0 }})</v-list-subheader>
-                        <user-avatar
-                            v-for="user in eventData?.notgoing || []"
-                            :key="`notgoing-${user.id}`"
-                            :user="user"
-                        />
+                        <div class="d-flex flex-wrap ga-1">
+                            <user-avatar
+                                v-for="user in eventData?.notgoing || []"
+                                :key="`notgoing-${user.id}`"
+                                :user="user"
+                            />
+                        </div>
                     </v-col>
                 </v-row>
             </v-container>
         </template>
-
     </div>
 </template>
 
@@ -110,6 +96,7 @@ import { useUserStore } from '@/store/userStore.js'
 import { useSettingsStore } from '@/store/settingStore.js'
 //import EventDatePicker from './EventDatePicker.vue'
 import UserAvatar from '../common/UserAvatar.vue'
+import PageHeader from '../common/PageHeader.vue'
 import axios from 'axios'
 import { useDialog } from '@/composables/useDialog.js'
 
@@ -144,6 +131,14 @@ const endpoint = '/api/events'
 const id = ref(null)
 // Which answer is currently being sent (null when idle)
 const answering = ref(null)
+
+// Start and end shown under the title as "date time - date time"
+const dateRange = computed(() => {
+    if (!event.value?.startDate) return ''
+    const start = `${formatDate(event.value.startDate)} ${formatDate(event.value.startDate, userTimeFormat.value)}`
+    if (!event.value.endDate) return start
+    return `${start} - ${formatDate(event.value.endDate)} ${formatDate(event.value.endDate, userTimeFormat.value)}`
+})
 
 // Methods
 const getEvent = async () => {
@@ -218,47 +213,31 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.event-show {
-    /* Add any specific styles if needed */
-}
-
-.event-hero {
-    position: relative;
-    font-size: large;
-    color: whitesmoke !important;
-}
-
-.event-hero h1 {
-    display: block;
-    font-size: 6rem;
-    color: white !important;
-}
-
+/* Tear-off calendar leaf showing the day of the month; it overlaps the
+   bottom edge of the page header band. */
 .calendar-day {
     position: relative;
     top: -3rem;
     width: 80px;
     height: 80px;
-    box-shadow: inset 0 -3em 3em rgba(0, 0, 0, 0.1),
-    0 0 0 0 rgb(255, 255, 255),
-    0.3em 0.3em 1em rgba(0, 0, 0, 0.3);
+    box-shadow: inset 0 -3em 3em rgba(var(--v-theme-on-surface), 0.1),
+    0.3em 0.3em 1em rgba(var(--v-theme-on-surface), 0.3);
     margin-bottom: -3rem;
 }
 
 .calendar-day-top {
     width: 80px;
     height: 20px;
-    background: #941024;
+    background: rgb(var(--v-theme-primary));
 }
 
 .calendar-day-bottom {
-    background-color: white;
-    color: #1a202c;
+    background-color: rgb(var(--v-theme-surface));
+    color: rgb(var(--v-theme-on-surface));
     width: 80px;
     height: 60px;
-    border-left: 1px solid #a2a2a2;
-    border-right: 1px solid #a2a2a2;
-    border-bottom: 1px solid #a2a2a2;
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+    border-top: 0;
     text-align: center;
     display: flex;
     align-items: center;
@@ -269,10 +248,6 @@ onUnmounted(() => {
 
 /* Responsive design */
 @media (max-width: 768px) {
-    .event-hero h1 {
-        font-size: 3rem !important;
-    }
-
     .calendar-day {
         width: 60px;
         height: 60px;
@@ -287,16 +262,6 @@ onUnmounted(() => {
         width: 60px;
         height: 45px;
         font-size: 2rem;
-    }
-}
-
-@media (max-width: 600px) {
-    .event-hero {
-        height: 40vh !important;
-    }
-
-    .event-hero h1 {
-        font-size: 2rem !important;
     }
 }
 </style>

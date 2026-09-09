@@ -1,18 +1,24 @@
 <template>
     <div class="flex-grow-1">
+        <page-header
+            :title="form"
+            icon="mdi-calendar-edit"
+            :back-to="{ name: 'events' }"
+        />
+
         <v-container>
             <v-row>
-                <v-col cols="3">
+                <v-col cols="12" md="3">
                     <EventDatePicker v-model="event.date"></EventDatePicker>
-<!--                    <VueDatePicker v-model="event.date" :range="{ partialRange: false }" />-->
                 </v-col>
-                <v-col cols="9">
+                <v-col cols="12" md="9">
                     <v-text-field :label="t('common.title')" v-model="event.title" :disabled="saving"></v-text-field>
-                    <!-- Notice the updated v-model usage -->
                     <Tiptap v-model="event.description" />
                 </v-col>
             </v-row>
-            <v-btn :loading="saving" @click="save">{{ form }}</v-btn>
+            <div class="d-flex justify-end mt-4">
+                <v-btn color="primary" variant="elevated" :loading="saving" @click="save">{{ form }}</v-btn>
+            </div>
         </v-container>
     </div>
 </template>

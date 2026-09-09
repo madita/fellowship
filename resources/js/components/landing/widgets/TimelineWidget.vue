@@ -5,7 +5,7 @@
         <h2 class="text-h3 text-md-h2 font-weight-bold mb-4">
           {{ content.title }}
         </h2>
-        <p v-if="content.subtitle" class="text-h6 text-grey">
+        <p v-if="content.subtitle" class="text-h6 text-medium-emphasis">
           {{ content.subtitle }}
         </p>
       </div>
@@ -38,7 +38,7 @@
                 <v-card-title class="d-flex align-center">
                   <div>
                     <div class="text-h5 font-weight-bold">{{ step.title }}</div>
-                    <div v-if="!$vuetify.display.mdAndUp && step.date" class="text-subtitle-2 text-grey mt-1">
+                    <div v-if="!$vuetify.display.mdAndUp && step.date" class="text-subtitle-2 text-medium-emphasis mt-1">
                       {{ step.date }}
                     </div>
                   </div>

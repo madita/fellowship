@@ -1,65 +1,46 @@
 <template>
     <div class="wiki-container">
-        <!-- Header Section -->
-        <div class="wiki-header">
-            <v-container>
-                <v-row align="center" class="mb-6">
-                    <v-col cols="12" md="8">
-                        <h1 class="wiki-title text-h3 font-weight-bold mb-2">
-                            {{ $t('wiki.title') }}
-                        </h1>
-                        <p class="text-subtitle-1 text-medium-emphasis">
-                            {{ $t('wiki.subtitle') }}
-                        </p>
-                    </v-col>
-                    <v-col cols="12" md="4" class="text-right">
-                        <v-btn
-                            color="primary"
-                            variant="elevated"
-                            size="large"
-                            prepend-icon="mdi-plus"
-                            @click="createWikiPage"
-                            class="create-btn"
-                        >
-                            {{ $t('wiki.createPage') }}
-                        </v-btn>
-                    </v-col>
-                </v-row>
+        <page-header :title="$t('wiki.title')" :subtitle="$t('wiki.subtitle')" icon="mdi-book-open-page-variant">
+            <template #actions>
+                <v-btn
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-plus"
+                    @click="createWikiPage"
+                >
+                    {{ $t('wiki.createPage') }}
+                </v-btn>
+            </template>
 
-                <!-- Search Section -->
-                <div class="search-section mb-8">
-                    <v-text-field
-                        v-model="searchText"
-                        :label="$t('wiki.searchPlaceholder')"
-                        prepend-inner-icon="mdi-magnify"
-                        variant="outlined"
-                        density="comfortable"
-                        hide-details
-                        clearable
-                        class="search-field"
-                        @keyup="onSearchInput"
-                        @click:clear="clearSearch"
-                    >
-                        <template v-slot:append>
-                            <v-fade-transition>
-                                <v-progress-circular
-                                    v-if="searching"
-                                    size="24"
-                                    width="2"
-                                    color="primary"
-                                    indeterminate
-                                />
-                            </v-fade-transition>
-                        </template>
-                    </v-text-field>
-                </div>
-            </v-container>
-        </div>
+            <v-text-field
+                v-model="searchText"
+                :label="$t('wiki.searchPlaceholder')"
+                prepend-inner-icon="mdi-magnify"
+                density="comfortable"
+                hide-details
+                clearable
+                class="search-field"
+                @keyup="onSearchInput"
+                @click:clear="clearSearch"
+            >
+                <template v-slot:append-inner>
+                    <v-fade-transition>
+                        <v-progress-circular
+                            v-if="searching"
+                            size="24"
+                            width="2"
+                            color="primary"
+                            indeterminate
+                        />
+                    </v-fade-transition>
+                </template>
+            </v-text-field>
+        </page-header>
 
         <!-- Content Section -->
-        <v-container>
+        <v-container fluid>
             <!-- Stats Bar -->
-            <div class="stats-bar mb-6" v-if="response.total">
+            <div class="d-flex flex-wrap align-center ga-3 mb-6" v-if="response.total">
                 <v-chip
                     color="primary"
                     variant="tonal"
@@ -94,6 +75,7 @@
                         <v-card
                             class="wiki-card h-100"
                             variant="elevated"
+                            rounded="lg"
                             :class="{ 'featured-card': index === 0 && !searchText }"
                             :loading="deletingId === item.data.id"
                             @click="readMore(item.slug)"
@@ -243,62 +225,44 @@
             </div>
 
             <!-- Empty State -->
-            <div v-else-if="!loading" class="empty-state text-center py-12">
-                <v-icon size="120" color="disabled" class="mb-4">
-                    {{ searchText ? 'mdi-magnify' : 'mdi-file-document-plus' }}
-                </v-icon>
-                <h3 class="text-h5 font-weight-bold mb-2">
-                    {{ searchText ? $t('wiki.noResultsFound') : $t('wiki.noPagesYet') }}
-                </h3>
-                <p class="text-body-1 text-medium-emphasis mb-6">
-                    {{ searchText
-                    ? $t('wiki.tryAdjustingSearch')
-                    : $t('wiki.startBuildingKnowledgeBase')
-                    }}
-                </p>
-                <v-btn
-                    v-if="!searchText"
-                    color="primary"
-                    variant="elevated"
-                    prepend-icon="mdi-plus"
-                    size="large"
-                    @click="createWikiPage"
-                >
-                    {{ $t('wiki.createFirstPage') }}
-                </v-btn>
-                <v-btn
-                    v-else
-                    color="primary"
-                    variant="outlined"
-                    prepend-icon="mdi-refresh"
-                    @click="clearSearch"
-                >
-                    {{ $t('wiki.clearSearch') }}
-                </v-btn>
-            </div>
+            <empty-state
+                v-else-if="!loading"
+                :icon="searchText ? 'mdi-magnify' : 'mdi-file-document-plus'"
+                :title="searchText ? $t('wiki.noResultsFound') : $t('wiki.noPagesYet')"
+                :text="searchText ? $t('wiki.tryAdjustingSearch') : $t('wiki.startBuildingKnowledgeBase')"
+            >
+                <template #actions>
+                    <v-btn
+                        v-if="!searchText"
+                        color="primary"
+                        variant="elevated"
+                        prepend-icon="mdi-plus"
+                        @click="createWikiPage"
+                    >
+                        {{ $t('wiki.createFirstPage') }}
+                    </v-btn>
+                    <v-btn
+                        v-else
+                        color="primary"
+                        variant="tonal"
+                        prepend-icon="mdi-refresh"
+                        @click="clearSearch"
+                    >
+                        {{ $t('wiki.clearSearch') }}
+                    </v-btn>
+                </template>
+            </empty-state>
 
             <!-- Loading State -->
-            <div v-if="loading" class="loading-state text-center py-12">
-                <v-progress-circular
-                    size="64"
-                    width="4"
-                    color="primary"
-                    indeterminate
-                    class="mb-4"
-                />
-                <p class="text-body-1 text-medium-emphasis">
-                    {{ searchText ? $t('wiki.searching') : $t('wiki.loadingPages') }}
-                </p>
-            </div>
+            <loading-state v-if="loading" :text="searchText ? $t('wiki.searching') : $t('wiki.loadingPages')" />
 
             <!-- Load More -->
             <div v-if="hasMorePages" class="text-center mt-8">
                 <v-btn
                     color="primary"
-                    variant="outlined"
+                    variant="tonal"
                     :loading="loading"
                     @click="loadMore"
-                    size="large"
                 >
                     {{ $t('wiki.loadMorePages') }}
                 </v-btn>
@@ -311,9 +275,13 @@
 import { useUserStore } from "@/store/userStore.js";
 import { formatDate as formatDateUtil } from '@/plugins/formatDate.js';
 import axios from 'axios';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 export default {
     name: 'WikiComponent',
+    components: { PageHeader, EmptyState, LoadingState },
     data() {
         return {
             page: 1,
@@ -518,63 +486,9 @@ export default {
 </script>
 
 <style scoped>
-.wiki-container {
-    min-height: 100vh;
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
-}
-
-.wiki-header {
-    background: rgba(var(--v-theme-primary), 0.1);
-    padding: 32px 0;
-    backdrop-filter: blur(10px);
-}
-
-/* Light mode header gradient */
-.v-theme--light .wiki-header {
-    background: linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(156, 39, 176, 0.1) 100%);
-}
-
-/* Dark mode header */
-.v-theme--dark .wiki-header {
-    background: linear-gradient(135deg, rgba(77, 166, 199, 0.15) 0%, rgba(124, 169, 186, 0.15) 100%);
-}
-
-.wiki-title {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-/* Ensure text is visible in both modes */
-.v-theme--light .wiki-title {
-    background: linear-gradient(135deg, #1976d2 0%, #9c27b0 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.v-theme--dark .wiki-title {
-    background: linear-gradient(135deg, #4da6c7 0%, #7ca9ba 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.search-section {
+.search-field {
     max-width: 600px;
     margin: 0 auto;
-}
-
-.search-field {
-    border-radius: 16px !important;
-}
-
-.stats-bar {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    align-items: center;
 }
 
 .wiki-grid {
@@ -582,15 +496,14 @@ export default {
 }
 
 .wiki-card {
-    border-radius: 20px !important;
     box-shadow: 0 4px 20px rgba(var(--v-theme-on-surface), 0.08) !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
-    border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-    backdrop-filter: blur(10px);
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     display: flex;
     flex-direction: column;
     background-color: rgb(var(--v-theme-surface));
+    animation: slideInUp 0.5s ease-out;
 }
 
 .wiki-card:hover {
@@ -605,7 +518,7 @@ export default {
 
 .card-header {
     background: rgba(var(--v-theme-on-surface), 0.05);
-    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .card-avatar {
@@ -618,7 +531,6 @@ export default {
 
 .card-title {
     line-height: 1.3 !important;
-    color: rgb(var(--v-theme-on-surface));
 }
 
 .card-excerpt {
@@ -639,51 +551,6 @@ export default {
     overflow: hidden;
 }
 
-.empty-state,
-.loading-state {
-    max-width: 400px;
-    margin: 0 auto;
-}
-
-.create-btn {
-    border-radius: 12px !important;
-    text-transform: none !important;
-    font-weight: 600 !important;
-    box-shadow: 0 4px 16px rgba(var(--v-theme-primary), 0.3) !important;
-}
-
-/* Button styling */
-.v-btn {
-    border-radius: 12px !important;
-    text-transform: none !important;
-    font-weight: 600 !important;
-}
-
-/* Responsive design */
-@media (max-width: 960px) {
-    .wiki-header {
-        padding: 24px 0;
-    }
-
-    .search-section {
-        margin-bottom: 24px;
-    }
-
-    .stats-bar {
-        justify-content: center;
-    }
-
-    .text-right {
-        text-align: center !important;
-    }
-
-    .create-btn {
-        width: 100%;
-        margin-top: 16px;
-    }
-}
-
-/* Card animations */
 @keyframes slideInUp {
     from {
         opacity: 0;
@@ -692,27 +559,6 @@ export default {
     to {
         opacity: 1;
         transform: translateY(0);
-    }
-}
-
-.wiki-card {
-    animation: slideInUp 0.5s ease-out;
-}
-
-/* Loading animation */
-.v-progress-circular {
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.7;
-    }
-    100% {
-        opacity: 1;
     }
 }
 </style>

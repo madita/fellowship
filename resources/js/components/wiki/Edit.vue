@@ -1,98 +1,48 @@
 <template>
     <div class="wiki-edit-container">
-        <v-container class="py-6">
-            <!-- Progress Indicator -->
-<!--            <div class="progress-section mb-6">-->
-<!--                <v-stepper-->
-<!--                    v-model="currentStep"-->
-<!--                    :items="steps"-->
-<!--                    color="primary"-->
-<!--                    variant="horizontal"-->
-<!--                    class="elevation-2"-->
-<!--                >-->
-<!--                    <template #item.1>-->
-<!--                        <v-stepper-item-->
-<!--                            :complete="!!wikipage.title && !!wikipage.content"-->
-<!--                            title="Content"-->
-<!--                            subtitle="Title and body"-->
-<!--                            value="1"-->
-<!--                        />-->
-<!--                    </template>-->
-<!--                    <template #item.2>-->
-<!--                        <v-stepper-item-->
-<!--                            :complete="hasChanges"-->
-<!--                            title="Organization"-->
-<!--                            subtitle="Categories and tags"-->
-<!--                            value="2"-->
-<!--                        />-->
-<!--                    </template>-->
-<!--                    <template #item.3>-->
-<!--                        <v-stepper-item-->
-<!--                            title="Review"-->
-<!--                            subtitle="Save changes"-->
-<!--                            value="3"-->
-<!--                        />-->
-<!--                    </template>-->
-<!--                </v-stepper>-->
-<!--            </div>-->
+        <!-- Header Section -->
+        <page-header
+            :title="wikipage.title ? $t('wiki.editing', { title: wikipage.title }) : $t('wiki.editPage')"
+            :subtitle="lastModified ? $t('wiki.lastModifiedAt', { date: lastModified }) : $t('wiki.makeChangesAndSave')"
+            icon="mdi-pencil-outline"
+            :back-to="`/wiki/${slug}`"
+        >
+            <template #actions>
+                <v-btn
+                    v-if="authenticated"
+                    variant="tonal"
+                    :to="`/wiki/${slug}`"
+                    :disabled="saving"
+                >
+                    {{ $t('common.cancel') }}
+                </v-btn>
+                <v-btn
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-content-save"
+                    @click="handleSave"
+                    :loading="saving"
+                    :disabled="!hasChanges || !canSave"
+                >
+                    {{ saving ? $t('wiki.saving') : $t('wiki.saveChanges') }}
+                </v-btn>
+            </template>
 
-            <!-- Header Section -->
-            <div class="edit-header mb-6">
-                <v-row align="center">
-                    <v-col cols="12" md="8">
-                        <div class="d-flex align-center mb-2">
-                            <v-icon color="primary" size="28" class="mr-3">mdi-pencil</v-icon>
-                            <h1 class="edit-title text-h4 font-weight-bold">
-                                {{ wikipage.title ? $t('wiki.editing', { title: wikipage.title }) : $t('wiki.editPage') }}
-                            </h1>
-                        </div>
-                        <p class="text-subtitle-1 text-medium-emphasis">
-                            {{ lastModified ? $t('wiki.lastModifiedAt', { date: lastModified }) : $t('wiki.makeChangesAndSave') }}
-                        </p>
-                    </v-col>
-                    <v-col cols="12" md="4" class="text-right">
-                        <div class="header-actions">
-                            <v-btn
-                                v-if="authenticated"
-                                variant="outlined"
-                                color="secondary"
-                                prepend-icon="mdi-arrow-left"
-                                :to="`/wiki/${slug}`"
-                                class="mr-2"
-                                :disabled="saving"
-                            >
-                                {{ $t('common.cancel') }}
-                            </v-btn>
-                            <v-btn
-                                color="primary"
-                                variant="elevated"
-                                prepend-icon="mdi-content-save"
-                                @click="handleSave"
-                                :loading="saving"
-                                :disabled="!hasChanges || !canSave"
-                                class="save-btn"
-                            >
-                                {{ saving ? $t('wiki.saving') : $t('wiki.saveChanges') }}
-                            </v-btn>
-                        </div>
-                    </v-col>
-                </v-row>
-
+            <template v-if="hasChanges || (editing.errors && editing.errors.length > 0)">
                 <!-- Change Indicator -->
                 <v-alert
                     v-if="hasChanges"
                     type="warning"
-                    variant="tonal"
-                    class="mt-4"
+                    class="mb-3"
                     closable
                     @click:close="dismissChangeAlert = true"
                 >
                     <template #prepend>
                         <v-icon>mdi-pencil-circle</v-icon>
                     </template>
-                    <div class="d-flex justify-space-between align-center">
+                    <div class="d-flex justify-space-between align-center flex-wrap ga-2">
                         <span>{{ $t('wiki.unsavedChanges') }}</span>
-                        <div class="ml-4">
+                        <div class="d-flex align-center ga-2">
                             <v-btn
                                 variant="text"
                                 size="small"
@@ -118,8 +68,7 @@
                 <v-alert
                     v-if="editing.errors && editing.errors.length > 0"
                     type="error"
-                    variant="tonal"
-                    class="mt-4"
+                    class="mb-0"
                     closable
                     @click:close="editing.errors = []"
                 >
@@ -127,25 +76,27 @@
                         <v-icon>mdi-alert-circle</v-icon>
                     </template>
                     <div class="error-content">
-                        <h4 class="mb-2">{{ $t('wiki.pleaseFixIssues') }}</h4>
+                        <h4 class="text-subtitle-1 font-weight-medium mb-2">{{ $t('wiki.pleaseFixIssues') }}</h4>
                         <ul class="mb-0">
                             <li v-for="(error, index) in editing.errors" :key="index">{{ error }}</li>
                         </ul>
                     </div>
                 </v-alert>
-            </div>
+            </template>
+        </page-header>
 
+        <v-container fluid>
             <!-- Main Content with Responsive Layout -->
             <v-row>
                 <!-- Editor Section -->
                 <v-col cols="12" :lg="showPreview ? 8 : 12">
                     <v-card class="editor-card" elevation="2" rounded="lg">
-                        <v-card-title class="editor-card-title d-flex justify-space-between align-center">
+                        <v-card-title class="card-section-title text-subtitle-1 font-weight-medium d-flex justify-space-between align-center flex-wrap ga-2">
                             <div class="d-flex align-center">
                                 <v-icon class="mr-2" color="primary">mdi-file-document-edit</v-icon>
                                 <span>{{ $t('wiki.contentEditor') }}</span>
                             </div>
-                            <div class="editor-actions">
+                            <div class="d-flex align-center ga-2">
                                 <v-btn
                                     variant="text"
                                     size="small"
@@ -293,7 +244,7 @@
                     <div class="sidebar-content">
                         <!-- Quick Actions -->
                         <v-card class="quick-actions-card mb-4" elevation="1" rounded="lg">
-                            <v-card-title class="quick-actions-title">
+                            <v-card-title class="card-section-title text-subtitle-1 font-weight-medium">
                                 <v-icon class="mr-2" color="primary">mdi-lightning-bolt</v-icon>
                                 {{ $t('wiki.quickActions') }}
                             </v-card-title>
@@ -302,7 +253,7 @@
                                     <v-col cols="6">
                                         <v-btn
                                             block
-                                            variant="outlined"
+                                            variant="tonal"
                                             size="small"
                                             @click="focusTitle"
                                             prepend-icon="mdi-format-title"
@@ -313,7 +264,7 @@
                                     <v-col cols="6">
                                         <v-btn
                                             block
-                                            variant="outlined"
+                                            variant="tonal"
                                             size="small"
                                             @click="focusContent"
                                             prepend-icon="mdi-text"
@@ -324,7 +275,7 @@
                                     <v-col cols="6">
                                         <v-btn
                                             block
-                                            variant="outlined"
+                                            variant="tonal"
                                             size="small"
                                             @click="discardChanges"
                                             prepend-icon="mdi-undo"
@@ -336,7 +287,7 @@
                                     <v-col cols="6">
                                         <v-btn
                                             block
-                                            variant="outlined"
+                                            variant="tonal"
                                             size="small"
                                             @click="duplicatePage"
                                             prepend-icon="mdi-content-copy"
@@ -350,8 +301,8 @@
 
                         <!-- Page Settings -->
                         <v-card class="settings-card mb-4" elevation="1" rounded="lg">
-                            <v-card-title class="settings-title">
-                                <v-icon class="mr-2" color="info">mdi-cog</v-icon>
+                            <v-card-title class="card-section-title text-subtitle-1 font-weight-medium">
+                                <v-icon class="mr-2" color="primary">mdi-cog</v-icon>
                                 {{ $t('wiki.pageSettings') }}
                             </v-card-title>
                             <v-card-text class="pa-4">
@@ -390,7 +341,7 @@
 
                         <!-- Enhanced Categories -->
                         <v-card class="categories-card mb-4" elevation="1" rounded="lg">
-                            <v-card-title class="categories-title">
+                            <v-card-title class="card-section-title text-subtitle-1 font-weight-medium d-flex align-center">
                                 <v-icon class="mr-2" color="primary">mdi-folder-outline</v-icon>
                                 {{ $t('wiki.categories') }}
                                 <v-spacer />
@@ -447,7 +398,7 @@
                                             v-for="category in popularCategories"
                                             :key="category.id"
                                             size="small"
-                                            variant="outlined"
+                                            variant="tonal"
                                             @click="addPopularCategory(category)"
                                         >
                                             {{ category.title }}
@@ -459,7 +410,7 @@
 
                         <!-- Enhanced Tags -->
                         <v-card class="tags-card mb-4" elevation="1" rounded="lg">
-                            <v-card-title class="tags-title">
+                            <v-card-title class="card-section-title text-subtitle-1 font-weight-medium d-flex align-center">
                                 <v-icon class="mr-2" color="secondary">mdi-tag-outline</v-icon>
                                 {{ $t('wiki.tags') }}
                                 <v-spacer />
@@ -474,7 +425,7 @@
                                     item-title="title"
                                     :search-input.sync="searchTerm"
                                     :label="$t('wiki.addTags')"
-                                    variant="outlined"
+                                    variant="tonal"
                                     density="compact"
                                     multiple
                                     chips
@@ -524,7 +475,7 @@
                                             v-for="tag in suggestedTags"
                                             :key="tag"
                                             size="small"
-                                            variant="outlined"
+                                            variant="tonal"
                                             @click="addSuggestedTag(tag)"
                                         >
                                             {{ tag }}
@@ -536,16 +487,16 @@
 
                         <!-- Enhanced Preview -->
                         <v-card class="preview-card" elevation="1" rounded="lg">
-                            <v-card-title class="preview-title">
-                                <v-icon class="mr-2" color="success">mdi-eye-outline</v-icon>
+                            <v-card-title class="card-section-title text-subtitle-1 font-weight-medium">
+                                <v-icon class="mr-2" color="primary">mdi-eye-outline</v-icon>
                                 {{ $t('wiki.livePreview') }}
                             </v-card-title>
                             <v-card-text class="pa-4">
                                 <div class="preview-content">
                                     <div class="preview-header mb-3">
-                                        <h4 class="preview-page-title">
+                                        <h4 class="preview-page-title text-subtitle-1 font-weight-medium text-primary d-flex align-center">
                                             {{ wikipage.title || $t('wiki.untitledPage') }}
-                                            <v-chip v-if="hasChanges" color="warning" size="x-small" class="ml-2">
+                                            <v-chip v-if="hasChanges" color="warning" size="x-small" variant="tonal" class="ml-2">
                                                 {{ $t('wiki.modified') }}
                                             </v-chip>
                                         </h4>
@@ -568,8 +519,8 @@
                                                 {{ category.title || category }}
                                             </v-chip>
                                             <span v-if="categoryValue.length > 3" class="text-caption">
-                        +{{ categoryValue.length - 3 }} more
-                      </span>
+                                                {{ $t('wiki.moreCount', { count: categoryValue.length - 3 }) }}
+                                            </span>
                                         </div>
 
                                         <div v-if="termValue.length" class="preview-tags mb-2">
@@ -585,8 +536,8 @@
                                                 {{ tag.title || tag }}
                                             </v-chip>
                                             <span v-if="termValue.length > 3" class="text-caption">
-                        +{{ termValue.length - 3 }} more
-                      </span>
+                                                {{ $t('wiki.moreCount', { count: termValue.length - 3 }) }}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -629,12 +580,13 @@
         </v-container>
 
         <!-- History Dialog -->
-        <v-dialog v-model="showHistory" max-width="800">
+        <v-dialog v-model="showHistory" max-width="900">
             <v-card>
-                <v-card-title class="d-flex align-center">
-                    <v-icon color="info" class="mr-2">mdi-history</v-icon>
+                <v-card-title class="text-h6 d-flex align-center">
+                    <v-icon class="mr-2">mdi-history</v-icon>
                     {{ $t('wiki.pageHistory') }}
                 </v-card-title>
+                <v-divider />
                 <v-card-text>
                     <div class="text-body-2 text-medium-emphasis">
                         {{ $t('wiki.pageHistoryPlaceholder') }}
@@ -654,6 +606,7 @@ import { ref, reactive, computed, watch, onMounted, nextTick, onBeforeUnmount } 
 import { useDisplay } from 'vuetify'
 import { useI18n } from 'vue-i18n'
 import Tiptap from '../common/tiptap/Tiptap.vue'
+import PageHeader from '../common/PageHeader.vue'
 import { useAuthStore } from '@/store/authStore.js'
 import { useRouter } from 'vue-router'
 import { formatDate } from '@/plugins/formatDate.js'
@@ -662,7 +615,8 @@ import { useDialog } from '@/composables/useDialog.js'
 export default {
     name: 'WikiEditPage',
     components: {
-        Tiptap
+        Tiptap,
+        PageHeader
     },
     setup() {
         const { t } = useI18n()
@@ -809,12 +763,12 @@ export default {
 
         const autoSaveStatus = computed(() => {
             if (autoSaving.value) {
-                return { color: 'info', icon: 'mdi-loading', text: 'Saving...' }
+                return { color: 'info', icon: 'mdi-loading', text: t('wiki.saving') }
             }
             if (hasChanges.value) {
-                return { color: 'warning', icon: 'mdi-pencil', text: 'Unsaved' }
+                return { color: 'warning', icon: 'mdi-pencil', text: t('wiki.unsaved') }
             }
-            return { color: 'success', icon: 'mdi-check', text: 'Saved' }
+            return { color: 'success', icon: 'mdi-check', text: t('wiki.saved') }
         })
 
         // Steps for stepper
@@ -1224,56 +1178,11 @@ export default {
 
 <style scoped>
 .wiki-edit-container {
-    min-height: 100vh;
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
     position: relative;
-}
-
-.progress-section {
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity));
-    border-radius: 16px;
-    padding: 16px;
-    backdrop-filter: blur(10px);
-}
-
-.edit-header {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(147, 51, 234, 0.08) 100%);
-    border-radius: 16px;
-    padding: 24px;
-    border: 1px solid rgba(59, 130, 246, 0.15);
-    backdrop-filter: blur(10px);
-}
-
-.edit-title {
-    background: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    line-height: 1.2;
 }
 
 .error-content {
     color: rgb(var(--v-theme-on-surface));
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.save-btn {
-    border-radius: 12px !important;
-    text-transform: none !important;
-    font-weight: 600 !important;
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3) !important;
-    transition: all 0.3s ease !important;
-}
-
-.save-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4) !important;
 }
 
 .editor-card,
@@ -1282,9 +1191,8 @@ export default {
 .categories-card,
 .tags-card,
 .preview-card {
-    border: 1px solid rgba(var(--v-border-color), 0.2);
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     backdrop-filter: blur(10px);
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
     transition: all 0.3s ease;
 }
 
@@ -1298,23 +1206,10 @@ export default {
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
 }
 
-.editor-card-title,
-.quick-actions-title,
-.settings-title,
-.categories-title,
-.tags-title,
-.preview-title {
-    background: linear-gradient(135deg, rgb(var(--v-theme-surface-variant)) 0%, rgba(var(--v-theme-surface-variant), 0.8) 100%);
-    border-bottom: 1px solid rgb(var(--v-border-color));
-    font-size: 1.1rem !important;
-    font-weight: 600 !important;
+.card-section-title {
+    background: rgba(var(--v-theme-on-surface), 0.04);
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     padding: 16px 20px !important;
-}
-
-.editor-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
 }
 
 .sidebar-content {
@@ -1330,12 +1225,12 @@ export default {
 }
 
 .sidebar-content::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(var(--v-theme-on-surface), 0.08);
     border-radius: 3px;
 }
 
 .sidebar-content::-webkit-scrollbar-thumb {
-    background: rgba(59, 130, 246, 0.3);
+    background: rgba(var(--v-theme-primary), 0.3);
     border-radius: 3px;
 }
 
@@ -1347,7 +1242,7 @@ export default {
 
 .title-field:focus-within {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.2);
 }
 
 .change-indicator {
@@ -1366,7 +1261,7 @@ export default {
 }
 
 .content-header {
-    border-bottom: 1px solid rgba(var(--v-border-color), 0.3);
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     padding-bottom: 8px;
 }
 
@@ -1375,9 +1270,9 @@ export default {
     align-items: center;
     gap: 12px;
     padding: 12px;
-    background: rgba(var(--v-theme-surface-variant), 0.3);
+    background: rgba(var(--v-theme-on-surface), 0.04);
     border-radius: 8px;
-    border: 1px solid rgba(var(--v-border-color), 0.5);
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .auto-save-status {
@@ -1401,7 +1296,7 @@ export default {
 }
 
 .editor-wrapper {
-    border: 2px solid rgb(var(--v-border-color));
+    border: 2px solid rgba(var(--v-border-color), var(--v-border-opacity));
     border-radius: 12px;
     overflow: hidden;
     background: rgb(var(--v-theme-surface));
@@ -1410,7 +1305,7 @@ export default {
 
 .editor-wrapper:focus-within {
     border-color: rgb(var(--v-theme-primary));
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.1);
 }
 
 .quick-actions-card .v-btn {
@@ -1421,42 +1316,25 @@ export default {
 .popular-categories,
 .suggested-tags {
     padding: 12px;
-    background: rgba(var(--v-theme-surface-variant), 0.2);
+    background: rgba(var(--v-theme-on-surface), 0.03);
     border-radius: 8px;
-    border: 1px dashed rgba(var(--v-border-color), 0.6);
-}
-
-.kbd {
-    background: rgb(var(--v-theme-surface-variant));
-    border: 1px solid rgb(var(--v-border-color));
-    border-radius: 4px;
-    padding: 2px 6px;
-    font-size: 0.75rem;
-    font-family: monospace;
+    border: 1px dashed rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .preview-content {
     padding: 16px;
-    background: linear-gradient(135deg, rgba(var(--v-theme-surface-variant), 0.2) 0%, rgba(var(--v-theme-surface-variant), 0.1) 100%);
+    background: rgba(var(--v-theme-on-surface), 0.03);
     border-radius: 12px;
-    border: 1px solid rgba(var(--v-border-color), 0.5);
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .preview-header {
-    border-bottom: 1px solid rgba(var(--v-border-color), 0.3);
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     padding-bottom: 8px;
 }
 
-.preview-page-title {
-    color: rgb(var(--v-theme-primary));
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    font-size: 1.1rem;
-}
-
 .preview-meta {
-    border-bottom: 1px solid rgba(var(--v-border-color), 0.2);
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     padding-bottom: 8px;
 }
 
@@ -1466,15 +1344,6 @@ export default {
 
 /* Mobile optimizations */
 @media (max-width: 960px) {
-    .edit-header {
-        padding: 16px;
-    }
-
-    .header-actions {
-        justify-content: center;
-        margin-top: 16px;
-    }
-
     .sidebar-content {
         position: static;
         max-height: none;
@@ -1482,32 +1351,6 @@ export default {
 
     .content-toolbar {
         flex-wrap: wrap;
-    }
-
-    .editor-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-}
-
-/* Dark theme support */
-@media (prefers-color-scheme: dark) {
-    .wiki-edit-container {
-        background: linear-gradient(135deg, #0f1419 0%, #1a1a1a 100%);
-    }
-
-    .edit-header {
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
-        border-color: rgba(59, 130, 246, 0.2);
-    }
-
-    .editor-card,
-    .quick-actions-card,
-    .settings-card,
-    .categories-card,
-    .tags-card,
-    .preview-card {
-        background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
     }
 }
 
@@ -1526,22 +1369,5 @@ export default {
 .v-combobox:focus-within {
     transform: translateY(-1px);
     transition: transform 0.2s ease;
-}
-
-/* Warning states for unsaved changes */
-.save-btn:not(:disabled) {
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
-    }
-    50% {
-        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.5);
-    }
-    100% {
-        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
-    }
 }
 </style>

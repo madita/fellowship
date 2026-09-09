@@ -6,7 +6,7 @@
           {{ content.subtitle }}
         </div>
         <h2 class="text-h4 mb-4">{{ content.title }}</h2>
-        <p class="text-body-1 text-grey">{{ content.description }}</p>
+        <p class="text-body-1 text-medium-emphasis">{{ content.description }}</p>
       </v-col>
       <v-col cols="12" md="6">
         <v-img

@@ -3,26 +3,22 @@
     <div v-if="content.title" class="text-h5 font-weight-bold mb-2">
       {{ content.title }}
     </div>
-    <div v-if="content.subtitle" class="text-subtitle-2 text--secondary mb-4">
+    <div v-if="content.subtitle" class="text-subtitle-2 text-medium-emphasis mb-4">
       {{ content.subtitle }}
     </div>
 
-    <div v-if="loading" class="text-center py-8">
-      <v-progress-circular indeterminate color="primary"></v-progress-circular>
-    </div>
+    <loading-state v-if="loading" compact :text="t('widgets.landing.loadingPolls')" />
 
-    <div v-else-if="error" class="text-center py-8">
-      <v-alert type="error" outlined>
-        {{ error }}
-      </v-alert>
-    </div>
+    <v-alert v-else-if="error" type="error" class="my-4">
+      {{ error }}
+    </v-alert>
 
-    <div v-else-if="polls.length === 0" class="text-center py-8">
-      <v-icon size="64" color="grey lighten-1">mdi-poll-box-outline</v-icon>
-      <div class="text-h6 mt-4 text--secondary">
-        {{ content.emptyText || 'No polls available' }}
-      </div>
-    </div>
+    <empty-state
+      v-else-if="polls.length === 0"
+      compact
+      icon="mdi-poll-box-outline"
+      :title="content.emptyText || t('widgets.landing.noPolls')"
+    />
 
     <div v-else>
       <v-row v-if="config.style === 'grid'">
@@ -62,11 +58,10 @@
           :href="content.viewAllUrl"
           :to="content.viewAllInternal ? content.viewAllUrl : undefined"
           :color="config.viewAllColor || 'primary'"
-          :outlined="config.viewAllOutlined"
-          :text="config.viewAllText"
+          :variant="config.viewAllText ? 'text' : (config.viewAllOutlined ? 'outlined' : 'tonal')"
+          append-icon="mdi-arrow-right"
         >
           {{ content.viewAllLabel || 'View All Polls' }}
-          <v-icon right>mdi-arrow-right</v-icon>
         </v-btn>
       </div>
     </div>
@@ -75,8 +70,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import PollCard from '@/components/poll/PollCard.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
 import axios from 'axios'
+
+const { t } = useI18n()
 
 const props = defineProps({
   content: {

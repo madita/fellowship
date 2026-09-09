@@ -1,47 +1,25 @@
 <template>
-    <div class="forum-search-container">
-        <!-- Header Section -->
-        <div class="forum-header">
-            <v-container>
-                <!-- Breadcrumbs -->
-                <v-breadcrumbs class="px-0 mb-4">
-                    <v-breadcrumbs-item :to="{ name: 'forum-index' }">
-                        {{ $t('forum.home') }}
-                    </v-breadcrumbs-item>
-                    <v-breadcrumbs-divider />
-                    <v-breadcrumbs-item :to="{ name: 'forum-index' }">
-                        {{ $t('forum.forums') }}
-                    </v-breadcrumbs-item>
-                    <v-breadcrumbs-divider />
-                    <v-breadcrumbs-item disabled>
-                        {{ $t('forum.searchResults') }}
-                    </v-breadcrumbs-item>
-                </v-breadcrumbs>
+    <div>
+        <page-header
+            :title="$t('forum.searchResults')"
+            :subtitle="forumStore.searchQuery ? $t('forum.searchResultsFor', { query: forumStore.searchQuery }) : ''"
+            icon="mdi-magnify"
+            :back-to="{ name: 'forum-index' }"
+        >
+            <v-text-field
+                v-model="searchInput"
+                :placeholder="$t('forum.searchPlaceholder')"
+                prepend-inner-icon="mdi-magnify"
+                density="comfortable"
+                hide-details
+                clearable
+                style="max-width: 500px;"
+                @keydown.enter="doSearch"
+                @click:clear="searchInput = ''"
+            />
+        </page-header>
 
-                <h1 class="forum-title text-h3 font-weight-bold mb-2">
-                    {{ $t('forum.searchResults') }}
-                </h1>
-                <p v-if="forumStore.searchQuery" class="text-subtitle-1 text-medium-emphasis mb-4">
-                    {{ $t('forum.searchResultsFor', { query: forumStore.searchQuery }) }}
-                </p>
-
-                <!-- Search Input -->
-                <v-text-field
-                    v-model="searchInput"
-                    :placeholder="$t('forum.searchPlaceholder')"
-                    prepend-inner-icon="mdi-magnify"
-                    variant="outlined"
-                    density="comfortable"
-                    hide-details
-                    clearable
-                    style="max-width: 500px;"
-                    @keydown.enter="doSearch"
-                    @click:clear="searchInput = ''"
-                />
-            </v-container>
-        </div>
-
-        <v-container>
+        <v-container fluid>
             <!-- Search Degraded Warning -->
             <v-alert
                 v-if="forumStore.searchDegraded"
@@ -53,11 +31,7 @@
                 {{ $t('forum.searchDegradedWarning') }}
             </v-alert>
 
-            <!-- Loading State -->
-            <div v-if="forumStore.searchLoading" class="text-center py-12">
-                <v-progress-circular size="64" width="4" color="primary" indeterminate class="mb-4" />
-                <p class="text-body-1 text-medium-emphasis">{{ $t('forum.searching') }}</p>
-            </div>
+            <loading-state v-if="forumStore.searchLoading" :text="$t('forum.searching')" />
 
             <!-- Results -->
             <div v-else-if="forumStore.hasSearchResults">
@@ -90,6 +64,7 @@
                                 :key="'t-' + thread.id"
                                 class="result-card mb-3"
                                 variant="elevated"
+                                rounded="lg"
                                 @click="goToThread(thread)"
                             >
                                 <v-card-text>
@@ -98,10 +73,10 @@
                                             <div class="d-flex align-center">
                                                 <UserAvatar v-if="thread.author || thread.meta?.legacy_author" :user="thread.author" :legacy-name="thread.meta?.legacy_author" />
                                                 <div class="ml-3">
-                                                    <div class="d-flex align-center gap-2 mb-1">
+                                                    <div class="d-flex align-center ga-2 mb-1">
                                                         <v-icon v-if="thread.is_pinned" size="16" color="primary">mdi-pin</v-icon>
                                                         <span class="font-weight-bold">{{ thread.title }}</span>
-                                                        <v-chip v-if="thread.is_locked" size="x-small" color="warning" prepend-icon="mdi-lock">
+                                                        <v-chip v-if="thread.is_locked" size="x-small" color="warning" variant="tonal" prepend-icon="mdi-lock">
                                                             {{ $t('forum.locked') }}
                                                         </v-chip>
                                                     </div>
@@ -142,10 +117,7 @@
                                 />
                             </div>
                         </div>
-                        <div v-else class="text-center py-8">
-                            <v-icon size="64" color="disabled" class="mb-3">mdi-message-text-outline</v-icon>
-                            <p class="text-body-1 text-medium-emphasis">{{ $t('forum.noThreadResults') }}</p>
-                        </div>
+                        <empty-state v-else compact icon="mdi-message-text-outline" :title="$t('forum.noThreadResults')" />
                     </v-window-item>
 
                     <!-- Posts Tab -->
@@ -156,26 +128,27 @@
                                 :key="'p-' + post.id"
                                 class="result-card mb-3"
                                 variant="elevated"
+                                rounded="lg"
                                 @click="goToPost(post)"
                             >
                                 <v-card-text>
                                     <div class="d-flex align-center">
                                         <UserAvatar v-if="post.author || post.meta?.legacy_author" :user="post.author" :legacy-name="post.meta?.legacy_author" />
                                         <div class="ml-3 flex-grow-1">
-                                            <div class="d-flex align-center gap-2 mb-1">
+                                            <div class="d-flex align-center ga-2 mb-1">
                                                 <span class="font-weight-medium">{{ post.display_author || post.author?.username }}</span>
                                                 <span class="text-caption text-medium-emphasis">
                                                     {{ $t('forum.replyIn') }}
                                                 </span>
                                                 <span class="font-weight-bold">{{ post.thread_title }}</span>
-                                                <v-chip v-if="post.is_solution" size="x-small" color="success" prepend-icon="mdi-check-circle">
+                                                <v-chip v-if="post.is_solution" size="x-small" color="success" variant="tonal" prepend-icon="mdi-check-circle">
                                                     {{ $t('forum.solution') }}
                                                 </v-chip>
                                             </div>
                                             <div class="text-body-2 text-medium-emphasis body-snippet">
                                                 {{ snippet(post.body) }}
                                             </div>
-                                            <div class="d-flex align-center gap-2 mt-2">
+                                            <div class="d-flex align-center ga-2 mt-2">
                                                 <v-chip size="x-small" variant="tonal" color="primary">
                                                     {{ post.category_name }}
                                                 </v-chip>
@@ -198,22 +171,17 @@
                                 />
                             </div>
                         </div>
-                        <div v-else class="text-center py-8">
-                            <v-icon size="64" color="disabled" class="mb-3">mdi-comment-text-outline</v-icon>
-                            <p class="text-body-1 text-medium-emphasis">{{ $t('forum.noPostResults') }}</p>
-                        </div>
+                        <empty-state v-else compact icon="mdi-comment-text-outline" :title="$t('forum.noPostResults')" />
                     </v-window-item>
                 </v-window>
             </div>
 
-            <!-- No Results -->
-            <div v-else-if="!forumStore.searchLoading && forumStore.searchQuery" class="empty-state text-center py-12">
-                <v-icon size="120" color="disabled" class="mb-4">mdi-magnify-close</v-icon>
-                <h3 class="text-h5 font-weight-bold mb-2">{{ $t('forum.noSearchResults') }}</h3>
-                <p class="text-body-1 text-medium-emphasis">
-                    {{ $t('forum.noResults') }}
-                </p>
-            </div>
+            <empty-state
+                v-else-if="forumStore.searchQuery"
+                icon="mdi-magnify-close"
+                :title="$t('forum.noSearchResults')"
+                :text="$t('forum.noSearchResultsHint')"
+            />
         </v-container>
     </div>
 </template>
@@ -222,10 +190,13 @@
 import { useForumStore } from '@/store/forumStore.js'
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
 
 export default {
     name: 'ForumSearch',
-    components: { UserAvatar },
+    components: { UserAvatar, PageHeader, EmptyState, LoadingState },
     setup() {
         const forumStore = useForumStore()
         return { forumStore }
@@ -319,34 +290,7 @@ export default {
 </script>
 
 <style scoped>
-.forum-search-container {
-    min-height: 100vh;
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
-}
-
-.forum-header {
-    background: rgba(var(--v-theme-primary), 0.1);
-    padding: 24px 0;
-    backdrop-filter: blur(10px);
-}
-
-.v-theme--light .forum-header {
-    background: linear-gradient(135deg, rgba(25, 118, 210, 0.1) 0%, rgba(156, 39, 176, 0.1) 100%);
-}
-
-.v-theme--dark .forum-header {
-    background: linear-gradient(135deg, rgba(77, 166, 199, 0.15) 0%, rgba(124, 169, 186, 0.15) 100%);
-}
-
-.forum-title {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
 .result-card {
-    border-radius: 12px !important;
     transition: all 0.2s ease;
     cursor: pointer;
 }
@@ -361,20 +305,5 @@ export default {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-}
-
-.gap-2 {
-    gap: 8px;
-}
-
-.empty-state {
-    max-width: 400px;
-    margin: 0 auto;
-}
-
-@media (max-width: 960px) {
-    .forum-header {
-        padding: 16px 0;
-    }
 }
 </style>

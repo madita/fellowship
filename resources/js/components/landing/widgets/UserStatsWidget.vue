@@ -3,7 +3,7 @@
     <div v-if="content.title" class="text-h5 font-weight-bold mb-2">
       {{ content.title }}
     </div>
-    <div v-if="content.subtitle" class="text-subtitle-2 text--secondary mb-6">
+    <div v-if="content.subtitle" class="text-subtitle-2 text-medium-emphasis mb-6">
       {{ content.subtitle }}
     </div>
 
@@ -17,10 +17,10 @@
       >
         <v-card
           :elevation="config.elevation || 2"
-          :outlined="config.outlined"
+          :variant="config.outlined ? 'outlined' : 'elevated'"
           :hover="config.hover"
           :color="stat.color"
-          :dark="stat.dark"
+          :theme="stat.dark ? 'dark' : undefined"
           :href="stat.url"
           :to="stat.internal ? stat.url : undefined"
           class="stat-card h-100"
@@ -28,7 +28,7 @@
           <v-card-text class="pa-4">
             <div class="d-flex justify-space-between align-start">
               <div class="flex-grow-1">
-                <div class="text-overline mb-1" :class="stat.dark ? 'white--text' : 'text--secondary'">
+                <div class="text-overline mb-1" :class="stat.dark ? 'text-white' : 'text-medium-emphasis'">
                   {{ stat.label }}
                 </div>
                 <div class="text-h4 font-weight-bold mb-1">
@@ -37,28 +37,28 @@
                 <div v-if="stat.change !== undefined" class="d-flex align-center mt-2">
                   <v-icon
                     :color="getChangeColor(stat.change)"
-                    small
+                    size="small"
                   >
                     {{ getChangeIcon(stat.change) }}
                   </v-icon>
                   <span
-                    :class="`${getChangeColor(stat.change)}--text`"
+                    :class="`text-${getChangeColor(stat.change)}`"
                     class="text-caption ml-1 font-weight-medium"
                   >
                     {{ Math.abs(stat.change) }}%
                   </span>
-                  <span class="text-caption ml-1" :class="stat.dark ? 'white--text' : 'text--secondary'">
+                  <span class="text-caption ml-1" :class="stat.dark ? 'text-white' : 'text-medium-emphasis'">
                     {{ stat.changePeriod || 'vs last period' }}
                   </span>
                 </div>
-                <div v-if="stat.description" class="text-caption mt-2" :class="stat.dark ? 'white--text' : 'text--secondary'">
+                <div v-if="stat.description" class="text-caption mt-2" :class="stat.dark ? 'text-white' : 'text-medium-emphasis'">
                   {{ stat.description }}
                 </div>
               </div>
               <v-icon
                 v-if="stat.icon"
                 :size="config.iconSize || 48"
-                :color="stat.iconColor || (stat.dark ? 'white' : 'grey lighten-1')"
+                :color="stat.iconColor || (stat.dark ? 'white' : 'grey-lighten-1')"
                 class="ml-2"
               >
                 {{ stat.icon }}
@@ -67,7 +67,7 @@
 
             <v-progress-linear
               v-if="stat.progress !== undefined"
-              :value="stat.progress"
+              :model-value="stat.progress"
               :color="stat.progressColor || 'primary'"
               height="4"
               rounded
@@ -142,7 +142,7 @@ const props = defineProps({
           changePeriod: 'this week',
           description: 'Community points',
           icon: 'mdi-star',
-          iconColor: 'yellow darken-2',
+          iconColor: 'yellow-darken-2',
           color: '',
           dark: false,
           url: '/profile',

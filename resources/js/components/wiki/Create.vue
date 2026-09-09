@@ -1,95 +1,46 @@
 <template>
     <div class="wiki-create-container">
-        <v-container class="py-6">
-            <!-- Progress Indicator -->
-<!--            <div class="progress-section mb-6">-->
-<!--                <v-stepper-->
-<!--                    v-model="currentStep"-->
-<!--                    :items="steps"-->
-<!--                    color="success"-->
-<!--                    variant="horizontal"-->
-<!--                    class="elevation-2"-->
-<!--                >-->
-<!--                    <template #item.1>-->
-<!--                        <v-stepper-item-->
-<!--                            :complete="!!wikipage.title"-->
-<!--                            title="Basic Info"-->
-<!--                            subtitle="Title and content"-->
-<!--                            value="1"-->
-<!--                        />-->
-<!--                    </template>-->
-<!--                    <template #item.2>-->
-<!--                        <v-stepper-item-->
-<!--                            :complete="categoryValue.length > 0 || termValue.length > 0"-->
-<!--                            title="Organization"-->
-<!--                            subtitle="Categories and tags"-->
-<!--                            value="2"-->
-<!--                        />-->
-<!--                    </template>-->
-<!--                    <template #item.3>-->
-<!--                        <v-stepper-item-->
-<!--                            title="Review"-->
-<!--                            subtitle="Final check"-->
-<!--                            value="3"-->
-<!--                        />-->
-<!--                    </template>-->
-<!--                </v-stepper>-->
-<!--            </div>-->
+        <!-- Header Section -->
+        <page-header
+            :title="$t('wiki.createNewPage')"
+            :subtitle="slug ? $t('wiki.creatingPage', { slug: slug }) : $t('wiki.buildKnowledgeBase')"
+            icon="mdi-file-document-plus-outline"
+            :back-to="slug ? `/wiki/${slug}` : { name: 'wiki-index' }"
+        >
+            <template #actions>
+                <v-btn
+                    v-if="authenticated && slug"
+                    variant="tonal"
+                    :to="`/wiki/${slug}`"
+                    :disabled="creating"
+                >
+                    {{ $t('common.cancel') }}
+                </v-btn>
+                <v-btn
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-content-save"
+                    @click="handleSubmit"
+                    :loading="creating"
+                    :disabled="!canCreate"
+                >
+                    {{ creating ? $t('wiki.creating') : $t('wiki.createPage') }}
+                </v-btn>
+            </template>
 
-            <!-- Header Section -->
-            <div class="create-header mb-6">
-                <v-row align="center">
-                    <v-col cols="12" md="8">
-                        <div class="d-flex align-center mb-2">
-                            <v-icon color="success" size="28" class="mr-3">mdi-file-document-plus</v-icon>
-                            <h1 class="create-title text-h4 font-weight-bold">
-                                {{ $t('wiki.createNewPage') }}
-                            </h1>
-                        </div>
-                        <p class="text-subtitle-1 text-medium-emphasis">
-                            {{ slug ? $t('wiki.creatingPage', { slug: slug }) : $t('wiki.buildKnowledgeBase') }}
-                        </p>
-                    </v-col>
-                    <v-col cols="12" md="4" class="text-right">
-                        <div class="header-actions">
-                            <v-btn
-                                v-if="authenticated && slug"
-                                variant="outlined"
-                                color="secondary"
-                                prepend-icon="mdi-arrow-left"
-                                :to="`/wiki/${slug}`"
-                                class="mr-2"
-                            >
-                                {{ $t('common.cancel') }}
-                            </v-btn>
-                            <v-btn
-                                color="success"
-                                variant="elevated"
-                                prepend-icon="mdi-content-save"
-                                @click="handleSubmit"
-                                :loading="creating"
-                                :disabled="!canCreate"
-                                class="create-btn"
-                            >
-                                {{ creating ? $t('wiki.creating') : $t('wiki.createPage') }}
-                            </v-btn>
-                        </div>
-                    </v-col>
-                </v-row>
-
+            <template v-if="(slug && slug.length > 0) || (editing.errors && editing.errors.length > 0)">
                 <!-- Smart Alerts -->
                 <v-alert
                     v-if="slug && slug.length > 0"
                     type="info"
-                    variant="tonal"
-                    class="mt-4"
+                    class="mb-3"
                     closable
                 >
                     <template #prepend>
                         <v-icon>mdi-information</v-icon>
                     </template>
                     <div class="alert-content">
-                        <h4 class="alert-title">{{ $t('wiki.readyToCreate') }}</h4>
+                        <h4 class="text-subtitle-1 font-weight-medium">{{ $t('wiki.readyToCreate') }}</h4>
                         <p class="mb-0">{{ $t('wiki.pageNotExistsFillForm', { slug: slug }) }}</p>
                     </div>
                 </v-alert>
@@ -98,8 +49,7 @@
                 <v-alert
                     v-if="editing.errors && editing.errors.length > 0"
                     type="error"
-                    variant="tonal"
-                    class="mt-4"
+                    class="mb-0"
                     closable
                     @click:close="editing.errors = []"
                 >
@@ -107,25 +57,27 @@
                         <v-icon>mdi-alert-circle</v-icon>
                     </template>
                     <div class="error-content">
-                        <h4 class="mb-2">{{ $t('wiki.pleaseFixIssues') }}</h4>
+                        <h4 class="text-subtitle-1 font-weight-medium mb-2">{{ $t('wiki.pleaseFixIssues') }}</h4>
                         <ul class="mb-0">
                             <li v-for="(error, index) in editing.errors" :key="index">{{ error }}</li>
                         </ul>
                     </div>
                 </v-alert>
-            </div>
+            </template>
+        </page-header>
 
+        <v-container fluid>
             <!-- Main Content with Responsive Layout -->
             <v-row>
                 <!-- Editor Section -->
                 <v-col cols="12" :lg="showPreview ? 8 : 12">
                     <v-card class="editor-card" elevation="2" rounded="lg">
-                        <v-card-title class="editor-card-title d-flex justify-space-between align-center">
+                        <v-card-title class="text-subtitle-1 font-weight-medium d-flex justify-space-between align-center flex-wrap ga-2">
                             <div class="d-flex align-center">
-                                <v-icon class="mr-2" color="success">mdi-file-document-edit</v-icon>
+                                <v-icon class="mr-2" color="primary">mdi-file-document-edit</v-icon>
                                 <span>{{ $t('wiki.pageContent') }}</span>
                             </div>
-                            <div class="editor-actions">
+                            <div class="d-flex align-center ga-2">
                                 <v-btn
                                     variant="text"
                                     size="small"
@@ -176,7 +128,7 @@
 
                                 <!-- URL Preview -->
                                 <div v-if="wikipage.title" class="url-preview mt-2">
-                                    <v-chip size="small" color="success" variant="tonal">
+                                    <v-chip size="small" color="primary" variant="tonal">
                                         <v-icon start size="16">mdi-link</v-icon>
                                         {{ $t('wiki.url') }}: /wiki/{{ generateSlug(wikipage.title) }}
                                     </v-chip>
@@ -187,7 +139,7 @@
                             <div class="content-section">
                                 <div class="content-header mb-3 d-flex justify-space-between align-center">
                                     <div class="d-flex align-center">
-                                        <v-icon class="mr-2" size="20" color="success">mdi-text</v-icon>
+                                        <v-icon class="mr-2" size="20" color="primary">mdi-text</v-icon>
                                         <span class="text-subtitle-1 font-weight-medium">{{ $t('wiki.pageContent') }}</span>
                                     </div>
                                     <div class="content-stats">
@@ -198,7 +150,7 @@
                                 </div>
 
                                 <!-- Content Toolbar -->
-                                <div class="content-toolbar mb-3">
+                                <div class="d-flex align-center ga-3 mb-3">
                                     <v-btn-group density="compact" variant="outlined">
                                         <v-btn size="small" @click="insertTemplate('heading')">
                                             <v-icon>mdi-format-header-1</v-icon>
@@ -236,6 +188,7 @@
                                                     v-for="template in contentTemplates"
                                                     :key="template.name"
                                                     size="small"
+                                                    variant="tonal"
                                                     @click="insertContentTemplate(template)"
                                                     prepend-icon="mdi-plus"
                                                 >
@@ -267,7 +220,7 @@
                     <div class="sidebar-content">
                         <!-- Quick Actions -->
                         <v-card class="quick-actions-card mb-4" elevation="1" rounded="lg">
-                            <v-card-title class="quick-actions-title">
+                            <v-card-title class="text-subtitle-1 font-weight-medium">
                                 <v-icon class="mr-2" color="primary">mdi-lightning-bolt</v-icon>
                                 {{ $t('wiki.quickActions') }}
                             </v-card-title>
@@ -276,7 +229,7 @@
                                     <v-col cols="6">
                                         <v-btn
                                             block
-                                            variant="outlined"
+                                            variant="tonal"
                                             size="small"
                                             @click="focusTitle"
                                             prepend-icon="mdi-format-title"
@@ -287,7 +240,7 @@
                                     <v-col cols="6">
                                         <v-btn
                                             block
-                                            variant="outlined"
+                                            variant="tonal"
                                             size="small"
                                             @click="focusContent"
                                             prepend-icon="mdi-text"
@@ -298,7 +251,7 @@
                                     <v-col cols="6">
                                         <v-btn
                                             block
-                                            variant="outlined"
+                                            variant="tonal"
                                             size="small"
                                             @click="clearForm"
                                             prepend-icon="mdi-refresh"
@@ -309,7 +262,7 @@
                                     <v-col cols="6">
                                         <v-btn
                                             block
-                                            variant="outlined"
+                                            variant="tonal"
                                             size="small"
                                             @click="saveAsDraft"
                                             prepend-icon="mdi-content-save-outline"
@@ -323,8 +276,8 @@
 
                         <!-- Parent Page Selection -->
                         <v-card class="settings-card mb-4" elevation="1" rounded="lg">
-                            <v-card-title class="settings-title">
-                                <v-icon class="mr-2" color="info">mdi-file-tree</v-icon>
+                            <v-card-title class="text-subtitle-1 font-weight-medium">
+                                <v-icon class="mr-2" color="primary">mdi-file-tree</v-icon>
                                 {{ $t('wiki.organization') }}
                             </v-card-title>
                             <v-card-text class="pa-4">
@@ -363,7 +316,7 @@
 
                         <!-- Enhanced Categories -->
                         <v-card class="categories-card mb-4" elevation="1" rounded="lg">
-                            <v-card-title class="categories-title">
+                            <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
                                 <v-icon class="mr-2" color="primary">mdi-folder-outline</v-icon>
                                 {{ $t('wiki.categories') }}
                                 <v-spacer />
@@ -412,7 +365,7 @@
                                             v-for="category in popularCategories"
                                             :key="category.id"
                                             size="small"
-                                            variant="outlined"
+                                            variant="tonal"
                                             @click="addPopularCategory(category)"
                                         >
                                             {{ category.title }}
@@ -424,7 +377,7 @@
 
                         <!-- Enhanced Tags -->
                         <v-card class="tags-card mb-4" elevation="1" rounded="lg">
-                            <v-card-title class="tags-title">
+                            <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
                                 <v-icon class="mr-2" color="secondary">mdi-tag-outline</v-icon>
                                 {{ $t('wiki.tags') }}
                                 <v-spacer />
@@ -481,7 +434,7 @@
                                             v-for="tag in suggestedTags"
                                             :key="tag"
                                             size="small"
-                                            variant="outlined"
+                                            variant="tonal"
                                             @click="addSuggestedTag(tag)"
                                         >
                                             {{ tag }}
@@ -493,16 +446,16 @@
 
                         <!-- Enhanced Preview -->
                         <v-card class="preview-card" elevation="1" rounded="lg">
-                            <v-card-title class="preview-title">
-                                <v-icon class="mr-2" color="success">mdi-eye-outline</v-icon>
+                            <v-card-title class="text-subtitle-1 font-weight-medium">
+                                <v-icon class="mr-2" color="primary">mdi-eye-outline</v-icon>
                                 {{ $t('wiki.livePreview') }}
                             </v-card-title>
                             <v-card-text class="pa-4">
                                 <div class="preview-content">
                                     <div class="preview-header mb-3">
-                                        <h4 class="preview-page-title">
+                                        <h4 class="text-subtitle-1 font-weight-medium text-primary d-flex align-center">
                                             {{ wikipage.title || $t('wiki.untitledPage') }}
-                                            <v-chip v-if="!wikipage.title" color="warning" size="x-small" class="ml-2">
+                                            <v-chip v-if="!wikipage.title" color="warning" size="x-small" variant="tonal" class="ml-2">
                                                 {{ $t('wiki.titleRequired') }}
                                             </v-chip>
                                         </h4>
@@ -525,8 +478,8 @@
                                                 {{ category.title || category }}
                                             </v-chip>
                                             <span v-if="categoryValue.length > 3" class="text-caption">
-                        +{{ categoryValue.length - 3 }} more
-                      </span>
+                                                {{ $t('wiki.moreCount', { count: categoryValue.length - 3 }) }}
+                                            </span>
                                         </div>
 
                                         <div v-if="termValue.length" class="preview-tags mb-2">
@@ -542,8 +495,8 @@
                                                 {{ tag.title || tag }}
                                             </v-chip>
                                             <span v-if="termValue.length > 3" class="text-caption">
-                        +{{ termValue.length - 3 }} more
-                      </span>
+                                                {{ $t('wiki.moreCount', { count: termValue.length - 3 }) }}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -576,7 +529,7 @@
                 v-if="$vuetify.display.mobile"
                 location="bottom end"
                 size="large"
-                color="success"
+                color="primary"
                 icon="mdi-content-save"
                 @click="handleSubmit"
                 :loading="creating"
@@ -592,6 +545,7 @@ import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
 import { useDisplay } from 'vuetify'
 import { useI18n } from 'vue-i18n'
 import Tiptap from '../common/tiptap/Tiptap.vue'
+import PageHeader from '../common/PageHeader.vue'
 import { useAuthStore } from '@/store/authStore.js'
 import { useRouter } from 'vue-router'
 import { useDialog } from '@/composables/useDialog.js'
@@ -599,7 +553,8 @@ import { useDialog } from '@/composables/useDialog.js'
 export default {
     name: 'WikiCreatePage',
     components: {
-        Tiptap
+        Tiptap,
+        PageHeader
     },
     setup() {
         const { t } = useI18n()
@@ -1085,20 +1040,14 @@ Answer to the third question.`
 </script>
 
 <style scoped>
-.wiki-create-container {
-    min-height: 100vh;
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
-}
-
 .editor-card,
 .quick-actions-card,
 .settings-card,
 .categories-card,
 .tags-card,
 .preview-card {
-    border: 1px solid rgba(var(--v-border-color), 0.2);
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     backdrop-filter: blur(10px);
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
     transition: all 0.3s ease;
 }
 </style>

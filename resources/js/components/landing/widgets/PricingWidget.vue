@@ -17,7 +17,7 @@
           <h3 class="text-h5 mb-2">{{ plan.name }}</h3>
           <div class="text-h3 font-weight-bold my-4">
             ${{ plan.price }}
-            <span class="text-body-2 text-grey">/{{ plan.period }}</span>
+            <span class="text-body-2 text-medium-emphasis">/{{ plan.period }}</span>
           </div>
           <v-divider class="my-4" />
           <v-list density="compact" class="mb-4">
