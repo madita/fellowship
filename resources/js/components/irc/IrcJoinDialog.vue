@@ -27,7 +27,7 @@
 
       <v-card-actions>
         <v-spacer />
-        <v-btn @click="$emit('update:modelValue', false)">
+        <v-btn :disabled="joining" @click="$emit('update:modelValue', false)">
           Cancel
         </v-btn>
         <v-btn
@@ -75,6 +75,7 @@ export default {
   },
   methods: {
     async join() {
+      if (this.joining) return;
       if (!this.$refs.form.validate()) return;
 
       this.joining = true;
@@ -85,7 +86,7 @@ export default {
         this.$emit('joined');
       } catch (error) {
         console.error('Error joining channel:', error);
-        alert('Failed to join channel');
+        await this.$dialog.requestError(error, this.$t('irc.joinDialog.joinFailed'));
       } finally {
         this.joining = false;
       }

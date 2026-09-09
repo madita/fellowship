@@ -129,6 +129,8 @@
                 size="x-small"
                 color="error"
                 class="delete-btn"
+                :loading="busyCommentIds.includes(comment.id)"
+                :disabled="!!threadAction[thread.id]"
                 @click.stop="deleteComment(thread, comment)"
               >
                 <v-icon size="14">mdi-delete-outline</v-icon>
@@ -146,6 +148,8 @@
               variant="outlined"
               density="compact"
               hide-details
+              :loading="replyingIds.includes(thread.id)"
+              :disabled="replyingIds.includes(thread.id) || !!threadAction[thread.id]"
               @keyup.enter="submitReply(thread)"
               @click.stop
             >
@@ -172,6 +176,8 @@
               size="x-small"
               color="success"
               prepend-icon="mdi-check"
+              :loading="threadAction[thread.id] === 'resolve'"
+              :disabled="!!threadAction[thread.id]"
               @click.stop="resolveThread(thread)"
             >
               Resolve
@@ -181,6 +187,8 @@
               variant="text"
               size="x-small"
               prepend-icon="mdi-refresh"
+              :loading="threadAction[thread.id] === 'resolve'"
+              :disabled="!!threadAction[thread.id]"
               @click.stop="unresolveThread(thread)"
             >
               Reopen
@@ -192,6 +200,8 @@
               size="x-small"
               color="error"
               prepend-icon="mdi-delete-outline"
+              :loading="threadAction[thread.id] === 'delete'"
+              :disabled="!!threadAction[thread.id]"
               @click.stop="deleteThread(thread)"
             >
               Delete
@@ -205,9 +215,11 @@
 
 <script>
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import UserAvatar from '../common/UserAvatar.vue'
 import { useRelativeTime } from '@/composables/useRelativeTime.js'
+import { useDialog } from '@/composables/useDialog.js'
 
 export default {
   name: 'SandboxComments',
@@ -242,10 +254,28 @@ export default {
   emits: ['close', 'thread-created', 'thread-deleted'],
 
   setup(props, { emit }) {
+    const { t } = useI18n()
+    const dialog = useDialog()
     const threads = ref([])
     const loading = ref(true)
     const submitting = ref(false)
+    // In-flight thread action per thread id: 'resolve' | 'delete'
+    const threadAction = ref({})
+    // Thread ids with a reply being posted
+    const replyingIds = ref([])
+    // Comment ids being deleted
+    const busyCommentIds = ref([])
     const showResolved = ref(false)
+
+    const setThreadAction = (threadId, action) => {
+      const next = { ...threadAction.value }
+      if (action) next[threadId] = action
+      else delete next[threadId]
+      threadAction.value = next
+    }
+    const toggleId = (list, id, on) => {
+      list.value = on ? [...list.value, id] : list.value.filter((i) => i !== id)
+    }
     const selectedThreadId = ref(null)
     const pendingThread = ref(null)
     const replyTexts = ref({})
@@ -313,6 +343,7 @@ export default {
         emit('thread-created', thread)
       } catch (error) {
         console.error('Failed to create thread:', error)
+        await dialog.requestError(error, t('sandbox.comments.createFailed'))
       } finally {
         submitting.value = false
       }
@@ -320,8 +351,9 @@ export default {
 
     const submitReply = async (thread) => {
       const content = replyTexts.value[thread.id]
-      if (!content?.trim()) return
+      if (!content?.trim() || replyingIds.value.includes(thread.id)) return
 
+      toggleId(replyingIds, thread.id, true)
       replyTexts.value[thread.id] = ''
 
       try {
@@ -334,34 +366,42 @@ export default {
       } catch (error) {
         console.error('Failed to add reply:', error)
         replyTexts.value[thread.id] = content
+        await dialog.requestError(error, t('sandbox.comments.replyFailed'))
+      } finally {
+        toggleId(replyingIds, thread.id, false)
       }
     }
 
-    const resolveThread = async (thread) => {
+    const setResolved = async (thread, resolved) => {
+      if (threadAction.value[thread.id]) return
+
+      setThreadAction(thread.id, 'resolve')
       try {
         await axios.put(`/api/sandbox/${props.sandbox.uuid}/threads/${thread.id}`, {
-          resolved: true,
+          resolved,
         })
-        thread.resolved_at = new Date().toISOString()
+        thread.resolved_at = resolved ? new Date().toISOString() : null
       } catch (error) {
-        console.error('Failed to resolve thread:', error)
+        console.error('Failed to update thread:', error)
+        await dialog.requestError(error, t('sandbox.comments.resolveFailed'))
+      } finally {
+        setThreadAction(thread.id, null)
       }
     }
 
-    const unresolveThread = async (thread) => {
-      try {
-        await axios.put(`/api/sandbox/${props.sandbox.uuid}/threads/${thread.id}`, {
-          resolved: false,
-        })
-        thread.resolved_at = null
-      } catch (error) {
-        console.error('Failed to unresolve thread:', error)
-      }
-    }
+    const resolveThread = (thread) => setResolved(thread, true)
+
+    const unresolveThread = (thread) => setResolved(thread, false)
 
     const deleteThread = async (thread) => {
-      if (!confirm('Delete this comment thread?')) return
+      if (threadAction.value[thread.id]) return
 
+      const confirmed = await dialog.confirmDelete(t('sandbox.comments.deleteThreadConfirm'), {
+        title: t('sandbox.comments.deleteThreadTitle'),
+      })
+      if (!confirmed) return
+
+      setThreadAction(thread.id, 'delete')
       try {
         await axios.delete(`/api/sandbox/${props.sandbox.uuid}/threads/${thread.id}`)
 
@@ -373,15 +413,23 @@ export default {
         emit('thread-deleted', thread)
       } catch (error) {
         console.error('Failed to delete thread:', error)
+        await dialog.requestError(error, t('sandbox.comments.deleteThreadFailed'))
+      } finally {
+        setThreadAction(thread.id, null)
       }
     }
 
     const deleteComment = async (thread, comment) => {
-      const isLastComment = thread.comments.length === 1
-      if (isLastComment && !confirm('Deleting the last comment will also delete this thread. Continue?')) {
-        return
-      }
+      if (busyCommentIds.value.includes(comment.id) || threadAction.value[thread.id]) return
 
+      const isLastComment = thread.comments.length === 1
+      const confirmed = await dialog.confirmDelete(
+        t(isLastComment ? 'sandbox.comments.deleteLastCommentConfirm' : 'sandbox.comments.deleteCommentConfirm'),
+        { title: t('sandbox.comments.deleteCommentTitle') }
+      )
+      if (!confirmed) return
+
+      toggleId(busyCommentIds, comment.id, true)
       try {
         await axios.delete(
           `/api/sandbox/${props.sandbox.uuid}/threads/${thread.id}/comments/${comment.id}`
@@ -398,6 +446,9 @@ export default {
         }
       } catch (error) {
         console.error('Failed to delete comment:', error)
+        await dialog.requestError(error, t('sandbox.comments.deleteCommentFailed'))
+      } finally {
+        toggleId(busyCommentIds, comment.id, false)
       }
     }
 
@@ -458,6 +509,9 @@ export default {
       threads,
       loading,
       submitting,
+      threadAction,
+      replyingIds,
+      busyCommentIds,
       showResolved,
       selectedThreadId,
       pendingThread,

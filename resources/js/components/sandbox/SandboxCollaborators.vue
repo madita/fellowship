@@ -40,15 +40,19 @@
               type="text"
               placeholder="Search by username..."
               class="form-control"
+              :disabled="adding"
             />
             <div v-if="searchResults.length > 0" class="search-results">
               <div
                 v-for="user in searchResults"
                 :key="user.id"
                 @click="addCollaborator(user)"
-                class="search-result-item"
+                :class="['search-result-item', { busy: adding }]"
               >
-                <span class="username">{{ user.username }}</span>
+                <span class="username">
+                  <i v-if="adding" class="fas fa-spinner fa-spin"></i>
+                  {{ user.username }}
+                </span>
                 <span class="email">{{ user.email }}</span>
               </div>
             </div>
@@ -88,13 +92,18 @@
                 v-model="collab.pivot.role"
                 @change="updateRole(collab)"
                 class="role-select"
+                :disabled="isBusy(collab.id)"
               >
                 <option value="viewer">Can view</option>
                 <option value="editor">Can edit</option>
                 <option value="admin">Admin</option>
               </select>
-              <button @click="removeCollaborator(collab)" class="remove-btn">
-                <i class="fas fa-times"></i>
+              <button
+                @click="removeCollaborator(collab)"
+                class="remove-btn"
+                :disabled="isBusy(collab.id)"
+              >
+                <i :class="isBusy(collab.id) ? 'fas fa-spinner fa-spin' : 'fas fa-times'"></i>
               </button>
             </div>
           </div>
@@ -116,7 +125,9 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
+import { useDialog } from '@/composables/useDialog.js'
 
 export default {
   name: 'SandboxCollaborators',
@@ -131,12 +142,29 @@ export default {
   emits: ['close', 'updated'],
 
   setup(props, { emit }) {
+    const { t } = useI18n()
+    const dialog = useDialog()
     const searchQuery = ref('')
     const searchResults = ref([])
     const collaborators = ref([])
     const copied = ref(false)
     const linkInput = ref(null)
+    const adding = ref(false)
+    // Collaborator ids with a role change or removal in flight
+    const busyIds = ref([])
+    // Last role the server accepted per collaborator, to revert a failed change
+    const lastRoles = {}
     let searchTimeout = null
+
+    const isBusy = (id) => busyIds.value.includes(id)
+    const setBusy = (id, busy) => {
+      busyIds.value = busy
+        ? [...busyIds.value, id]
+        : busyIds.value.filter((i) => i !== id)
+    }
+    const rememberRoles = () => {
+      collaborators.value.forEach((c) => { lastRoles[c.id] = c.pivot?.role })
+    }
 
     const shareLink = computed(() => {
       return `${window.location.origin}/sandbox/${props.sandbox.slug}`
@@ -144,6 +172,7 @@ export default {
 
     onMounted(() => {
       collaborators.value = props.sandbox.collaborators || []
+      rememberRoles()
     })
 
     const copyLink = async () => {
@@ -187,43 +216,71 @@ export default {
     }
 
     const addCollaborator = async (user) => {
+      if (adding.value) return
+
+      adding.value = true
       try {
         const response = await axios.post(
           `/api/sandbox/${props.sandbox.uuid}/collaborators`,
           { user_id: user.id, role: 'editor' }
         )
         collaborators.value = response.data.collaborators
+        rememberRoles()
         searchQuery.value = ''
         searchResults.value = []
         emit('updated')
       } catch (error) {
         console.error('Failed to add collaborator:', error)
-        alert(error.response?.data?.error || 'Failed to add collaborator')
+        await dialog.requestError(error, t('sandbox.collaborators.addFailed'))
+      } finally {
+        adding.value = false
       }
     }
 
     const updateRole = async (collab) => {
+      if (isBusy(collab.id)) return
+
+      setBusy(collab.id, true)
       try {
         await axios.post(`/api/sandbox/${props.sandbox.uuid}/collaborators`, {
           user_id: collab.id,
           role: collab.pivot.role,
         })
+        lastRoles[collab.id] = collab.pivot.role
       } catch (error) {
         console.error('Failed to update role:', error)
+        if (lastRoles[collab.id]) collab.pivot.role = lastRoles[collab.id]
+        await dialog.requestError(error, t('sandbox.collaborators.roleUpdateFailed'))
+      } finally {
+        setBusy(collab.id, false)
       }
     }
 
     const removeCollaborator = async (collab) => {
-      if (!confirm(`Remove ${collab.username} from this sandbox?`)) return
+      if (isBusy(collab.id)) return
 
+      const confirmed = await dialog.confirmDelete(
+        t('sandbox.collaborators.removeConfirm', { name: collab.username }),
+        {
+          title: t('sandbox.collaborators.removeTitle'),
+          confirmationText: t('dialogs.confirm.remove'),
+        }
+      )
+      if (!confirmed) return
+
+      setBusy(collab.id, true)
       try {
         await axios.delete(
           `/api/sandbox/${props.sandbox.uuid}/collaborators/${collab.id}`
         )
         collaborators.value = collaborators.value.filter(c => c.id !== collab.id)
+        delete lastRoles[collab.id]
         emit('updated')
       } catch (error) {
         console.error('Failed to remove collaborator:', error)
+        await dialog.requestError(error, t('sandbox.collaborators.removeFailed'))
+      } finally {
+        setBusy(collab.id, false)
       }
     }
 
@@ -233,6 +290,8 @@ export default {
       collaborators,
       copied,
       linkInput,
+      adding,
+      isBusy,
       shareLink,
       copyLink,
       searchUsers,
@@ -382,6 +441,11 @@ export default {
     background: #f3f4f6;
   }
 
+  &.busy {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
   .username {
     font-weight: 500;
   }
@@ -465,6 +529,11 @@ export default {
   border-radius: 0.25rem;
   font-size: 0.875rem;
   background: white;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
 }
 
 .remove-btn {
@@ -477,6 +546,11 @@ export default {
 
   &:hover {
     background: #fef2f2;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
   }
 }
 

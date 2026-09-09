@@ -4,11 +4,13 @@ import { useI18n } from 'vue-i18n';
 import UserAvatar from '../common/UserAvatar.vue';
 import axios from 'axios';
 import { useUserStore } from '@/store/userStore.js';
+import { useDialog } from '@/composables/useDialog.js';
 
 const emit = defineEmits(['statusPosted']);
 
 const { t } = useI18n();
 const userStore = useUserStore();
+const dialog = useDialog();
 
 const user = computed(() => userStore.user || { id: null });
 
@@ -57,11 +59,11 @@ const onFilesSelected = (event) => {
     event.target.value = '';
 };
 
-const addFiles = (files) => {
+const addFiles = async (files) => {
     for (const file of files) {
         if (selectedFiles.value.length >= MAX_IMAGES) break;
         if (file.size > MAX_FILE_SIZE) {
-            alert(`"${file.name}" exceeds the 5MB size limit.`);
+            await dialog.warning(t('timeline.fileTooLarge', { name: file.name, size: 5 }));
             continue;
         }
         if (!file.type.startsWith('image/')) continue;
@@ -87,7 +89,7 @@ const removeFeeling = () => {
 };
 
 const postStatus = async () => {
-    if (!canPost.value) return;
+    if (!canPost.value || posting.value) return;
 
     posting.value = true;
     try {
@@ -117,6 +119,7 @@ const postStatus = async () => {
         emit('statusPosted', response.data);
     } catch (error) {
         console.error('Failed to post status:', error);
+        await dialog.requestError(error, t('timeline.postFailed'));
     } finally {
         posting.value = false;
     }

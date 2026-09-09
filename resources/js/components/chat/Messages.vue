@@ -3,6 +3,9 @@
 
 <!--        <perfect-scrollbar >-->
             <div id="messages" ref="messageContainer" style="height: calc(100vh - 290px)">
+            <div v-if="loading" class="d-flex justify-center py-8">
+                <v-progress-circular indeterminate color="primary" />
+            </div>
             <chat-message
                 v-for="message in messages"
                 :key="message.id"
@@ -20,8 +23,10 @@
 <script>
 // import EventBus from '@/bus.js'
 import {ref, computed, onMounted,onUpdated, watch} from 'vue';
+import { useI18n } from 'vue-i18n';
 import ChatMessage from './Message.vue';
 import {useChatStore} from "@/store/chatStore.js";
+import { useDialog } from '@/composables/useDialog.js';
 
 
 export default {
@@ -29,9 +34,12 @@ export default {
         ChatMessage
     },
     setup() {
+        const { t } = useI18n();
+        const dialog = useDialog();
         const chatStore = useChatStore();
 
         const messageContainer = ref(null);
+        const loading = ref(true);
 
         const messages = computed(() => {
             if (chatStore?.messages === []) {
@@ -94,6 +102,10 @@ export default {
                 // messages = response.data;
                 chatStore.setMessages(response.data)
                 //this.messages = chatStore.messages
+            }).catch((error) => {
+                dialog.requestError(error, t('chat.loadFailed'));
+            }).finally(() => {
+                loading.value = false;
             });
 
             scrollToEnd()
@@ -110,6 +122,7 @@ export default {
 
         return {
             messages,
+            loading,
             messageContainer,
             scrollToEnd,
             removeMessage

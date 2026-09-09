@@ -17,6 +17,7 @@
             type="text"
             class="form-control"
             required
+            :disabled="busy"
           />
         </div>
 
@@ -27,12 +28,13 @@
             v-model="form.description"
             class="form-control"
             rows="3"
+            :disabled="busy"
           ></textarea>
         </div>
 
         <div class="form-group">
           <label for="visibility">Visibility</label>
-          <select id="visibility" v-model="form.visibility" class="form-control">
+          <select id="visibility" v-model="form.visibility" class="form-control" :disabled="busy">
             <option value="private">Private - Only you and collaborators</option>
             <option value="members">Members - All site members can view</option>
             <option v-if="publicEnabled" value="public">Public - Anyone can view</option>
@@ -43,15 +45,15 @@
           <label>Editor Settings</label>
           <div class="checkbox-group">
             <label class="checkbox-label">
-              <input type="checkbox" v-model="form.settings.showCursors" />
+              <input type="checkbox" v-model="form.settings.showCursors" :disabled="busy" />
               Show collaborator cursors
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" v-model="form.settings.autoSave" />
+              <input type="checkbox" v-model="form.settings.autoSave" :disabled="busy" />
               Auto-save changes
             </label>
             <label class="checkbox-label">
-              <input type="checkbox" v-model="form.settings.allowComments" />
+              <input type="checkbox" v-model="form.settings.allowComments" :disabled="busy" />
               Allow comments
             </label>
           </div>
@@ -59,19 +61,20 @@
 
         <div class="danger-zone">
           <h3>Danger Zone</h3>
-          <button type="button" @click="confirmDelete" class="btn btn-danger">
-            <i class="fas fa-trash"></i>
-            Delete Sandbox
+          <button type="button" @click="confirmDelete" class="btn btn-danger" :disabled="busy">
+            <i :class="deleting ? 'fas fa-spinner fa-spin' : 'fas fa-trash'"></i>
+            {{ deleting ? $t('sandbox.settings.deleting') : 'Delete Sandbox' }}
           </button>
         </div>
       </form>
 
       <div class="modal-footer">
-        <button type="button" @click="$emit('close')" class="btn btn-secondary">
+        <button type="button" @click="$emit('close')" class="btn btn-secondary" :disabled="busy">
           Cancel
         </button>
-        <button type="button" @click="saveSettings" class="btn btn-primary" :disabled="saving">
-          {{ saving ? 'Saving...' : 'Save Changes' }}
+        <button type="button" @click="saveSettings" class="btn btn-primary" :disabled="busy">
+          <i v-if="saving" class="fas fa-spinner fa-spin"></i>
+          {{ saving ? $t('sandbox.settings.saving') : 'Save Changes' }}
         </button>
       </div>
     </div>
@@ -80,8 +83,10 @@
 
 <script>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { useSettingsStore } from '@/store/settingStore.js'
+import { useDialog } from '@/composables/useDialog.js'
 
 export default {
   name: 'SandboxSettings',
@@ -96,9 +101,13 @@ export default {
   emits: ['close', 'updated'],
 
   setup(props, { emit }) {
+    const { t } = useI18n()
+    const dialog = useDialog()
     const settingsStore = useSettingsStore()
     const publicEnabled = computed(() => settingsStore.sandboxPublicEnabled)
     const saving = ref(false)
+    const deleting = ref(false)
+    const busy = computed(() => saving.value || deleting.value)
     const form = reactive({
       title: '',
       description: '',
@@ -118,33 +127,46 @@ export default {
     })
 
     const saveSettings = async () => {
+      if (busy.value) return
+
       saving.value = true
       try {
         const response = await axios.put(`/api/sandbox/${props.sandbox.uuid}`, form)
         emit('updated', response.data.sandbox)
+        await dialog.success(t('sandbox.settings.saved'))
       } catch (error) {
         console.error('Failed to save settings:', error)
-        alert('Failed to save settings')
+        await dialog.requestError(error, t('sandbox.settings.saveFailed'))
       } finally {
         saving.value = false
       }
     }
 
     const confirmDelete = async () => {
-      if (confirm('Are you sure you want to delete this sandbox? This action cannot be undone.')) {
-        try {
-          await axios.delete(`/api/sandbox/${props.sandbox.uuid}`)
-          window.location.href = '/sandbox'
-        } catch (error) {
-          console.error('Failed to delete:', error)
-          alert('Failed to delete sandbox')
-        }
+      if (busy.value) return
+
+      const confirmed = await dialog.confirmDelete(t('sandbox.settings.deleteConfirm'), {
+        title: t('sandbox.settings.deleteTitle'),
+      })
+      if (!confirmed) return
+
+      deleting.value = true
+      try {
+        await axios.delete(`/api/sandbox/${props.sandbox.uuid}`)
+        window.location.href = '/sandbox'
+      } catch (error) {
+        console.error('Failed to delete:', error)
+        await dialog.requestError(error, t('sandbox.settings.deleteFailed'))
+      } finally {
+        deleting.value = false
       }
     }
 
     return {
       form,
       saving,
+      deleting,
+      busy,
       publicEnabled,
       saveSettings,
       confirmDelete,

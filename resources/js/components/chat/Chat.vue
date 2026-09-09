@@ -36,7 +36,7 @@
                     density="compact"
                     :placeholder="$t('chat.typeMessage')"
                 ></v-text-field>
-                <v-btn icon variant="text" type="submit" class="text-medium-emphasis" :disabled="!body">
+                <v-btn icon variant="text" type="submit" class="text-medium-emphasis" :disabled="!body" :loading="sending">
                     <v-icon small>mdi-send</v-icon>
                 </v-btn>
             </form>
@@ -80,12 +80,14 @@
 
 <script>
 import {onMounted, ref} from 'vue';
+import { useI18n } from 'vue-i18n';
 //import moment from 'moment';
 import ChatMessages from './Messages.vue';
 import Users from './Users.vue';
 import { useUserStore } from "@/store/userStore.js";
 import { useChatStore } from '@/store/chatStore';
 import {useOnlineUsersStore} from "@/store/onlineUsersStore.js";
+import { useDialog } from '@/composables/useDialog.js';
 // import useEventBus from "@/bus.js";
 const { onlineUsersStore } = useOnlineUsersStore();
 
@@ -95,8 +97,11 @@ export default {
         ChatMessages
     },
     setup() {
+        const { t } = useI18n();
+        const dialog = useDialog();
         const body = ref('');
         const bodyBackedUp = ref('');
+        const sending = ref(false);
         const usersDrawer = ref(true);
         const userStore = useUserStore();
         // const { emit, on } = useEventBus();
@@ -130,22 +135,22 @@ export default {
             }
         }
 
-        const send = () => {
-            if (!body.value || body.value.trim() === '') {
+        const send = async () => {
+            if (!body.value || body.value.trim() === '' || sending.value) {
                 return;
             }
-            let tempMessage = buildTempMessage();
-            axios.post('/api/chat/messages', {
-                body: body.value.trim()
-            }).then((response) => {
-                // console.log(response)
-
-                chatStore.addMessage(response.data);
-                }
-            ).catch(() => {
-                body.value = bodyBackedUp.value;
-            });
+            const text = body.value.trim();
+            sending.value = true;
             body.value = '';
+            try {
+                const response = await axios.post('/api/chat/messages', { body: text });
+                chatStore.addMessage(response.data);
+            } catch (error) {
+                body.value = bodyBackedUp.value;
+                await dialog.requestError(error, t('chat.sendFailed'));
+            } finally {
+                sending.value = false;
+            }
         };
 
         onMounted(() => {
@@ -174,6 +179,7 @@ export default {
 
         return {
             body,
+            sending,
             send,
             handleMessageInput,
             user: userStore.user

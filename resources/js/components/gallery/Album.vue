@@ -148,9 +148,13 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
 
+const { t } = useI18n();
+const dialog = useDialog();
 const route = useRoute();
 const album = ref(null);
 const selectedFile = ref(null);
@@ -179,14 +183,16 @@ const  handleFiles = (files) => {
     // You can now upload the files to your backend, handle them, etc.
 }
 
-const  handleUploadSuccess = (files) => {
-    console.log('handleUploadSuccess :', files);
-    // You can now upload the files to your backend, handle them, etc.
+const handleUploadSuccess = async () => {
+    // Show the new images and close the uploader
+    await fetchAlbum();
+    fileUpload.value = false;
+    await dialog.success(t('gallery.uploadSuccess'));
 }
 
-const  handleUploadFailure = (files) => {
-    console.log('handleUploadSuccess :', files);
-    // You can now upload the files to your backend, handle them, etc.
+const handleUploadFailure = async (error) => {
+    console.error('Upload failed:', error);
+    await dialog.requestError(error, t('gallery.uploadFailed'));
 }
 
 

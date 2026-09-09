@@ -24,6 +24,8 @@
                     v-if="notifications.length > 0"
                     variant="text"
                     size="x-small"
+                    :loading="markingAll"
+                    :disabled="busyIds.length > 0"
                     @click="markAllAsRead"
                 >
                     Mark all read
@@ -48,6 +50,7 @@
                 <template v-for="(item, index) in notifications" :key="item.id || index">
                     <v-list-item
                         class="notification-item"
+                        :disabled="busyIds.includes(item.id) || markingAll"
                         @click="goToNotification(item)"
                     >
                         <template v-slot:prepend>
@@ -72,6 +75,8 @@
                                 variant="text"
                                 size="x-small"
                                 color="medium-emphasis"
+                                :loading="busyIds.includes(item.id)"
+                                :disabled="markingAll"
                                 @click.stop="dismiss(item.id)"
                             >
                                 <v-icon size="16">mdi-close</v-icon>
@@ -103,8 +108,10 @@
 <script>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store/userStore.js'
 import { useRelativeTime } from '@/composables/useRelativeTime.js'
+import { useDialog } from '@/composables/useDialog.js'
 import axios from 'axios'
 
 export default {
@@ -112,9 +119,20 @@ export default {
 
     setup() {
         const router = useRouter()
+        const { t } = useI18n()
+        const dialog = useDialog()
         const userStore = useUserStore()
         const allNotifications = ref([])
         const loading = ref(true)
+        // Notification ids with a mark-as-read / dismiss request in flight
+        const busyIds = ref([])
+        const markingAll = ref(false)
+
+        const setBusy = (id, busy) => {
+            busyIds.value = busy
+                ? [...busyIds.value, id]
+                : busyIds.value.filter(i => i !== id)
+        }
 
         // Filter to only sandbox notifications
         const notifications = computed(() =>
@@ -135,14 +153,20 @@ export default {
         }
 
         const goToNotification = async (item) => {
+            if (busyIds.value.includes(item.id) || markingAll.value) return
+
+            setBusy(item.id, true)
             try {
                 await axios.get('/api/account/notification/markasread/' + item.id)
             } catch (error) {
                 // Keep the notification in local state and don't navigate it as
                 // read when the mark-as-read request fails.
                 console.warn(error)
+                setBusy(item.id, false)
+                await dialog.requestError(error, t('sandbox.notifications.markReadFailed'))
                 return
             }
+            setBusy(item.id, false)
 
             // Remove from local list only after successful mark-as-read
             allNotifications.value = allNotifications.value.filter(n => n.id !== item.id)
@@ -155,26 +179,42 @@ export default {
         }
 
         const dismiss = async (id) => {
+            if (busyIds.value.includes(id) || markingAll.value) return
+
+            setBusy(id, true)
             try {
                 await axios.delete('/api/account/notification/delete/' + id)
                 allNotifications.value = allNotifications.value.filter(n => n.id !== id)
             } catch (error) {
                 console.warn(error)
+                await dialog.requestError(error, t('sandbox.notifications.dismissFailed'))
+            } finally {
+                setBusy(id, false)
             }
         }
 
         const markAllAsRead = async () => {
-            // Mark only sandbox notifications as read (one by one)
-            const sandboxIds = notifications.value.map(n => n.id)
-            const results = await Promise.allSettled(
-                sandboxIds.map(id => axios.get('/api/account/notification/markasread/' + id))
-            )
-            const succeededIds = new Set(
-                sandboxIds.filter((_, i) => results[i].status === 'fulfilled')
-            )
-            allNotifications.value = allNotifications.value.filter(
-                n => !(n.data?.type?.startsWith('sandbox_') && succeededIds.has(n.id))
-            )
+            if (markingAll.value || busyIds.value.length > 0) return
+
+            markingAll.value = true
+            try {
+                // Mark only sandbox notifications as read (one by one)
+                const sandboxIds = notifications.value.map(n => n.id)
+                const results = await Promise.allSettled(
+                    sandboxIds.map(id => axios.get('/api/account/notification/markasread/' + id))
+                )
+                const succeededIds = new Set(
+                    sandboxIds.filter((_, i) => results[i].status === 'fulfilled')
+                )
+                allNotifications.value = allNotifications.value.filter(
+                    n => !(n.data?.type?.startsWith('sandbox_') && succeededIds.has(n.id))
+                )
+                if (succeededIds.size < sandboxIds.length) {
+                    await dialog.error(t('sandbox.notifications.markAllFailed'))
+                }
+            } finally {
+                markingAll.value = false
+            }
         }
 
         const getIcon = (item) => {
@@ -230,6 +270,8 @@ export default {
         return {
             notifications,
             loading,
+            busyIds,
+            markingAll,
             unreadCount,
             goToNotification,
             dismiss,

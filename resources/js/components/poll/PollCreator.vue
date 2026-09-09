@@ -134,6 +134,7 @@
         <v-spacer></v-spacer>
         <v-btn
           text
+          :disabled="loading"
           @click="close"
         >
           Cancel
@@ -152,6 +153,8 @@
 </template>
 
 <script>
+import axios from 'axios'
+
 export default {
   name: 'PollCreator',
   props: {
@@ -215,6 +218,7 @@ export default {
       }
     },
     async submit() {
+      if (this.loading) return
       if (!this.$refs.form.validate()) {
         return
       }
@@ -234,25 +238,17 @@ export default {
 
         let response
         if (this.editMode) {
-          response = await this.$axios.put(`/polls/${this.existingPoll.id}`, payload)
+          response = await axios.put(`/api/polls/${this.existingPoll.id}`, payload)
         } else {
-          response = await this.$axios.post('/polls', payload)
+          response = await axios.post('/api/polls', payload)
         }
 
         this.$emit('created', response.data.poll)
-        this.$notify({
-          type: 'success',
-          title: 'Success',
-          text: response.data.message
-        })
-
         this.close()
+
+        await this.$dialog.success(response.data.message || this.$t('poll.saved'))
       } catch (error) {
-        this.$notify({
-          type: 'error',
-          title: 'Error',
-          text: error.response?.data?.message || 'Failed to save poll'
-        })
+        await this.$dialog.requestError(error, this.$t('poll.saveFailed'))
       } finally {
         this.loading = false
       }

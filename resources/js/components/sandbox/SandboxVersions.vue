@@ -92,6 +92,7 @@
                     variant="tonal"
                     prepend-icon="mdi-restore"
                     :loading="restoring === version.id"
+                    :disabled="restoring !== null && restoring !== version.id"
                     @click="restoreVersion(version)"
                   >
                     Restore
@@ -188,6 +189,7 @@
               size="small"
               prepend-icon="mdi-restore"
               :loading="restoring === previewData.id"
+              :disabled="restoring !== null && restoring !== previewData.id"
               @click="restoreVersion(previewData)"
             >
               Restore
@@ -236,14 +238,6 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <!-- Confirm Restore Dialog -->
-    <ConfirmDialog
-      v-model="confirmDialog"
-      title="Restore Version"
-      :content="confirmMessage"
-      confirmation-text="Restore"
-      :resolve="onConfirmResolve"
-    />
 
     <!-- Error Snackbar -->
     <v-snackbar v-model="errorSnackbar" color="error" :timeout="4000">
@@ -254,9 +248,10 @@
 
 <script>
 import { ref, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import UserAvatar from '../common/UserAvatar.vue'
-import ConfirmDialog from '../common/ConfirmDialog.vue'
+import { useDialog } from '@/composables/useDialog.js'
 
 /**
  * Convert HTML to plain text, preserving line breaks from block elements.
@@ -425,7 +420,6 @@ export default {
 
   components: {
     UserAvatar,
-    ConfirmDialog,
   },
 
   props: {
@@ -442,6 +436,8 @@ export default {
   emits: ['close', 'restore'],
 
   setup(props, { emit }) {
+    const { t } = useI18n()
+    const dialog = useDialog()
     const activeTab = ref('versions')
     const previewTab = ref('preview')
 
@@ -466,11 +462,6 @@ export default {
     const previewLoading = ref(false)
     const diffHtml = ref('')
 
-    // Confirm dialog state
-    const confirmDialog = ref(false)
-    const confirmMessage = ref('')
-    const pendingRestoreVersion = ref(null)
-
     // Error snackbar
     const errorSnackbar = ref(false)
     const errorMessage = ref('')
@@ -492,6 +483,7 @@ export default {
     }
 
     const loadMoreVersions = async () => {
+      if (versionsLoadingMore.value) return
       versionsLoadingMore.value = true
       versionsPage.value++
       try {
@@ -507,17 +499,19 @@ export default {
       }
     }
 
-    const restoreVersion = (version) => {
-      pendingRestoreVersion.value = version
-      confirmMessage.value = `Restore "${version.title || 'Untitled version'}"? The current state will be saved as a version first.`
-      confirmDialog.value = true
-    }
+    const restoreVersion = async (version) => {
+      if (restoring.value !== null) return
 
-    const onConfirmResolve = async (confirmed) => {
-      confirmDialog.value = false
-      if (!confirmed || !pendingRestoreVersion.value) return
+      const confirmed = await dialog.confirm({
+        title: t('sandbox.versions.restoreTitle'),
+        content: t('sandbox.versions.restoreConfirm', {
+          title: version.title || t('sandbox.versions.untitled'),
+        }),
+        confirmationText: t('sandbox.versions.restore'),
+        color: 'warning',
+      })
+      if (!confirmed) return
 
-      const version = pendingRestoreVersion.value
       restoring.value = version.id
       try {
         const response = await axios.post(
@@ -531,7 +525,6 @@ export default {
         errorSnackbar.value = true
       } finally {
         restoring.value = null
-        pendingRestoreVersion.value = null
       }
     }
 
@@ -580,6 +573,7 @@ export default {
     }
 
     const loadMoreActivity = async () => {
+      if (activityLoadingMore.value) return
       activityLoadingMore.value = true
       activityPage.value++
       try {
@@ -652,9 +646,6 @@ export default {
       previewData,
       previewLoading,
       diffHtml,
-      confirmDialog,
-      confirmMessage,
-      onConfirmResolve,
       errorSnackbar,
       errorMessage,
       loadMoreVersions,

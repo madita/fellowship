@@ -70,7 +70,7 @@
 
       <v-card-actions>
         <v-spacer />
-        <v-btn @click="$emit('update:modelValue', false)">
+        <v-btn :disabled="saving" @click="$emit('update:modelValue', false)">
           Cancel
         </v-btn>
         <v-btn
@@ -135,6 +135,7 @@ export default {
   },
   methods: {
     async save() {
+      if (this.saving) return;
       if (!this.$refs.form.validate()) return;
 
       // Parse channels
@@ -153,7 +154,7 @@ export default {
         this.$emit('saved');
       } catch (error) {
         console.error('Error saving connection:', error);
-        alert('Failed to save connection');
+        await this.$dialog.requestError(error, this.$t('irc.connectionDialog.saveFailed'));
       } finally {
         this.saving = false;
       }

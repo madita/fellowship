@@ -5,6 +5,7 @@ import UserAvatar from '../common/UserAvatar.vue';
 import TinyBox from '../gallery/TinyBox.vue';
 import axios from 'axios';
 import { useUserStore } from '@/store/userStore.js';
+import { useDialog } from '@/composables/useDialog.js';
 
 const MAX_IMAGES = 10;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -20,6 +21,7 @@ const emit = defineEmits(['updated', 'deleted']);
 
 const { t } = useI18n();
 const userStore = useUserStore();
+const dialog = useDialog();
 
 const user = computed(() => userStore.user || { id: null });
 const isMyStatus = computed(() => user.value.id === props.status.user_id);
@@ -27,12 +29,15 @@ const isMyStatus = computed(() => user.value.id === props.status.user_id);
 const isLiked = ref(props.status.is_liked_by_me);
 const likesCount = ref(props.status.likes_count);
 const commentsCount = ref(props.status.comments_count);
+const liking = ref(false);
 
 const showComments = ref(false);
 const comments = ref(props.status.comments || []);
 const newComment = ref('');
 const loadingComments = ref(false);
 const addingComment = ref(false);
+const deletingCommentId = ref(null);
+const deleting = ref(false);
 
 const feelingMap = {
     happy: '\u{1F60A}',
@@ -78,12 +83,12 @@ const triggerEditFileInput = () => {
     editFileInput.value?.click();
 };
 
-const onEditFilesSelected = (event) => {
+const onEditFilesSelected = async (event) => {
     for (const file of Array.from(event.target.files)) {
         if (editImageCount.value >= MAX_IMAGES) break;
         if (!file.type.startsWith('image/')) continue;
         if (file.size > MAX_FILE_SIZE) {
-            alert(`"${file.name}" exceeds the 5MB size limit.`);
+            await dialog.warning(t('timeline.fileTooLarge', { name: file.name, size: 5 }));
             continue;
         }
         newFiles.value.push(file);
@@ -128,6 +133,8 @@ const openLightbox = (index) => {
 };
 
 const toggleLike = async () => {
+    if (liking.value) return;
+
     const previousState = isLiked.value;
     const previousCount = likesCount.value;
 
@@ -135,6 +142,7 @@ const toggleLike = async () => {
     isLiked.value = !isLiked.value;
     likesCount.value += isLiked.value ? 1 : -1;
 
+    liking.value = true;
     try {
         const response = await axios.post(`/api/statuses/${props.status.id}/like`);
         isLiked.value = response.data.liked;
@@ -144,6 +152,9 @@ const toggleLike = async () => {
         isLiked.value = previousState;
         likesCount.value = previousCount;
         console.error('Failed to toggle like:', error);
+        await dialog.requestError(error, t('timeline.likeFailed'));
+    } finally {
+        liking.value = false;
     }
 };
 
@@ -178,7 +189,7 @@ const cancelReply = () => {
 };
 
 const addComment = async () => {
-    if (!newComment.value.trim()) return;
+    if (!newComment.value.trim() || addingComment.value) return;
 
     addingComment.value = true;
     try {
@@ -208,18 +219,30 @@ const addComment = async () => {
         replyingTo.value = null;
     } catch (error) {
         console.error('Failed to add comment:', error);
+        await dialog.requestError(error, t('timeline.commentFailed'));
     } finally {
         addingComment.value = false;
     }
 };
 
 const deleteComment = async (commentId) => {
+    if (deletingCommentId.value !== null) return;
+
+    const confirmed = await dialog.confirmDelete(t('timeline.deleteCommentConfirm'), {
+        title: t('timeline.deleteCommentTitle'),
+    });
+    if (!confirmed) return;
+
+    deletingCommentId.value = commentId;
     try {
         await axios.delete(`/api/status-comments/${commentId}`);
         comments.value = comments.value.filter(c => c.id !== commentId);
         commentsCount.value--;
     } catch (error) {
         console.error('Failed to delete comment:', error);
+        await dialog.requestError(error, t('timeline.deleteCommentFailed'));
+    } finally {
+        deletingCommentId.value = null;
     }
 };
 
@@ -236,7 +259,7 @@ const cancelEdit = () => {
 };
 
 const saveEdit = async () => {
-    if (!editedContent.value.trim()) return;
+    if (!editedContent.value.trim() || saving.value) return;
 
     saving.value = true;
     try {
@@ -266,19 +289,29 @@ const saveEdit = async () => {
         emit('updated', response.data);
     } catch (error) {
         console.error('Failed to update status:', error);
+        await dialog.requestError(error, t('timeline.updateFailed'));
     } finally {
         saving.value = false;
     }
 };
 
 const deleteStatus = async () => {
-    if (!confirm('Are you sure you want to delete this status?')) return;
+    if (deleting.value) return;
 
+    const confirmed = await dialog.confirmDelete(t('timeline.deleteStatusConfirm'), {
+        title: t('timeline.deleteStatusTitle'),
+    });
+    if (!confirmed) return;
+
+    deleting.value = true;
     try {
         await axios.delete(`/api/statuses/${props.status.id}`);
         emit('deleted', props.status.id);
     } catch (error) {
         console.error('Failed to delete status:', error);
+        await dialog.requestError(error, t('timeline.deleteStatusFailed'));
+    } finally {
+        deleting.value = false;
     }
 };
 
@@ -321,14 +354,14 @@ onBeforeUnmount(() => {
                     </template>
 
                     <v-list density="compact">
-                        <v-list-item @click="editStatus">
+                        <v-list-item :disabled="deleting" @click="editStatus">
                             <template #prepend>
                                 <v-icon size="small">mdi-pencil</v-icon>
                             </template>
                             <v-list-item-title>Edit</v-list-item-title>
                         </v-list-item>
 
-                        <v-list-item @click="deleteStatus">
+                        <v-list-item :disabled="deleting" @click="deleteStatus">
                             <template #prepend>
                                 <v-icon size="small" color="error">mdi-delete</v-icon>
                             </template>
@@ -480,6 +513,7 @@ onBeforeUnmount(() => {
                 <v-btn
                     variant="text"
                     :color="isLiked ? 'pink' : 'default'"
+                    :loading="liking"
                     @click="toggleLike"
                     class="flex-grow-1"
                 >
@@ -521,6 +555,8 @@ onBeforeUnmount(() => {
                                             icon="mdi-delete"
                                             size="x-small"
                                             variant="text"
+                                            :loading="deletingCommentId === comment.id"
+                                            :disabled="deletingCommentId !== null && deletingCommentId !== comment.id"
                                             @click="deleteComment(comment.id)"
                                         />
                                     </div>
@@ -548,6 +584,8 @@ onBeforeUnmount(() => {
                                                             icon="mdi-delete"
                                                             size="x-small"
                                                             variant="text"
+                                                            :loading="deletingCommentId === reply.id"
+                                                            :disabled="deletingCommentId !== null && deletingCommentId !== reply.id"
                                                             @click="deleteComment(reply.id)"
                                                         />
                                                     </div>

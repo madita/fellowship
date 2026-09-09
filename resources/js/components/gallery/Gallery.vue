@@ -52,8 +52,10 @@ import {ref, onMounted, watch} from 'vue';
 import {useI18n} from 'vue-i18n';
 import {useRouter} from 'vue-router';
 import axios from 'axios';
+import {useDialog} from '@/composables/useDialog.js';
 
 const {t} = useI18n();
+const dialog = useDialog();
 
 const taxonomies = ref([]);
 const collections = ref([]);
@@ -115,7 +117,7 @@ const onFileChange = (collectionId, event) => {
 
 const uploadMedia = async (collectionId) => {
     if (!selectedFile.value) {
-        alert(t('gallery.selectFileFirst'));
+        await dialog.warning(t('gallery.selectFileFirst'));
         return;
     }
 

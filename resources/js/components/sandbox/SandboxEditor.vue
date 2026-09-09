@@ -33,6 +33,8 @@
           hide-details
           autofocus
           class="title-input"
+          :loading="savingTitle"
+          :disabled="savingTitle"
           @blur="saveTitle"
           @keyup.enter="saveTitle"
         />
@@ -284,6 +286,7 @@
 
 <script>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Editor, EditorContent, BubbleMenu } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Collaboration from '@tiptap/extension-collaboration'
@@ -299,6 +302,7 @@ import SandboxComments from './SandboxComments.vue'
 import UserAvatar from '../common/UserAvatar.vue'
 import colourHelper from '@/helpers/colour.js'
 import { useSettingsStore } from '@/store/settingStore.js'
+import { useDialog } from '@/composables/useDialog.js'
 
 function getUserColor(user) {
   if (user?.colour) return user.colour
@@ -333,11 +337,14 @@ export default {
   emits: ['toggle-fullscreen'],
 
   setup(props) {
+    const { t } = useI18n()
+    const dialog = useDialog()
     const settingsStore = useSettingsStore()
     const sandbox = ref(null)
     const editor = ref(null)
     const connected = ref(false)
     const saving = ref(false)
+    const savingTitle = ref(false)
     const canEdit = ref(false)
     const canManage = ref(false)
     const activeUsers = ref([])
@@ -357,6 +364,8 @@ export default {
     let echoChannel = null
     let autoSaveInterval = null
     let pendingRestoreContent = null
+    // Auto-save reports a failure once, not on every tick
+    let autoSaveErrorShown = false
 
     const visibilityColor = computed(() => {
       const map = { private: 'error', members: 'warning', public: 'success' }
@@ -557,6 +566,7 @@ export default {
 
     const saveContent = async (createVersion = false) => {
       if (!canEdit.value || !editor.value) return
+      if (createVersion && saving.value) return
 
       saving.value = true
       try {
@@ -564,8 +574,18 @@ export default {
           content: editor.value.getHTML(),
           createVersion,
         })
+        autoSaveErrorShown = false
+        if (createVersion) {
+          await dialog.success(t('sandbox.editor.versionSaved'))
+        }
       } catch (error) {
         console.error('Failed to save content:', error)
+        if (createVersion) {
+          await dialog.requestError(error, t('sandbox.editor.saveFailed'))
+        } else if (!autoSaveErrorShown) {
+          autoSaveErrorShown = true
+          await dialog.error(t('sandbox.editor.autoSaveFailed'))
+        }
       } finally {
         saving.value = false
       }
@@ -580,17 +600,32 @@ export default {
     }
 
     const saveTitle = async () => {
-      if (editableTitle.value !== sandbox.value.title) {
-        try {
-          await axios.put(`/api/sandbox/${sandbox.value.uuid}`, {
-            title: editableTitle.value,
-          })
-          sandbox.value.title = editableTitle.value
-        } catch (error) {
-          console.error('Failed to save title:', error)
-        }
+      // Enter and blur both land here; only the first call runs the request
+      if (!isEditingTitle.value || savingTitle.value) return
+
+      if (editableTitle.value === sandbox.value.title) {
+        isEditingTitle.value = false
+        return
       }
-      isEditingTitle.value = false
+
+      let failure = null
+      savingTitle.value = true
+      try {
+        await axios.put(`/api/sandbox/${sandbox.value.uuid}`, {
+          title: editableTitle.value,
+        })
+        sandbox.value.title = editableTitle.value
+      } catch (error) {
+        console.error('Failed to save title:', error)
+        failure = error
+      } finally {
+        savingTitle.value = false
+        isEditingTitle.value = false
+      }
+
+      if (failure) {
+        await dialog.requestError(failure, t('sandbox.editor.titleSaveFailed'))
+      }
     }
 
     const toggleComments = () => {
@@ -662,6 +697,7 @@ export default {
       editor,
       connected,
       saving,
+      savingTitle,
       canEdit,
       canManage,
       activeUsers,

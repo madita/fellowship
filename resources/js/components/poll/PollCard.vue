@@ -100,6 +100,7 @@
 </template>
 
 <script>
+import axios from 'axios'
 import PollResults from './PollResults.vue'
 import { format, formatDistanceToNow } from 'date-fns'
 
@@ -140,13 +141,15 @@ export default {
   },
   methods: {
     async submitVote() {
+      if (this.loading) return
+
       this.loading = true
       try {
         const optionIds = this.poll.type === 'single'
           ? [this.selectedOptions]
           : this.selectedOptions
 
-        const response = await this.$axios.post(`/polls/${this.poll.id}/vote`, {
+        const response = await axios.post(`/api/polls/${this.poll.id}/vote`, {
           option_ids: optionIds
         })
 
@@ -154,17 +157,9 @@ export default {
         Object.assign(this.poll, response.data.poll)
         this.$emit('voted', this.poll)
 
-        this.$notify({
-          type: 'success',
-          title: 'Success',
-          text: response.data.message
-        })
+        await this.$dialog.success(response.data.message || this.$t('poll.voteSubmitted'))
       } catch (error) {
-        this.$notify({
-          type: 'error',
-          title: 'Error',
-          text: error.response?.data?.message || 'Failed to submit vote'
-        })
+        await this.$dialog.requestError(error, this.$t('poll.voteFailed'))
       } finally {
         this.loading = false
       }

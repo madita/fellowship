@@ -172,7 +172,7 @@
       <v-card>
         <v-card-title class="d-flex align-center justify-space-between">
           <span>Create New Sandbox</span>
-          <v-btn icon variant="text" size="small" @click="showCreateModal = false">
+          <v-btn icon variant="text" size="small" :disabled="creating" @click="showCreateModal = false">
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </v-card-title>
@@ -210,7 +210,7 @@
 
         <v-card-actions class="px-4 pb-4">
           <v-spacer />
-          <v-btn variant="text" @click="showCreateModal = false">Cancel</v-btn>
+          <v-btn variant="text" :disabled="creating" @click="showCreateModal = false">Cancel</v-btn>
           <v-btn color="primary" :loading="creating" :disabled="!newSandbox.title.trim()" @click="createSandbox">
             Create Sandbox
           </v-btn>
@@ -330,7 +330,7 @@ export default {
     }
 
     const createSandbox = async () => {
-      if (!newSandbox.value.title.trim()) return
+      if (!newSandbox.value.title.trim() || creating.value) return
 
       creating.value = true
       try {

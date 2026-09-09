@@ -37,10 +37,18 @@
                       </v-btn>
                     </template>
                     <v-list>
-                      <v-list-item v-if="connection.status === 'disconnected'" @click="connect(connection)">
+                      <v-list-item
+                        v-if="connection.status === 'disconnected'"
+                        :disabled="busyConnectionIds.includes(connection.id)"
+                        @click="connect(connection)"
+                      >
                         <v-list-item-title>Connect</v-list-item-title>
                       </v-list-item>
-                      <v-list-item v-else @click="disconnect(connection)">
+                      <v-list-item
+                        v-else
+                        :disabled="busyConnectionIds.includes(connection.id)"
+                        @click="disconnect(connection)"
+                      >
                         <v-list-item-title>Disconnect</v-list-item-title>
                       </v-list-item>
                       <v-list-item @click="showJoinDialog(connection)">
@@ -53,7 +61,10 @@
                       <v-list-item @click="editConnection(connection)">
                         <v-list-item-title>Edit</v-list-item-title>
                       </v-list-item>
-                      <v-list-item @click="deleteConnection(connection)">
+                      <v-list-item
+                        :disabled="busyConnectionIds.includes(connection.id)"
+                        @click="deleteConnection(connection)"
+                      >
                         <v-list-item-title class="text-error">Delete</v-list-item-title>
                       </v-list-item>
                     </v-list>
@@ -99,6 +110,7 @@
                       size="x-small"
                       variant="text"
                       color="success"
+                      :loading="busyChannelIds.includes(channel.id)"
                       @click.stop="rejoinChannel(connection, channel)"
                     >
                       <v-icon size="small">mdi-login</v-icon>
@@ -108,6 +120,7 @@
                       icon
                       size="x-small"
                       variant="text"
+                      :loading="busyChannelIds.includes(channel.id)"
                       @click.stop="toggleFavorite(channel)"
                     >
                       <v-icon size="small" :color="channel.is_favorite ? 'warning' : 'grey'">
@@ -196,7 +209,12 @@
                 </v-tooltip>
               </v-btn>
 
-              <v-btn icon size="small" @click="partChannel(activeChannel)">
+              <v-btn
+                icon
+                size="small"
+                :loading="busyChannelIds.includes(activeChannel.id)"
+                @click="partChannel(activeChannel)"
+              >
                 <v-icon>mdi-close</v-icon>
               </v-btn>
             </div>
@@ -310,6 +328,7 @@
                       size="small"
                       color="primary"
                       :disabled="!newMessage.trim()"
+                      :loading="sending"
                       @click="sendMessage"
                     >
                       <v-icon>mdi-send</v-icon>
@@ -339,6 +358,7 @@
               color="primary"
               variant="tonal"
               prepend-icon="mdi-power"
+              :loading="busyConnectionIds.includes(activeServerLog.id)"
               @click="connect(activeServerLog)"
             >
               Connect
@@ -348,6 +368,7 @@
               size="small"
               variant="tonal"
               prepend-icon="mdi-power-off"
+              :loading="busyConnectionIds.includes(activeServerLog.id)"
               @click="disconnect(activeServerLog)"
             >
               Disconnect
@@ -389,6 +410,7 @@
                   size="small"
                   color="primary"
                   :disabled="!newMessage.trim()"
+                  :loading="sending"
                   @click="sendMessage"
                 >
                   <v-icon>mdi-send</v-icon>
@@ -496,6 +518,10 @@ export default {
       activeServerLog: null,
       messages: [],
       newMessage: '',
+      sending: false,
+      // Ids with a request in flight (connect/disconnect/delete, part/rejoin/favorite)
+      busyConnectionIds: [],
+      busyChannelIds: [],
       showConnectionDialog: false,
       showJoinChannelDialog: false,
       showCharacterDialog: false,
@@ -707,7 +733,20 @@ export default {
       this.showUserList = !this.showUserList;
       localStorage.setItem('irc:showUserList', this.showUserList ? '1' : '0');
     },
+    setConnectionBusy(id, busy) {
+      this.busyConnectionIds = busy
+        ? [...this.busyConnectionIds, id]
+        : this.busyConnectionIds.filter(i => i !== id);
+    },
+    setChannelBusy(id, busy) {
+      this.busyChannelIds = busy
+        ? [...this.busyChannelIds, id]
+        : this.busyChannelIds.filter(i => i !== id);
+    },
     async connect(connection) {
+      if (this.busyConnectionIds.includes(connection.id)) return;
+
+      this.setConnectionBusy(connection.id, true);
       try {
         this.logServer(connection.id, `Connecting to ${connection.server?.host}:${connection.server?.port}...`);
         const { data } = await axios.post(`/api/irc/connections/${connection.id}/connect`);
@@ -716,9 +755,14 @@ export default {
       } catch (error) {
         this.logServer(connection.id, `Error connecting: ${error.response?.data?.message || error.message}`);
         console.error('Error connecting:', error);
+      } finally {
+        this.setConnectionBusy(connection.id, false);
       }
     },
     async disconnect(connection) {
+      if (this.busyConnectionIds.includes(connection.id)) return;
+
+      this.setConnectionBusy(connection.id, true);
       try {
         this.logServer(connection.id, 'Disconnecting...');
         const { data } = await axios.post(`/api/irc/connections/${connection.id}/disconnect`);
@@ -727,6 +771,8 @@ export default {
       } catch (error) {
         this.logServer(connection.id, `Error disconnecting: ${error.response?.data?.message || error.message}`);
         console.error('Error disconnecting:', error);
+      } finally {
+        this.setConnectionBusy(connection.id, false);
       }
     },
     showJoinDialog(connection) {
@@ -738,8 +784,15 @@ export default {
       this.showConnectionDialog = true;
     },
     async deleteConnection(connection) {
-      if (!confirm(`Delete connection to ${connection.server.name}?`)) return;
+      if (this.busyConnectionIds.includes(connection.id)) return;
 
+      const confirmed = await this.$dialog.confirmDelete(
+        this.$t('irc.client.deleteConnectionConfirm', { server: connection.server.name }),
+        { title: this.$t('irc.client.deleteConnectionTitle') }
+      );
+      if (!confirmed) return;
+
+      this.setConnectionBusy(connection.id, true);
       try {
         await axios.delete(`/api/irc/connections/${connection.id}`);
         this.fetchConnections();
@@ -752,6 +805,9 @@ export default {
         }
       } catch (error) {
         console.error('Error deleting connection:', error);
+        await this.$dialog.requestError(error, this.$t('irc.client.deleteConnectionFailed'));
+      } finally {
+        this.setConnectionBusy(connection.id, false);
       }
     },
     async selectChannel(channel) {
@@ -791,40 +847,46 @@ export default {
       }
     },
     async sendMessage() {
-      if (!this.newMessage.trim()) return;
+      if (!this.newMessage.trim() || this.sending) return;
 
-      // Handle slash commands
-      if (this.newMessage.startsWith('/')) {
-        await this.handleSlashCommand(this.newMessage);
-        this.newMessage = '';
-        return;
-      }
-
-      if (!this.activeChannel) {
-        if (this.activeServerLog) {
-          this.logServer(this.activeServerLog.id, 'The console only takes commands — join a channel to chat (/join #channel).');
-          this.newMessage = '';
-        }
-        return;
-      }
-
+      this.sending = true;
       try {
-        const payload = {
-          message: this.newMessage,
-        };
-
-        // Add comic chat metadata if in comic mode
-        if (this.isComicMode) {
-          payload.emotion = this.selectedEmotion;
-          payload.gesture = this.selectedGesture;
-          payload.bubble_type = this.getBubbleType();
+        // Handle slash commands
+        if (this.newMessage.startsWith('/')) {
+          await this.handleSlashCommand(this.newMessage);
+          this.newMessage = '';
+          return;
         }
 
-        await axios.post(`/api/irc/channels/${this.activeChannel.id}/messages`, payload);
-        this.newMessage = '';
-        await this.fetchMessages(this.activeChannel);
-      } catch (error) {
-        console.error('Error sending message:', error);
+        if (!this.activeChannel) {
+          if (this.activeServerLog) {
+            this.logServer(this.activeServerLog.id, 'The console only takes commands — join a channel to chat (/join #channel).');
+            this.newMessage = '';
+          }
+          return;
+        }
+
+        try {
+          const payload = {
+            message: this.newMessage,
+          };
+
+          // Add comic chat metadata if in comic mode
+          if (this.isComicMode) {
+            payload.emotion = this.selectedEmotion;
+            payload.gesture = this.selectedGesture;
+            payload.bubble_type = this.getBubbleType();
+          }
+
+          await axios.post(`/api/irc/channels/${this.activeChannel.id}/messages`, payload);
+          this.newMessage = '';
+          await this.fetchMessages(this.activeChannel);
+        } catch (error) {
+          console.error('Error sending message:', error);
+          await this.$dialog.requestError(error, this.$t('irc.client.sendFailed'));
+        }
+      } finally {
+        this.sending = false;
       }
     },
     async handleSlashCommand(input) {
@@ -860,7 +922,8 @@ export default {
             this.addSystemMessage('No active channel to leave.');
             return;
           }
-          await this.partChannel(channel);
+          // Typing /part is explicit enough — no extra confirmation
+          await this.partChannel(channel, { confirm: false });
           break;
         }
         case 'nick': {
@@ -999,6 +1062,9 @@ export default {
       this.selectedGesture = gesture;
     },
     async rejoinChannel(connection, channel) {
+      if (this.busyChannelIds.includes(channel.id)) return;
+
+      this.setChannelBusy(channel.id, true);
       try {
         await axios.post(`/api/irc/connections/${connection.id}/join`, {
           channel: channel.name,
@@ -1006,9 +1072,24 @@ export default {
         this.addSystemMessage(`Rejoining ${channel.name}...`);
       } catch (error) {
         this.addSystemMessage(`Error rejoining: ${error.response?.data?.message || error.message}`);
+      } finally {
+        this.setChannelBusy(channel.id, false);
       }
     },
-    async partChannel(channel) {
+    async partChannel(channel, { confirm = true } = {}) {
+      if (this.busyChannelIds.includes(channel.id)) return;
+
+      if (confirm) {
+        const confirmed = await this.$dialog.confirm({
+          title: this.$t('irc.client.leaveChannelTitle'),
+          content: this.$t('irc.client.leaveChannelConfirm', { channel: channel.name }),
+          confirmationText: this.$t('irc.client.leaveChannel'),
+          color: 'warning',
+        });
+        if (!confirmed) return;
+      }
+
+      this.setChannelBusy(channel.id, true);
       try {
         await axios.post(`/api/irc/channels/${channel.id}/part`);
         this.fetchConnections();
@@ -1018,14 +1099,23 @@ export default {
         }
       } catch (error) {
         console.error('Error parting channel:', error);
+        await this.$dialog.requestError(error, this.$t('irc.client.leaveChannelFailed'));
+      } finally {
+        this.setChannelBusy(channel.id, false);
       }
     },
     async toggleFavorite(channel) {
+      if (this.busyChannelIds.includes(channel.id)) return;
+
+      this.setChannelBusy(channel.id, true);
       try {
         const { data } = await axios.post(`/api/irc/channels/${channel.id}/favorite`);
         channel.is_favorite = data.is_favorite;
       } catch (error) {
         console.error('Error toggling favorite:', error);
+        await this.$dialog.requestError(error, this.$t('irc.client.favoriteFailed'));
+      } finally {
+        this.setChannelBusy(channel.id, false);
       }
     },
     onConnectionSaved() {
@@ -1132,6 +1222,7 @@ export default {
         this.editingConnectionForCharacter = null;
       } catch (error) {
         console.error("Error saving character:", error);
+        await this.$dialog.requestError(error, this.$t('irc.client.characterSaveFailed'));
       }
     },
   },
