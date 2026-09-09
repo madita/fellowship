@@ -1,14 +1,14 @@
 <template>
     <settings-page-layout
-        title="WebSocket Server"
-        description="Yjs WebSocket server status and connection details"
+        :title="$t('sandbox.admin.serverTitle')"
+        :description="$t('sandbox.admin.serverDescription')"
         icon="mdi-server-network"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'sandbox' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >
-        <settings-card icon="mdi-server-network" title="Server Status">
+        <settings-card icon="mdi-server-network" :title="$t('sandbox.admin.serverStatusCard')">
             <v-alert type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
                     The Yjs WebSocket server enables real-time collaborative editing in sandboxes.
@@ -18,7 +18,7 @@
 
             <div class="d-flex align-center justify-space-between mb-4">
                 <div>
-                    <div class="text-subtitle-1 font-weight-medium">Connection Status</div>
+                    <div class="text-subtitle-1 font-weight-medium">{{ $t('sandbox.admin.connectionStatus') }}</div>
                     <div class="text-caption text-medium-emphasis">
                         Real-time connection status of the Yjs WebSocket server
                     </div>
@@ -32,12 +32,12 @@
                         <v-icon start size="small">
                             {{ wsStatus.connected ? 'mdi-check-circle' : 'mdi-alert-circle' }}
                         </v-icon>
-                        {{ wsStatus.connected ? 'Connected' : 'Disconnected' }}
+                        {{ wsStatus.connected ? $t('sandbox.admin.connected') : $t('sandbox.admin.disconnected') }}
                     </v-chip>
                     <v-chip
                         v-if="wsStatus.latency_ms !== null"
                         size="small"
-                        variant="outlined"
+                        variant="tonal"
                         color="info"
                     >
                         {{ wsStatus.latency_ms }}ms
@@ -46,6 +46,7 @@
                         icon="mdi-refresh"
                         size="x-small"
                         variant="text"
+                        :title="$t('common.refresh')"
                         :loading="loadingStatus"
                         @click="fetchWsStatus"
                     ></v-btn>
@@ -54,30 +55,30 @@
 
             <v-card variant="outlined" class="pa-3 mb-4">
                 <div class="d-flex justify-space-between align-center mb-2">
-                    <span class="text-body-2">Host:</span>
+                    <span class="text-body-2">{{ $t('sandbox.admin.host') }}:</span>
                     <code class="text-body-2 font-weight-medium">{{ wsStatus.host || '—' }}</code>
                 </div>
                 <v-divider class="my-2"></v-divider>
                 <div class="d-flex justify-space-between align-center mb-2">
-                    <span class="text-body-2">Port:</span>
+                    <span class="text-body-2">{{ $t('sandbox.admin.port') }}:</span>
                     <code class="text-body-2 font-weight-medium">{{ wsStatus.port || '—' }}</code>
                 </div>
                 <v-divider class="my-2"></v-divider>
                 <div class="d-flex justify-space-between align-center mb-2">
-                    <span class="text-body-2">Latency:</span>
+                    <span class="text-body-2">{{ $t('sandbox.admin.latency') }}:</span>
                     <span class="text-body-2 font-weight-medium">
                         {{ wsStatus.latency_ms !== null ? wsStatus.latency_ms + 'ms' : '—' }}
                     </span>
                 </div>
                 <v-divider class="my-2"></v-divider>
                 <div class="d-flex justify-space-between align-center">
-                    <span class="text-body-2">Status:</span>
+                    <span class="text-body-2">{{ $t('sandbox.admin.status') }}:</span>
                     <v-chip
                         :color="wsStatus.connected ? 'success' : 'error'"
                         size="x-small"
                         variant="tonal"
                     >
-                        {{ wsStatus.connected ? 'Running' : 'Not Running' }}
+                        {{ wsStatus.connected ? $t('sandbox.admin.running') : $t('sandbox.admin.notRunning') }}
                     </v-chip>
                 </div>
             </v-card>
@@ -108,7 +109,7 @@
             </v-alert>
         </settings-card>
 
-        <settings-card icon="mdi-cog-outline" title="Server Configuration">
+        <settings-card icon="mdi-cog-outline" :title="$t('sandbox.admin.serverConfigCard')">
             <v-alert type="warning" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
                     <strong>Note:</strong> Changing these values requires updating your <code>.env</code> file
@@ -120,7 +121,6 @@
                 :model-value="wsStatus.host || '127.0.0.1'"
                 label="WebSocket Host"
                 prepend-inner-icon="mdi-server"
-                variant="outlined"
                 class="mb-4"
                 readonly
                 disabled
@@ -132,7 +132,6 @@
                 :model-value="wsStatus.port || 1234"
                 label="WebSocket Port"
                 prepend-inner-icon="mdi-ethernet"
-                variant="outlined"
                 class="mb-4"
                 readonly
                 disabled

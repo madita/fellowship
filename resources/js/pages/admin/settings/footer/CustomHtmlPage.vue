@@ -38,7 +38,7 @@
                     class="mb-4"
                 ></v-textarea>
 
-                <div class="d-flex gap-2 mb-4">
+                <div class="d-flex ga-2 mb-4">
                     <v-btn
                         color="primary"
                         variant="outlined"
@@ -159,8 +159,3 @@ async function loadComplexFooterTemplate() {
 }
 </script>
 
-<style scoped>
-.gap-2 {
-    gap: 8px;
-}
-</style>

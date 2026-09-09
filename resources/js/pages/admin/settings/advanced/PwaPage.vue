@@ -52,8 +52,8 @@
                     <v-divider class="my-2"></v-divider>
                     <div class="d-flex justify-space-between align-center mb-2">
                         <span class="text-body-2">{{ $t('settings.advanced.pwa.themeColor') }}</span>
-                        <v-chip :color="settings.primary_color || '#1976D2'" size="small">
-                            {{ settings.primary_color || '#1976D2' }}
+                        <v-chip :color="settings.primary_color || 'primary'" size="small" variant="tonal">
+                            {{ settings.primary_color || $t('settings.advanced.usingDefault') }}
                         </v-chip>
                     </div>
                     <v-divider class="my-2"></v-divider>
@@ -89,7 +89,7 @@
                 </div>
             </v-alert>
 
-            <div class="d-flex gap-2">
+            <div class="d-flex ga-2">
                 <v-btn
                     color="primary"
                     variant="outlined"
@@ -150,8 +150,3 @@ function testServiceWorker() {
 }
 </script>
 
-<style scoped>
-.gap-2 {
-    gap: 8px;
-}
-</style>

@@ -1,7 +1,7 @@
 <template>
-  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" max-width="1200px" scrollable persistent>
+  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" max-width="900" scrollable persistent>
     <v-card v-if="widget">
-      <v-card-title class="d-flex align-center bg-primary text-white">
+      <v-card-title class="d-flex align-center text-h6">
         <v-icon class="mr-2">{{ widgetIcon }}</v-icon>
         {{ $t('settings.widgetEditor.edit') }} {{ widgetDefinition?.name || widget.type }}
         <v-spacer></v-spacer>
@@ -34,9 +34,9 @@
           </v-col>
 
           <!-- Right: Preview -->
-          <v-col cols="12" md="5" class="bg-grey-lighten-4 pa-4" style="overflow-y: auto; height: 100%;">
+          <v-col cols="12" md="5" class="preview-pane pa-4" style="overflow-y: auto; height: 100%;">
             <div class="sticky-top">
-              <div class="text-subtitle-1 font-weight-bold mb-2">
+              <div class="text-subtitle-1 font-weight-medium mb-2">
                 <v-icon class="mr-1">mdi-eye</v-icon>
                 {{ $t('settings.widgetEditor.preview') }}
               </div>
@@ -47,17 +47,14 @@
                   <v-icon size="48" color="error">mdi-alert-circle</v-icon>
                   <p class="text-subtitle-1 mt-2 text-error">{{ $t('settings.widgetEditor.previewError') }}</p>
                   <p class="text-caption">{{ previewError }}</p>
-                  <v-btn size="small" class="mt-2" @click="previewError = null">{{ $t('settings.widgetEditor.retry') }}</v-btn>
+                  <v-btn size="small" variant="tonal" class="mt-2" @click="previewError = null">{{ $t('settings.widgetEditor.retry') }}</v-btn>
                 </div>
-                <div v-else-if="!widgetComponent" class="pa-8 text-center text-grey">
-                  <v-icon size="48" color="grey">mdi-alert-circle</v-icon>
+                <div v-else-if="!widgetComponent" class="pa-8 text-center text-medium-emphasis">
+                  <v-icon size="48">mdi-alert-circle</v-icon>
                   <p class="text-subtitle-1 mt-2">{{ $t('settings.widgetEditor.previewNotAvailable') }}</p>
                   <p class="text-caption">{{ $t('settings.widgetEditor.widgetType') }}: {{ widget?.type }}</p>
                 </div>
-                <div v-else-if="!editedWidget || !editedWidget.content" class="pa-8 text-center text-grey">
-                  <v-progress-circular indeterminate></v-progress-circular>
-                  <p class="text-caption mt-2">{{ $t('settings.widgetEditor.loadingPreview') }}</p>
-                </div>
+                <loading-state v-else-if="!editedWidget || !editedWidget.content" compact :text="$t('settings.widgetEditor.loadingPreview')" />
                 <component
                   v-else
                   :is="widgetComponent"
@@ -79,10 +76,9 @@
       <v-divider></v-divider>
 
       <v-card-actions class="pa-4">
-        <v-btn :disabled="saving" @click="cancel">{{ $t('common.cancel') }}</v-btn>
         <v-spacer></v-spacer>
-        <v-btn color="primary" :loading="saving" @click="save">
-          <v-icon class="mr-1">mdi-content-save</v-icon>
+        <v-btn variant="text" :disabled="saving" @click="cancel">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="primary" variant="flat" prepend-icon="mdi-content-save" :loading="saving" @click="save">
           {{ $t('settings.widgetEditor.saveChanges') }}
         </v-btn>
       </v-card-actions>
@@ -96,6 +92,7 @@ import { useI18n } from 'vue-i18n';
 import { getWidgetDefinition } from '@/configs/widgetTypes';
 import { getWidgetComponent } from '@/components/landing/widgets';
 import DynamicWidgetForm from './DynamicWidgetForm.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 const { t } = useI18n();
 
@@ -217,10 +214,14 @@ function cancel() {
 </script>
 
 <style scoped>
+.preview-pane {
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+
 .preview-container {
   min-height: 200px;
   max-height: 500px;
-  background: white;
+  background: rgb(var(--v-theme-surface));
   border-radius: 4px;
   overflow-y: auto;
 }

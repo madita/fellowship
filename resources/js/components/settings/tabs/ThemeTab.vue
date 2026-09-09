@@ -580,7 +580,7 @@ function handleImageDeleted(key) {
 
 <style scoped>
 .font-preview-card {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.08) 0%, rgba(var(--v-theme-secondary), 0.16) 100%);
 }
 
 /* Preview text uses the selected font */

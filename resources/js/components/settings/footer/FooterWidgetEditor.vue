@@ -1,7 +1,7 @@
 <template>
-  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" max-width="800px" scrollable persistent>
+  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" max-width="900" scrollable persistent>
     <v-card v-if="widget">
-      <v-card-title class="d-flex align-center bg-primary text-white">
+      <v-card-title class="d-flex align-center text-h6">
         <v-icon class="mr-2">{{ widgetIcon }}</v-icon>
         {{ $t('settings.widgetEditor.edit') }} {{ widgetDefinition?.name || widget.type }}
         <v-spacer></v-spacer>
@@ -49,10 +49,10 @@
               variant="outlined"
               class="mb-2"
             >
-              <v-card-text class="d-flex align-center gap-2 pa-3">
+              <v-card-text class="d-flex align-center ga-2 pa-3">
                 <div class="flex-grow-1">
                   <div class="font-weight-medium">{{ link.label }}</div>
-                  <div class="text-caption text-grey">{{ link.url }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ link.url }}</div>
                   <v-chip v-if="link.authOnly" size="x-small" color="warning" class="mt-1">{{ $t('settings.widgetEditor.authOnly') }}</v-chip>
                 </div>
                 <v-btn icon size="small" variant="text" @click="editQuicklink(idx)">
@@ -256,21 +256,21 @@
       <v-divider></v-divider>
 
       <v-card-actions class="pa-4">
-        <v-btn :disabled="saving" @click="cancel">{{ $t('common.cancel') }}</v-btn>
         <v-spacer></v-spacer>
-        <v-btn color="primary" :loading="saving" @click="save">
-          <v-icon class="mr-1">mdi-content-save</v-icon>
+        <v-btn variant="text" :disabled="saving" @click="cancel">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="primary" variant="flat" prepend-icon="mdi-content-save" :loading="saving" @click="save">
           {{ $t('settings.widgetEditor.saveChanges') }}
         </v-btn>
       </v-card-actions>
     </v-card>
 
     <!-- Quicklink Dialog -->
-    <v-dialog v-model="showQuicklinkDialog" max-width="500">
+    <v-dialog v-model="showQuicklinkDialog" max-width="600">
       <v-card>
-        <v-card-title class="bg-primary text-white">
+        <v-card-title class="text-h6">
           {{ editingQuicklinkIndex !== null ? $t('settings.widgetEditor.editLink') : $t('settings.widgetEditor.addLink') }}
         </v-card-title>
+        <v-divider></v-divider>
 
         <v-card-text class="pa-4">
           <v-text-field
@@ -308,8 +308,8 @@
 
         <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
-          <v-btn @click="cancelQuicklinkEdit">{{ $t('common.cancel') }}</v-btn>
-          <v-btn color="primary" @click="saveQuicklink">
+          <v-btn variant="text" @click="cancelQuicklinkEdit">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" variant="flat" @click="saveQuicklink">
             {{ editingQuicklinkIndex !== null ? $t('settings.widgetEditor.update') : $t('settings.widgetEditor.add') }}
           </v-btn>
         </v-card-actions>
@@ -446,8 +446,3 @@ function cancel() {
 }
 </script>
 
-<style scoped>
-.gap-2 {
-  gap: 8px;
-}
-</style>

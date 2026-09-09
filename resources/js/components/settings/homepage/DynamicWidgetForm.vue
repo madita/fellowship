@@ -78,16 +78,15 @@
           <v-chip
             v-if="localValue[key] === null"
             size="small"
-            color="grey"
-            variant="outlined"
+            variant="tonal"
           >
             {{ $t('settings.dynamicForm.disabled') }}
           </v-chip>
         </div>
 
         <div v-if="localValue[key] === null" class="text-center py-4">
-          <v-icon size="48" color="grey-lighten-1">mdi-cancel</v-icon>
-          <p class="text-caption text-grey mt-2">{{ $t('settings.dynamicForm.elementDisabled') }}</p>
+          <v-icon size="48" class="text-medium-emphasis">mdi-cancel</v-icon>
+          <p class="text-caption text-medium-emphasis mt-2">{{ $t('settings.dynamicForm.elementDisabled') }}</p>
           <v-btn
             size="small"
             variant="outlined"
@@ -144,7 +143,7 @@
               <v-card-text>
                 <div class="d-flex align-center mb-2">
                   <v-icon class="array-drag-handle mr-2" style="cursor: grab;">mdi-drag-vertical</v-icon>
-                  <div class="text-caption text-grey">{{ $t('settings.dynamicForm.item') }} {{ index + 1 }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ $t('settings.dynamicForm.item') }} {{ index + 1 }}</div>
                   <v-spacer></v-spacer>
                   <v-btn
                     icon="mdi-delete"

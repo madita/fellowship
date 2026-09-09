@@ -15,8 +15,8 @@
             <!-- Data Export Section -->
             <v-card variant="outlined" class="mb-4">
                 <v-card-text>
-                    <div class="d-flex align-center">
-                        <v-icon color="primary" class="mr-3">mdi-download</v-icon>
+                    <div class="d-flex align-center flex-wrap ga-3">
+                        <v-icon color="primary">mdi-download</v-icon>
                         <div class="flex-grow-1">
                             <div class="font-weight-medium">{{ $t('accountDeletion.exportYourData') }}</div>
                             <div class="text-body-2 text-medium-emphasis">
@@ -25,7 +25,7 @@
                         </div>
                         <v-btn
                             color="primary"
-                            variant="outlined"
+                            variant="tonal"
                             :loading="isExporting"
                             @click="exportData"
                         >
@@ -60,9 +60,9 @@
         </template>
 
         <!-- Delete Confirmation Dialog -->
-        <v-dialog v-model="showDeleteDialog" max-width="500" persistent>
+        <v-dialog v-model="showDeleteDialog" max-width="600" persistent>
             <v-card>
-                <v-card-title class="d-flex align-center text-error">
+                <v-card-title class="d-flex align-center text-h6 text-error">
                     <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
                     {{ $t('accountDeletion.deleteAccount') }}
                 </v-card-title>
@@ -121,6 +121,7 @@
                     </v-btn>
                     <v-btn
                         color="error"
+                        variant="flat"
                         :loading="isDeleting"
                         :disabled="!deleteForm.confirm"
                         @click="deleteAccount"
@@ -134,7 +135,7 @@
         <!-- Export Data Dialog -->
         <v-dialog v-model="showExportDialog" max-width="600">
             <v-card>
-                <v-card-title class="d-flex align-center">
+                <v-card-title class="d-flex align-center text-h6">
                     <v-icon color="primary" class="mr-2">mdi-download</v-icon>
                     {{ $t('accountDeletion.exportSuccess') }}
                 </v-card-title>
@@ -156,8 +157,7 @@
                 <v-card-actions class="pa-4 pt-0">
                     <v-spacer />
                     <v-btn variant="text" @click="showExportDialog = false">{{ $t('common.close') }}</v-btn>
-                    <v-btn color="primary" @click="downloadExport">
-                        <v-icon start>mdi-download</v-icon>
+                    <v-btn color="primary" variant="flat" prepend-icon="mdi-download" @click="downloadExport">
                         {{ $t('accountDeletion.downloadJson') }}
                     </v-btn>
                 </v-card-actions>

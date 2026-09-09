@@ -1,59 +1,57 @@
 <template>
     <settings-page-layout
-        title="IRC Connections"
-        description="View and manage active IRC connections"
+        :title="$t('irc.admin.connectionsTitle')"
+        :description="$t('irc.admin.connectionsDescription')"
         icon="mdi-connection"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'irc' } }"
         :show-save-button="false"
     >
-        <settings-card icon="mdi-connection" title="Active Connections">
+        <settings-card icon="mdi-connection" :title="$t('irc.admin.activeConnections')">
             <div class="d-flex justify-end mb-4">
                 <v-btn
                     color="primary"
                     size="small"
-                    variant="outlined"
+                    variant="tonal"
                     prepend-icon="mdi-refresh"
                     @click="fetchConnections"
                     :loading="loading"
                 >
-                    Refresh
+                    {{ $t('common.refresh') }}
                 </v-btn>
             </div>
 
-            <div v-if="loading" class="text-center py-4">
-                <v-progress-circular indeterminate size="32" />
-            </div>
+            <loading-state v-if="loading" compact />
 
             <v-table v-else density="comfortable">
                 <thead>
                     <tr>
-                        <th>User</th>
-                        <th>Server</th>
-                        <th>Nickname</th>
-                        <th>Status</th>
-                        <th>Channels</th>
-                        <th>Connected Since</th>
-                        <th class="text-right">Actions</th>
+                        <th>{{ $t('irc.admin.table.user') }}</th>
+                        <th>{{ $t('irc.admin.table.server') }}</th>
+                        <th>{{ $t('irc.admin.table.nickname') }}</th>
+                        <th>{{ $t('irc.admin.table.status') }}</th>
+                        <th>{{ $t('irc.admin.table.channels') }}</th>
+                        <th>{{ $t('irc.admin.table.connectedSince') }}</th>
+                        <th class="text-right">{{ $t('irc.admin.table.actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="conn in connections" :key="conn.id">
                         <td>
-                            <div class="d-flex align-center gap-2">
+                            <div class="d-flex align-center ga-2">
                                 <v-avatar size="24" color="primary">
                                     <span class="text-caption">{{ (conn.user?.name || '?')[0].toUpperCase() }}</span>
                                 </v-avatar>
                                 <span>{{ conn.user?.name || conn.user?.username || `User #${conn.user_id}` }}</span>
                             </div>
                         </td>
-                        <td>{{ conn.server?.name || 'Unknown' }}</td>
+                        <td>{{ conn.server?.name || $t('irc.admin.unknown') }}</td>
                         <td class="font-weight-medium">{{ conn.nickname }}</td>
                         <td>
                             <v-chip
                                 :color="statusColor(conn.status)"
                                 size="x-small"
-                                variant="flat"
+                                variant="tonal"
                             >
                                 {{ conn.status }}
                             </v-chip>
@@ -74,7 +72,7 @@
                                 @click="disconnectConnection(conn)"
                             >
                                 <v-icon size="small">mdi-power-plug-off</v-icon>
-                                <v-tooltip activator="parent" location="top">Disconnect</v-tooltip>
+                                <v-tooltip activator="parent" location="top">{{ $t('irc.admin.disconnect') }}</v-tooltip>
                             </v-btn>
                             <v-btn
                                 icon
@@ -86,13 +84,13 @@
                                 @click="deleteConnection(conn)"
                             >
                                 <v-icon size="small">mdi-delete</v-icon>
-                                <v-tooltip activator="parent" location="top">Delete</v-tooltip>
+                                <v-tooltip activator="parent" location="top">{{ $t('common.delete') }}</v-tooltip>
                             </v-btn>
                         </td>
                     </tr>
                     <tr v-if="!connections.length && !loading">
-                        <td colspan="7" class="text-center text-medium-emphasis py-8">
-                            No connections found
+                        <td colspan="7">
+                            <empty-state compact icon="mdi-connection" :title="$t('irc.admin.noConnections')" />
                         </td>
                     </tr>
                 </tbody>
@@ -107,6 +105,8 @@ import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 import { useDialog } from '@/composables/useDialog.js';
 
 defineProps({
@@ -132,7 +132,7 @@ function setBusy(id, action) {
 }
 
 function statusColor(status) {
-    return { connected: 'success', connecting: 'warning', disconnected: 'grey' }[status] || 'grey';
+    return { connected: 'success', connecting: 'warning' }[status];
 }
 
 function formatDate(dateStr) {

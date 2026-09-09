@@ -1,23 +1,21 @@
 <template>
     <settings-page-layout
-        title="Limits & Quotas"
-        description="Configure sandbox limits per role"
+        :title="$t('sandbox.admin.limitsTitle')"
+        :description="$t('sandbox.admin.limitsDescription')"
         icon="mdi-numeric"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'sandbox' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >
-        <settings-card icon="mdi-account-cog" title="Role-based Limits">
+        <settings-card icon="mdi-account-cog" :title="$t('sandbox.admin.limitsCard')">
             <v-alert type="info" variant="tonal" density="compact" class="mb-4">
                 <div class="text-caption">
                     Configure sandbox limits per role. A value of <strong>0</strong> means unlimited.
                 </div>
             </v-alert>
 
-            <div v-if="loadingRoles" class="text-center py-4">
-                <v-progress-circular indeterminate size="24"></v-progress-circular>
-            </div>
+            <loading-state v-if="loadingRoles" compact />
 
             <template v-else>
                 <v-card
@@ -34,7 +32,7 @@
                         </v-avatar>
                         <span class="text-subtitle-1 font-weight-medium text-capitalize">{{ role }}</span>
                         <v-chip v-if="role === 'admin'" size="x-small" color="warning" variant="tonal" class="ml-2">
-                            Typically unlimited
+                            {{ $t('sandbox.admin.typicallyUnlimited') }}
                         </v-chip>
                     </div>
 
@@ -45,7 +43,6 @@
                                 @update:model-value="setRoleLimit(role, 'max_sandboxes', $event)"
                                 label="Max Sandboxes"
                                 prepend-inner-icon="mdi-notebook-multiple"
-                                variant="outlined"
                                 type="number"
                                 density="compact"
                                 hint="Per user (0 = unlimited)"
@@ -58,7 +55,6 @@
                                 @update:model-value="setRoleLimit(role, 'max_collaborators', $event)"
                                 label="Max Collaborators"
                                 prepend-inner-icon="mdi-account-group"
-                                variant="outlined"
                                 type="number"
                                 density="compact"
                                 hint="Per sandbox (0 = unlimited)"
@@ -71,7 +67,6 @@
                                 @update:model-value="setRoleLimit(role, 'max_versions', $event)"
                                 label="Max Versions"
                                 prepend-inner-icon="mdi-history"
-                                variant="outlined"
                                 type="number"
                                 density="compact"
                                 hint="Per sandbox (0 = unlimited)"
@@ -88,11 +83,12 @@
             block
             size="large"
             color="primary"
+            variant="elevated"
             @click="$emit('save')"
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('sandbox.admin.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>
@@ -102,6 +98,7 @@ import { ref, watch, onMounted } from 'vue';
 import { useApi } from '@/api/useAPI.js';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 const api = useApi('api');
 

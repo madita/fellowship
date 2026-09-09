@@ -16,7 +16,7 @@
                 ></v-img>
             </div>
             <div v-else :class="['image-preview-container', placeholderClass, 'mb-2']">
-                <v-icon :size="placeholderIconSize" color="grey-lighten-2">mdi-image-off</v-icon>
+                <v-icon :size="placeholderIconSize" class="text-medium-emphasis">mdi-image-off</v-icon>
             </div>
 
             <v-file-input
@@ -33,7 +33,7 @@
                 :persistent-hint="!!hint"
             ></v-file-input>
 
-            <div class="d-flex gap-2 mt-2">
+            <div class="d-flex ga-2 mt-2">
                 <v-btn
                     v-if="file"
                     color="primary"
@@ -227,10 +227,10 @@ async function handleDelete() {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid #e0e0e0;
+    border: 2px solid rgba(var(--v-border-color), var(--v-border-opacity));
     border-radius: 8px;
     overflow: hidden;
-    background-color: #fafafa;
+    background-color: rgba(var(--v-theme-on-surface), 0.04);
 }
 
 .image-placeholder {
@@ -252,10 +252,6 @@ async function handleDelete() {
     height: 300px;
     min-height: 250px;
     border-style: dashed;
-}
-
-.gap-2 {
-    gap: 8px;
 }
 
 @media (max-width: 600px) {

@@ -1,14 +1,14 @@
 <template>
     <settings-page-layout
-        title="Feature Settings"
-        description="Enable or disable sandbox and collaboration features"
+        :title="$t('sandbox.admin.featuresTitle')"
+        :description="$t('sandbox.admin.featuresDescription')"
         icon="mdi-toggle-switch-outline"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'sandbox' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >
-        <settings-card icon="mdi-notebook-edit" title="Sandbox Features">
+        <settings-card icon="mdi-notebook-edit" :title="$t('sandbox.admin.featuresCard')">
             <v-switch
                 v-model="settings.sandbox_enabled"
                 label="Enable Sandbox Feature"
@@ -42,7 +42,6 @@
                 v-model.number="settings.sandbox_autosave_interval"
                 label="Auto-save Interval (seconds)"
                 prepend-inner-icon="mdi-timer-outline"
-                variant="outlined"
                 type="number"
                 :error-messages="errors.sandbox_autosave_interval"
                 hint="How often the sandbox content auto-saves (in seconds)"
@@ -56,11 +55,12 @@
             block
             size="large"
             color="primary"
+            variant="elevated"
             @click="$emit('save')"
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('sandbox.admin.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

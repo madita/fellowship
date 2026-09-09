@@ -8,16 +8,16 @@
         :show-save-button="false"
     >
         <!-- Action Buttons -->
-        <div class="d-flex justify-space-between align-center mb-4">
-            <div>
-                <v-btn color="primary" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">
+        <div class="d-flex justify-space-between align-center flex-wrap ga-2 mb-4">
+            <div class="d-flex flex-wrap ga-2">
+                <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">
                     {{ $t('settings.footer.addWidget') }}
                 </v-btn>
-                <v-btn class="ml-2" prepend-icon="mdi-refresh" @click="loadWidgets" :loading="isLoading">
+                <v-btn variant="tonal" prepend-icon="mdi-refresh" @click="loadWidgets" :loading="isLoading">
                     {{ $t('settings.footer.refresh') }}
                 </v-btn>
             </div>
-            <v-chip v-if="hasChanges" color="warning">
+            <v-chip v-if="hasChanges" color="warning" variant="tonal" size="small">
                 {{ $t('settings.footer.unsavedChanges') }}
             </v-chip>
         </div>
@@ -28,7 +28,7 @@
                 <v-card>
                     <v-card-text class="text-center">
                         <div class="text-h4">{{ widgets.length }}</div>
-                        <div class="text-caption text-grey">{{ $t('settings.footer.totalWidgets') }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('settings.footer.totalWidgets') }}</div>
                     </v-card-text>
                 </v-card>
             </v-col>
@@ -36,7 +36,7 @@
                 <v-card>
                     <v-card-text class="text-center">
                         <div class="text-h4 text-success">{{ enabledCount }}</div>
-                        <div class="text-caption text-grey">{{ $t('settings.footer.enabled') }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('settings.footer.enabled') }}</div>
                     </v-card-text>
                 </v-card>
             </v-col>
@@ -44,23 +44,24 @@
 
         <!-- Widgets List with Drag and Drop -->
         <v-card>
-            <v-card-title>
+            <v-card-title class="text-subtitle-1 font-weight-medium">
                 <v-icon class="mr-2">mdi-drag</v-icon>
                 {{ $t('settings.footer.dragToReorder') }}
             </v-card-title>
             <v-divider></v-divider>
 
-            <v-card-text v-if="isLoading" class="text-center py-8">
-                <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                <div class="mt-2">{{ $t('settings.footer.loadingWidgets') }}</div>
-            </v-card-text>
-
-            <v-card-text v-else-if="widgets.length === 0" class="text-center py-8">
-                <v-icon size="64" color="grey">mdi-widgets-outline</v-icon>
-                <div class="text-h6 mt-4">{{ $t('settings.footer.noWidgetsYet') }}</div>
-                <div class="text-caption text-grey mb-4">{{ $t('settings.footer.clickAddWidget') }}</div>
-                <v-btn color="primary" @click="showWidgetLibrary = true">{{ $t('settings.footer.addFirstWidget') }}</v-btn>
-            </v-card-text>
+            <loading-state v-if="isLoading" compact :text="$t('settings.footer.loadingWidgets')" />
+            <empty-state
+                v-else-if="widgets.length === 0"
+                compact
+                icon="mdi-widgets-outline"
+                :title="$t('settings.footer.noWidgetsYet')"
+                :text="$t('settings.footer.clickAddWidget')"
+            >
+                <template #actions>
+                    <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">{{ $t('settings.footer.addFirstWidget') }}</v-btn>
+                </template>
+            </empty-state>
 
             <draggable
                 v-else
@@ -163,6 +164,8 @@ import { useFooterStore } from '@/store/footerStore';
 import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
 import { useDialog } from '@/composables/useDialog.js';
 import draggable from 'vuedraggable';
+import LoadingState from '@/components/common/LoadingState.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import FooterWidgetEditor from '@/components/settings/footer/FooterWidgetEditor.vue';
 import FooterWidgetLibrary from '@/components/settings/footer/FooterWidgetLibrary.vue';
@@ -353,7 +356,7 @@ onMounted(async () => {
 
 .widget-item:hover {
     background: rgba(var(--v-theme-surface-variant), 0.6);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(var(--v-theme-on-surface), 0.1);
 }
 
 .widget-disabled {

@@ -1,313 +1,286 @@
 <template>
     <div class="flex-grow-1">
+        <page-header
+            :title="$t('settings.overview.applicationSettings')"
+            :subtitle="$t('settings.overview.subtitle')"
+            icon="mdi-cog"
+            fluid
+        >
+            <template #actions>
+                <!-- Save Button (Tab view only) -->
+                <v-btn
+                    v-if="viewMode === 'tabs'"
+                    :loading="isSaving"
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-content-save"
+                    class="d-none d-sm-flex"
+                    @click="saveSettings"
+                >
+                    {{ $t('common.save') }}
+                </v-btn>
+                <!-- View Toggle -->
+                <v-btn-toggle
+                    v-model="viewMode"
+                    mandatory
+                    density="compact"
+                    variant="outlined"
+                    color="primary"
+                    divided
+                >
+                    <v-btn value="overview" size="small" prepend-icon="mdi-view-grid-outline">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.overview') }}</span>
+                    </v-btn>
+                    <v-btn value="tabs" size="small" prepend-icon="mdi-tab">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabs') }}</span>
+                    </v-btn>
+                </v-btn-toggle>
+            </template>
+
+            <!-- Search Bar (Overview mode only) -->
+            <v-text-field
+                v-if="viewMode === 'overview'"
+                v-model="searchQuery"
+                prepend-inner-icon="mdi-magnify"
+                :label="$t('settings.overview.searchSettings')"
+                density="comfortable"
+                hide-details
+                clearable
+                @click:clear="searchQuery = ''"
+            ></v-text-field>
+        </page-header>
+
         <v-container fluid class="pa-2 pa-sm-4">
-            <v-card elevation="2">
-                <v-card-title class="text-h6 text-sm-h5 font-weight-bold pa-3 pa-sm-6 bg-gradient">
-                    <div class="d-flex align-center justify-space-between w-100">
-                        <div class="d-flex align-center">
-                            <v-icon class="mr-2 mr-sm-3" :size="$vuetify.display.mobile ? 24 : 28">mdi-cog</v-icon>
-                            <span class="d-none d-sm-inline">{{ $t('settings.overview.applicationSettings') }}</span>
-                            <span class="d-sm-none">{{ $t('settings.overview.settings') }}</span>
-                        </div>
-                        <div class="d-flex align-center gap-2">
-                            <!-- Save Button (Tab view only) -->
-                            <v-btn
-                                v-if="viewMode === 'tabs'"
-                                :loading="isSaving"
-                                color="white"
-                                variant="elevated"
-                                @click="saveSettings"
-                                prepend-icon="mdi-content-save"
-                                class="d-none d-sm-flex"
-                            >
-                                {{ $t('common.save') }}
-                            </v-btn>
-                            <!-- View Toggle -->
-                            <v-btn-toggle
-                                v-model="viewMode"
-                                mandatory
-                                density="compact"
-                                variant="outlined"
-                                color="white"
-                                class="view-toggle"
-                            >
-                                <v-btn value="overview" size="small">
-                                    <v-icon size="18" :class="{ 'mr-1': !$vuetify.display.mobile }">mdi-view-grid-outline</v-icon>
-                                    <span class="d-none d-sm-inline">{{ $t('settings.overview.overview') }}</span>
-                                </v-btn>
-                                <v-btn value="tabs" size="small">
-                                    <v-icon size="18" :class="{ 'mr-1': !$vuetify.display.mobile }">mdi-tab</v-icon>
-                                    <span class="d-none d-sm-inline">{{ $t('settings.overview.tabs') }}</span>
-                                </v-btn>
-                            </v-btn-toggle>
-                        </div>
-                    </div>
-                </v-card-title>
+            <!-- Tab View -->
+            <v-card v-if="viewMode === 'tabs'" variant="outlined">
+                <v-tabs
+                    v-model="currentTab"
+                    bg-color="transparent"
+                    color="primary"
+                    show-arrows
+                    center-active
+                >
+                    <v-tab value="general" prepend-icon="mdi-cog-outline">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabGeneral') }}</span>
+                    </v-tab>
+                    <v-tab value="localization" prepend-icon="mdi-earth">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabLocalization') }}</span>
+                    </v-tab>
+                    <v-tab value="branding" prepend-icon="mdi-palette-outline">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabBranding') }}</span>
+                    </v-tab>
+                    <v-tab value="theme" prepend-icon="mdi-theme-light-dark">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabTheme') }}</span>
+                    </v-tab>
+                    <v-tab value="oauth" prepend-icon="mdi-login-variant">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabOAuth') }}</span>
+                    </v-tab>
+                    <v-tab value="seo" prepend-icon="mdi-search-web">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabSEO') }}</span>
+                    </v-tab>
+                    <v-tab value="homepage" prepend-icon="mdi-home-edit-outline">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabHomepage') }}</span>
+                    </v-tab>
+                    <v-tab value="footer" prepend-icon="mdi-page-layout-footer">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabFooter') }}</span>
+                    </v-tab>
+                    <v-tab value="moderation" prepend-icon="mdi-shield-check-outline">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabModeration') }}</span>
+                    </v-tab>
+                    <v-tab value="sandbox" prepend-icon="mdi-notebook-edit-outline">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabSandbox') }}</span>
+                    </v-tab>
+                    <v-tab value="advanced" prepend-icon="mdi-cog-sync-outline">
+                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabAdvanced') }}</span>
+                    </v-tab>
+                </v-tabs>
 
                 <v-divider></v-divider>
 
-                <!-- Search Bar (Overview mode only) -->
-                <div v-if="viewMode === 'overview'" class="pa-4">
-                    <v-text-field
-                        v-model="searchQuery"
-                        prepend-inner-icon="mdi-magnify"
-                        :label="$t('settings.overview.searchSettings')"
-                        variant="outlined"
-                        density="comfortable"
-                        hide-details
-                        clearable
-                        @click:clear="searchQuery = ''"
-                    ></v-text-field>
-                </div>
-
-                <!-- Quick Stats (Overview mode only) -->
-                <div v-if="viewMode === 'overview'" class="px-4 pb-2">
-                    <v-row dense>
-                        <v-col cols="6" sm="4" md="2">
-                            <v-card variant="tonal" color="primary">
-                                <v-card-text class="text-center pa-3">
-                                    <div class="text-h5 font-weight-bold">{{ categoriesCount }}</div>
-                                    <div class="text-caption">{{ $t('settings.overview.categories') }}</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col cols="6" sm="4" md="2">
-                            <v-card variant="tonal" color="success">
-                                <v-card-text class="text-center pa-3">
-                                    <div class="text-h5 font-weight-bold">{{ totalSettings }}</div>
-                                    <div class="text-caption">{{ $t('settings.overview.settings') }}</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col v-if="searchQuery" cols="12" sm="4" md="2">
-                            <v-card variant="tonal" color="info">
-                                <v-card-text class="text-center pa-3">
-                                    <div class="text-h5 font-weight-bold">{{ filteredSettingsCount }}</div>
-                                    <div class="text-caption">{{ $t('settings.overview.results') }}</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                    </v-row>
-                </div>
-
-                <v-divider v-if="viewMode === 'overview'" class="mt-2"></v-divider>
-
-                <!-- Tab View -->
-                <template v-if="viewMode === 'tabs'">
-                    <v-tabs
-                        v-model="currentTab"
-                        bg-color="transparent"
-                        color="primary"
-                        show-arrows
-                        center-active
-                    >
-                        <v-tab value="general">
-                            <v-icon class="mr-2" size="20">mdi-cog-outline</v-icon>
-                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabGeneral') }}</span>
-                        </v-tab>
-                        <v-tab value="localization">
-                            <v-icon class="mr-2" size="20">mdi-earth</v-icon>
-                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabLocalization') }}</span>
-                        </v-tab>
-                        <v-tab value="branding">
-                            <v-icon class="mr-2" size="20">mdi-palette-outline</v-icon>
-                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabBranding') }}</span>
-                        </v-tab>
-                        <v-tab value="theme">
-                            <v-icon class="mr-2" size="20">mdi-theme-light-dark</v-icon>
-                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabTheme') }}</span>
-                        </v-tab>
-                        <v-tab value="oauth">
-                            <v-icon class="mr-2" size="20">mdi-login-variant</v-icon>
-                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabOAuth') }}</span>
-                        </v-tab>
-                        <v-tab value="seo">
-                            <v-icon class="mr-2" size="20">mdi-search-web</v-icon>
-                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabSEO') }}</span>
-                        </v-tab>
-                        <v-tab value="homepage">
-                            <v-icon class="mr-2" size="20">mdi-home-edit-outline</v-icon>
-                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabHomepage') }}</span>
-                        </v-tab>
-                        <v-tab value="footer">
-                            <v-icon class="mr-2" size="20">mdi-page-layout-footer</v-icon>
-                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabFooter') }}</span>
-                        </v-tab>
-                        <v-tab value="moderation">
-                            <v-icon class="mr-2" size="20">mdi-shield-check-outline</v-icon>
-                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabModeration') }}</span>
-                        </v-tab>
-                        <v-tab value="sandbox">
-                            <v-icon class="mr-2" size="20">mdi-notebook-edit-outline</v-icon>
-                            <span class="d-none d-sm-inline">Sandbox</span>
-                        </v-tab>
-                        <v-tab value="advanced">
-                            <v-icon class="mr-2" size="20">mdi-cog-sync-outline</v-icon>
-                            <span class="d-none d-sm-inline">{{ $t('settings.overview.tabAdvanced') }}</span>
-                        </v-tab>
-                    </v-tabs>
-
-                    <v-divider></v-divider>
-
-                    <v-card-text class="pa-4 pa-sm-6">
-                        <v-window v-model="currentTab">
-                            <v-window-item value="general">
-                                <general-tab
-                                    :settings="settings"
-                                    :errors="errors"
-                                    :is-saving="isSaving"
-                                    @save="saveSettings"
-                                />
-                            </v-window-item>
-                            <v-window-item value="localization">
-                                <localization-tab
-                                    :settings="settings"
-                                    :errors="errors"
-                                    :is-saving="isSaving"
-                                    @save="saveSettings"
-                                />
-                            </v-window-item>
-                            <v-window-item value="branding">
-                                <branding-tab
-                                    :settings="settings"
-                                    :errors="errors"
-                                    :is-saving="isSaving"
-                                    @save="saveSettings"
-                                />
-                            </v-window-item>
-                            <v-window-item value="theme">
-                                <theme-tab
-                                    :settings="settings"
-                                    :errors="errors"
-                                    :is-saving="isSaving"
-                                    @save="saveSettings"
-                                />
-                            </v-window-item>
-                            <v-window-item value="oauth">
-                                <o-auth-tab
-                                    :settings="settings"
-                                    :errors="errors"
-                                    :is-saving="isSaving"
-                                    @save="saveSettings"
-                                />
-                            </v-window-item>
-                            <v-window-item value="seo">
-                                <seo-tab
-                                    :settings="settings"
-                                    :errors="errors"
-                                    :is-saving="isSaving"
-                                    @save="saveSettings"
-                                />
-                            </v-window-item>
-                            <v-window-item value="homepage">
-                                <homepage-tab
-                                    :settings="settings"
-                                    :errors="errors"
-                                    :is-saving="isSaving"
-                                    @save="saveSettings"
-                                />
-                            </v-window-item>
-                            <v-window-item value="footer">
-                                <footer-tab
-                                    :settings="settings"
-                                    :errors="errors"
-                                    :is-saving="isSaving"
-                                    @save="saveSettings"
-                                />
-                            </v-window-item>
-                            <v-window-item value="moderation">
-                              <moderation-tab
+                <v-card-text class="pa-4 pa-sm-6">
+                    <v-window v-model="currentTab">
+                        <v-window-item value="general">
+                            <general-tab
                                 :settings="settings"
                                 :errors="errors"
                                 :is-saving="isSaving"
                                 @save="saveSettings"
-                              />
-                            </v-window-item>
-                            <v-window-item value="sandbox">
-                                <sandbox-tab
-                                    :settings="settings"
-                                    :errors="errors"
-                                    :is-saving="isSaving"
-                                    @save="saveSettings"
-                                />
-                            </v-window-item>
-                            <v-window-item value="advanced">
-                                <advanced-tab
-                                    :settings="settings"
-                                    :errors="errors"
-                                    :is-saving="isSaving"
-                                    @save="saveSettings"
-                                />
-                            </v-window-item>
-                        </v-window>
+                            />
+                        </v-window-item>
+                        <v-window-item value="localization">
+                            <localization-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                            />
+                        </v-window-item>
+                        <v-window-item value="branding">
+                            <branding-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                            />
+                        </v-window-item>
+                        <v-window-item value="theme">
+                            <theme-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                            />
+                        </v-window-item>
+                        <v-window-item value="oauth">
+                            <o-auth-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                            />
+                        </v-window-item>
+                        <v-window-item value="seo">
+                            <seo-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                            />
+                        </v-window-item>
+                        <v-window-item value="homepage">
+                            <homepage-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                            />
+                        </v-window-item>
+                        <v-window-item value="footer">
+                            <footer-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                            />
+                        </v-window-item>
+                        <v-window-item value="moderation">
+                            <moderation-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                            />
+                        </v-window-item>
+                        <v-window-item value="sandbox">
+                            <sandbox-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                            />
+                        </v-window-item>
+                        <v-window-item value="advanced">
+                            <advanced-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                            />
+                        </v-window-item>
+                    </v-window>
 
-                        <!-- Mobile Save Button -->
-                        <v-btn
-                            :loading="isSaving"
-                            block
-                            size="large"
-                            color="primary"
-                            @click="saveSettings"
-                            prepend-icon="mdi-content-save"
-                            class="d-sm-none mt-4"
-                        >
-                            {{ $t('settings.saveSettings') }}
-                        </v-btn>
-                    </v-card-text>
-                </template>
-
-                <!-- Overview View -->
-                <v-card-text v-else class="pa-4 pa-md-6">
-                    <!-- No Results -->
-                    <v-alert
-                        v-if="searchQuery && filteredSettingsCount === 0"
-                        type="info"
-                        variant="tonal"
-                        class="mb-4"
+                    <!-- Mobile Save Button -->
+                    <v-btn
+                        :loading="isSaving"
+                        block
+                        size="large"
+                        color="primary"
+                        variant="elevated"
+                        prepend-icon="mdi-content-save"
+                        class="d-sm-none mt-4"
+                        @click="saveSettings"
                     >
-                        {{ $t('settings.overview.noResultsMessage', { query: searchQuery }) }}
-                    </v-alert>
-
-                    <!-- Settings grouped by category -->
-                    <div
-                        v-for="category in filteredCategories"
-                        :key="category.id"
-                        class="mb-6"
-                    >
-                        <!-- Category Header -->
-                        <div class="d-flex align-center mb-3">
-                            <v-avatar :color="category.color" size="36" class="mr-3">
-                                <v-icon color="white" size="20">{{ category.icon }}</v-icon>
-                            </v-avatar>
-                            <div>
-                                <div class="text-h6 font-weight-medium">{{ category.title }}</div>
-                                <div class="text-caption text-medium-emphasis">{{ category.description }}</div>
-                            </div>
-                        </div>
-
-                        <!-- Settings Grid -->
-                        <v-row>
-                            <v-col
-                                v-for="setting in getFilteredSettings(category)"
-                                :key="`${category.id}-${setting.id}`"
-                                cols="12"
-                                sm="6"
-                                lg="4"
-                            >
-                                <settings-item-card
-                                    :title="setting.title"
-                                    :description="setting.description"
-                                    :icon="setting.icon"
-                                    :color="category.color"
-                                    @click="navigateToSetting(category.id, setting)"
-                                />
-                            </v-col>
-                        </v-row>
-
-                        <v-divider v-if="category !== filteredCategories[filteredCategories.length - 1]" class="mt-4"></v-divider>
-                    </div>
+                        {{ $t('settings.saveSettings') }}
+                    </v-btn>
                 </v-card-text>
             </v-card>
+
+            <!-- Overview View -->
+            <template v-else>
+                <!-- Quick Stats -->
+                <v-row dense class="mb-4">
+                    <v-col cols="6" sm="4" md="2">
+                        <v-card variant="tonal" color="primary">
+                            <v-card-text class="text-center pa-3">
+                                <div class="text-h5 font-weight-bold">{{ categoriesCount }}</div>
+                                <div class="text-caption">{{ $t('settings.overview.categories') }}</div>
+                            </v-card-text>
+                        </v-card>
+                    </v-col>
+                    <v-col cols="6" sm="4" md="2">
+                        <v-card variant="tonal" color="success">
+                            <v-card-text class="text-center pa-3">
+                                <div class="text-h5 font-weight-bold">{{ totalSettings }}</div>
+                                <div class="text-caption">{{ $t('settings.overview.settings') }}</div>
+                            </v-card-text>
+                        </v-card>
+                    </v-col>
+                    <v-col v-if="searchQuery" cols="12" sm="4" md="2">
+                        <v-card variant="tonal" color="info">
+                            <v-card-text class="text-center pa-3">
+                                <div class="text-h5 font-weight-bold">{{ filteredSettingsCount }}</div>
+                                <div class="text-caption">{{ $t('settings.overview.results') }}</div>
+                            </v-card-text>
+                        </v-card>
+                    </v-col>
+                </v-row>
+
+                <!-- No Results -->
+                <empty-state
+                    v-if="searchQuery && filteredSettingsCount === 0"
+                    icon="mdi-magnify-close"
+                    :title="$t('settings.overview.noResultsMessage', { query: searchQuery })"
+                />
+
+                <!-- Settings grouped by category -->
+                <div
+                    v-for="category in filteredCategories"
+                    :key="category.id"
+                    class="mb-6"
+                >
+                    <!-- Category Header -->
+                    <div class="d-flex align-center ga-3 mb-3">
+                        <v-avatar :color="category.color" size="36">
+                            <v-icon color="white" size="20">{{ category.icon }}</v-icon>
+                        </v-avatar>
+                        <div>
+                            <div class="text-h6 font-weight-medium">{{ category.title }}</div>
+                            <div class="text-caption text-medium-emphasis">{{ category.description }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Grid -->
+                    <v-row>
+                        <v-col
+                            v-for="setting in getFilteredSettings(category)"
+                            :key="`${category.id}-${setting.id}`"
+                            cols="12"
+                            sm="6"
+                            lg="4"
+                        >
+                            <settings-item-card
+                                :title="setting.title"
+                                :description="setting.description"
+                                :icon="setting.icon"
+                                :color="category.color"
+                                @click="navigateToSetting(category.id, setting)"
+                            />
+                        </v-col>
+                    </v-row>
+
+                    <v-divider v-if="category !== filteredCategories[filteredCategories.length - 1]" class="mt-4"></v-divider>
+                </div>
+            </template>
         </v-container>
     </div>
 </template>
@@ -317,6 +290,8 @@ import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { settingsCategories, getTotalSettingsCount } from '@/configs/settingsConfig';
 import { useSettings } from '@/composables/useSettings';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import SettingsItemCard from '@/components/settings/SettingsItemCard.vue';
 
 // Tab Components
@@ -436,33 +411,3 @@ function navigateToSetting(categoryId, setting) {
     });
 }
 </script>
-
-<style scoped>
-.bg-gradient {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
-    color: white;
-}
-
-.w-100 {
-    width: 100%;
-}
-
-.view-toggle {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
-}
-
-.view-toggle .v-btn {
-    color: rgba(255, 255, 255, 0.8) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-}
-
-.view-toggle .v-btn--active {
-    color: white !important;
-    background: rgba(255, 255, 255, 0.2) !important;
-}
-
-.gap-2 {
-    gap: 8px;
-}
-</style>

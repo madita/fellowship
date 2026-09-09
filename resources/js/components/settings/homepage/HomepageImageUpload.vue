@@ -11,7 +11,7 @@
         contain
       ></v-img>
       <div v-else class="image-placeholder mb-2">
-        <v-icon size="48" color="grey-lighten-2">mdi-image-off</v-icon>
+        <v-icon size="48" class="text-medium-emphasis">mdi-image-off</v-icon>
       </div>
 
       <!-- File Input -->
@@ -30,7 +30,7 @@
       ></v-file-input>
 
       <!-- Actions -->
-      <div class="d-flex gap-2">
+      <div class="d-flex ga-2">
         <v-btn
           v-if="file"
           color="primary"
@@ -154,7 +154,7 @@ async function handleDelete() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.05);
+  background: rgba(var(--v-theme-on-surface), 0.05);
   border-radius: 4px;
 }
 </style>

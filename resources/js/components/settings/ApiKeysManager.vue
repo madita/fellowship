@@ -5,7 +5,7 @@
         </v-alert>
 
         <template v-else>
-            <div class="d-flex justify-space-between align-center mb-4">
+            <div class="d-flex justify-space-between align-center flex-wrap ga-2 mb-4">
                 <div>
                     <div class="text-h6">{{ $t('apiKeys.title') }}</div>
                     <div class="text-caption text-medium-emphasis">
@@ -14,6 +14,7 @@
                 </div>
                 <v-btn
                     color="primary"
+                    variant="elevated"
                     prepend-icon="mdi-plus"
                     @click="showCreateDialog = true"
                 >
@@ -27,7 +28,7 @@
                     <template v-for="(key, index) in apiKeys" :key="key.id">
                         <v-list-item>
                             <template v-slot:prepend>
-                                <v-icon :color="key.is_active ? 'success' : 'grey'">
+                                <v-icon :color="key.is_active ? 'success' : undefined" :class="{ 'text-medium-emphasis': !key.is_active }">
                                     {{ key.is_active ? 'mdi-key' : 'mdi-key-off' }}
                                 </v-icon>
                             </template>
@@ -93,22 +94,27 @@
                 </v-list>
             </v-card>
 
-            <v-card v-else variant="outlined" class="pa-8 text-center">
-                <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-key-outline</v-icon>
-                <div class="text-h6 text-medium-emphasis mb-2">{{ $t('apiKeys.noKeys') }}</div>
-                <div class="text-body-2 text-medium-emphasis mb-4">
-                    {{ $t('apiKeys.noKeysDescription') }}
-                </div>
-                <v-btn color="primary" @click="showCreateDialog = true">
-                    {{ $t('apiKeys.createFirstKey') }}
-                </v-btn>
+            <v-card v-else variant="outlined">
+                <empty-state
+                    compact
+                    icon="mdi-key-outline"
+                    :title="$t('apiKeys.noKeys')"
+                    :text="$t('apiKeys.noKeysDescription')"
+                >
+                    <template #actions>
+                        <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showCreateDialog = true">
+                            {{ $t('apiKeys.createFirstKey') }}
+                        </v-btn>
+                    </template>
+                </empty-state>
             </v-card>
         </template>
 
         <!-- Create Dialog -->
-        <v-dialog v-model="showCreateDialog" max-width="500">
+        <v-dialog v-model="showCreateDialog" max-width="600">
             <v-card>
-                <v-card-title>{{ $t('apiKeys.createKey') }}</v-card-title>
+                <v-card-title class="text-h6">{{ $t('apiKeys.createKey') }}</v-card-title>
+                <v-divider></v-divider>
                 <v-card-text>
                     <v-text-field
                         v-model="newKey.name"
@@ -132,7 +138,7 @@
                 <v-card-actions>
                     <v-spacer />
                     <v-btn variant="text" :disabled="isCreating" @click="showCreateDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" :loading="isCreating" @click="createKey">{{ $t('common.create') }}</v-btn>
+                    <v-btn color="primary" variant="flat" :loading="isCreating" @click="createKey">{{ $t('common.create') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -140,7 +146,7 @@
         <!-- Secret Display Dialog -->
         <v-dialog v-model="showSecretDialog" max-width="600" persistent>
             <v-card>
-                <v-card-title class="d-flex align-center">
+                <v-card-title class="d-flex align-center text-h6">
                     <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
                     {{ $t('apiKeys.saveYourSecret') }}
                 </v-card-title>
@@ -176,14 +182,14 @@
                     <v-alert type="info" variant="tonal" density="compact">
                         <div class="text-caption">
                             <strong>{{ $t('apiKeys.usage') }}:</strong> {{ $t('apiKeys.usageDescription') }}
-                            <pre class="mt-2 pa-2 bg-grey-darken-3 rounded text-white">X-API-Key: {{ createdKey?.key }}
+                            <pre class="mt-2 pa-2 bg-surface-variant rounded">X-API-Key: {{ createdKey?.key }}
 X-API-Secret: {{ createdKey?.secret }}</pre>
                         </div>
                     </v-alert>
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn color="primary" @click="closeSecretDialog">{{ $t('apiKeys.savedSecret') }}</v-btn>
+                    <v-btn color="primary" variant="flat" @click="closeSecretDialog">{{ $t('apiKeys.savedSecret') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -196,6 +202,7 @@ import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { formatDate as formatDateUtil } from '@/plugins/formatDate.js';
 import { useDialog } from '@/composables/useDialog.js';
+import EmptyState from '@/components/common/EmptyState.vue';
 
 const { t } = useI18n();
 const dialog = useDialog();

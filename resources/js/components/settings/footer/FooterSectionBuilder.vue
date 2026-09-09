@@ -1,27 +1,28 @@
 <template>
   <div>
     <!-- Action Buttons -->
-    <div class="d-flex justify-space-between align-center mb-4">
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="showAddSectionDialog = true">
+    <div class="d-flex justify-space-between align-center flex-wrap ga-2 mb-4">
+      <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showAddSectionDialog = true">
         {{ $t('settings.footerBuilder.addSection') }}
       </v-btn>
-      <v-btn prepend-icon="mdi-refresh" @click="loadSections" :loading="isLoading">
+      <v-btn variant="tonal" prepend-icon="mdi-refresh" @click="loadSections" :loading="isLoading">
         {{ $t('settings.footerBuilder.refresh') }}
       </v-btn>
     </div>
 
     <!-- Sections List with Drag-and-Drop -->
-    <v-card v-if="isLoading" class="pa-8 text-center">
-      <v-progress-circular indeterminate color="primary"></v-progress-circular>
-      <div class="mt-2">{{ $t('settings.footerBuilder.loadingSections') }}</div>
-    </v-card>
+    <loading-state v-if="isLoading" :text="$t('settings.footerBuilder.loadingSections')" />
 
-    <div v-else-if="sections.length === 0" class="text-center py-8">
-      <v-icon size="64" color="grey">mdi-view-grid-outline</v-icon>
-      <div class="text-h6 mt-4">{{ $t('settings.footerBuilder.noSectionsYet') }}</div>
-      <div class="text-caption text-grey mb-4">{{ $t('settings.footerBuilder.createSectionsHint') }}</div>
-      <v-btn color="primary" @click="showAddSectionDialog = true">{{ $t('settings.footerBuilder.addFirstSection') }}</v-btn>
-    </div>
+    <empty-state
+      v-else-if="sections.length === 0"
+      icon="mdi-view-grid-outline"
+      :title="$t('settings.footerBuilder.noSectionsYet')"
+      :text="$t('settings.footerBuilder.createSectionsHint')"
+    >
+      <template #actions>
+        <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showAddSectionDialog = true">{{ $t('settings.footerBuilder.addFirstSection') }}</v-btn>
+      </template>
+    </empty-state>
 
     <draggable
       v-else
@@ -33,11 +34,11 @@
       <template #item="{ element: section }">
         <v-card class="mb-4" :class="{ 'section-disabled': !section.enabled }">
           <!-- Section Header -->
-          <v-card-title class="d-flex align-center bg-grey-lighten-4">
+          <v-card-title class="d-flex align-center section-header">
             <v-icon class="section-drag-handle mr-2" style="cursor: grab;">mdi-drag-vertical</v-icon>
             <div class="flex-grow-1">
               <div class="text-h6">{{ section.title || `Section ${section.order}` }}</div>
-              <div class="text-caption text-grey">
+              <div class="text-caption text-medium-emphasis">
                 {{ $t('settings.footerBuilder.layout') }}: {{ getLayoutLabel(section.layout) }} | {{ $t('settings.footerBuilder.order') }}: {{ section.order }}
               </div>
             </div>
@@ -81,7 +82,7 @@
                 :md="colWidth"
               >
                 <div class="column-container pa-3">
-                  <div class="text-caption text-grey mb-2">
+                  <div class="text-caption text-medium-emphasis mb-2">
                     {{ $t('settings.footerBuilder.column') }} {{ colIndex + 1 }}
                     <v-btn
                       size="x-small"
@@ -150,9 +151,10 @@
     </draggable>
 
     <!-- Add/Edit Section Dialog -->
-    <v-dialog v-model="showAddSectionDialog" max-width="600px">
+    <v-dialog v-model="showAddSectionDialog" max-width="600">
       <v-card>
-        <v-card-title>{{ editingSection ? $t('settings.footerBuilder.editFooterSection') : $t('settings.footerBuilder.addFooterSection') }}</v-card-title>
+        <v-card-title class="text-h6">{{ editingSection ? $t('settings.footerBuilder.editFooterSection') : $t('settings.footerBuilder.addFooterSection') }}</v-card-title>
+        <v-divider></v-divider>
         <v-card-text>
           <v-text-field
             v-model="sectionFormData.title"
@@ -182,8 +184,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn :disabled="savingSection" @click="cancelSectionEdit">{{ $t('common.cancel') }}</v-btn>
-          <v-btn color="primary" :loading="savingSection" @click="saveSection">{{ editingSection ? $t('settings.footerBuilder.update') : $t('settings.footerBuilder.add') }}</v-btn>
+          <v-btn variant="text" :disabled="savingSection" @click="cancelSectionEdit">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" variant="flat" :loading="savingSection" @click="saveSection">{{ editingSection ? $t('settings.footerBuilder.update') : $t('settings.footerBuilder.add') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -201,6 +203,8 @@ import { useI18n } from 'vue-i18n';
 import { useFooterStore } from '@/store/footerStore';
 import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
 import draggable from 'vuedraggable';
+import LoadingState from '@/components/common/LoadingState.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
@@ -483,6 +487,10 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.section-header {
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+
 .section-disabled {
   opacity: 0.6;
 }
@@ -524,7 +532,7 @@ onMounted(async () => {
 }
 
 .widget-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(var(--v-theme-on-surface), 0.1);
 }
 
 .widget-disabled {

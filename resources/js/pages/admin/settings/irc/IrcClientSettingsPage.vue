@@ -1,14 +1,14 @@
 <template>
     <settings-page-layout
-        title="Client Settings"
-        description="Options for the IRC client"
+        :title="$t('irc.admin.clientTitle')"
+        :description="$t('irc.admin.clientDescription')"
         icon="mdi-tune"
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'irc' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >
-        <settings-card icon="mdi-book-open-variant" title="Comic Chat">
+        <settings-card icon="mdi-book-open-variant" :title="$t('irc.admin.comicChat')">
             <v-switch
                 v-model="settings.irc_comic_chat_enabled"
                 label="Enable Comic Chat"
@@ -24,11 +24,12 @@
             block
             size="large"
             color="primary"
+            variant="elevated"
             @click="$emit('save')"
             prepend-icon="mdi-content-save"
             class="d-sm-none"
         >
-            Save Settings
+            {{ $t('irc.admin.saveSettings') }}
         </v-btn>
     </settings-page-layout>
 </template>

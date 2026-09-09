@@ -6,34 +6,36 @@
     </v-alert>
 
     <!-- Action Buttons -->
-    <div class="d-flex justify-space-between align-center mb-4">
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="showAddDialog = true">
+    <div class="d-flex justify-space-between align-center flex-wrap ga-2 mb-4">
+      <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showAddDialog = true">
         {{ $t('settings.menuBuilder.addMenuItem') }}
       </v-btn>
-      <v-btn prepend-icon="mdi-refresh" @click="loadMenuItems" :loading="isLoading">
+      <v-btn variant="tonal" prepend-icon="mdi-refresh" @click="loadMenuItems" :loading="isLoading">
         {{ $t('settings.menuBuilder.refresh') }}
       </v-btn>
     </div>
 
     <!-- Menu Items List -->
     <v-card>
-      <v-card-title>
+      <v-card-title class="text-subtitle-1 font-weight-medium">
         <v-icon class="mr-2">mdi-drag</v-icon>
         {{ $t('settings.menuBuilder.dragToReorder') }}
       </v-card-title>
       <v-divider></v-divider>
 
-      <v-card-text v-if="isLoading" class="text-center py-8">
-        <v-progress-circular indeterminate color="primary"></v-progress-circular>
-        <div class="mt-2">{{ $t('settings.menuBuilder.loadingMenuItems') }}</div>
-      </v-card-text>
+      <loading-state v-if="isLoading" compact :text="$t('settings.menuBuilder.loadingMenuItems')" />
 
-      <v-card-text v-else-if="menuItems.length === 0" class="text-center py-8">
-        <v-icon size="64" color="grey">mdi-menu</v-icon>
-        <div class="text-h6 mt-4">{{ $t('settings.menuBuilder.noMenuItemsYet') }}</div>
-        <div class="text-caption text-grey mb-4">{{ $t('settings.menuBuilder.addMenuItemsHint') }}</div>
-        <v-btn color="primary" @click="showAddDialog = true">{{ $t('settings.menuBuilder.addFirstMenuItem') }}</v-btn>
-      </v-card-text>
+      <empty-state
+        v-else-if="menuItems.length === 0"
+        compact
+        icon="mdi-menu"
+        :title="$t('settings.menuBuilder.noMenuItemsYet')"
+        :text="$t('settings.menuBuilder.addMenuItemsHint')"
+      >
+        <template #actions>
+          <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showAddDialog = true">{{ $t('settings.menuBuilder.addFirstMenuItem') }}</v-btn>
+        </template>
+      </empty-state>
 
       <draggable
         v-else
@@ -104,9 +106,10 @@
     </v-card>
 
     <!-- Add/Edit Dialog -->
-    <v-dialog v-model="showAddDialog" max-width="600px">
+    <v-dialog v-model="showAddDialog" max-width="600">
       <v-card>
-        <v-card-title>{{ editingItem ? $t('settings.menuBuilder.editMenuItem') : $t('settings.menuBuilder.addMenuItem') }}</v-card-title>
+        <v-card-title class="text-h6">{{ editingItem ? $t('settings.menuBuilder.editMenuItem') : $t('settings.menuBuilder.addMenuItem') }}</v-card-title>
+        <v-divider></v-divider>
         <v-card-text>
           <v-text-field
             v-model="formData.label"
@@ -125,7 +128,7 @@
             class="mb-4"
           >
             <template #prepend-inner>
-              <span class="text-grey">#</span>
+              <span class="text-medium-emphasis">#</span>
             </template>
           </v-select>
 
@@ -141,8 +144,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn :disabled="savingItem" @click="cancelEdit">{{ $t('common.cancel') }}</v-btn>
-          <v-btn color="primary" :loading="savingItem" @click="saveMenuItem">{{ editingItem ? $t('settings.menuBuilder.update') : $t('settings.menuBuilder.add') }}</v-btn>
+          <v-btn variant="text" :disabled="savingItem" @click="cancelEdit">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" variant="flat" :loading="savingItem" @click="saveMenuItem">{{ editingItem ? $t('settings.menuBuilder.update') : $t('settings.menuBuilder.add') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -159,6 +162,8 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useHomepageStore } from '@/store/homepageStore';
 import draggable from 'vuedraggable';
+import LoadingState from '@/components/common/LoadingState.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
@@ -353,7 +358,7 @@ onMounted(async () => {
 
 .menu-item:hover {
   background: rgba(var(--v-theme-surface-variant), 0.6);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(var(--v-theme-on-surface), 0.1);
 }
 
 .menu-disabled {

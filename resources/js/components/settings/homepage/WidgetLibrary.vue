@@ -1,16 +1,17 @@
 <template>
-  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" max-width="900px" scrollable>
+  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" max-width="900" scrollable>
     <v-card>
-      <v-card-title class="bg-primary text-white">
+      <v-card-title class="d-flex align-center text-h6">
         <v-icon class="mr-2">mdi-widgets</v-icon>
         {{ $t('settings.widgetLibrary.homepageWidgetLibrary') }}
         <v-spacer></v-spacer>
         <v-btn icon="mdi-close" variant="text" :disabled="adding" @click="close"></v-btn>
       </v-card-title>
+      <v-divider></v-divider>
 
       <v-card-text class="pa-0">
         <!-- Category Filter -->
-        <v-tabs v-model="selectedCategory" bg-color="grey-lighten-4" color="primary">
+        <v-tabs v-model="selectedCategory" bg-color="transparent" color="primary">
           <v-tab value="all">{{ $t('settings.widgetLibrary.allWidgets') }}</v-tab>
           <v-tab v-for="category in categories" :key="category.value" :value="category.value">
             {{ category.label }}
@@ -43,11 +44,11 @@
                   </v-avatar>
 
                   <div class="text-h6 mb-2">{{ widget.name }}</div>
-                  <div class="text-caption text-grey">{{ widget.description }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ widget.description }}</div>
 
                   <v-chip
                     :color="widget.color"
-                    size="x-small"
+                    size="small"
                     class="mt-3"
                     variant="tonal"
                   >
@@ -73,9 +74,12 @@
             </v-col>
           </v-row>
 
-          <v-alert v-if="filteredWidgets.length === 0" type="info" variant="tonal" class="mt-4">
-            {{ $t('settings.widgetLibrary.noWidgetsInCategory') }}
-          </v-alert>
+          <empty-state
+            v-if="filteredWidgets.length === 0"
+            compact
+            icon="mdi-widgets-outline"
+            :title="$t('settings.widgetLibrary.noWidgetsInCategory')"
+          />
         </div>
       </v-card-text>
     </v-card>
@@ -86,6 +90,7 @@
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getAvailableWidgets, WIDGET_CATEGORIES } from '@/configs/widgetTypes';
+import EmptyState from '@/components/common/EmptyState.vue';
 
 const { t } = useI18n();
 
@@ -134,6 +139,6 @@ function close() {
 
 .widget-card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(var(--v-theme-on-surface), 0.15);
 }
 </style>

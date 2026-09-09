@@ -13,7 +13,7 @@
                 <div class="text-subtitle-1 font-weight-medium">{{ title }}</div>
                 <div class="text-caption text-medium-emphasis">{{ description }}</div>
             </div>
-            <v-icon color="grey-lighten-1" size="20">mdi-chevron-right</v-icon>
+            <v-icon size="20" class="text-medium-emphasis">mdi-chevron-right</v-icon>
         </v-card-text>
     </v-card>
 </template>

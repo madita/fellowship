@@ -2,34 +2,36 @@
     <div class="flex-grow-1">
         <!-- Loading State -->
         <v-container v-if="isLoading" fluid class="pa-2 pa-sm-4">
-            <v-card elevation="2">
-                <v-card-text class="text-center py-12">
-                    <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
-                    <div class="mt-4 text-body-1">Loading settings...</div>
-                </v-card-text>
-            </v-card>
+            <loading-state :text="$t('settings.page.loading')" />
         </v-container>
 
         <!-- Error/404 State -->
-        <v-container v-else-if="loadError || !setting" fluid class="pa-2 pa-sm-4">
-            <v-card elevation="2">
-                <v-card-text class="text-center py-12">
-                    <v-icon size="80" color="grey-lighten-1">mdi-alert-circle-outline</v-icon>
-                    <div class="text-h5 mt-4">{{ loadError ? 'Error Loading Settings' : 'Setting Not Found' }}</div>
-                    <div class="text-body-2 text-medium-emphasis mt-2">
-                        {{ loadError || "The settings page you're looking for doesn't exist." }}
-                    </div>
-                    <v-btn
-                        color="primary"
-                        class="mt-6"
-                        @click="goBack"
-                        prepend-icon="mdi-arrow-left"
-                    >
-                        Back to Settings
-                    </v-btn>
-                </v-card-text>
-            </v-card>
-        </v-container>
+        <template v-else-if="loadError || !setting">
+            <page-header
+                :title="loadError ? $t('settings.page.loadError') : $t('settings.page.notFound')"
+                icon="mdi-alert-circle-outline"
+                :back-to="{ name: 'admin-settings' }"
+                fluid
+            />
+            <v-container fluid class="pa-2 pa-sm-4">
+                <empty-state
+                    icon="mdi-alert-circle-outline"
+                    :title="loadError ? $t('settings.page.loadError') : $t('settings.page.notFound')"
+                    :text="loadError || $t('settings.page.notFoundMessage')"
+                >
+                    <template #actions>
+                        <v-btn
+                            color="primary"
+                            variant="flat"
+                            prepend-icon="mdi-arrow-left"
+                            @click="goBack"
+                        >
+                            {{ $t('settings.category.backToSettings') }}
+                        </v-btn>
+                    </template>
+                </empty-state>
+            </v-container>
+        </template>
 
         <!-- Dynamic Component -->
         <component
@@ -50,6 +52,9 @@ import { ref, computed, watch, defineAsyncComponent, shallowRef } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getCategoryBySlug, getSettingBySlug } from '@/configs/settingsConfig';
 import { useSettings } from '@/composables/useSettings';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 const router = useRouter();
 const route = useRoute();
