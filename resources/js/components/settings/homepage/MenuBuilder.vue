@@ -72,6 +72,8 @@
                   density="compact"
                   color="success"
                   class="mr-2"
+                  :loading="rowAction(item) === 'toggle'"
+                  :disabled="isRowBusy(item)"
                   @change="toggleMenuItem(item)"
                 ></v-switch>
 
@@ -79,6 +81,7 @@
                   icon="mdi-pencil"
                   size="small"
                   variant="text"
+                  :disabled="isRowBusy(item)"
                   @click="editMenuItem(item)"
                   :title="$t('settings.menuBuilder.editMenuItem')"
                 ></v-btn>
@@ -88,6 +91,8 @@
                   size="small"
                   variant="text"
                   color="error"
+                  :loading="rowAction(item) === 'delete'"
+                  :disabled="isRowBusy(item)"
                   @click="confirmDelete(item)"
                   :title="$t('settings.menuBuilder.deleteMenuItem')"
                 ></v-btn>
@@ -136,23 +141,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="cancelEdit">{{ $t('common.cancel') }}</v-btn>
-          <v-btn color="primary" @click="saveMenuItem">{{ editingItem ? $t('settings.menuBuilder.update') : $t('settings.menuBuilder.add') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="showDeleteDialog" max-width="500">
-      <v-card>
-        <v-card-title>{{ $t('settings.menuBuilder.confirmDelete') }}</v-card-title>
-        <v-card-text>
-          {{ $t('settings.menuBuilder.deleteConfirmMessage', { label: itemToDelete?.label }) }}
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn @click="showDeleteDialog = false">{{ $t('common.cancel') }}</v-btn>
-          <v-btn color="error" @click="deleteMenuItem">{{ $t('common.delete') }}</v-btn>
+          <v-btn :disabled="savingItem" @click="cancelEdit">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" :loading="savingItem" @click="saveMenuItem">{{ editingItem ? $t('settings.menuBuilder.update') : $t('settings.menuBuilder.add') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -169,8 +159,10 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useHomepageStore } from '@/store/homepageStore';
 import draggable from 'vuedraggable';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 const homepageStore = useHomepageStore();
 const isLoading = ref(true);
 
@@ -196,10 +188,26 @@ const anchorOptions = computed(() => {
 
 // Dialog states
 const showAddDialog = ref(false);
-const showDeleteDialog = ref(false);
 const editingItem = ref(null);
-const itemToDelete = ref(null);
 const customAnchor = ref('');
+
+// Request state
+const savingItem = ref(false);
+// One in-flight request per item row: { [id]: 'toggle' | 'delete' }
+const rowActions = ref({});
+const rowAction = (item) => rowActions.value[item.id] || null;
+const isRowBusy = (item) => rowAction(item) !== null;
+
+async function runRowAction(item, action, work) {
+  if (isRowBusy(item)) return;
+  rowActions.value = { ...rowActions.value, [item.id]: action };
+  try {
+    await work();
+  } finally {
+    const { [item.id]: _done, ...rest } = rowActions.value;
+    rowActions.value = rest;
+  }
+}
 
 const formData = ref({
   label: '',
@@ -249,6 +257,7 @@ function editMenuItem(item) {
 }
 
 async function saveMenuItem() {
+  if (savingItem.value) return;
   const finalAnchor = formData.value.anchor_target === 'custom' ? customAnchor.value : formData.value.anchor_target;
 
   if (!formData.value.label || !finalAnchor) {
@@ -256,6 +265,7 @@ async function saveMenuItem() {
     return;
   }
 
+  savingItem.value = true;
   try {
     const menuData = {
       label: formData.value.label,
@@ -275,6 +285,8 @@ async function saveMenuItem() {
     cancelEdit();
   } catch (error) {
     showSnackbar(t('settings.menuBuilder.failedToSaveMenuItem'), 'error');
+  } finally {
+    savingItem.value = false;
   }
 }
 
@@ -285,31 +297,35 @@ function cancelEdit() {
   customAnchor.value = '';
 }
 
-async function toggleMenuItem(item) {
+function toggleMenuItem(item) {
   // The toggle happens in the UI, but we need to save it
-  try {
-    await homepageStore.updateMenuItem(item.id, item);
-    showSnackbar(item.enabled ? t('settings.menuBuilder.menuItemEnabled') : t('settings.menuBuilder.menuItemDisabled'), 'success');
-  } catch (error) {
-    showSnackbar(t('settings.menuBuilder.failedToToggleMenuItem'), 'error');
-    item.enabled = !item.enabled;
-  }
+  return runRowAction(item, 'toggle', async () => {
+    try {
+      await homepageStore.updateMenuItem(item.id, item);
+      showSnackbar(item.enabled ? t('settings.menuBuilder.menuItemEnabled') : t('settings.menuBuilder.menuItemDisabled'), 'success');
+    } catch (error) {
+      showSnackbar(t('settings.menuBuilder.failedToToggleMenuItem'), 'error');
+      item.enabled = !item.enabled;
+    }
+  });
 }
 
-function confirmDelete(item) {
-  itemToDelete.value = item;
-  showDeleteDialog.value = true;
-}
+async function confirmDelete(item) {
+  if (isRowBusy(item)) return;
+  const ok = await dialog.confirmDelete(
+    t('settings.menuBuilder.deleteConfirmMessage', { label: item.label }),
+    { title: t('settings.menuBuilder.confirmDelete') }
+  );
+  if (!ok) return;
 
-async function deleteMenuItem() {
-  try {
-    await homepageStore.deleteMenuItem(itemToDelete.value.id);
-    showSnackbar(t('settings.menuBuilder.menuItemDeleted'), 'success');
-    showDeleteDialog.value = false;
-    itemToDelete.value = null;
-  } catch (error) {
-    showSnackbar(t('settings.menuBuilder.failedToDeleteMenuItem'), 'error');
-  }
+  await runRowAction(item, 'delete', async () => {
+    try {
+      await homepageStore.deleteMenuItem(item.id);
+      showSnackbar(t('settings.menuBuilder.menuItemDeleted'), 'success');
+    } catch (error) {
+      showSnackbar(t('settings.menuBuilder.failedToDeleteMenuItem'), 'error');
+    }
+  });
 }
 
 function showSnackbar(message, color = 'success') {

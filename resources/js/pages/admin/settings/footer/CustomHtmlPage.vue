@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'footer' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-code-tags" :title="$t('settings.footer.customFooterHtml')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
@@ -93,9 +90,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useDialog } from '@/composables/useDialog.js';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
+
+const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
     settings: Object,
@@ -105,12 +106,23 @@ const props = defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
+defineEmits(['save']);
 
-const message = ref('');
-const alertType = ref('success');
 
-function loadSimpleFooterTemplate() {
+// Loading a template overwrites whatever is in the editor, so ask first
+// when there is something to lose.
+async function confirmTemplateOverwrite() {
+    if (!props.settings.custom_footer_html?.trim()) return true;
+    return dialog.confirm({
+        title: t('settings.footer.customFooterHtml'),
+        content: t('settings.footer.templateOverwriteConfirm'),
+        confirmationText: t('dialogs.confirm.confirm'),
+        color: 'warning',
+    });
+}
+
+async function loadSimpleFooterTemplate() {
+    if (!(await confirmTemplateOverwrite())) return;
     props.settings.custom_footer_html = `<div class="v-footer v-theme--light bg-transparent" style="padding: 16px;">
   <div class="v-container">
     <div class="text-center">
@@ -128,7 +140,8 @@ function loadSimpleFooterTemplate() {
 </div>`;
 }
 
-function loadComplexFooterTemplate() {
+async function loadComplexFooterTemplate() {
+    if (!(await confirmTemplateOverwrite())) return;
     props.settings.custom_footer_html = `<div class="v-footer v-theme--light bg-transparent" style="padding: 40px 0;">
   <div class="v-container">
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px; margin-bottom: 24px;">

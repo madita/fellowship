@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'irc' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-book-open-variant" title="Comic Chat">
             <v-switch
@@ -49,8 +46,6 @@ defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
+defineEmits(['save']);
 
-const message = ref('');
-const alertType = ref('success');
 </script>

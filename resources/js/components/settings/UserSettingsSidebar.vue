@@ -129,18 +129,6 @@
           >
             {{ $t('settings.savePreferences') }}
           </v-btn>
-
-          <!-- Success/Error Messages -->
-          <v-alert
-            v-if="message"
-            :type="messageType"
-            density="compact"
-            class="mt-3"
-            closable
-            @click:close="message = ''"
-          >
-            {{ message }}
-          </v-alert>
         </v-card-text>
       </div>
     </v-expand-transition>
@@ -155,6 +143,7 @@ import { useSettingsStore } from '@/store/settingStore'
 import { useI18n } from 'vue-i18n'
 import { formatDateInTimezone, formatDate } from '@/plugins/formatDate.js'
 import axios from 'axios'
+import { useDialog } from '@/composables/useDialog.js'
 
 const emit = defineEmits(['close'])
 
@@ -162,11 +151,10 @@ const theme = useTheme()
 const userStore = useUserStore()
 const settingsStore = useSettingsStore()
 const { locale } = useI18n()
+const dialog = useDialog()
 
 const collapsed = ref(false)
 const saving = ref(false)
-const message = ref('')
-const messageType = ref('success')
 
 // Theme Mode
 const themeMode = ref('system')
@@ -290,8 +278,8 @@ function applyTheme(mode) {
 }
 
 async function savePreferences() {
+  if (saving.value) return
   saving.value = true
-  message.value = ''
 
   try {
     // Save to backend
@@ -310,12 +298,10 @@ async function savePreferences() {
       userStore.user.language = selectedLanguage.value
     }
 
-    message.value = t('settings.preferencesSaved')
-    messageType.value = 'success'
+    dialog.success(t('settings.preferencesSaved'))
   } catch (error) {
     console.error('Failed to save preferences:', error)
-    message.value = t('settings.preferencesFailed')
-    messageType.value = 'error'
+    dialog.requestError(error, t('settings.preferencesFailed'))
   } finally {
     saving.value = false
   }

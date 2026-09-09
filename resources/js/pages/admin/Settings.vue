@@ -9,12 +9,6 @@
 
                 <v-divider></v-divider>
 
-                <div v-if="message" class="alert-container">
-                    <v-alert :type="alertType" class="mx-2 mx-sm-6 mt-4 mb-0 message-alert" closable @click:close="message = ''">
-                        <div class="text-body-2">{{ message }}</div>
-                    </v-alert>
-                </div>
-
                 <v-alert
                     v-if="settings.maintenance_mode"
                     type="warning"
@@ -60,6 +54,7 @@
                     <v-tab value="moderation">
                         <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-shield-check</v-icon>
                         <span class="d-none d-sm-inline">Moderation</span>
+                    </v-tab>
                     <v-tab value="sandbox">
                         <v-icon :class="$vuetify.display.mobile ? '' : 'mr-2'">mdi-notebook-edit</v-icon>
                         <span class="d-none d-sm-inline">Sandbox</span>
@@ -80,7 +75,6 @@
                                 :errors="errors"
                                 :is-saving="isSaving"
                                 @save="saveSettings"
-                                @message="handleMessage"
                             />
                         </v-window-item>
 
@@ -99,7 +93,6 @@
                                 :errors="errors"
                                 :is-saving="isSaving"
                                 @save="saveSettings"
-                                @message="handleMessage"
                             />
                         </v-window-item>
 
@@ -109,7 +102,6 @@
                                 :errors="errors"
                                 :is-saving="isSaving"
                                 @save="saveSettings"
-                                @message="handleMessage"
                             />
                         </v-window-item>
 
@@ -128,7 +120,6 @@
                                 :errors="errors"
                                 :is-saving="isSaving"
                                 @save="saveSettings"
-                                @message="handleMessage"
                             />
                         </v-window-item>
 
@@ -142,19 +133,24 @@
                                 :errors="errors"
                                 :is-saving="isSaving"
                                 @save="saveSettings"
-                                @message="handleMessage"
                             />
                         </v-window-item>
 
                         <v-window-item value="moderation">
                             <moderation-tab
+                                :settings="settings"
+                                :errors="errors"
+                                :is-saving="isSaving"
+                                @save="saveSettings"
+                            />
+                        </v-window-item>
+
                         <v-window-item value="sandbox">
                             <sandbox-tab
                                 :settings="settings"
                                 :errors="errors"
                                 :is-saving="isSaving"
                                 @save="saveSettings"
-                                @message="handleMessage"
                             />
                         </v-window-item>
 
@@ -189,32 +185,16 @@ import AdvancedTab from '../../components/settings/tabs/AdvancedTab.vue';
 import ModerationTab from '../../components/settings/tabs/ModerationTab.vue';
 
 const currentTab = ref('general');
-const { settings, isSaving, message, alertType, errors, fetchSettings, saveSettings, showMessage } = useSettings();
+const { settings, isSaving, errors, fetchSettings, saveSettings } = useSettings();
 
 onMounted(() => {
     fetchSettings();
 });
-
-function handleMessage({ text, type }) {
-    showMessage(text, type);
-}
 </script>
 
 <style scoped>
 .bg-gradient {
     background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
     color: white;
-}
-
-.alert-container {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: transparent;
-}
-
-.message-alert {
-    word-break: break-word;
-    white-space: pre-wrap;
 }
 </style>

@@ -46,17 +46,6 @@
 
                 <v-divider></v-divider>
 
-                <!-- Alert Message (Tab view) -->
-                <v-alert
-                    v-if="viewMode === 'tabs' && message"
-                    :type="alertType"
-                    class="mx-4 mx-sm-6 mt-4 mb-0"
-                    closable
-                    @click:close="message = ''"
-                >
-                    {{ message }}
-                </v-alert>
-
                 <!-- Search Bar (Overview mode only) -->
                 <div v-if="viewMode === 'overview'" class="pa-4">
                     <v-text-field
@@ -326,12 +315,9 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { settingsCategories, getTotalSettingsCount } from '@/configs/settingsConfig';
 import { useSettings } from '@/composables/useSettings';
 import SettingsItemCard from '@/components/settings/SettingsItemCard.vue';
-
-const { t } = useI18n();
 
 // Tab Components
 import GeneralTab from '@/components/settings/tabs/GeneralTab.vue';
@@ -355,12 +341,8 @@ const {
     isSaving,
     errors,
     fetchSettings,
-    saveSettings: saveSettingsApi,
-    showMessage
+    saveSettings
 } = useSettings();
-
-const message = ref('');
-const alertType = ref('success');
 
 // View mode with localStorage persistence
 const STORAGE_KEY = 'settings_view_mode';
@@ -383,17 +365,6 @@ onMounted(() => {
         fetchSettings();
     }
 });
-
-async function saveSettings() {
-    try {
-        await saveSettingsApi();
-        message.value = t('settings.overview.saved');
-        alertType.value = 'success';
-    } catch (error) {
-        message.value = error.message || t('settings.overview.saveError');
-        alertType.value = 'error';
-    }
-}
 
 const categoriesCount = computed(() => settingsCategories.length);
 const totalSettings = computed(() => getTotalSettingsCount());

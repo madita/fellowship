@@ -117,6 +117,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'settings'"
                         @click="clearCache('settings')"
                     >
@@ -129,6 +130,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'views'"
                         @click="clearCache('views')"
                     >
@@ -141,6 +143,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'routes'"
                         @click="clearCache('routes')"
                     >
@@ -153,6 +156,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'config'"
                         @click="clearCache('config')"
                     >
@@ -165,6 +169,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'application'"
                         @click="clearCache('application')"
                     >
@@ -177,6 +182,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'http'"
                         @click="clearCache('http')"
                     >
@@ -194,6 +200,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'pages'"
                         @click="clearCache('pages')"
                     >
@@ -206,6 +213,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'wiki'"
                         @click="clearCache('wiki')"
                     >
@@ -218,6 +226,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'posts'"
                         @click="clearCache('posts')"
                     >
@@ -230,6 +239,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'widgets'"
                         @click="clearCache('widgets')"
                     >
@@ -243,6 +253,7 @@
                         size="small"
                         color="error"
                         variant="tonal"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'all'"
                         @click="clearCache('all')"
                     >
@@ -808,10 +819,12 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useApi } from '@/api/useAPI.js';
+import { useDialog } from '@/composables/useDialog.js';
 import SettingsCard from '../SettingsCard.vue';
 
 const { t } = useI18n();
 const api = useApi('api');
+const dialog = useDialog();
 
 const props = defineProps({
     settings: Object,
@@ -819,7 +832,7 @@ const props = defineProps({
     isSaving: Boolean,
 });
 
-const emit = defineEmits(['save', 'message']);
+defineEmits(['save']);
 
 // Server environment info (fetched from backend)
 const serverEnvironment = ref('unknown');
@@ -860,21 +873,27 @@ async function fetchServerInfo() {
 }
 
 async function clearCache(type) {
+    if (clearingCache.value) return;
+
+    if (type === 'all') {
+        const ok = await dialog.confirm({
+            title: t('settings.advanced.clearAllCaches'),
+            content: t('settings.advanced.clearAllConfirm'),
+            confirmationText: t('settings.advanced.clearAllCaches'),
+            color: 'warning',
+        });
+        if (!ok) return;
+    }
+
     clearingCache.value = type;
     try {
         const response = await api.post('/admin/settings/clear-cache', { type });
-        emit('message', {
-            text: `Cache cleared successfully: ${response.data.cleared.join(', ')}`,
-            type: 'success'
-        });
+        dialog.success(t('settings.advanced.cacheCleared', { types: response.data.cleared.join(', ') }));
         // Refresh cache status
         await fetchCacheStatus();
     } catch (error) {
         console.error('Failed to clear cache:', error);
-        emit('message', {
-            text: 'Failed to clear cache: ' + (error.response?.data?.message || error.message),
-            type: 'error'
-        });
+        dialog.requestError(error, t('settings.advanced.cacheClearFailed'));
     } finally {
         clearingCache.value = null;
     }
@@ -896,28 +915,20 @@ const newsletterProviders = [
 ];
 
 function testServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistration('/').then((registration) => {
-            if (registration) {
-                emit('message', {
-                    text: 'Service Worker is active and registered! Check browser console for details.',
-                    type: 'success'
-                });
-                console.log('Service Worker Registration:', registration);
-                console.log('Service Worker State:', registration.active?.state);
-            } else {
-                emit('message', {
-                    text: 'Service Worker is not registered yet. It will be registered on production build.',
-                    type: 'info'
-                });
-            }
-        });
-    } else {
-        emit('message', {
-            text: 'Service Workers are not supported in this browser.',
-            type: 'error'
-        });
+    if (!('serviceWorker' in navigator)) {
+        dialog.error(t('settings.advanced.swNotSupported'));
+        return;
     }
+
+    navigator.serviceWorker.getRegistration('/').then((registration) => {
+        if (registration) {
+            console.log('Service Worker Registration:', registration);
+            console.log('Service Worker State:', registration.active?.state);
+            dialog.success(t('settings.advanced.swActive'));
+        } else {
+            dialog.info(t('settings.advanced.swNotRegistered'));
+        }
+    });
 }
 </script>
 

@@ -74,7 +74,6 @@
                 placeholder-size="large"
                 @uploaded="handleImageUploaded"
                 @deleted="handleImageDeleted"
-                @error="handleImageError"
             />
         </settings-card>
 
@@ -173,19 +172,13 @@ const props = defineProps({
     isSaving: Boolean,
 });
 
-const emit = defineEmits(['save', 'message']);
+defineEmits(['save']);
 
 function handleImageUploaded({ key, path }) {
     props.settings[key] = path;
-    emit('message', { text: 'OG image uploaded successfully', type: 'success' });
 }
 
 function handleImageDeleted(key) {
     props.settings[key] = null;
-    emit('message', { text: 'OG image deleted successfully', type: 'success' });
-}
-
-function handleImageError(message) {
-    emit('message', { text: message, type: 'error' });
 }
 </script>

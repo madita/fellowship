@@ -41,7 +41,6 @@
             :category="category"
             :setting="setting"
             @save="saveSettings"
-            @message="handleMessage"
         />
     </div>
 </template>
@@ -55,7 +54,7 @@ import { useSettings } from '@/composables/useSettings';
 const router = useRouter();
 const route = useRoute();
 
-const { settings, isSaving, errors, fetchSettings, saveSettings, showMessage } = useSettings();
+const { settings, isSaving, errors, fetchSettings, saveSettings } = useSettings();
 
 const isLoading = ref(true);
 const loadError = ref(null);
@@ -172,10 +171,6 @@ async function loadComponent() {
 
 function goBack() {
     router.push({ name: 'admin-settings' });
-}
-
-function handleMessage({ text, type }) {
-    showMessage(text, type);
 }
 
 // Watch for route changes

@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'sandbox' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-server-network" title="Server Status">
             <v-alert type="info" variant="tonal" density="compact" class="mb-4">
@@ -176,10 +173,8 @@ const props = defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
+defineEmits(['save']);
 
-const message = ref('');
-const alertType = ref('success');
 const loadingStatus = ref(false);
 
 const wsStatus = reactive({
@@ -191,6 +186,8 @@ const wsStatus = reactive({
 });
 
 async function fetchWsStatus() {
+    if (loadingStatus.value) return;
+
     loadingStatus.value = true;
     try {
         const response = await api.get('/sandbox/status');

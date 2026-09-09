@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'localization' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-translate" :title="$t('settings.localization.languageOptions.cardTitle')">
             <v-switch
@@ -59,7 +56,6 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
 import { languages } from '@/composables/settingsConstants';
@@ -72,8 +68,5 @@ const props = defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
-
-const message = ref('');
-const alertType = ref('success');
+defineEmits(['save']);
 </script>

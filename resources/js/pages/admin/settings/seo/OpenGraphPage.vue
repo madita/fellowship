@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'seo' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-share-variant" :title="$t('settings.seo.openGraph.cardTitle')">
             <v-text-field
@@ -46,7 +43,6 @@
                 placeholder-size="large"
                 @uploaded="handleImageUploaded"
                 @deleted="handleImageDeleted"
-                @error="handleImageError"
             />
         </settings-card>
 
@@ -65,13 +61,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
 import ImageUpload from '@/components/settings/ImageUpload.vue';
-
-const { t } = useI18n();
 
 const props = defineProps({
     settings: Object,
@@ -81,22 +73,14 @@ const props = defineProps({
     setting: Object,
 });
 
-const emit = defineEmits(['save', 'message']);
+defineEmits(['save']);
 
-const message = ref('');
-const alertType = ref('success');
 
 function handleImageUploaded({ key, path }) {
     props.settings[key] = path;
-    emit('message', { text: t('settings.seo.openGraph.uploadSuccess'), type: 'success' });
 }
 
 function handleImageDeleted(key) {
     props.settings[key] = null;
-    emit('message', { text: t('settings.seo.openGraph.deleteSuccess'), type: 'success' });
-}
-
-function handleImageError(errorMessage) {
-    emit('message', { text: errorMessage, type: 'error' });
 }
 </script>

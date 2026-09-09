@@ -69,6 +69,8 @@
                                 size="small"
                                 variant="text"
                                 color="warning"
+                                :loading="busy[conn.id] === 'disconnect'"
+                                :disabled="!!busy[conn.id]"
                                 @click="disconnectConnection(conn)"
                             >
                                 <v-icon size="small">mdi-power-plug-off</v-icon>
@@ -79,6 +81,8 @@
                                 size="small"
                                 variant="text"
                                 color="error"
+                                :loading="busy[conn.id] === 'delete'"
+                                :disabled="!!busy[conn.id]"
                                 @click="deleteConnection(conn)"
                             >
                                 <v-icon size="small">mdi-delete</v-icon>
@@ -99,9 +103,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
 defineProps({
     settings: Object,
@@ -111,8 +117,19 @@ defineProps({
     setting: Object,
 });
 
+const { t } = useI18n();
+const dialog = useDialog();
 const loading = ref(true);
 const connections = ref([]);
+// In-flight action per connection id: 'disconnect' | 'delete'
+const busy = ref({});
+
+function setBusy(id, action) {
+    const next = { ...busy.value };
+    if (action) next[id] = action;
+    else delete next[id];
+    busy.value = next;
+}
 
 function statusColor(status) {
     return { connected: 'success', connecting: 'warning', disconnected: 'grey' }[status] || 'grey';
@@ -130,28 +147,53 @@ async function fetchConnections() {
         connections.value = data;
     } catch (error) {
         console.error('Error fetching connections:', error);
+        await dialog.requestError(error, t('irc.admin.loadFailed'));
     } finally {
         loading.value = false;
     }
 }
 
 async function disconnectConnection(conn) {
-    if (!confirm(`Disconnect ${conn.nickname} from ${conn.server?.name}?`)) return;
+    if (busy.value[conn.id]) return;
+
+    const confirmed = await dialog.confirm({
+        title: t('irc.admin.disconnectTitle'),
+        content: t('irc.admin.disconnectConfirm', { nickname: conn.nickname, server: conn.server?.name }),
+        confirmationText: t('irc.admin.disconnect'),
+        color: 'warning',
+    });
+    if (!confirmed) return;
+
+    setBusy(conn.id, 'disconnect');
     try {
         await axios.post(`/api/admin/irc/connections/${conn.id}/disconnect`);
         conn.status = 'disconnected';
     } catch (error) {
         console.error('Error disconnecting:', error);
+        await dialog.requestError(error, t('irc.admin.disconnectFailed'));
+    } finally {
+        setBusy(conn.id, null);
     }
 }
 
 async function deleteConnection(conn) {
-    if (!confirm(`Delete connection for ${conn.nickname}? This will remove all channels and messages.`)) return;
+    if (busy.value[conn.id]) return;
+
+    const confirmed = await dialog.confirmDelete(
+        t('irc.admin.deleteConnectionConfirm', { nickname: conn.nickname }),
+        { title: t('irc.admin.deleteConnectionTitle') }
+    );
+    if (!confirmed) return;
+
+    setBusy(conn.id, 'delete');
     try {
         await axios.delete(`/api/admin/irc/connections/${conn.id}`);
         await fetchConnections();
     } catch (error) {
         console.error('Error deleting connection:', error);
+        await dialog.requestError(error, t('irc.admin.deleteConnectionFailed'));
+    } finally {
+        setBusy(conn.id, null);
     }
 }
 

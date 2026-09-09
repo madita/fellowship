@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'sandbox' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-chart-bar" title="Sandbox Statistics">
             <div class="d-flex align-center justify-space-between mb-4">
@@ -83,9 +80,11 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useApi } from '@/api/useAPI.js';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
 const api = useApi('api');
 
@@ -97,10 +96,10 @@ defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
+defineEmits(['save']);
 
-const message = ref('');
-const alertType = ref('success');
+const { t } = useI18n();
+const dialog = useDialog();
 const loadingStats = ref(false);
 
 const stats = reactive({
@@ -119,6 +118,8 @@ const wsStatus = reactive({
 });
 
 async function fetchStats() {
+    if (loadingStats.value) return;
+
     loadingStats.value = true;
     try {
         const response = await api.get('/sandbox/status');
@@ -126,6 +127,7 @@ async function fetchStats() {
         Object.assign(stats, response.data.stats);
     } catch (error) {
         console.error('Failed to fetch sandbox stats:', error);
+        await dialog.requestError(error, t('sandbox.admin.statsLoadFailed'));
     } finally {
         loadingStats.value = false;
     }

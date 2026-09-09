@@ -145,6 +145,8 @@
                       density="compact"
                       color="success"
                       class="mr-2"
+                      :loading="rowAction(widget) === 'toggle'"
+                      :disabled="isRowBusy(widget)"
                       @change="toggleWidget(widget)"
                     ></v-switch>
 
@@ -152,6 +154,7 @@
                       icon="mdi-pencil"
                       size="small"
                       variant="text"
+                      :disabled="isRowBusy(widget)"
                       @click="editWidget(widget)"
                       :title="$t('settings.homepage.editWidget')"
                     ></v-btn>
@@ -160,6 +163,8 @@
                       icon="mdi-content-copy"
                       size="small"
                       variant="text"
+                      :loading="rowAction(widget) === 'duplicate'"
+                      :disabled="isRowBusy(widget)"
                       @click="duplicateWidget(widget)"
                       :title="$t('settings.homepage.duplicateWidget')"
                     ></v-btn>
@@ -169,6 +174,8 @@
                       size="small"
                       variant="text"
                       color="error"
+                      :loading="rowAction(widget) === 'delete'"
+                      :disabled="isRowBusy(widget)"
                       @click="confirmDelete(widget)"
                       :title="$t('settings.homepage.deleteWidget')"
                     ></v-btn>
@@ -190,29 +197,16 @@
     <widget-editor
       v-model="showEditor"
       :widget="selectedWidget"
+      :saving="savingWidget"
       @save="saveWidget"
     />
 
     <!-- Widget Library Dialog -->
     <widget-library
       v-model="showWidgetLibrary"
+      :adding="addingWidget"
       @select="addWidget"
     />
-
-    <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="showDeleteDialog" max-width="500">
-      <v-card>
-        <v-card-title>{{ $t('settings.homepage.confirmDelete') }}</v-card-title>
-        <v-card-text>
-          {{ $t('settings.homepage.deleteConfirmMessage', { name: widgetToDelete?.title || widgetToDelete?.type }) }}
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn @click="showDeleteDialog = false">{{ $t('common.cancel') }}</v-btn>
-          <v-btn color="error" @click="deleteWidget">{{ $t('common.delete') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
     <!-- Success Snackbar -->
     <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000">
@@ -226,6 +220,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useHomepageStore } from '@/store/homepageStore';
 import { getWidgetDefinition } from '@/configs/widgetTypes';
+import { useDialog } from '@/composables/useDialog.js';
 import draggable from 'vuedraggable';
 import WidgetEditor from '../homepage/WidgetEditor.vue';
 import WidgetLibrary from '../homepage/WidgetLibrary.vue';
@@ -233,6 +228,7 @@ import MenuBuilder from '../homepage/MenuBuilder.vue';
 import SectionBuilder from '../homepage/SectionBuilder.vue';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const homepageStore = useHomepageStore();
 const tab = ref('sections'); // Default to sections tab
@@ -259,9 +255,26 @@ const disabledCount = computed(() => widgets.value.filter(w => !w.enabled).lengt
 // Dialog states
 const showEditor = ref(false);
 const showWidgetLibrary = ref(false);
-const showDeleteDialog = ref(false);
 const selectedWidget = ref(null);
-const widgetToDelete = ref(null);
+
+// Request state
+const savingWidget = ref(false);
+const addingWidget = ref(false);
+// One in-flight request per widget row: { [id]: 'toggle' | 'duplicate' | 'delete' }
+const rowActions = ref({});
+const rowAction = (widget) => rowActions.value[widget.id] || null;
+const isRowBusy = (widget) => rowAction(widget) !== null;
+
+async function runRowAction(widget, action, work) {
+  if (isRowBusy(widget)) return;
+  rowActions.value = { ...rowActions.value, [widget.id]: action };
+  try {
+    await work();
+  } finally {
+    const { [widget.id]: _done, ...rest } = rowActions.value;
+    rowActions.value = rest;
+  }
+}
 
 // Section widget adding
 const widgetSectionContext = ref(null); // { sectionId, column }
@@ -311,6 +324,8 @@ function editWidget(widget) {
 }
 
 async function saveWidget(updatedWidget) {
+  if (savingWidget.value) return;
+  savingWidget.value = true;
   try {
     console.log('Saving widget with data:', JSON.stringify(updatedWidget, null, 2));
     await homepageStore.updateWidget(updatedWidget.id, updatedWidget);
@@ -319,10 +334,14 @@ async function saveWidget(updatedWidget) {
   } catch (error) {
     console.error('Failed to save widget:', error);
     showSnackbar(t('settings.homepage.failedToUpdateWidget'), 'error');
+  } finally {
+    savingWidget.value = false;
   }
 }
 
 async function addWidget(widgetType) {
+  if (addingWidget.value) return;
+  addingWidget.value = true;
   try {
     const definition = getWidgetDefinition(widgetType);
     const newWidget = {
@@ -353,6 +372,8 @@ async function addWidget(widgetType) {
     }
   } catch (error) {
     showSnackbar(t('settings.homepage.failedToAddWidget'), 'error');
+  } finally {
+    addingWidget.value = false;
   }
 }
 
@@ -361,39 +382,45 @@ function handleAddWidgetToSection({ sectionId, column }) {
   showWidgetLibrary.value = true;
 }
 
-async function toggleWidget(widget) {
-  try {
-    await homepageStore.toggleWidget(widget.id);
-    showSnackbar(widget.enabled ? t('settings.homepage.widgetEnabled') : t('settings.homepage.widgetDisabled'), 'success');
-  } catch (error) {
-    showSnackbar(t('settings.homepage.failedToToggleWidget'), 'error');
-    widget.enabled = !widget.enabled; // Revert on error
-  }
+function toggleWidget(widget) {
+  return runRowAction(widget, 'toggle', async () => {
+    try {
+      await homepageStore.toggleWidget(widget.id);
+      showSnackbar(widget.enabled ? t('settings.homepage.widgetEnabled') : t('settings.homepage.widgetDisabled'), 'success');
+    } catch (error) {
+      showSnackbar(t('settings.homepage.failedToToggleWidget'), 'error');
+      widget.enabled = !widget.enabled; // Revert on error
+    }
+  });
 }
 
-async function duplicateWidget(widget) {
-  try {
-    await homepageStore.duplicateWidget(widget.id);
-    showSnackbar(t('settings.homepage.widgetDuplicated'), 'success');
-  } catch (error) {
-    showSnackbar(t('settings.homepage.failedToDuplicateWidget'), 'error');
-  }
+function duplicateWidget(widget) {
+  return runRowAction(widget, 'duplicate', async () => {
+    try {
+      await homepageStore.duplicateWidget(widget.id);
+      showSnackbar(t('settings.homepage.widgetDuplicated'), 'success');
+    } catch (error) {
+      showSnackbar(t('settings.homepage.failedToDuplicateWidget'), 'error');
+    }
+  });
 }
 
-function confirmDelete(widget) {
-  widgetToDelete.value = widget;
-  showDeleteDialog.value = true;
-}
+async function confirmDelete(widget) {
+  if (isRowBusy(widget)) return;
+  const ok = await dialog.confirmDelete(
+    t('settings.homepage.deleteConfirmMessage', { name: widget.title || widget.type }),
+    { title: t('settings.homepage.confirmDelete') }
+  );
+  if (!ok) return;
 
-async function deleteWidget() {
-  try {
-    await homepageStore.deleteWidget(widgetToDelete.value.id);
-    showSnackbar(t('settings.homepage.widgetDeleted'), 'success');
-    showDeleteDialog.value = false;
-    widgetToDelete.value = null;
-  } catch (error) {
-    showSnackbar(t('settings.homepage.failedToDeleteWidget'), 'error');
-  }
+  await runRowAction(widget, 'delete', async () => {
+    try {
+      await homepageStore.deleteWidget(widget.id);
+      showSnackbar(t('settings.homepage.widgetDeleted'), 'success');
+    } catch (error) {
+      showSnackbar(t('settings.homepage.failedToDeleteWidget'), 'error');
+    }
+  });
 }
 
 function showSnackbar(message, color = 'success') {

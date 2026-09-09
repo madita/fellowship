@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'theme' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-image-area" :title="$t('settings.backgroundImages.cardTitle')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
@@ -49,7 +46,6 @@
                         :hint="$t('settings.backgroundImages.lightBackgroundHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
-                        @error="handleImageError"
                     />
                 </v-col>
 
@@ -69,7 +65,6 @@
                         :hint="$t('settings.backgroundImages.darkBackgroundHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
-                        @error="handleImageError"
                     />
                 </v-col>
             </v-row>
@@ -90,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
@@ -106,10 +101,8 @@ const props = defineProps({
     setting: Object,
 });
 
-const emit = defineEmits(['save', 'message']);
+defineEmits(['save']);
 
-const message = ref('');
-const alertType = ref('success');
 
 const backgroundStyles = computed(() => [
     { label: t('settings.backgroundImages.styleCover'), value: 'cover' },
@@ -118,15 +111,9 @@ const backgroundStyles = computed(() => [
 
 function handleImageUploaded({ key, path }) {
     props.settings[key] = path;
-    emit('message', { text: t('settings.backgroundImages.uploadSuccess'), type: 'success' });
 }
 
 function handleImageDeleted(key) {
     props.settings[key] = null;
-    emit('message', { text: t('settings.backgroundImages.deleteSuccess'), type: 'success' });
-}
-
-function handleImageError(errorMessage) {
-    emit('message', { text: errorMessage, type: 'error' });
 }
 </script>

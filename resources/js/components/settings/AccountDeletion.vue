@@ -51,49 +51,13 @@
                     <v-btn
                         color="error"
                         variant="outlined"
-                        @click="showConfirmDialog = true"
+                        @click="startDeletion"
                     >
                         {{ $t('accountDeletion.deleteMyAccount') }}
                     </v-btn>
                 </v-card-text>
             </v-card>
         </template>
-
-        <!-- Are You Sure Dialog -->
-        <v-dialog v-model="showConfirmDialog" max-width="450">
-            <v-card>
-                <v-card-title class="d-flex align-center text-error">
-                    <v-icon color="error" class="mr-2">mdi-alert</v-icon>
-                    {{ $t('accountDeletion.areYouSure') }}
-                </v-card-title>
-
-                <v-card-text>
-                    <p class="text-body-1 mb-4">
-                        {{ $t('accountDeletion.aboutToDelete') }}
-                    </p>
-                    <p class="text-body-2 text-medium-emphasis mb-0">
-                        {{ $t('accountDeletion.allDataRemoved') }}
-                    </p>
-                </v-card-text>
-
-                <v-card-actions class="pa-4 pt-0">
-                    <v-spacer />
-                    <v-btn
-                        variant="text"
-                        @click="showConfirmDialog = false"
-                    >
-                        {{ $t('common.cancel') }}
-                    </v-btn>
-                    <v-btn
-                        color="error"
-                        variant="tonal"
-                        @click="proceedToDelete"
-                    >
-                        {{ $t('accountDeletion.yesDelete') }}
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
 
         <!-- Delete Confirmation Dialog -->
         <v-dialog v-model="showDeleteDialog" max-width="500" persistent>
@@ -150,6 +114,7 @@
                     <v-spacer />
                     <v-btn
                         variant="text"
+                        :disabled="isDeleting"
                         @click="closeDeleteDialog"
                     >
                         {{ $t('common.cancel') }}
@@ -216,8 +181,10 @@ import { useI18n } from 'vue-i18n';
 import { useAuthStore } from '@/store/authStore';
 import { useUserStore } from '@/store/userStore';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -226,7 +193,6 @@ const userStore = useUserStore();
 const isEnabled = ref(false);
 const isExporting = ref(false);
 const isDeleting = ref(false);
-const showConfirmDialog = ref(false);
 const showDeleteDialog = ref(false);
 const showExportDialog = ref(false);
 const showError = ref(false);
@@ -254,6 +220,7 @@ async function fetchStatus() {
 }
 
 async function exportData() {
+    if (isExporting.value) return;
     isExporting.value = true;
     try {
         const response = await axios.get('/api/account/export-data');
@@ -294,6 +261,7 @@ async function deleteAccount() {
         return;
     }
 
+    if (isDeleting.value) return;
     isDeleting.value = true;
     try {
         await axios.post('/api/account/delete', {
@@ -326,9 +294,15 @@ async function deleteAccount() {
     }
 }
 
-function proceedToDelete() {
-    showConfirmDialog.value = false;
-    showDeleteDialog.value = true;
+// First "are you sure" step, before the password form
+async function startDeletion() {
+    const ok = await dialog.confirm({
+        title: t('accountDeletion.confirmTitle'),
+        content: `${t('accountDeletion.confirmMessage')} ${t('accountDeletion.dataWillBeDeleted')}`,
+        confirmationText: t('accountDeletion.yesDeleteAccount'),
+        color: 'error',
+    });
+    if (ok) showDeleteDialog.value = true;
 }
 
 function closeDeleteDialog() {

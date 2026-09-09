@@ -5,7 +5,7 @@
         <v-icon class="mr-2">mdi-widgets</v-icon>
         {{ $t('settings.widgetLibrary.footerWidgetLibrary') }}
         <v-spacer></v-spacer>
-        <v-btn icon="mdi-close" variant="text" @click="close"></v-btn>
+        <v-btn icon="mdi-close" variant="text" :disabled="adding" @click="close"></v-btn>
       </v-card-title>
 
       <v-card-text class="pa-0">
@@ -33,6 +33,7 @@
                 class="widget-card"
                 :class="{ 'widget-card-hover': true }"
                 variant="outlined"
+                :disabled="adding"
                 @click="selectWidget(widget.type)"
                 hover
               >
@@ -62,6 +63,8 @@
                     variant="text"
                     size="small"
                     prepend-icon="mdi-plus"
+                    :loading="adding && addingType === widget.type"
+                    :disabled="adding"
                   >
                     {{ $t('settings.widgetLibrary.addWidget') }}
                   </v-btn>
@@ -87,12 +90,15 @@ import { getAvailableWidgets, FOOTER_WIDGET_CATEGORIES } from '@/configs/footerW
 const { t } = useI18n();
 
 const props = defineProps({
-  modelValue: Boolean
+  modelValue: Boolean,
+  // True while the parent is creating the selected widget
+  adding: Boolean
 });
 
 const emit = defineEmits(['update:modelValue', 'select']);
 
 const selectedCategory = ref('all');
+const addingType = ref(null);
 const categories = FOOTER_WIDGET_CATEGORIES;
 
 const allWidgets = computed(() => getAvailableWidgets());
@@ -109,9 +115,12 @@ function getCategoryLabel(categoryValue) {
   return category ? category.label : categoryValue;
 }
 
+// The parent closes the dialog once the widget has been created, so a
+// failed request leaves the library open for another try.
 function selectWidget(type) {
+  if (props.adding) return;
+  addingType.value = type;
   emit('select', type);
-  close();
 }
 
 function close() {

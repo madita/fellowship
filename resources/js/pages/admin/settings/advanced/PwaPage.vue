@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'advanced' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-cellphone-check" :title="$t('settings.advanced.pwa.cardTitle')">
             <v-alert type="info" variant="tonal" class="mb-4" density="compact">
@@ -116,12 +113,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useDialog } from '@/composables/useDialog.js';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
     settings: Object,
@@ -131,34 +129,24 @@ const props = defineProps({
     setting: Object,
 });
 
-const emit = defineEmits(['save', 'message']);
+defineEmits(['save']);
 
-const message = ref('');
-const alertType = ref('success');
 
 function testServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistration('/').then((registration) => {
-            if (registration) {
-                emit('message', {
-                    text: t('settings.advanced.pwa.swActive'),
-                    type: 'success'
-                });
-                console.log('Service Worker Registration:', registration);
-                console.log('Service Worker State:', registration.active?.state);
-            } else {
-                emit('message', {
-                    text: t('settings.advanced.pwa.swNotRegistered'),
-                    type: 'info'
-                });
-            }
-        });
-    } else {
-        emit('message', {
-            text: t('settings.advanced.pwa.swNotSupported'),
-            type: 'error'
-        });
+    if (!('serviceWorker' in navigator)) {
+        dialog.error(t('settings.advanced.pwa.swNotSupported'));
+        return;
     }
+
+    navigator.serviceWorker.getRegistration('/').then((registration) => {
+        if (registration) {
+            console.log('Service Worker Registration:', registration);
+            console.log('Service Worker State:', registration.active?.state);
+            dialog.success(t('settings.advanced.pwa.swActive'));
+        } else {
+            dialog.info(t('settings.advanced.pwa.swNotRegistered'));
+        }
+    });
 }
 </script>
 

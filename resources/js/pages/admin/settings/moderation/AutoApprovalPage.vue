@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'moderation' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-shield-check" :title="$t('settings.moderation.contentAutoApproval')">
             <v-alert type="info" variant="tonal" density="compact" class="mb-6">
@@ -78,10 +75,8 @@ const props = defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
+defineEmits(['save']);
 
-const message = ref('');
-const alertType = ref('success');
 const roles = ref([]);
 const loadingRoles = ref(false);
 

@@ -102,6 +102,8 @@
                                     density="compact"
                                     color="success"
                                     class="mr-2"
+                                    :loading="togglingIds.includes(widget.id)"
+                                    :disabled="isRowBusy(widget)"
                                     @change="toggleWidget(widget)"
                                 ></v-switch>
 
@@ -109,6 +111,7 @@
                                     icon="mdi-pencil"
                                     size="small"
                                     variant="text"
+                                    :disabled="isRowBusy(widget)"
                                     @click="editWidget(widget)"
                                     :title="$t('settings.homepage.widgets.editWidget')"
                                 ></v-btn>
@@ -118,6 +121,8 @@
                                     size="small"
                                     variant="text"
                                     color="error"
+                                    :loading="deletingId === widget.id"
+                                    :disabled="togglingIds.includes(widget.id)"
                                     @click="confirmDelete(widget)"
                                     :title="$t('settings.homepage.widgets.deleteWidget')"
                                 ></v-btn>
@@ -132,29 +137,16 @@
         <widget-editor
             v-model="showEditor"
             :widget="selectedWidget"
+            :saving="savingWidget"
             @save="saveWidget"
         />
 
         <!-- Widget Library Dialog -->
         <widget-library
             v-model="showWidgetLibrary"
+            :adding="addingWidget"
             @select="addWidget"
         />
-
-        <!-- Delete Confirmation Dialog -->
-        <v-dialog v-model="showDeleteDialog" max-width="500">
-            <v-card>
-                <v-card-title>{{ $t('settings.homepage.widgets.confirmDelete') }}</v-card-title>
-                <v-card-text>
-                    {{ $t('settings.homepage.widgets.deleteConfirmText', { name: widgetToDelete?.title || widgetToDelete?.type }) }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn @click="showDeleteDialog = false">{{ $t('settings.homepage.widgets.cancel') }}</v-btn>
-                    <v-btn color="error" @click="deleteWidget">{{ $t('settings.homepage.widgets.delete') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
 
         <!-- Success Snackbar -->
         <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000">
@@ -168,12 +160,14 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useHomepageStore } from '@/store/homepageStore';
 import { getWidgetDefinition } from '@/configs/widgetTypes';
+import { useDialog } from '@/composables/useDialog.js';
 import draggable from 'vuedraggable';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import WidgetEditor from '@/components/settings/homepage/WidgetEditor.vue';
 import WidgetLibrary from '@/components/settings/homepage/WidgetLibrary.vue';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
     settings: Object,
@@ -193,9 +187,17 @@ const enabledCount = computed(() => localWidgets.value.filter(w => w.enabled).le
 
 const showEditor = ref(false);
 const showWidgetLibrary = ref(false);
-const showDeleteDialog = ref(false);
 const selectedWidget = ref(null);
-const widgetToDelete = ref(null);
+
+// Request state per control
+const savingWidget = ref(false);
+const addingWidget = ref(false);
+const togglingIds = ref([]);
+const deletingId = ref(null);
+
+function isRowBusy(widget) {
+    return togglingIds.value.includes(widget.id) || deletingId.value === widget.id;
+}
 
 const snackbar = ref(false);
 const snackbarMessage = ref('');
@@ -240,6 +242,8 @@ function editWidget(widget) {
 }
 
 async function saveWidget(updatedWidget) {
+    if (savingWidget.value) return;
+    savingWidget.value = true;
     try {
         await homepageStore.updateWidget(updatedWidget.id, updatedWidget);
         showSnackbar(t('settings.homepage.widgets.widgetUpdated'), 'success');
@@ -247,10 +251,14 @@ async function saveWidget(updatedWidget) {
         await loadWidgets();
     } catch (error) {
         showSnackbar(t('settings.homepage.widgets.failedToUpdateWidget'), 'error');
+    } finally {
+        savingWidget.value = false;
     }
 }
 
 async function addWidget(widgetType) {
+    if (addingWidget.value) return;
+    addingWidget.value = true;
     try {
         const definition = getWidgetDefinition(widgetType);
         const newWidget = {
@@ -269,33 +277,42 @@ async function addWidget(widgetType) {
         await loadWidgets();
     } catch (error) {
         showSnackbar(t('settings.homepage.widgets.failedToAddWidget'), 'error');
+    } finally {
+        addingWidget.value = false;
     }
 }
 
 async function toggleWidget(widget) {
+    if (togglingIds.value.includes(widget.id)) return;
+    togglingIds.value.push(widget.id);
     try {
         await homepageStore.toggleWidget(widget.id);
         showSnackbar(widget.enabled ? t('settings.homepage.widgets.widgetEnabled') : t('settings.homepage.widgets.widgetDisabled'), 'success');
     } catch (error) {
         showSnackbar(t('settings.homepage.widgets.failedToToggleWidget'), 'error');
         widget.enabled = !widget.enabled;
+    } finally {
+        togglingIds.value = togglingIds.value.filter(id => id !== widget.id);
     }
 }
 
-function confirmDelete(widget) {
-    widgetToDelete.value = widget;
-    showDeleteDialog.value = true;
-}
+async function confirmDelete(widget) {
+    if (deletingId.value !== null) return;
+    const ok = await dialog.confirmDelete(
+        t('settings.homepage.widgets.deleteConfirmText', { name: widget.title || widget.type }),
+        { title: t('settings.homepage.widgets.confirmDelete') }
+    );
+    if (!ok) return;
 
-async function deleteWidget() {
+    deletingId.value = widget.id;
     try {
-        await homepageStore.deleteWidget(widgetToDelete.value.id);
+        await homepageStore.deleteWidget(widget.id);
         showSnackbar(t('settings.homepage.widgets.widgetDeleted'), 'success');
-        showDeleteDialog.value = false;
-        widgetToDelete.value = null;
         await loadWidgets();
     } catch (error) {
         showSnackbar(t('settings.homepage.widgets.failedToDeleteWidget'), 'error');
+    } finally {
+        deletingId.value = null;
     }
 }
 

@@ -21,10 +21,6 @@
                 </v-btn>
             </div>
 
-            <v-alert v-if="error" type="error" variant="tonal" class="mb-4" closable @click:close="error = ''">
-                {{ error }}
-            </v-alert>
-
             <!-- API Keys List -->
             <v-card v-if="apiKeys.length > 0" variant="outlined">
                 <v-list>
@@ -60,6 +56,8 @@
                                     icon
                                     variant="text"
                                     size="small"
+                                    :loading="isBusy(key, 'toggle')"
+                                    :disabled="busy.id !== null"
                                     @click="toggleKey(key)"
                                     :title="key.is_active ? $t('apiKeys.deactivate') : $t('apiKeys.activate')"
                                 >
@@ -69,6 +67,8 @@
                                     icon
                                     variant="text"
                                     size="small"
+                                    :loading="isBusy(key, 'regenerate')"
+                                    :disabled="busy.id !== null"
                                     @click="confirmRegenerate(key)"
                                     :title="$t('apiKeys.regenerate')"
                                 >
@@ -79,6 +79,8 @@
                                     variant="text"
                                     size="small"
                                     color="error"
+                                    :loading="isBusy(key, 'delete')"
+                                    :disabled="busy.id !== null"
                                     @click="confirmDelete(key)"
                                     :title="$t('common.delete')"
                                 >
@@ -129,7 +131,7 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn variant="text" @click="showCreateDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn variant="text" :disabled="isCreating" @click="showCreateDialog = false">{{ $t('common.cancel') }}</v-btn>
                     <v-btn color="primary" :loading="isCreating" @click="createKey">{{ $t('common.create') }}</v-btn>
                 </v-card-actions>
             </v-card>
@@ -185,36 +187,6 @@ X-API-Secret: {{ createdKey?.secret }}</pre>
                 </v-card-actions>
             </v-card>
         </v-dialog>
-
-        <!-- Confirm Delete Dialog -->
-        <v-dialog v-model="showDeleteDialog" max-width="400">
-            <v-card>
-                <v-card-title>{{ $t('apiKeys.deleteKey') }}</v-card-title>
-                <v-card-text>
-                    {{ $t('apiKeys.confirmDelete', { name: keyToDelete?.name }) }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" @click="showDeleteDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="error" :loading="isDeleting" @click="deleteKey">{{ $t('common.delete') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <!-- Confirm Regenerate Dialog -->
-        <v-dialog v-model="showRegenerateDialog" max-width="400">
-            <v-card>
-                <v-card-title>{{ $t('apiKeys.regenerateKey') }}</v-card-title>
-                <v-card-text>
-                    {{ $t('apiKeys.confirmRegenerate', { name: keyToRegenerate?.name }) }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" @click="showRegenerateDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="warning" :loading="isRegenerating" @click="regenerateKey">{{ $t('apiKeys.regenerate') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
     </div>
 </template>
 
@@ -223,14 +195,34 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { formatDate as formatDateUtil } from '@/plugins/formatDate.js';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const isEnabled = ref(false);
 const rateLimit = ref(60);
 const apiKeys = ref([]);
 const isLoading = ref(false);
-const error = ref('');
+
+// Which key row has a request in flight, and for which action
+const busy = ref({ id: null, action: null });
+
+function isBusy(key, action) {
+    return busy.value.id === key.id && busy.value.action === action;
+}
+
+async function runForKey(key, action, work) {
+    if (busy.value.id !== null) return;
+    busy.value = { id: key.id, action };
+    try {
+        await work();
+    } catch (err) {
+        dialog.requestError(err);
+    } finally {
+        busy.value = { id: null, action: null };
+    }
+}
 
 // Create dialog
 const showCreateDialog = ref(false);
@@ -241,16 +233,6 @@ const formErrors = ref({});
 // Secret display dialog
 const showSecretDialog = ref(false);
 const createdKey = ref(null);
-
-// Delete dialog
-const showDeleteDialog = ref(false);
-const keyToDelete = ref(null);
-const isDeleting = ref(false);
-
-// Regenerate dialog
-const showRegenerateDialog = ref(false);
-const keyToRegenerate = ref(null);
-const isRegenerating = ref(false);
 
 const minDate = computed(() => {
     const tomorrow = new Date();
@@ -276,13 +258,14 @@ async function fetchKeys() {
         const response = await axios.get('/api/api-keys');
         apiKeys.value = response.data.api_keys;
     } catch (err) {
-        error.value = err.response?.data?.message || 'Failed to fetch API keys';
+        dialog.requestError(err);
     } finally {
         isLoading.value = false;
     }
 }
 
 async function createKey() {
+    if (isCreating.value) return;
     formErrors.value = {};
     isCreating.value = true;
 
@@ -304,7 +287,7 @@ async function createKey() {
         if (err.response?.data?.errors) {
             formErrors.value = err.response.data.errors;
         } else {
-            error.value = err.response?.data?.message || 'Failed to create API key';
+            dialog.requestError(err);
         }
     } finally {
         isCreating.value = false;
@@ -316,55 +299,45 @@ function closeSecretDialog() {
     createdKey.value = null;
 }
 
-async function toggleKey(key) {
-    try {
+function toggleKey(key) {
+    return runForKey(key, 'toggle', async () => {
         await axios.patch(`/api/api-keys/${key.id}`, {
             is_active: !key.is_active,
         });
         await fetchKeys();
-    } catch (err) {
-        error.value = err.response?.data?.message || 'Failed to toggle API key';
-    }
+    });
 }
 
-function confirmDelete(key) {
-    keyToDelete.value = key;
-    showDeleteDialog.value = true;
-}
+async function confirmDelete(key) {
+    if (busy.value.id !== null) return;
+    const ok = await dialog.confirmDelete(
+        t('apiKeys.confirmDelete', { name: key.name }),
+        { title: t('apiKeys.deleteKey') }
+    );
+    if (!ok) return;
 
-async function deleteKey() {
-    isDeleting.value = true;
-    try {
-        await axios.delete(`/api/api-keys/${keyToDelete.value.id}`);
-        showDeleteDialog.value = false;
-        keyToDelete.value = null;
+    await runForKey(key, 'delete', async () => {
+        await axios.delete(`/api/api-keys/${key.id}`);
         await fetchKeys();
-    } catch (err) {
-        error.value = err.response?.data?.message || 'Failed to delete API key';
-    } finally {
-        isDeleting.value = false;
-    }
+    });
 }
 
-function confirmRegenerate(key) {
-    keyToRegenerate.value = key;
-    showRegenerateDialog.value = true;
-}
+async function confirmRegenerate(key) {
+    if (busy.value.id !== null) return;
+    const ok = await dialog.confirm({
+        title: t('apiKeys.regenerateKey'),
+        content: t('apiKeys.confirmRegenerate', { name: key.name }),
+        confirmationText: t('apiKeys.regenerate'),
+        color: 'warning',
+    });
+    if (!ok) return;
 
-async function regenerateKey() {
-    isRegenerating.value = true;
-    try {
-        const response = await axios.post(`/api/api-keys/${keyToRegenerate.value.id}/regenerate`);
+    await runForKey(key, 'regenerate', async () => {
+        const response = await axios.post(`/api/api-keys/${key.id}/regenerate`);
         createdKey.value = response.data.api_key;
-        showRegenerateDialog.value = false;
-        keyToRegenerate.value = null;
         showSecretDialog.value = true;
         await fetchKeys();
-    } catch (err) {
-        error.value = err.response?.data?.message || 'Failed to regenerate API key';
-    } finally {
-        isRegenerating.value = false;
-    }
+    });
 }
 
 function copyToClipboard(text, label) {

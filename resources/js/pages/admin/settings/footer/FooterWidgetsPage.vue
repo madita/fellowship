@@ -103,6 +103,8 @@
                                     density="compact"
                                     color="success"
                                     class="mr-2"
+                                    :loading="togglingIds.includes(widget.id)"
+                                    :disabled="isRowBusy(widget)"
                                     @change="toggleWidget(widget)"
                                 ></v-switch>
 
@@ -110,6 +112,7 @@
                                     icon="mdi-pencil"
                                     size="small"
                                     variant="text"
+                                    :disabled="isRowBusy(widget)"
                                     @click="editWidget(widget)"
                                     :title="$t('settings.footer.editWidget')"
                                 ></v-btn>
@@ -119,6 +122,8 @@
                                     size="small"
                                     variant="text"
                                     color="error"
+                                    :loading="deletingId === widget.id"
+                                    :disabled="togglingIds.includes(widget.id)"
                                     @click="confirmDelete(widget)"
                                     :title="$t('settings.footer.deleteWidget')"
                                 ></v-btn>
@@ -133,29 +138,16 @@
         <footer-widget-editor
             v-model="showEditor"
             :widget="selectedWidget"
+            :saving="savingWidget"
             @save="saveWidget"
         />
 
         <!-- Widget Library Dialog -->
         <footer-widget-library
             v-model="showWidgetLibrary"
+            :adding="addingWidget"
             @select="addWidget"
         />
-
-        <!-- Delete Confirmation Dialog -->
-        <v-dialog v-model="showDeleteDialog" max-width="500">
-            <v-card>
-                <v-card-title>{{ $t('settings.footer.confirmDelete') }}</v-card-title>
-                <v-card-text>
-                    {{ $t('settings.footer.deleteConfirmMessage', { name: widgetToDelete?.title || widgetToDelete?.type }) }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn @click="showDeleteDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="error" @click="deleteWidget">{{ $t('common.delete') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
 
         <!-- Success Snackbar -->
         <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000">
@@ -169,12 +161,14 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useFooterStore } from '@/store/footerStore';
 import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
+import { useDialog } from '@/composables/useDialog.js';
 import draggable from 'vuedraggable';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import FooterWidgetEditor from '@/components/settings/footer/FooterWidgetEditor.vue';
 import FooterWidgetLibrary from '@/components/settings/footer/FooterWidgetLibrary.vue';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
     settings: Object,
@@ -194,9 +188,17 @@ const enabledCount = computed(() => localWidgets.value.filter(w => w.enabled).le
 
 const showEditor = ref(false);
 const showWidgetLibrary = ref(false);
-const showDeleteDialog = ref(false);
 const selectedWidget = ref(null);
-const widgetToDelete = ref(null);
+
+// Request state per control
+const savingWidget = ref(false);
+const addingWidget = ref(false);
+const togglingIds = ref([]);
+const deletingId = ref(null);
+
+function isRowBusy(widget) {
+    return togglingIds.value.includes(widget.id) || deletingId.value === widget.id;
+}
 
 const snackbar = ref(false);
 const snackbarMessage = ref('');
@@ -250,6 +252,8 @@ function editWidget(widget) {
 }
 
 async function saveWidget(updatedWidget) {
+    if (savingWidget.value) return;
+    savingWidget.value = true;
     try {
         await footerStore.updateWidget(updatedWidget.id, updatedWidget);
         showSnackbar(t('settings.footer.widgetUpdated'), 'success');
@@ -257,10 +261,14 @@ async function saveWidget(updatedWidget) {
         await loadWidgets();
     } catch (error) {
         showSnackbar(t('settings.footer.failedToUpdateWidget'), 'error');
+    } finally {
+        savingWidget.value = false;
     }
 }
 
 async function addWidget(widgetType) {
+    if (addingWidget.value) return;
+    addingWidget.value = true;
     try {
         const definition = getWidgetDefinition(widgetType);
         if (!definition) {
@@ -281,33 +289,42 @@ async function addWidget(widgetType) {
         await loadWidgets();
     } catch (error) {
         showSnackbar(t('settings.footer.failedToAddWidget'), 'error');
+    } finally {
+        addingWidget.value = false;
     }
 }
 
 async function toggleWidget(widget) {
+    if (togglingIds.value.includes(widget.id)) return;
+    togglingIds.value.push(widget.id);
     try {
         await footerStore.toggleWidget(widget.id);
         showSnackbar(widget.enabled ? t('settings.footer.widgetEnabled') : t('settings.footer.widgetDisabled'), 'success');
     } catch (error) {
         showSnackbar(t('settings.footer.failedToToggleWidget'), 'error');
         widget.enabled = !widget.enabled;
+    } finally {
+        togglingIds.value = togglingIds.value.filter(id => id !== widget.id);
     }
 }
 
-function confirmDelete(widget) {
-    widgetToDelete.value = widget;
-    showDeleteDialog.value = true;
-}
+async function confirmDelete(widget) {
+    if (deletingId.value !== null) return;
+    const ok = await dialog.confirmDelete(
+        t('settings.footer.deleteConfirmMessage', { name: getWidgetTitle(widget) }),
+        { title: t('settings.footer.confirmDelete') }
+    );
+    if (!ok) return;
 
-async function deleteWidget() {
+    deletingId.value = widget.id;
     try {
-        await footerStore.deleteWidget(widgetToDelete.value.id);
+        await footerStore.deleteWidget(widget.id);
         showSnackbar(t('settings.footer.widgetDeleted'), 'success');
-        showDeleteDialog.value = false;
-        widgetToDelete.value = null;
         await loadWidgets();
     } catch (error) {
         showSnackbar(t('settings.footer.failedToDeleteWidget'), 'error');
+    } finally {
+        deletingId.value = null;
     }
 }
 

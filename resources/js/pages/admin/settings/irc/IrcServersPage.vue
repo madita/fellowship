@@ -47,6 +47,8 @@
                                 density="compact"
                                 hide-details
                                 color="success"
+                                :loading="togglingId === server.id"
+                                :disabled="togglingId !== null"
                                 @update:model-value="toggleActive(server, $event)"
                             />
                         </td>
@@ -79,7 +81,8 @@
                                 variant="text"
                                 color="error"
                                 @click="deleteServer(server)"
-                                :disabled="server.connections_count > 0"
+                                :loading="deletingId === server.id"
+                                :disabled="server.connections_count > 0 || (deletingId !== null && deletingId !== server.id)"
                             >
                                 <v-icon size="small">mdi-delete</v-icon>
                             </v-btn>
@@ -179,7 +182,7 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn @click="showDialog = false">Cancel</v-btn>
+                    <v-btn :disabled="saving" @click="showDialog = false">Cancel</v-btn>
                     <v-btn color="primary" variant="flat" @click="saveServer" :loading="saving">
                         {{ editingServer ? 'Update' : 'Create' }}
                     </v-btn>
@@ -191,9 +194,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
 defineProps({
     settings: Object,
@@ -203,12 +208,16 @@ defineProps({
     setting: Object,
 });
 
+const { t } = useI18n();
+const dialog = useDialog();
 const loading = ref(true);
 const saving = ref(false);
 const servers = ref([]);
 const showDialog = ref(false);
 const editingServer = ref(null);
 const checkingServer = ref(null);
+const deletingId = ref(null);
+const togglingId = ref(null);
 const formRef = ref(null);
 
 const defaultForm = {
@@ -231,6 +240,7 @@ async function fetchServers() {
         servers.value = data;
     } catch (error) {
         console.error('Error fetching servers:', error);
+        await dialog.requestError(error, t('irc.admin.loadFailed'));
     } finally {
         loading.value = false;
     }
@@ -243,6 +253,7 @@ function openDialog(server = null) {
 }
 
 async function saveServer() {
+    if (saving.value) return;
     const { valid } = await formRef.value.validate();
     if (!valid) return;
 
@@ -255,39 +266,61 @@ async function saveServer() {
         }
         showDialog.value = false;
         await fetchServers();
+        await dialog.success(t('irc.admin.serverSaved'));
     } catch (error) {
         console.error('Error saving server:', error);
+        await dialog.requestError(error, t('irc.admin.serverSaveFailed'));
     } finally {
         saving.value = false;
     }
 }
 
 async function deleteServer(server) {
-    if (!confirm(`Delete server "${server.name}"? This cannot be undone.`)) return;
+    if (deletingId.value !== null) return;
+
+    const confirmed = await dialog.confirmDelete(
+        t('irc.admin.deleteServerConfirm', { name: server.name }),
+        { title: t('irc.admin.deleteServerTitle') }
+    );
+    if (!confirmed) return;
+
+    deletingId.value = server.id;
     try {
         await axios.delete(`/api/admin/irc/servers/${server.id}`);
         await fetchServers();
     } catch (error) {
-        alert(error.response?.data?.message || 'Error deleting server');
+        console.error('Error deleting server:', error);
+        await dialog.requestError(error, t('irc.admin.deleteServerFailed'));
+    } finally {
+        deletingId.value = null;
     }
 }
 
 async function toggleActive(server, value) {
+    if (togglingId.value !== null) return;
+
+    togglingId.value = server.id;
     try {
         await axios.patch(`/api/admin/irc/servers/${server.id}`, { is_active: value });
         server.is_active = value;
     } catch (error) {
         console.error('Error toggling server:', error);
+        await dialog.requestError(error, t('irc.admin.toggleFailed'));
+    } finally {
+        togglingId.value = null;
     }
 }
 
 async function checkServer(server) {
+    if (checkingServer.value !== null) return;
+
     checkingServer.value = server.id;
     try {
         const { data } = await axios.post(`/api/admin/irc/servers/${server.id}/check`);
         server.is_reachable = data.is_reachable;
     } catch (error) {
         console.error('Error checking server:', error);
+        await dialog.requestError(error, t('irc.admin.checkFailed'));
     } finally {
         checkingServer.value = null;
     }

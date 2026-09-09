@@ -5,7 +5,7 @@
         <v-icon class="mr-2">{{ widgetIcon }}</v-icon>
         {{ $t('settings.widgetEditor.edit') }} {{ widgetDefinition?.name || widget.type }}
         <v-spacer></v-spacer>
-        <v-btn icon="mdi-close" variant="text" @click="cancel"></v-btn>
+        <v-btn icon="mdi-close" variant="text" :disabled="saving" @click="cancel"></v-btn>
       </v-card-title>
 
       <v-divider></v-divider>
@@ -79,9 +79,9 @@
       <v-divider></v-divider>
 
       <v-card-actions class="pa-4">
-        <v-btn @click="cancel">{{ $t('common.cancel') }}</v-btn>
+        <v-btn :disabled="saving" @click="cancel">{{ $t('common.cancel') }}</v-btn>
         <v-spacer></v-spacer>
-        <v-btn color="primary" @click="save">
+        <v-btn color="primary" :loading="saving" @click="save">
           <v-icon class="mr-1">mdi-content-save</v-icon>
           {{ $t('settings.widgetEditor.saveChanges') }}
         </v-btn>
@@ -101,7 +101,9 @@ const { t } = useI18n();
 
 const props = defineProps({
   modelValue: Boolean,
-  widget: Object
+  widget: Object,
+  // True while the parent is persisting the emitted widget
+  saving: Boolean
 });
 
 const emit = defineEmits(['update:modelValue', 'save']);
@@ -205,6 +207,7 @@ function mergeContent(defaults, actual) {
 }
 
 function save() {
+  if (props.saving) return;
   emit('save', editedWidget.value);
 }
 

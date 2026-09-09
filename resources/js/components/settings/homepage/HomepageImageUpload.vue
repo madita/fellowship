@@ -45,6 +45,7 @@
           color="error"
           size="small"
           variant="outlined"
+          :disabled="uploading"
           @click="handleDelete"
         >
           {{ $t('common.delete') }}
@@ -58,8 +59,10 @@
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
   modelValue: {
@@ -103,6 +106,8 @@ function handleSelect() {
 }
 
 async function handleUpload() {
+  if (uploading.value) return;
+
   const selectedFile = Array.isArray(file.value) ? file.value[0] : file.value;
   if (!selectedFile) {
     return;
@@ -125,14 +130,14 @@ async function handleUpload() {
     console.log('Emitted image path to parent:', imagePath);
   } catch (error) {
     console.error('Failed to upload image:', error);
-    alert(t('settings.imageUpload.uploadFailed'));
+    dialog.requestError(error, t('settings.imageUpload.uploadFailed'));
   } finally {
     uploading.value = false;
   }
 }
 
-function handleDelete() {
-  if (!confirm(t('settings.imageUpload.confirmDelete'))) {
+async function handleDelete() {
+  if (!(await dialog.confirmDelete(t('settings.imageUpload.confirmDelete')))) {
     return;
   }
 

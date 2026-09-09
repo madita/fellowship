@@ -16,12 +16,14 @@
         <widget-editor
             v-model="showEditor"
             :widget="selectedWidget"
+            :saving="savingWidget"
             @save="saveWidget"
         />
 
         <!-- Widget Library Dialog -->
         <widget-library
             v-model="showWidgetLibrary"
+            :adding="addingWidget"
             @select="addWidget"
         />
 
@@ -58,6 +60,8 @@ const showEditor = ref(false);
 const showWidgetLibrary = ref(false);
 const selectedWidget = ref(null);
 const widgetSectionContext = ref(null);
+const savingWidget = ref(false);
+const addingWidget = ref(false);
 
 const snackbar = ref(false);
 const snackbarMessage = ref('');
@@ -72,6 +76,8 @@ function editWidget(widget) {
 }
 
 async function saveWidget(updatedWidget) {
+    if (savingWidget.value) return;
+    savingWidget.value = true;
     try {
         await homepageStore.updateWidget(updatedWidget.id, updatedWidget);
         showSnackbar(t('settings.homepage.sections.widgetUpdated'), 'success');
@@ -79,6 +85,8 @@ async function saveWidget(updatedWidget) {
     } catch (error) {
         console.error('Failed to save widget:', error);
         showSnackbar(t('settings.homepage.sections.failedToUpdateWidget'), 'error');
+    } finally {
+        savingWidget.value = false;
     }
 }
 
@@ -88,6 +96,8 @@ function handleAddWidgetToSection({ sectionId, column }) {
 }
 
 async function addWidget(widgetType) {
+    if (addingWidget.value) return;
+    addingWidget.value = true;
     try {
         const definition = getWidgetDefinition(widgetType);
         const newWidget = {
@@ -116,6 +126,8 @@ async function addWidget(widgetType) {
         }
     } catch (error) {
         showSnackbar(t('settings.homepage.sections.failedToAddWidget'), 'error');
+    } finally {
+        addingWidget.value = false;
     }
 }
 

@@ -403,7 +403,6 @@
                         :hint="$t('settings.themeSettings.lightBackgroundHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
-                        @error="handleImageError"
                     />
                 </v-col>
 
@@ -423,7 +422,6 @@
                         :hint="$t('settings.themeSettings.darkBackgroundHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
-                        @error="handleImageError"
                     />
                 </v-col>
             </v-row>
@@ -501,11 +499,13 @@
 <script setup>
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useDialog } from '@/composables/useDialog.js';
 import SettingsCard from '../SettingsCard.vue';
 import ImageUpload from '../ImageUpload.vue';
 import { themeModes, fontFamilies } from '../../../composables/settingsConstants';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
     settings: Object,
@@ -513,7 +513,7 @@ const props = defineProps({
     isSaving: Boolean,
 });
 
-const emit = defineEmits(['save', 'message']);
+defineEmits(['save']);
 
 // Background style options
 const backgroundStyles = computed(() => [
@@ -555,29 +555,26 @@ const previewStyle = computed(() => {
     };
 });
 
-function resetToDefaults() {
-    if (confirm(t('settings.themeSettings.resetConfirm'))) {
-        // Reset light theme colors
-        Object.assign(props.settings, defaultColors.light);
-        // Reset dark theme colors
-        Object.assign(props.settings, defaultColors.dark);
+async function resetToDefaults() {
+    const ok = await dialog.confirm({
+        title: t('settings.themeSettings.resetThemeColors'),
+        content: t('settings.themeSettings.resetConfirm'),
+        confirmationText: t('settings.themeSettings.resetToDefaults'),
+        color: 'warning',
+    });
+    if (!ok) return;
 
-        emit('message', { text: t('settings.themeSettings.resetSuccess'), type: 'info' });
-    }
+    Object.assign(props.settings, defaultColors.light);
+    Object.assign(props.settings, defaultColors.dark);
+    await dialog.info(t('settings.themeSettings.resetSuccess'));
 }
 
 function handleImageUploaded({ key, path }) {
     props.settings[key] = path;
-    emit('message', { text: `${key.replace(/_/g, ' ')} uploaded successfully`, type: 'success' });
 }
 
 function handleImageDeleted(key) {
     props.settings[key] = null;
-    emit('message', { text: `${key.replace(/_/g, ' ')} deleted successfully`, type: 'success' });
-}
-
-function handleImageError(message) {
-    emit('message', { text: message, type: 'error' });
 }
 </script>
 

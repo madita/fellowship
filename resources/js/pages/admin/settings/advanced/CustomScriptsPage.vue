@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'advanced' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-code-tags" :title="$t('settings.advanced.customScripts.cardTitle')">
             <v-alert type="warning" variant="tonal" class="mb-4" density="compact">
@@ -69,7 +66,6 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
 
@@ -81,10 +77,7 @@ const props = defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
-
-const message = ref('');
-const alertType = ref('success');
+defineEmits(['save']);
 </script>
 
 <style scoped>

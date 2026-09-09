@@ -25,6 +25,7 @@
                 :accept="accept"
                 :prepend-icon="icon"
                 :density="density"
+                :disabled="uploading || deleting"
                 variant="outlined"
                 @change="handleSelect"
                 show-size
@@ -38,6 +39,7 @@
                     color="primary"
                     :size="buttonSize"
                     :loading="uploading"
+                    :disabled="deleting"
                     @click="handleUpload"
                 >
                     {{ $t('settings.imageUpload.upload') }}
@@ -47,6 +49,8 @@
                     color="error"
                     :size="buttonSize"
                     variant="outlined"
+                    :loading="deleting"
+                    :disabled="uploading"
                     @click="handleDelete"
                 >
                     {{ $t('settings.imageUpload.delete') }}
@@ -60,9 +64,11 @@
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useApi } from '@/api/useAPI.js';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
 const api = useApi('api');
+const dialog = useDialog();
 
 const props = defineProps({
     imageKey: {
@@ -124,6 +130,7 @@ const emit = defineEmits(['uploaded', 'deleted', 'error']);
 const file = ref(null);
 const preview = ref(null);
 const uploading = ref(false);
+const deleting = ref(false);
 
 const placeholderClass = props.placeholderSize === 'small'
     ? 'image-placeholder-small'
@@ -154,9 +161,13 @@ function handleSelect() {
 }
 
 async function handleUpload() {
+    if (uploading.value || deleting.value) return;
+
     const selectedFile = Array.isArray(file.value) ? file.value[0] : file.value;
     if (!selectedFile) {
-        emit('error', t('settings.imageUpload.pleaseSelect', { label: props.label.toLowerCase() }));
+        const message = t('settings.imageUpload.pleaseSelect', { label: props.label.toLowerCase() });
+        emit('error', message);
+        dialog.warning(message);
         return;
     }
 
@@ -172,18 +183,26 @@ async function handleUpload() {
         preview.value = response.data.url;
         file.value = null;
         emit('uploaded', { key: props.imageKey, path: response.data.path, url: response.data.url });
+        dialog.success(t('settings.imageUpload.uploadSuccess'));
     } catch (error) {
         console.error(`Failed to upload ${props.imageKey}:`, error);
-        emit('error', t('settings.imageUpload.uploadFailed', { key: props.imageKey }));
+        const message = t('settings.imageUpload.uploadFailed', { key: props.imageKey });
+        emit('error', message);
+        dialog.requestError(error, message);
     } finally {
         uploading.value = false;
     }
 }
 
 async function handleDelete() {
-    if (!confirm(t('settings.imageUpload.deleteConfirm', { label: props.label.toLowerCase() }))) {
-        return;
-    }
+    if (uploading.value || deleting.value) return;
+
+    const ok = await dialog.confirmDelete(
+        t('settings.imageUpload.deleteConfirm', { label: props.label.toLowerCase() })
+    );
+    if (!ok) return;
+
+    deleting.value = true;
 
     try {
         await api.delete('/admin/settings/image', {
@@ -191,9 +210,14 @@ async function handleDelete() {
         });
         preview.value = null;
         emit('deleted', props.imageKey);
+        dialog.success(t('settings.imageUpload.deleteSuccess'));
     } catch (error) {
         console.error(`Failed to delete ${props.imageKey}:`, error);
-        emit('error', t('settings.imageUpload.deleteFailed', { key: props.imageKey }));
+        const message = t('settings.imageUpload.deleteFailed', { key: props.imageKey });
+        emit('error', message);
+        dialog.requestError(error, message);
+    } finally {
+        deleting.value = false;
     }
 }
 </script>

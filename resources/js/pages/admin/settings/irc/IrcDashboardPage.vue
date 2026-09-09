@@ -149,9 +149,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
 defineProps({
     settings: Object,
@@ -161,6 +163,8 @@ defineProps({
     setting: Object,
 });
 
+const { t } = useI18n();
+const dialog = useDialog();
 const loading = ref(true);
 const daemonStatus = ref({});
 const stats = ref({});
@@ -179,6 +183,7 @@ async function fetchAll() {
         servers.value = serversRes.data;
     } catch (error) {
         console.error('Error fetching IRC dashboard:', error);
+        await dialog.requestError(error, t('irc.admin.loadFailed'));
     } finally {
         loading.value = false;
     }

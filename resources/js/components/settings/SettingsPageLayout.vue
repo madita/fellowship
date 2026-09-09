@@ -45,18 +45,6 @@
 
                 <v-divider></v-divider>
 
-                <!-- Alert messages -->
-                <div v-if="message" class="alert-container">
-                    <v-alert
-                        :type="alertType"
-                        class="mx-2 mx-sm-6 mt-4 mb-0 message-alert"
-                        closable
-                        @click:close="$emit('clear-message')"
-                    >
-                        <div class="text-body-2">{{ message }}</div>
-                    </v-alert>
-                </div>
-
                 <!-- Description -->
                 <v-card-subtitle v-if="description" class="py-3 px-4 text-body-2">
                     {{ description }}
@@ -121,21 +109,13 @@ const props = defineProps({
         type: Boolean,
         default: false
     },
-    message: {
-        type: String,
-        default: ''
-    },
-    alertType: {
-        type: String,
-        default: 'success'
-    },
     categoryTitle: {
         type: String,
         default: ''
     }
 });
 
-const emit = defineEmits(['save', 'clear-message']);
+const emit = defineEmits(['save']);
 
 const router = useRouter();
 const route = useRoute();
@@ -177,18 +157,6 @@ function goBack() {
 .bg-gradient {
     background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
     color: white;
-}
-
-.alert-container {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: transparent;
-}
-
-.message-alert {
-    word-break: break-word;
-    white-space: pre-wrap;
 }
 
 .w-100 {

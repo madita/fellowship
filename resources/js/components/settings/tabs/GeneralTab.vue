@@ -251,7 +251,7 @@ const props = defineProps({
     isSaving: Boolean,
 });
 
-defineEmits(['save', 'message']);
+defineEmits(['save']);
 
 const maintenanceModeChanged = ref(false);
 const initialMaintenanceMode = ref(null);
