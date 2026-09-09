@@ -3,7 +3,7 @@
         <v-card-title class="d-flex align-center justify-space-between">
             <span>{{ $t('migrationTool.mappings') }}</span>
             <div>
-                <v-btn size="small" variant="text" prepend-icon="mdi-download" class="mr-1" @click="exportMappings">
+                <v-btn size="small" variant="text" prepend-icon="mdi-download" class="mr-1" :loading="exporting" :disabled="exporting" @click="exportMappings">
                     {{ $t('migrationTool.exportJson') }}
                 </v-btn>
                 <v-btn size="small" variant="text" prepend-icon="mdi-upload" class="mr-1" @click="importDialog = true">
@@ -38,14 +38,20 @@
                                 icon size="small" variant="text" color="success"
                                 :title="$t('migrationTool.runImport')"
                                 :loading="runningId === mapping.id"
+                                :disabled="rowBusy"
                                 @click="run(mapping)"
                             >
                                 <v-icon size="small">mdi-play</v-icon>
                             </v-btn>
-                            <v-btn icon size="small" variant="text" @click="openEditor(mapping)">
+                            <v-btn icon size="small" variant="text" :disabled="rowBusy" @click="openEditor(mapping)">
                                 <v-icon size="small">mdi-pencil</v-icon>
                             </v-btn>
-                            <v-btn icon size="small" variant="text" color="error" @click="deleteMapping(mapping)">
+                            <v-btn
+                                icon size="small" variant="text" color="error"
+                                :loading="deletingId === mapping.id"
+                                :disabled="rowBusy"
+                                @click="deleteMapping(mapping)"
+                            >
                                 <v-icon size="small">mdi-delete</v-icon>
                             </v-btn>
                         </td>
@@ -78,8 +84,8 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn @click="importDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" :loading="importing" :disabled="!importText.trim()" @click="doImport">
+                    <v-btn :disabled="importing" @click="importDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" :loading="importing" :disabled="!importText.trim() || importing" @click="doImport">
                         {{ $t('migrationTool.importJson') }}
                     </v-btn>
                 </v-card-actions>
@@ -347,22 +353,20 @@
                             </tbody>
                         </v-table>
                     </template>
-
-                    <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mt-2">{{ error }}</v-alert>
                 </v-card-text>
                 <v-card-actions>
                     <v-btn
                         variant="tonal"
                         prepend-icon="mdi-eye-outline"
                         :loading="previewing"
-                        :disabled="!canSave"
+                        :disabled="!canSave || saving || previewing"
                         @click="doPreview"
                     >
                         {{ $t('migrationTool.preview') }}
                     </v-btn>
                     <v-spacer />
-                    <v-btn @click="editor = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" :loading="saving" :disabled="!canSave" @click="save">{{ $t('common.save') }}</v-btn>
+                    <v-btn :disabled="saving || previewing" @click="editor = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" :loading="saving && !previewing" :disabled="!canSave || saving || previewing" @click="save">{{ $t('common.save') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -373,8 +377,10 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 const emit = defineEmits(['notify', 'run']);
 
 const mappings = ref([]);
@@ -400,10 +406,13 @@ const importing = ref(false);
 const saving = ref(false);
 const previewing = ref(false);
 const runningId = ref(null);
+const deletingId = ref(null);
+const exporting = ref(false);
 const loadingTables = ref(false);
 const loadingColumns = ref(false);
 const preview = ref(null);
-const error = ref('');
+
+const rowBusy = computed(() => runningId.value !== null || deletingId.value !== null);
 
 const emptyForm = () => ({
     name: '', migration_source_id: null, target: null, source_table: null,
@@ -481,7 +490,6 @@ const ensureFieldMap = () => {
 const openEditor = async (mapping = null) => {
     editing.value = mapping;
     preview.value = null;
-    error.value = '';
     rowCount.value = null;
     tables.value = [];
     columns.value = [];
@@ -532,7 +540,7 @@ const loadJoinColumns = async (table) => {
         joinColumns.value = { ...joinColumns.value, [table]: data.columns };
         joinSamples.value = { ...joinSamples.value, [table]: data.sample || {} };
     } catch (e) {
-        error.value = e.response?.data?.error || e.message;
+        dialog.requestError(e);
     }
 };
 
@@ -563,7 +571,7 @@ const loadTables = async () => {
         const { data } = await axios.get(`/api/admin/migrations/sources/${form.value.migration_source_id}/tables`);
         tables.value = data.tables;
     } catch (e) {
-        error.value = e.response?.data?.error || e.message;
+        dialog.requestError(e);
     } finally {
         loadingTables.value = false;
     }
@@ -580,7 +588,7 @@ const loadColumns = async () => {
         sample.value = data.sample || {};
         rowCount.value = data.rowCount ?? null;
     } catch (e) {
-        error.value = e.response?.data?.error || e.message;
+        dialog.requestError(e);
     } finally {
         loadingColumns.value = false;
     }
@@ -611,8 +619,8 @@ const cleanedForm = () => ({
 });
 
 const save = async () => {
+    if (saving.value) return false;
     saving.value = true;
-    error.value = '';
     try {
         if (editing.value) {
             await axios.patch(`/api/admin/migrations/mappings/${editing.value.id}`, cleanedForm());
@@ -622,31 +630,40 @@ const save = async () => {
         }
         await fetchAll();
         emit('notify', { text: t('migrationTool.mappingSaved') });
+        return true;
     } catch (e) {
-        error.value = e.response?.data?.message || e.message;
+        dialog.requestError(e);
+        return false;
     } finally {
         saving.value = false;
     }
 };
 
 const doPreview = async () => {
+    if (previewing.value || saving.value) return;
     previewing.value = true;
-    error.value = '';
     try {
         // Preview runs against the saved state — persist first.
-        await save();
-        if (!editing.value) return;
+        const saved = await save();
+        if (!saved || !editing.value) return;
         const { data } = await axios.post(`/api/admin/migrations/mappings/${editing.value.id}/preview`);
         preview.value = data;
     } catch (e) {
-        error.value = e.response?.data?.error || e.message;
+        dialog.requestError(e);
     } finally {
         previewing.value = false;
     }
 };
 
 const run = async (mapping) => {
-    if (!confirm(t('migrationTool.confirmRun', { name: mapping.name }))) return;
+    if (rowBusy.value) return;
+    const ok = await dialog.confirm({
+        title: t('migrationTool.runImport'),
+        content: t('migrationTool.confirmRun', { name: mapping.name }),
+        confirmationText: t('migrationTool.runImport'),
+        color: 'primary',
+    });
+    if (!ok) return;
     runningId.value = mapping.id;
     try {
         const { data } = await axios.post(`/api/admin/migrations/mappings/${mapping.id}/run`);
@@ -660,6 +677,8 @@ const run = async (mapping) => {
 };
 
 const exportMappings = async () => {
+    if (exporting.value) return;
+    exporting.value = true;
     try {
         const { data } = await axios.get('/api/admin/migrations/mappings/export');
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -670,10 +689,13 @@ const exportMappings = async () => {
         URL.revokeObjectURL(link.href);
     } catch (e) {
         emit('notify', { text: e.response?.data?.message || e.message, color: 'error' });
+    } finally {
+        exporting.value = false;
     }
 };
 
 const doImport = async () => {
+    if (importing.value) return;
     importErrors.value = [];
     let payload;
     try {
@@ -694,21 +716,28 @@ const doImport = async () => {
             importText.value = '';
         }
     } catch (e) {
-        importErrors.value = e.response?.data?.errors?.length
-            ? e.response.data.errors
-            : [e.response?.data?.message || e.message];
+        if (e.response?.data?.errors?.length) {
+            importErrors.value = e.response.data.errors;
+        } else {
+            dialog.requestError(e);
+        }
     } finally {
         importing.value = false;
     }
 };
 
 const deleteMapping = async (mapping) => {
-    if (!confirm(t('migrationTool.confirmDeleteMapping', { name: mapping.name }))) return;
+    if (rowBusy.value) return;
+    const ok = await dialog.confirmDelete(t('migrationTool.confirmDeleteMapping', { name: mapping.name }));
+    if (!ok) return;
+    deletingId.value = mapping.id;
     try {
         await axios.delete(`/api/admin/migrations/mappings/${mapping.id}`);
         await fetchAll();
     } catch (e) {
         emit('notify', { text: e.response?.data?.message || e.message, color: 'error' });
+    } finally {
+        deletingId.value = null;
     }
 };
 

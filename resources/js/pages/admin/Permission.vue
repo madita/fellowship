@@ -24,6 +24,7 @@
                       <v-checkbox
                           v-model="selected"
                           :value="{role: role.id, permission: item.id}"
+                          :disabled="saving"
                       ></v-checkbox>
 
                   </td>
@@ -34,9 +35,11 @@
       <v-btn
           color="blue darken-1"
           text
+          :loading="saving"
+          :disabled="saving"
           @click="save"
       >
-          Save
+          {{ $t('common.save') }}
       </v-btn>
   </div>
 </template>
@@ -51,6 +54,7 @@ export default {
             roles: {},
             permissions: {},
             loading: false,
+            saving: false,
             breadcrumbs: [{
                 text: '',
                 disabled: false,
@@ -94,18 +98,17 @@ export default {
                 this.loading = false
             });
         },
-        save () {
-            axios.post('/api/datatable/permissions/roles', this.selected).then(() => {
-                //this.response.records.data.push(this.editedItem)
-                //console.log()
-
-
-            }).catch((error) => {
-                if (error.response.status === 422) {
-                    // this.creating.errors = error.response.data
-                    this.editing.errors = error.response.data
-                }
-            })
+        async save () {
+            if (this.saving) return
+            this.saving = true
+            try {
+                await axios.post('/api/datatable/permissions/roles', this.selected)
+                this.saving = false
+                this.$dialog.success(this.$t('success.saved'))
+            } catch (error) {
+                this.saving = false
+                this.$dialog.requestError(error)
+            }
         }
     },
     mounted () {

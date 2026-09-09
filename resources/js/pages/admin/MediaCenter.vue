@@ -10,6 +10,8 @@
                             icon
                             size="small"
                             variant="text"
+                            :loading="loadingFolders"
+                            :disabled="loadingFolders"
                             @click="fetchFolders"
                         >
                             <v-icon icon="mdi-refresh" />
@@ -166,6 +168,8 @@
                                 color="error"
                                 variant="tonal"
                                 size="small"
+                                :loading="deleting"
+                                :disabled="deleting"
                                 @click="confirmBulkDelete"
                             >
                                 <v-icon icon="mdi-delete" start />
@@ -173,6 +177,8 @@
                             </v-btn>
                         </div>
                     </div>
+
+                    <v-progress-linear v-if="openingDetails || deleting" indeterminate color="primary" class="mb-2" />
 
                     <!-- Model Items View (when viewing a context) -->
                     <div v-if="showModelItems && !currentModelId" class="model-items-view">
@@ -257,28 +263,6 @@
             :media="selectedMedia"
             @delete="handleDelete"
         />
-
-        <!-- Delete Confirmation Dialog -->
-        <v-dialog v-model="deleteConfirmDialog" max-width="400">
-            <v-card>
-                <v-card-title>
-                    {{ bulkDeleteMode ? t('mediaCenter.deleteSelectedMedia') : t('mediaCenter.deleteMedia') }}
-                </v-card-title>
-                <v-card-text>
-                    <template v-if="bulkDeleteMode">
-                        {{ t('mediaCenter.confirmDeleteMultiple', { count: selectedIds.length }) }}
-                    </template>
-                    <template v-else>
-                        {{ t('mediaCenter.confirmDeleteSingle', { filename: mediaToDelete?.file_name }) }}
-                    </template>
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" @click="cancelDelete">{{ t('common.cancel') }}</v-btn>
-                    <v-btn color="error" :loading="deleting" @click="executeDelete">{{ t('common.delete') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
 
         <!-- Upload Dialog -->
         <v-dialog v-model="showUploadDialog" max-width="600" persistent>
@@ -414,8 +398,10 @@ import { debounce } from 'lodash';
 import MediaGrid from '@/components/admin/media/MediaGrid.vue';
 import MediaList from '@/components/admin/media/MediaList.vue';
 import MediaDetailsDialog from '@/components/admin/media/MediaDetailsDialog.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 // Navigation State
 const folders = ref([]);
@@ -435,6 +421,8 @@ const showModelItems = computed(() => {
 
 // Media State
 const loading = ref(false);
+const loadingFolders = ref(false);
+const openingDetails = ref(false);
 const media = ref([]);
 const viewMode = ref('grid');
 const page = ref(1);
@@ -454,9 +442,6 @@ const meta = reactive({
 // Dialog State
 const detailsDialogOpen = ref(false);
 const selectedMedia = ref(null);
-const deleteConfirmDialog = ref(false);
-const mediaToDelete = ref(null);
-const bulkDeleteMode = ref(false);
 const deleting = ref(false);
 
 const snackbar = reactive({
@@ -541,6 +526,8 @@ const breadcrumbs = computed(() => {
 
 // Methods
 const fetchFolders = async () => {
+    if (loadingFolders.value) return;
+    loadingFolders.value = true;
     try {
         const response = await axios.get('/api/admin/media/folders');
         folders.value = response.data.folders;
@@ -548,6 +535,8 @@ const fetchFolders = async () => {
     } catch (error) {
         console.error('Failed to fetch folders:', error);
         showSnackbar(t('mediaCenter.loadFolderError'), 'error');
+    } finally {
+        loadingFolders.value = false;
     }
 };
 
@@ -668,6 +657,8 @@ const debouncedSearch = debounce(() => {
 
 // Details
 const openDetails = async (item) => {
+    if (openingDetails.value) return;
+    openingDetails.value = true;
     try {
         const response = await axios.get(`/api/admin/media/${item.id}`);
         selectedMedia.value = response.data.data;
@@ -675,45 +666,40 @@ const openDetails = async (item) => {
     } catch (error) {
         console.error('Failed to fetch media details:', error);
         showSnackbar(t('mediaCenter.loadDetailsError'), 'error');
+    } finally {
+        openingDetails.value = false;
     }
 };
 
 // Delete operations
-const confirmDelete = (item) => {
-    mediaToDelete.value = item;
-    bulkDeleteMode.value = false;
-    deleteConfirmDialog.value = true;
+const refreshAfterDelete = () =>
+    Promise.all([fetchFolders(), currentModelId.value ? fetchMedia() : fetchModelItems()]);
+
+const confirmDelete = async (item) => {
+    if (deleting.value) return;
+    const ok = await dialog.confirmDelete(
+        t('mediaCenter.confirmDeleteSingle', { filename: item.file_name }),
+        { title: t('mediaCenter.deleteMedia') }
+    );
+    if (!ok) return;
+    await handleDelete(item);
 };
 
-const confirmBulkDelete = () => {
-    bulkDeleteMode.value = true;
-    deleteConfirmDialog.value = true;
-};
+const confirmBulkDelete = async () => {
+    if (deleting.value || !selectedIds.value.length) return;
+    const ok = await dialog.confirmDelete(
+        t('mediaCenter.confirmDeleteMultiple', { count: selectedIds.value.length }),
+        { title: t('mediaCenter.deleteSelectedMedia') }
+    );
+    if (!ok) return;
 
-const cancelDelete = () => {
-    deleteConfirmDialog.value = false;
-    mediaToDelete.value = null;
-    bulkDeleteMode.value = false;
-};
-
-const executeDelete = async () => {
     deleting.value = true;
     try {
-        if (bulkDeleteMode.value) {
-            await axios.post('/api/admin/media/bulk-delete', { ids: selectedIds.value });
-            showSnackbar(t('mediaCenter.itemsDeleted', { count: selectedIds.value.length }));
-            selectedIds.value = [];
-        } else {
-            await axios.delete(`/api/admin/media/${mediaToDelete.value.id}`);
-            showSnackbar(t('mediaCenter.deleteSuccess'));
-        }
-
-        deleteConfirmDialog.value = false;
-        mediaToDelete.value = null;
-        bulkDeleteMode.value = false;
-
-        // Refresh data
-        await Promise.all([fetchFolders(), currentModelId.value ? fetchMedia() : fetchModelItems()]);
+        const count = selectedIds.value.length;
+        await axios.post('/api/admin/media/bulk-delete', { ids: selectedIds.value });
+        showSnackbar(t('mediaCenter.itemsDeleted', { count }));
+        selectedIds.value = [];
+        await refreshAfterDelete();
     } catch (error) {
         console.error('Failed to delete media:', error);
         showSnackbar(t('mediaCenter.deleteError'), 'error');
@@ -722,13 +708,15 @@ const executeDelete = async () => {
     }
 };
 
+// Deletes one item; the details dialog confirms on its own before emitting.
 const handleDelete = async (item) => {
+    if (deleting.value) return;
     deleting.value = true;
     try {
         await axios.delete(`/api/admin/media/${item.id}`);
         showSnackbar(t('mediaCenter.deleteSuccess'));
         detailsDialogOpen.value = false;
-        await Promise.all([fetchFolders(), currentModelId.value ? fetchMedia() : fetchModelItems()]);
+        await refreshAfterDelete();
     } catch (error) {
         console.error('Failed to delete media:', error);
         showSnackbar(t('mediaCenter.deleteError'), 'error');
@@ -808,7 +796,7 @@ const formatFileSize = (bytes) => {
 };
 
 const executeUpload = async () => {
-    if (uploadFiles.value.length === 0) return;
+    if (uploadFiles.value.length === 0 || uploading.value) return;
 
     uploading.value = true;
     uploadProgress.value = 0;

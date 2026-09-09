@@ -351,10 +351,10 @@
                     </div>
                 </div>
                 <v-spacer />
-                <v-btn variant="text" @click="close">{{ $t('common.cancel') }}</v-btn>
+                <v-btn variant="text" :disabled="uploading" @click="close">{{ $t('common.cancel') }}</v-btn>
                 <v-btn
                     color="primary"
-                    :disabled="!canInsert"
+                    :disabled="!canInsert || uploading"
                     @click="insertImage"
                 >
                     {{ $t('mediaPicker.insertImage') }}
@@ -590,7 +590,7 @@ const formatFileSize = (bytes) => {
 };
 
 const executeUpload = async () => {
-    if (uploadFiles.value.length === 0) return;
+    if (uploadFiles.value.length === 0 || uploading.value) return;
 
     uploading.value = true;
     uploadProgress.value = 0;

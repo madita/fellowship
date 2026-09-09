@@ -59,7 +59,6 @@ const title = ref('');
 const item = ref(JSON.parse(JSON.stringify(props.item || props.defaultItem)));
 const itemDetails = ref({});
 const parentItems = ref({});
-const loading = ref({});
 const initialSnapshot = ref('');
 
 // Validation states
@@ -209,9 +208,9 @@ const endDateTimePickerConfig = computed(() => {
 
 const formTitle = computed(() => {
     if (localEditMode.value) {
-        return item.value?.id ? 'Update Item' : 'Add Item';
+        return item.value?.id ? t('dataTable.editItem') : t('dataTable.newItem');
     }
-    return 'View Item';
+    return t('dataTable.viewItem');
 });
 
 const hasUpdatableFields = computed(() => {
@@ -480,9 +479,8 @@ onMounted(() => {
                                         type="submit"
                                         color="primary"
                                         variant="elevated"
-                                        :loading="loading.submit"
                                     >
-                                        {{ item.id ? 'Update' : 'Create' }}
+                                        {{ item.id ? $t('common.update') : $t('common.create') }}
                                     </VBtn>
 
                                     <VBtn
@@ -490,7 +488,7 @@ onMounted(() => {
                                         color="secondary"
                                         @click="onCancel"
                                     >
-                                        Cancel
+                                        {{ $t('common.cancel') }}
                                     </VBtn>
 
                                     <VBtn
@@ -498,9 +496,8 @@ onMounted(() => {
                                         variant="outlined"
                                         color="error"
                                         @click="removeItem"
-                                        :loading="loading.delete"
                                     >
-                                        Delete
+                                        {{ $t('common.delete') }}
                                     </VBtn>
                                 </div>
                             </VCol>
@@ -517,7 +514,7 @@ onMounted(() => {
                                     prepend-icon="mdi-pencil"
                                     @click="localEditMode = true"
                                 >
-                                    Edit
+                                    {{ $t('common.edit') }}
                                 </VBtn>
 
                                 <VBtn
@@ -526,7 +523,7 @@ onMounted(() => {
                                     prepend-icon="mdi-delete"
                                     @click="removeItem"
                                 >
-                                    Delete
+                                    {{ $t('common.delete') }}
                                 </VBtn>
                             </div>
                         </VCol>

@@ -91,6 +91,7 @@
             <v-spacer />
             <v-btn
                 variant="text"
+                :disabled="saving"
                 @click="$emit('cancel')"
             >
                 {{ $t('common.cancel') }}
@@ -98,7 +99,7 @@
             <v-btn
                 color="primary"
                 :loading="saving"
-                :disabled="!hasChanges || !isInitialized"
+                :disabled="!hasChanges || !isInitialized || saving"
                 @click="saveTranslations"
             >
                 <v-icon icon="mdi-content-save" start />
@@ -241,6 +242,7 @@ const onFieldChange = (locale, field) => {
 };
 
 const saveTranslations = () => {
+    if (props.saving) return;
     emit('save', { ...localTranslations });
 };
 </script>

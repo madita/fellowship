@@ -15,11 +15,6 @@
                 </v-btn>
             </div>
 
-            <!-- Alert -->
-            <v-alert v-if="alert.show" :type="alert.type" class="mb-4" closable @click:close="alert.show = false">
-                {{ alert.message }}
-            </v-alert>
-
             <!-- Loading -->
             <div v-if="loading" class="text-center py-12">
                 <v-progress-circular size="48" indeterminate color="primary" />
@@ -66,9 +61,9 @@
                                 <span class="text-body-2 text-medium-emphasis">#{{ forum.position }}</span>
                             </v-col>
                             <v-col cols="12" md="2" class="text-right">
-                                <v-btn icon="mdi-plus" size="small" variant="text" @click="openCreateDialog(forum.id)" :title="$t('admin.forums.addSubForum')" />
-                                <v-btn icon="mdi-pencil" size="small" variant="text" @click="openEditDialog(forum)" />
-                                <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="confirmDelete(forum)" />
+                                <v-btn icon="mdi-plus" size="small" variant="text" :disabled="deletingId !== null" @click="openCreateDialog(forum.id)" :title="$t('admin.forums.addSubForum')" />
+                                <v-btn icon="mdi-pencil" size="small" variant="text" :disabled="deletingId !== null" @click="openEditDialog(forum)" />
+                                <v-btn icon="mdi-delete" size="small" variant="text" color="error" :loading="deletingId === forum.id" :disabled="deletingId !== null" @click="confirmDelete(forum)" />
                             </v-col>
                         </v-row>
                     </v-card-text>
@@ -98,8 +93,8 @@
                                         <span class="text-caption text-medium-emphasis mr-4">
                                             {{ child.threads_count || 0 }} {{ $t('forum.threads') }}
                                         </span>
-                                        <v-btn icon="mdi-pencil" size="x-small" variant="text" @click="openEditDialog(child)" />
-                                        <v-btn icon="mdi-delete" size="x-small" variant="text" color="error" @click="confirmDelete(child)" />
+                                        <v-btn icon="mdi-pencil" size="x-small" variant="text" :disabled="deletingId !== null" @click="openEditDialog(child)" />
+                                        <v-btn icon="mdi-delete" size="x-small" variant="text" color="error" :loading="deletingId === child.id" :disabled="deletingId !== null" @click="confirmDelete(child)" />
                                     </template>
                                 </v-list-item>
                             </v-list>
@@ -235,40 +230,27 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn variant="text" @click="closeDialog">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" :loading="dialog.saving" @click="saveForum">
+                    <v-btn variant="text" :disabled="dialog.saving" @click="closeDialog">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" :loading="dialog.saving" :disabled="dialog.saving" @click="saveForum">
                         {{ dialog.editing ? $t('common.save') : $t('common.add') }}
                     </v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
-
-        <!-- Delete Confirm Dialog -->
-        <ConfirmDialog
-            v-model="deleteDialog.show"
-            :content="$t('admin.forums.confirmDelete', { name: deleteDialog.forum?.name })"
-            :resolve="onDeleteConfirm"
-        />
     </div>
 </template>
 
 <script>
 import axios from 'axios'
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 export default {
     name: 'ForumManager',
-    components: { ConfirmDialog },
     data() {
         return {
             loading: false,
             forums: [],
             roles: [],
-            alert: {
-                show: false,
-                type: 'success',
-                message: ''
-            },
+            deletingId: null,
             dialog: {
                 show: false,
                 editing: false,
@@ -287,10 +269,6 @@ export default {
                     delete_roles: []
                 },
                 errors: {}
-            },
-            deleteDialog: {
-                show: false,
-                forum: null
             }
         }
     },
@@ -313,7 +291,7 @@ export default {
                 const response = await axios.get('/api/forums')
                 this.forums = response.data
             } catch (error) {
-                this.showAlert('error', error.response?.data?.message || 'Failed to load forums')
+                this.$dialog.requestError(error, this.$t('errors.general'))
             } finally {
                 this.loading = false
             }
@@ -372,49 +350,53 @@ export default {
         },
 
         async saveForum() {
+            if (this.dialog.saving) return
             this.dialog.saving = true
             this.dialog.errors = {}
 
+            let successMessage
             try {
                 if (this.dialog.editing) {
                     await axios.patch(`/api/forums/${this.dialog.editId}`, this.dialog.form)
-                    this.showAlert('success', this.$t('admin.forums.forumUpdated'))
+                    successMessage = this.$t('admin.forums.forumUpdated')
                 } else {
                     await axios.post('/api/forums', this.dialog.form)
-                    this.showAlert('success', this.$t('admin.forums.forumCreated'))
+                    successMessage = this.$t('admin.forums.forumCreated')
                 }
                 this.closeDialog()
-                await this.fetchForums()
             } catch (error) {
+                this.dialog.saving = false
                 if (error.response?.status === 422) {
                     this.dialog.errors = error.response.data.errors || {}
                 } else {
-                    this.showAlert('error', error.response?.data?.message || 'Failed to save forum')
+                    this.$dialog.requestError(error, this.$t('errors.general'))
                 }
+                return
             } finally {
                 this.dialog.saving = false
             }
+
+            this.$dialog.success(successMessage)
+            await this.fetchForums()
         },
 
-        confirmDelete(forum) {
-            this.deleteDialog.forum = forum
-            this.deleteDialog.show = true
-        },
+        async confirmDelete(forum) {
+            if (this.deletingId !== null) return
+            const ok = await this.$dialog.confirmDelete(this.$t('admin.forums.confirmDelete', { name: forum.name }))
+            if (!ok) return
 
-        async onDeleteConfirm(confirmed) {
-            if (!confirmed || !this.deleteDialog.forum) return
-
+            this.deletingId = forum.id
             try {
-                await axios.delete(`/api/forums/${this.deleteDialog.forum.id}`)
-                this.showAlert('success', this.$t('admin.forums.forumDeleted'))
-                await this.fetchForums()
+                await axios.delete(`/api/forums/${forum.id}`)
             } catch (error) {
-                this.showAlert('error', error.response?.data?.message || 'Failed to delete forum')
+                this.$dialog.requestError(error, this.$t('errors.general'))
+                return
+            } finally {
+                this.deletingId = null
             }
-        },
 
-        showAlert(type, message) {
-            this.alert = { show: true, type, message }
+            this.$dialog.success(this.$t('admin.forums.forumDeleted'))
+            await this.fetchForums()
         }
     }
 }

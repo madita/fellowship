@@ -1,37 +1,40 @@
 <template>
   <div class="flex-grow-1">
       <v-container>
-          <v-alert v-if="message" :type="type">
-              {{ message }}
-          </v-alert>
           <v-text-field
               :label="$t('announcement.subject')"
               v-model="form.subject"
               :rules="[rules.required]"
               :error-messages="errors.subject"
+              :disabled="isLoading"
           ></v-text-field>
           <v-textarea
               :label="$t('announcement.message')"
               v-model="form.body"
               :rules="[rules.required]"
               :error-messages="errors.body"
+              :disabled="isLoading"
           ></v-textarea>
           <v-text-field
               :label="$t('announcement.actionButton')"
               v-model="form.action"
+              :disabled="isLoading"
           ></v-text-field>
           <v-text-field
               :label="$t('announcement.url')"
               v-model="form.url"
+              :disabled="isLoading"
           ></v-text-field>
           <v-text-field
               :label="$t('announcement.footer')"
               v-model="form.thanks"
               :rules="[rules.required]"
               :error-messages="errors.thanks"
+              :disabled="isLoading"
           ></v-text-field>
           <v-btn
               :loading="isLoading"
+              :disabled="isLoading"
               block
               size="large"
               color="primary"
@@ -54,8 +57,6 @@ export default {
     data () {
         return {
             isLoading: false,
-            message:'',
-            type:'error',
             form: {
                 subject: '',
                 body: '',
@@ -78,7 +79,6 @@ export default {
     methods: {
 
         resetError() {
-            this.message = '';
             this.errors = {
                 subject: '',
                 body: '',
@@ -88,12 +88,11 @@ export default {
             }
         },
 
-        save () {
+        async save () {
+            if (this.isLoading) return;
             this.isLoading = true
-            axios.post('/api/admin/announcement', this.form).then(() => {
-
-                this.message = this.t('announcement.sentSuccess')
-                this.type = 'success'
+            try {
+                await axios.post('/api/admin/announcement', this.form)
 
                 this.form = {
                     subject: '',
@@ -104,16 +103,14 @@ export default {
                 }
                 this.resetError();
                 this.isLoading = false
-
-            }).catch((error) => {
-                this.isLoading = false
-                this.type = 'error'
-                this.message = error
-                if (error.response.status === 422) {
-                    this.message = error.response.data.message
-                    this.errors = error.response.data.errors
+                this.$dialog.success(this.t('announcement.sentSuccess'))
+            } catch (error) {
+                if (error.response?.status === 422) {
+                    this.errors = { ...this.errors, ...(error.response.data.errors || {}) }
                 }
-            })
+                this.isLoading = false
+                this.$dialog.requestError(error)
+            }
         }
     },
     mounted () {

@@ -1,7 +1,9 @@
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
 
+const dialog = useDialog();
 const emit = defineEmits(['update:modelValue', 'error']);
 const props = defineProps({
     config: {
@@ -60,7 +62,7 @@ const fetchTerms = async () => {
 
 const saveCategory = async () => {
     const title = newCategory.value.trim();
-    if (!title) return;
+    if (!title || saving.value) return;
     saving.value = true;
     try {
         await axios.post('/api/tag/terms', {
@@ -80,6 +82,7 @@ const saveCategory = async () => {
     } catch (e) {
         console.error('Failed to create category:', e);
         emit('error', { source: 'saveCategory', error: e });
+        dialog.requestError(e);
     } finally {
         saving.value = false;
     }
@@ -176,11 +179,11 @@ onMounted(() => {
                         variant="elevated"
                         size="small"
                         :loading="saving"
-                        :disabled="!newCategory.trim()"
+                        :disabled="!newCategory.trim() || saving"
                         prepend-icon="mdi-plus"
                         @click="saveCategory"
                     >
-                        Add
+                        {{ $t('common.add') }}
                     </v-btn>
                 </div>
             </v-expand-transition>

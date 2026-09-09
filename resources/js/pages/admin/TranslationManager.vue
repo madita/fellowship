@@ -132,6 +132,7 @@
                                     <v-btn
                                         color="primary"
                                         variant="tonal"
+                                        :disabled="saving"
                                         @click="showAddKeyDialog('js')"
                                     >
                                         <v-icon icon="mdi-plus" start />
@@ -141,7 +142,7 @@
                                     <v-btn
                                         color="success"
                                         :loading="saving"
-                                        :disabled="!hasJsChanges"
+                                        :disabled="!hasJsChanges || saving"
                                         @click="saveJsTranslations"
                                     >
                                         <v-icon icon="mdi-content-save" start />
@@ -197,6 +198,8 @@
                                             size="small"
                                             variant="text"
                                             color="error"
+                                            :loading="deletingKeyName === item.key"
+                                            :disabled="deletingKeyName !== null || saving"
                                             @click="confirmDeleteKey('js', item.key)"
                                         >
                                             <v-icon icon="mdi-delete" size="small" />
@@ -284,6 +287,7 @@
                                     <v-btn
                                         color="primary"
                                         variant="tonal"
+                                        :disabled="saving"
                                         @click="showAddKeyDialog('php')"
                                     >
                                         <v-icon icon="mdi-plus" start />
@@ -293,7 +297,7 @@
                                     <v-btn
                                         color="success"
                                         :loading="saving"
-                                        :disabled="!hasPhpChanges"
+                                        :disabled="!hasPhpChanges || saving"
                                         @click="savePhpTranslations"
                                     >
                                         <v-icon icon="mdi-content-save" start />
@@ -340,6 +344,8 @@
                                             size="small"
                                             variant="text"
                                             color="error"
+                                            :loading="deletingKeyName === item.key"
+                                            :disabled="deletingKeyName !== null || saving"
                                             @click="confirmDeleteKey('php', item.key)"
                                         >
                                             <v-icon icon="mdi-delete" size="small" />
@@ -725,11 +731,11 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn variant="text" @click="showCreateLocaleDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn variant="text" :disabled="creatingLocale" @click="showCreateLocaleDialog = false">{{ $t('common.cancel') }}</v-btn>
                     <v-btn
                         color="primary"
                         :loading="creatingLocale"
-                        :disabled="!newLocale.code || newLocale.code.length !== 2"
+                        :disabled="!newLocale.code || newLocale.code.length !== 2 || creatingLocale"
                         @click="createLocale"
                     >
                         {{ $t('translationManager.createLocale') }}
@@ -784,35 +790,14 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn variant="text" @click="showAddKeyDialogVisible = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn variant="text" :disabled="addingKey" @click="showAddKeyDialogVisible = false">{{ $t('common.cancel') }}</v-btn>
                     <v-btn
                         color="primary"
                         :loading="addingKey"
-                        :disabled="!newKey.key"
+                        :disabled="!newKey.key || addingKey"
                         @click="addKey"
                     >
                         {{ $t('translationManager.addKey') }}
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <!-- Delete Key Confirmation -->
-        <v-dialog v-model="showDeleteKeyDialog" max-width="400">
-            <v-card>
-                <v-card-title>{{ $t('translationManager.deleteTranslationKey') }}</v-card-title>
-                <v-card-text>
-                    {{ $t('translationManager.deleteKeyConfirmation', { key: keyToDelete.key }) }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" @click="showDeleteKeyDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn
-                        color="error"
-                        :loading="deletingKey"
-                        @click="deleteKey"
-                    >
-                        {{ $t('common.delete') }}
                     </v-btn>
                 </v-card-actions>
             </v-card>
@@ -830,8 +815,10 @@ import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import ModelTranslationsTab from '@/components/admin/ModelTranslationsTab.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 // State
 const activeTab = ref('js');
@@ -874,10 +861,9 @@ const expandedReportPanels = ref([]);
 // Dialogs
 const showCreateLocaleDialog = ref(false);
 const showAddKeyDialogVisible = ref(false);
-const showDeleteKeyDialog = ref(false);
 const creatingLocale = ref(false);
 const addingKey = ref(false);
-const deletingKey = ref(false);
+const deletingKeyName = ref(null);
 
 const newLocale = reactive({
     code: '',
@@ -891,11 +877,6 @@ const newKey = reactive({
     key: '',
     file: '',
     values: {},
-});
-
-const keyToDelete = reactive({
-    type: '',
-    key: '',
 });
 
 const snackbar = reactive({
@@ -1031,7 +1012,25 @@ const fetchLocales = async () => {
     }
 };
 
+// Ask before throwing away unsaved edits in the current editor.
+const confirmDiscardChanges = async (hasChanges) => {
+    if (!hasChanges) return true;
+    return dialog.confirm({
+        title: t('dialogs.unsavedChanges.title'),
+        content: t('dialogs.unsavedChanges.message'),
+        confirmationText: t('dialogs.unsavedChanges.leave'),
+        cancellationText: t('dialogs.unsavedChanges.stay'),
+        color: 'warning',
+    });
+};
+
 const selectJsLocale = async (locale) => {
+    if (loadingJs.value) return;
+    if (locale !== selectedJsLocale.value && !(await confirmDiscardChanges(hasJsChanges.value))) return;
+    await loadJsLocale(locale);
+};
+
+const loadJsLocale = async (locale) => {
     selectedJsLocale.value = locale;
     loadingJs.value = true;
     hasJsChanges.value = false;
@@ -1064,6 +1063,13 @@ const selectJsLocale = async (locale) => {
 };
 
 const selectPhpFile = async (locale, file) => {
+    if (loadingPhp.value) return;
+    const isSame = locale === selectedPhpLocale.value && file === selectedPhpFile.value;
+    if (!isSame && !(await confirmDiscardChanges(hasPhpChanges.value))) return;
+    await loadPhpFile(locale, file);
+};
+
+const loadPhpFile = async (locale, file) => {
     selectedPhpLocale.value = locale;
     selectedPhpFile.value = file;
     loadingPhp.value = true;
@@ -1090,6 +1096,7 @@ const markPhpChanged = () => {
 };
 
 const saveJsTranslations = async () => {
+    if (saving.value) return;
     saving.value = true;
     try {
         await axios.put(`/api/admin/translations/js/${selectedJsLocale.value}`, {
@@ -1107,6 +1114,7 @@ const saveJsTranslations = async () => {
 };
 
 const savePhpTranslations = async () => {
+    if (saving.value) return;
     saving.value = true;
     try {
         await axios.put(`/api/admin/translations/php/${selectedPhpLocale.value}/${selectedPhpFile.value}`, {
@@ -1124,6 +1132,7 @@ const savePhpTranslations = async () => {
 };
 
 const scanMissing = async () => {
+    if (scanning.value) return;
     scanning.value = true;
     try {
         const response = await axios.get('/api/admin/translations/scan');
@@ -1139,6 +1148,7 @@ const scanMissing = async () => {
 };
 
 const generateReport = async () => {
+    if (generatingReport.value) return;
     generatingReport.value = true;
     try {
         const response = await axios.get('/api/admin/translations/report', {
@@ -1198,6 +1208,7 @@ const copyChange = (change) => {
 };
 
 const createLocale = async () => {
+    if (creatingLocale.value) return;
     creatingLocale.value = true;
     try {
         await axios.post('/api/admin/translations/locales', {
@@ -1230,6 +1241,7 @@ const showAddKeyDialog = (type) => {
 };
 
 const addKey = async () => {
+    if (addingKey.value) return;
     addingKey.value = true;
     try {
         await axios.post('/api/admin/translations/keys', {
@@ -1243,9 +1255,9 @@ const addKey = async () => {
 
         // Refresh current view
         if (newKey.type === 'js' && selectedJsLocale.value) {
-            await selectJsLocale(selectedJsLocale.value);
+            await loadJsLocale(selectedJsLocale.value);
         } else if (newKey.type === 'php' && selectedPhpFile.value) {
-            await selectPhpFile(selectedPhpLocale.value, selectedPhpFile.value);
+            await loadPhpFile(selectedPhpLocale.value, selectedPhpFile.value);
         }
     } catch (error) {
         console.error('Failed to add key:', error);
@@ -1255,41 +1267,40 @@ const addKey = async () => {
     }
 };
 
-const confirmDeleteKey = (type, key) => {
-    keyToDelete.type = type;
-    keyToDelete.key = key;
-    showDeleteKeyDialog.value = true;
-};
+const confirmDeleteKey = async (type, key) => {
+    if (deletingKeyName.value !== null) return;
+    const ok = await dialog.confirmDelete(t('translationManager.deleteKeyConfirmation', { key }), {
+        title: t('translationManager.deleteTranslationKey'),
+    });
+    if (!ok) return;
 
-const deleteKey = async () => {
-    deletingKey.value = true;
+    deletingKeyName.value = key;
     try {
-        const localesList = keyToDelete.type === 'js'
+        const localesList = type === 'js'
             ? jsLocales.value.map(l => l.code)
             : phpLocales.value.map(l => l.code);
 
         await axios.delete('/api/admin/translations/keys', {
             data: {
-                type: keyToDelete.type,
-                key: keyToDelete.key,
+                type,
+                key,
                 locales: localesList,
                 file: selectedPhpFile.value,
             },
         });
         showSnackbar(t('translationManager.keyDeletedSuccessfully'));
-        showDeleteKeyDialog.value = false;
 
         // Refresh current view
-        if (keyToDelete.type === 'js' && selectedJsLocale.value) {
-            await selectJsLocale(selectedJsLocale.value);
-        } else if (keyToDelete.type === 'php' && selectedPhpFile.value) {
-            await selectPhpFile(selectedPhpLocale.value, selectedPhpFile.value);
+        if (type === 'js' && selectedJsLocale.value) {
+            await loadJsLocale(selectedJsLocale.value);
+        } else if (type === 'php' && selectedPhpFile.value) {
+            await loadPhpFile(selectedPhpLocale.value, selectedPhpFile.value);
         }
     } catch (error) {
         console.error('Failed to delete key:', error);
         showSnackbar(t('translationManager.failedToDeleteKey'), 'error');
     } finally {
-        deletingKey.value = false;
+        deletingKeyName.value = null;
     }
 };
 

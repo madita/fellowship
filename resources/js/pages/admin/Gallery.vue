@@ -17,8 +17,9 @@
                     v-model="newCollection.name"
                     :label="$t('gallery.collectionName')"
                     outlined
+                    :disabled="creating"
                 />
-                <v-btn @click="createCollection" color="primary" class="ma-2">{{ $t('gallery.createCollection') }}</v-btn>
+                <v-btn @click="createCollection" color="primary" class="ma-2" :loading="creating" :disabled="busy && !creating">{{ $t('gallery.createCollection') }}</v-btn>
             </v-col>
         </v-row>
 
@@ -38,16 +39,33 @@
                                     outlined
                                     dense
                                 />
-                                <v-btn @click="updateMediaCaption(media.id, media.newCaption)" color="success" small>{{ $t('gallery.updateCaption') }}</v-btn>
-                                <v-btn @click="deleteMedia(media.id)" color="error" small>{{ $t('common.delete') }}</v-btn>
+                                <v-btn
+                                    @click="updateMediaCaption(media.id, media.newCaption)"
+                                    color="success"
+                                    small
+                                    :loading="savingCaptionId === media.id"
+                                    :disabled="busy && savingCaptionId !== media.id"
+                                >{{ $t('gallery.updateCaption') }}</v-btn>
+                                <v-btn
+                                    @click="deleteMedia(media.id)"
+                                    color="error"
+                                    small
+                                    :loading="deletingId === media.id"
+                                    :disabled="busy && deletingId !== media.id"
+                                >{{ $t('common.delete') }}</v-btn>
                             </v-col>
                         </v-row>
                     </v-card-text>
 
                     <v-card-actions>
-                        <v-file-input @change="onFileChange(collection.id, $event)" :label="$t('gallery.selectFile')" outlined dense></v-file-input>
-                        <v-text-field v-model="newCaption" :label="$t('gallery.addCaption')" outlined dense></v-text-field>
-                        <v-btn @click="uploadMedia(collection.id)" color="primary">{{ $t('gallery.uploadToCollection') }}</v-btn>
+                        <v-file-input @change="onFileChange(collection.id, $event)" :label="$t('gallery.selectFile')" outlined dense :disabled="uploadingId !== null"></v-file-input>
+                        <v-text-field v-model="newCaption" :label="$t('gallery.addCaption')" outlined dense :disabled="uploadingId !== null"></v-text-field>
+                        <v-btn
+                            @click="uploadMedia(collection.id)"
+                            color="primary"
+                            :loading="uploadingId === collection.id"
+                            :disabled="busy && uploadingId !== collection.id"
+                        >{{ $t('gallery.uploadToCollection') }}</v-btn>
                     </v-card-actions>
                 </v-card>
             </v-col>
@@ -56,11 +74,13 @@
 </template>
 
 <script setup>
-import {ref, onMounted, watch} from 'vue';
+import {ref, computed, onMounted, watch} from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const taxonomies = ref([]);
 const collections = ref([]);
@@ -68,6 +88,13 @@ const newCollection = ref({name: ''});
 const selectedTaxonomy = ref(null);
 const selectedFile = ref(null);
 const newCaption = ref('');
+const creating = ref(false);
+const uploadingId = ref(null);
+const savingCaptionId = ref(null);
+const deletingId = ref(null);
+const busy = computed(() =>
+    creating.value || uploadingId.value !== null || savingCaptionId.value !== null || deletingId.value !== null
+);
 
 const fetchTaxonomies = async () => {
     try {
@@ -96,6 +123,13 @@ const fetchCollections = async () => {
 };
 
 const createCollection = async () => {
+    if (busy.value) return;
+    if (!newCollection.value.name.trim()) {
+        await dialog.warning(t('gallery.collectionNameRequired'));
+        return;
+    }
+
+    creating.value = true;
     try {
         await axios.post('/api/collections', {
             name: newCollection.value.name,
@@ -103,8 +137,12 @@ const createCollection = async () => {
         });
         await fetchCollections();
         newCollection.value.name = '';
+        await dialog.success(t('gallery.collectionCreated'));
     } catch (error) {
         console.error(error);
+        await dialog.requestError(error, t('gallery.collectionCreateFailed'));
+    } finally {
+        creating.value = false;
     }
 };
 
@@ -113,8 +151,9 @@ const onFileChange = (collectionId, event) => {
 };
 
 const uploadMedia = async (collectionId) => {
+    if (busy.value) return;
     if (!selectedFile.value) {
-        alert(t('gallery.pleaseSelectFile'));
+        await dialog.warning(t('gallery.pleaseSelectFile'));
         return;
     }
 
@@ -122,6 +161,7 @@ const uploadMedia = async (collectionId) => {
     formData.append('file', selectedFile.value);
     formData.append('caption', newCaption.value);
 
+    uploadingId.value = collectionId;
     try {
         await axios.post(`/api/collections/${collectionId}/media`, formData, {
             headers: {
@@ -131,26 +171,48 @@ const uploadMedia = async (collectionId) => {
         await fetchCollections();
         selectedFile.value = null;
         newCaption.value = '';
+        await dialog.success(t('gallery.uploadSuccess'));
     } catch (error) {
         console.error(error);
+        await dialog.requestError(error, t('gallery.uploadFailed'));
+    } finally {
+        uploadingId.value = null;
     }
 };
 
 const updateMediaCaption = async (mediaId, newCaption) => {
+    if (busy.value) return;
+
+    savingCaptionId.value = mediaId;
     try {
         await axios.patch(`/api/media/${mediaId}/caption`, {caption: newCaption});
         await fetchCollections();
+        await dialog.success(t('gallery.captionSaved'));
     } catch (error) {
         console.error(error);
+        await dialog.requestError(error, t('gallery.captionSaveFailed'));
+    } finally {
+        savingCaptionId.value = null;
     }
 };
 
 const deleteMedia = async (mediaId) => {
+    if (busy.value) return;
+
+    const confirmed = await dialog.confirmDelete(t('gallery.deleteImageConfirm'), {
+        title: t('gallery.deleteImageTitle'),
+    });
+    if (!confirmed) return;
+
+    deletingId.value = mediaId;
     try {
         await axios.delete(`/api/media/${mediaId}`);
         await fetchCollections();
     } catch (error) {
         console.error(error);
+        await dialog.requestError(error, t('gallery.deleteImageFailed'));
+    } finally {
+        deletingId.value = null;
     }
 };
 

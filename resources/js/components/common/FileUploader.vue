@@ -12,6 +12,7 @@
         <!-- Upload Button -->
         <v-btn
             :disabled="validFiles.length === 0 || uploadInProgress"
+            :loading="uploadInProgress"
             color="primary"
             @click="uploadFiles"
         >
@@ -64,6 +65,7 @@
                                 <v-btn
                                     icon
                                     class="delete-icon"
+                                    :disabled="uploadInProgress"
                                     @click="removeFile(index)"
                                 >
                                     <v-icon color="red">mdi-delete</v-icon>
@@ -100,6 +102,7 @@
         <!-- Upload Button -->
         <v-btn
             :disabled="validFiles.length === 0 || uploadInProgress"
+            :loading="uploadInProgress"
             color="primary"
             @click="uploadFiles"
         >
@@ -113,8 +116,10 @@ import { ref, computed } from "vue";
 import { useI18n } from 'vue-i18n';
 import axios from "axios";
 import { useSettingsStore } from "@/store/settingStore";
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
     accept: {
@@ -182,14 +187,16 @@ const addFiles = (newFiles) => {
 
 // Upload files based on batch or single upload setting
 const uploadFiles = async () => {
+    if (uploadInProgress.value || validFiles.value.length === 0) return;
     uploadInProgress.value = true;
-    // console.log('batchUploadEnabled', batchUploadEnabled)
-    if (settingStore.batchUpload) {
-        console.log('batch')
-        await uploadInBatches();
-    } else {
-        console.log('individual')
-        await uploadIndividually();
+    try {
+        if (settingStore.batchUpload) {
+            await uploadInBatches();
+        } else {
+            await uploadIndividually();
+        }
+    } finally {
+        uploadInProgress.value = false;
     }
 
     emit("upload-success", files.value);
@@ -223,12 +230,13 @@ const uploadInBatches = async () => {
                 },
             });
 
-            console.log(`Batch uploaded successfully.`);
         } catch (error) {
             console.error(`Failed to upload batch:`, error.response?.data || error.message);
+            batch.forEach((file) => (file.warning = t('commonComponents.fileUploader.uploadFailed')));
+            emit("upload-failure", { batch, error });
+            await dialog.requestError(error, t('commonComponents.fileUploader.uploadFailed'));
         }
     }
-    uploadInProgress.value = false;
 };
 
 // Upload files one at a time
@@ -250,14 +258,13 @@ const uploadIndividually = async () => {
                 },
             });
 
-            console.log(`File ${file.name} uploaded successfully.`);
             file.uploadProgress = 100;
         } catch (error) {
             console.error(`Failed to upload file ${file.name}:`, error.response?.data || error.message);
             file.warning = t('commonComponents.fileUploader.uploadFailed');
+            emit("upload-failure", { file, error });
         }
     }
-    uploadInProgress.value = false;
 };
 
 // Drag-and-drop handlers

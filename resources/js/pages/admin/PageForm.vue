@@ -4,20 +4,23 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import Tiptap from '../../components/common/tiptap/Tiptap.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
 const route = useRoute();
 const { t } = useI18n();
+const dialog = useDialog();
 
 // Reactive state
 const loading = ref(true);
 const dataReady = ref(false);
+const saving = ref(false);
+const savingCategory = ref(false);
 const addCategory = ref(false);
 const page = ref({ title: '', content: '', parent: null, taxonomy: [], terms: [], categories: [] });
 const pages = ref([]);
 const endpoint = '/api/datatable/pages';
 const form = ref('create');
 const id = ref(null);
-const message = ref('');
 const searchTax = ref(null);
 const searchTerm = ref(null);
 const terms = ref([]);
@@ -126,56 +129,48 @@ const getCategories = (tax) => {
     });
 };
 
-const saveCategory = () => {
+const saveCategory = async () => {
     const term = newCategory.value.trim();
-    if (!term) return;
+    if (!term || savingCategory.value) return;
     const taxName = getTaxonomyName();
     const data = { term, taxonomy: taxName, parent: parentValue.value };
-    axios.post(`/api/tag/terms`, data).then(() => {
-        getCategories(taxName);
+    savingCategory.value = true;
+    try {
+        await axios.post(`/api/tag/terms`, data);
+        await getCategories(taxName);
         categoryValue.value.push(term);
         newCategory.value = '';
         addCategory.value = false;
-    }).catch((error) => {
-        console.error('Failed to create category:', error);
-    });
-};
-
-const save = () => {
-    if (form.value === 'edit') {
-        update();
-    } else {
-        store();
+    } catch (error) {
+        savingCategory.value = false;
+        dialog.requestError(error);
+    } finally {
+        savingCategory.value = false;
     }
 };
 
-const update = () => {
+const save = async () => {
+    if (saving.value) return;
     page.value.terms = termValue.value;
     page.value.taxonomy = getTaxonomyName();
     page.value.categories = categoryValue.value.map(x => x.title ?? x);
 
-    axios.patch(`${endpoint}/${id.value}`, page.value).then(() => {
-        message.value = t('pageForm.pageUpdated');
-    }).catch((error) => {
-        if (error.response?.status === 422) {
-            console.error('Validation errors:', error.response.data);
+    saving.value = true;
+    try {
+        if (form.value === 'edit') {
+            await axios.patch(`${endpoint}/${id.value}`, page.value);
+            saving.value = false;
+            dialog.success(t('pageForm.pageUpdated'));
+        } else {
+            await axios.post(`${endpoint}`, page.value);
+            page.value = { title: '', content: '' };
+            saving.value = false;
+            dialog.success(t('pageForm.pageSaved'));
         }
-    });
-};
-
-const store = () => {
-    page.value.terms = termValue.value;
-    page.value.taxonomy = getTaxonomyName();
-    page.value.categories = categoryValue.value.map(x => x.title ?? x);
-
-    axios.post(`${endpoint}`, page.value).then(() => {
-        page.value = { title: '', content: '' };
-        message.value = t('pageForm.pageSaved');
-    }).catch((error) => {
-        if (error.response?.status === 422) {
-            console.error('Validation errors:', error.response.data);
-        }
-    });
+    } catch (error) {
+        saving.value = false;
+        dialog.requestError(error);
+    }
 };
 
 // Init (equivalent to created())
@@ -203,10 +198,6 @@ Promise.all([
         <v-container>
             <v-row>
                 <v-col cols="8">
-                    <v-alert v-if="message" type="success">
-                        {{ message }}
-                    </v-alert>
-
                     <v-text-field
                         :label="$t('common.title')"
                         v-model="page.title"
@@ -360,6 +351,8 @@ Promise.all([
                                             variant="elevated"
                                             size="small"
                                             prepend-icon="mdi-plus"
+                                            :loading="savingCategory"
+                                            :disabled="savingCategory"
                                             @click="saveCategory"
                                         >
                                             {{ $t('pageForm.addNewCategoryBtn') }}
@@ -448,6 +441,8 @@ Promise.all([
                                 variant="elevated"
                                 block
                                 :prepend-icon="form === 'edit' ? 'mdi-content-save' : 'mdi-plus'"
+                                :loading="saving"
+                                :disabled="saving"
                                 @click="save"
                             >
                                 {{ form === 'edit' ? $t('common.update') : $t('common.create') }}

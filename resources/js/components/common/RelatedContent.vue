@@ -53,8 +53,13 @@
             </VCardText>
             <VCardActions>
                 <VSpacer/>
-                <VBtn color="grey" @click="cancel">{{ $t('common.cancel') }}</VBtn>
-                <VBtn color="primary" :disabled="!selectedSource || !selectedSourceItem || !selectedRelated || !selectedRelatedItem" @click="confirm">
+                <VBtn color="grey" :disabled="saving" @click="cancel">{{ $t('common.cancel') }}</VBtn>
+                <VBtn
+                    color="primary"
+                    :loading="saving"
+                    :disabled="saving || !selectedSource || !selectedSourceItem || !selectedRelated || !selectedRelatedItem"
+                    @click="confirm"
+                >
                     {{ $t('common.confirm') }}
                 </VBtn>
             </VCardActions>
@@ -66,8 +71,11 @@
 import {ref, watch, computed, onMounted} from 'vue';
 import {useI18n} from 'vue-i18n';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
 
 const {t} = useI18n();
+const dialog = useDialog();
+const saving = ref(false);
 
 const props = defineProps({
     modelValue: Boolean,
@@ -151,16 +159,20 @@ const fetchModelItems = async (model, targetArray) => {
     }
 };
 
+// Resolves to true when the relation was stored, false after showing the error.
 const relateModels = async (data) => {
-    console.log(data)
+    saving.value = true;
     try {
-
-        const response = await axios.post('/api/relate-models', {
+        await axios.post('/api/relate-models', {
             data
         });
-
+        return true;
     } catch (error) {
         console.error(`Failed to relate models ${data}:`, error);
+        dialog.requestError(error);
+        return false;
+    } finally {
+        saving.value = false;
     }
 };
 
@@ -188,7 +200,8 @@ watch(internalModelValue, () => {
 //     fetchRelateableModels();
 // });
 
-function confirm() {
+async function confirm() {
+    if (saving.value) return;
     let data = {
             sourceType: selectedSource.value,
             relatedType: selectedRelated.value,
@@ -196,9 +209,8 @@ function confirm() {
             relatedId: selectedRelatedItem.value,
         }
 
-    relateModels(data)
-
-
+    const ok = await relateModels(data)
+    if (!ok) return;
 
     // emit('confirmRelation', {
     //     sourceType: selectedSource.value,
@@ -207,11 +219,12 @@ function confirm() {
     //     relatedIdId: selectedRelatedItem.value,
     // });
 
-
     internalModelValue.value = false;
+    dialog.success(t('success.saved'));
 }
 
 function cancel() {
+    if (saving.value) return;
     internalModelValue.value = false;
 }
 </script>

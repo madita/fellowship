@@ -165,6 +165,8 @@
                                 size="small"
                                 variant="text"
                                 color="primary"
+                                :loading="loadingItemId === item.id"
+                                :disabled="loadingItemId !== null"
                                 @click="editItem(item)"
                             >
                                 <v-icon icon="mdi-pencil" size="small" />
@@ -223,6 +225,7 @@ const stats = reactive({
 
 const loadingStats = ref(false);
 const loadingItems = ref(false);
+const loadingItemId = ref(null);
 const saving = ref(false);
 
 const editDialog = ref(false);
@@ -265,6 +268,7 @@ const fetchModels = async () => {
 };
 
 const fetchStats = async () => {
+    if (loadingStats.value) return;
     loadingStats.value = true;
     try {
         const response = await axios.get('/api/admin/model-translations/stats');
@@ -318,6 +322,8 @@ const debouncedSearch = () => {
 };
 
 const editItem = async (item) => {
+    if (loadingItemId.value !== null) return;
+    loadingItemId.value = item.id;
     editingItem.value = item;
     try {
         const response = await axios.get(`/api/admin/model-translations/${selectedModel.value}/${item.id}`);
@@ -326,10 +332,13 @@ const editItem = async (item) => {
     } catch (error) {
         console.error('Failed to load translations:', error);
         showSnackbar(t('modelTranslations.failedToLoadTranslations'), 'error');
+    } finally {
+        loadingItemId.value = null;
     }
 };
 
 const saveTranslations = async (translations) => {
+    if (saving.value) return;
     saving.value = true;
     try {
         await axios.put(`/api/admin/model-translations/${selectedModel.value}/${editingItem.value.id}`, {

@@ -175,28 +175,15 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
-
-    <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="deleteConfirmDialog" max-width="400">
-        <v-card>
-            <v-card-title>{{ $t('mediaCenter.deleteMedia') }}</v-card-title>
-            <v-card-text>
-                {{ $t('mediaCenter.deleteConfirm') }}
-            </v-card-text>
-            <v-card-actions>
-                <v-spacer />
-                <v-btn variant="text" @click="deleteConfirmDialog = false">{{ $t('common.cancel') }}</v-btn>
-                <v-btn color="error" @click="deleteMedia">{{ $t('common.delete') }}</v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
     modelValue: {
@@ -210,8 +197,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:modelValue', 'delete']);
-
-const deleteConfirmDialog = ref(false);
 
 const internalModelValue = computed({
     get: () => props.modelValue,
@@ -274,13 +259,10 @@ const copyUrl = async () => {
     }
 };
 
-const confirmDelete = () => {
-    deleteConfirmDialog.value = true;
-};
-
-const deleteMedia = () => {
+const confirmDelete = async () => {
+    const ok = await dialog.confirmDelete(t('mediaCenter.deleteConfirm'), { title: t('mediaCenter.deleteMedia') });
+    if (!ok) return;
     emit('delete', props.media);
-    deleteConfirmDialog.value = false;
     internalModelValue.value = false;
 };
 </script>

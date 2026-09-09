@@ -59,6 +59,8 @@
                                     color="primary"
                                     size="small"
                                     variant="elevated"
+                                    :loading="state.loading"
+                                    :disabled="state.loading"
                                     @click="getRecords"
                                     min-width="80"
                                 >
@@ -68,6 +70,7 @@
                                 <!-- Refresh Button -->
                                 <v-btn
                                     :loading="state.loading"
+                                    :disabled="state.loading"
                                     size="small"
                                     icon="mdi-refresh"
                                     @click="getRecords"
@@ -113,7 +116,7 @@
                         :pageCount="state.response.records.last_page"
                         :server-items-length="state.response.records.total"
                         :search="state.quickSearchQuery"
-                        :loading="state.loading"
+                        :loading="state.loading || state.deleting"
                     >
                         <template #top>
                             <v-toolbar flat>
@@ -139,7 +142,10 @@
                                                         </transition>
                                                     </template>
                                                     <v-list density="compact">
-                                                        <v-list-item @click="destroy(state.selected)">
+                                                        <v-list-item :disabled="state.deleting" @click="deleteItem(state.selected)">
+                                                            <template v-if="state.deleting" v-slot:prepend>
+                                                                <v-progress-circular indeterminate size="16" width="2" />
+                                                            </template>
                                                             <v-list-item-title>{{ $t('common.delete') }}</v-list-item-title>
                                                         </v-list-item>
                                                     </v-list>
@@ -218,6 +224,7 @@
                                             <v-btn
                                                 color="blue-darken-1"
                                                 variant="text"
+                                                :disabled="state.saving"
                                                 @click="close"
                                             >
                                                 {{ $t('common.cancel') }}
@@ -225,22 +232,12 @@
                                             <v-btn
                                                 color="blue-darken-1"
                                                 variant="text"
+                                                :loading="state.saving"
+                                                :disabled="state.saving"
                                                 @click="save"
                                             >
                                                 {{ $t('common.save') }}
                                             </v-btn>
-                                        </v-card-actions>
-                                    </v-card>
-                                </v-dialog>
-
-                                <v-dialog v-model="state.dialogDelete" max-width="500px">
-                                    <v-card>
-                                        <v-card-title class="text-h5">{{ $t('dataTable.deleteConfirm') }}</v-card-title>
-                                        <v-card-actions>
-                                            <v-spacer></v-spacer>
-                                            <v-btn color="blue-darken-1" variant="text" @click="closeDelete">{{ $t('common.cancel') }}</v-btn>
-                                            <v-btn color="blue-darken-1" variant="text" @click="deleteItemConfirm">{{ $t('dataTable.ok') }}</v-btn>
-                                            <v-spacer></v-spacer>
                                         </v-card-actions>
                                     </v-card>
                                 </v-dialog>
@@ -269,6 +266,7 @@
                             </v-icon>
                             <v-icon
                                 size="small"
+                                :disabled="state.deleting"
                                 @click="deleteItem(item)"
                             >
                                 mdi-delete
@@ -286,7 +284,7 @@
                 :endpoint="endpoint"
                 @add-item="addItem"
                 @update-item="updateItem"
-                @remove-item="deleteItem(state.selected)"
+                @remove-item="deleteItem"
             />
         </v-container>
     </div>
@@ -297,6 +295,7 @@ import { ref, reactive, computed, nextTick, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { useApi } from '@/api/useAPI.js'
+import { useDialog } from '@/composables/useDialog.js'
 import AppDataTable from '../AppDataTable.vue'
 import DataTableForm from './DataTableForm.vue'
 import Tiptap from '../tiptap/Tiptap.vue'
@@ -317,6 +316,7 @@ export default {
     setup(props) {
         const { t } = useI18n()
         const api = useApi()
+        const dialog = useDialog()
         const isSidebarActive = ref(false)
 
         const breadcrumbs = computed(() => [
@@ -332,8 +332,9 @@ export default {
 
         const state = reactive({
             dialog: false,
-            dialogDelete: false,
             loading: true,
+            saving: false,
+            deleting: false,
             formTitle: '',
             creating: {
                 active: false,
@@ -470,6 +471,7 @@ export default {
                 }
             } catch (error) {
                 console.error('Error fetching records:', error)
+                dialog.requestError(error, t('errors.general'))
             } finally {
                 state.loading = false
             }
@@ -490,14 +492,21 @@ export default {
         }
 
         const addItem = async (newItem) => {
+            if (state.saving) return
+            state.saving = true
             try {
                 await axios.post(`/api${props.endpoint}`, newItem)
+                state.saving = false
+                dialog.success(t('success.created'))
                 await getRecords()
             } catch (error) {
                 if (error.response?.status === 422) {
                     state.editing.errors = error.response.data
                 }
                 console.error('Error adding item:', error)
+                dialog.requestError(error, t('errors.general'))
+            } finally {
+                state.saving = false
             }
         }
 
@@ -515,16 +524,20 @@ export default {
             isSidebarActive.value = true
         }
 
-        const deleteItem = (item) => {
-            state.editedIndex = state.response.records.data.indexOf(item)
-            state.editing.id = item.id
-            state.editedItem = Object.assign({}, item)
-            state.dialogDelete = true
-        }
+        // Confirms, then deletes one record (object or id) or a list of them.
+        const deleteItem = async (record) => {
+            if (state.deleting) return
+            const isList = Array.isArray(record)
+            if (isList && record.length === 0) return
 
-        const deleteItemConfirm = async () => {
-            await destroy(state.editing.id)
-            closeDelete()
+            const ok = await dialog.confirmDelete(
+                isList && record.length > 1
+                    ? t('dataTable.deleteSelectedConfirm', { count: record.length })
+                    : t('dataTable.deleteConfirm')
+            )
+            if (!ok) return
+
+            await destroy(record)
         }
 
         const close = () => {
@@ -535,15 +548,8 @@ export default {
             })
         }
 
-        const closeDelete = () => {
-            state.dialogDelete = false
-            nextTick(() => {
-                state.editedItem = Object.assign({}, state.defaultItem)
-                state.editedIndex = -1
-            })
-        }
-
         const save = () => {
+            if (state.saving) return
             if (state.editedIndex > -1) {
                 update()
             } else {
@@ -552,37 +558,50 @@ export default {
         }
 
         const updateItem = async (item) => {
-            console.log('update');
+            if (state.saving) return
+            state.saving = true
             try {
-                // await axios.patch(`${endpoint}/${event.id}`, event);
-                // await calendarStore.fetchEvents();
                 await axios.patch(`/api${props.endpoint}/${item.id}`, item)
+                state.saving = false
+                dialog.success(t('success.updated'))
                 await getRecords()
                 state.editing.id = null
                 state.editing.form = {}
                 state.editedItem = Object.assign({}, state.defaultItem)
             } catch (error) {
                 console.error('Error updating item from form sidebar:', error);
+                dialog.requestError(error, t('errors.general'))
+            } finally {
+                state.saving = false
             }
         };
 
         const update = async () => {
+            state.saving = true
             try {
                 await axios.patch(`/api${props.endpoint}/${state.editing.id}`, state.editedItem)
+                state.saving = false
                 close()
+                dialog.success(t('success.updated'))
                 await getRecords()
                 state.editing.id = null
                 state.editing.form = {}
                 state.editedItem = Object.assign({}, state.defaultItem)
             } catch (error) {
                 console.error('Error updating item:', error)
+                dialog.requestError(error, t('errors.general'))
+            } finally {
+                state.saving = false
             }
         }
 
         const store = async () => {
+            state.saving = true
             try {
                 await axios.post(`/api${props.endpoint}`, state.editedItem)
+                state.saving = false
                 close()
+                dialog.success(t('success.created'))
                 await getRecords()
                 state.editedItem = Object.assign({}, state.defaultItem)
                 state.creating.errors = []
@@ -591,6 +610,9 @@ export default {
                     state.editing.errors = error.response.data
                 }
                 console.error('Error storing item:', error)
+                dialog.requestError(error, t('errors.general'))
+            } finally {
+                state.saving = false
             }
         }
 
@@ -599,11 +621,18 @@ export default {
                 ? record.map(item => item.id || item)
                 : [record.id || record]
 
+            state.deleting = true
             try {
                 await axios.delete(`/api${props.endpoint}/${recordIds.join(',')}`)
+                state.selected = []
+                state.deleting = false
+                dialog.success(t('success.deleted'))
                 await getRecords()
             } catch (error) {
                 console.error('Error deleting item(s):', error)
+                dialog.requestError(error, t('errors.general'))
+            } finally {
+                state.deleting = false
             }
         }
 
@@ -658,9 +687,7 @@ export default {
             updateItem,
             editItemForm,
             deleteItem,
-            deleteItemConfirm,
             close,
-            closeDelete,
             save,
             update,
             store,

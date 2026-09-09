@@ -117,12 +117,11 @@
                         density="compact"
                         autofocus
                     />
-                    <v-alert v-if="error" type="error" variant="tonal" density="compact">{{ error }}</v-alert>
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn @click="dialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" :loading="saving" :disabled="!assignUser" @click="assign">
+                    <v-btn :disabled="saving" @click="dialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" :loading="saving" :disabled="!assignUser || saving" @click="assign">
                         {{ $t('migrationTool.assign') }}
                     </v-btn>
                 </v-card-actions>
@@ -135,8 +134,10 @@
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const feedback = useDialog();
 const emit = defineEmits(['notify']);
 const props = defineProps({
     // Pre-fill the search, e.g. deep-linked from a claim ticket.
@@ -149,7 +150,6 @@ const dialog = ref(false);
 const assigning = ref(null);
 const assignUser = ref('');
 const saving = ref(false);
-const error = ref('');
 
 const filtered = computed(() => {
     const query = (search.value || '').toLowerCase();
@@ -178,13 +178,12 @@ const fetchAll = async () => {
 const openAssign = (row) => {
     assigning.value = row;
     assignUser.value = row.claim?.user?.username || row.suggested_user?.username || '';
-    error.value = '';
     dialog.value = true;
 };
 
 const assign = async () => {
+    if (saving.value) return;
     saving.value = true;
-    error.value = '';
     try {
         const { data } = await axios.post('/api/admin/migrations/legacy-users/assign', {
             legacy_username: assigning.value.legacy_username,
@@ -195,7 +194,7 @@ const assign = async () => {
         dialog.value = false;
         await fetchAll();
     } catch (e) {
-        error.value = e.response?.data?.message || e.message;
+        feedback.requestError(e);
     } finally {
         saving.value = false;
     }

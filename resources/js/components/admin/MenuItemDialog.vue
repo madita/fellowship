@@ -176,14 +176,14 @@
 
             <v-card-actions>
                 <v-spacer />
-                <v-btn variant="text" @click="$emit('update:modelValue', false)">
+                <v-btn variant="text" :disabled="saving" @click="$emit('update:modelValue', false)">
                     {{ t('common.cancel') }}
                 </v-btn>
                 <v-btn
                     color="primary"
                     variant="tonal"
                     :loading="saving"
-                    :disabled="!valid"
+                    :disabled="!valid || saving"
                     @click="save"
                 >
                     {{ t('common.save') }}
@@ -289,6 +289,7 @@ watch(
 );
 
 async function save() {
+    if (saving.value) return;
     const { valid: ok } = await formRef.value.validate();
     if (!ok) return;
 

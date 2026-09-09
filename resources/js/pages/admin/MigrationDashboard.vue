@@ -127,7 +127,7 @@
                             color="primary"
                             variant="tonal"
                             :loading="archiving"
-                            :disabled="!archiveCategory"
+                            :disabled="!archiveCategory || archiving"
                             @click="archiveForum"
                         >
                             {{ $t('migrationTool.forumArchiveRun') }}
@@ -153,6 +153,8 @@
                             color="error"
                             variant="text"
                             size="small"
+                            :loading="cancelling"
+                            :disabled="cancelling"
                             @click="cancelBatch"
                         >
                             {{ $t('common.cancel') }}
@@ -266,10 +268,18 @@
                             <v-list-item
                                 v-for="batch in history"
                                 :key="batch.batchId"
+                                :disabled="loadingBatchId !== null"
                                 @click="loadBatch(batch.batchId)"
                             >
                                 <template #prepend>
+                                    <v-progress-circular
+                                        v-if="loadingBatchId === batch.batchId"
+                                        indeterminate
+                                        size="20"
+                                        width="2"
+                                    />
                                     <v-icon
+                                        v-else
                                         :icon="getStatusIcon(batch.status)"
                                         :color="getStatusColor(batch.status)"
                                     />
@@ -312,8 +322,10 @@ import axios from 'axios';
 import MigrationSources from '@/components/admin/migration/MigrationSources.vue';
 import MigrationMappings from '@/components/admin/migration/MigrationMappings.vue';
 import MigrationLegacyUsers from '@/components/admin/migration/MigrationLegacyUsers.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 // Components
 const MigrationStatusChip = {
@@ -345,6 +357,8 @@ const migrations = ref([]);
 const groups = ref([]);
 const selectedMigrations = ref([]);
 const starting = ref(false);
+const cancelling = ref(false);
+const loadingBatchId = ref(null);
 const currentBatchId = ref(null);
 const batchStatus = ref(null);
 const logs = ref([]);
@@ -435,7 +449,7 @@ const toggleGroup = (groupKey, selected) => {
 };
 
 const startMigrations = async () => {
-    if (selectedMigrations.value.length === 0) return;
+    if (selectedMigrations.value.length === 0 || starting.value) return;
 
     starting.value = true;
     logs.value = [];
@@ -458,27 +472,46 @@ const startMigrations = async () => {
 };
 
 const runAll = () => {
+    if (starting.value) return;
     selectedMigrations.value = migrations.value.map(m => m.key);
     startMigrations();
 };
 
 const cancelBatch = async () => {
-    if (!currentBatchId.value) return;
+    if (!currentBatchId.value || cancelling.value) return;
 
+    const ok = await dialog.confirm({
+        title: t('migrationDashboard.cancelBatchTitle'),
+        content: t('migrationDashboard.cancelBatchConfirm'),
+        confirmationText: t('migrationDashboard.cancelBatchTitle'),
+        cancellationText: t('dialogs.confirm.close'),
+        color: 'warning',
+    });
+    if (!ok) return;
+
+    cancelling.value = true;
     try {
         await axios.post(`/api/admin/migrations/cancel/${currentBatchId.value}`);
         showSnackbar(t('migrationDashboard.batchCancelled'));
         addLog('warning', t('migrationDashboard.batchCancelledByUser'));
     } catch (error) {
         showSnackbar(t('migrationDashboard.failedToCancelBatch'), 'error');
+    } finally {
+        cancelling.value = false;
     }
 };
 
 const loadBatch = async (batchId) => {
+    if (loadingBatchId.value !== null) return;
+    loadingBatchId.value = batchId;
     currentBatchId.value = batchId;
     logs.value = [];
-    await fetchBatchStatus();
-    await fetchLogs();
+    try {
+        await fetchBatchStatus();
+        await fetchLogs();
+    } finally {
+        loadingBatchId.value = null;
+    }
 };
 
 const startPolling = () => {
@@ -631,6 +664,15 @@ const archiveLockThreads = ref(true);
 const archiving = ref(false);
 
 const archiveForum = async () => {
+    if (archiving.value) return;
+    const ok = await dialog.confirm({
+        title: t('migrationTool.forumArchive'),
+        content: t('migrationTool.forumArchiveConfirm', { category: archiveCategory.value }),
+        confirmationText: t('migrationTool.forumArchiveRun'),
+        color: 'warning',
+    });
+    if (!ok) return;
+
     archiving.value = true;
     try {
         const { data } = await axios.post('/api/admin/migrations/forum/archive', {

@@ -14,8 +14,6 @@
                 </v-btn>
             </div>
 
-            <v-alert v-if="error" type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
-
             <div v-if="loading && !data" class="text-center py-12">
                 <v-progress-circular size="48" indeterminate color="primary" />
             </div>
@@ -232,7 +230,6 @@ export default {
         return {
             data: null,
             loading: false,
-            error: null,
             quickLinks: [
                 { to: '/admin/settings', icon: 'mdi-cog-outline', key: 'menu.adminSettings' },
                 { to: '/admin/users', icon: 'mdi-account-group-outline', key: 'menu.adminUsers' },
@@ -298,13 +295,13 @@ export default {
     },
     methods: {
         async load() {
+            if (this.loading) return;
             this.loading = true;
-            this.error = null;
             try {
                 const { data } = await axios.get('/api/admin/dashboard');
                 this.data = data.data;
             } catch (e) {
-                this.error = e.response?.data?.message || e.message;
+                this.$dialog.requestError(e);
             } finally {
                 this.loading = false;
             }
