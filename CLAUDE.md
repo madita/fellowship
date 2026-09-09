@@ -173,3 +173,12 @@ php artisan queue:work           # Process jobs
 7. Run `php artisan serve` + `npm run dev`
 
 Laravel Sail available as alternative: `./vendor/bin/sail up -d`
+
+## UI Conventions (frontend)
+
+- **Page shell:** every routed page starts with `components/common/PageHeader.vue` (title, subtitle, icon, `back-to`, `#actions` slot) followed by its own `<v-container fluid>` (pages are full width; the header is fluid by default). Page titles are `text-h4`, section headings `text-h6`, card titles `text-subtitle-1 font-weight-medium`.
+- **States:** `LoadingState` (centered spinner) or `v-skeleton-loader` while loading; `EmptyState` (icon, title, text, `#actions`) when a list/search has nothing to show. Never a bare "No data" string.
+- **Feedback:** outcome of an action → `this.$dialog` / `useDialog()` (`success`, `error`, `requestError`, `confirm`, `confirmDelete`); see `store/dialogStore.js`. Inline `v-alert` only for static hints, persistent state banners and field validation. Snackbars for non-blocking toasts.
+- **Requests:** every control that triggers a request has `:loading`, a re-entry guard, and disables conflicting siblings; destructive actions confirm first.
+- **Components:** inputs are outlined and alerts tonal by default (`plugins/vuetify.js`), so don't repeat those props. Dialogs: `max-width` 480 (confirm) / 600 (form) / 900 (wide), title `text-h6`, actions right-aligned with a `variant="text"` cancel and a `variant="flat" color="primary"` (or `error`) confirm. Primary page CTA: `color="primary" variant="elevated"`; secondary actions `variant="tonal"` or `text`; chips `variant="tonal" size="small"`.
+- **Colour & spacing:** theme tokens only (`rgb(var(--v-theme-primary))`, `text-medium-emphasis`, `.bg-gradient`, `.text-gradient`), no hard-coded hex except real brand colours (social logos) and code editors. Use Vuetify utilities (`ga-2`, `pa-4`, `mb-6`) instead of custom margin/gap CSS. No Vuetify 2 syntax (`display-1`, `caption`, `grey--text`, bare `small`/`outlined`/`dense` props, `<v-icon left>`).

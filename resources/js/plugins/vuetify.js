@@ -159,6 +159,15 @@ const vuetify = createVuetify({
         },
     },
     defaults: {
+        // House style: outlined inputs, tonal alerts. Pass a variant
+        // explicitly only where a component must deviate.
+        VTextField: { variant: 'outlined' },
+        VSelect: { variant: 'outlined' },
+        VTextarea: { variant: 'outlined' },
+        VAutocomplete: { variant: 'outlined' },
+        VCombobox: { variant: 'outlined' },
+        VFileInput: { variant: 'outlined' },
+        VAlert: { variant: 'tonal' },
         global: {
             // Apply custom font family to all Vuetify components
             style: {

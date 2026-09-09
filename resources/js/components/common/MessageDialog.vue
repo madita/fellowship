@@ -8,7 +8,7 @@
             <v-card-text class="text-body-2" style="white-space: pre-line;">{{ message }}</v-card-text>
             <v-card-actions>
                 <v-spacer />
-                <v-btn :color="color" variant="tonal" @click="close">{{ okText || $t('dialogs.confirm.ok') }}</v-btn>
+                <v-btn :color="color" variant="flat" @click="close">{{ okText || $t('dialogs.confirm.ok') }}</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>

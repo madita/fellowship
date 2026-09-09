@@ -1,8 +1,8 @@
 <template>
     <!-- Bind modelValue to the dialog's v-model -->
-    <VDialog v-model="internalModelValue" max-width="400">
+    <VDialog v-model="internalModelValue" max-width="480">
         <VCard>
-            <VCardTitle class="text-h5">{{ title || $t('dialogs.confirm.title') }}</VCardTitle>
+            <VCardTitle class="text-h6">{{ title || $t('dialogs.confirm.title') }}</VCardTitle>
             <VCardText>
                 <p v-if="content">{{ content }}</p>
                 <VTextField
@@ -14,8 +14,8 @@
             </VCardText>
             <VCardActions>
                 <VSpacer />
-                <VBtn color="grey" variant="text" @click="cancel">{{ cancellationText || $t('common.cancel') }}</VBtn>
-                <VBtn :color="color" variant="tonal" :disabled="confirmationButtonDisabled" @click="confirm">
+                <VBtn variant="text" @click="cancel">{{ cancellationText || $t('common.cancel') }}</VBtn>
+                <VBtn :color="color" variant="flat" :disabled="confirmationButtonDisabled" @click="confirm">
                     {{ confirmationText || $t('dialogs.confirm.yes') }}
                 </VBtn>
             </VCardActions>
