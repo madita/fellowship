@@ -214,18 +214,6 @@
                     {{ $t('forum.noResults') }}
                 </p>
             </div>
-
-            <!-- Error State -->
-            <v-alert
-                v-if="forumStore.error"
-                type="error"
-                variant="tonal"
-                class="mt-4"
-                closable
-                @click:close="forumStore.error = null"
-            >
-                {{ forumStore.error }}
-            </v-alert>
         </v-container>
     </div>
 </template>
@@ -273,8 +261,13 @@ export default {
     methods: {
         performSearch() {
             if (this.searchInput && this.searchInput.trim().length >= 2) {
-                this.forumStore.searchForum(this.searchInput.trim())
+                this.runSearch(this.searchInput.trim())
             }
+        },
+        // Every search goes through here so a failed request is reported once.
+        runSearch(query, options) {
+            return this.forumStore.searchForum(query, options)
+                .catch(error => this.$dialog.requestError(error, this.$t('forum.errorLoading')))
         },
         doSearch() {
             if (this.searchInput && this.searchInput.trim().length >= 2) {
@@ -286,12 +279,12 @@ export default {
         },
         onThreadPageChange(page) {
             this.threadPage = page
-            this.forumStore.searchForum(this.forumStore.searchQuery, { type: 'threads', page })
+            this.runSearch(this.forumStore.searchQuery, { type: 'threads', page })
             window.scrollTo({ top: 0, behavior: 'smooth' })
         },
         onPostPageChange(page) {
             this.postPage = page
-            this.forumStore.searchForum(this.forumStore.searchQuery, { type: 'posts', page })
+            this.runSearch(this.forumStore.searchQuery, { type: 'posts', page })
             window.scrollTo({ top: 0, behavior: 'smooth' })
         },
         goToThread(thread) {

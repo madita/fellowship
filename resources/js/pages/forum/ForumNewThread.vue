@@ -33,18 +33,6 @@
         <v-container>
             <v-card class="new-thread-card" variant="elevated">
                 <v-card-text>
-                    <!-- Error Alert -->
-                    <v-alert
-                        v-if="forumStore.error"
-                        type="error"
-                        variant="tonal"
-                        class="mb-4"
-                        closable
-                        @click:close="forumStore.error = null"
-                    >
-                        {{ forumStore.error }}
-                    </v-alert>
-
                     <!-- Title -->
                     <v-text-field
                         v-model="title"
@@ -53,6 +41,7 @@
                         variant="outlined"
                         density="comfortable"
                         :error-messages="titleErrors"
+                        :disabled="forumStore.submitting"
                         class="mb-4"
                         @input="titleErrors = []"
                     />
@@ -70,6 +59,7 @@
                 <v-card-actions class="px-4 pb-4">
                     <v-btn
                         variant="text"
+                        :disabled="forumStore.submitting"
                         @click="cancel"
                     >
                         {{ $t('forum.cancel') }}
@@ -118,6 +108,7 @@ export default {
         // Ensure the forum data is loaded for breadcrumbs
         if (!this.forumStore.currentForum || this.forumStore.currentForum.slug !== this.$route.params.slug) {
             this.forumStore.fetchForum(this.$route.params.slug)
+                .catch(error => this.$dialog.requestError(error, this.$t('forum.errorLoading')))
         }
     },
     methods: {
@@ -133,15 +124,15 @@ export default {
             return this.titleErrors.length === 0 && this.bodyErrors.length === 0
         },
         async submitThread() {
-            if (!this.validate()) return
+            if (this.forumStore.submitting || !this.validate()) return
+
+            const forumId = this.forumStore.currentForum?.id
+            if (!forumId) {
+                this.$dialog.error(this.$t('forum.forumNotFound'))
+                return
+            }
 
             try {
-                const forumId = this.forumStore.currentForum?.id
-                if (!forumId) {
-                    this.forumStore.error = 'Forum not found'
-                    return
-                }
-
                 const thread = await this.forumStore.createThread(forumId, {
                     title: this.title,
                     body: this.body
@@ -156,8 +147,7 @@ export default {
                     }
                 })
             } catch (error) {
-                // Error is handled by the store
-                console.error('Failed to create thread:', error)
+                this.$dialog.requestError(error, this.$t('forum.errorCreating'))
             }
         },
         cancel() {

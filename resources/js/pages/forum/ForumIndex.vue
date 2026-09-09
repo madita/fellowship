@@ -275,18 +275,6 @@
             <div v-if="forumStore.activities.length > 0 && viewMode === 'categories'" class="mt-6">
                 <ForumActivityFeed :activities="forumStore.activities" />
             </div>
-
-            <!-- Error State -->
-            <v-alert
-                v-if="forumStore.error"
-                type="error"
-                variant="tonal"
-                class="mt-4"
-                closable
-                @click:close="forumStore.error = null"
-            >
-                {{ forumStore.error }}
-            </v-alert>
         </v-container>
     </v-container>
 </template>
@@ -336,6 +324,7 @@ export default {
     },
     mounted() {
         this.forumStore.fetchForums()
+            .catch(error => this.$dialog.requestError(error, this.$t('forum.errorLoading')))
         this.forumStore.fetchActivities()
     },
     methods: {
@@ -358,6 +347,7 @@ export default {
         },
         loadRecentThreads() {
             this.forumStore.fetchRecentThreads(this.recentThreadsPage, { filter: this.activeThreadFilter })
+                .catch(error => this.$dialog.requestError(error, this.$t('forum.errorLoading')))
         },
         setThreadFilter(value) {
             this.activeThreadFilter = value

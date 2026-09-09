@@ -6,7 +6,7 @@
                 <v-breadcrumbs :items="breadcrumbs" class="pa-0 py-2"></v-breadcrumbs>
 
                 <h1>{{page.title}}</h1>
-                <v-btn v-if="!showHistory && !showHistoryItem" @click="loadHistory">History</v-btn>
+                <v-btn v-if="!showHistory && !showHistoryItem" :loading="loadingHistory" @click="loadHistory">History</v-btn>
                 <v-btn v-if="showHistory || showHistoryItem" @click="showPage">Show Page</v-btn>
                 <div v-if="showHistory">
                     <v-list-group
@@ -102,6 +102,7 @@ export default {
     data() {
         return {
             loading: true,
+            loadingHistory: false,
             showHistory: false,
             showHistoryItem: false,
             page: [],
@@ -149,23 +150,30 @@ export default {
             this.showHistoryItem = false
         },
         loadHistory() {
+            if (this.loadingHistory) return;
             if(!this.page) {
                 this.getPage();
             }
 
             this.loading = true
+            this.loadingHistory = true
             return axios.get(`/api/pages/${this.page.id}/history`).then((response) => {
                 this.history = response.data
 
                 this.loading = false
                 this.showHistory = true
             }).catch((error) => {
-                if (error.response.status === 404) {
+                if (error.response?.status === 404) {
                     this.$router.push('/error/not-found')
+                    return
                 }
-                if (error.response.status === 403) {
+                if (error.response?.status === 403) {
                     this.$router.push('/auth/signin')
+                    return
                 }
+                this.$dialog.requestError(error)
+            }).finally(() => {
+                this.loadingHistory = false
             });
 
         },

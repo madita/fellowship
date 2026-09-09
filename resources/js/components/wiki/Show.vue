@@ -245,8 +245,10 @@ import { useAuthStore } from '@/store/authStore.js'
 import { useUserStore } from '@/store/userStore.js'
 import { useDateFormat } from '@/plugins/formatDate.js' // Adjust path as needed
 import axios from 'axios'
+import { useDialog } from '@/composables/useDialog.js'
 
 const { t } = useI18n()
+const dialog = useDialog()
 
 // Props (if any would be passed to this component)
 const props = defineProps({
@@ -322,24 +324,30 @@ const goTo = (slugParam, type) => {
 }
 
 const approveWiki = async () => {
+    if (approving.value) return
     try {
         approving.value = true
         await axios.post(`/api/wiki/${slug.value}/approve`)
         isApproved.value = true
+        approving.value = false
+        await dialog.success(t('wiki.approveSuccess'))
     } catch (error) {
-        console.error('Error approving wiki page:', error)
+        await dialog.requestError(error, t('wiki.approveError'))
     } finally {
         approving.value = false
     }
 }
 
 const unapproveWiki = async () => {
+    if (approving.value) return
     try {
         approving.value = true
         await axios.post(`/api/wiki/${slug.value}/unapprove`)
         isApproved.value = false
+        approving.value = false
+        await dialog.success(t('wiki.unapproveSuccess'))
     } catch (error) {
-        console.error('Error unapproving wiki page:', error)
+        await dialog.requestError(error, t('wiki.approveError'))
     } finally {
         approving.value = false
     }

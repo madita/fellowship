@@ -10,17 +10,14 @@
             <v-row v-if="!loading && info != null">
                 <v-col
                     cols="8">
-                    <v-alert v-if="message" type="success">
+                    <v-alert v-if="message" type="info">
                         {{ message }}
-                    </v-alert>
-
-                    <v-alert v-if="editing.errors.length > 0" type="error">
-                        {{ editing.errors }}
                     </v-alert>
 
                     <v-text-field
                         :label="$t('common.title')"
                         v-model="info.term.title"
+                        :disabled="saving"
                     ></v-text-field>
 
                     <tiptap v-model="info.description" :value="info.description" id="text-content" name="content"/>
@@ -50,7 +47,7 @@
 
                     </template>
 
-                    <v-btn @click="updateCategory">{{ $t('common.save') }}</v-btn>
+                    <v-btn :loading="saving" @click="updateCategory">{{ $t('common.save') }}</v-btn>
                 </v-col>
             </v-row>
 
@@ -63,6 +60,7 @@
 
 // import {mapGetters} from "vuex";
 import Tiptap from '../common/tiptap/Tiptap.vue'
+import { useAuthStore } from '@/store/authStore.js';
 
 export default {
     components: {
@@ -71,6 +69,7 @@ export default {
     data() {
         return {
             loading: true,
+            saving: false,
             isDisabled: false,
             parents:[],
             pages:[],
@@ -91,11 +90,6 @@ export default {
             categories: [],
             categoryValue: [],
             parentValue: null,
-            editing: {
-                id: null,
-                form: {},
-                errors: []
-            },
             rules: {
                 required: value => !!value || this.$t('validation.required')
             },
@@ -167,19 +161,22 @@ export default {
                 this.loading = false
             });
         },
-        updateCategory() {
+        async updateCategory() {
+            if (this.saving) return;
+            this.saving = true
 
-            // this.loading = true
             let data = {term: this.newCategory, category: this.info, old: this.infoOld, taxonomy: this.taxonomyValue, parent: this.parentValue, content: this.info.description}
 
-            axios.patch(`/api/wiki/category/${this.slug}`, data).then(() => {
+            try {
+                await axios.patch(`/api/wiki/category/${this.slug}`, data)
 
                 this.getCategories(this.taxonomyValue.taxonomy)
-                this.infoValue.push(this.newCategory);
-                // this.categories = this.parents = response.data
-
-                // this.loading = false
-            });
+                await this.$dialog.success(this.$t('wiki.categoryUpdated'))
+            } catch (error) {
+                await this.$dialog.requestError(error, this.$t('wiki.errorSavingCategory'))
+            } finally {
+                this.saving = false
+            }
         },
 
 

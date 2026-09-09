@@ -47,7 +47,8 @@
                         <v-btn
                             color="primary"
                             class="me-3"
-                            :disabled="getIsGoing('going')"
+                            :loading="answering === 'going'"
+                            :disabled="getIsGoing('going') || (answering && answering !== 'going')"
                             @click="register('going')"
                         >
                             {{ $t('events.yes') }}
@@ -56,7 +57,8 @@
                             variant="tonal"
                             color="primary"
                             class="me-3"
-                            :disabled="getIsGoing('notgoing')"
+                            :loading="answering === 'notgoing'"
+                            :disabled="getIsGoing('notgoing') || (answering && answering !== 'notgoing')"
                             @click="register('notgoing')"
                         >
                             {{ $t('events.no') }}
@@ -64,7 +66,8 @@
                         <v-btn
                             variant="outlined"
                             color="secondary"
-                            :disabled="getIsGoing('maybe')"
+                            :loading="answering === 'maybe'"
+                            :disabled="getIsGoing('maybe') || (answering && answering !== 'maybe')"
                             @click="register('maybe')"
                         >
                             {{ $t('events.maybe') }}
@@ -90,19 +93,6 @@
                             :key="`notgoing-${user.id}`"
                             :user="user"
                         />
-
-                        <!-- Success Message -->
-                        <v-alert
-                            v-if="message"
-                            type="success"
-                            variant="tonal"
-                            density="compact"
-                            class="mt-4"
-                            closable
-                            @click:close="message = ''"
-                        >
-                            {{ message }}
-                        </v-alert>
                     </v-col>
                 </v-row>
             </v-container>
@@ -121,8 +111,10 @@ import { useSettingsStore } from '@/store/settingStore.js'
 //import EventDatePicker from './EventDatePicker.vue'
 import UserAvatar from '../common/UserAvatar.vue'
 import axios from 'axios'
+import { useDialog } from '@/composables/useDialog.js'
 
 const { t } = useI18n()
+const dialog = useDialog()
 
 // Props (if any would be passed to this component)
 const props = defineProps({
@@ -150,7 +142,8 @@ const eventData = ref(null)
 const event = ref({ title: '', description: '' })
 const endpoint = '/api/events'
 const id = ref(null)
-const message = ref('')
+// Which answer is currently being sent (null when idle)
+const answering = ref(null)
 
 // Methods
 const getEvent = async () => {
@@ -167,6 +160,8 @@ const getEvent = async () => {
 }
 
 const register = async (answer) => {
+    if (answering.value) return
+    answering.value = answer
     try {
         const response = await axios.get(`${endpoint}/${id.value}/going/${answer}`)
 
@@ -182,19 +177,12 @@ const register = async (answer) => {
         eventData.value.notgoing = response.data.notgoing
         eventData.value.maybe = response.data.maybe
 
-        message.value = t('events.answerSaved')
-
-        // Clear message after 3 seconds
-        setTimeout(() => {
-            message.value = ''
-        }, 3000)
-
+        answering.value = null
+        await dialog.success(t('events.answerSaved'))
     } catch (error) {
-        if (error.response?.status === 422) {
-            console.error('Validation errors:', error.response.data)
-            // Handle validation errors as needed
-        }
-        console.error('Error registering:', error)
+        await dialog.requestError(error, t('events.rsvpError'))
+    } finally {
+        answering.value = null
     }
 }
 

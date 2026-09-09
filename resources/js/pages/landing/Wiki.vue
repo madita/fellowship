@@ -95,6 +95,7 @@
                             class="wiki-card h-100"
                             variant="elevated"
                             :class="{ 'featured-card': index === 0 && !searchText }"
+                            :loading="deletingId === item.data.id"
                             @click="readMore(item.slug)"
                         >
                             <!-- Card Header -->
@@ -132,6 +133,7 @@
                                             <v-list-item
                                                 prepend-icon="mdi-delete"
                                                 :title="$t('common.delete')"
+                                                :disabled="deletingId === item.data.id"
                                                 @click="deletePage(item.data.id)"
                                             />
                                         </v-list>
@@ -322,6 +324,7 @@ export default {
             searchText: "",
             searchTimeout: null,
             cancelToken: null,
+            deletingId: null,
         }
     },
     computed: {
@@ -355,7 +358,7 @@ export default {
                 this.page++;
             } catch (error) {
                 console.error('Error loading wiki pages:', error);
-                this.$emit('error', this.$t('wiki.loadError'));
+                this.$dialog.requestError(error, this.$t('wiki.loadError'));
             } finally {
                 this.loading = false;
             }
@@ -446,20 +449,28 @@ export default {
         sharePage(slug) {
             const url = `${window.location.origin}${this.$route.path}/${slug}`;
             navigator.clipboard.writeText(url).then(() => {
-                this.$emit('success', this.$t('wiki.linkCopied'));
+                this.$dialog.success(this.$t('wiki.linkCopied'));
             });
         },
 
         async deletePage(id) {
-            if (confirm(this.$t('wiki.confirmDelete'))) {
-                try {
-                    await axios.delete(`/api/wiki/${id}`);
-                    this.wikiable = this.wikiable.filter(item => item.data.id !== id);
-                    this.$emit('success', this.$t('wiki.pageDeleted'));
-                } catch (error) {
-                    console.error('Error deleting page:', error);
-                    this.$emit('error', this.$t('wiki.deleteError'));
-                }
+            if (this.deletingId) return;
+            const ok = await this.$dialog.confirmDelete(this.$t('wiki.confirmDelete'), {
+                title: this.$t('wiki.deletePage')
+            });
+            if (!ok) return;
+
+            this.deletingId = id;
+            try {
+                await axios.delete(`/api/wiki/${id}`);
+                this.wikiable = this.wikiable.filter(item => item.data.id !== id);
+                this.deletingId = null;
+                await this.$dialog.success(this.$t('wiki.pageDeleted'));
+            } catch (error) {
+                console.error('Error deleting page:', error);
+                await this.$dialog.requestError(error, this.$t('wiki.deleteError'));
+            } finally {
+                this.deletingId = null;
             }
         },
 

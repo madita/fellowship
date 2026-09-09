@@ -51,13 +51,14 @@
                                 v-if="forumStore.threadPermissions.can_edit || forumStore.threadPermissions.can_delete">
                                 <v-menu>
                                     <template v-slot:activator="{ props }">
-                                        <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props"/>
+                                        <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props" :loading="deletingThread"/>
                                     </template>
                                     <v-list density="compact">
                                         <v-list-item
                                             v-if="forumStore.threadPermissions.can_edit"
                                             prepend-icon="mdi-pencil"
                                             :title="$t('forum.edit')"
+                                            :disabled="deletingThread"
                                             @click="startEditThread"
                                         />
                                         <v-list-item
@@ -65,7 +66,8 @@
                                             prepend-icon="mdi-delete"
                                             :title="$t('forum.delete')"
                                             class="text-error"
-                                            @click="showDeleteThreadDialog = true"
+                                            :disabled="deletingThread"
+                                            @click="deleteThread"
                                         />
                                     </v-list>
                                 </v-menu>
@@ -122,7 +124,7 @@
                                 <v-btn color="primary" :loading="forumStore.submitting" @click="saveEditThread">
                                     {{ $t('forum.save') }}
                                 </v-btn>
-                                <v-btn variant="text" @click="cancelEditThread">{{ $t('forum.cancel') }}</v-btn>
+                                <v-btn variant="text" :disabled="forumStore.submitting" @click="cancelEditThread">{{ $t('forum.cancel') }}</v-btn>
                             </div>
                         </div>
                     </v-card-text>
@@ -152,6 +154,7 @@
                         :thread-locked="forumStore.currentThread.is_locked"
                         :can-moderate="forumStore.threadPermissions.can_moderate"
                         :can-delete-others="forumStore.threadPermissions.can_delete_others"
+                        :busy-post-id="busyPostId"
                         @mark-solution="onMarkSolution"
                         @delete-post="onDeletePost"
                         @quote-reply="onQuoteReply"
@@ -221,26 +224,7 @@
                     {{ $t('forum.loginToReply') }}
                 </v-alert>
             </template>
-
-            <!-- Error State -->
-            <v-alert
-                v-if="forumStore.error"
-                type="error"
-                variant="tonal"
-                class="mt-4"
-                closable
-                @click:close="forumStore.error = null"
-            >
-                {{ forumStore.error }}
-            </v-alert>
         </v-container>
-
-        <!-- Delete Thread Dialog -->
-        <ConfirmDialog
-            v-model="showDeleteThreadDialog"
-            :content="$t('forum.confirmDeleteThread')"
-            :resolve="onDeleteThreadConfirm"
-        />
     </div>
 </template>
 
@@ -251,12 +235,11 @@ import {useAuthStore} from '@/store/authStore.js'
 import {formatDateDistanceToNow} from '@/plugins/formatDate.js'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import ForumPostItem from '@/components/forum/ForumPostItem.vue'
 
 export default {
     name: 'ForumThread',
-    components: {UserAvatar, Tiptap, ConfirmDialog, ForumPostItem},
+    components: {UserAvatar, Tiptap, ForumPostItem},
     setup() {
         const forumStore = useForumStore()
         const userStore = useUserStore()
@@ -272,7 +255,8 @@ export default {
             editingThread: false,
             editThreadTitle: '',
             editThreadBody: '',
-            showDeleteThreadDialog: false
+            deletingThread: false,
+            busyPostId: null
         }
     },
     computed: {
@@ -330,15 +314,17 @@ export default {
         loadThread() {
             const {forumSlug, threadSlug} = this.$route.params
             this.forumStore.fetchThread(forumSlug, threadSlug, this.currentPage)
+                .catch(error => this.$dialog.requestError(error, this.$t('forum.errorLoading')))
         },
         onPageChange(page) {
             this.currentPage = page
             const {forumSlug, threadSlug} = this.$route.params
             this.forumStore.fetchThread(forumSlug, threadSlug, page)
+                .catch(error => this.$dialog.requestError(error, this.$t('forum.errorLoading')))
             window.scrollTo({top: 0, behavior: 'smooth'})
         },
         async submitReply() {
-            if (this.isReplyBodyEmpty) return
+            if (this.isReplyBodyEmpty || this.forumStore.submitting) return
             try {
                 await this.forumStore.createPost(this.forumStore.currentThread.id, {
                     body: this.replyBody,
@@ -347,7 +333,7 @@ export default {
                 this.replyBody = ''
                 this.replyParentId = null
             } catch (error) {
-                console.error('Failed to submit reply:', error)
+                this.$dialog.requestError(error, this.$t('forum.errorSubmitting'))
             }
         },
         escapeHtml(str) {
@@ -373,40 +359,44 @@ export default {
                 }
             })
         },
-        async onUpdatePost({postId, body}) {
+        // Runs one store action for a single post; the post's own buttons
+        // show a loader via busyPostId and stay blocked until it settles.
+        async runPostAction(postId, action, fallbackKey) {
+            if (this.busyPostId) return false
+            this.busyPostId = postId
             try {
-                await this.forumStore.updatePost(postId, {body})
+                await action()
+                return true
             } catch (error) {
-                console.error('Failed to update post:', error)
+                this.$dialog.requestError(error, this.$t(fallbackKey))
+                return false
+            } finally {
+                this.busyPostId = null
             }
+        },
+        async onUpdatePost({postId, body, done}) {
+            const ok = await this.runPostAction(postId, () => this.forumStore.updatePost(postId, {body}), 'forum.errorSubmitting')
+            if (typeof done === 'function') done(ok)
         },
         async onDeletePost(postId) {
-            try {
-                await this.forumStore.deletePost(postId)
-            } catch (error) {
-                console.error('Failed to delete post:', error)
-            }
+            if (this.busyPostId) return
+            const ok = await this.$dialog.confirmDelete(this.$t('forum.confirmDeletePost'))
+            if (!ok) return
+            await this.runPostAction(postId, () => this.forumStore.deletePost(postId), 'forum.errorSubmitting')
         },
         async onToggleSubscription() {
+            if (this.forumStore.submitting) return
             try {
                 await this.forumStore.toggleSubscription(this.forumStore.currentThread.id)
             } catch (error) {
-                console.error('Failed to toggle subscription:', error)
+                this.$dialog.requestError(error, this.$t('forum.errorSubmitting'))
             }
         },
-        async onToggleLike(postId) {
-            try {
-                await this.forumStore.toggleLike(postId)
-            } catch (error) {
-                console.error('Failed to toggle like:', error)
-            }
+        onToggleLike(postId) {
+            return this.runPostAction(postId, () => this.forumStore.toggleLike(postId), 'forum.errorSubmitting')
         },
-        async onMarkSolution(postId) {
-            try {
-                await this.forumStore.markAsSolution(postId)
-            } catch (error) {
-                console.error('Failed to mark as solution:', error)
-            }
+        onMarkSolution(postId) {
+            return this.runPostAction(postId, () => this.forumStore.markAsSolution(postId), 'forum.errorSubmitting')
         },
         startEditThread() {
             this.editingThread = true
@@ -419,6 +409,7 @@ export default {
             this.editThreadBody = ''
         },
         async saveEditThread() {
+            if (this.forumStore.submitting) return
             try {
                 await this.forumStore.updateThread(this.forumStore.currentThread.id, {
                     title: this.editThreadTitle,
@@ -426,17 +417,23 @@ export default {
                 })
                 this.editingThread = false
             } catch (error) {
-                console.error('Failed to update thread:', error)
+                this.$dialog.requestError(error, this.$t('forum.errorSubmitting'))
             }
         },
-        async onDeleteThreadConfirm(confirmed) {
-            if (!confirmed) return
+        async deleteThread() {
+            if (this.deletingThread) return
+            const ok = await this.$dialog.confirmDelete(this.$t('forum.confirmDeleteThread'))
+            if (!ok) return
+
+            this.deletingThread = true
             try {
                 const forumSlug = this.forumStore.currentThread.forum?.slug || this.$route.params.forumSlug
                 await this.forumStore.deleteThread(this.forumStore.currentThread.id)
                 this.$router.push({name: 'forum-category', params: {slug: forumSlug}})
             } catch (error) {
-                console.error('Failed to delete thread:', error)
+                this.$dialog.requestError(error, this.$t('forum.errorSubmitting'))
+            } finally {
+                this.deletingThread = false
             }
         },
         formatDateDistance(date) {

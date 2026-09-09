@@ -31,6 +31,7 @@
                   :required="true"
                   type="email"
                   variant="outlined"
+                  :disabled="isSubscribing"
                   hide-details="auto"
                   class="flex-grow-1"
                 ></v-text-field>
@@ -45,16 +46,6 @@
                   {{ content.buttonText || $t('newsletterWidget.subscribe') }}
                 </v-btn>
               </div>
-
-              <v-alert
-                v-if="subscribeMessage"
-                :type="subscribeSuccess ? 'success' : 'error'"
-                variant="tonal"
-                class="mt-4"
-                density="compact"
-              >
-                {{ subscribeMessage }}
-              </v-alert>
 
               <p v-if="content.privacyText" class="text-caption text-grey mt-3 text-center">
                 {{ content.privacyText }}
@@ -88,8 +79,10 @@
 <script setup>
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
   content: {
@@ -118,14 +111,11 @@ const props = defineProps({
 
 const email = ref('');
 const isSubscribing = ref(false);
-const subscribeMessage = ref('');
-const subscribeSuccess = ref(false);
 
 async function handleSubscribe() {
-  if (!email.value) return;
+  if (!email.value || isSubscribing.value) return;
 
   isSubscribing.value = true;
-  subscribeMessage.value = '';
 
   try {
     // TODO: Replace with actual API endpoint
@@ -134,12 +124,11 @@ async function handleSubscribe() {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    subscribeSuccess.value = true;
-    subscribeMessage.value = props.content.successMessage || t('newsletterWidget.successMessage');
     email.value = '';
+    isSubscribing.value = false;
+    await dialog.success(props.content.successMessage || t('newsletterWidget.successMessage'));
   } catch (error) {
-    subscribeSuccess.value = false;
-    subscribeMessage.value = props.content.errorMessage || t('newsletterWidget.errorMessage');
+    await dialog.requestError(error, props.content.errorMessage || t('newsletterWidget.errorMessage'));
   } finally {
     isSubscribing.value = false;
   }

@@ -114,44 +114,7 @@
                     </div>
                 </v-alert>
 
-                <!-- Success Message with Actions -->
-                <v-alert
-                    v-if="message"
-                    type="success"
-                    variant="tonal"
-                    class="mt-4"
-                    closable
-                    @click:close="message = ''"
-                >
-                    <template #prepend>
-                        <v-icon>mdi-check-circle</v-icon>
-                    </template>
-                    <div class="d-flex justify-space-between align-center">
-                        <span>{{ message }}</span>
-                        <div class="ml-4">
-                            <v-btn
-                                color="success"
-                                variant="elevated"
-                                size="small"
-                                :to="`/wiki/${slug}`"
-                                prepend-icon="mdi-eye"
-                                class="mr-2"
-                            >
-                                {{ $t('wiki.viewPage') }}
-                            </v-btn>
-                            <v-btn
-                                variant="outlined"
-                                size="small"
-                                @click="continueEditing"
-                                prepend-icon="mdi-pencil"
-                            >
-                                {{ $t('wiki.keepEditing') }}
-                            </v-btn>
-                        </div>
-                    </div>
-                </v-alert>
-
-                <!-- Error Display -->
+                <!-- Validation / not-found errors (form flow) -->
                 <v-alert
                     v-if="editing.errors && editing.errors.length > 0"
                     type="error"
@@ -683,24 +646,6 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-
-        <!-- Confirmation Dialog -->
-        <v-dialog v-model="showConfirmDialog" max-width="500">
-            <v-card>
-                <v-card-title class="d-flex align-center">
-                    <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
-                    {{ $t('common.confirmAction') }}
-                </v-card-title>
-                <v-card-text>
-                    {{ confirmMessage }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" @click="showConfirmDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" variant="elevated" @click="confirmAction">{{ $t('common.confirm') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
     </div>
 </template>
 
@@ -712,6 +657,7 @@ import Tiptap from '../common/tiptap/Tiptap.vue'
 import { useAuthStore } from '@/store/authStore.js'
 import { useRouter } from 'vue-router'
 import { formatDate } from '@/plugins/formatDate.js'
+import { useDialog } from '@/composables/useDialog.js'
 
 export default {
     name: 'WikiEditPage',
@@ -720,6 +666,7 @@ export default {
     },
     setup() {
         const { t } = useI18n()
+        const dialog = useDialog()
 
         // Reactive data
         const editorRef = ref(null)
@@ -728,9 +675,6 @@ export default {
         const showPreview = ref(true)
         const showHistory = ref(false)
         const showDiff = ref(false)
-        const showConfirmDialog = ref(false)
-        const confirmMessage = ref('')
-        const confirmCallback = ref(null)
         const dismissChangeAlert = ref(false)
         const autoSaving = ref(false)
 
@@ -751,7 +695,6 @@ export default {
             categories: []
         })
 
-        const message = ref('')
         const parents = reactive([])
         const termValue = ref([])
         const categories = ref([])
@@ -936,18 +879,21 @@ export default {
             editorRef.value?.focusEditor()
         }
 
-        const discardChanges = () => {
-            confirmMessage.value = t('wiki.confirmDiscardChanges')
-            confirmCallback.value = () => {
-                wikipage.value = { ...originalData.value }
-                termValue.value = [...originalData.value.terms]
-                categoryValue.value = [...originalData.value.categories]
-                wikiPageParent.value = originalData.value.parent
-                editing.errors = []
-                showConfirmDialog.value = false
-                dismissChangeAlert.value = true
-            }
-            showConfirmDialog.value = true
+        const discardChanges = async () => {
+            const ok = await dialog.confirm({
+                title: t('common.confirmAction'),
+                content: t('wiki.confirmDiscardChanges'),
+                confirmationText: t('dialogs.confirm.discard'),
+                color: 'warning'
+            })
+            if (!ok) return
+
+            wikipage.value = { ...originalData.value }
+            termValue.value = [...originalData.value.terms]
+            categoryValue.value = [...originalData.value.categories]
+            wikiPageParent.value = originalData.value.parent
+            editing.errors = []
+            dismissChangeAlert.value = true
         }
 
         const duplicatePage = () => {
@@ -964,10 +910,6 @@ export default {
                 name: 'wiki-create',
                 query: { duplicate: JSON.stringify(duplicateData) }
             })
-        }
-
-        const continueEditing = () => {
-            message.value = ''
         }
 
         const autoSave = async () => {
@@ -995,12 +937,6 @@ export default {
         const addSuggestedTag = (tag) => {
             if (!termValue.value.find(t => (t.title || t) === tag)) {
                 termValue.value.push({ title: tag, color: colors.value[Math.floor(Math.random() * colors.value.length)] })
-            }
-        }
-
-        const confirmAction = () => {
-            if (confirmCallback.value) {
-                confirmCallback.value()
             }
         }
 
@@ -1117,6 +1053,7 @@ export default {
         }
 
         const update = async () => {
+            if (saving.value) return
             editing.errors = []
             saving.value = true
 
@@ -1125,7 +1062,7 @@ export default {
             wikipage.value.parent = wikiPageParent.value
 
             try {
-                const response = await axios.patch(`/api/wiki/${slug.value}`, wikipage.value)
+                await axios.patch(`/api/wiki/${slug.value}`, wikipage.value)
 
                 // Update original data
                 originalData.value = {
@@ -1136,20 +1073,17 @@ export default {
                     categories: [...categoryValue.value]
                 }
 
-                message.value = t('wiki.pageUpdatedSuccessfully')
                 lastSaved.value = formatDate(new Date(), 'H:i:s')
                 currentStep.value = 3
                 dismissChangeAlert.value = true
+                saving.value = false
 
-                setTimeout(() => {
-                    message.value = ''
-                }, 5000)
-
+                await dialog.success(t('wiki.pageUpdatedSuccessfully'))
             } catch (error) {
                 if (error.response?.status === 422) {
                     editing.errors = error.response.data.errors || [error.response.data.message || t('wiki.validationFailed')]
                 } else {
-                    editing.errors = [t('wiki.errorUpdatingPage')]
+                    await dialog.requestError(error, t('wiki.errorUpdatingPage'))
                 }
             } finally {
                 saving.value = false
@@ -1219,13 +1153,10 @@ export default {
             showPreview,
             showHistory,
             showDiff,
-            showConfirmDialog,
-            confirmMessage,
             dismissChangeAlert,
             autoSaving,
             wikipage,
             originalData,
-            message,
             parents,
             termValue,
             categories,
@@ -1276,11 +1207,9 @@ export default {
             focusContent,
             discardChanges,
             duplicatePage,
-            continueEditing,
             autoSave,
             addPopularCategory,
             addSuggestedTag,
-            confirmAction,
             handleSave,
             getWikiPage,
             getCategories,

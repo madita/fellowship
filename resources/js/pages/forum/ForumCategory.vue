@@ -270,18 +270,6 @@
                     {{ $t('forum.newThread') }}
                 </v-btn>
             </div>
-
-            <!-- Error State -->
-            <v-alert
-                v-if="forumStore.error"
-                type="error"
-                variant="tonal"
-                class="mt-4"
-                closable
-                @click:close="forumStore.error = null"
-            >
-                {{ forumStore.error }}
-            </v-alert>
         </v-container>
     </div>
 </template>
@@ -347,7 +335,7 @@ export default {
             this.forumStore.fetchForum(slug, this.currentPage, {
                 filter: this.activeFilter,
                 sort: this.activeSort
-            })
+            }).catch(error => this.$dialog.requestError(error, this.$t('forum.errorLoading')))
         },
         setFilter(value) {
             this.activeFilter = value

@@ -13,7 +13,7 @@ const translateTypeName = (name) => {
 import UserAvatar from "../common/UserAvatar.vue";
 import axios from "axios";
 import { useCalendarStore } from '@/store/calendarStore.js';
-import ConfirmDialog from '../common/ConfirmDialog.vue';
+import { useDialog } from '@/composables/useDialog.js';
 import ProfileDialog from '../common/ProfileDialog.vue';
 import DetailsDialog from '../common/DetailsDialog.vue';
 import RelatedContent from '../common/RelatedContent.vue';
@@ -26,6 +26,9 @@ const props = defineProps({
     isDrawerOpen: Boolean,
     editMode: Boolean,
     event: Object,
+    // True while the parent is persisting an add/update/remove; the drawer
+    // stays open with a loader until the parent closes it on success.
+    saving: Boolean,
 });
 
 const emit = defineEmits([
@@ -35,8 +38,9 @@ const emit = defineEmits([
     'removeEvent',
 ]);
 
+const dialog = useDialog();
+
 const selectedStatus = ref(null);
-const showConfirmationDialog = ref(false);
 const showProfileDialog = ref(false);
 const showRelateContentDialog = ref(false);
 const showDetailsDialog = ref(false);
@@ -68,12 +72,11 @@ const isStartDateValid = ref(true);
 const isEndDateValid = ref(true);
 const profileAnswer = ref(null);
 
-const confirmationDialog = ref(null);
 const relatedItems = ref([]);
-
-const openConfirmationDialog = () => {
-    confirmationDialog.value.isOpen = true;
-};
+// RSVP answer currently being sent (null when idle)
+const answering = ref(null);
+// Guest whose approval/rejection request is in flight (null when idle)
+const busyGuestId = ref(null);
 
 const localEvent = ref(null);
 const initialSnapshot = ref('');
@@ -178,9 +181,15 @@ const canJoinEvent = computed(() => {
     return localEvent.value.end ? new Date(localEvent.value.end) >= utcDate : new Date(localEvent.value.start) >= utcDate;
 });
 
-const removeEvent = () => {
+// Confirms, then hands the delete to the parent. The parent closes the
+// drawer once the request succeeded (and reports failures itself).
+const removeEvent = async () => {
+    if (props.saving) return;
+    const ok = await dialog.confirmDelete(t('events.confirmDeleteEvent'), {
+        title: t('events.deleteEvent'),
+    });
+    if (!ok) return;
     emit('removeEvent', String(localEvent.value.id));
-    emit('update:isDrawerOpen', false);
 };
 
 const openDialog = () => {
@@ -188,19 +197,18 @@ const openDialog = () => {
 };
 
 const handleSubmit = () => {
+    if (props.saving) return;
     validateStartDate();
     validateEndDate();
 
     refForm.value?.validate().then(({ valid }) => {
         if (valid) {
-            localEditMode.value = false;
-
+            // The parent persists the event and closes the drawer on success;
+            // until then the form stays open with the submit button loading.
             if ('id' in localEvent.value)
                 emit('updateEvent', localEvent.value);
             else
                 emit('addEvent', localEvent.value);
-
-            emit('update:isDrawerOpen', false);
         }
     });
 };
@@ -246,6 +254,8 @@ const fetchRelatedItems = async (model, eventId) => {
 };
 
 const approveGuest = async (guestId, action) => {
+    if (busyGuestId.value !== null) return;
+    busyGuestId.value = guestId;
     try {
         await axios.post(`/api/events/${localEvent.value.id}/approve-guest`, {
             guestId,
@@ -279,7 +289,9 @@ const approveGuest = async (guestId, action) => {
         // Refresh the event data to ensure we have the latest state
         getEvent(localEvent.value.id);
     } catch (error) {
-        console.error(`Failed to ${action} guest:`, error);
+        await dialog.requestError(error, t('events.guestApprovalError'));
+    } finally {
+        busyGuestId.value = null;
     }
 };
 
@@ -315,6 +327,9 @@ const validateEndDate = () => {
 };
 const joinEvent = (answer) => {
     const type = eventType.value;
+
+    // One answer request at a time
+    if (answering.value) return;
 
     // Don't do anything if selecting the same option that's already selected, but do if profile can be changed...
     if (isGoing.value && isGoing.value.type === answer && !type?.options?.profile?.includes(answer)) {
@@ -383,6 +398,7 @@ const joinEvent = (answer) => {
             return;
         }
 
+        answering.value = answer;
         axios.post(`/api/events/${localEvent.value.id}/answer`, {answer})
             .then(response => {
                 // Server confirmed the update
@@ -443,7 +459,10 @@ const joinEvent = (answer) => {
                 // Replace entire object
                 eventAnswers.value = recoveryAnswers;
 
-                if (error.response?.status === 422) console.error('Validation failed:', error.response.data);
+                dialog.requestError(error, t('events.rsvpError'));
+            })
+            .finally(() => {
+                answering.value = null;
             });
     }
 };
@@ -458,12 +477,6 @@ const dialogModelValueUpdate = (val) => {
 const rules = {
     title: [v => !!v || t('events.titleRequired')],
     date: [v => !!v || t('events.dateRequired')]
-};
-
-const handleConfirmation = (isConfirmed) => {
-    if (isConfirmed) {
-        removeEvent(localEvent.value.id);
-    }
 };
 
 const handleProfile = (isConfirmed) => {
@@ -618,7 +631,7 @@ onMounted(() => {
 <template>
     <VNavigationDrawer
         temporary
-        :persistent="isDirty"
+        :persistent="isDirty || saving"
         location="end"
         :model-value="props.isDrawerOpen"
         width="420"
@@ -683,7 +696,8 @@ onMounted(() => {
                         color="error"
                         density="comfortable"
                         class="action-btn"
-                        @click="showConfirmationDialog = true"
+                        :loading="saving"
+                        @click="removeEvent"
                         :title="$t('events.delete')"
                     />
 
@@ -692,6 +706,7 @@ onMounted(() => {
                         variant="text"
                         density="comfortable"
                         class="action-btn"
+                        :disabled="saving"
                         @click="dialogModelValueUpdate(false)"
                         :title="$t('common.close')"
                     />
@@ -904,12 +919,14 @@ onMounted(() => {
                                     type="submit"
                                     color="primary"
                                     class="me-3"
+                                    :loading="saving"
                                 >
                                     {{ $t('events.submit') }}
                                 </VBtn>
                                 <VBtn
                                     variant="outlined"
                                     color="secondary"
+                                    :disabled="saving"
                                     @click="onCancel"
                                 >
                                     {{ $t('common.cancel') }}
@@ -986,6 +1003,8 @@ onMounted(() => {
                                 :color="['going', 'participant'].includes(answer.key) ? 'success' : answer.key === 'notgoing' ? 'error' : 'primary'"
                                 :variant="isGoing && isGoing.type === value ? 'elevated' : 'outlined'"
                                 class="response-btn mr-1"
+                                :loading="answering === answer.key"
+                                :disabled="!!answering && answering !== answer.key"
                                 @click="joinEvent(answer.key)"
                             >
                                 <v-icon
@@ -1080,6 +1099,8 @@ onMounted(() => {
                                                 variant="text"
                                                 icon="mdi-check"
                                                 class="me-1"
+                                                :loading="busyGuestId === guest.pivot.user_id"
+                                                :disabled="busyGuestId !== null && busyGuestId !== guest.pivot.user_id"
                                                 @click="approveGuest(guest.pivot.user_id, 'approve')"
                                             ></v-btn>
                                             <v-btn
@@ -1087,6 +1108,8 @@ onMounted(() => {
                                                 color="error"
                                                 variant="text"
                                                 icon="mdi-close"
+                                                :loading="busyGuestId === guest.pivot.user_id"
+                                                :disabled="busyGuestId !== null && busyGuestId !== guest.pivot.user_id"
                                                 @click="approveGuest(guest.pivot.user_id, 'reject')"
                                             ></v-btn>
                                         </div>
@@ -1150,15 +1173,6 @@ onMounted(() => {
         :is-going="isGoing"
         :answer="profileAnswer"
         :resolve="handleProfile"
-    />
-
-    <ConfirmDialog
-        v-model="showConfirmationDialog"
-        :title="$t('events.deleteEvent')"
-        :content="$t('events.confirmDeleteEvent')"
-        :confirmationText="$t('common.delete')"
-        :cancellationText="$t('common.cancel')"
-        :resolve="handleConfirmation"
     />
 
     <RelatedContent

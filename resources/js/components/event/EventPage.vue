@@ -376,6 +376,7 @@
             v-model:isDrawerOpen="isEventHandlerSidebarActive"
             :event="selectedEvent"
             :editMode="editMode"
+            :saving="saving"
             @add-event="addEvent"
             @update-event="updateEvent"
             @remove-event="removeEvent"
@@ -410,6 +411,7 @@ import { useSettingsStore } from '@/store/settingStore.js';
 import VueDatePicker from "@vuepic/vue-datepicker";
 import eventBus from "../common/eventBus.js";
 import { blankLocation, formatEventLocationLabel } from '@/utils/eventLocation.js';
+import { useDialog } from '@/composables/useDialog.js';
 
 // Store
 const calendarStore = useCalendarStore();
@@ -418,6 +420,7 @@ const settingsStore = useSettingsStore();
 
 // Composables
 const { formatDate: formatDateUtil } = useDateFormat();
+const dialog = useDialog();
 
 // Local state
 const activeTab = ref('calendar');
@@ -425,6 +428,8 @@ const calendarViewType = ref('dayGridMonth');
 const calendarApi = ref(null);
 const refCalendar = ref();
 const loading = ref(false);
+// True while an add/update/remove request from the event drawer is running
+const saving = ref(false);
 const loadEventTypes = ref(true);
 const isEventHandlerSidebarActive = ref(false);
 const isDialogActive = ref(false);
@@ -660,34 +665,32 @@ const createEvent = () => {
     activeTab.value = 'calendar';
 };
 
-const addEvent = async (addevent) => {
-    console.log('addEvent');
+// Runs one drawer request: the drawer shows a loader via `saving`, closes on
+// success and stays open (with an error dialog) on failure.
+const runDrawerRequest = async (request, successKey, errorKey) => {
+    if (saving.value) return;
+    saving.value = true;
     try {
-        await axios.post(`${endpoint}`, addevent);
+        await request();
         await calendarStore.fetchEvents();
+        isEventHandlerSidebarActive.value = false;
+        saving.value = false;
+        await dialog.success(t(successKey));
     } catch (error) {
-        console.error('Error adding event:', error.response?.data?.errors ?? error);
+        await dialog.requestError(error, t(errorKey));
+    } finally {
+        saving.value = false;
     }
 };
 
-const updateEvent = async (event) => {
-    console.log('update');
-    try {
-        await axios.patch(`${endpoint}/${event.id}`, event);
-        await calendarStore.fetchEvents();
-    } catch (error) {
-        console.error('Error updating event:', error);
-    }
-};
+const addEvent = (addevent) =>
+    runDrawerRequest(() => axios.post(`${endpoint}`, addevent), 'events.eventCreated', 'events.saveError');
 
-const removeEvent = async (eventId) => {
-    try {
-        await axios.delete(`${endpoint}/${eventId}`);
-        await calendarStore.fetchEvents();
-    } catch (error) {
-        console.error('Error removing event:', error);
-    }
-};
+const updateEvent = (event) =>
+    runDrawerRequest(() => axios.patch(`${endpoint}/${event.id}`, event), 'events.eventUpdated', 'events.saveError');
+
+const removeEvent = (eventId) =>
+    runDrawerRequest(() => axios.delete(`${endpoint}/${eventId}`), 'events.eventDeleted', 'events.deleteError');
 
 const jumpToDate = (currentDate) => {
     const calendarApi = refCalendar.value.getApi();

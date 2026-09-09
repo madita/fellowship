@@ -32,7 +32,7 @@
                         <v-btn
                             color="primary"
                             size="small"
-                            :loading="submitting"
+                            :loading="busy"
                             @click="saveEdit"
                         >
                             {{ $t('forum.save') }}
@@ -40,6 +40,7 @@
                         <v-btn
                             variant="text"
                             size="small"
+                            :disabled="busy"
                             @click="cancelEdit"
                         >
                             {{ $t('forum.cancel') }}
@@ -55,7 +56,9 @@
                     variant="text"
                     :color="post.is_liked ? 'red' : undefined"
                     :prepend-icon="post.is_liked ? 'mdi-heart' : 'mdi-heart-outline'"
-                    @click="$emit('toggle-like', post.id)"
+                    :loading="busy && busyAction === 'like'"
+                    :disabled="busy && busyAction !== 'like'"
+                    @click="emitAction('like', 'toggle-like')"
                 >
                     {{ post.like_count || 0 }}
                 </v-btn>
@@ -64,6 +67,7 @@
                     size="small"
                     variant="text"
                     prepend-icon="mdi-reply"
+                    :disabled="busy"
                     @click="onReplyClick"
                 >
                     {{ $t('forum.reply') }}
@@ -73,6 +77,7 @@
                     size="small"
                     variant="text"
                     prepend-icon="mdi-pencil"
+                    :disabled="busy"
                     @click="startEdit"
                 >
                     {{ $t('forum.edit') }}
@@ -83,7 +88,9 @@
                     variant="text"
                     :prepend-icon="post.is_solution ? 'mdi-close-circle' : 'mdi-check-circle'"
                     color="success"
-                    @click="$emit('mark-solution', post.id)"
+                    :loading="busy && busyAction === 'solution'"
+                    :disabled="busy && busyAction !== 'solution'"
+                    @click="emitAction('solution', 'mark-solution')"
                 >
                     {{ post.is_solution ? $t('forum.unmarkSolution') : $t('forum.markAsSolution') }}
                 </v-btn>
@@ -94,7 +101,9 @@
                     variant="text"
                     prepend-icon="mdi-delete"
                     color="error"
-                    @click="confirmDelete"
+                    :loading="busy && busyAction === 'delete'"
+                    :disabled="busy && busyAction !== 'delete'"
+                    @click="emitAction('delete', 'delete-post')"
                 >
                     {{ $t('forum.delete') }}
                 </v-btn>
@@ -113,6 +122,7 @@
                 :thread-locked="threadLocked"
                 :can-moderate="canModerate"
                 :can-delete-others="canDeleteOthers"
+                :busy-post-id="busyPostId"
                 :depth="depth + 1"
                 @mark-solution="$emit('mark-solution', $event)"
                 @delete-post="$emit('delete-post', $event)"
@@ -121,13 +131,6 @@
                 @toggle-like="$emit('toggle-like', $event)"
             />
         </div>
-
-        <!-- Confirm Delete Dialog -->
-        <ConfirmDialog
-            v-model="showDeleteDialog"
-            :content="$t('forum.confirmDeletePost')"
-            :resolve="onDeleteConfirm"
-        />
     </div>
 </template>
 
@@ -135,11 +138,10 @@
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 export default {
     name: 'ForumPostItem',
-    components: { UserAvatar, Tiptap, ConfirmDialog },
+    components: { UserAvatar, Tiptap },
     props: {
         post: { type: Object, required: true },
         thread: { type: Object, required: true },
@@ -148,6 +150,9 @@ export default {
         threadLocked: { type: Boolean, default: false },
         canModerate: { type: Boolean, default: false },
         canDeleteOthers: { type: Boolean, default: false },
+        // Id of the post the parent is currently running a request for;
+        // the matching item shows a loader and blocks further clicks.
+        busyPostId: { type: [Number, String], default: null },
         depth: { type: Number, default: 0 }
     },
     emits: ['mark-solution', 'delete-post', 'quote-reply', 'update-post', 'toggle-like'],
@@ -155,11 +160,13 @@ export default {
         return {
             editing: false,
             editBody: '',
-            showDeleteDialog: false,
-            submitting: false
+            busyAction: null
         }
     },
     computed: {
+        busy() {
+            return this.busyPostId !== null && String(this.busyPostId) === String(this.post.id)
+        },
         isAuthor() {
             return this.currentUser && this.post.author && this.currentUser.id === this.post.author.id
         },
@@ -202,26 +209,25 @@ export default {
             this.editing = false
             this.editBody = ''
         },
-        async saveEdit() {
-            if (!this.editBody?.trim()) return
-            this.submitting = true
-            try {
-                this.$emit('update-post', {
-                    postId: this.post.id,
-                    body: this.editBody
-                })
-                this.editing = false
-            } finally {
-                this.submitting = false
-            }
+        // Hand an action to the parent (which runs the store request and
+        // reports back via busyPostId). Ignored while any post is busy.
+        emitAction(action, event) {
+            if (this.busyPostId !== null) return
+            this.busyAction = action
+            this.$emit(event, this.post.id)
         },
-        confirmDelete() {
-            this.showDeleteDialog = true
-        },
-        onDeleteConfirm(confirmed) {
-            if (confirmed) {
-                this.$emit('delete-post', this.post.id)
-            }
+        saveEdit() {
+            if (!this.editBody?.trim() || this.busyPostId !== null) return
+            this.busyAction = 'save'
+            this.$emit('update-post', {
+                postId: this.post.id,
+                body: this.editBody,
+                // Called by the parent once the request settled; the edit
+                // stays open on failure so nothing typed is lost.
+                done: (ok) => {
+                    if (ok) this.cancelEdit()
+                }
+            })
         }
     }
 }

@@ -7,12 +7,12 @@
 <!--                    <VueDatePicker v-model="event.date" :range="{ partialRange: false }" />-->
                 </v-col>
                 <v-col cols="9">
-                    <v-text-field :label="t('common.title')" v-model="event.title"></v-text-field>
+                    <v-text-field :label="t('common.title')" v-model="event.title" :disabled="saving"></v-text-field>
                     <!-- Notice the updated v-model usage -->
                     <Tiptap v-model="event.description" />
                 </v-col>
             </v-row>
-            <v-btn @click="save">{{ form }}</v-btn>
+            <v-btn :loading="saving" @click="save">{{ form }}</v-btn>
         </v-container>
     </div>
 </template>
@@ -25,8 +25,10 @@ import EventDatePicker from './EventDatePicker.vue'
 import Tiptap from "@/components/common/tiptap/Tiptap.vue";
 import { useRoute } from 'vue-router';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 const date = ref();
 
 const route = useRoute();
@@ -34,15 +36,23 @@ const route = useRoute();
 // Assuming event is reactive
 const event = ref({title: "", description: "", date:null});
 const form = ref(t('events.create'));
-const message = ref("");
+const saving = ref(false);
 const id = ref(route.params.id);
 
 // Convert methods to setup style
-const save = () => {
-    if (id.value) {
-        updateEvent();
-    } else {
-        storeEvent();
+const save = async () => {
+    if (saving.value) return;
+    saving.value = true;
+    try {
+        if (id.value) {
+            await updateEvent();
+        } else {
+            await storeEvent();
+        }
+    } catch (error) {
+        await dialog.requestError(error, t('events.saveError'));
+    } finally {
+        saving.value = false;
     }
 };
 
@@ -57,29 +67,16 @@ const endpoint = '/api/events';
 //     });
 // }
 
-const updateEvent = () => {
-    // Implement update logic here
-    axios.patch(`${endpoint}/${id.value}`, this.page).then(() => {
-        message.value = t('events.eventUpdated')
-    }).catch((error) => {
-        if (error.response.status === 422) {
-            this.editing.errors = error.response.data
-        }
-    })
+const updateEvent = async () => {
+    await axios.patch(`${endpoint}/${id.value}`, event.value);
+    saving.value = false;
+    await dialog.success(t('events.eventUpdated'));
 };
 
-const storeEvent = () => {
-    // Implement store logic here
-    console.log('event',event)
-    axios.post(`${endpoint}`, event.value).then(() => {
-        // this.page = {title: "", body: ""};
-        // this.message = "Page saved ..link"
-    }).catch((error) => {
-        if (error.response.status === 422) {
-            // this.creating.errors = error.response.data
-            this.editing.errors = error.response.data
-        }
-    })
+const storeEvent = async () => {
+    await axios.post(`${endpoint}`, event.value);
+    saving.value = false;
+    await dialog.success(t('events.eventCreated'));
 };
 
 // Example of using onMounted

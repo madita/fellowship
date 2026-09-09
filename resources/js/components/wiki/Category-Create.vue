@@ -7,22 +7,14 @@
 <!--                </v-btn>-->
 <!--            </template>-->
 
-            <v-alert type="info" v-if="message.length === 0">{{ $t('wiki.categoryNotExistsFillForm') }}</v-alert>
-            <v-alert type="success" v-if="message.length > 0">{{ message }}</v-alert>
+            <v-alert type="info">{{ $t('wiki.categoryNotExistsFillForm') }}</v-alert>
             <v-row>
                 <v-col
                     cols="8">
-                    <v-alert v-if="message" type="success">
-                        {{ message }}
-                    </v-alert>
-
-                    <v-alert v-if="editing.errors.length > 0" type="error">
-                        {{ editing.errors }}
-                    </v-alert>
-
                     <v-text-field
                         :label="$t('common.title')"
                         v-model="newCategory"
+                        :disabled="saving"
                     ></v-text-field>
 
                     <!--                    <simple-editor v-model="page.body" :value="page.body" id="text-body" name="content"></simple-editor>-->
@@ -53,7 +45,7 @@
 
                     </template>
 
-                    <v-btn @click="saveCategory">{{ $t('common.save') }}</v-btn>
+                    <v-btn :loading="saving" @click="saveCategory">{{ $t('common.save') }}</v-btn>
                 </v-col>
             </v-row>
 
@@ -66,6 +58,7 @@
 
 // import {mapGetters} from "vuex";
 import Tiptap from '../common/tiptap/Tiptap.vue'
+import { useAuthStore } from '@/store/authStore.js';
 
 export default {
     components: {
@@ -74,11 +67,11 @@ export default {
     data() {
         return {
             isDisabled: false,
+            saving: false,
             parents:[],
             pages:[],
             slug:"",
             content:"",
-            message:"",
             colorsValue:"green",
             searchTax: null,
             searchTerm: null,
@@ -91,11 +84,6 @@ export default {
             categories: [],
             categoryValue: [],
             parentValue: null,
-            editing: {
-                id: null,
-                form: {},
-                errors: []
-            },
             rules: {
                 required: value => !!value || this.$t('validation.required')
             },
@@ -139,26 +127,27 @@ export default {
                 this.loading = false
             });
         },
-        saveCategory() {
+        async saveCategory() {
+            if (this.saving) return;
+            this.saving = true
 
-            // this.loading = true
             let data = {term: this.newCategory, taxonomy: this.taxonomyValue, parent: this.parentValue, content: this.content}
 
-            axios.post(`/api/wiki/category`, data).then(() => {
+            try {
+                await axios.post(`/api/wiki/category`, data)
 
                 this.getCategories(this.taxonomyValue.taxonomy)
                 this.categoryValue.push(this.newCategory);
-                this.message = this.$t('wiki.pageCreated')
-                // this.categories = this.parents = response.data
-
-                // this.loading = false
-            }).catch((error) => {
-                console.log(error)
-
-                if (error.response.status === 401) {
+                await this.$dialog.success(this.$t('wiki.categoryCreated'))
+            } catch (error) {
+                if (error.response?.status === 401) {
                     this.$router.push('/auth/signin')
+                    return
                 }
-            });
+                await this.$dialog.requestError(error, this.$t('wiki.errorSavingCategory'))
+            } finally {
+                this.saving = false
+            }
         },
 
 

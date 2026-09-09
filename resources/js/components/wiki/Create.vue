@@ -94,45 +94,7 @@
                     </div>
                 </v-alert>
 
-                <!-- Success Message with Actions -->
-                <v-alert
-                    v-if="message"
-                    type="success"
-                    variant="tonal"
-                    class="mt-4"
-                    closable
-                    @click:close="message = ''"
-                >
-                    <template #prepend>
-                        <v-icon>mdi-check-circle</v-icon>
-                    </template>
-                    <div class="d-flex justify-space-between align-center">
-                        <span>{{ message }}</span>
-                        <div class="ml-4">
-                            <v-btn
-                                v-if="createdSlug"
-                                color="success"
-                                variant="elevated"
-                                size="small"
-                                :to="`/wiki/${createdSlug}`"
-                                prepend-icon="mdi-eye"
-                                class="mr-2"
-                            >
-                                {{ $t('wiki.viewPage') }}
-                            </v-btn>
-                            <v-btn
-                                variant="outlined"
-                                size="small"
-                                @click="createAnother"
-                                prepend-icon="mdi-plus"
-                            >
-                                {{ $t('wiki.createAnother') }}
-                            </v-btn>
-                        </div>
-                    </div>
-                </v-alert>
-
-                <!-- Enhanced Error Display -->
+                <!-- Validation errors (form flow) -->
                 <v-alert
                     v-if="editing.errors && editing.errors.length > 0"
                     type="error"
@@ -622,24 +584,6 @@
                 app
             />
         </v-container>
-
-        <!-- Confirmation Dialog -->
-        <v-dialog v-model="showConfirmDialog" max-width="500">
-            <v-card>
-                <v-card-title class="d-flex align-center">
-                    <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
-                    {{ $t('common.confirmAction') }}
-                </v-card-title>
-                <v-card-text>
-                    {{ confirmMessage }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" @click="showConfirmDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" variant="elevated" @click="confirmAction">{{ $t('common.confirm') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
     </div>
 </template>
 
@@ -650,6 +594,7 @@ import { useI18n } from 'vue-i18n'
 import Tiptap from '../common/tiptap/Tiptap.vue'
 import { useAuthStore } from '@/store/authStore.js'
 import { useRouter } from 'vue-router'
+import { useDialog } from '@/composables/useDialog.js'
 
 export default {
     name: 'WikiCreatePage',
@@ -658,15 +603,13 @@ export default {
     },
     setup() {
         const { t } = useI18n()
+        const dialog = useDialog()
 
         // Reactive data
         const slug = ref('')
         const currentStep = ref(1)
         const showPreview = ref(true)
         const showTemplates = ref(false)
-        const showConfirmDialog = ref(false)
-        const confirmMessage = ref('')
-        const confirmCallback = ref(null)
         const autoSaving = ref(false)
 
         const wikipage = ref({
@@ -677,8 +620,6 @@ export default {
             categories: []
         })
 
-        const message = ref('')
-        const createdSlug = ref('')
         const parents = reactive([])
         const termValue = ref([])
         const categories = ref([])
@@ -888,22 +829,24 @@ Answer to the third question.`
             })
         }
 
-        const clearForm = () => {
-            confirmMessage.value = t('wiki.confirmClearAll')
-            confirmCallback.value = () => {
-                wikipage.value = {
-                    title: '',
-                    content: '',
-                    parent: null,
-                    terms: [],
-                    categories: []
-                }
-                termValue.value = []
-                categoryValue.value = []
-                currentStep.value = 1
-                showConfirmDialog.value = false
+        const clearForm = async () => {
+            const ok = await dialog.confirm({
+                title: t('common.confirmAction'),
+                content: t('wiki.confirmClearAll'),
+                color: 'warning'
+            })
+            if (!ok) return
+
+            wikipage.value = {
+                title: '',
+                content: '',
+                parent: null,
+                terms: [],
+                categories: []
             }
-            showConfirmDialog.value = true
+            termValue.value = []
+            categoryValue.value = []
+            currentStep.value = 1
         }
 
         const saveAsDraft = () => {
@@ -935,18 +878,6 @@ Answer to the third question.`
         const addSuggestedTag = (tag) => {
             if (!termValue.value.find(t => (t.title || t) === tag)) {
                 termValue.value.push({ title: tag, color: colors.value[Math.floor(Math.random() * colors.value.length)] })
-            }
-        }
-
-        const createAnother = () => {
-            clearForm()
-            message.value = ''
-            createdSlug.value = ''
-        }
-
-        const confirmAction = () => {
-            if (confirmCallback.value) {
-                confirmCallback.value()
             }
         }
 
@@ -1020,6 +951,7 @@ Answer to the third question.`
         }
 
         const store = async () => {
+            if (creating.value) return
             editing.errors = []
             creating.value = true
 
@@ -1028,25 +960,23 @@ Answer to the third question.`
 
             try {
                 const response = await axios.post(`/api/wiki`, wikipage.value)
-                createdSlug.value = response.data.slug || slug.value
+                const createdSlug = response.data.slug || slug.value
 
                 // Reset form
                 wikipage.value = { title: '', content: '', parent: null, terms: [], categories: [] }
                 termValue.value = []
                 categoryValue.value = []
-
-                message.value = t('wiki.pageCreatedSuccessfully')
                 currentStep.value = 3
 
-                setTimeout(() => {
-                    message.value = ''
-                }, 5000)
-
+                await dialog.success(t('wiki.pageCreatedSuccessfully'))
+                if (createdSlug) {
+                    router.push(`/wiki/${createdSlug}`)
+                }
             } catch (error) {
                 if (error.response?.status === 422) {
                     editing.errors = error.response.data.errors || [error.response.data.message || t('wiki.validationFailed')]
                 } else {
-                    editing.errors = [t('wiki.errorCreatingPage')]
+                    await dialog.requestError(error, t('wiki.errorCreatingPage'))
                 }
             } finally {
                 creating.value = false
@@ -1099,12 +1029,8 @@ Answer to the third question.`
             currentStep,
             showPreview,
             showTemplates,
-            showConfirmDialog,
-            confirmMessage,
             autoSaving,
             wikipage,
-            message,
-            createdSlug,
             parents,
             termValue,
             categories,
@@ -1146,8 +1072,6 @@ Answer to the third question.`
             autoSave,
             addPopularCategory,
             addSuggestedTag,
-            createAnother,
-            confirmAction,
             handleSubmit,
             getWikiPage,
             getCategories,
