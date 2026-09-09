@@ -42,7 +42,8 @@ export default {
         'customize': 'Customize',
         'showLess': 'Show Less',
         'showDetails': 'Show Details',
-        'refresh': 'Refresh'
+        'refresh': 'Refresh',
+        'edit': 'Edit'
     },
     'cookie': {
         'consentTitle': 'Cookie Consent',
@@ -126,7 +127,9 @@ export default {
         'replyTo': 'Reply to',
         'forwarded': 'Forwarded',
         'attachment': 'Attachment',
-        'attachFile': 'Attach file'
+        'attachFile': 'Attach file',
+        'sendFailed': 'The message could not be sent',
+        'loadFailed': 'The messages could not be loaded'
     },
     'conversation': {
         'newConversation': 'New Conversation',
@@ -174,7 +177,10 @@ export default {
         'new': 'new',
         'noConversationsYet': 'No conversations yet',
         'startToSee': 'Start a conversation to see it here',
-        'startNew': 'Start New Conversation'
+        'startNew': 'Start New Conversation',
+        'sendFailed': 'Your message could not be sent.',
+        'createFailed': 'The conversation could not be created.',
+        'loadFailed': 'The conversation could not be loaded.'
     },
     'formBuilder': {
         'formFields': 'Form Fields',
@@ -254,6 +260,9 @@ export default {
         'emptyHint': 'Add widgets to see upcoming events, notifications, wiki changes and more at a glance.',
         'loadFailed': 'Could not load this widget',
         'saveFailed': 'Your dashboard layout could not be saved: {error}',
+        'layoutLoadFailed': 'Your dashboard layout could not be loaded: {error}',
+        'confirmReset': 'This replaces your customised dashboard with the default widgets. Continue?',
+        'confirmRemove': 'Remove the widget "{title}" from your dashboard?',
         'widgets': {
             'events': {
                 'title': 'Upcoming Events',
@@ -402,6 +411,7 @@ export default {
         'subtitle': 'Enter your account email address and we will send you a link to reset your password.',
         'email': 'Email',
         'button': 'Request Password Reset',
+        'sent': 'We have e-mailed you a link to reset your password.',
         'backtosign': 'Back to Sign In'
     },
     'login': {
@@ -430,6 +440,8 @@ export default {
         'agree': 'By signing up, you agree to the',
         'account': 'Already have an account?',
         'signin': 'Sign In',
+        'ageRequired': 'You must confirm your age to register',
+        'failed': 'Registration failed. Please try again.',
         'ageConfirmation': 'I confirm that I am at least {age} years old'
     },
     'utility': {
@@ -534,6 +546,12 @@ export default {
         'resettingPassword': 'Resetting password',
         'newPassword': 'New Password',
         'setNewPasswordAndSignIn': 'Set new password and Sign In',
+        'passwordResetDone': 'Your password has been changed. You can now sign in.',
+        'verifyEmailTitle': 'Please verify your e-mail address',
+        'verifyEmailHint': 'Check your inbox for the link to verify your e-mail address.',
+        'alreadyVerified': 'Your e-mail address is already verified.',
+        'verificationSent': 'The verification e-mail has been sent.',
+        'resendEmail': 'Re-send e-mail',
         'required': 'Required'
     },
     'menu': {
@@ -1296,7 +1314,18 @@ export default {
         'updateCaption': 'Update Caption',
         'selectFile': 'Select File',
         'uploadToAlbum': 'Upload to Album',
-        'uploadToCollection': 'Upload to Collection'
+        'uploadToCollection': 'Upload to Collection',
+        'uploadSuccess': 'Image uploaded',
+        'uploadFailed': 'The image could not be uploaded',
+        'captionSaved': 'Caption saved',
+        'captionSaveFailed': 'The caption could not be saved',
+        'deleteImageTitle': 'Delete image',
+        'deleteImageConfirm': 'Are you sure you want to delete this image?',
+        'deleteImageFailed': 'The image could not be deleted',
+        'collectionCreated': 'Collection created',
+        'collectionCreateFailed': 'The collection could not be created',
+        'collectionNameRequired': 'Please enter a collection name first',
+        'loadFailed': 'The gallery could not be loaded'
     },
     'imageModal': {
         'addImage': 'Add image',
@@ -1353,7 +1382,9 @@ export default {
         'editItem': 'Edit Item',
         'quickSearch': 'Quick Search',
         'list': 'List',
+        'viewItem': 'View Item',
         'deleteConfirm': 'Are you sure you want to delete this item?',
+        'deleteSelectedConfirm': 'Are you sure you want to delete the {count} selected items?',
         'ok': 'OK',
         'required': 'Required.',
         'invalidEmail': 'Invalid e-mail.',
@@ -1534,6 +1565,9 @@ export default {
             'multi': 'Multi',
         },
         'viewDetailedAttendeeList': 'View detailed attendee list',
+        'saveError': 'Failed to save the event',
+        'deleteError': 'Failed to delete the event',
+        'guestApprovalError': 'Failed to update the guest approval',
     },
     'landing': {
         'hero': {
@@ -2147,6 +2181,7 @@ export default {
             'results': 'Results',
             'saved': 'Settings saved successfully!',
             'saveError': 'Failed to save settings',
+            'loadError': 'Failed to load settings',
             'noResultsMessage': 'No settings found matching "{query}". Try a different search term.',
             'tabGeneral': 'General',
             'tabLocalization': 'Localization',
@@ -2190,7 +2225,9 @@ export default {
             'uploadFailed': 'Failed to upload image. Please try again.',
             'deleteConfirm': 'Are you sure you want to delete the {label}?',
             'deleteFailed': 'Failed to delete {key}',
-            'confirmDelete': 'Are you sure you want to delete this image?'
+            'confirmDelete': 'Are you sure you want to delete this image?',
+            'uploadSuccess': 'Image uploaded successfully',
+            'deleteSuccess': 'Image deleted successfully'
         },
         'footerBuilder': {
             'addSection': 'Add Section',
@@ -2214,6 +2251,7 @@ export default {
             'add': 'Add',
             'confirmDelete': 'Confirm Delete',
             'deleteSectionConfirm': 'Are you sure you want to delete the section "{title}"? All widgets in this section will also be deleted.',
+            'deleteWidgetConfirm': 'Are you sure you want to delete the widget "{title}"?',
             'layout1Col': '1 Column (Full Width)',
             'layout2Col': '2 Columns (Equal)',
             'layout3Col': '3 Columns (Equal)',
@@ -2362,6 +2400,7 @@ export default {
             'add': 'Add',
             'confirmDelete': 'Confirm Delete',
             'deleteSectionConfirm': 'Are you sure you want to delete the section "{title}"? All widgets in this section will also be deleted.',
+            'deleteWidgetConfirm': 'Are you sure you want to delete the widget "{title}"?',
             'layout1Col': '1 Column (Full Width)',
             'layout2Col': '2 Columns (Equal)',
             'layout3Col': '3 Columns (Equal)',
@@ -2467,6 +2506,7 @@ export default {
             'customHtmlPlaceholder': 'Enter your custom HTML here...',
             'loadSimpleTemplate': 'Load Simple Template',
             'loadComplexTemplate': 'Load Complex Template',
+            'templateOverwriteConfirm': 'Loading a template replaces your current footer HTML. Continue?',
             'availableVariables': 'Available Variables',
             'varAppName': 'Application name',
             'varCopyright': 'Copyright text',
@@ -2693,6 +2733,17 @@ export default {
             'saveSettings': 'Save Settings'
         },
         'advanced': {
+            'caching': {
+                'clearAllCaches': 'Clear All Caches',
+                'cacheCleared': 'Cache cleared successfully: {types}',
+                'cacheClearFailed': 'Failed to clear cache',
+                'clearAllConfirm': 'This will clear all application caches. Continue?'
+            },
+            'pwa': {
+                'swActive': 'Service Worker is active and registered. Check the browser console for details.',
+                'swNotRegistered': 'Service Worker is not registered yet. It will be registered on the production build.',
+                'swNotSupported': 'Service Workers are not supported in this browser.'
+            },
             'performanceCaching': 'Performance & Caching',
             'enableCaching': 'Enable Caching',
             'enableCachingHint': 'Enable application-wide caching',
@@ -2759,6 +2810,12 @@ export default {
             'pwaIconInstructions': 'Go to Branding tab → App Icon (PWA) to upload a suitable icon.',
             'viewManifest': 'View Manifest',
             'testServiceWorker': 'Test Service Worker',
+            'cacheCleared': 'Cache cleared successfully: {types}',
+            'cacheClearFailed': 'Failed to clear cache',
+            'clearAllConfirm': 'This will clear all application caches. Continue?',
+            'swActive': 'Service Worker is active and registered. Check the browser console for details.',
+            'swNotRegistered': 'Service Worker is not registered yet. It will be registered on the production build.',
+            'swNotSupported': 'Service Workers are not supported in this browser.',
             'newsletterIntegration': 'Newsletter Integration',
             'newsletterDesc': 'Connect your newsletter service to enable email subscriptions through your website.',
             'enableNewsletter': 'Enable Newsletter',
@@ -2967,7 +3024,12 @@ export default {
         'minutesAgo': '{count} minutes ago',
         'hoursAgo': '{count} hours ago',
         'daysAgo': '{count} days ago',
-        'settings': 'Notification Settings'
+        'settings': 'Notification Settings',
+        'markRead': 'Mark as read',
+        'dismiss': 'Dismiss',
+        'confirmDelete': 'Delete this notification?',
+        'deleteFailed': 'The notification could not be deleted.',
+        'updateFailed': 'The notification could not be updated.'
     },
     'relativeTime': {
         'justNow': 'Just now',
@@ -3393,6 +3455,17 @@ export default {
         'beFirst': 'Be the first to share something!',
         'howAreYouFeeling': 'How are you feeling?',
         'isFeeling': 'is feeling',
+        'fileTooLarge': '"{name}" exceeds the {size} MB size limit.',
+        'postFailed': 'The status could not be posted',
+        'updateFailed': 'The status could not be updated',
+        'deleteStatusTitle': 'Delete status',
+        'deleteStatusConfirm': 'Are you sure you want to delete this status?',
+        'deleteStatusFailed': 'The status could not be deleted',
+        'commentFailed': 'The comment could not be posted',
+        'deleteCommentTitle': 'Delete comment',
+        'deleteCommentConfirm': 'Delete this comment?',
+        'deleteCommentFailed': 'The comment could not be deleted',
+        'likeFailed': 'Your like could not be saved',
         'feelings': {
             'happy': 'happy',
             'excited': 'excited',
@@ -3572,6 +3645,7 @@ export default {
             'preview': 'Preview:',
             'savePreferences': 'Save Preferences',
             'preferencesSaved': 'Preferences saved successfully',
+            'preferencesFailed': 'Failed to save preferences',
             'dataPrivacy': 'Data & Privacy',
             'dataPrivacyDescription': 'Manage your data and account deletion options',
             'actions': 'Actions',
@@ -3611,6 +3685,11 @@ export default {
             'deleteUserWarning': 'To delete the user please transfer ownership or delete user\'s subscriptions.',
             'leaveEmptyForDefault': 'Leave empty to use system default ({value})',
             'previewUnavailable': 'Preview unavailable',
+            'userSaved': 'The user has been saved.',
+            'saveFailed': 'The user could not be saved.',
+            'preferencesSaveFailed': 'The preferences could not be saved.',
+            'avatarUploadFailed': 'The avatar could not be uploaded.',
+            'rolesLoadFailed': 'The roles could not be loaded.',
             'userInformation': 'User Information',
             'addressLine1': 'Address Line 1',
             'addressLine2': 'Address Line 2',
@@ -3760,7 +3839,8 @@ export default {
         'startChatFromUsersTab': 'Start a chat from the Users tab',
         'noUsersFound': 'No users found',
         'participants': '{count} participants',
-        'groupChat': 'Group Chat'
+        'groupChat': 'Group Chat',
+        'loadUsersFailed': 'The user list could not be loaded.'
     },
     'userProfile': {
         'unknownUser': 'Unknown User',
@@ -3826,7 +3906,8 @@ export default {
         'overview': 'Overview',
         'profileSummary': 'Profile summary',
         'securitySettings': 'Security & settings',
-        'personalDetails': 'Personal details'
+        'personalDetails': 'Personal details',
+        'logoutDeviceConfirm': 'Sign out this device?'
     },
     'socialAccounts': {
         'title': 'Connected Social Accounts',
@@ -4122,6 +4203,7 @@ export default {
         'forumArchiveRun': 'Archive now',
         'forumArchiveMoved': 'categories moved',
         'forumArchiveLocked': 'threads locked',
+        'forumArchiveConfirm': 'Move all imported forum categories under "{category}" now? This changes the forum structure for everyone.',
         'legacyItems': 'Imported items',
         'legacyClaim': 'Claim request',
         'assignedTo': 'Assigned to',
@@ -4162,7 +4244,9 @@ export default {
         'failedToCancelBatch': 'Failed to cancel batch',
         'allMigrationsCompletedSuccessfully': 'All migrations completed successfully',
         'migrationsCompleted': 'Migrations completed',
-        'migrationsCompletedWithErrors': 'Migrations completed with errors'
+        'migrationsCompletedWithErrors': 'Migrations completed with errors',
+        'cancelBatchTitle': 'Cancel batch',
+        'cancelBatchConfirm': 'Stop the running migration batch? Migrations that already finished are kept.'
     },
     'pageForm': {
         'taxonomy': 'Taxonomy',
@@ -4283,7 +4367,106 @@ export default {
         'name': 'Name',
         'size': 'Size'
     },
+    'sandbox': {
+        'collaborators': {
+            'addFailed': 'The collaborator could not be added',
+            'roleUpdateFailed': 'The role could not be changed',
+            'removeTitle': 'Remove collaborator',
+            'removeConfirm': 'Remove {name} from this sandbox?',
+            'removeFailed': 'The collaborator could not be removed'
+        },
+        'comments': {
+            'createFailed': 'The comment could not be posted',
+            'replyFailed': 'The reply could not be posted',
+            'resolveFailed': 'The thread could not be updated',
+            'deleteThreadTitle': 'Delete thread',
+            'deleteThreadConfirm': 'Delete this comment thread?',
+            'deleteThreadFailed': 'The thread could not be deleted',
+            'deleteCommentTitle': 'Delete comment',
+            'deleteCommentConfirm': 'Delete this comment?',
+            'deleteLastCommentConfirm': 'Deleting the last comment will also delete this thread. Continue?',
+            'deleteCommentFailed': 'The comment could not be deleted'
+        },
+        'settings': {
+            'saved': 'Sandbox settings saved',
+            'saveFailed': 'The settings could not be saved',
+            'saving': 'Saving...',
+            'deleteTitle': 'Delete sandbox',
+            'deleteConfirm': 'Are you sure you want to delete this sandbox? This action cannot be undone.',
+            'deleteFailed': 'The sandbox could not be deleted',
+            'deleting': 'Deleting...'
+        },
+        'editor': {
+            'versionSaved': 'Version saved',
+            'saveFailed': 'The sandbox could not be saved',
+            'autoSaveFailed': 'Auto-save failed. Your latest changes may not be stored yet - please save a version manually.',
+            'titleSaveFailed': 'The title could not be saved'
+        },
+        'versions': {
+            'untitled': 'Untitled version',
+            'restoreTitle': 'Restore version',
+            'restoreConfirm': 'Restore "{title}"? The current state will be saved as a version first.',
+            'restore': 'Restore'
+        },
+        'notifications': {
+            'markReadFailed': 'The notification could not be marked as read',
+            'dismissFailed': 'The notification could not be dismissed',
+            'markAllFailed': 'Some notifications could not be marked as read'
+        },
+        'admin': {
+            'statsLoadFailed': 'The sandbox statistics could not be loaded'
+        }
+    },
+    'irc': {
+        'client': {
+            'deleteConnectionTitle': 'Delete connection',
+            'deleteConnectionConfirm': 'Delete the connection to {server}?',
+            'deleteConnectionFailed': 'The connection could not be deleted',
+            'leaveChannelTitle': 'Leave channel',
+            'leaveChannelConfirm': 'Leave {channel}?',
+            'leaveChannel': 'Leave',
+            'leaveChannelFailed': 'The channel could not be left',
+            'sendFailed': 'The message could not be sent',
+            'favoriteFailed': 'The favorite could not be updated',
+            'characterSaveFailed': 'The character could not be saved'
+        },
+        'connectionDialog': {
+            'saveFailed': 'The connection could not be saved'
+        },
+        'joinDialog': {
+            'joinFailed': 'The channel could not be joined'
+        },
+        'admin': {
+            'loadFailed': 'The IRC data could not be loaded',
+            'disconnectTitle': 'Disconnect',
+            'disconnectConfirm': 'Disconnect {nickname} from {server}?',
+            'disconnect': 'Disconnect',
+            'disconnectFailed': 'The connection could not be disconnected',
+            'deleteConnectionTitle': 'Delete connection',
+            'deleteConnectionConfirm': 'Delete the connection for {nickname}? This will remove all channels and messages.',
+            'deleteConnectionFailed': 'The connection could not be deleted',
+            'serverSaved': 'Server saved',
+            'serverSaveFailed': 'The server could not be saved',
+            'deleteServerTitle': 'Delete server',
+            'deleteServerConfirm': 'Delete server "{name}"? This cannot be undone.',
+            'deleteServerFailed': 'The server could not be deleted',
+            'toggleFailed': 'The server could not be updated',
+            'checkFailed': 'The server could not be checked'
+        }
+    },
+    'poll': {
+        'voteSubmitted': 'Your vote has been submitted',
+        'voteFailed': 'Your vote could not be submitted',
+        'saved': 'Poll saved',
+        'saveFailed': 'The poll could not be saved'
+    },
     'dialogs': {
+        'message': {
+            'error': 'Something went wrong',
+            'warning': 'Please note',
+            'success': 'Done',
+            'info': 'Information'
+        },
         'confirm': {
             'title': 'Are you sure?',
             'typeToConfirm': 'Type to confirm',
@@ -4491,6 +4674,10 @@ export default {
         'unapprove': 'Revoke Approval',
         'approveSuccess': 'Wiki page approved successfully',
         'unapproveSuccess': 'Wiki page approval revoked',
+        'approveError': 'Failed to approve the wiki page',
+        'categoryCreated': 'Category created successfully',
+        'categoryUpdated': 'Category updated successfully',
+        'errorSavingCategory': 'An error occurred while saving the category. Please try again.',
     },
     'map': {
         'title': 'Map Title',
@@ -4783,6 +4970,20 @@ export default {
             'deleteMessage': 'Are you sure you want to delete this ticket? This action cannot be undone.',
             'deleteConfirm': 'Delete',
             'deleteCancel': 'Cancel',
+            'deleteCommentMessage': 'Delete this comment?',
+        },
+        'messages': {
+            'created': 'The ticket has been created.',
+            'updated': 'The ticket has been updated.',
+            'deleted': 'The ticket has been deleted.',
+            'commentDeleted': 'The comment has been deleted.',
+            'createFailed': 'The ticket could not be created.',
+            'updateFailed': 'The ticket could not be updated.',
+            'deleteFailed': 'The ticket could not be deleted.',
+            'commentFailed': 'The comment could not be saved.',
+            'commentDeleteFailed': 'The comment could not be deleted.',
+            'loadFailed': 'The tickets could not be loaded.',
+            'approvalFailed': 'The approval could not be changed.',
         },
         'validation': {
             'titleRequired': 'Title is required',
@@ -4951,7 +5152,8 @@ export default {
         'replyIn': 'replied in',
         'viewChronological': 'Chronological',
         'viewThreaded': 'Threaded',
-        'new': 'NEW'
+        'new': 'NEW',
+        'forumNotFound': 'Forum not found'
     },
     'session': {
         'timeout': {

@@ -42,7 +42,8 @@ export default {
         'customize': 'Anpassen',
         'showLess': 'Weniger anzeigen',
         'showDetails': 'Details anzeigen',
-        'refresh': 'Aktualisieren'
+        'refresh': 'Aktualisieren',
+        'edit': 'Bearbeiten'
     },
     'cookie': {
         'consentTitle': 'Cookie-Zustimmung',
@@ -126,7 +127,9 @@ export default {
         'replyTo': 'Antworten auf',
         'forwarded': 'Weitergeleitet',
         'attachment': 'Anhang',
-        'attachFile': 'Datei anhängen'
+        'attachFile': 'Datei anhängen',
+        'sendFailed': 'Die Nachricht konnte nicht gesendet werden',
+        'loadFailed': 'Die Nachrichten konnten nicht geladen werden'
     },
     'conversation': {
         'newConversation': 'Neue Unterhaltung',
@@ -174,7 +177,10 @@ export default {
         'new': 'neu',
         'noConversationsYet': 'Noch keine Unterhaltungen',
         'startToSee': 'Starten Sie eine Unterhaltung, um sie hier zu sehen',
-        'startNew': 'Neue Unterhaltung starten'
+        'startNew': 'Neue Unterhaltung starten',
+        'sendFailed': 'Ihre Nachricht konnte nicht gesendet werden.',
+        'createFailed': 'Die Unterhaltung konnte nicht erstellt werden.',
+        'loadFailed': 'Die Unterhaltung konnte nicht geladen werden.'
     },
     'formBuilder': {
         'formFields': 'Formularfelder',
@@ -254,6 +260,9 @@ export default {
         'emptyHint': 'Füge Widgets hinzu, um kommende Events, Benachrichtigungen, Wiki-Änderungen und mehr auf einen Blick zu sehen.',
         'loadFailed': 'Widget konnte nicht geladen werden',
         'saveFailed': 'Dein Dashboard-Layout konnte nicht gespeichert werden: {error}',
+        'layoutLoadFailed': 'Dein Dashboard-Layout konnte nicht geladen werden: {error}',
+        'confirmReset': 'Das ersetzt dein angepasstes Dashboard durch die Standard-Widgets. Fortfahren?',
+        'confirmRemove': 'Widget „{title}" vom Dashboard entfernen?',
         'widgets': {
             'events': {
                 'title': 'Kommende Events',
@@ -402,6 +411,7 @@ export default {
         'subtitle': 'Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen Ihres Passworts.',
         'email': 'E-Mail',
         'button': 'Passwort-Reset anfordern',
+        'sent': 'Wir haben Ihnen einen Link zum Zurücksetzen Ihres Passworts per E-Mail gesendet.',
         'backtosign': 'Zurück zur Anmeldung'
     },
     'login': {
@@ -430,6 +440,8 @@ export default {
         'agree': 'Mit der Registrierung stimmen Sie zu',
         'account': 'Bereits ein Konto?',
         'signin': 'Anmelden',
+        'ageRequired': 'Sie müssen Ihr Alter bestätigen, um sich zu registrieren',
+        'failed': 'Die Registrierung ist fehlgeschlagen. Bitte versuchen Sie es erneut.',
         'ageConfirmation': 'Ich bestätige, dass ich mindestens {age} Jahre alt bin'
     },
     'utility': {
@@ -534,6 +546,12 @@ export default {
         'resettingPassword': 'Passwort wird zurückgesetzt',
         'newPassword': 'Neues Passwort',
         'setNewPasswordAndSignIn': 'Neues Passwort festlegen und anmelden',
+        'passwordResetDone': 'Ihr Passwort wurde geändert. Sie können sich jetzt anmelden.',
+        'verifyEmailTitle': 'Bitte bestätigen Sie Ihre E-Mail-Adresse',
+        'verifyEmailHint': 'Prüfen Sie Ihr Postfach – dort finden Sie den Link zur Bestätigung Ihrer E-Mail-Adresse.',
+        'alreadyVerified': 'Ihre E-Mail-Adresse ist bereits bestätigt.',
+        'verificationSent': 'Die Bestätigungs-E-Mail wurde gesendet.',
+        'resendEmail': 'E-Mail erneut senden',
         'required': 'Erforderlich'
     },
     'menu': {
@@ -1319,7 +1337,9 @@ export default {
         'editItem': 'Eintrag bearbeiten',
         'quickSearch': 'Schnellsuche',
         'list': 'Liste',
+        'viewItem': 'Eintrag ansehen',
         'deleteConfirm': 'Möchten Sie diesen Eintrag wirklich löschen?',
+        'deleteSelectedConfirm': 'Möchten Sie die {count} ausgewählten Einträge wirklich löschen?',
         'ok': 'OK',
         'required': 'Erforderlich.',
         'invalidEmail': 'Ungültige E-Mail-Adresse.',
@@ -1500,6 +1520,9 @@ export default {
             'multi': 'Multi',
         },
         'viewDetailedAttendeeList': 'Detaillierte Teilnehmerliste anzeigen',
+        'saveError': 'Der Termin konnte nicht gespeichert werden',
+        'deleteError': 'Der Termin konnte nicht gelöscht werden',
+        'guestApprovalError': 'Die Gastfreigabe konnte nicht aktualisiert werden',
     },
     'gallery': {
         'title': 'Galerie',
@@ -1532,7 +1555,18 @@ export default {
         'updateCaption': 'Beschriftung aktualisieren',
         'selectFile': 'Datei auswählen',
         'uploadToAlbum': 'In Album hochladen',
-        'uploadToCollection': 'In Sammlung hochladen'
+        'uploadToCollection': 'In Sammlung hochladen',
+        'uploadSuccess': 'Bild hochgeladen',
+        'uploadFailed': 'Das Bild konnte nicht hochgeladen werden',
+        'captionSaved': 'Beschriftung gespeichert',
+        'captionSaveFailed': 'Die Beschriftung konnte nicht gespeichert werden',
+        'deleteImageTitle': 'Bild löschen',
+        'deleteImageConfirm': 'Möchtest du dieses Bild wirklich löschen?',
+        'deleteImageFailed': 'Das Bild konnte nicht gelöscht werden',
+        'collectionCreated': 'Sammlung erstellt',
+        'collectionCreateFailed': 'Die Sammlung konnte nicht erstellt werden',
+        'collectionNameRequired': 'Bitte gib zuerst einen Namen für die Sammlung ein',
+        'loadFailed': 'Die Galerie konnte nicht geladen werden'
     },
     'landing': {
         'hero': {
@@ -2147,6 +2181,7 @@ export default {
             'results': 'Ergebnisse',
             'saved': 'Einstellungen erfolgreich gespeichert!',
             'saveError': 'Fehler beim Speichern der Einstellungen',
+            'loadError': 'Einstellungen konnten nicht geladen werden',
             'noResultsMessage': 'Keine Einstellungen gefunden für "{query}". Versuchen Sie einen anderen Suchbegriff.',
             'tabGeneral': 'Allgemein',
             'tabLocalization': 'Lokalisierung',
@@ -2190,7 +2225,9 @@ export default {
             'uploadFailed': 'Fehler beim Hochladen des Bildes. Bitte versuchen Sie es erneut.',
             'deleteConfirm': 'Sind Sie sicher, dass Sie das {label} löschen möchten?',
             'deleteFailed': 'Fehler beim Löschen von {key}',
-            'confirmDelete': 'Sind Sie sicher, dass Sie dieses Bild löschen möchten?'
+            'confirmDelete': 'Sind Sie sicher, dass Sie dieses Bild löschen möchten?',
+            'uploadSuccess': 'Bild erfolgreich hochgeladen',
+            'deleteSuccess': 'Bild erfolgreich gelöscht'
         },
         'footerBuilder': {
             'addSection': 'Abschnitt hinzufügen',
@@ -2214,6 +2251,7 @@ export default {
             'add': 'Hinzufügen',
             'confirmDelete': 'Löschen bestätigen',
             'deleteSectionConfirm': 'Sind Sie sicher, dass Sie den Abschnitt "{title}" löschen möchten? Alle Widgets in diesem Abschnitt werden ebenfalls gelöscht.',
+            'deleteWidgetConfirm': 'Sind Sie sicher, dass Sie das Widget "{title}" löschen möchten?',
             'layout1Col': '1 Spalte (Volle Breite)',
             'layout2Col': '2 Spalten (Gleich)',
             'layout3Col': '3 Spalten (Gleich)',
@@ -2362,6 +2400,7 @@ export default {
             'add': 'Hinzufügen',
             'confirmDelete': 'Löschen bestätigen',
             'deleteSectionConfirm': 'Sind Sie sicher, dass Sie den Abschnitt "{title}" löschen möchten? Alle Widgets in diesem Abschnitt werden ebenfalls gelöscht.',
+            'deleteWidgetConfirm': 'Sind Sie sicher, dass Sie das Widget "{title}" löschen möchten?',
             'layout1Col': '1 Spalte (Volle Breite)',
             'layout2Col': '2 Spalten (Gleich)',
             'layout3Col': '3 Spalten (Gleich)',
@@ -2428,6 +2467,7 @@ export default {
             'customHtmlPlaceholder': 'Geben Sie hier Ihr benutzerdefiniertes HTML ein...',
             'loadSimpleTemplate': 'Einfache Vorlage laden',
             'loadComplexTemplate': 'Komplexe Vorlage laden',
+            'templateOverwriteConfirm': 'Beim Laden einer Vorlage wird das aktuelle Footer-HTML ersetzt. Fortfahren?',
             'availableVariables': 'Verfügbare Variablen',
             'varAppName': 'Anwendungsname',
             'varCopyright': 'Copyright-Text',
@@ -2759,6 +2799,12 @@ export default {
             'pwaIconInstructions': 'Gehen Sie zum Branding-Tab → App-Symbol (PWA), um ein geeignetes Symbol hochzuladen.',
             'viewManifest': 'Manifest anzeigen',
             'testServiceWorker': 'Service Worker testen',
+            'cacheCleared': 'Cache erfolgreich geleert: {types}',
+            'cacheClearFailed': 'Fehler beim Leeren des Caches',
+            'clearAllConfirm': 'Dadurch werden alle Caches der Anwendung geleert. Fortfahren?',
+            'swActive': 'Service Worker ist aktiv und registriert. Details finden Sie in der Browser-Konsole.',
+            'swNotRegistered': 'Service Worker ist noch nicht registriert. Er wird mit dem Produktions-Build registriert.',
+            'swNotSupported': 'Service Worker werden in diesem Browser nicht unterstützt.',
             'newsletterIntegration': 'Newsletter-Integration',
             'newsletterDesc': 'Verbinden Sie Ihren Newsletter-Dienst, um E-Mail-Abonnements über Ihre Website zu ermöglichen.',
             'enableNewsletter': 'Newsletter aktivieren',
@@ -2985,7 +3031,8 @@ export default {
                 'posts': 'Posts',
                 'clearAllCaches': 'Alle Caches leeren',
                 'cacheCleared': 'Cache erfolgreich geleert: {types}',
-                'cacheClearFailed': 'Fehler beim Leeren des Caches'
+                'cacheClearFailed': 'Fehler beim Leeren des Caches',
+                'clearAllConfirm': 'Dadurch werden alle Caches der Anwendung geleert. Fortfahren?'
             },
             'pwa': {
                 'title': 'Progressive Web App',
@@ -3139,7 +3186,12 @@ export default {
         'minutesAgo': 'vor {count} Minuten',
         'hoursAgo': 'vor {count} Stunden',
         'daysAgo': 'vor {count} Tagen',
-        'settings': 'Benachrichtigungseinstellungen'
+        'settings': 'Benachrichtigungseinstellungen',
+        'markRead': 'Als gelesen markieren',
+        'dismiss': 'Verwerfen',
+        'confirmDelete': 'Diese Benachrichtigung löschen?',
+        'deleteFailed': 'Die Benachrichtigung konnte nicht gelöscht werden.',
+        'updateFailed': 'Die Benachrichtigung konnte nicht aktualisiert werden.'
     },
     'relativeTime': {
         'justNow': 'Gerade eben',
@@ -3561,6 +3613,17 @@ export default {
         'beFirst': 'Sei der Erste, der etwas teilt!',
         'howAreYouFeeling': 'Wie fühlst du dich?',
         'isFeeling': 'fühlt sich',
+        'fileTooLarge': '„{name}" überschreitet die maximale Dateigröße von {size} MB.',
+        'postFailed': 'Der Status konnte nicht gepostet werden',
+        'updateFailed': 'Der Status konnte nicht aktualisiert werden',
+        'deleteStatusTitle': 'Status löschen',
+        'deleteStatusConfirm': 'Möchtest du diesen Status wirklich löschen?',
+        'deleteStatusFailed': 'Der Status konnte nicht gelöscht werden',
+        'commentFailed': 'Der Kommentar konnte nicht gepostet werden',
+        'deleteCommentTitle': 'Kommentar löschen',
+        'deleteCommentConfirm': 'Diesen Kommentar löschen?',
+        'deleteCommentFailed': 'Der Kommentar konnte nicht gelöscht werden',
+        'likeFailed': 'Dein Like konnte nicht gespeichert werden',
         'feelings': {
             'happy': 'glücklich',
             'excited': 'aufgeregt',
@@ -3740,6 +3803,7 @@ export default {
             'preview': 'Vorschau:',
             'savePreferences': 'Einstellungen speichern',
             'preferencesSaved': 'Einstellungen erfolgreich gespeichert',
+            'preferencesFailed': 'Einstellungen konnten nicht gespeichert werden',
             'dataPrivacy': 'Daten & Datenschutz',
             'dataPrivacyDescription': 'Verwalten Sie Ihre Daten und Optionen zur Kontolöschung',
             'actions': 'Aktionen',
@@ -3779,6 +3843,11 @@ export default {
             'deleteUserWarning': 'Um den Benutzer zu löschen, übertragen Sie bitte das Eigentum oder löschen Sie die Abonnements des Benutzers.',
             'leaveEmptyForDefault': 'Leer lassen, um Systemstandard zu verwenden ({value})',
             'previewUnavailable': 'Vorschau nicht verfügbar',
+            'userSaved': 'Der Benutzer wurde gespeichert.',
+            'saveFailed': 'Der Benutzer konnte nicht gespeichert werden.',
+            'preferencesSaveFailed': 'Die Einstellungen konnten nicht gespeichert werden.',
+            'avatarUploadFailed': 'Der Avatar konnte nicht hochgeladen werden.',
+            'rolesLoadFailed': 'Die Rollen konnten nicht geladen werden.',
             'userInformation': 'Benutzerinformationen',
             'addressLine1': 'Adresszeile 1',
             'addressLine2': 'Adresszeile 2',
@@ -3928,7 +3997,8 @@ export default {
         'startChatFromUsersTab': 'Starten Sie einen Chat über die Benutzer-Registerkarte',
         'noUsersFound': 'Keine Benutzer gefunden',
         'participants': '{count} Teilnehmer',
-        'groupChat': 'Gruppenchat'
+        'groupChat': 'Gruppenchat',
+        'loadUsersFailed': 'Die Benutzerliste konnte nicht geladen werden.'
     },
     'userProfile': {
         'unknownUser': 'Unbekannter Benutzer',
@@ -3994,7 +4064,8 @@ export default {
         'overview': 'Übersicht',
         'profileSummary': 'Profilzusammenfassung',
         'securitySettings': 'Sicherheit & Einstellungen',
-        'personalDetails': 'Persönliche Angaben'
+        'personalDetails': 'Persönliche Angaben',
+        'logoutDeviceConfirm': 'Dieses Gerät abmelden?'
     },
     'socialAccounts': {
         'title': 'Verbundene soziale Konten',
@@ -4290,6 +4361,7 @@ export default {
         'forumArchiveRun': 'Jetzt archivieren',
         'forumArchiveMoved': 'Kategorien verschoben',
         'forumArchiveLocked': 'Themen gesperrt',
+        'forumArchiveConfirm': 'Alle importierten Forenkategorien jetzt unter „{category}" verschieben? Das ändert die Forenstruktur für alle.',
         'legacyItems': 'Importierte Einträge',
         'legacyClaim': 'Anfrage',
         'assignedTo': 'Zugewiesen an',
@@ -4330,7 +4402,9 @@ export default {
         'failedToCancelBatch': 'Batch konnte nicht abgebrochen werden',
         'allMigrationsCompletedSuccessfully': 'Alle Migrationen erfolgreich abgeschlossen',
         'migrationsCompleted': 'Migrationen abgeschlossen',
-        'migrationsCompletedWithErrors': 'Migrationen mit Fehlern abgeschlossen'
+        'migrationsCompletedWithErrors': 'Migrationen mit Fehlern abgeschlossen',
+        'cancelBatchTitle': 'Batch abbrechen',
+        'cancelBatchConfirm': 'Den laufenden Migrations-Batch stoppen? Bereits abgeschlossene Migrationen bleiben erhalten.'
     },
     'pageForm': {
         'taxonomy': 'Taxonomie',
@@ -4451,7 +4525,106 @@ export default {
         'name': 'Name',
         'size': 'Größe'
     },
+    'sandbox': {
+        'collaborators': {
+            'addFailed': 'Die Person konnte nicht hinzugefügt werden',
+            'roleUpdateFailed': 'Die Rolle konnte nicht geändert werden',
+            'removeTitle': 'Person entfernen',
+            'removeConfirm': '{name} aus dieser Sandbox entfernen?',
+            'removeFailed': 'Die Person konnte nicht entfernt werden'
+        },
+        'comments': {
+            'createFailed': 'Der Kommentar konnte nicht gepostet werden',
+            'replyFailed': 'Die Antwort konnte nicht gepostet werden',
+            'resolveFailed': 'Der Thread konnte nicht aktualisiert werden',
+            'deleteThreadTitle': 'Thread löschen',
+            'deleteThreadConfirm': 'Diesen Kommentar-Thread löschen?',
+            'deleteThreadFailed': 'Der Thread konnte nicht gelöscht werden',
+            'deleteCommentTitle': 'Kommentar löschen',
+            'deleteCommentConfirm': 'Diesen Kommentar löschen?',
+            'deleteLastCommentConfirm': 'Wenn du den letzten Kommentar löschst, wird auch der Thread gelöscht. Fortfahren?',
+            'deleteCommentFailed': 'Der Kommentar konnte nicht gelöscht werden'
+        },
+        'settings': {
+            'saved': 'Sandbox-Einstellungen gespeichert',
+            'saveFailed': 'Die Einstellungen konnten nicht gespeichert werden',
+            'saving': 'Wird gespeichert...',
+            'deleteTitle': 'Sandbox löschen',
+            'deleteConfirm': 'Möchtest du diese Sandbox wirklich löschen? Das kann nicht rückgängig gemacht werden.',
+            'deleteFailed': 'Die Sandbox konnte nicht gelöscht werden',
+            'deleting': 'Wird gelöscht...'
+        },
+        'editor': {
+            'versionSaved': 'Version gespeichert',
+            'saveFailed': 'Die Sandbox konnte nicht gespeichert werden',
+            'autoSaveFailed': 'Das automatische Speichern ist fehlgeschlagen. Deine letzten Änderungen sind möglicherweise noch nicht gesichert - bitte speichere manuell eine Version.',
+            'titleSaveFailed': 'Der Titel konnte nicht gespeichert werden'
+        },
+        'versions': {
+            'untitled': 'Unbenannte Version',
+            'restoreTitle': 'Version wiederherstellen',
+            'restoreConfirm': '„{title}" wiederherstellen? Der aktuelle Stand wird vorher als Version gespeichert.',
+            'restore': 'Wiederherstellen'
+        },
+        'notifications': {
+            'markReadFailed': 'Die Benachrichtigung konnte nicht als gelesen markiert werden',
+            'dismissFailed': 'Die Benachrichtigung konnte nicht entfernt werden',
+            'markAllFailed': 'Einige Benachrichtigungen konnten nicht als gelesen markiert werden'
+        },
+        'admin': {
+            'statsLoadFailed': 'Die Sandbox-Statistiken konnten nicht geladen werden'
+        }
+    },
+    'irc': {
+        'client': {
+            'deleteConnectionTitle': 'Verbindung löschen',
+            'deleteConnectionConfirm': 'Die Verbindung zu {server} löschen?',
+            'deleteConnectionFailed': 'Die Verbindung konnte nicht gelöscht werden',
+            'leaveChannelTitle': 'Channel verlassen',
+            'leaveChannelConfirm': '{channel} verlassen?',
+            'leaveChannel': 'Verlassen',
+            'leaveChannelFailed': 'Der Channel konnte nicht verlassen werden',
+            'sendFailed': 'Die Nachricht konnte nicht gesendet werden',
+            'favoriteFailed': 'Der Favorit konnte nicht aktualisiert werden',
+            'characterSaveFailed': 'Der Charakter konnte nicht gespeichert werden'
+        },
+        'connectionDialog': {
+            'saveFailed': 'Die Verbindung konnte nicht gespeichert werden'
+        },
+        'joinDialog': {
+            'joinFailed': 'Der Channel konnte nicht betreten werden'
+        },
+        'admin': {
+            'loadFailed': 'Die IRC-Daten konnten nicht geladen werden',
+            'disconnectTitle': 'Verbindung trennen',
+            'disconnectConfirm': '{nickname} von {server} trennen?',
+            'disconnect': 'Trennen',
+            'disconnectFailed': 'Die Verbindung konnte nicht getrennt werden',
+            'deleteConnectionTitle': 'Verbindung löschen',
+            'deleteConnectionConfirm': 'Die Verbindung von {nickname} löschen? Alle Channels und Nachrichten werden dabei entfernt.',
+            'deleteConnectionFailed': 'Die Verbindung konnte nicht gelöscht werden',
+            'serverSaved': 'Server gespeichert',
+            'serverSaveFailed': 'Der Server konnte nicht gespeichert werden',
+            'deleteServerTitle': 'Server löschen',
+            'deleteServerConfirm': 'Server „{name}" löschen? Das kann nicht rückgängig gemacht werden.',
+            'deleteServerFailed': 'Der Server konnte nicht gelöscht werden',
+            'toggleFailed': 'Der Server konnte nicht aktualisiert werden',
+            'checkFailed': 'Der Server konnte nicht geprüft werden'
+        }
+    },
+    'poll': {
+        'voteSubmitted': 'Deine Stimme wurde abgegeben',
+        'voteFailed': 'Deine Stimme konnte nicht abgegeben werden',
+        'saved': 'Umfrage gespeichert',
+        'saveFailed': 'Die Umfrage konnte nicht gespeichert werden'
+    },
     'dialogs': {
+        'message': {
+            'error': 'Etwas ist schiefgelaufen',
+            'warning': 'Bitte beachten',
+            'success': 'Erledigt',
+            'info': 'Information'
+        },
         'confirm': {
             'title': 'Sind Sie sicher?',
             'typeToConfirm': 'Zur Bestätigung eingeben',
@@ -4659,6 +4832,10 @@ export default {
         'unapprove': 'Genehmigung widerrufen',
         'approveSuccess': 'Wiki-Seite erfolgreich genehmigt',
         'unapproveSuccess': 'Wiki-Seitengenehmigung widerrufen',
+        'approveError': 'Die Wiki-Seite konnte nicht genehmigt werden',
+        'categoryCreated': 'Kategorie erfolgreich erstellt',
+        'categoryUpdated': 'Kategorie erfolgreich aktualisiert',
+        'errorSavingCategory': 'Beim Speichern der Kategorie ist ein Fehler aufgetreten. Bitte versuche es erneut.',
     },
     'map': {
         'title': 'Kartentitel',
@@ -4967,6 +5144,20 @@ export default {
             'deleteMessage': 'Sind Sie sicher, dass Sie dieses Ticket löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
             'deleteConfirm': 'Löschen',
             'deleteCancel': 'Abbrechen',
+            'deleteCommentMessage': 'Diesen Kommentar löschen?',
+        },
+        'messages': {
+            'created': 'Das Ticket wurde erstellt.',
+            'updated': 'Das Ticket wurde aktualisiert.',
+            'deleted': 'Das Ticket wurde gelöscht.',
+            'commentDeleted': 'Der Kommentar wurde gelöscht.',
+            'createFailed': 'Das Ticket konnte nicht erstellt werden.',
+            'updateFailed': 'Das Ticket konnte nicht aktualisiert werden.',
+            'deleteFailed': 'Das Ticket konnte nicht gelöscht werden.',
+            'commentFailed': 'Der Kommentar konnte nicht gespeichert werden.',
+            'commentDeleteFailed': 'Der Kommentar konnte nicht gelöscht werden.',
+            'loadFailed': 'Die Tickets konnten nicht geladen werden.',
+            'approvalFailed': 'Die Genehmigung konnte nicht geändert werden.',
         },
         'validation': {
             'titleRequired': 'Titel ist erforderlich',
@@ -5135,7 +5326,8 @@ export default {
         'replyIn': 'antwortete in',
         'viewChronological': 'Chronologisch',
         'viewThreaded': 'Verschachtelt',
-        'new': 'NEU'
+        'new': 'NEU',
+        'forumNotFound': 'Forum nicht gefunden'
     },
     'session': {
         'timeout': {

@@ -14,8 +14,8 @@
             </VCardText>
             <VCardActions>
                 <VSpacer />
-                <VBtn color="grey" @click="cancel">{{ cancellationText || $t('common.cancel') }}</VBtn>
-                <VBtn color="red" :disabled="confirmationButtonDisabled" @click="confirm">
+                <VBtn color="grey" variant="text" @click="cancel">{{ cancellationText || $t('common.cancel') }}</VBtn>
+                <VBtn :color="color" variant="tonal" :disabled="confirmationButtonDisabled" @click="confirm">
                     {{ confirmationText || $t('dialogs.confirm.yes') }}
                 </VBtn>
             </VCardActions>
@@ -32,8 +32,11 @@ const props = defineProps({
     title: String,
     content: String,
     confirmationKeyword: String,
-    confirmationText: {type: String, default: 'Yes'},
-    cancellationText: {type: String, default: 'Cancel'},
+    // Empty defaults so the translated labels apply
+    confirmationText: {type: String, default: ''},
+    cancellationText: {type: String, default: ''},
+    // Colour of the confirm button: 'error' for destructive actions
+    color: {type: String, default: 'error'},
     resolve: {type: Function, required: true},
 });
 

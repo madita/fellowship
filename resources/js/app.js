@@ -62,6 +62,7 @@ import './plugins/animate.js'
 import './plugins/clipboard.js'
 import formatDate from './plugins/formatDate.js'
 import sessionTimeout from './plugins/sessionTimeout.js'
+import dialogs from './plugins/dialogs.js'
 // import './plugins/moment'
 // import './plugins/lodash'
 
@@ -124,6 +125,7 @@ vueApp.use(router)
 
 vueApp.use(formatDate);
 vueApp.use(sessionTimeout);
+vueApp.use(dialogs);
 // Vue.use(require('vue-shortkey'))
 // vueApp.use(VueShortkey)
 // vueApp.mount("#app")
