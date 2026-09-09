@@ -27,6 +27,8 @@ export default function permission({ to, next }) {
         "admin-media": "manage-page",
         "admin-migrations": "manage-page",
         "admin-translations": "manage-page",
+        "admin-taxonomie": "manage-page",
+        "admin-terms": "manage-page",
         "admin-settings-menus": "manage-page",
         "admin-tickets": "manage-page",
         "admin-forums": "manage-page",

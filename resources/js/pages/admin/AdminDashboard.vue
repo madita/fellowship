@@ -239,8 +239,8 @@ export default {
                 { to: '/admin/tickets', icon: 'mdi-ticket-outline', key: 'menu.adminTickets' },
                 { to: '/admin/media', icon: 'mdi-folder-multiple-image', key: 'menu.adminMedia' },
                 { to: '/admin/announcements', icon: 'mdi-bullhorn-outline', key: 'menu.adminAnnouncement' },
-                { to: '/admin/translations', icon: 'mdi-translate', key: 'menu.adminTranslations' },
-                { to: '/admin/migrations', icon: 'mdi-database-import-outline', key: 'migrationDashboard.title' },
+                { to: '/admin/settings/localization/translations', icon: 'mdi-translate', key: 'menu.adminTranslations' },
+                { to: '/admin/settings/tools/migrations', icon: 'mdi-database-import-outline', key: 'migrationDashboard.title' },
             ],
         };
     },

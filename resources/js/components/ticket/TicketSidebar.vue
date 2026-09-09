@@ -350,7 +350,7 @@ const openLegacyUsers = () => {
     const meta = localTicket.value?.metadata || {};
     const search = meta.legacy_username || meta.legacy_user_id || meta.legacy_email || '';
     dialogModelValueUpdate(false);
-    router.push({ path: '/admin/migrations', query: { tab: 'legacyUsers', search } });
+    router.push({ path: '/admin/settings/tools/migrations', query: { tab: 'legacyUsers', search } });
 };
 
 const rules = {

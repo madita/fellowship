@@ -37,6 +37,7 @@ export const settingsCategories = [
         settings: [
             { id: 'regional', title: 'Regional Settings', description: 'Language, timezone, date/time formats', icon: 'mdi-map-clock-outline', component: 'RegionalSettingsPage' },
             { id: 'language-options', title: 'Language Options', description: 'User language preferences', icon: 'mdi-translate', component: 'LanguageOptionsPage' },
+            { id: 'translations', title: 'Translation Manager', description: 'Edit the interface texts of every locale', icon: 'mdi-translate-variant', routeName: 'admin-translations' },
         ]
     },
     {
@@ -181,6 +182,38 @@ export const settingsCategories = [
             { id: 'cookies', title: 'Cookie Consent', description: 'GDPR cookie banner settings', icon: 'mdi-cookie-outline', component: 'CookieConsentPage' },
             { id: 'scripts', title: 'Custom Scripts', description: 'Head and body scripts', icon: 'mdi-script-text-outline', component: 'CustomScriptsPage' },
             { id: 'legal', title: 'Legal & Compliance', description: 'Privacy, terms, and GDPR', icon: 'mdi-scale-balance', component: 'LegalCompliancePage' },
+        ]
+    },
+    {
+        id: 'access',
+        title: 'Users & Access',
+        description: 'Roles and the permissions they grant',
+        icon: 'mdi-shield-account-outline',
+        color: 'red',
+        settings: [
+            { id: 'roles', title: 'Roles', description: 'Create roles and assign them to users', icon: 'mdi-shield-account', routeName: 'admin-roles' },
+            { id: 'permissions', title: 'Permissions', description: 'Which role may do what', icon: 'mdi-shield-key-outline', routeName: 'admin-permissions' },
+        ]
+    },
+    {
+        id: 'taxonomy',
+        title: 'Taxonomy',
+        description: 'Tag and category vocabularies shared by all content',
+        icon: 'mdi-tag-multiple-outline',
+        color: 'lime-darken-2',
+        settings: [
+            { id: 'taxonomies', title: 'Taxonomies', description: 'Vocabularies such as tags, categories and forum sections', icon: 'mdi-file-tree', routeName: 'admin-taxonomie' },
+            { id: 'terms', title: 'Terms', description: 'The entries of each taxonomy', icon: 'mdi-tag-multiple', routeName: 'admin-terms' },
+        ]
+    },
+    {
+        id: 'tools',
+        title: 'Tools & Data',
+        description: 'Imports and maintenance tools',
+        icon: 'mdi-toolbox-outline',
+        color: 'brown',
+        settings: [
+            { id: 'migrations', title: 'Migration Tool', description: 'Import content and users from legacy databases', icon: 'mdi-database-arrow-right-outline', routeName: 'admin-migrations' },
         ]
     },
 ];

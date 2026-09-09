@@ -4,6 +4,7 @@
             :title="$t('migrationDashboard.title')"
             :subtitle="$t('migrationDashboard.description')"
             icon="mdi-database-arrow-right-outline"
+            :back-to="{ name: 'admin-settings-category', params: { category: 'tools' } }"
             fluid
         >
             <template #actions>

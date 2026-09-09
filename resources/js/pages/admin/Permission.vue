@@ -1,6 +1,6 @@
 <template>
   <div class="flex-grow-1">
-      <page-header :title="$t('admin.permissions.title')" icon="mdi-shield-key-outline">
+      <page-header :title="$t('admin.permissions.title')" icon="mdi-shield-key-outline" :back-to="{ name: 'admin-settings-category', params: { category: 'access' } }">
           <template #actions>
               <v-btn
                   color="primary"

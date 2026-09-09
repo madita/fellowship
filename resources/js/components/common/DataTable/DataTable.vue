@@ -1,6 +1,6 @@
 <template>
     <div class="flex-grow-1">
-        <page-header :title="pageTitle" :subtitle="subtitle" :icon="icon">
+        <page-header :title="pageTitle" :subtitle="subtitle" :icon="icon" :back-to="backTo">
             <template v-if="state.response.allow.creation" #actions>
                 <v-btn
                     color="primary"
@@ -327,6 +327,11 @@ export default {
         icon: {
             type: String,
             default: 'mdi-table'
+        },
+        // Route of the settings category (or page) this table belongs to
+        backTo: {
+            type: [String, Object],
+            default: null
         }
     },
     setup(props) {

@@ -4,6 +4,7 @@
             :title="$t('translationManager.title')"
             :subtitle="$t('translationManager.description')"
             icon="mdi-translate"
+            :back-to="{ name: 'admin-settings-category', params: { category: 'localization' } }"
             fluid
         >
             <template #actions>
