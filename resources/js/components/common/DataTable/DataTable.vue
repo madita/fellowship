@@ -1,22 +1,25 @@
 <template>
     <div class="flex-grow-1">
-        <v-container>
-            <div class="d-flex align-center py-3">
-                <div>
-                    <div class="display-1">{{ state.response.table }}</div>
-                    <v-breadcrumbs :items="breadcrumbs" class="pa-0 py-2"></v-breadcrumbs>
-                </div>
-            </div>
+        <page-header :title="pageTitle" :subtitle="subtitle" :icon="icon">
+            <template v-if="state.response.allow.creation" #actions>
+                <v-btn
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-plus"
+                    :disabled="state.loading"
+                    @click="isSidebarActive = true"
+                >
+                    {{ $t('dataTable.newItem') }}
+                </v-btn>
+            </template>
+        </page-header>
 
-
-                <v-card>
-                    <v-row
-                        dense
-                        class="pa-2 align-center"
-                        no-gutters
-                    >
+        <v-container fluid>
+            <v-card>
+                <v-card-text>
+                    <v-row dense class="align-center">
                         <!-- Columns Dropdown -->
-                        <v-col cols="12" md="4" class="pr-md-2">
+                        <v-col cols="12" md="4">
                             <v-select
                                 v-model="state.search.column"
                                 :items="state.response.displayable"
@@ -27,7 +30,7 @@
                         </v-col>
 
                         <!-- Operators Dropdown -->
-                        <v-col cols="12" md="2" class="px-md-1">
+                        <v-col cols="12" md="2">
                             <v-select
                                 v-model="state.search.operator"
                                 :items="state.searchOperators"
@@ -40,9 +43,8 @@
                         </v-col>
 
                         <!-- Search Input and Buttons -->
-                        <v-col cols="12" md="6" class="pl-md-2">
-                            <div class="d-flex align-center gap-2">
-                                <!-- Search Input -->
+                        <v-col cols="12" md="6">
+                            <div class="d-flex align-center flex-wrap ga-2">
                                 <v-text-field
                                     v-model="state.search.value"
                                     append-inner-icon="mdi-magnify"
@@ -54,227 +56,222 @@
                                     @keyup.enter="getRecords"
                                 />
 
-                                <!-- Search Button -->
                                 <v-btn
                                     color="primary"
-                                    size="small"
-                                    variant="elevated"
+                                    variant="tonal"
                                     :loading="state.loading"
                                     :disabled="state.loading"
                                     @click="getRecords"
-                                    min-width="80"
                                 >
                                     {{ $t('dataTable.search') }}
                                 </v-btn>
 
-                                <!-- Refresh Button -->
                                 <v-btn
-                                    :loading="state.loading"
-                                    :disabled="state.loading"
-                                    size="small"
                                     icon="mdi-refresh"
+                                    variant="text"
+                                    :disabled="state.loading"
+                                    :aria-label="$t('dataTable.refresh')"
+                                    :title="$t('dataTable.refresh')"
                                     @click="getRecords"
                                 />
                             </div>
                         </v-col>
                     </v-row>
 
-
-                <!-- Toggle Filters -->
-                <v-row
-                    v-if="state.response.toggle_filters && state.response.toggle_filters.length"
-                    dense
-                    class="pa-2"
-                >
-                    <v-col cols="12">
-                        <div class="d-flex align-center gap-2 flex-wrap">
-                            <span class="text-caption text-medium-emphasis mr-1">{{ $t('dataTable.filters') }}:</span>
-                            <v-chip
-                                v-for="filter in state.response.toggle_filters"
-                                :key="filter.key"
-                                :prepend-icon="filter.icon"
-                                :color="state.activeFilters[filter.key] ? 'primary' : undefined"
-                                :variant="state.activeFilters[filter.key] ? 'elevated' : 'outlined'"
-                                size="small"
-                                @click="toggleFilter(filter.key)"
-                            >
-                                {{ filter.label }}
-                            </v-chip>
-                        </div>
-                    </v-col>
-                </v-row>
-
-                <v-row class="pa-2 align-center">
-                    <AppDataTable
-                        v-model="state.page"
-                        v-if="getHeaders && getHeaders.length > 0"
-                        :items="filteredRecords"
-                        :headers="getHeaders"
-                        :page="state.page"
-                        :links="state.response.records.links"
-                        :itemsPerPage="state.response.records.per_page"
-                        :pageCount="state.response.records.last_page"
-                        :server-items-length="state.response.records.total"
-                        :search="state.quickSearchQuery"
-                        :loading="state.loading || state.deleting"
+                    <!-- Toggle Filters -->
+                    <div
+                        v-if="state.response.toggle_filters && state.response.toggle_filters.length"
+                        class="d-flex align-center flex-wrap ga-2 mt-3"
                     >
-                        <template #top>
-                            <v-toolbar flat>
-                                <v-dialog
-                                    v-if="!state.loading"
-                                    v-model="state.dialog"
-                                    max-width="500px"
+                        <span class="text-caption text-medium-emphasis">{{ $t('dataTable.filters') }}:</span>
+                        <v-chip
+                            v-for="filter in state.response.toggle_filters"
+                            :key="filter.key"
+                            :prepend-icon="filter.icon"
+                            :color="state.activeFilters[filter.key] ? 'primary' : undefined"
+                            :variant="state.activeFilters[filter.key] ? 'elevated' : 'tonal'"
+                            size="small"
+                            @click="toggleFilter(filter.key)"
+                        >
+                            {{ filter.label }}
+                        </v-chip>
+                    </div>
+                </v-card-text>
+
+                <v-divider />
+
+                <!-- Table toolbar -->
+                <div class="d-flex align-center flex-wrap ga-2 pa-4">
+                    <v-menu>
+                        <template v-slot:activator="{ props: menuProps }">
+                            <transition name="slide-fade" mode="out-in">
+                                <v-btn
+                                    v-show="state.selected.length > 0"
+                                    variant="tonal"
+                                    append-icon="mdi-menu-down"
+                                    v-bind="menuProps"
                                 >
-                                    <template v-slot:activator="{ props: activatorProps }">
-                                        <v-row>
-                                            <v-col cols="6">
-                                                <v-menu offset-y>
-                                                    <template v-slot:activator="{ props: menuProps }">
-                                                        <transition name="slide-fade" mode="out-in">
-                                                            <v-btn
-                                                                v-show="state.selected.length > 0"
-                                                                class="mb-2 mr-1"
-                                                                v-bind="menuProps"
-                                                            >
-                                                                {{ $t('dataTable.actions') }}
-                                                                <v-icon>mdi-menu-down</v-icon>
-                                                            </v-btn>
-                                                        </transition>
-                                                    </template>
-                                                    <v-list density="compact">
-                                                        <v-list-item :disabled="state.deleting" @click="deleteItem(state.selected)">
-                                                            <template v-if="state.deleting" v-slot:prepend>
-                                                                <v-progress-circular indeterminate size="16" width="2" />
-                                                            </template>
-                                                            <v-list-item-title>{{ $t('common.delete') }}</v-list-item-title>
-                                                        </v-list-item>
-                                                    </v-list>
-                                                </v-menu>
-                                                <v-btn
-                                                    v-if="state.response.allow.creation"
-                                                    color="primary"
-                                                    class="mb-2"
-                                                    @click="isSidebarActive = true"
-                                                >
-                                                    {{ $t('dataTable.newItem') }}
-                                                </v-btn>
-                                            </v-col>
-                                            <v-col cols="6">
-                                                <v-text-field
-                                                    class="ml-2"
-                                                    v-model="state.quickSearchQuery"
-                                                    append-icon="mdi-magnify"
-                                                    :label="$t('dataTable.quickSearch')"
-                                                    single-line
-                                                    hide-details
-                                                ></v-text-field>
-                                            </v-col>
-                                        </v-row>
-                                    </template>
-
-                                    <v-card>
-                                        <v-card-title>
-                                            <span class="text-h5">{{ formTitle }}</span>
-                                        </v-card-title>
-
-                                        <v-card-text>
-                                            <v-container v-if="state.editedItem !== null">
-                                                <v-row v-for="column in state.response.updatable" :key="`card-${column}`">
-                                                    <v-col cols="12">
-                                                        <template v-if="typeof(state.response.column_fields[column]) === 'object'">
-                                                            <v-select
-                                                                v-if="'select' in state.response.column_fields[column]"
-                                                                :items="state.response.column_fields[column]['select']"
-                                                                v-model="state.editedItem[column]"
-                                                                :label="column"
-                                                            ></v-select>
-                                                        </template>
-                                                        <v-textarea
-                                                            v-else-if="state.response.column_fields[column]==='textarea'"
-                                                            :label="column"
-                                                            :id="column"
-                                                            v-model="state.editedItem[column]"
-                                                        ></v-textarea>
-
-                                                        <Tiptap
-                                                            v-else-if="state.response.column_fields[column]==='wysiwyg'"
-                                                            v-model="state.editedItem[column]"
-                                                            :id="`text-content-${column}`"
-                                                            :name="`content-${column}`"
-                                                        />
-
-                                                        <v-checkbox
-                                                            v-else-if="state.response.column_fields[column]==='checkbox'"
-                                                            v-model="state.editedItem[column]"
-                                                            :label="column"
-                                                        ></v-checkbox>
-
-                                                        <v-text-field
-                                                            v-else
-                                                            v-model="state.editedItem[column]"
-                                                            :label="column"
-                                                        ></v-text-field>
-                                                    </v-col>
-                                                </v-row>
-                                            </v-container>
-                                        </v-card-text>
-
-                                        <v-card-actions>
-                                            <v-spacer></v-spacer>
-                                            <v-btn
-                                                color="blue-darken-1"
-                                                variant="text"
-                                                :disabled="state.saving"
-                                                @click="close"
-                                            >
-                                                {{ $t('common.cancel') }}
-                                            </v-btn>
-                                            <v-btn
-                                                color="blue-darken-1"
-                                                variant="text"
-                                                :loading="state.saving"
-                                                :disabled="state.saving"
-                                                @click="save"
-                                            >
-                                                {{ $t('common.save') }}
-                                            </v-btn>
-                                        </v-card-actions>
-                                    </v-card>
-                                </v-dialog>
-                            </v-toolbar>
+                                    {{ $t('dataTable.actions') }}
+                                </v-btn>
+                            </transition>
                         </template>
+                        <v-list density="compact">
+                            <v-list-item :disabled="state.deleting" @click="deleteItem(state.selected)">
+                                <template v-if="state.deleting" v-slot:prepend>
+                                    <v-progress-circular indeterminate size="16" width="2" />
+                                </template>
+                                <v-list-item-title>{{ $t('common.delete') }}</v-list-item-title>
+                            </v-list-item>
+                        </v-list>
+                    </v-menu>
+                    <v-spacer />
+                    <v-text-field
+                        v-model="state.quickSearchQuery"
+                        append-inner-icon="mdi-magnify"
+                        :label="$t('dataTable.quickSearch')"
+                        density="compact"
+                        single-line
+                        hide-details
+                        clearable
+                        class="data-table__quick-search"
+                    />
+                </div>
 
-                        <template v-slot:item.created_at="{ item }">
-                            {{ $formatDate(item.created_at, 'Y-m-d H:i') }}
-                        </template>
+                <v-progress-linear v-if="state.loading && state.response.table" indeterminate color="primary" />
 
-                        <template #actions="{ item }">
-                            <v-icon
+                <loading-state v-if="state.loading && !state.response.table" :text="$t('dataTable.loading')" />
+
+                <empty-state
+                    v-else-if="!state.loading && filteredRecords.length === 0"
+                    icon="mdi-table-off"
+                    :title="hasActiveSearch ? $t('dataTable.noResults') : $t('dataTable.noData')"
+                    compact
+                >
+                    <template v-if="hasActiveSearch" #actions>
+                        <v-btn variant="tonal" prepend-icon="mdi-filter-remove-outline" @click="resetRecords">
+                            {{ $t('dataTable.clearFilter') }}
+                        </v-btn>
+                    </template>
+                </empty-state>
+
+                <AppDataTable
+                    v-else-if="getHeaders && getHeaders.length > 0"
+                    v-model="state.page"
+                    :items="filteredRecords"
+                    :headers="getHeaders"
+                    :page="state.page"
+                    :links="state.response.records.links"
+                    :itemsPerPage="state.response.records.per_page"
+                    :pageCount="state.response.records.last_page"
+                    :server-items-length="state.response.records.total"
+                    :search="state.quickSearchQuery"
+                    :loading="state.loading || state.deleting"
+                >
+                    <template v-slot:item.created_at="{ item }">
+                        {{ $formatDate(item.created_at, 'Y-m-d H:i') }}
+                    </template>
+
+                    <template #actions="{ item }">
+                        <div class="d-flex align-center ga-1">
+                            <v-btn
                                 v-if="state.response.allow.hasForm"
+                                icon="mdi-file-document-edit"
+                                variant="text"
                                 size="small"
-                                class="mr-2"
+                                :aria-label="$t('dataTable.editItem')"
+                                :title="$t('dataTable.editItem')"
                                 @click="editItemForm(item)"
-                            >
-                                mdi-file-document-edit
-                            </v-icon>
-                            <v-icon
+                            />
+                            <v-btn
+                                icon="mdi-pencil"
+                                variant="text"
                                 size="small"
-                                class="mr-2"
+                                :aria-label="$t('common.edit')"
+                                :title="$t('common.edit')"
                                 @click="editItem(item)"
-                            >
-                                mdi-pencil
-                            </v-icon>
-                            <v-icon
+                            />
+                            <v-btn
+                                icon="mdi-delete"
+                                variant="text"
                                 size="small"
+                                color="error"
                                 :disabled="state.deleting"
+                                :aria-label="$t('common.delete')"
+                                :title="$t('common.delete')"
                                 @click="deleteItem(item)"
-                            >
-                                mdi-delete
-                            </v-icon>
-                        </template>
-                    </AppDataTable>
-                </v-row>
+                            />
+                        </div>
+                    </template>
+                </AppDataTable>
             </v-card>
+
+            <!-- Quick edit dialog -->
+            <v-dialog v-model="state.dialog" max-width="600">
+                <v-card>
+                    <v-card-title class="text-h6">{{ formTitle }}</v-card-title>
+                    <v-divider />
+
+                    <v-card-text>
+                        <template v-if="state.editedItem !== null">
+                            <div v-for="column in state.response.updatable" :key="`card-${column}`" class="mb-2">
+                                <template v-if="typeof(state.response.column_fields[column]) === 'object'">
+                                    <v-select
+                                        v-if="'select' in state.response.column_fields[column]"
+                                        :items="state.response.column_fields[column]['select']"
+                                        v-model="state.editedItem[column]"
+                                        :label="column"
+                                    ></v-select>
+                                </template>
+                                <v-textarea
+                                    v-else-if="state.response.column_fields[column]==='textarea'"
+                                    :label="column"
+                                    :id="column"
+                                    v-model="state.editedItem[column]"
+                                ></v-textarea>
+
+                                <Tiptap
+                                    v-else-if="state.response.column_fields[column]==='wysiwyg'"
+                                    v-model="state.editedItem[column]"
+                                    :id="`text-content-${column}`"
+                                    :name="`content-${column}`"
+                                />
+
+                                <v-checkbox
+                                    v-else-if="state.response.column_fields[column]==='checkbox'"
+                                    v-model="state.editedItem[column]"
+                                    :label="column"
+                                ></v-checkbox>
+
+                                <v-text-field
+                                    v-else
+                                    v-model="state.editedItem[column]"
+                                    :label="column"
+                                ></v-text-field>
+                            </div>
+                        </template>
+                    </v-card-text>
+
+                    <v-card-actions>
+                        <v-spacer></v-spacer>
+                        <v-btn
+                            variant="text"
+                            :disabled="state.saving"
+                            @click="close"
+                        >
+                            {{ $t('common.cancel') }}
+                        </v-btn>
+                        <v-btn
+                            color="primary"
+                            variant="flat"
+                            :loading="state.saving"
+                            :disabled="state.saving"
+                            @click="save"
+                        >
+                            {{ $t('common.save') }}
+                        </v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
 
             <DataTableForm
                 v-model:isDrawerOpen="isSidebarActive"
@@ -299,18 +296,37 @@ import { useDialog } from '@/composables/useDialog.js'
 import AppDataTable from '../AppDataTable.vue'
 import DataTableForm from './DataTableForm.vue'
 import Tiptap from '../tiptap/Tiptap.vue'
+import PageHeader from '../PageHeader.vue'
+import EmptyState from '../EmptyState.vue'
+import LoadingState from '../LoadingState.vue'
 
 export default {
     name: 'DataTable',
     components: {
         Tiptap,
         AppDataTable,
-        DataTableForm
+        DataTableForm,
+        PageHeader,
+        EmptyState,
+        LoadingState
     },
     props: {
         endpoint: {
             type: String,
             required: true
+        },
+        // Page title; falls back to a humanised table name from the response
+        title: {
+            type: String,
+            default: ''
+        },
+        subtitle: {
+            type: String,
+            default: ''
+        },
+        icon: {
+            type: String,
+            default: 'mdi-table'
         }
     },
     setup(props) {
@@ -319,16 +335,14 @@ export default {
         const dialog = useDialog()
         const isSidebarActive = ref(false)
 
-        const breadcrumbs = computed(() => [
-            {
-                text: '',
-                disabled: false,
-                href: '#'
-            },
-            {
-                text: t('dataTable.list')
-            }
-        ])
+        const pageTitle = computed(() => {
+            if (props.title) return props.title
+            const table = state.response.table
+            if (!table) return t('dataTable.list')
+            return table.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+        })
+
+        const hasActiveSearch = computed(() => !!(state.quickSearchQuery || state.search.value))
 
         const state = reactive({
             dialog: false,
@@ -674,7 +688,8 @@ export default {
         })
 
         return {
-            breadcrumbs,
+            pageTitle,
+            hasActiveSearch,
             state,
             formTitle,
             getRecords,
@@ -704,32 +719,8 @@ export default {
 </script>
 
 <style scoped>
-/* Ensure consistent spacing */
-.v-row {
-    margin: 0;
-}
-
-.v-col {
-    padding: 4px;
-}
-
-/* Better button alignment */
-.d-flex.gap-2 {
-    gap: 8px;
-}
-
-/* Responsive adjustments */
-@media (max-width: 960px) {
-    .v-col {
-        margin-bottom: 8px;
-    }
-
-    .d-flex {
-        flex-wrap: wrap;
-    }
-
-    .v-btn {
-        flex-shrink: 0;
-    }
+.data-table__quick-search {
+    flex: 1 1 240px;
+    max-width: 360px;
 }
 </style>

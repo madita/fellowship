@@ -170,7 +170,7 @@ watch(() => props.src, () => {
 }
 
 .app-image--loading {
-    background-color: #f0f0f0;
+    background-color: rgba(var(--v-theme-on-surface), 0.08);
 }
 
 .app-image--error {

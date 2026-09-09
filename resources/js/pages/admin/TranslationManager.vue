@@ -1,819 +1,840 @@
 <template>
-    <v-container fluid class="pa-4">
-        <v-row>
-            <v-col cols="12">
-                <div class="d-flex align-center justify-space-between mb-4">
-                    <div>
-                        <h1 class="text-h4 font-weight-bold">{{ $t('translationManager.title') }}</h1>
-                        <p class="text-body-2 text-grey mt-1">
-                            {{ $t('translationManager.description') }}
-                        </p>
-                    </div>
-                    <div class="d-flex ga-2">
-                        <v-btn
-                            color="warning"
-                            variant="tonal"
-                            @click="scanMissing"
-                            :loading="scanning"
+    <div>
+        <page-header
+            :title="$t('translationManager.title')"
+            :subtitle="$t('translationManager.description')"
+            icon="mdi-translate"
+            fluid
+        >
+            <template #actions>
+                <v-btn
+                    variant="tonal"
+                    prepend-icon="mdi-magnify-scan"
+                    :loading="scanning"
+                    :disabled="scanning"
+                    @click="scanMissing"
+                >
+                    {{ $t('translationManager.scanMissing') }}
+                </v-btn>
+                <v-btn
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-plus"
+                    @click="showCreateLocaleDialog = true"
+                >
+                    {{ $t('translationManager.addLocale') }}
+                </v-btn>
+            </template>
+        </page-header>
+
+        <v-container fluid>
+            <!-- Tabs for JS and PHP -->
+            <v-card>
+                <v-tabs v-model="activeTab" color="primary">
+                    <v-tab value="js">
+                        <v-icon icon="mdi-language-javascript" start />
+                        {{ $t('translationManager.jsTranslations') }}
+                    </v-tab>
+                    <v-tab value="php">
+                        <v-icon icon="mdi-language-php" start />
+                        {{ $t('translationManager.phpTranslations') }}
+                    </v-tab>
+                    <v-tab value="models">
+                        <v-icon icon="mdi-database" start />
+                        {{ $t('translationManager.modelTranslations') }}
+                    </v-tab>
+                    <v-tab value="missing">
+                        <v-icon icon="mdi-alert-circle-outline" start />
+                        {{ $t('translationManager.missingTranslations') }}
+                        <v-chip
+                            v-if="totalMissing > 0"
+                            size="x-small"
+                            color="error"
+                            class="ml-2"
                         >
-                            <v-icon icon="mdi-magnify-scan" start />
-                            {{ $t('translationManager.scanMissing') }}
-                        </v-btn>
+                            {{ totalMissing }}
+                        </v-chip>
+                    </v-tab>
+                    <v-tab value="report">
+                        <v-icon icon="mdi-file-document-outline" start />
+                        {{ $t('translationManager.aiReport') }}
+                    </v-tab>
+                </v-tabs>
+
+                <v-divider />
+
+                <v-window v-model="activeTab">
+                    <!-- JS Translations Tab -->
+                    <v-window-item value="js">
+                        <v-row no-gutters>
+                            <!-- Locale List -->
+                            <v-col cols="12" md="3" class="border-e">
+                                <v-list density="compact" nav>
+                                    <v-list-subheader>{{ $t('translationManager.availableLocales') }}</v-list-subheader>
+                                    <v-list-item
+                                        v-for="locale in jsLocales"
+                                        :key="locale.code"
+                                        :active="selectedJsLocale === locale.code"
+                                        @click="selectJsLocale(locale.code)"
+                                    >
+                                        <template #prepend>
+                                            <v-avatar size="24" class="mr-2">
+                                                <span class="text-caption font-weight-bold">
+                                                    {{ locale.code.toUpperCase() }}
+                                                </span>
+                                            </v-avatar>
+                                        </template>
+                                        <v-list-item-title>{{ locale.name }}</v-list-item-title>
+                                        <template #append>
+                                            <v-chip size="x-small">{{ locale.js_keys }}</v-chip>
+                                        </template>
+                                    </v-list-item>
+                                </v-list>
+                            </v-col>
+
+                            <!-- Translation Editor -->
+                            <v-col cols="12" md="9">
+                                <empty-state
+                                    v-if="!selectedJsLocale"
+                                    icon="mdi-translate"
+                                    :title="$t('translationManager.selectLocaleToEdit')"
+                                />
+
+                                <div v-else class="pa-4">
+                                    <!-- Toolbar -->
+                                    <div class="d-flex align-center ga-2 mb-4">
+                                        <v-text-field
+                                            v-model="jsSearch"
+                                            :placeholder="$t('translationManager.searchKeysOrValues')"
+                                            prepend-inner-icon="mdi-magnify"
+                                            variant="outlined"
+                                            density="compact"
+                                            hide-details
+                                            clearable
+                                            style="max-width: 300px;"
+                                        />
+
+                                        <v-select
+                                            v-model="jsGroupFilter"
+                                            :items="jsGroups"
+                                            :placeholder="$t('translationManager.allGroups')"
+                                            variant="outlined"
+                                            density="compact"
+                                            hide-details
+                                            clearable
+                                            style="max-width: 200px;"
+                                        />
+
+                                        <v-spacer />
+
+                                        <v-btn
+                                            color="primary"
+                                            variant="tonal"
+                                            :disabled="saving"
+                                            @click="showAddKeyDialog('js')"
+                                        >
+                                            <v-icon icon="mdi-plus" start />
+                                            {{ $t('translationManager.addKey') }}
+                                        </v-btn>
+
+                                        <v-btn
+                                            color="primary"
+                                            variant="flat"
+                                            :loading="saving"
+                                            :disabled="!hasJsChanges || saving"
+                                            @click="saveJsTranslations"
+                                        >
+                                            <v-icon icon="mdi-content-save" start />
+                                            {{ $t('translationManager.saveChanges') }}
+                                        </v-btn>
+                                    </div>
+
+                                    <!-- Compare with base locale -->
+                                    <v-alert
+                                        v-if="selectedJsLocale !== 'en' && jsComparison"
+                                        :type="jsComparison.missing_count > 0 ? 'warning' : 'success'"
+                                        density="compact"
+                                        class="mb-4"
+                                    >
+                                        <template v-if="jsComparison.missing_count > 0">
+                                            {{ $t('translationManager.keysMissingCompared', { count: jsComparison.missing_count, completion: jsComparison.completion }) }}
+                                        </template>
+                                        <template v-else>
+                                            {{ $t('translationManager.allKeysTranslated') }}
+                                        </template>
+                                    </v-alert>
+
+                                    <!-- Translation Table -->
+                                    <v-data-table
+                                        :headers="jsHeaders"
+                                        :items="filteredJsTranslations"
+                                        :loading="loadingJs"
+                                        :search="jsSearch"
+                                        density="compact"
+                                        class="translation-table"
+                                        items-per-page="25"
+                                    >
+                                        <template #item.key="{ item }">
+                                            <code class="text-caption">{{ item.key }}</code>
+                                        </template>
+                                        <template #item.value="{ item }">
+                                            <v-text-field
+                                                v-model="jsTranslations[item.key]"
+                                                variant="outlined"
+                                                density="compact"
+                                                hide-details
+                                                @update:model-value="markJsChanged"
+                                            />
+                                        </template>
+                                        <template #item.base="{ item }">
+                                            <span class="text-caption text-medium-emphasis">
+                                                {{ jsBaseTranslations[item.key] || '-' }}
+                                            </span>
+                                        </template>
+                                        <template #item.actions="{ item }">
+                                            <v-btn
+                                                icon
+                                                size="small"
+                                                variant="text"
+                                                color="error"
+                                                :loading="deletingKeyName === item.key"
+                                                :disabled="deletingKeyName !== null || saving"
+                                                @click="confirmDeleteKey('js', item.key)"
+                                            >
+                                                <v-icon icon="mdi-delete" size="small" />
+                                            </v-btn>
+                                        </template>
+                                    </v-data-table>
+                                </div>
+                            </v-col>
+                        </v-row>
+                    </v-window-item>
+
+                    <!-- Model Translations Tab -->
+                    <v-window-item value="models">
+                        <ModelTranslationsTab />
+                    </v-window-item>
+
+                    <!-- PHP Translations Tab -->
+                    <v-window-item value="php">
+                        <v-row no-gutters>
+                            <!-- Locale & File List -->
+                            <v-col cols="12" md="3" class="border-e">
+                                <v-list density="compact" nav>
+                                    <v-list-subheader>{{ $t('translationManager.localesAndFiles') }}</v-list-subheader>
+                                    <template v-for="locale in phpLocales" :key="locale.code">
+                                        <v-list-group :value="locale.code">
+                                            <template #activator="{ props }">
+                                                <v-list-item v-bind="props">
+                                                    <template #prepend>
+                                                        <v-avatar size="24" class="mr-2">
+                                                            <span class="text-caption font-weight-bold">
+                                                                {{ locale.code.toUpperCase() }}
+                                                            </span>
+                                                        </v-avatar>
+                                                    </template>
+                                                    <v-list-item-title>{{ locale.name }}</v-list-item-title>
+                                                </v-list-item>
+                                            </template>
+
+                                            <v-list-item
+                                                v-for="file in locale.php_files"
+                                                :key="`${locale.code}-${file}`"
+                                                :active="selectedPhpLocale === locale.code && selectedPhpFile === file"
+                                                @click="selectPhpFile(locale.code, file)"
+                                                class="pl-8"
+                                            >
+                                                <template #prepend>
+                                                    <v-icon icon="mdi-file-document" size="small" />
+                                                </template>
+                                                <v-list-item-title class="text-body-2">
+                                                    {{ file }}.php
+                                                </v-list-item-title>
+                                            </v-list-item>
+                                        </v-list-group>
+                                    </template>
+                                </v-list>
+                            </v-col>
+
+                            <!-- Translation Editor -->
+                            <v-col cols="12" md="9">
+                                <empty-state
+                                    v-if="!selectedPhpFile"
+                                    icon="mdi-translate"
+                                    :title="$t('translationManager.selectFileToEdit')"
+                                />
+
+                                <div v-else class="pa-4">
+                                    <!-- Toolbar -->
+                                    <div class="d-flex align-center ga-2 mb-4">
+                                        <v-chip color="primary" variant="tonal">
+                                            {{ selectedPhpLocale }}/{{ selectedPhpFile }}.php
+                                        </v-chip>
+
+                                        <v-text-field
+                                            v-model="phpSearch"
+                                            :placeholder="$t('translationManager.searchKeysOrValues')"
+                                            prepend-inner-icon="mdi-magnify"
+                                            variant="outlined"
+                                            density="compact"
+                                            hide-details
+                                            clearable
+                                            style="max-width: 300px;"
+                                        />
+
+                                        <v-spacer />
+
+                                        <v-btn
+                                            color="primary"
+                                            variant="tonal"
+                                            :disabled="saving"
+                                            @click="showAddKeyDialog('php')"
+                                        >
+                                            <v-icon icon="mdi-plus" start />
+                                            {{ $t('translationManager.addKey') }}
+                                        </v-btn>
+
+                                        <v-btn
+                                            color="primary"
+                                            variant="flat"
+                                            :loading="saving"
+                                            :disabled="!hasPhpChanges || saving"
+                                            @click="savePhpTranslations"
+                                        >
+                                            <v-icon icon="mdi-content-save" start />
+                                            {{ $t('translationManager.saveChanges') }}
+                                        </v-btn>
+                                    </div>
+
+                                    <!-- Translation Table -->
+                                    <v-data-table
+                                        :headers="phpHeaders"
+                                        :items="filteredPhpTranslations"
+                                        :loading="loadingPhp"
+                                        :search="phpSearch"
+                                        density="compact"
+                                        class="translation-table"
+                                        items-per-page="25"
+                                    >
+                                        <template #item.key="{ item }">
+                                            <code class="text-caption">{{ item.key }}</code>
+                                        </template>
+                                        <template #item.value="{ item }">
+                                            <v-textarea
+                                                v-if="item.value && item.value.length > 50"
+                                                v-model="phpTranslations[item.key]"
+                                                variant="outlined"
+                                                density="compact"
+                                                hide-details
+                                                rows="2"
+                                                auto-grow
+                                                @update:model-value="markPhpChanged"
+                                            />
+                                            <v-text-field
+                                                v-else
+                                                v-model="phpTranslations[item.key]"
+                                                variant="outlined"
+                                                density="compact"
+                                                hide-details
+                                                @update:model-value="markPhpChanged"
+                                            />
+                                        </template>
+                                        <template #item.actions="{ item }">
+                                            <v-btn
+                                                icon
+                                                size="small"
+                                                variant="text"
+                                                color="error"
+                                                :loading="deletingKeyName === item.key"
+                                                :disabled="deletingKeyName !== null || saving"
+                                                @click="confirmDeleteKey('php', item.key)"
+                                            >
+                                                <v-icon icon="mdi-delete" size="small" />
+                                            </v-btn>
+                                        </template>
+                                    </v-data-table>
+                                </div>
+                            </v-col>
+                        </v-row>
+                    </v-window-item>
+
+                    <!-- Missing Translations Tab -->
+                    <v-window-item value="missing">
+                        <div class="pa-4">
+                            <empty-state
+                                v-if="!missingData"
+                                icon="mdi-magnify-scan"
+                                :title="$t('translationManager.missingTranslations')"
+                                :text="$t('translationManager.clickScanMissing')"
+                            >
+                                <template #actions>
+                                    <v-btn
+                                        color="primary"
+                                        variant="flat"
+                                        prepend-icon="mdi-magnify-scan"
+                                        :loading="scanning"
+                                        :disabled="scanning"
+                                        @click="scanMissing"
+                                    >
+                                        {{ $t('translationManager.scanMissing') }}
+                                    </v-btn>
+                                </template>
+                            </empty-state>
+
+                            <template v-else>
+                                <!-- Summary Cards -->
+                                <v-row class="mb-4">
+                                    <v-col cols="12" md="3">
+                                        <v-card color="warning" variant="tonal">
+                                            <v-card-text class="text-center">
+                                                <div class="text-h4">{{ missingData.summary.js_missing }}</div>
+                                                <div class="text-body-2">{{ $t('translationManager.missingJsKeys') }}</div>
+                                            </v-card-text>
+                                        </v-card>
+                                    </v-col>
+                                    <v-col cols="12" md="3">
+                                        <v-card color="error" variant="tonal">
+                                            <v-card-text class="text-center">
+                                                <div class="text-h4">{{ missingData.summary.js_hardcoded }}</div>
+                                                <div class="text-body-2">{{ $t('translationManager.hardcodedJsStrings') }}</div>
+                                            </v-card-text>
+                                        </v-card>
+                                    </v-col>
+                                    <v-col cols="12" md="3">
+                                        <v-card color="warning" variant="tonal">
+                                            <v-card-text class="text-center">
+                                                <div class="text-h4">{{ missingData.summary.php_missing }}</div>
+                                                <div class="text-body-2">{{ $t('translationManager.missingPhpKeys') }}</div>
+                                            </v-card-text>
+                                        </v-card>
+                                    </v-col>
+                                    <v-col cols="12" md="3">
+                                        <v-card color="error" variant="tonal">
+                                            <v-card-text class="text-center">
+                                                <div class="text-h4">{{ missingData.summary.php_hardcoded }}</div>
+                                                <div class="text-body-2">{{ $t('translationManager.hardcodedPhpStrings') }}</div>
+                                            </v-card-text>
+                                        </v-card>
+                                    </v-col>
+                                </v-row>
+
+                                <!-- Missing Keys Tables -->
+                                <v-expansion-panels>
+                                    <v-expansion-panel v-if="Object.keys(missingData.missing.js?.missing_keys || {}).length">
+                                        <v-expansion-panel-title>
+                                            <v-icon icon="mdi-language-javascript" class="mr-2" />
+                                            {{ $t('translationManager.missingJsTranslationKeys') }}
+                                            <v-chip size="small" color="warning" class="ml-2">
+                                                {{ Object.keys(missingData.missing.js.missing_keys).length }}
+                                            </v-chip>
+                                        </v-expansion-panel-title>
+                                        <v-expansion-panel-text>
+                                            <v-data-table
+                                                :headers="missingKeyHeaders"
+                                                :items="formatMissingKeys(missingData.missing.js.missing_keys)"
+                                                density="compact"
+                                                items-per-page="10"
+                                            >
+                                                <template #item.key="{ item }">
+                                                    <code>{{ item.key }}</code>
+                                                </template>
+                                                <template #item.files="{ item }">
+                                                    <div class="text-caption">
+                                                        {{ item.files.slice(0, 3).join(', ') }}
+                                                        <span v-if="item.files.length > 3">
+                                                            {{ $t('translationManager.plusMore', { count: item.files.length - 3 }) }}
+                                                        </span>
+                                                    </div>
+                                                </template>
+                                            </v-data-table>
+                                        </v-expansion-panel-text>
+                                    </v-expansion-panel>
+
+                                    <v-expansion-panel v-if="missingData.missing.js?.hardcoded?.length">
+                                        <v-expansion-panel-title>
+                                            <v-icon icon="mdi-code-string" class="mr-2" />
+                                            {{ $t('translationManager.hardcodedJsStrings') }}
+                                            <v-chip size="small" color="error" class="ml-2">
+                                                {{ missingData.missing.js.hardcoded.length }}
+                                            </v-chip>
+                                        </v-expansion-panel-title>
+                                        <v-expansion-panel-text>
+                                            <v-data-table
+                                                :headers="hardcodedHeaders"
+                                                :items="missingData.missing.js.hardcoded"
+                                                density="compact"
+                                                items-per-page="10"
+                                            >
+                                                <template #item.text="{ item }">
+                                                    <span class="text-error">"{{ item.text }}"</span>
+                                                </template>
+                                            </v-data-table>
+                                        </v-expansion-panel-text>
+                                    </v-expansion-panel>
+
+                                    <v-expansion-panel v-if="Object.keys(missingData.missing.php?.missing_keys || {}).length">
+                                        <v-expansion-panel-title>
+                                            <v-icon icon="mdi-language-php" class="mr-2" />
+                                            {{ $t('translationManager.missingPhpTranslationKeys') }}
+                                            <v-chip size="small" color="warning" class="ml-2">
+                                                {{ Object.keys(missingData.missing.php.missing_keys).length }}
+                                            </v-chip>
+                                        </v-expansion-panel-title>
+                                        <v-expansion-panel-text>
+                                            <v-data-table
+                                                :headers="missingKeyHeaders"
+                                                :items="formatMissingKeys(missingData.missing.php.missing_keys)"
+                                                density="compact"
+                                                items-per-page="10"
+                                            >
+                                                <template #item.key="{ item }">
+                                                    <code>{{ item.key }}</code>
+                                                </template>
+                                            </v-data-table>
+                                        </v-expansion-panel-text>
+                                    </v-expansion-panel>
+                                </v-expansion-panels>
+                            </template>
+                        </div>
+                    </v-window-item>
+
+                    <!-- AI Report Tab -->
+                    <v-window-item value="report">
+                        <div class="pa-4">
+                            <div class="d-flex flex-wrap align-center justify-space-between ga-2 mb-4">
+                                <div>
+                                    <h3 class="text-h6">{{ $t('translationManager.aiReportTitle') }}</h3>
+                                    <p class="text-body-2 text-medium-emphasis mb-0">
+                                        {{ $t('translationManager.aiReportDescription') }}
+                                    </p>
+                                </div>
+                                <div class="d-flex align-center ga-2">
+                                    <v-btn-toggle v-model="reportType" mandatory density="compact" variant="outlined" divided>
+                                        <v-btn value="all" size="small">{{ $t('translationManager.all') }}</v-btn>
+                                        <v-btn value="js" size="small">{{ $t('translationManager.jsOnly') }}</v-btn>
+                                        <v-btn value="php" size="small">{{ $t('translationManager.phpOnly') }}</v-btn>
+                                    </v-btn-toggle>
+                                    <v-btn
+                                        color="primary"
+                                        variant="flat"
+                                        prepend-icon="mdi-file-document-edit"
+                                        :loading="generatingReport"
+                                        :disabled="generatingReport"
+                                        @click="generateReport"
+                                    >
+                                        {{ $t('translationManager.generateReport') }}
+                                    </v-btn>
+                                </div>
+                            </div>
+
+                            <empty-state
+                                v-if="!reportData"
+                                icon="mdi-file-document-outline"
+                                :title="$t('translationManager.aiReport')"
+                                :text="$t('translationManager.clickGenerateReport')"
+                            />
+
+                            <template v-else>
+                                <!-- Report Summary -->
+                                <v-row class="mb-4">
+                                    <v-col cols="12" md="3">
+                                        <v-card variant="tonal">
+                                            <v-card-text class="text-center">
+                                                <div class="text-h4">{{ reportData.summary.total_files_scanned }}</div>
+                                                <div class="text-body-2">{{ $t('translationManager.filesScanned') }}</div>
+                                            </v-card-text>
+                                        </v-card>
+                                    </v-col>
+                                    <v-col cols="12" md="3">
+                                        <v-card color="warning" variant="tonal">
+                                            <v-card-text class="text-center">
+                                                <div class="text-h4">{{ reportData.summary.files_with_hardcoded }}</div>
+                                                <div class="text-body-2">{{ $t('translationManager.filesWithIssues') }}</div>
+                                            </v-card-text>
+                                        </v-card>
+                                    </v-col>
+                                    <v-col cols="12" md="3">
+                                        <v-card color="error" variant="tonal">
+                                            <v-card-text class="text-center">
+                                                <div class="text-h4">{{ reportData.summary.total_hardcoded_strings }}</div>
+                                                <div class="text-body-2">{{ $t('translationManager.hardcodedStrings') }}</div>
+                                            </v-card-text>
+                                        </v-card>
+                                    </v-col>
+                                    <v-col cols="12" md="3">
+                                        <v-card color="info" variant="tonal">
+                                            <v-card-text class="text-center">
+                                                <div class="text-h4">{{ reportData.summary.missing_translation_keys }}</div>
+                                                <div class="text-body-2">{{ $t('translationManager.missingKeys') }}</div>
+                                            </v-card-text>
+                                        </v-card>
+                                    </v-col>
+                                </v-row>
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex flex-wrap ga-2 mb-4">
+                                    <v-btn
+                                        variant="tonal"
+                                        @click="copyMarkdownReport"
+                                        :disabled="!reportData.markdown_report"
+                                    >
+                                        <v-icon icon="mdi-content-copy" start />
+                                        {{ $t('translationManager.copyMarkdownReport') }}
+                                    </v-btn>
+                                    <v-btn
+                                        variant="tonal"
+                                        @click="downloadJsonReport"
+                                    >
+                                        <v-icon icon="mdi-download" start />
+                                        {{ $t('translationManager.downloadJson') }}
+                                    </v-btn>
+                                    <v-btn
+                                        variant="tonal"
+                                        color="primary"
+                                        @click="showSuggestedTranslations = !showSuggestedTranslations"
+                                    >
+                                        <v-icon :icon="showSuggestedTranslations ? 'mdi-chevron-up' : 'mdi-chevron-down'" start />
+                                        {{ $t('translationManager.suggestedTranslationsCount', { count: Object.keys(reportData.suggested_translations).length }) }}
+                                    </v-btn>
+                                </div>
+
+                                <!-- Suggested Translations Panel -->
+                                <v-expand-transition>
+                                    <v-card v-if="showSuggestedTranslations" class="mb-4" variant="outlined">
+                                        <v-card-title class="text-subtitle-1 font-weight-medium">
+                                            {{ $t('translationManager.suggestedTranslationsToAdd') }}
+                                        </v-card-title>
+                                        <v-card-text>
+                                            <pre class="suggested-translations-code">{{ formatSuggestedTranslations() }}</pre>
+                                        </v-card-text>
+                                        <v-card-actions>
+                                            <v-btn
+                                                variant="text"
+                                                size="small"
+                                                @click="copySuggestedTranslations"
+                                            >
+                                                <v-icon icon="mdi-content-copy" start />
+                                                {{ $t('common.copy') }}
+                                            </v-btn>
+                                        </v-card-actions>
+                                    </v-card>
+                                </v-expand-transition>
+
+                                <!-- Actionable Changes by File -->
+                                <v-expansion-panels v-model="expandedReportPanels">
+                                    <v-expansion-panel
+                                        v-for="(fileChanges, fileName) in groupedActionableChanges"
+                                        :key="fileName"
+                                    >
+                                        <v-expansion-panel-title>
+                                            <v-icon
+                                                :icon="fileName.endsWith('.vue') ? 'mdi-vuejs' : (fileName.endsWith('.php') ? 'mdi-language-php' : 'mdi-file-code')"
+                                                class="mr-2"
+                                                :color="fileName.endsWith('.vue') ? 'success' : 'info'"
+                                            />
+                                            <span class="font-weight-medium">{{ fileName }}</span>
+                                            <v-chip size="x-small" color="warning" class="ml-2">
+                                                {{ $t('translationManager.changesCount', { count: fileChanges.length }) }}
+                                            </v-chip>
+                                        </v-expansion-panel-title>
+                                        <v-expansion-panel-text>
+                                            <v-list density="compact">
+                                                <v-list-item
+                                                    v-for="(change, index) in fileChanges"
+                                                    :key="index"
+                                                    class="mb-3 change-item"
+                                                >
+                                                    <div class="d-flex align-start">
+                                                        <v-chip
+                                                            size="x-small"
+                                                            variant="tonal"
+                                                            class="mr-2 mt-1"
+                                                            label
+                                                        >
+                                                            L{{ change.line }}
+                                                        </v-chip>
+                                                        <div class="flex-grow-1">
+                                                            <div class="text-caption text-medium-emphasis mb-1">
+                                                                {{ $t('translationManager.text') }}: <code class="text-error">"{{ change.text }}"</code>
+                                                            </div>
+                                                            <div class="text-caption mb-1">
+                                                                {{ $t('translationManager.suggestedKey') }}: <code class="text-primary">{{ change.suggested_key }}</code>
+                                                            </div>
+                                                            <div class="code-block original mb-1">
+                                                                <span class="label">{{ $t('translationManager.original') }}:</span>
+                                                                <code>{{ change.original }}</code>
+                                                            </div>
+                                                            <div class="code-block suggested">
+                                                                <span class="label">{{ $t('translationManager.suggested') }}:</span>
+                                                                <code>{{ change.suggested_fix }}</code>
+                                                            </div>
+                                                        </div>
+                                                        <v-btn
+                                                            icon
+                                                            size="small"
+                                                            variant="text"
+                                                            @click="copyChange(change)"
+                                                        >
+                                                            <v-icon icon="mdi-content-copy" size="small" />
+                                                        </v-btn>
+                                                    </div>
+                                                </v-list-item>
+                                            </v-list>
+                                        </v-expansion-panel-text>
+                                    </v-expansion-panel>
+                                </v-expansion-panels>
+
+                                <!-- Markdown Report Preview -->
+                                <v-card v-if="reportData.markdown_report" class="mt-4" variant="outlined">
+                                    <v-card-title class="d-flex align-center justify-space-between">
+                                        <span class="text-subtitle-1 font-weight-medium">{{ $t('translationManager.markdownReportPreview') }}</span>
+                                        <v-btn
+                                            variant="text"
+                                            size="small"
+                                            @click="showMarkdownPreview = !showMarkdownPreview"
+                                        >
+                                            {{ showMarkdownPreview ? $t('common.hide') : $t('common.show') }}
+                                        </v-btn>
+                                    </v-card-title>
+                                    <v-expand-transition>
+                                        <v-card-text v-if="showMarkdownPreview">
+                                            <pre class="markdown-preview">{{ reportData.markdown_report }}</pre>
+                                        </v-card-text>
+                                    </v-expand-transition>
+                                </v-card>
+                            </template>
+                        </div>
+                    </v-window-item>
+                </v-window>
+            </v-card>
+
+            <!-- Create Locale Dialog -->
+            <v-dialog v-model="showCreateLocaleDialog" max-width="600">
+                <v-card>
+                    <v-card-title class="text-h6">{{ $t('translationManager.addNewLocale') }}</v-card-title>
+                    <v-divider />
+                    <v-card-text>
+                        <v-text-field
+                            v-model="newLocale.code"
+                            :label="$t('translationManager.localeCode')"
+                            :placeholder="$t('translationManager.localeCodePlaceholder')"
+                            :hint="$t('translationManager.localeCodeHint')"
+                            persistent-hint
+                            variant="outlined"
+                            maxlength="2"
+                            class="mb-4"
+                        />
+
+                        <v-select
+                            v-model="newLocale.copyFrom"
+                            :items="availableLocalesForCopy"
+                            :label="$t('translationManager.copyTranslationsFrom')"
+                            variant="outlined"
+                            class="mb-4"
+                        />
+
+                        <v-checkbox
+                            v-model="newLocale.createJs"
+                            :label="$t('translationManager.createJsTranslations')"
+                            hide-details
+                        />
+                        <v-checkbox
+                            v-model="newLocale.createPhp"
+                            :label="$t('translationManager.createPhpTranslations')"
+                            hide-details
+                        />
+                    </v-card-text>
+                    <v-card-actions>
+                        <v-spacer />
+                        <v-btn variant="text" :disabled="creatingLocale" @click="showCreateLocaleDialog = false">{{ $t('common.cancel') }}</v-btn>
                         <v-btn
                             color="primary"
-                            @click="showCreateLocaleDialog = true"
+                            variant="flat"
+                            :loading="creatingLocale"
+                            :disabled="!newLocale.code || newLocale.code.length !== 2 || creatingLocale"
+                            @click="createLocale"
                         >
-                            <v-icon icon="mdi-plus" start />
-                            {{ $t('translationManager.addLocale') }}
+                            {{ $t('translationManager.createLocale') }}
                         </v-btn>
-                    </div>
-                </div>
-            </v-col>
-        </v-row>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
 
-        <!-- Tabs for JS and PHP -->
-        <v-card>
-            <v-tabs v-model="activeTab" color="primary">
-                <v-tab value="js">
-                    <v-icon icon="mdi-language-javascript" start />
-                    {{ $t('translationManager.jsTranslations') }}
-                </v-tab>
-                <v-tab value="php">
-                    <v-icon icon="mdi-language-php" start />
-                    {{ $t('translationManager.phpTranslations') }}
-                </v-tab>
-                <v-tab value="models">
-                    <v-icon icon="mdi-database" start />
-                    {{ $t('translationManager.modelTranslations') }}
-                </v-tab>
-                <v-tab value="missing">
-                    <v-icon icon="mdi-alert-circle-outline" start />
-                    {{ $t('translationManager.missingTranslations') }}
-                    <v-chip
-                        v-if="totalMissing > 0"
-                        size="x-small"
-                        color="error"
-                        class="ml-2"
-                    >
-                        {{ totalMissing }}
-                    </v-chip>
-                </v-tab>
-                <v-tab value="report">
-                    <v-icon icon="mdi-file-document-outline" start />
-                    {{ $t('translationManager.aiReport') }}
-                </v-tab>
-            </v-tabs>
-
-            <v-divider />
-
-            <v-window v-model="activeTab">
-                <!-- JS Translations Tab -->
-                <v-window-item value="js">
-                    <v-row no-gutters>
-                        <!-- Locale List -->
-                        <v-col cols="12" md="3" class="border-e">
-                            <v-list density="compact" nav>
-                                <v-list-subheader>{{ $t('translationManager.availableLocales') }}</v-list-subheader>
-                                <v-list-item
-                                    v-for="locale in jsLocales"
-                                    :key="locale.code"
-                                    :active="selectedJsLocale === locale.code"
-                                    @click="selectJsLocale(locale.code)"
-                                >
-                                    <template #prepend>
-                                        <v-avatar size="24" class="mr-2">
-                                            <span class="text-caption font-weight-bold">
-                                                {{ locale.code.toUpperCase() }}
-                                            </span>
-                                        </v-avatar>
-                                    </template>
-                                    <v-list-item-title>{{ locale.name }}</v-list-item-title>
-                                    <template #append>
-                                        <v-chip size="x-small">{{ locale.js_keys }}</v-chip>
-                                    </template>
-                                </v-list-item>
-                            </v-list>
-                        </v-col>
-
-                        <!-- Translation Editor -->
-                        <v-col cols="12" md="9">
-                            <div v-if="!selectedJsLocale" class="pa-8 text-center">
-                                <v-icon icon="mdi-translate" size="64" color="grey" />
-                                <div class="text-h6 text-grey mt-4">{{ $t('translationManager.selectLocaleToEdit') }}</div>
-                            </div>
-
-                            <div v-else class="pa-4">
-                                <!-- Toolbar -->
-                                <div class="d-flex align-center ga-2 mb-4">
-                                    <v-text-field
-                                        v-model="jsSearch"
-                                        :placeholder="$t('translationManager.searchKeysOrValues')"
-                                        prepend-inner-icon="mdi-magnify"
-                                        variant="outlined"
-                                        density="compact"
-                                        hide-details
-                                        clearable
-                                        style="max-width: 300px;"
-                                    />
-
-                                    <v-select
-                                        v-model="jsGroupFilter"
-                                        :items="jsGroups"
-                                        :placeholder="$t('translationManager.allGroups')"
-                                        variant="outlined"
-                                        density="compact"
-                                        hide-details
-                                        clearable
-                                        style="max-width: 200px;"
-                                    />
-
-                                    <v-spacer />
-
-                                    <v-btn
-                                        color="primary"
-                                        variant="tonal"
-                                        :disabled="saving"
-                                        @click="showAddKeyDialog('js')"
-                                    >
-                                        <v-icon icon="mdi-plus" start />
-                                        {{ $t('translationManager.addKey') }}
-                                    </v-btn>
-
-                                    <v-btn
-                                        color="success"
-                                        :loading="saving"
-                                        :disabled="!hasJsChanges || saving"
-                                        @click="saveJsTranslations"
-                                    >
-                                        <v-icon icon="mdi-content-save" start />
-                                        {{ $t('translationManager.saveChanges') }}
-                                    </v-btn>
-                                </div>
-
-                                <!-- Compare with base locale -->
-                                <v-alert
-                                    v-if="selectedJsLocale !== 'en' && jsComparison"
-                                    :type="jsComparison.missing_count > 0 ? 'warning' : 'success'"
-                                    density="compact"
-                                    class="mb-4"
-                                >
-                                    <template v-if="jsComparison.missing_count > 0">
-                                        {{ $t('translationManager.keysMissingCompared', { count: jsComparison.missing_count, completion: jsComparison.completion }) }}
-                                    </template>
-                                    <template v-else>
-                                        {{ $t('translationManager.allKeysTranslated') }}
-                                    </template>
-                                </v-alert>
-
-                                <!-- Translation Table -->
-                                <v-data-table
-                                    :headers="jsHeaders"
-                                    :items="filteredJsTranslations"
-                                    :loading="loadingJs"
-                                    :search="jsSearch"
-                                    density="compact"
-                                    class="translation-table"
-                                    items-per-page="25"
-                                >
-                                    <template #item.key="{ item }">
-                                        <code class="text-caption">{{ item.key }}</code>
-                                    </template>
-                                    <template #item.value="{ item }">
-                                        <v-text-field
-                                            v-model="jsTranslations[item.key]"
-                                            variant="outlined"
-                                            density="compact"
-                                            hide-details
-                                            @update:model-value="markJsChanged"
-                                        />
-                                    </template>
-                                    <template #item.base="{ item }">
-                                        <span class="text-caption text-grey">
-                                            {{ jsBaseTranslations[item.key] || '-' }}
-                                        </span>
-                                    </template>
-                                    <template #item.actions="{ item }">
-                                        <v-btn
-                                            icon
-                                            size="small"
-                                            variant="text"
-                                            color="error"
-                                            :loading="deletingKeyName === item.key"
-                                            :disabled="deletingKeyName !== null || saving"
-                                            @click="confirmDeleteKey('js', item.key)"
-                                        >
-                                            <v-icon icon="mdi-delete" size="small" />
-                                        </v-btn>
-                                    </template>
-                                </v-data-table>
-                            </div>
-                        </v-col>
-                    </v-row>
-                </v-window-item>
-
-                <!-- Model Translations Tab -->
-                <v-window-item value="models">
-                    <ModelTranslationsTab />
-                </v-window-item>
-
-                <!-- PHP Translations Tab -->
-                <v-window-item value="php">
-                    <v-row no-gutters>
-                        <!-- Locale & File List -->
-                        <v-col cols="12" md="3" class="border-e">
-                            <v-list density="compact" nav>
-                                <v-list-subheader>{{ $t('translationManager.localesAndFiles') }}</v-list-subheader>
-                                <template v-for="locale in phpLocales" :key="locale.code">
-                                    <v-list-group :value="locale.code">
-                                        <template #activator="{ props }">
-                                            <v-list-item v-bind="props">
-                                                <template #prepend>
-                                                    <v-avatar size="24" class="mr-2">
-                                                        <span class="text-caption font-weight-bold">
-                                                            {{ locale.code.toUpperCase() }}
-                                                        </span>
-                                                    </v-avatar>
-                                                </template>
-                                                <v-list-item-title>{{ locale.name }}</v-list-item-title>
-                                            </v-list-item>
-                                        </template>
-
-                                        <v-list-item
-                                            v-for="file in locale.php_files"
-                                            :key="`${locale.code}-${file}`"
-                                            :active="selectedPhpLocale === locale.code && selectedPhpFile === file"
-                                            @click="selectPhpFile(locale.code, file)"
-                                            class="pl-8"
-                                        >
-                                            <template #prepend>
-                                                <v-icon icon="mdi-file-document" size="small" />
-                                            </template>
-                                            <v-list-item-title class="text-body-2">
-                                                {{ file }}.php
-                                            </v-list-item-title>
-                                        </v-list-item>
-                                    </v-list-group>
-                                </template>
-                            </v-list>
-                        </v-col>
-
-                        <!-- Translation Editor -->
-                        <v-col cols="12" md="9">
-                            <div v-if="!selectedPhpFile" class="pa-8 text-center">
-                                <v-icon icon="mdi-translate" size="64" color="grey" />
-                                <div class="text-h6 text-grey mt-4">{{ $t('translationManager.selectFileToEdit') }}</div>
-                            </div>
-
-                            <div v-else class="pa-4">
-                                <!-- Toolbar -->
-                                <div class="d-flex align-center ga-2 mb-4">
-                                    <v-chip color="primary" variant="tonal">
-                                        {{ selectedPhpLocale }}/{{ selectedPhpFile }}.php
-                                    </v-chip>
-
-                                    <v-text-field
-                                        v-model="phpSearch"
-                                        :placeholder="$t('translationManager.searchKeysOrValues')"
-                                        prepend-inner-icon="mdi-magnify"
-                                        variant="outlined"
-                                        density="compact"
-                                        hide-details
-                                        clearable
-                                        style="max-width: 300px;"
-                                    />
-
-                                    <v-spacer />
-
-                                    <v-btn
-                                        color="primary"
-                                        variant="tonal"
-                                        :disabled="saving"
-                                        @click="showAddKeyDialog('php')"
-                                    >
-                                        <v-icon icon="mdi-plus" start />
-                                        {{ $t('translationManager.addKey') }}
-                                    </v-btn>
-
-                                    <v-btn
-                                        color="success"
-                                        :loading="saving"
-                                        :disabled="!hasPhpChanges || saving"
-                                        @click="savePhpTranslations"
-                                    >
-                                        <v-icon icon="mdi-content-save" start />
-                                        {{ $t('translationManager.saveChanges') }}
-                                    </v-btn>
-                                </div>
-
-                                <!-- Translation Table -->
-                                <v-data-table
-                                    :headers="phpHeaders"
-                                    :items="filteredPhpTranslations"
-                                    :loading="loadingPhp"
-                                    :search="phpSearch"
-                                    density="compact"
-                                    class="translation-table"
-                                    items-per-page="25"
-                                >
-                                    <template #item.key="{ item }">
-                                        <code class="text-caption">{{ item.key }}</code>
-                                    </template>
-                                    <template #item.value="{ item }">
-                                        <v-textarea
-                                            v-if="item.value && item.value.length > 50"
-                                            v-model="phpTranslations[item.key]"
-                                            variant="outlined"
-                                            density="compact"
-                                            hide-details
-                                            rows="2"
-                                            auto-grow
-                                            @update:model-value="markPhpChanged"
-                                        />
-                                        <v-text-field
-                                            v-else
-                                            v-model="phpTranslations[item.key]"
-                                            variant="outlined"
-                                            density="compact"
-                                            hide-details
-                                            @update:model-value="markPhpChanged"
-                                        />
-                                    </template>
-                                    <template #item.actions="{ item }">
-                                        <v-btn
-                                            icon
-                                            size="small"
-                                            variant="text"
-                                            color="error"
-                                            :loading="deletingKeyName === item.key"
-                                            :disabled="deletingKeyName !== null || saving"
-                                            @click="confirmDeleteKey('php', item.key)"
-                                        >
-                                            <v-icon icon="mdi-delete" size="small" />
-                                        </v-btn>
-                                    </template>
-                                </v-data-table>
-                            </div>
-                        </v-col>
-                    </v-row>
-                </v-window-item>
-
-                <!-- Missing Translations Tab -->
-                <v-window-item value="missing">
-                    <div class="pa-4">
-                        <v-alert
-                            v-if="!missingData"
-                            type="info"
+            <!-- Add Key Dialog -->
+            <v-dialog v-model="showAddKeyDialogVisible" max-width="600">
+                <v-card>
+                    <v-card-title class="text-h6">{{ $t('translationManager.addTranslationKey') }}</v-card-title>
+                    <v-divider />
+                    <v-card-text>
+                        <v-text-field
+                            v-model="newKey.key"
+                            :label="$t('translationManager.translationKey')"
+                            :placeholder="$t('translationManager.translationKeyPlaceholder')"
+                            :hint="$t('translationManager.translationKeyHint')"
+                            persistent-hint
+                            variant="outlined"
                             class="mb-4"
-                        >
-                            {{ $t('translationManager.clickScanMissing') }}
-                        </v-alert>
+                        />
 
-                        <template v-else>
-                            <!-- Summary Cards -->
-                            <v-row class="mb-4">
-                                <v-col cols="12" md="3">
-                                    <v-card color="warning" variant="tonal">
-                                        <v-card-text class="text-center">
-                                            <div class="text-h4">{{ missingData.summary.js_missing }}</div>
-                                            <div class="text-body-2">{{ $t('translationManager.missingJsKeys') }}</div>
-                                        </v-card-text>
-                                    </v-card>
-                                </v-col>
-                                <v-col cols="12" md="3">
-                                    <v-card color="error" variant="tonal">
-                                        <v-card-text class="text-center">
-                                            <div class="text-h4">{{ missingData.summary.js_hardcoded }}</div>
-                                            <div class="text-body-2">{{ $t('translationManager.hardcodedJsStrings') }}</div>
-                                        </v-card-text>
-                                    </v-card>
-                                </v-col>
-                                <v-col cols="12" md="3">
-                                    <v-card color="warning" variant="tonal">
-                                        <v-card-text class="text-center">
-                                            <div class="text-h4">{{ missingData.summary.php_missing }}</div>
-                                            <div class="text-body-2">{{ $t('translationManager.missingPhpKeys') }}</div>
-                                        </v-card-text>
-                                    </v-card>
-                                </v-col>
-                                <v-col cols="12" md="3">
-                                    <v-card color="error" variant="tonal">
-                                        <v-card-text class="text-center">
-                                            <div class="text-h4">{{ missingData.summary.php_hardcoded }}</div>
-                                            <div class="text-body-2">{{ $t('translationManager.hardcodedPhpStrings') }}</div>
-                                        </v-card-text>
-                                    </v-card>
-                                </v-col>
-                            </v-row>
-
-                            <!-- Missing Keys Tables -->
-                            <v-expansion-panels>
-                                <v-expansion-panel v-if="Object.keys(missingData.missing.js?.missing_keys || {}).length">
-                                    <v-expansion-panel-title>
-                                        <v-icon icon="mdi-language-javascript" class="mr-2" />
-                                        {{ $t('translationManager.missingJsTranslationKeys') }}
-                                        <v-chip size="small" color="warning" class="ml-2">
-                                            {{ Object.keys(missingData.missing.js.missing_keys).length }}
-                                        </v-chip>
-                                    </v-expansion-panel-title>
-                                    <v-expansion-panel-text>
-                                        <v-data-table
-                                            :headers="missingKeyHeaders"
-                                            :items="formatMissingKeys(missingData.missing.js.missing_keys)"
-                                            density="compact"
-                                            items-per-page="10"
-                                        >
-                                            <template #item.key="{ item }">
-                                                <code>{{ item.key }}</code>
-                                            </template>
-                                            <template #item.files="{ item }">
-                                                <div class="text-caption">
-                                                    {{ item.files.slice(0, 3).join(', ') }}
-                                                    <span v-if="item.files.length > 3">
-                                                        {{ $t('translationManager.plusMore', { count: item.files.length - 3 }) }}
-                                                    </span>
-                                                </div>
-                                            </template>
-                                        </v-data-table>
-                                    </v-expansion-panel-text>
-                                </v-expansion-panel>
-
-                                <v-expansion-panel v-if="missingData.missing.js?.hardcoded?.length">
-                                    <v-expansion-panel-title>
-                                        <v-icon icon="mdi-code-string" class="mr-2" />
-                                        {{ $t('translationManager.hardcodedJsStrings') }}
-                                        <v-chip size="small" color="error" class="ml-2">
-                                            {{ missingData.missing.js.hardcoded.length }}
-                                        </v-chip>
-                                    </v-expansion-panel-title>
-                                    <v-expansion-panel-text>
-                                        <v-data-table
-                                            :headers="hardcodedHeaders"
-                                            :items="missingData.missing.js.hardcoded"
-                                            density="compact"
-                                            items-per-page="10"
-                                        >
-                                            <template #item.text="{ item }">
-                                                <span class="text-error">"{{ item.text }}"</span>
-                                            </template>
-                                        </v-data-table>
-                                    </v-expansion-panel-text>
-                                </v-expansion-panel>
-
-                                <v-expansion-panel v-if="Object.keys(missingData.missing.php?.missing_keys || {}).length">
-                                    <v-expansion-panel-title>
-                                        <v-icon icon="mdi-language-php" class="mr-2" />
-                                        {{ $t('translationManager.missingPhpTranslationKeys') }}
-                                        <v-chip size="small" color="warning" class="ml-2">
-                                            {{ Object.keys(missingData.missing.php.missing_keys).length }}
-                                        </v-chip>
-                                    </v-expansion-panel-title>
-                                    <v-expansion-panel-text>
-                                        <v-data-table
-                                            :headers="missingKeyHeaders"
-                                            :items="formatMissingKeys(missingData.missing.php.missing_keys)"
-                                            density="compact"
-                                            items-per-page="10"
-                                        >
-                                            <template #item.key="{ item }">
-                                                <code>{{ item.key }}</code>
-                                            </template>
-                                        </v-data-table>
-                                    </v-expansion-panel-text>
-                                </v-expansion-panel>
-                            </v-expansion-panels>
-                        </template>
-                    </div>
-                </v-window-item>
-
-                <!-- AI Report Tab -->
-                <v-window-item value="report">
-                    <div class="pa-4">
-                        <div class="d-flex align-center justify-space-between mb-4">
-                            <div>
-                                <h3 class="text-h6">{{ $t('translationManager.aiReportTitle') }}</h3>
-                                <p class="text-body-2 text-grey">
-                                    {{ $t('translationManager.aiReportDescription') }}
-                                </p>
-                            </div>
-                            <div class="d-flex ga-2">
-                                <v-btn-toggle v-model="reportType" mandatory density="compact">
-                                    <v-btn value="all" size="small">{{ $t('translationManager.all') }}</v-btn>
-                                    <v-btn value="js" size="small">{{ $t('translationManager.jsOnly') }}</v-btn>
-                                    <v-btn value="php" size="small">{{ $t('translationManager.phpOnly') }}</v-btn>
-                                </v-btn-toggle>
-                                <v-btn
-                                    color="primary"
-                                    @click="generateReport"
-                                    :loading="generatingReport"
-                                >
-                                    <v-icon icon="mdi-file-document-edit" start />
-                                    {{ $t('translationManager.generateReport') }}
-                                </v-btn>
-                            </div>
-                        </div>
-
-                        <v-alert
-                            v-if="!reportData"
-                            type="info"
+                        <v-select
+                            v-if="newKey.type === 'php'"
+                            v-model="newKey.file"
+                            :items="phpFiles"
+                            :label="$t('translationManager.phpFile')"
+                            variant="outlined"
                             class="mb-4"
+                        />
+
+                        <v-divider class="mb-4" />
+
+                        <div class="text-subtitle-2 mb-2">{{ $t('translationManager.valuesPerLocale') }}</div>
+
+                        <v-row>
+                            <v-col
+                                v-for="locale in localesForNewKey"
+                                :key="locale"
+                                cols="12"
+                                md="6"
+                            >
+                                <v-text-field
+                                    v-model="newKey.values[locale]"
+                                    :label="locale.toUpperCase()"
+                                    variant="outlined"
+                                    density="compact"
+                                />
+                            </v-col>
+                        </v-row>
+                    </v-card-text>
+                    <v-card-actions>
+                        <v-spacer />
+                        <v-btn variant="text" :disabled="addingKey" @click="showAddKeyDialogVisible = false">{{ $t('common.cancel') }}</v-btn>
+                        <v-btn
+                            color="primary"
+                            variant="flat"
+                            :loading="addingKey"
+                            :disabled="!newKey.key || addingKey"
+                            @click="addKey"
                         >
-                            {{ $t('translationManager.clickGenerateReport') }}
-                        </v-alert>
+                            {{ $t('translationManager.addKey') }}
+                        </v-btn>
+                    </v-card-actions>
+                </v-card>
+            </v-dialog>
 
-                        <template v-else>
-                            <!-- Report Summary -->
-                            <v-row class="mb-4">
-                                <v-col cols="12" md="3">
-                                    <v-card variant="tonal">
-                                        <v-card-text class="text-center">
-                                            <div class="text-h4">{{ reportData.summary.total_files_scanned }}</div>
-                                            <div class="text-body-2">{{ $t('translationManager.filesScanned') }}</div>
-                                        </v-card-text>
-                                    </v-card>
-                                </v-col>
-                                <v-col cols="12" md="3">
-                                    <v-card color="warning" variant="tonal">
-                                        <v-card-text class="text-center">
-                                            <div class="text-h4">{{ reportData.summary.files_with_hardcoded }}</div>
-                                            <div class="text-body-2">{{ $t('translationManager.filesWithIssues') }}</div>
-                                        </v-card-text>
-                                    </v-card>
-                                </v-col>
-                                <v-col cols="12" md="3">
-                                    <v-card color="error" variant="tonal">
-                                        <v-card-text class="text-center">
-                                            <div class="text-h4">{{ reportData.summary.total_hardcoded_strings }}</div>
-                                            <div class="text-body-2">{{ $t('translationManager.hardcodedStrings') }}</div>
-                                        </v-card-text>
-                                    </v-card>
-                                </v-col>
-                                <v-col cols="12" md="3">
-                                    <v-card color="info" variant="tonal">
-                                        <v-card-text class="text-center">
-                                            <div class="text-h4">{{ reportData.summary.missing_translation_keys }}</div>
-                                            <div class="text-body-2">{{ $t('translationManager.missingKeys') }}</div>
-                                        </v-card-text>
-                                    </v-card>
-                                </v-col>
-                            </v-row>
-
-                            <!-- Action Buttons -->
-                            <div class="d-flex ga-2 mb-4">
-                                <v-btn
-                                    variant="outlined"
-                                    @click="copyMarkdownReport"
-                                    :disabled="!reportData.markdown_report"
-                                >
-                                    <v-icon icon="mdi-content-copy" start />
-                                    {{ $t('translationManager.copyMarkdownReport') }}
-                                </v-btn>
-                                <v-btn
-                                    variant="outlined"
-                                    @click="downloadJsonReport"
-                                >
-                                    <v-icon icon="mdi-download" start />
-                                    {{ $t('translationManager.downloadJson') }}
-                                </v-btn>
-                                <v-btn
-                                    variant="outlined"
-                                    color="success"
-                                    @click="showSuggestedTranslations = !showSuggestedTranslations"
-                                >
-                                    <v-icon :icon="showSuggestedTranslations ? 'mdi-chevron-up' : 'mdi-chevron-down'" start />
-                                    {{ $t('translationManager.suggestedTranslationsCount', { count: Object.keys(reportData.suggested_translations).length }) }}
-                                </v-btn>
-                            </div>
-
-                            <!-- Suggested Translations Panel -->
-                            <v-expand-transition>
-                                <v-card v-if="showSuggestedTranslations" class="mb-4" variant="outlined">
-                                    <v-card-title class="text-subtitle-1">
-                                        {{ $t('translationManager.suggestedTranslationsToAdd') }}
-                                    </v-card-title>
-                                    <v-card-text>
-                                        <pre class="suggested-translations-code">{{ formatSuggestedTranslations() }}</pre>
-                                    </v-card-text>
-                                    <v-card-actions>
-                                        <v-btn
-                                            variant="text"
-                                            size="small"
-                                            @click="copySuggestedTranslations"
-                                        >
-                                            <v-icon icon="mdi-content-copy" start />
-                                            {{ $t('common.copy') }}
-                                        </v-btn>
-                                    </v-card-actions>
-                                </v-card>
-                            </v-expand-transition>
-
-                            <!-- Actionable Changes by File -->
-                            <v-expansion-panels v-model="expandedReportPanels">
-                                <v-expansion-panel
-                                    v-for="(fileChanges, fileName) in groupedActionableChanges"
-                                    :key="fileName"
-                                >
-                                    <v-expansion-panel-title>
-                                        <v-icon
-                                            :icon="fileName.endsWith('.vue') ? 'mdi-vuejs' : (fileName.endsWith('.php') ? 'mdi-language-php' : 'mdi-file-code')"
-                                            class="mr-2"
-                                            :color="fileName.endsWith('.vue') ? 'green' : 'blue'"
-                                        />
-                                        <span class="font-weight-medium">{{ fileName }}</span>
-                                        <v-chip size="x-small" color="warning" class="ml-2">
-                                            {{ $t('translationManager.changesCount', { count: fileChanges.length }) }}
-                                        </v-chip>
-                                    </v-expansion-panel-title>
-                                    <v-expansion-panel-text>
-                                        <v-list density="compact">
-                                            <v-list-item
-                                                v-for="(change, index) in fileChanges"
-                                                :key="index"
-                                                class="mb-3 change-item"
-                                            >
-                                                <div class="d-flex align-start">
-                                                    <v-chip
-                                                        size="x-small"
-                                                        color="grey"
-                                                        class="mr-2 mt-1"
-                                                        label
-                                                    >
-                                                        L{{ change.line }}
-                                                    </v-chip>
-                                                    <div class="flex-grow-1">
-                                                        <div class="text-caption text-grey mb-1">
-                                                            {{ $t('translationManager.text') }}: <code class="text-error">"{{ change.text }}"</code>
-                                                        </div>
-                                                        <div class="text-caption mb-1">
-                                                            {{ $t('translationManager.suggestedKey') }}: <code class="text-primary">{{ change.suggested_key }}</code>
-                                                        </div>
-                                                        <div class="code-block original mb-1">
-                                                            <span class="label">{{ $t('translationManager.original') }}:</span>
-                                                            <code>{{ change.original }}</code>
-                                                        </div>
-                                                        <div class="code-block suggested">
-                                                            <span class="label">{{ $t('translationManager.suggested') }}:</span>
-                                                            <code>{{ change.suggested_fix }}</code>
-                                                        </div>
-                                                    </div>
-                                                    <v-btn
-                                                        icon
-                                                        size="small"
-                                                        variant="text"
-                                                        @click="copyChange(change)"
-                                                    >
-                                                        <v-icon icon="mdi-content-copy" size="small" />
-                                                    </v-btn>
-                                                </div>
-                                            </v-list-item>
-                                        </v-list>
-                                    </v-expansion-panel-text>
-                                </v-expansion-panel>
-                            </v-expansion-panels>
-
-                            <!-- Markdown Report Preview -->
-                            <v-card v-if="reportData.markdown_report" class="mt-4" variant="outlined">
-                                <v-card-title class="d-flex align-center justify-space-between">
-                                    <span class="text-subtitle-1">{{ $t('translationManager.markdownReportPreview') }}</span>
-                                    <v-btn
-                                        variant="text"
-                                        size="small"
-                                        @click="showMarkdownPreview = !showMarkdownPreview"
-                                    >
-                                        {{ showMarkdownPreview ? $t('common.hide') : $t('common.show') }}
-                                    </v-btn>
-                                </v-card-title>
-                                <v-expand-transition>
-                                    <v-card-text v-if="showMarkdownPreview">
-                                        <pre class="markdown-preview">{{ reportData.markdown_report }}</pre>
-                                    </v-card-text>
-                                </v-expand-transition>
-                            </v-card>
-                        </template>
-                    </div>
-                </v-window-item>
-            </v-window>
-        </v-card>
-
-        <!-- Create Locale Dialog -->
-        <v-dialog v-model="showCreateLocaleDialog" max-width="500">
-            <v-card>
-                <v-card-title>{{ $t('translationManager.addNewLocale') }}</v-card-title>
-                <v-card-text>
-                    <v-text-field
-                        v-model="newLocale.code"
-                        :label="$t('translationManager.localeCode')"
-                        :placeholder="$t('translationManager.localeCodePlaceholder')"
-                        :hint="$t('translationManager.localeCodeHint')"
-                        persistent-hint
-                        variant="outlined"
-                        maxlength="2"
-                        class="mb-4"
-                    />
-
-                    <v-select
-                        v-model="newLocale.copyFrom"
-                        :items="availableLocalesForCopy"
-                        :label="$t('translationManager.copyTranslationsFrom')"
-                        variant="outlined"
-                        class="mb-4"
-                    />
-
-                    <v-checkbox
-                        v-model="newLocale.createJs"
-                        :label="$t('translationManager.createJsTranslations')"
-                        hide-details
-                    />
-                    <v-checkbox
-                        v-model="newLocale.createPhp"
-                        :label="$t('translationManager.createPhpTranslations')"
-                        hide-details
-                    />
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" :disabled="creatingLocale" @click="showCreateLocaleDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn
-                        color="primary"
-                        :loading="creatingLocale"
-                        :disabled="!newLocale.code || newLocale.code.length !== 2 || creatingLocale"
-                        @click="createLocale"
-                    >
-                        {{ $t('translationManager.createLocale') }}
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <!-- Add Key Dialog -->
-        <v-dialog v-model="showAddKeyDialogVisible" max-width="600">
-            <v-card>
-                <v-card-title>{{ $t('translationManager.addTranslationKey') }}</v-card-title>
-                <v-card-text>
-                    <v-text-field
-                        v-model="newKey.key"
-                        :label="$t('translationManager.translationKey')"
-                        :placeholder="$t('translationManager.translationKeyPlaceholder')"
-                        :hint="$t('translationManager.translationKeyHint')"
-                        persistent-hint
-                        variant="outlined"
-                        class="mb-4"
-                    />
-
-                    <v-select
-                        v-if="newKey.type === 'php'"
-                        v-model="newKey.file"
-                        :items="phpFiles"
-                        :label="$t('translationManager.phpFile')"
-                        variant="outlined"
-                        class="mb-4"
-                    />
-
-                    <v-divider class="mb-4" />
-
-                    <div class="text-subtitle-2 mb-2">{{ $t('translationManager.valuesPerLocale') }}</div>
-
-                    <v-row>
-                        <v-col
-                            v-for="locale in localesForNewKey"
-                            :key="locale"
-                            cols="12"
-                            md="6"
-                        >
-                            <v-text-field
-                                v-model="newKey.values[locale]"
-                                :label="locale.toUpperCase()"
-                                variant="outlined"
-                                density="compact"
-                            />
-                        </v-col>
-                    </v-row>
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" :disabled="addingKey" @click="showAddKeyDialogVisible = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn
-                        color="primary"
-                        :loading="addingKey"
-                        :disabled="!newKey.key || addingKey"
-                        @click="addKey"
-                    >
-                        {{ $t('translationManager.addKey') }}
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <!-- Snackbar -->
-        <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
-            {{ snackbar.text }}
-        </v-snackbar>
-    </v-container>
+            <!-- Snackbar -->
+            <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
+                {{ snackbar.text }}
+            </v-snackbar>
+        </v-container>
+    </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import PageHeader from '../../components/common/PageHeader.vue';
+import EmptyState from '../../components/common/EmptyState.vue';
 import ModelTranslationsTab from '@/components/admin/ModelTranslationsTab.vue';
 import { useDialog } from '@/composables/useDialog.js';
 
@@ -1324,10 +1345,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.ga-2 {
-    gap: 8px;
-}
-
 .translation-table :deep(.v-text-field) {
     font-size: 14px;
 }
@@ -1336,10 +1353,6 @@ onMounted(() => {
     background: rgba(var(--v-theme-primary), 0.1);
     padding: 2px 6px;
     border-radius: 4px;
-}
-
-.border-e {
-    border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .code-block {

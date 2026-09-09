@@ -1,12 +1,11 @@
 <template>
     <v-card>
-        <v-card-title class="d-flex align-center justify-space-between">
+        <v-card-title class="d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
             <span>{{ $t('migrationTool.legacyUsers') }}</span>
             <v-text-field
                 v-model="search"
                 :label="$t('common.search')"
                 prepend-inner-icon="mdi-magnify"
-                variant="outlined"
                 density="compact"
                 hide-details
                 clearable
@@ -46,7 +45,7 @@
                                 :key="type"
                                 size="x-small"
                                 variant="tonal"
-                                class="mr-1"
+                                class="me-1"
                             >
                                 {{ type }}: {{ count }}
                             </v-chip>
@@ -98,30 +97,28 @@
                     </tr>
                 </tbody>
             </v-table>
-            <div v-else class="text-center text-medium-emphasis py-8">
-                {{ $t('migrationTool.noLegacyUsers') }}
-            </div>
+            <empty-state v-else compact icon="mdi-account-convert-outline" :title="$t('migrationTool.noLegacyUsers')" />
         </v-card-text>
 
         <!-- Assign dialog -->
         <v-dialog v-model="dialog" max-width="480">
             <v-card v-if="assigning">
-                <v-card-title>{{ $t('migrationTool.assignTitle', { name: `${assigning.legacy_username} (${assigning.legacy_source})` }) }}</v-card-title>
+                <v-card-title class="text-h6">{{ $t('migrationTool.assignTitle', { name: `${assigning.legacy_username} (${assigning.legacy_source})` }) }}</v-card-title>
+                <v-divider />
                 <v-card-text>
                     <div class="text-body-2 mb-3">{{ $t('migrationTool.assignHint') }}</div>
                     <v-text-field
                         v-model="assignUser"
                         :label="$t('migrationTool.assignUserLabel')"
                         :placeholder="assigning.claim?.user?.username"
-                        variant="outlined"
                         density="compact"
                         autofocus
                     />
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn :disabled="saving" @click="dialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" :loading="saving" :disabled="!assignUser || saving" @click="assign">
+                    <v-btn variant="text" :disabled="saving" @click="dialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" variant="flat" :loading="saving" :disabled="!assignUser || saving" @click="assign">
                         {{ $t('migrationTool.assign') }}
                     </v-btn>
                 </v-card-actions>
@@ -135,6 +132,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { useDialog } from '@/composables/useDialog.js';
+import EmptyState from '../../common/EmptyState.vue';
 
 const { t } = useI18n();
 const feedback = useDialog();

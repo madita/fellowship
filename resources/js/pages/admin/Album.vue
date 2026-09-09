@@ -1,45 +1,93 @@
 <template>
-    <v-container fluid class="pa-5">
-        <v-row>
-            <v-col cols="12">
-                <v-btn @click="$router.back()" color="primary" class="ma-2">{{ $t('gallery.backToGallery') }}</v-btn>
-            </v-col>
+    <div>
+        <page-header
+            :title="album?.name || $t('gallery.album')"
+            icon="mdi-image-album"
+            :back-to="{ name: 'admin-gallery' }"
+            fluid
+        />
 
-            <v-col cols="12">
-                <v-row v-if="album && album.media.length">
-                    <v-col v-for="media in album.media" :key="media.id" cols="12" md="6" lg="4">
-                        <v-img :src="media.url" :alt="media.file_name" height="200"></v-img>
-                        <v-text-field
-                            v-model="media.newCaption"
-                            :label="media.caption ? $t('gallery.editCaption') : $t('gallery.addCaption')"
-                            outlined
-                            dense
-                        />
-                        <v-btn
-                            @click="updateMediaCaption(media.id, media.newCaption)"
-                            color="success"
-                            small
-                            :loading="savingCaptionId === media.id"
-                            :disabled="busy && savingCaptionId !== media.id"
-                        >{{ $t('gallery.updateCaption') }}</v-btn>
-                        <v-btn
-                            @click="deleteMedia(media.id)"
-                            color="error"
-                            small
-                            :loading="deletingId === media.id"
-                            :disabled="busy && deletingId !== media.id"
-                        >{{ $t('common.delete') }}</v-btn>
-                    </v-col>
-                </v-row>
-            </v-col>
+        <v-container fluid>
+            <v-card rounded="lg" variant="outlined" class="mb-6">
+                <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('gallery.uploadToAlbum') }}</v-card-title>
+                <v-divider />
+                <v-card-text>
+                    <v-file-input
+                        :label="$t('gallery.selectFile')"
+                        :disabled="uploading"
+                        class="mb-2"
+                        @change="onFileChange($event)"
+                    />
+                    <v-text-field
+                        v-model="newCaption"
+                        :label="$t('gallery.addCaption')"
+                        :disabled="uploading"
+                    />
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn
+                        color="primary"
+                        variant="flat"
+                        prepend-icon="mdi-upload"
+                        :loading="uploading"
+                        :disabled="busy && !uploading"
+                        @click="uploadMedia"
+                    >
+                        {{ $t('gallery.uploadToAlbum') }}
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
 
-            <v-col cols="12">
-                <v-file-input @change="onFileChange($event)" :label="$t('gallery.selectFile')" outlined dense :disabled="uploading"></v-file-input>
-                <v-text-field v-model="newCaption" :label="$t('gallery.addCaption')" outlined dense :disabled="uploading"></v-text-field>
-                <v-btn @click="uploadMedia" color="primary" :loading="uploading" :disabled="busy && !uploading">{{ $t('gallery.uploadToAlbum') }}</v-btn>
-            </v-col>
-        </v-row>
-    </v-container>
+            <loading-state v-if="!album" />
+
+            <empty-state
+                v-else-if="!album.media.length"
+                icon="mdi-image-off-outline"
+                :title="$t('gallery.noImages')"
+                :text="$t('gallery.noImagesText')"
+            />
+
+            <v-row v-else>
+                <v-col v-for="media in album.media" :key="media.id" cols="12" md="6" lg="4">
+                    <v-card rounded="lg" variant="outlined">
+                        <v-img :src="media.url" :alt="media.file_name" height="200" cover />
+                        <v-card-text>
+                            <v-text-field
+                                v-model="media.newCaption"
+                                :label="media.caption ? $t('gallery.editCaption') : $t('gallery.addCaption')"
+                                density="compact"
+                                hide-details
+                            />
+                        </v-card-text>
+                        <v-card-actions class="ga-2">
+                            <v-btn
+                                color="primary"
+                                variant="tonal"
+                                size="small"
+                                :loading="savingCaptionId === media.id"
+                                :disabled="busy && savingCaptionId !== media.id"
+                                @click="updateMediaCaption(media.id, media.newCaption)"
+                            >
+                                {{ $t('gallery.updateCaption') }}
+                            </v-btn>
+                            <v-spacer />
+                            <v-btn
+                                color="error"
+                                variant="text"
+                                size="small"
+                                :loading="deletingId === media.id"
+                                :disabled="busy && deletingId !== media.id"
+                                @click="deleteMedia(media.id)"
+                            >
+                                {{ $t('common.delete') }}
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-col>
+            </v-row>
+        </v-container>
+    </div>
 </template>
 
 <script setup>
@@ -48,6 +96,9 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import { useDialog } from '@/composables/useDialog.js';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 const { t } = useI18n();
 const dialog = useDialog();
@@ -145,9 +196,3 @@ const deleteMedia = async (mediaId) => {
 
 onMounted(fetchAlbum);
 </script>
-
-<style scoped>
-.album {
-    padding: 20px;
-}
-</style>

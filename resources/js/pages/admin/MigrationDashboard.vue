@@ -1,48 +1,51 @@
 <template>
-    <v-container fluid class="pa-4">
-        <!-- Header -->
-        <div class="d-flex align-center justify-space-between mb-4">
-            <div>
-                <h1 class="text-h4 font-weight-bold">{{ $t('migrationDashboard.title') }}</h1>
-                <p class="text-body-2 text-grey">{{ $t('migrationDashboard.description') }}</p>
-            </div>
-            <div class="d-flex ga-2">
+    <div>
+        <page-header
+            :title="$t('migrationDashboard.title')"
+            :subtitle="$t('migrationDashboard.description')"
+            icon="mdi-database-arrow-right-outline"
+            fluid
+        >
+            <template #actions>
                 <v-btn
                     color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-play"
                     :disabled="isRunning || selectedMigrations.length === 0"
                     :loading="starting"
                     @click="startMigrations"
                 >
-                    <v-icon icon="mdi-play" start />
                     {{ $t('migrationDashboard.runSelected', { count: selectedMigrations.length }) }}
                 </v-btn>
                 <v-btn
                     color="warning"
+                    variant="tonal"
+                    prepend-icon="mdi-play-circle"
                     :disabled="isRunning"
                     :loading="starting"
                     @click="runAll"
                 >
-                    <v-icon icon="mdi-play-circle" start />
                     {{ $t('migrationDashboard.runAll') }}
                 </v-btn>
-            </div>
-        </div>
+            </template>
 
-        <v-tabs v-model="tab" color="primary" class="mb-4">
-            <v-tab value="runs">
-                <v-icon start>mdi-play-box-multiple-outline</v-icon>{{ $t('migrationTool.tabRuns') }}
-            </v-tab>
-            <v-tab value="sources">
-                <v-icon start>mdi-database-outline</v-icon>{{ $t('migrationTool.tabSources') }}
-            </v-tab>
-            <v-tab value="mappings">
-                <v-icon start>mdi-swap-horizontal</v-icon>{{ $t('migrationTool.tabMappings') }}
-            </v-tab>
-            <v-tab value="legacyUsers">
-                <v-icon start>mdi-account-convert</v-icon>{{ $t('migrationTool.tabLegacyUsers') }}
-            </v-tab>
-        </v-tabs>
+            <v-tabs v-model="tab" color="primary">
+                <v-tab value="runs">
+                    <v-icon start>mdi-play-box-multiple-outline</v-icon>{{ $t('migrationTool.tabRuns') }}
+                </v-tab>
+                <v-tab value="sources">
+                    <v-icon start>mdi-database-outline</v-icon>{{ $t('migrationTool.tabSources') }}
+                </v-tab>
+                <v-tab value="mappings">
+                    <v-icon start>mdi-swap-horizontal</v-icon>{{ $t('migrationTool.tabMappings') }}
+                </v-tab>
+                <v-tab value="legacyUsers">
+                    <v-icon start>mdi-account-convert</v-icon>{{ $t('migrationTool.tabLegacyUsers') }}
+                </v-tab>
+            </v-tabs>
+        </page-header>
 
+        <v-container fluid>
         <v-window v-model="tab">
         <v-window-item value="sources">
             <migration-sources @notify="onNotify" />
@@ -61,7 +64,7 @@
             <!-- Migration Selection -->
             <v-col cols="12" md="5">
                 <v-card>
-                    <v-card-title>{{ $t('migrationDashboard.availableMigrations') }}</v-card-title>
+                    <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('migrationDashboard.availableMigrations') }}</v-card-title>
                     <v-card-text>
                         <div v-for="group in groups" :key="group.key" class="mb-4">
                             <div class="d-flex align-center mb-2">
@@ -106,14 +109,13 @@
 
                 <!-- Archive imported forum -->
                 <v-card class="mt-4">
-                    <v-card-title>{{ $t('migrationTool.forumArchive') }}</v-card-title>
+                    <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('migrationTool.forumArchive') }}</v-card-title>
                     <v-card-text>
                         <div class="text-caption text-medium-emphasis mb-3">{{ $t('migrationTool.forumArchiveHint') }}</div>
                         <v-text-field
                             v-model="archiveCategory"
                             :label="$t('migrationTool.forumArchiveCategory')"
                             placeholder="Archiv"
-                            variant="outlined"
                             density="compact"
                         />
                         <v-checkbox
@@ -137,7 +139,7 @@
 
                 <!-- Current Batch Progress -->
                 <v-card v-if="currentBatchId" class="mt-4">
-                    <v-card-title class="d-flex align-center justify-space-between">
+                    <v-card-title class="d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
                         <span>
                             <v-progress-circular
                                 v-if="isRunning"
@@ -172,7 +174,7 @@
                             <v-list-item
                                 v-for="migration in batchStatus?.migrations || []"
                                 :key="migration.key"
-                                :class="{ 'bg-primary-lighten-5': migration.status === 'running' }"
+                                :class="{ 'migration-row--running': migration.status === 'running' }"
                             >
                                 <template #prepend>
                                     <v-icon
@@ -183,7 +185,7 @@
                                 </template>
                                 <v-list-item-title class="text-body-2">
                                     {{ migration.name }}
-                                    <span v-if="migration.status === 'running' && migration.currentItem" class="text-caption text-grey">
+                                    <span v-if="migration.status === 'running' && migration.currentItem" class="text-caption text-medium-emphasis">
                                         - {{ migration.currentItem }}
                                     </span>
                                 </v-list-item-title>
@@ -211,12 +213,12 @@
             <!-- Terminal Output -->
             <v-col cols="12" md="7">
                 <v-card class="terminal-card">
-                    <v-card-title class="d-flex align-center justify-space-between">
+                    <v-card-title class="d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
                         <span>
                             <v-icon icon="mdi-console" class="mr-2" />
                             {{ $t('migrationDashboard.output') }}
                         </span>
-                        <div>
+                        <div class="d-flex align-center ga-2">
                             <v-select
                                 v-if="batchStatus?.migrations?.length > 1"
                                 v-model="selectedLogMigration"
@@ -224,28 +226,28 @@
                                 item-title="name"
                                 item-value="key"
                                 density="compact"
-                                variant="outlined"
                                 hide-details
                                 style="width: 200px;"
-                                class="mr-2"
                             />
                             <v-btn
-                                icon
+                                icon="mdi-delete"
                                 size="small"
                                 variant="text"
                                 :disabled="logs.length === 0"
                                 @click="clearLogs"
-                            >
-                                <v-icon icon="mdi-delete" />
-                            </v-btn>
+                            />
                         </div>
                     </v-card-title>
                     <v-card-text class="pa-0">
                         <div ref="terminalRef" class="terminal">
-                            <div v-if="logs.length === 0" class="terminal-empty">
-                                <v-icon icon="mdi-console-line" size="48" color="grey-darken-1" />
-                                <div class="mt-2">{{ $t('migrationDashboard.noOutputYet') }}</div>
-                            </div>
+                            <empty-state
+                                v-if="logs.length === 0"
+                                icon="mdi-console-line"
+                                :title="$t('migrationDashboard.output')"
+                                :text="$t('migrationDashboard.noOutputYet')"
+                                compact
+                                class="terminal-empty"
+                            />
                             <div
                                 v-for="(log, index) in logs"
                                 :key="index"
@@ -262,7 +264,7 @@
 
                 <!-- History -->
                 <v-card v-if="history.length > 0" class="mt-4">
-                    <v-card-title>{{ $t('migrationDashboard.recentBatches') }}</v-card-title>
+                    <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('migrationDashboard.recentBatches') }}</v-card-title>
                     <v-card-text class="pa-0">
                         <v-list density="compact">
                             <v-list-item
@@ -293,6 +295,7 @@
                                 <template #append>
                                     <v-chip
                                         :color="getStatusColor(batch.status)"
+                                        variant="tonal"
                                         size="x-small"
                                     >
                                         {{ batch.completed }}/{{ batch.totalMigrations }}
@@ -311,7 +314,8 @@
         <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
             {{ snackbar.text }}
         </v-snackbar>
-    </v-container>
+        </v-container>
+    </div>
 </template>
 
 <script setup>
@@ -322,6 +326,8 @@ import axios from 'axios';
 import MigrationSources from '@/components/admin/migration/MigrationSources.vue';
 import MigrationMappings from '@/components/admin/migration/MigrationMappings.vue';
 import MigrationLegacyUsers from '@/components/admin/migration/MigrationLegacyUsers.vue';
+import PageHeader from '../../components/common/PageHeader.vue';
+import EmptyState from '../../components/common/EmptyState.vue';
 import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
@@ -331,17 +337,16 @@ const dialog = useDialog();
 const MigrationStatusChip = {
     props: ['status'],
     template: `
-        <v-chip :color="color" size="small">{{ label }}</v-chip>
+        <v-chip :color="color" variant="tonal" size="small">{{ label }}</v-chip>
     `,
     computed: {
         color() {
             const colors = {
-                pending: 'grey',
                 running: 'primary',
                 completed: 'success',
                 failed: 'error',
             };
-            return colors[this.status] || 'grey';
+            return colors[this.status];
         },
         label() {
             return this.status?.charAt(0).toUpperCase() + this.status?.slice(1) || '';
@@ -629,13 +634,12 @@ const getStatusIcon = (status) => {
 
 const getStatusColor = (status) => {
     const colors = {
-        pending: 'grey',
         running: 'primary',
         completed: 'success',
         completed_with_errors: 'warning',
         failed: 'error',
     };
-    return colors[status] || 'grey';
+    return colors[status];
 };
 
 const formatTimestamp = (timestamp) => {
@@ -712,8 +716,8 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.ga-2 {
-    gap: 8px;
+.migration-row--running {
+    background: rgba(var(--v-theme-primary), 0.08);
 }
 
 .terminal-card {
@@ -730,8 +734,9 @@ onUnmounted(() => {
 
 .terminal {
     height: 100%;
-    background: #1e1e1e;
-    color: #d4d4d4;
+    background: rgba(var(--v-theme-on-surface), 0.04);
+    border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+    color: rgb(var(--v-theme-on-surface));
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     font-size: 12px;
     line-height: 1.4;
@@ -741,12 +746,7 @@ onUnmounted(() => {
 }
 
 .terminal-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     height: 100%;
-    color: #6b6b6b;
 }
 
 .terminal-line {
@@ -755,7 +755,7 @@ onUnmounted(() => {
 }
 
 .terminal-timestamp {
-    color: #6a9955;
+    color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
     margin-right: 8px;
 }
 
@@ -764,17 +764,17 @@ onUnmounted(() => {
     font-weight: bold;
 }
 
-.terminal-line--info .terminal-type { color: #569cd6; }
-.terminal-line--log .terminal-type { color: #d4d4d4; }
-.terminal-line--success .terminal-type { color: #4ec9b0; }
-.terminal-line--warning .terminal-type { color: #dcdcaa; }
-.terminal-line--error .terminal-type { color: #f14c4c; }
-.terminal-line--progress .terminal-type { color: #c586c0; }
+.terminal-line--info .terminal-type { color: rgb(var(--v-theme-info)); }
+.terminal-line--log .terminal-type { color: inherit; }
+.terminal-line--success .terminal-type { color: rgb(var(--v-theme-success)); }
+.terminal-line--warning .terminal-type { color: rgb(var(--v-theme-warning)); }
+.terminal-line--error .terminal-type { color: rgb(var(--v-theme-error)); }
+.terminal-line--progress .terminal-type { color: rgb(var(--v-theme-secondary)); }
 
 .terminal-message { color: inherit; }
-.terminal-line--error .terminal-message { color: #f14c4c; }
-.terminal-line--warning .terminal-message { color: #dcdcaa; }
-.terminal-line--success .terminal-message { color: #4ec9b0; }
+.terminal-line--error .terminal-message { color: rgb(var(--v-theme-error)); }
+.terminal-line--warning .terminal-message { color: rgb(var(--v-theme-warning)); }
+.terminal-line--success .terminal-message { color: rgb(var(--v-theme-success)); }
 
 .mdi-spin {
     animation: spin 1s linear infinite;

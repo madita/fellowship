@@ -280,16 +280,16 @@ onMounted(() => {
     >
         <!-- Header -->
         <div class="pa-4 d-flex align-center">
-            <h5 class="text-h5 me-3">
+            <h2 class="text-h6 me-3">
                 {{ formTitle }}
-            </h5>
+            </h2>
 
             <VSpacer />
 
             <slot name="beforeClose" />
 
             <!-- Action buttons in header -->
-            <div class="d-flex gap-2">
+            <div class="d-flex ga-2">
                 <VBtn
                     v-if="!localEditMode && item.id"
                     icon="mdi-pencil"
@@ -474,30 +474,31 @@ onMounted(() => {
                         <!-- Form Actions -->
                         <VRow v-if="localEditMode">
                             <VCol cols="12">
-                                <div class="d-flex gap-3 mt-4">
+                                <div class="d-flex flex-wrap align-center ga-2 mt-4">
                                     <VBtn
-                                        type="submit"
-                                        color="primary"
-                                        variant="elevated"
+                                        v-if="item.id"
+                                        variant="text"
+                                        color="error"
+                                        @click="removeItem"
                                     >
-                                        {{ item.id ? $t('common.update') : $t('common.create') }}
+                                        {{ $t('common.delete') }}
                                     </VBtn>
 
+                                    <VSpacer />
+
                                     <VBtn
-                                        variant="outlined"
-                                        color="secondary"
+                                        variant="text"
                                         @click="onCancel"
                                     >
                                         {{ $t('common.cancel') }}
                                     </VBtn>
 
                                     <VBtn
-                                        v-if="item.id"
-                                        variant="outlined"
-                                        color="error"
-                                        @click="removeItem"
+                                        type="submit"
+                                        color="primary"
+                                        variant="flat"
                                     >
-                                        {{ $t('common.delete') }}
+                                        {{ item.id ? $t('common.update') : $t('common.create') }}
                                     </VBtn>
                                 </div>
                             </VCol>
@@ -507,23 +508,25 @@ onMounted(() => {
                     <!-- View Mode Actions -->
                     <VRow v-if="!localEditMode && item.id">
                         <VCol cols="12">
-                            <div class="d-flex gap-3 mt-4">
+                            <div class="d-flex flex-wrap align-center ga-2 mt-4">
                                 <VBtn
-                                    color="primary"
-                                    variant="elevated"
-                                    prepend-icon="mdi-pencil"
-                                    @click="localEditMode = true"
-                                >
-                                    {{ $t('common.edit') }}
-                                </VBtn>
-
-                                <VBtn
-                                    variant="outlined"
+                                    variant="text"
                                     color="error"
                                     prepend-icon="mdi-delete"
                                     @click="removeItem"
                                 >
                                     {{ $t('common.delete') }}
+                                </VBtn>
+
+                                <VSpacer />
+
+                                <VBtn
+                                    color="primary"
+                                    variant="flat"
+                                    prepend-icon="mdi-pencil"
+                                    @click="localEditMode = true"
+                                >
+                                    {{ $t('common.edit') }}
                                 </VBtn>
                             </div>
                         </VCol>
@@ -563,21 +566,5 @@ onMounted(() => {
 .v-select,
 .v-checkbox {
     margin-bottom: 8px;
-}
-
-/* Improved button styling */
-.v-btn {
-    text-transform: none;
-    font-weight: 600;
-}
-
-/* Header styling */
-.pa-4 {
-    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-/* Loading states */
-.v-btn--loading {
-    pointer-events: none;
 }
 </style>

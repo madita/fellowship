@@ -1,24 +1,25 @@
 <template>
     <div class="flex-grow-1">
-        <v-container>
-            <div class="d-flex align-center justify-space-between mb-6">
-                <div>
-                    <h1 class="text-h4 font-weight-bold">{{ $t('admin.forums.title') }}</h1>
-                    <p class="text-body-2 text-medium-emphasis">{{ $t('admin.forums.subtitle') }}</p>
-                </div>
+        <page-header
+            :title="$t('admin.forums.title')"
+            :subtitle="$t('admin.forums.subtitle')"
+            icon="mdi-forum"
+        >
+            <template #actions>
                 <v-btn
                     color="primary"
+                    variant="elevated"
                     prepend-icon="mdi-plus"
                     @click="openCreateDialog()"
                 >
                     {{ $t('admin.forums.createForum') }}
                 </v-btn>
-            </div>
+            </template>
+        </page-header>
 
+        <v-container fluid>
             <!-- Loading -->
-            <div v-if="loading" class="text-center py-12">
-                <v-progress-circular size="48" indeterminate color="primary" />
-            </div>
+            <loading-state v-if="loading" />
 
             <!-- Forum Tree -->
             <div v-else-if="forums.length > 0">
@@ -34,12 +35,12 @@
                                 <div class="d-flex align-center">
                                     <v-icon class="mr-3" color="primary">mdi-forum</v-icon>
                                     <div>
-                                        <div class="d-flex align-center gap-2">
+                                        <div class="d-flex align-center ga-2">
                                             <span class="font-weight-bold text-body-1">{{ forum.name }}</span>
-                                            <v-chip v-if="forum.is_locked" size="x-small" color="warning">
+                                            <v-chip v-if="forum.is_locked" size="x-small" variant="tonal" color="warning">
                                                 {{ $t('forum.locked') }}
                                             </v-chip>
-                                            <v-chip v-if="forum.is_private" size="x-small" color="info">
+                                            <v-chip v-if="forum.is_private" size="x-small" variant="tonal" color="info">
                                                 {{ $t('forum.private') }}
                                             </v-chip>
                                         </div>
@@ -60,7 +61,7 @@
                             <v-col cols="4" md="1" class="text-center">
                                 <span class="text-body-2 text-medium-emphasis">#{{ forum.position }}</span>
                             </v-col>
-                            <v-col cols="12" md="2" class="text-right">
+                            <v-col cols="12" md="2" class="d-flex justify-end ga-1">
                                 <v-btn icon="mdi-plus" size="small" variant="text" :disabled="deletingId !== null" @click="openCreateDialog(forum.id)" :title="$t('admin.forums.addSubForum')" />
                                 <v-btn icon="mdi-pencil" size="small" variant="text" :disabled="deletingId !== null" @click="openEditDialog(forum)" />
                                 <v-btn icon="mdi-delete" size="small" variant="text" color="error" :loading="deletingId === forum.id" :disabled="deletingId !== null" @click="confirmDelete(forum)" />
@@ -84,7 +85,7 @@
                                     </template>
                                     <v-list-item-title>
                                         <span class="font-weight-medium">{{ child.name }}</span>
-                                        <v-chip v-if="child.is_locked" size="x-small" color="warning" class="ml-2">
+                                        <v-chip v-if="child.is_locked" size="x-small" variant="tonal" color="warning" class="ml-2">
                                             {{ $t('forum.locked') }}
                                         </v-chip>
                                     </v-list-item-title>
@@ -104,22 +105,27 @@
             </div>
 
             <!-- Empty State -->
-            <div v-else class="text-center py-12">
-                <v-icon size="80" color="disabled" class="mb-4">mdi-forum-outline</v-icon>
-                <h3 class="text-h6 mb-2">{{ $t('admin.forums.noForums') }}</h3>
-                <p class="text-body-2 text-medium-emphasis mb-4">{{ $t('admin.forums.noForumsDescription') }}</p>
-                <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog()">
-                    {{ $t('admin.forums.createFirst') }}
-                </v-btn>
-            </div>
+            <empty-state
+                v-else
+                icon="mdi-forum-outline"
+                :title="$t('admin.forums.noForums')"
+                :text="$t('admin.forums.noForumsDescription')"
+            >
+                <template #actions>
+                    <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="openCreateDialog()">
+                        {{ $t('admin.forums.createFirst') }}
+                    </v-btn>
+                </template>
+            </empty-state>
         </v-container>
 
         <!-- Create/Edit Dialog -->
         <v-dialog v-model="dialog.show" max-width="600" persistent>
             <v-card>
-                <v-card-title>
+                <v-card-title class="text-h6">
                     {{ dialog.editing ? $t('admin.forums.editForum') : $t('admin.forums.createForum') }}
                 </v-card-title>
+                <v-divider />
                 <v-card-text>
                     <v-text-field
                         v-model="dialog.form.name"
@@ -231,7 +237,7 @@
                 <v-card-actions>
                     <v-spacer />
                     <v-btn variant="text" :disabled="dialog.saving" @click="closeDialog">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" :loading="dialog.saving" :disabled="dialog.saving" @click="saveForum">
+                    <v-btn color="primary" variant="flat" :loading="dialog.saving" :disabled="dialog.saving" @click="saveForum">
                         {{ dialog.editing ? $t('common.save') : $t('common.add') }}
                     </v-btn>
                 </v-card-actions>
@@ -242,9 +248,17 @@
 
 <script>
 import axios from 'axios'
+import PageHeader from '../../components/common/PageHeader.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
+import LoadingState from '../../components/common/LoadingState.vue'
 
 export default {
     name: 'ForumManager',
+    components: {
+        PageHeader,
+        EmptyState,
+        LoadingState
+    },
     data() {
         return {
             loading: false,
@@ -401,9 +415,3 @@ export default {
     }
 }
 </script>
-
-<style scoped>
-.gap-2 {
-    gap: 8px;
-}
-</style>

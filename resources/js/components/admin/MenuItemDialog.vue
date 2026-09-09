@@ -2,13 +2,15 @@
     <v-dialog
         :model-value="modelValue"
         @update:model-value="$emit('update:modelValue', $event)"
-        max-width="700"
+        max-width="900"
         transition="slide-y-transition"
     >
         <v-card>
-            <v-card-title>
+            <v-card-title class="text-h6">
                 {{ item?.id ? t('menuAdmin.editItem') : t('menuAdmin.createItem') }}
             </v-card-title>
+
+            <v-divider />
 
             <v-card-text>
                 <v-form ref="formRef" v-model="valid">
@@ -107,7 +109,7 @@
 
                         <v-col cols="12">
                             <v-divider class="my-2" />
-                            <p class="text-subtitle-2 mb-2">{{ t('menuAdmin.visibility') }}</p>
+                            <p class="text-subtitle-1 font-weight-medium mb-2">{{ t('menuAdmin.visibility') }}</p>
                         </v-col>
 
                         <v-col cols="12" md="4">
@@ -181,7 +183,7 @@
                 </v-btn>
                 <v-btn
                     color="primary"
-                    variant="tonal"
+                    variant="flat"
                     :loading="saving"
                     :disabled="!valid || saving"
                     @click="save"

@@ -1,14 +1,15 @@
 <template>
     <!-- Bind modelValue to the dialog's v-model -->
-    <VDialog v-model="internalModelValue" max-width="400">
+    <VDialog v-model="internalModelValue" max-width="600">
         <VCard>
+            <VCardTitle class="text-h6">{{ $t('profileDialog.title') }}</VCardTitle>
+            <VDivider />
             <VCardText>
                 <!-- Fix 1: Add v-if to ensure formData.days exists before rendering -->
                 <v-select v-if="eventDays.length > 1 && formData.days"
                           v-model="formData.days"
                           :items="eventDays"
                           :label="$t('profileDialog.days')"
-                          outlined
                           multiple
                 />
 
@@ -53,8 +54,8 @@
             </VCardText>
             <VCardActions>
                 <VSpacer/>
-                <VBtn color="grey" :disabled="submitting" @click="cancel">{{ $t('common.cancel') }}</VBtn>
-                <VBtn color="red" :loading="submitting" :disabled="submitting" @click="confirm">
+                <VBtn variant="text" :disabled="submitting" @click="cancel">{{ $t('common.cancel') }}</VBtn>
+                <VBtn color="primary" variant="flat" :loading="submitting" :disabled="submitting" @click="confirm">
                     {{ $t('common.submit') }}
                 </VBtn>
             </VCardActions>

@@ -1,8 +1,8 @@
 <template>
     <v-card>
-        <v-card-title class="d-flex align-center justify-space-between">
+        <v-card-title class="d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
             <span>{{ $t('migrationTool.sources') }}</span>
-            <v-btn color="primary" size="small" prepend-icon="mdi-plus" @click="openDialog()">
+            <v-btn color="primary" variant="tonal" size="small" prepend-icon="mdi-plus" @click="openDialog()">
                 {{ $t('migrationTool.addSource') }}
             </v-btn>
         </v-card-title>
@@ -52,44 +52,41 @@
                     </tr>
                 </tbody>
             </v-table>
-            <div v-else class="text-center text-medium-emphasis py-8">
-                {{ $t('migrationTool.noSources') }}
-            </div>
+            <empty-state v-else compact icon="mdi-database-off-outline" :title="$t('migrationTool.noSources')" />
         </v-card-text>
 
         <!-- Source form dialog -->
-        <v-dialog v-model="dialog" max-width="560">
+        <v-dialog v-model="dialog" max-width="600">
             <v-card>
-                <v-card-title>
+                <v-card-title class="text-h6">
                     {{ editing ? $t('migrationTool.editSource') : $t('migrationTool.addSource') }}
                 </v-card-title>
+                <v-divider />
                 <v-card-text>
-                    <v-text-field v-model="form.name" :label="$t('common.name')" variant="outlined" density="compact" class="mb-2" />
+                    <v-text-field v-model="form.name" :label="$t('common.name')" density="compact" class="mb-2" />
                     <v-select
                         v-model="form.driver"
                         :items="drivers"
                         :label="$t('migrationTool.driver')"
-                        variant="outlined"
                         density="compact"
                         class="mb-2"
                     />
                     <template v-if="form.driver !== 'sqlite'">
                         <v-row dense>
                             <v-col cols="8">
-                                <v-text-field v-model="form.host" label="Host" variant="outlined" density="compact" />
+                                <v-text-field v-model="form.host" label="Host" density="compact" />
                             </v-col>
                             <v-col cols="4">
-                                <v-text-field v-model.number="form.port" label="Port" type="number" variant="outlined" density="compact" />
+                                <v-text-field v-model.number="form.port" label="Port" type="number" density="compact" />
                             </v-col>
                         </v-row>
-                        <v-text-field v-model="form.username" :label="$t('migrationTool.username')" variant="outlined" density="compact" class="mb-2" />
+                        <v-text-field v-model="form.username" :label="$t('migrationTool.username')" density="compact" class="mb-2" />
                         <v-text-field
                             v-model="form.password"
                             :label="$t('migrationTool.password')"
                             :hint="editing ? $t('migrationTool.passwordKeepHint') : ''"
                             persistent-hint
                             type="password"
-                            variant="outlined"
                             density="compact"
                             class="mb-2"
                         />
@@ -97,14 +94,13 @@
                     <v-text-field
                         v-model="form.database"
                         :label="form.driver === 'sqlite' ? $t('migrationTool.sqlitePath') : $t('migrationTool.database')"
-                        variant="outlined"
                         density="compact"
                     />
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn :disabled="saving" @click="dialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" :loading="saving" :disabled="saving" @click="save">{{ $t('common.save') }}</v-btn>
+                    <v-btn variant="text" :disabled="saving" @click="dialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" variant="flat" :loading="saving" :disabled="saving" @click="save">{{ $t('common.save') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -116,6 +112,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { useDialog } from '@/composables/useDialog.js';
+import EmptyState from '../../common/EmptyState.vue';
 
 const { t } = useI18n();
 const feedback = useDialog();

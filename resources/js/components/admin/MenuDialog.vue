@@ -6,9 +6,11 @@
         transition="slide-y-transition"
     >
         <v-card>
-            <v-card-title>
+            <v-card-title class="text-h6">
                 {{ menu?.id ? t('menuAdmin.editMenu') : t('menuAdmin.createMenu') }}
             </v-card-title>
+
+            <v-divider />
 
             <v-card-text>
                 <v-form ref="formRef" v-model="valid">
@@ -67,7 +69,7 @@
                 </v-btn>
                 <v-btn
                     color="primary"
-                    variant="tonal"
+                    variant="flat"
                     :loading="saving"
                     :disabled="!valid || saving"
                     @click="save"

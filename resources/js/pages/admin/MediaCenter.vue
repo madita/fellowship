@@ -1,21 +1,38 @@
 <template>
-    <v-container fluid class="pa-0 media-center">
-        <v-row no-gutters class="fill-height">
+    <div class="media-center d-flex flex-column">
+        <page-header
+            :title="t('mediaCenter.title')"
+            :subtitle="t('mediaCenter.subtitle')"
+            icon="mdi-folder-multiple-image"
+            fluid
+        >
+            <template #actions>
+                <v-btn
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-upload"
+                    @click="showUploadDialog = true"
+                >
+                    {{ t('mediaCenter.upload') }}
+                </v-btn>
+            </template>
+        </page-header>
+
+        <v-row no-gutters class="media-center__body">
             <!-- Sidebar - Folder Navigation -->
             <v-col cols="12" md="3" lg="2" class="sidebar-col">
                 <v-card class="sidebar-card fill-height" rounded="0" flat>
-                    <v-card-title class="d-flex align-center justify-space-between py-3">
-                        <span>{{ t('mediaCenter.title') }}</span>
+                    <v-card-title class="d-flex align-center justify-space-between py-3 text-subtitle-1 font-weight-medium">
+                        <span>{{ t('mediaCenter.folders') }}</span>
                         <v-btn
-                            icon
+                            icon="mdi-refresh"
                             size="small"
                             variant="text"
                             :loading="loadingFolders"
                             :disabled="loadingFolders"
+                            :aria-label="t('common.refresh')"
                             @click="fetchFolders"
-                        >
-                            <v-icon icon="mdi-refresh" />
-                        </v-btn>
+                        />
                     </v-card-title>
 
                     <v-divider />
@@ -82,7 +99,7 @@
                     <!-- Storage Info -->
                     <v-divider />
                     <div class="pa-3">
-                        <div class="text-caption text-grey">{{ t('mediaCenter.storageUsed') }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ t('mediaCenter.storageUsed') }}</div>
                         <div class="text-body-2 font-weight-medium">{{ totalStats.size_formatted }}</div>
                     </div>
                 </v-card>
@@ -92,7 +109,7 @@
             <v-col cols="12" md="9" lg="10" class="content-col">
                 <div class="content-wrapper pa-4">
                     <!-- Breadcrumbs & Actions -->
-                    <div class="d-flex align-center justify-space-between mb-4">
+                    <div class="d-flex flex-wrap align-center justify-space-between ga-2 mb-4">
                         <v-breadcrumbs :items="breadcrumbs" class="pa-0">
                             <template #item="{ item }">
                                 <v-breadcrumbs-item
@@ -105,16 +122,7 @@
                             </template>
                         </v-breadcrumbs>
 
-                        <div class="d-flex align-center ga-2">
-                            <!-- Upload Button -->
-                            <v-btn
-                                color="primary"
-                                @click="showUploadDialog = true"
-                            >
-                                <v-icon icon="mdi-upload" start />
-                                {{ t('mediaCenter.upload') }}
-                            </v-btn>
-
+                        <div class="d-flex flex-wrap align-center ga-2">
                             <!-- Search -->
                             <v-text-field
                                 v-model="search"
@@ -153,13 +161,9 @@
                             </v-select>
 
                             <!-- View Toggle -->
-                            <v-btn-toggle v-model="viewMode" mandatory density="compact">
-                                <v-btn value="grid" size="small">
-                                    <v-icon icon="mdi-view-grid" />
-                                </v-btn>
-                                <v-btn value="list" size="small">
-                                    <v-icon icon="mdi-view-list" />
-                                </v-btn>
+                            <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="tonal">
+                                <v-btn value="grid" size="small" icon="mdi-view-grid" :aria-label="t('mediaCenter.grid')" />
+                                <v-btn value="list" size="small" icon="mdi-view-list" :aria-label="t('mediaCenter.list')" />
                             </v-btn-toggle>
 
                             <!-- Bulk Delete -->
@@ -168,11 +172,11 @@
                                 color="error"
                                 variant="tonal"
                                 size="small"
+                                prepend-icon="mdi-delete"
                                 :loading="deleting"
                                 :disabled="deleting"
                                 @click="confirmBulkDelete"
                             >
-                                <v-icon icon="mdi-delete" start />
                                 {{ t('common.delete') }} ({{ selectedIds.length }})
                             </v-btn>
                         </div>
@@ -202,7 +206,7 @@
                                         <div class="text-body-2 text-truncate font-weight-medium">
                                             {{ item.model_name }}
                                         </div>
-                                        <div class="text-caption text-grey">
+                                        <div class="text-caption text-medium-emphasis">
                                             {{ t('mediaCenter.filesCount', { count: item.count }) }} - {{ item.size_formatted }}
                                         </div>
                                     </v-card-text>
@@ -210,10 +214,12 @@
                             </v-col>
                         </v-row>
 
-                        <div v-if="modelItems.length === 0 && !loading" class="text-center pa-8">
-                            <v-icon icon="mdi-folder-open-outline" size="64" color="grey" />
-                            <div class="text-h6 text-grey mt-4">{{ t('mediaCenter.noItemsFound') }}</div>
-                        </div>
+                        <loading-state v-if="loading && modelItems.length === 0" />
+                        <empty-state
+                            v-else-if="modelItems.length === 0"
+                            icon="mdi-folder-open-outline"
+                            :title="t('mediaCenter.noItemsFound')"
+                        />
                     </div>
 
                     <!-- Media Grid/List View -->
@@ -241,7 +247,7 @@
                         <!-- Pagination -->
                         <v-card v-if="meta.total > 0" class="mt-4" flat>
                             <v-card-text class="d-flex align-center justify-space-between">
-                                <div class="text-body-2 text-grey">
+                                <div class="text-body-2 text-medium-emphasis">
                                     {{ t('mediaCenter.showingRange', { from: meta.from, to: meta.to, total: meta.total }) }}
                                 </div>
                                 <v-pagination
@@ -267,12 +273,11 @@
         <!-- Upload Dialog -->
         <v-dialog v-model="showUploadDialog" max-width="600" persistent>
             <v-card>
-                <v-card-title class="d-flex align-center justify-space-between">
-                    <span>{{ t('mediaCenter.uploadImages') }}</span>
-                    <v-btn icon variant="text" @click="closeUploadDialog">
-                        <v-icon icon="mdi-close" />
-                    </v-btn>
+                <v-card-title class="text-h6 d-flex align-center">
+                    <v-icon icon="mdi-upload" class="mr-2" />
+                    {{ t('mediaCenter.uploadImages') }}
                 </v-card-title>
+                <v-divider />
                 <v-card-text>
                     <!-- Collection Selection -->
                     <v-select
@@ -281,7 +286,6 @@
                         :items="uploadCollectionOptions"
                         item-title="label"
                         item-value="value"
-                        variant="outlined"
                         density="compact"
                         class="mb-4"
                     />
@@ -306,9 +310,9 @@
                         />
 
                         <template v-if="uploadFiles.length === 0">
-                            <v-icon icon="mdi-cloud-upload" size="64" color="grey" />
+                            <v-icon icon="mdi-cloud-upload" size="64" class="text-medium-emphasis" />
                             <div class="text-h6 mt-2">{{ t('mediaCenter.dropFilesHere') }}</div>
-                            <div class="text-caption text-grey">{{ t('mediaCenter.supportedFormats', { size: '10MB' }) }}</div>
+                            <div class="text-caption text-medium-emphasis">{{ t('mediaCenter.supportedFormats', { size: '10MB' }) }}</div>
                         </template>
 
                         <template v-else>
@@ -332,7 +336,7 @@
                             :key="index"
                         >
                             <template #prepend>
-                                <v-avatar rounded size="40" color="grey-lighten-3">
+                                <v-avatar rounded size="40" color="surface-variant">
                                     <v-img
                                         v-if="file.preview"
                                         :src="file.preview"
@@ -345,13 +349,12 @@
                             <v-list-item-subtitle>{{ formatFileSize(file.file.size) }}</v-list-item-subtitle>
                             <template #append>
                                 <v-btn
-                                    icon
+                                    icon="mdi-close"
                                     variant="text"
                                     size="small"
+                                    :aria-label="t('common.delete')"
                                     @click="removeUploadFile(index)"
-                                >
-                                    <v-icon icon="mdi-close" size="small" />
-                                </v-btn>
+                                />
                             </template>
                         </v-list-item>
                     </v-list>
@@ -373,6 +376,7 @@
                     </v-btn>
                     <v-btn
                         color="primary"
+                        variant="flat"
                         :disabled="uploadFiles.length === 0 || uploading"
                         :loading="uploading"
                         @click="executeUpload"
@@ -387,7 +391,7 @@
         <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
             {{ snackbar.text }}
         </v-snackbar>
-    </v-container>
+    </div>
 </template>
 
 <script setup>
@@ -398,6 +402,9 @@ import { debounce } from 'lodash';
 import MediaGrid from '@/components/admin/media/MediaGrid.vue';
 import MediaList from '@/components/admin/media/MediaList.vue';
 import MediaDetailsDialog from '@/components/admin/media/MediaDetailsDialog.vue';
+import PageHeader from '../../components/common/PageHeader.vue';
+import EmptyState from '../../components/common/EmptyState.vue';
+import LoadingState from '../../components/common/LoadingState.vue';
 import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
@@ -867,6 +874,11 @@ onMounted(async () => {
     overflow: hidden;
 }
 
+.media-center__body {
+    flex: 1 1 0;
+    min-height: 0;
+}
+
 .sidebar-col {
     border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     height: 100%;
@@ -899,10 +911,6 @@ onMounted(async () => {
 .content-wrapper {
     height: 100%;
     overflow-y: auto;
-}
-
-.ga-2 {
-    gap: 8px;
 }
 
 .breadcrumb-link {

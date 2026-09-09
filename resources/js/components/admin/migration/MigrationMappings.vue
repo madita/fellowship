@@ -1,15 +1,15 @@
 <template>
     <v-card>
-        <v-card-title class="d-flex align-center justify-space-between">
+        <v-card-title class="d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
             <span>{{ $t('migrationTool.mappings') }}</span>
-            <div>
-                <v-btn size="small" variant="text" prepend-icon="mdi-download" class="mr-1" :loading="exporting" :disabled="exporting" @click="exportMappings">
+            <div class="d-flex align-center flex-wrap ga-2">
+                <v-btn size="small" variant="text" prepend-icon="mdi-download" :loading="exporting" :disabled="exporting" @click="exportMappings">
                     {{ $t('migrationTool.exportJson') }}
                 </v-btn>
-                <v-btn size="small" variant="text" prepend-icon="mdi-upload" class="mr-1" @click="importDialog = true">
+                <v-btn size="small" variant="text" prepend-icon="mdi-upload" @click="importDialog = true">
                     {{ $t('migrationTool.importJson') }}
                 </v-btn>
-                <v-btn color="primary" size="small" prepend-icon="mdi-plus" @click="openEditor()">
+                <v-btn color="primary" variant="tonal" size="small" prepend-icon="mdi-plus" @click="openEditor()">
                     {{ $t('migrationTool.addMapping') }}
                 </v-btn>
             </div>
@@ -58,34 +58,32 @@
                     </tr>
                 </tbody>
             </v-table>
-            <div v-else class="text-center text-medium-emphasis py-8">
-                {{ $t('migrationTool.noMappings') }}
-            </div>
+            <empty-state v-else compact icon="mdi-swap-horizontal" :title="$t('migrationTool.noMappings')" />
         </v-card-text>
 
         <!-- Import JSON dialog -->
-        <v-dialog v-model="importDialog" max-width="720">
+        <v-dialog v-model="importDialog" max-width="600">
             <v-card>
-                <v-card-title>{{ $t('migrationTool.importJson') }}</v-card-title>
+                <v-card-title class="text-h6">{{ $t('migrationTool.importJson') }}</v-card-title>
+                <v-divider />
                 <v-card-text>
                     <div class="text-caption text-medium-emphasis mb-2">{{ $t('migrationTool.importHint') }}</div>
                     <v-textarea
                         v-model="importText"
                         rows="12"
-                        variant="outlined"
                         density="compact"
                         placeholder='{ "mappings": [ … ] }'
                         hide-details
                         class="import-textarea"
                     />
-                    <v-alert v-if="importErrors.length" type="warning" variant="tonal" density="compact" class="mt-2">
+                    <v-alert v-if="importErrors.length" type="warning" density="compact" class="mt-2">
                         <div v-for="(err, i) in importErrors" :key="i">{{ err }}</div>
                     </v-alert>
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn :disabled="importing" @click="importDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" :loading="importing" :disabled="!importText.trim() || importing" @click="doImport">
+                    <v-btn variant="text" :disabled="importing" @click="importDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" variant="flat" :loading="importing" :disabled="!importText.trim() || importing" @click="doImport">
                         {{ $t('migrationTool.importJson') }}
                     </v-btn>
                 </v-card-actions>
@@ -93,15 +91,16 @@
         </v-dialog>
 
         <!-- Mapping editor dialog -->
-        <v-dialog v-model="editor" max-width="980" scrollable>
+        <v-dialog v-model="editor" max-width="900" scrollable>
             <v-card>
-                <v-card-title>
+                <v-card-title class="text-h6">
                     {{ editing ? $t('migrationTool.editMapping') : $t('migrationTool.addMapping') }}
                 </v-card-title>
+                <v-divider />
                 <v-card-text>
                     <v-row dense>
                         <v-col cols="12" md="3">
-                            <v-text-field v-model="form.name" :label="$t('common.name')" variant="outlined" density="compact" />
+                            <v-text-field v-model="form.name" :label="$t('common.name')" density="compact" />
                         </v-col>
                         <v-col cols="12" md="3">
                             <v-select
@@ -110,7 +109,6 @@
                                 item-title="name"
                                 item-value="id"
                                 :label="$t('migrationTool.source')"
-                                variant="outlined"
                                 density="compact"
                                 @update:model-value="onSourceChanged"
                             />
@@ -122,7 +120,6 @@
                                 item-title="label"
                                 item-value="key"
                                 :label="$t('migrationTool.target')"
-                                variant="outlined"
                                 density="compact"
                                 @update:model-value="onTargetChanged"
                             />
@@ -134,7 +131,6 @@
                                 :hint="$t('migrationTool.contentLocaleHint')"
                                 persistent-hint
                                 placeholder="de"
-                                variant="outlined"
                                 density="compact"
                             />
                         </v-col>
@@ -146,7 +142,6 @@
                         :label="$t('migrationTool.sourceTable')"
                         :loading="loadingTables"
                         :disabled="!form.migration_source_id"
-                        variant="outlined"
                         density="compact"
                         class="mb-1"
                         @update:model-value="onTableChanged"
@@ -159,7 +154,7 @@
                     <template v-if="form.source_table">
                         <div class="d-flex align-center mb-1">
                             <span class="text-subtitle-2">{{ $t('migrationTool.joins') }}</span>
-                            <v-btn size="x-small" variant="text" color="primary" prepend-icon="mdi-plus" class="ml-2" @click="addJoin">
+                            <v-btn size="x-small" variant="text" color="primary" prepend-icon="mdi-plus" class="ms-2" @click="addJoin">
                                 {{ $t('migrationTool.addJoin') }}
                             </v-btn>
                         </div>
@@ -172,7 +167,7 @@
                                     v-model="join.type"
                                     :items="joinTypes"
                                     :label="$t('migrationTool.joinType')"
-                                    hide-details variant="outlined" density="compact"
+                                    hide-details density="compact"
                                 />
                             </v-col>
                             <v-col cols="6" md="3">
@@ -180,7 +175,7 @@
                                     v-model="join.table"
                                     :items="tables"
                                     :label="$t('migrationTool.joinTable')"
-                                    hide-details variant="outlined" density="compact"
+                                    hide-details density="compact"
                                     @update:model-value="loadJoinColumns(join.table)"
                                 />
                             </v-col>
@@ -189,14 +184,14 @@
                                     v-model="join.first"
                                     :label="$t('migrationTool.joinFirst')"
                                     :placeholder="`${join.table || 'table'}.column`"
-                                    hide-details variant="outlined" density="compact"
+                                    hide-details density="compact"
                                 />
                             </v-col>
                             <v-col cols="2" md="1">
                                 <v-select
                                     v-model="join.operator"
                                     :items="operators"
-                                    hide-details variant="outlined" density="compact"
+                                    hide-details density="compact"
                                 />
                             </v-col>
                             <v-col cols="5" md="2">
@@ -204,7 +199,7 @@
                                     v-model="join.second"
                                     :label="$t('migrationTool.joinSecond')"
                                     :placeholder="`${form.source_table}.column`"
-                                    hide-details variant="outlined" density="compact"
+                                    hide-details density="compact"
                                 />
                             </v-col>
                             <v-col cols="12" md="1" class="text-right">
@@ -217,7 +212,7 @@
                         <!-- Row filters -->
                         <div class="d-flex align-center mb-1 mt-2">
                             <span class="text-subtitle-2">{{ $t('migrationTool.filters') }}</span>
-                            <v-btn size="x-small" variant="text" color="primary" prepend-icon="mdi-plus" class="ml-2" @click="addFilter">
+                            <v-btn size="x-small" variant="text" color="primary" prepend-icon="mdi-plus" class="ms-2" @click="addFilter">
                                 {{ $t('migrationTool.addFilter') }}
                             </v-btn>
                         </div>
@@ -229,21 +224,21 @@
                                 <v-text-field
                                     v-model="where.column"
                                     :label="$t('migrationTool.filterColumn')"
-                                    hide-details variant="outlined" density="compact"
+                                    hide-details density="compact"
                                 />
                             </v-col>
                             <v-col cols="2" md="2">
                                 <v-select
                                     v-model="where.operator"
                                     :items="operators"
-                                    hide-details variant="outlined" density="compact"
+                                    hide-details density="compact"
                                 />
                             </v-col>
                             <v-col cols="5" md="5">
                                 <v-text-field
                                     v-model="where.value"
                                     :label="$t('migrationTool.filterValue')"
-                                    hide-details variant="outlined" density="compact"
+                                    hide-details density="compact"
                                 />
                             </v-col>
                             <v-col cols="12" md="1" class="text-right">
@@ -283,7 +278,6 @@
                                             :loading="loadingColumns"
                                             clearable
                                             hide-details
-                                            variant="outlined"
                                             density="compact"
                                         />
                                         <div v-if="sampleFor(form.field_map[field.key].source)" class="text-caption text-medium-emphasis text-truncate" style="max-width: 220px;">
@@ -295,7 +289,6 @@
                                             v-model="form.field_map[field.key].transform"
                                             :items="transforms"
                                             hide-details
-                                            variant="outlined"
                                             density="compact"
                                         />
                                     </td>
@@ -305,7 +298,6 @@
                                             :disabled="!['date', 'time', 'datetime'].includes(form.field_map[field.key].transform)"
                                             placeholder="Ymd"
                                             hide-details
-                                            variant="outlined"
                                             density="compact"
                                         />
                                     </td>
@@ -314,7 +306,6 @@
                                             v-model="form.field_map[field.key].template"
                                             :placeholder="$t('migrationTool.templatePlaceholder')"
                                             hide-details
-                                            variant="outlined"
                                             density="compact"
                                         />
                                     </td>
@@ -322,7 +313,6 @@
                                         <v-text-field
                                             v-model="form.field_map[field.key].default"
                                             hide-details
-                                            variant="outlined"
                                             density="compact"
                                         />
                                     </td>
@@ -365,8 +355,8 @@
                         {{ $t('migrationTool.preview') }}
                     </v-btn>
                     <v-spacer />
-                    <v-btn :disabled="saving || previewing" @click="editor = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" :loading="saving && !previewing" :disabled="!canSave || saving || previewing" @click="save">{{ $t('common.save') }}</v-btn>
+                    <v-btn variant="text" :disabled="saving || previewing" @click="editor = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" variant="flat" :loading="saving && !previewing" :disabled="!canSave || saving || previewing" @click="save">{{ $t('common.save') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -378,6 +368,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { useDialog } from '@/composables/useDialog.js';
+import EmptyState from '../../common/EmptyState.vue';
 
 const { t } = useI18n();
 const dialog = useDialog();

@@ -1,26 +1,19 @@
 <template>
     <div class="flex-grow-1">
-        <v-container>
-            <div class="d-flex align-center justify-space-between mb-6">
-                <div>
-                    <h1 class="text-h4 font-weight-bold">{{ $t('admin.dashboard.title') }}</h1>
-                    <p class="text-body-2 text-medium-emphasis mb-0">
-                        {{ $t('admin.dashboard.subtitle') }}
-                        <span v-if="data">· {{ $t('admin.dashboard.updated', { time: relative(data.generated_at) }) }}</span>
-                    </p>
-                </div>
-                <v-btn variant="tonal" prepend-icon="mdi-refresh" :loading="loading" @click="load">
+        <page-header :title="$t('admin.dashboard.title')" :subtitle="subtitle" icon="mdi-view-dashboard-outline">
+            <template #actions>
+                <v-btn variant="tonal" prepend-icon="mdi-refresh" :loading="loading" :disabled="loading" @click="load">
                     {{ $t('dashboard.refresh') }}
                 </v-btn>
-            </div>
+            </template>
+        </page-header>
 
-            <div v-if="loading && !data" class="text-center py-12">
-                <v-progress-circular size="48" indeterminate color="primary" />
-            </div>
+        <v-container fluid>
+            <loading-state v-if="loading && !data" />
 
             <template v-if="data">
                 <!-- Needs attention -->
-                <h2 class="text-subtitle-1 font-weight-bold mb-2">{{ $t('admin.dashboard.attention.title') }}</h2>
+                <h2 class="text-h6 mb-2">{{ $t('admin.dashboard.attention.title') }}</h2>
                 <v-row dense class="mb-4">
                     <v-col v-for="item in attentionItems" :key="item.key" cols="6" sm="4" md="3" lg="auto" class="flex-lg-grow-1">
                         <v-card
@@ -47,7 +40,7 @@
                     <!-- Community -->
                     <v-col cols="12" md="6">
                         <v-card variant="outlined" class="h-100">
-                            <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center">
+                            <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
                                 <v-icon class="mr-2" color="primary">mdi-account-group</v-icon>
                                 {{ $t('admin.dashboard.users.title') }}
                                 <v-spacer />
@@ -83,7 +76,7 @@
                     <!-- Content -->
                     <v-col cols="12" md="6">
                         <v-card variant="outlined" class="h-100">
-                            <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center">
+                            <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
                                 <v-icon class="mr-2" color="warning">mdi-database</v-icon>
                                 {{ $t('admin.dashboard.content.title') }}
                             </v-card-title>
@@ -109,16 +102,19 @@
                     <!-- Unassigned tickets -->
                     <v-col cols="12" md="6">
                         <v-card variant="outlined" class="h-100">
-                            <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center">
-                                <v-icon class="mr-2" color="purple">mdi-ticket-confirmation</v-icon>
+                            <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
+                                <v-icon class="mr-2" color="secondary">mdi-ticket-confirmation</v-icon>
                                 {{ $t('admin.dashboard.tickets.title') }}
                                 <v-spacer />
                                 <v-btn size="small" variant="text" to="/admin/tickets?assigned_to=unassigned">{{ $t('admin.dashboard.manage') }}</v-btn>
                             </v-card-title>
                             <v-card-text>
-                                <div v-if="data.recent.tickets.length === 0" class="text-caption text-medium-emphasis">
-                                    {{ $t('admin.dashboard.tickets.empty') }}
-                                </div>
+                                <empty-state
+                                    v-if="data.recent.tickets.length === 0"
+                                    icon="mdi-ticket-outline"
+                                    :title="$t('admin.dashboard.tickets.empty')"
+                                    compact
+                                />
                                 <v-list v-else density="compact" class="pa-0">
                                     <v-list-item
                                         v-for="ticket in data.recent.tickets"
@@ -144,18 +140,21 @@
                     <!-- Recent activity -->
                     <v-col cols="12" md="6">
                         <v-card variant="outlined" class="h-100">
-                            <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center">
-                                <v-icon class="mr-2" color="pink">mdi-pulse</v-icon>
+                            <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
+                                <v-icon class="mr-2" color="primary">mdi-pulse</v-icon>
                                 {{ $t('admin.dashboard.activity.title') }}
                             </v-card-title>
                             <v-card-text>
-                                <div v-if="data.recent.activity.length === 0" class="text-caption text-medium-emphasis">
-                                    {{ $t('admin.dashboard.activity.empty') }}
-                                </div>
+                                <empty-state
+                                    v-if="data.recent.activity.length === 0"
+                                    icon="mdi-pulse"
+                                    :title="$t('admin.dashboard.activity.empty')"
+                                    compact
+                                />
                                 <v-list v-else density="compact" class="pa-0">
                                     <v-list-item v-for="entry in data.recent.activity" :key="entry.id" class="px-0">
                                         <template v-slot:prepend>
-                                            <v-icon size="18" color="pink">mdi-circle-small</v-icon>
+                                            <v-icon size="18" color="primary">mdi-circle-small</v-icon>
                                         </template>
                                         <v-list-item-title class="text-body-2">
                                             <strong v-if="entry.causer">{{ entry.causer }}</strong> {{ entry.description }}
@@ -172,14 +171,14 @@
                     <!-- System -->
                     <v-col cols="12">
                         <v-card variant="outlined">
-                            <v-card-title class="text-subtitle-1 font-weight-bold d-flex align-center">
+                            <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
                                 <v-icon class="mr-2" color="success">mdi-server</v-icon>
                                 {{ $t('admin.dashboard.system.title') }}
                                 <v-spacer />
                                 <v-btn size="small" variant="text" to="/admin/settings">{{ $t('admin.dashboard.settings') }}</v-btn>
                             </v-card-title>
                             <v-card-text>
-                                <div class="d-flex flex-wrap" style="gap: 8px;">
+                                <div class="d-flex flex-wrap ga-2">
                                     <v-chip v-for="chip in systemChips" :key="chip.key" :color="chip.color" variant="tonal" :prepend-icon="chip.icon" size="small">
                                         {{ $t(`admin.dashboard.system.${chip.key}`) }}: {{ chip.value }}
                                     </v-chip>
@@ -198,9 +197,9 @@
                 </v-row>
 
                 <!-- Quick links -->
-                <h2 class="text-subtitle-1 font-weight-bold mt-6 mb-2">{{ $t('admin.dashboard.quickLinks') }}</h2>
-                <div class="d-flex flex-wrap" style="gap: 8px;">
-                    <v-btn v-for="link in quickLinks" :key="link.to" :to="link.to" variant="outlined" size="small" :prepend-icon="link.icon">
+                <h2 class="text-h6 mt-6 mb-2">{{ $t('admin.dashboard.quickLinks') }}</h2>
+                <div class="d-flex flex-wrap ga-2">
+                    <v-btn v-for="link in quickLinks" :key="link.to" :to="link.to" variant="tonal" size="small" :prepend-icon="link.icon">
                         {{ $t(link.key) }}
                     </v-btn>
                 </div>
@@ -213,6 +212,9 @@
 import axios from 'axios';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 /**
  * Admin overview: moderation queues, community and content numbers,
@@ -221,6 +223,7 @@ import { formatDateDistanceToNow } from '@/plugins/formatDate.js';
  */
 export default {
     name: 'AdminDashboard',
+    components: { PageHeader, EmptyState, LoadingState },
     setup() {
         const { getPriorityColor, getPriorityIcon } = useTicketHelpers();
 
@@ -242,12 +245,17 @@ export default {
         };
     },
     computed: {
+        subtitle() {
+            const base = this.$t('admin.dashboard.subtitle');
+            if (!this.data) return base;
+            return `${base} · ${this.$t('admin.dashboard.updated', { time: this.relative(this.data.generated_at) })}`;
+        },
         attentionItems() {
             const a = this.data.attention;
             return [
                 { key: 'pending_wiki', value: a.pending_wiki, icon: 'mdi-book-clock-outline', color: 'warning', to: '/wiki' },
                 { key: 'pending_event_guests', value: a.pending_event_guests, icon: 'mdi-account-clock-outline', color: 'warning', to: '/admin/events' },
-                { key: 'unassigned_tickets', value: a.unassigned_tickets, icon: 'mdi-ticket-account', color: 'purple', to: '/admin/tickets?assigned_to=unassigned' },
+                { key: 'unassigned_tickets', value: a.unassigned_tickets, icon: 'mdi-ticket-account', color: 'secondary', to: '/admin/tickets?assigned_to=unassigned' },
                 { key: 'overdue_tickets', value: a.overdue_tickets, icon: 'mdi-clock-alert-outline', color: 'error', to: '/admin/tickets?due=overdue' },
                 { key: 'legacy_claims', value: a.legacy_claims, icon: 'mdi-account-convert', color: 'info', to: '/admin/migrations?tab=legacyUsers' },
                 { key: 'unverified_users', value: a.unverified_users, icon: 'mdi-email-alert-outline', color: 'secondary', to: '/admin/users' },
@@ -260,14 +268,14 @@ export default {
         contentItems() {
             return [
                 { key: 'wiki_pages', icon: 'mdi-book-open-variant', color: 'warning', to: '/wiki' },
-                { key: 'forum_threads', delta: 'forum_threads_7d', icon: 'mdi-forum', color: 'pink', to: '/admin/forums' },
-                { key: 'forum_posts', delta: 'forum_posts_7d', icon: 'mdi-comment-multiple', color: 'pink', to: '/forum' },
-                { key: 'events_upcoming', icon: 'mdi-calendar-clock', color: 'primary', to: '/admin/events' },
-                { key: 'open_tickets', icon: 'mdi-ticket-confirmation', color: 'purple', to: '/admin/tickets' },
-                { key: 'albums', icon: 'mdi-image-multiple', color: 'deep-orange', to: '/admin/gallery' },
-                { key: 'media_files', icon: 'mdi-folder-multiple-image', color: 'deep-orange', to: '/admin/media' },
-                { key: 'sandboxes', icon: 'mdi-file-document-edit', color: 'indigo', to: '/sandbox' },
-                { key: 'messages_7d', icon: 'mdi-message-text', color: 'teal', to: '/conversations' },
+                { key: 'forum_threads', delta: 'forum_threads_7d', icon: 'mdi-forum', color: 'primary', to: '/admin/forums' },
+                { key: 'forum_posts', delta: 'forum_posts_7d', icon: 'mdi-comment-multiple', color: 'primary', to: '/forum' },
+                { key: 'events_upcoming', icon: 'mdi-calendar-clock', color: 'info', to: '/admin/events' },
+                { key: 'open_tickets', icon: 'mdi-ticket-confirmation', color: 'secondary', to: '/admin/tickets' },
+                { key: 'albums', icon: 'mdi-image-multiple', color: 'warning', to: '/admin/gallery' },
+                { key: 'media_files', icon: 'mdi-folder-multiple-image', color: 'warning', to: '/admin/media' },
+                { key: 'sandboxes', icon: 'mdi-file-document-edit', color: 'info', to: '/sandbox' },
+                { key: 'messages_7d', icon: 'mdi-message-text', color: 'success', to: '/conversations' },
             ];
         },
         systemChips() {

@@ -104,7 +104,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="d-flex gap-2">
+                            <div class="d-flex ga-2">
                                 <v-btn
                                     v-if="logoFile"
                                     color="primary"
@@ -596,7 +596,7 @@
                                                     @change="handleImageSelect('logo_light')"
                                                     show-size
                                                 ></v-file-input>
-                                                <div class="d-flex gap-2">
+                                                <div class="d-flex ga-2">
                                                     <v-btn
                                                         v-if="brandingImages.logo_light_file"
                                                         color="primary"
@@ -644,7 +644,7 @@
                                                     @change="handleImageSelect('logo_dark')"
                                                     show-size
                                                 ></v-file-input>
-                                                <div class="d-flex gap-2">
+                                                <div class="d-flex ga-2">
                                                     <v-btn
                                                         v-if="brandingImages.logo_dark_file"
                                                         color="primary"
@@ -692,7 +692,7 @@
                                                     @change="handleImageSelect('favicon')"
                                                     show-size
                                                 ></v-file-input>
-                                                <div class="d-flex gap-2">
+                                                <div class="d-flex ga-2">
                                                     <v-btn
                                                         v-if="brandingImages.favicon_file"
                                                         color="primary"
@@ -740,7 +740,7 @@
                                                     @change="handleImageSelect('app_icon')"
                                                     show-size
                                                 ></v-file-input>
-                                                <div class="d-flex gap-2">
+                                                <div class="d-flex ga-2">
                                                     <v-btn
                                                         v-if="brandingImages.app_icon_file"
                                                         color="primary"
@@ -984,7 +984,7 @@
                                                 hint="Recommended: 1200x630px"
                                                 persistent-hint
                                             ></v-file-input>
-                                            <div class="d-flex gap-2 mt-2">
+                                            <div class="d-flex ga-2 mt-2">
                                                 <v-btn
                                                     v-if="brandingImages.og_image_file"
                                                     color="primary"
@@ -2517,7 +2517,7 @@ export default {
     border-radius: 8px;
 }
 
-.gap-2 {
+.ga-2 {
     gap: 8px;
 }
 </style>

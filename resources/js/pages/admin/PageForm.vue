@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import Tiptap from '../../components/common/tiptap/Tiptap.vue';
+import PageHeader from '../../components/common/PageHeader.vue';
 import { useDialog } from '@/composables/useDialog.js';
 
 const route = useRoute();
@@ -195,9 +196,16 @@ Promise.all([
 
 <template>
     <div class="flex-grow-1">
+        <page-header
+            :title="form === 'edit' ? $t('admin.pages.edit') : $t('admin.pages.create')"
+            :subtitle="page.title"
+            icon="mdi-file-document-edit-outline"
+            :back-to="{ name: 'admin-pages' }"
+        />
+
         <v-container>
             <v-row>
-                <v-col cols="8">
+                <v-col cols="12" md="8">
                     <v-text-field
                         :label="$t('common.title')"
                         v-model="page.title"
@@ -205,10 +213,10 @@ Promise.all([
 
                     <tiptap v-model="page.content" :value="page.content" id="text-content" name="content" />
                 </v-col>
-                <v-col cols="4" v-if="dataReady">
+                <v-col cols="12" md="4" v-if="dataReady">
                     <!-- Parent Page -->
                     <v-card class="mb-4" elevation="1" rounded="lg">
-                        <v-card-title class="text-subtitle-1">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
                             <v-icon class="mr-2" color="info">mdi-file-tree</v-icon>
                             {{ $t('common.pages') }}
                         </v-card-title>
@@ -248,7 +256,7 @@ Promise.all([
 
                     <!-- Taxonomy -->
                     <v-card class="mb-4" elevation="1" rounded="lg">
-                        <v-card-title class="text-subtitle-1">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
                             <v-icon class="mr-2" color="secondary">mdi-shape-outline</v-icon>
                             {{ $t('pageForm.taxonomy') }}
                         </v-card-title>
@@ -273,7 +281,7 @@ Promise.all([
 
                     <!-- Categories -->
                     <v-card class="mb-4" elevation="1" rounded="lg">
-                        <v-card-title class="text-subtitle-1">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
                             <v-icon class="mr-2" color="primary">mdi-folder-outline</v-icon>
                             {{ $t('pageForm.category') }}
                             <v-spacer />
@@ -365,7 +373,7 @@ Promise.all([
 
                     <!-- Tags -->
                     <v-card class="mb-4" elevation="1" rounded="lg">
-                        <v-card-title class="text-subtitle-1">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
                             <v-icon class="mr-2" color="secondary">mdi-tag-outline</v-icon>
                             {{ $t('pageForm.terms') }}
                             <v-spacer />
@@ -417,7 +425,7 @@ Promise.all([
 
                     <!-- Settings & Actions -->
                     <v-card class="mb-4" elevation="1" rounded="lg">
-                        <v-card-title class="text-subtitle-1">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
                             <v-icon class="mr-2" color="success">mdi-cog-outline</v-icon>
                             {{ $t('pageForm.settings') }}
                         </v-card-title>

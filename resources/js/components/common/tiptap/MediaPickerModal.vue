@@ -1,11 +1,9 @@
 <template>
     <v-dialog v-model="dialogOpen" max-width="900" scrollable>
         <v-card class="media-picker-modal">
-            <v-card-title class="d-flex align-center justify-space-between py-3">
+            <v-card-title class="text-h6 d-flex align-center justify-space-between py-3">
                 <span>{{ $t('mediaPicker.selectImage') }}</span>
-                <v-btn icon variant="text" @click="close">
-                    <v-icon icon="mdi-close" />
-                </v-btn>
+                <v-btn icon="mdi-close" variant="text" :aria-label="$t('common.close')" @click="close" />
             </v-card-title>
 
             <v-divider />
@@ -62,17 +60,15 @@
                             </div>
 
                             <!-- Media Grid -->
-                            <div v-if="loading" class="d-flex justify-center pa-8">
-                                <v-progress-circular indeterminate color="primary" />
-                            </div>
+                            <loading-state v-if="loading" compact />
 
-                            <div v-else-if="!media.length" class="text-center pa-8">
-                                <v-icon icon="mdi-image-off" size="64" color="grey" />
-                                <div class="text-h6 text-grey mt-4">{{ $t('mediaPicker.noImagesFound') }}</div>
-                                <div class="text-body-2 text-grey">
-                                    {{ $t('mediaPicker.tryAdjustingSearch') }}
-                                </div>
-                            </div>
+                            <empty-state
+                                v-else-if="!media.length"
+                                compact
+                                icon="mdi-image-off"
+                                :title="$t('mediaPicker.noImagesFound')"
+                                :text="$t('mediaPicker.tryAdjustingSearch')"
+                            />
 
                             <v-row v-else>
                                 <v-col
@@ -97,12 +93,12 @@
                                             >
                                                 <template #placeholder>
                                                     <v-row class="fill-height ma-0" align="center" justify="center">
-                                                        <v-progress-circular indeterminate color="grey-lighten-1" size="24" />
+                                                        <v-progress-circular indeterminate color="primary" size="24" />
                                                     </v-row>
                                                 </template>
                                             </v-img>
-                                            <div v-else class="d-flex align-center justify-center fill-height">
-                                                <v-icon icon="mdi-file" size="48" color="grey" />
+                                            <div v-else class="d-flex align-center justify-center fill-height text-medium-emphasis">
+                                                <v-icon icon="mdi-file" size="48" />
                                             </div>
 
                                             <v-icon
@@ -170,9 +166,9 @@
                                 />
 
                                 <template v-if="uploadFiles.length === 0">
-                                    <v-icon icon="mdi-cloud-upload" size="64" color="grey" />
+                                    <v-icon icon="mdi-cloud-upload" size="64" color="primary" />
                                     <div class="text-h6 mt-2">{{ $t('mediaPicker.dropImagesHere') }}</div>
-                                    <div class="text-caption text-grey">{{ $t('mediaPicker.supportedFormats') }}</div>
+                                    <div class="text-caption text-medium-emphasis">{{ $t('mediaPicker.supportedFormats') }}</div>
                                 </template>
 
                                 <template v-else>
@@ -196,7 +192,7 @@
                                     :key="index"
                                 >
                                     <template #prepend>
-                                        <v-avatar rounded size="40" color="grey-lighten-3">
+                                        <v-avatar rounded size="40" color="surface-variant">
                                             <v-img
                                                 v-if="file.preview"
                                                 :src="file.preview"
@@ -209,13 +205,12 @@
                                     <v-list-item-subtitle>{{ formatFileSize(file.file.size) }}</v-list-item-subtitle>
                                     <template #append>
                                         <v-btn
-                                            icon
+                                            icon="mdi-close"
                                             variant="text"
                                             size="small"
+                                            :aria-label="$t('common.delete')"
                                             @click="removeUploadFile(index)"
-                                        >
-                                            <v-icon icon="mdi-close" size="small" />
-                                        </v-btn>
+                                        />
                                     </template>
                                 </v-list-item>
                             </v-list>
@@ -234,18 +229,19 @@
                             <div v-if="uploadFiles.length > 0" class="mt-4">
                                 <v-btn
                                     color="primary"
+                                    variant="tonal"
+                                    prepend-icon="mdi-upload"
                                     :disabled="uploading"
                                     :loading="uploading"
                                     @click="executeUpload"
                                 >
-                                    <v-icon icon="mdi-upload" start />
                                     {{ $t('mediaPicker.uploadFiles', { count: uploadFiles.length }) }}
                                 </v-btn>
                             </div>
 
                             <!-- Recently Uploaded -->
                             <div v-if="recentlyUploaded.length > 0" class="mt-6">
-                                <div class="text-subtitle-2 mb-2">{{ $t('mediaPicker.recentlyUploaded') }}</div>
+                                <div class="text-subtitle-1 font-weight-medium mb-2">{{ $t('mediaPicker.recentlyUploaded') }}</div>
                                 <v-row>
                                     <v-col
                                         v-for="item in recentlyUploaded"
@@ -309,7 +305,7 @@
 
                             <!-- URL Preview -->
                             <div v-if="imageUrl && isValidUrl" class="mt-4">
-                                <div class="text-subtitle-2 mb-2">{{ $t('mediaPicker.preview') }}</div>
+                                <div class="text-subtitle-1 font-weight-medium mb-2">{{ $t('mediaPicker.preview') }}</div>
                                 <v-card max-width="300" class="mx-auto">
                                     <v-img
                                         :src="imageUrl"
@@ -320,14 +316,14 @@
                                     >
                                         <template #placeholder>
                                             <v-row class="fill-height ma-0" align="center" justify="center">
-                                                <v-progress-circular indeterminate color="grey-lighten-1" />
+                                                <v-progress-circular indeterminate color="primary" />
                                             </v-row>
                                         </template>
                                         <template #error>
-                                            <v-row class="fill-height ma-0 bg-grey-lighten-3" align="center" justify="center">
-                                                <div class="text-center">
-                                                    <v-icon icon="mdi-image-broken" size="48" color="grey" />
-                                                    <div class="text-caption text-grey">{{ $t('mediaPicker.failedToLoadImage') }}</div>
+                                            <v-row class="fill-height ma-0 bg-surface-variant" align="center" justify="center">
+                                                <div class="text-center text-medium-emphasis">
+                                                    <v-icon icon="mdi-image-broken" size="48" />
+                                                    <div class="text-caption">{{ $t('mediaPicker.failedToLoadImage') }}</div>
                                                 </div>
                                             </v-row>
                                         </template>
@@ -354,6 +350,7 @@
                 <v-btn variant="text" :disabled="uploading" @click="close">{{ $t('common.cancel') }}</v-btn>
                 <v-btn
                     color="primary"
+                    variant="flat"
                     :disabled="!canInsert || uploading"
                     @click="insertImage"
                 >
@@ -374,6 +371,8 @@ import { ref, reactive, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { debounce } from 'lodash';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 const { t } = useI18n();
 
@@ -655,10 +654,6 @@ watch(dialogOpen, (open) => {
     max-height: 90vh;
 }
 
-.ga-2 {
-    gap: 8px;
-}
-
 .picker-card {
     cursor: pointer;
     transition: all 0.2s ease;
@@ -684,7 +679,7 @@ watch(dialogOpen, (open) => {
     position: absolute;
     top: 8px;
     right: 8px;
-    background: white;
+    background: rgb(var(--v-theme-surface));
     border-radius: 50%;
 }
 

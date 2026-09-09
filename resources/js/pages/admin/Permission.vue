@@ -1,71 +1,101 @@
 <template>
   <div class="flex-grow-1">
-      <v-table>
-          <template v-slot:default>
-              <thead>
-              <tr>
-                  <th></th>
-                  <th class="text-left"
-                      v-for="role in roles"
-                      :key="role.name">
-                      {{ role.display_name }}
-                  </th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr
-                  v-for="(item, index) in permissions"
-                  :key="item.name"
+      <page-header :title="$t('admin.permissions.title')" icon="mdi-shield-key-outline">
+          <template #actions>
+              <v-btn
+                  color="primary"
+                  variant="elevated"
+                  prepend-icon="mdi-content-save-outline"
+                  :loading="saving"
+                  :disabled="saving || loading"
+                  @click="save"
               >
-                  <td>{{ item.display_name }}</td>
-                  <td class="text-left"
-                      v-for="role in roles"
-                      :key="role.name+index">
-                      <v-checkbox
-                          v-model="selected"
-                          :value="{role: role.id, permission: item.id}"
-                          :disabled="saving"
-                      ></v-checkbox>
-
-                  </td>
-              </tr>
-              </tbody>
+                  {{ $t('common.save') }}
+              </v-btn>
           </template>
-      </v-table>
-      <v-btn
-          color="blue darken-1"
-          text
-          :loading="saving"
-          :disabled="saving"
-          @click="save"
-      >
-          {{ $t('common.save') }}
-      </v-btn>
+      </page-header>
+
+      <v-container fluid>
+          <v-card>
+              <loading-state v-if="loading && !permissions.length" />
+
+              <empty-state
+                  v-else-if="!loading && !permissions.length"
+                  icon="mdi-shield-off-outline"
+                  :title="$t('admin.permissions.noPermissions')"
+                  compact
+              />
+
+              <v-table v-else>
+                  <thead>
+                  <tr>
+                      <th></th>
+                      <th class="text-left"
+                          v-for="role in roles"
+                          :key="role.name">
+                          {{ role.display_name }}
+                      </th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <tr
+                      v-for="(item, index) in permissions"
+                      :key="item.name"
+                  >
+                      <td>{{ item.display_name }}</td>
+                      <td class="text-left"
+                          v-for="role in roles"
+                          :key="role.name+index">
+                          <v-checkbox
+                              v-model="selected"
+                              :value="{role: role.id, permission: item.id}"
+                              :disabled="saving"
+                              hide-details
+                              density="compact"
+                          ></v-checkbox>
+                      </td>
+                  </tr>
+                  </tbody>
+              </v-table>
+
+              <v-divider />
+
+              <v-card-actions>
+                  <v-spacer />
+                  <v-btn
+                      color="primary"
+                      variant="flat"
+                      :loading="saving"
+                      :disabled="saving || loading"
+                      @click="save"
+                  >
+                      {{ $t('common.save') }}
+                  </v-btn>
+              </v-card-actions>
+          </v-card>
+      </v-container>
   </div>
 </template>
 
 <script>
-// import DataTable from '../../components/common/DataTable'
+import PageHeader from '../../components/common/PageHeader.vue'
+import EmptyState from '../../components/common/EmptyState.vue'
+import LoadingState from '../../components/common/LoadingState.vue'
 
 export default {
     data () {
         return {
             selected: [],
-            roles: {},
-            permissions: {},
-            loading: false,
+            roles: [],
+            permissions: [],
+            loading: true,
             saving: false,
-            breadcrumbs: [{
-                text: '',
-                disabled: false,
-                href: '#'
-            }, {
-                text: 'List'
-            }],
         }
     },
     components: {
-
+        PageHeader,
+        EmptyState,
+        LoadingState
     },
     methods: {
         getRoles () {

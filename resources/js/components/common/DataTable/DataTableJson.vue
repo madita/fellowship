@@ -90,12 +90,9 @@ onMounted(() => {
 <template>
     <v-row>
         <v-col cols="12">
-            {{localOptions}}
-            <h4 v-if="localOptions.length > 0">Options</h4>
+            <h3 v-if="localOptions && Object.keys(localOptions).length > 0" class="text-h6 mb-2">{{ $t('formBuilder.options') }}</h3>
 
-
-            <v-row v-for="(option, name) in localOptions" :key="name" class="answer-item d-flex align-center mb-1 ml-2">
-                {{option}} {{typeof option === 'object'}} {{Array.isArray(option)}}
+            <v-row v-for="(option, name) in localOptions" :key="name" class="d-flex align-center mb-1">
                 <template v-if="name === 'form'">
                     <DataTableJsonField v-model:modelFields="localOptions[name]" />
                 </template>
@@ -125,17 +122,4 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.answer-item {
-    display: flex;
-    justify-content: space-between; /* Align items to the left and right */
-    align-items: center;
-    padding: 8px 0;
-}
-
-.delete-icon, .edit-icon {
-    cursor: pointer;
-    margin-left: 10px;
-}
-
-
 </style>

@@ -15,12 +15,12 @@
             >
                 <template #placeholder>
                     <v-row class="fill-height ma-0" align="center" justify="center">
-                        <v-progress-circular indeterminate color="grey-lighten-1" />
+                        <v-progress-circular indeterminate color="primary" />
                     </v-row>
                 </template>
             </v-img>
             <div v-else class="media-card__file-icon d-flex align-center justify-center fill-height">
-                <v-icon :icon="fileIcon" size="64" color="grey" />
+                <v-icon :icon="fileIcon" size="64" class="text-medium-emphasis" />
             </div>
 
             <v-checkbox
@@ -32,15 +32,14 @@
             />
 
             <v-btn
-                icon
+                icon="mdi-delete"
                 size="small"
                 class="media-card__delete-btn"
                 color="error"
                 variant="flat"
+                :aria-label="$t('common.delete')"
                 @click.stop="$emit('delete', media)"
-            >
-                <v-icon icon="mdi-delete" size="small" />
-            </v-btn>
+            />
         </div>
 
         <v-card-text class="pa-2">

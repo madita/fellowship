@@ -34,6 +34,8 @@ const chipIcon = computed(() => isTagLike.value ? 'mdi-pound' : 'mdi-folder');
 const toTitle = (v) => (typeof v === 'string' ? v : (v?.title ?? String(v ?? '')));
 
 const multiple = computed(() => props.config.multiple !== false);
+const fieldLabel = computed(() => props.config.label?.toLowerCase() || 'item');
+const fieldLabelSingular = computed(() => fieldLabel.value.replace(/s$/, ''));
 
 const normalizeIn = (val) => {
     if (multiple.value) {
@@ -127,15 +129,14 @@ onMounted(() => {
             variant="outlined"
             density="compact"
             :prepend-inner-icon="isTagLike ? 'mdi-tag-plus' : 'mdi-folder-plus'"
-            :placeholder="`Type to search or create new ${config.label?.toLowerCase() || 'item'}`"
-            hint="Press Enter to add a new entry"
+            :placeholder="$t('dataTable.taxonomy.searchOrCreate', { label: fieldLabel })"
+            :hint="$t('dataTable.taxonomy.enterToAdd')"
             persistent-hint
         >
             <template #no-data>
                 <v-list-item>
-                    <v-list-item-title>
-                        <span v-if="search">No results matching "<strong>{{ search }}</strong>". Press Enter to create.</span>
-                        <span v-else>Start typing to search or create.</span>
+                    <v-list-item-title class="text-medium-emphasis">
+                        {{ search ? $t('dataTable.taxonomy.noMatch', { search }) : $t('dataTable.taxonomy.startTyping') }}
                     </v-list-item-title>
                 </v-list-item>
             </template>
@@ -161,14 +162,14 @@ onMounted(() => {
                 :prepend-icon="showAddInline ? 'mdi-chevron-up' : 'mdi-plus'"
                 @click="showAddInline = !showAddInline"
             >
-                Add new {{ config.label?.toLowerCase().replace(/s$/, '') || 'item' }}
+                {{ $t('dataTable.taxonomy.addNew', { label: fieldLabelSingular }) }}
             </v-btn>
 
             <v-expand-transition>
-                <div v-if="showAddInline" class="mt-2 d-flex gap-2 align-start">
+                <div v-if="showAddInline" class="mt-2 d-flex ga-2 align-start">
                     <v-text-field
                         v-model="newCategory"
-                        :label="`New ${config.label?.toLowerCase() || 'item'}`"
+                        :label="$t('dataTable.taxonomy.newLabel', { label: fieldLabel })"
                         variant="outlined"
                         density="compact"
                         hide-details

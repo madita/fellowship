@@ -112,65 +112,55 @@ onMounted(() => {
 <template>
     <v-row>
         <v-col cols="12">
-            <v-row>
-
-                <v-col class="ma-1"><h4>{{ $t('formBuilder.formFields') }}</h4></v-col>
-                <v-col class="text-right">
-                    <v-btn class="btn btn-secondary text-right" @click="addField" icon="mdi-plus"></v-btn>
-                </v-col>
-            </v-row>
+            <div class="d-flex align-center ga-2 mb-2">
+                <h3 class="text-subtitle-1 font-weight-medium flex-grow-1">{{ $t('formBuilder.formFields') }}</h3>
+                <v-btn variant="tonal" size="small" prepend-icon="mdi-plus" @click="addField">
+                    {{ $t('formBuilder.addField') }}
+                </v-btn>
+            </div>
 
             <v-row v-for="(field, name) in fields" :key="name" class="d-flex align-center">
 
 
-                <v-col cols="3">
+                <v-col cols="12" sm="6" md="3">
                     <v-text-field
                         density="compact"
-                        class="form-control"
                         v-model="field.label"
                         :label="$t('formBuilder.label')">
                     </v-text-field>
                 </v-col>
-                <v-col cols="3">
+                <v-col cols="12" sm="6" md="3">
                     <v-text-field
                         density="compact"
-                        class="form-control"
                         v-model="field.name"
                         :label="field.label">
                     </v-text-field>
                 </v-col>
-                <v-col cols="3">
+                <v-col cols="12" sm="6" md="3">
                     <v-text-field
                         density="compact"
-                        class="form-control"
                         v-model="field.placeholder"
                         :label="$t('formBuilder.placeholder')">
                     </v-text-field>
                 </v-col>
-                <v-col cols="3">
+                <v-col cols="12" sm="6" md="3">
                     <v-select
                         density="compact"
                         :label="$t('formBuilder.type')"
                         :items="['select', 'text','taxonomy']"
                         v-model="field.type"
-                        class="form-control v-col-5"
                     />
                 </v-col>
                 <v-col cols="12">
-
-
-                    <!--                        </div>-->
-
-                    <template class="form-control v-col-12" v-if="field.type==='select'">
+                    <div v-if="field.type==='select'">
                         <DataTableJsonOption
                             :name=name
                             :option="convertToArray(fields[name].options)"
                             v-model="fields[name].options">
                         </DataTableJsonOption>
-
-                    </template>
-                    <template class="form-control v-col-12" v-if="field.type==='taxonomy'">
-                        {{ $t('formBuilder.loadTaxonomies') }}
+                    </div>
+                    <div v-if="field.type==='taxonomy'">
+                        <div class="text-caption text-medium-emphasis mb-1">{{ $t('formBuilder.loadTaxonomies') }}</div>
                         <v-select
                             clearable
                             v-model="fields[name].options"
@@ -178,7 +168,7 @@ onMounted(() => {
                             item-value="name"
                             :items="taxonomies"
                             :label="$t('formBuilder.taxonomy')"
-
+                            density="compact"
                         ></v-select>
 
 <!--                        <v-combobox-->
@@ -190,7 +180,7 @@ onMounted(() => {
 <!--                            chips-->
 <!--                            clearable-->
 <!--                        ></v-combobox>-->
-                    </template>
+                    </div>
                 </v-col>
 
 
@@ -212,21 +202,4 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.answer-item {
-    display: flex;
-    justify-content: space-between; /* Align items to the left and right */
-    align-items: center;
-    padding: 8px 0;
-}
-
-.delete-icon, .edit-icon {
-    cursor: pointer;
-    margin-left: 10px;
-}
-
-
 </style>

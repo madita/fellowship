@@ -1,7 +1,8 @@
 <template>
-    <VDialog v-model="internalModelValue" max-width="500">
+    <VDialog v-model="internalModelValue" max-width="600">
         <VCard>
-            <VCardTitle class="text-h5">{{ $t('relatedContent.title') }}</VCardTitle>
+            <VCardTitle class="text-h6">{{ $t('relatedContent.title') }}</VCardTitle>
+            <VDivider />
             <VCardText>
                 <p>{{ $t('relatedContent.selectRelationType') }} <strong>{{ contentName }}</strong>:</p>
 
@@ -13,7 +14,6 @@
                     item-value="class"
                     :label="$t('relatedContent.relationType')"
                     :placeholder="$t('relatedContent.selectSourceType')"
-                    variant="underlined"
                 />
 
                 <VSelect
@@ -23,7 +23,6 @@
                     item-value="id"
                     :label="$t('relatedContent.selectItem')"
                     :placeholder="$t('relatedContent.selectAnItem')"
-                    variant="underlined"
                     :disabled="!selectedSource"
                 />
 
@@ -35,7 +34,6 @@
                     item-value="class"
                     :label="$t('relatedContent.modelType')"
                     :placeholder="$t('relatedContent.selectModelType')"
-                    variant="underlined"
                     :disabled="!selectedSource"
                 />
 
@@ -47,15 +45,15 @@
                     item-value="id"
                     :label="$t('relatedContent.selectItem')"
                     :placeholder="$t('relatedContent.selectAnItem')"
-                    variant="underlined"
                     :disabled="!selectedRelated"
                 />
             </VCardText>
             <VCardActions>
                 <VSpacer/>
-                <VBtn color="grey" :disabled="saving" @click="cancel">{{ $t('common.cancel') }}</VBtn>
+                <VBtn variant="text" :disabled="saving" @click="cancel">{{ $t('common.cancel') }}</VBtn>
                 <VBtn
                     color="primary"
+                    variant="flat"
                     :loading="saving"
                     :disabled="saving || !selectedSource || !selectedSourceItem || !selectedRelated || !selectedRelatedItem"
                     @click="confirm"

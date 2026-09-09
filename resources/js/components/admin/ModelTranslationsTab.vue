@@ -5,7 +5,7 @@
             <v-col cols="12">
                 <v-card variant="outlined" class="mb-4">
                     <v-card-title class="d-flex align-center justify-space-between">
-                        <span>{{ $t('modelTranslations.translationCoverage') }}</span>
+                        <span class="text-subtitle-1 font-weight-medium">{{ $t('modelTranslations.translationCoverage') }}</span>
                         <v-btn
                             variant="tonal"
                             color="primary"
@@ -52,7 +52,7 @@
             <!-- Model List -->
             <v-col cols="12" md="4">
                 <v-card variant="outlined">
-                    <v-card-title>{{ $t('modelTranslations.models') }}</v-card-title>
+                    <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('modelTranslations.models') }}</v-card-title>
                     <v-divider />
                     <v-list density="compact" nav>
                         <v-list-item
@@ -66,7 +66,7 @@
                             </template>
                             <v-list-item-title>{{ model.label }}</v-list-item-title>
                             <template #append>
-                                <v-chip size="x-small" color="grey">
+                                <v-chip size="x-small" variant="tonal">
                                     {{ model.count }}
                                 </v-chip>
                             </template>
@@ -106,17 +106,15 @@
             <!-- Items List -->
             <v-col cols="12" md="8">
                 <v-card v-if="!selectedModel" variant="outlined">
-                    <v-card-text class="text-center pa-8">
-                        <v-icon icon="mdi-translate" size="64" color="grey" />
-                        <div class="text-h6 text-grey mt-4">
-                            {{ $t('modelTranslations.selectModelToManage') }}
-                        </div>
-                    </v-card-text>
+                    <empty-state
+                        icon="mdi-translate"
+                        :title="$t('modelTranslations.selectModelToManage')"
+                    />
                 </v-card>
 
                 <v-card v-else variant="outlined">
-                    <v-card-title class="d-flex align-center justify-space-between">
-                        <span>{{ getSelectedModelLabel() }}</span>
+                    <v-card-title class="d-flex align-center justify-space-between ga-2">
+                        <span class="text-subtitle-1 font-weight-medium">{{ getSelectedModelLabel() }}</span>
                         <v-text-field
                             v-model="search"
                             :placeholder="$t('common.search')"
@@ -205,6 +203,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import TranslationEditor from './TranslationEditor.vue';
+import EmptyState from '../common/EmptyState.vue';
 
 const { t, locale } = useI18n();
 
@@ -415,9 +414,5 @@ onMounted(async () => {
 <style scoped>
 .model-translations-tab :deep(.v-data-table) {
     font-size: 14px;
-}
-
-.ga-1 {
-    gap: 4px;
 }
 </style>

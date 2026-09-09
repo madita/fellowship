@@ -72,52 +72,39 @@ watch(localOption, (newValue) => {
     <v-row>
         <v-col cols="12">
             <!-- Add Button -->
-            <v-btn v-if="!showModal" @click="showModal = true" class="mb-1">
-                Add {{ name }}
+            <v-btn
+                v-if="!showModal"
+                variant="tonal"
+                size="small"
+                prepend-icon="mdi-plus"
+                class="mb-2"
+                @click="showModal = true"
+            >
+                {{ $t('formBuilder.addOption', { name }) }}
             </v-btn>
 
-            <!-- Modal for adding new option -->
-            <template v-if="showModal">
-                <v-row>
-                    <v-text-field v-model="newOptionKey" :label="$t('formBuilder.key')" density="compact" class="me-1 v-col-5" />
-                    <v-text-field v-model="newOptionValue" :label="$t('formBuilder.value')" density="compact" class="me-1 v-col-5" />
-                    <v-icon @click="addOption()">mdi-check</v-icon>
-                    <v-icon @click="showModal = false">mdi-close</v-icon>
-                </v-row>
-            </template>
+            <!-- Inline form for adding a new option -->
+            <div v-if="showModal" class="d-flex align-center ga-2 mb-2">
+                <v-text-field v-model="newOptionKey" :label="$t('formBuilder.key')" density="compact" hide-details class="flex-grow-1" />
+                <v-text-field v-model="newOptionValue" :label="$t('formBuilder.value')" density="compact" hide-details class="flex-grow-1" />
+                <v-btn icon="mdi-check" variant="text" size="small" color="primary" :aria-label="$t('common.add')" @click="addOption()" />
+                <v-btn icon="mdi-close" variant="text" size="small" :aria-label="$t('common.cancel')" @click="showModal = false" />
+            </div>
 
             <!-- Display Options List -->
-            <ul>
-                {{localOption}}
-                <li v-for="(value, index) in localOption" :key="index" class="answer-item d-flex align-center mb-1 ml-2">
-                    <template v-if="editIndex === index">
-                        <v-text-field v-model="editKey" :label="$t('formBuilder.key')" density="compact" class="me-1 v-col-5" />
-                        <v-text-field v-model="editValue" :label="$t('formBuilder.value')" density="compact" class="me-1 v-col-5" />
-                        <v-icon @click="saveEdit(index)">mdi-check</v-icon>
-                    </template>
-                    <template v-else>
-                        <span>{{ index }} - {{ value.key }}: {{ value.value }}</span>
-                        <span>
-              <v-icon class="edit-icon" @click="editOption(index, value)">mdi-pencil</v-icon>
-              <v-icon class="delete-icon" @click="removeOption(index)">mdi-delete</v-icon>
-            </span>
-                    </template>
-                </li>
-            </ul>
+            <div v-for="(value, index) in localOption" :key="index" class="d-flex align-center ga-2 mb-1">
+                <template v-if="editIndex === index">
+                    <v-text-field v-model="editKey" :label="$t('formBuilder.key')" density="compact" hide-details class="flex-grow-1" />
+                    <v-text-field v-model="editValue" :label="$t('formBuilder.value')" density="compact" hide-details class="flex-grow-1" />
+                    <v-btn icon="mdi-check" variant="text" size="small" color="primary" :aria-label="$t('common.save')" @click="saveEdit(index)" />
+                </template>
+                <template v-else>
+                    <span class="flex-grow-1 text-body-2">{{ value.key }}: {{ value.value }}</span>
+                    <v-btn icon="mdi-pencil" variant="text" size="small" :aria-label="$t('common.edit')" @click="editOption(index, value)" />
+                    <v-btn icon="mdi-delete" variant="text" size="small" color="error" :aria-label="$t('common.delete')" @click="removeOption(index)" />
+                </template>
+            </div>
         </v-col>
     </v-row>
 </template>
 
-<style scoped>
-.answer-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1px 0;
-}
-
-.delete-icon, .edit-icon {
-    cursor: pointer;
-    margin-left: 10px;
-}
-</style>

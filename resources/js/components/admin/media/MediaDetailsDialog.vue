@@ -5,12 +5,10 @@
         scrollable
     >
         <v-card v-if="media">
-            <v-card-title class="d-flex align-center">
+            <v-card-title class="text-h6 d-flex align-center">
                 <span class="text-truncate" style="max-width: 80%;">{{ media.file_name }}</span>
                 <v-spacer />
-                <v-btn icon variant="text" @click="close">
-                    <v-icon icon="mdi-close" />
-                </v-btn>
+                <v-btn icon="mdi-close" variant="text" :aria-label="$t('common.close')" @click="close" />
             </v-card-title>
 
             <v-divider />
@@ -29,13 +27,13 @@
                             >
                                 <template #placeholder>
                                     <v-row class="fill-height ma-0" align="center" justify="center">
-                                        <v-progress-circular indeterminate color="grey-lighten-1" />
+                                        <v-progress-circular indeterminate color="primary" />
                                     </v-row>
                                 </template>
                             </v-img>
                             <div v-else class="d-flex flex-column align-center">
-                                <v-icon :icon="fileIcon" size="128" color="grey" />
-                                <div class="text-h6 text-grey mt-4">{{ fileType }}</div>
+                                <v-icon :icon="fileIcon" size="128" class="text-medium-emphasis" />
+                                <div class="text-h6 text-medium-emphasis mt-4">{{ fileType }}</div>
                             </div>
                         </div>
                     </v-col>
@@ -143,22 +141,20 @@
 
             <v-card-actions>
                 <v-btn
-                    color="primary"
                     variant="tonal"
+                    prepend-icon="mdi-download"
                     :href="media.url"
                     target="_blank"
                     download
                 >
-                    <v-icon icon="mdi-download" start />
                     {{ $t('mediaCenter.download') }}
                 </v-btn>
 
                 <v-btn
-                    color="primary"
                     variant="tonal"
+                    prepend-icon="mdi-content-copy"
                     @click="copyUrl"
                 >
-                    <v-icon icon="mdi-content-copy" start />
                     {{ $t('mediaCenter.copyUrl') }}
                 </v-btn>
 
@@ -166,10 +162,10 @@
 
                 <v-btn
                     color="error"
-                    variant="tonal"
+                    variant="flat"
+                    prepend-icon="mdi-delete"
                     @click="confirmDelete"
                 >
-                    <v-icon icon="mdi-delete" start />
                     {{ $t('common.delete') }}
                 </v-btn>
             </v-card-actions>

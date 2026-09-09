@@ -1,7 +1,13 @@
 <template>
-    <v-container fluid>
-        <h1 class="text-h4 mb-4">{{ t('menuAdmin.title') }}</h1>
+    <div class="flex-grow-1">
+    <page-header
+        :title="t('menuAdmin.title')"
+        :subtitle="t('menuAdmin.subtitle')"
+        icon="mdi-menu"
+        fluid
+    />
 
+    <v-container fluid>
         <v-row>
             <!-- Menu list -->
             <v-col cols="12" md="4">
@@ -74,9 +80,12 @@
                         </v-list-item>
                     </v-list>
 
-                    <v-card-text v-else class="text-center text-medium-emphasis">
-                        {{ t('menuAdmin.emptyMenus') }}
-                    </v-card-text>
+                    <empty-state
+                        v-else
+                        compact
+                        icon="mdi-menu"
+                        :title="t('menuAdmin.emptyMenus')"
+                    />
                 </v-card>
             </v-col>
 
@@ -179,7 +188,6 @@
                                         <v-chip
                                             v-if="!item.is_active"
                                             size="x-small"
-                                            color="grey"
                                             variant="tonal"
                                             class="me-2"
                                         >
@@ -244,25 +252,20 @@
                             </template>
                         </draggable>
 
-                        <div
+                        <empty-state
                             v-else
-                            class="text-center text-medium-emphasis py-8"
-                        >
-                            {{ t('menuAdmin.emptyItems') }}
-                        </div>
+                            compact
+                            icon="mdi-format-list-bulleted"
+                            :title="t('menuAdmin.emptyItems')"
+                        />
                     </v-card-text>
                 </v-card>
 
-                <v-card
-                    v-else
-                    flat
-                    border
-                    class="text-center pa-12"
-                >
-                    <v-icon size="64" color="grey-lighten-1">mdi-menu</v-icon>
-                    <p class="text-body-1 mt-3 text-medium-emphasis">
-                        {{ t('menuAdmin.selectPrompt') }}
-                    </p>
+                <v-card v-else flat border>
+                    <empty-state
+                        icon="mdi-menu"
+                        :title="t('menuAdmin.selectPrompt')"
+                    />
                 </v-card>
             </v-col>
         </v-row>
@@ -293,6 +296,7 @@
             {{ snack.text }}
         </v-snackbar>
     </v-container>
+    </div>
 </template>
 
 <script setup>
@@ -302,6 +306,8 @@ import axios from 'axios';
 import draggable from 'vuedraggable';
 import MenuDialog from '@/components/admin/MenuDialog.vue';
 import MenuItemDialog from '@/components/admin/MenuItemDialog.vue';
+import PageHeader from '../../components/common/PageHeader.vue';
+import EmptyState from '../../components/common/EmptyState.vue';
 import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();

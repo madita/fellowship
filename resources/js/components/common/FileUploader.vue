@@ -3,9 +3,9 @@
         <!-- Global Progress Bar -->
         <v-progress-linear
             v-if="uploadInProgress"
-            :value="globalProgress"
+            :model-value="globalProgress"
             height="5"
-            color="blue"
+            color="primary"
             class="global-progress-bar"
         ></v-progress-linear>
 
@@ -14,13 +14,15 @@
             :disabled="validFiles.length === 0 || uploadInProgress"
             :loading="uploadInProgress"
             color="primary"
+            variant="elevated"
+            class="mb-4"
             @click="uploadFiles"
         >
             {{ t('commonComponents.fileUploader.uploadFiles', { count: validFiles.length }) }}
         </v-btn>
         <!-- Dropzone -->
         <div
-            class="dropzone"
+            class="dropzone mb-4"
             @dragover.prevent="dragOver"
             @dragleave.prevent="dragLeave"
             @drop.prevent="dropFiles"
@@ -35,12 +37,12 @@
             />
 
             <div class="dropzone-content">
-                <v-icon size="48">mdi-cloud-upload</v-icon>
-                <p>
+                <v-icon size="48" color="primary">mdi-cloud-upload</v-icon>
+                <p class="text-body-1 mt-2 mb-0">
                     {{ t('commonComponents.fileUploader.dragDropOr') }}
                     <span class="file-select" @click="triggerFileInput">{{ t('commonComponents.fileUploader.browse') }}</span>
                 </p>
-                <p v-if="files.length">{{ t('commonComponents.fileUploader.filesSelected', { count: files.length }) }}</p>
+                <p v-if="files.length" class="text-body-2 text-medium-emphasis mt-1 mb-0">{{ t('commonComponents.fileUploader.filesSelected', { count: files.length }) }}</p>
             </div>
         </div>
 
@@ -63,22 +65,24 @@
                             >
                                 <!-- Delete Icon -->
                                 <v-btn
-                                    icon
+                                    icon="mdi-delete"
+                                    variant="text"
+                                    color="error"
                                     class="delete-icon"
                                     :disabled="uploadInProgress"
+                                    :aria-label="t('commonComponents.fileUploader.removeFile')"
+                                    :title="t('commonComponents.fileUploader.removeFile')"
                                     @click="removeFile(index)"
-                                >
-                                    <v-icon color="red">mdi-delete</v-icon>
-                                </v-btn>
+                                />
                                 <!-- File Name (only visible on hover) -->
                                 <div v-show="isHovering" class="file-name-overlay">
                                     {{ file.name }}
                                 </div>
                                 <v-progress-linear
                                     v-if="file.uploadProgress > 0"
-                                    :value="file.uploadProgress"
+                                    :model-value="file.uploadProgress"
                                     height="4"
-                                    color="blue"
+                                    color="primary"
                                     class="thumbnail-progress-bar"
                                 ></v-progress-linear>
                             </v-img>
@@ -90,7 +94,7 @@
                             :label="t('commonComponents.fileUploader.addCaption')"
                             :placeholder="t('commonComponents.fileUploader.captionPlaceholder')"
                         />
-                        <div v-if="file.warning" class="warning">
+                        <div v-if="file.warning" class="text-caption text-error mt-1">
                             {{ file.warning }}
                         </div>
 
@@ -104,6 +108,8 @@
             :disabled="validFiles.length === 0 || uploadInProgress"
             :loading="uploadInProgress"
             color="primary"
+            variant="elevated"
+            class="mt-4"
             @click="uploadFiles"
         >
             {{ t('commonComponents.fileUploader.uploadFiles', { count: validFiles.length }) }}
@@ -307,12 +313,17 @@ const fileInput = ref(null);
 }
 /* Dropzone styles */
 .dropzone {
-    border: 2px dashed #aaa;
+    border: 2px dashed rgba(var(--v-border-color), var(--v-border-opacity));
     padding: 30px;
     text-align: center;
     border-radius: 10px;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.dropzone:hover {
+    border-color: rgb(var(--v-theme-primary));
+    background-color: rgba(var(--v-theme-primary), 0.05);
 }
 
 .dropzone-content {
@@ -322,13 +333,13 @@ const fileInput = ref(null);
 }
 
 .file-select {
-    color: #3f51b5;
+    color: rgb(var(--v-theme-primary));
     text-decoration: underline;
     cursor: pointer;
 }
 
 .file-select:hover {
-    color: #1e88e5;
+    opacity: 0.8;
 }
 
 /* File Card Styles */
@@ -361,7 +372,7 @@ const fileInput = ref(null);
     color: #fff;
     text-align: center;
     padding: 5px;
-    font-size: 14px;
+    font-size: 0.875rem;
 }
 
 .thumbnail-progress-bar {
@@ -378,12 +389,6 @@ const fileInput = ref(null);
     left: 0;
     width: 100%;
     z-index: 1000;
-}
-
-.warning {
-    color: red;
-    font-size: 0.9em;
-    margin-top: 5px;
 }
 
 </style>
