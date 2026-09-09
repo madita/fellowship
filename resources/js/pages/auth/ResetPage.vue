@@ -1,7 +1,7 @@
 <template>
     <v-card class="pa-2" elevation="4">
-        <v-card-title class="justify-center display-1 mb-2">{{ $t('auth.setNewPassword') }}</v-card-title>
-        <div class="overline">{{ status }}</div>
+        <v-card-title class="justify-center text-h5 mb-2">{{ $t('auth.setNewPassword') }}</v-card-title>
+        <div class="text-overline text-medium-emphasis">{{ status }}</div>
 
         <v-form ref="form" v-model="isFormValid" lazy-validation @submit.prevent="submit">
             <v-text-field

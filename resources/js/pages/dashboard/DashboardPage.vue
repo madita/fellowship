@@ -1,52 +1,46 @@
 <template>
-    <v-container fluid class="pa-0">
-    <div class="dashboard-container">
-        <!-- Dashboard Header -->
-        <div class="dashboard-header mb-6">
-            <v-row align="center" class="mb-4">
-                <v-col cols="12" md="6">
-                    <h1 class="dashboard-title text-h3 font-weight-bold mb-2">
-                        {{ $t('dashboard.welcomeBack', { username: user?.username || 'User' }) }} 👋
-                    </h1>
-                    <p class="text-subtitle-1 text-medium-emphasis">
-                        {{ $t('dashboard.customizeDashboard') }}
-                    </p>
-                </v-col>
-                <v-col cols="12" md="6" class="text-right">
-                    <v-btn
-                        color="primary"
-                        variant="elevated"
-                        prepend-icon="mdi-widgets"
-                        @click="showWidgetPanel = true"
-                        class="mr-3"
-                    >
-                        {{ $t('dashboard.addWidgets') }}
-                    </v-btn>
-                    <v-btn
-                        color="secondary"
-                        variant="tonal"
-                        prepend-icon="mdi-restore"
-                        @click="resetLayout"
-                    >
-                        {{ $t('dashboard.resetLayout') }}
-                    </v-btn>
-                </v-col>
-            </v-row>
-        </div>
-
-        <div v-if="loadingLayout" class="text-center py-12">
-            <v-progress-circular size="40" indeterminate color="primary" />
-        </div>
-
-        <!-- Empty dashboard -->
-        <v-card v-else-if="activeWidgets.length === 0" variant="tonal" class="pa-8 text-center mb-6">
-            <v-icon size="48" class="mb-3">mdi-view-dashboard-outline</v-icon>
-            <div class="text-h6 mb-1">{{ $t('dashboard.emptyTitle') }}</div>
-            <div class="text-body-2 text-medium-emphasis mb-4">{{ $t('dashboard.emptyHint') }}</div>
-            <v-btn color="primary" prepend-icon="mdi-widgets" @click="showWidgetPanel = true">
+    <div>
+    <page-header
+        fluid
+        :title="$t('dashboard.welcomeBack', { username: user?.username || 'User' })"
+        :subtitle="$t('dashboard.customizeDashboard')"
+        icon="mdi-view-dashboard"
+    >
+        <template #actions>
+            <v-btn
+                color="primary"
+                variant="elevated"
+                prepend-icon="mdi-widgets"
+                @click="showWidgetPanel = true"
+            >
                 {{ $t('dashboard.addWidgets') }}
             </v-btn>
-        </v-card>
+            <v-btn
+                variant="tonal"
+                prepend-icon="mdi-restore"
+                @click="resetLayout"
+            >
+                {{ $t('dashboard.resetLayout') }}
+            </v-btn>
+        </template>
+    </page-header>
+
+    <v-container fluid class="dashboard-container">
+        <loading-state v-if="loadingLayout" />
+
+        <!-- Empty dashboard -->
+        <empty-state
+            v-else-if="activeWidgets.length === 0"
+            icon="mdi-view-dashboard-outline"
+            :title="$t('dashboard.emptyTitle')"
+            :text="$t('dashboard.emptyHint')"
+        >
+            <template #actions>
+                <v-btn color="primary" variant="flat" prepend-icon="mdi-widgets" @click="showWidgetPanel = true">
+                    {{ $t('dashboard.addWidgets') }}
+                </v-btn>
+            </template>
+        </empty-state>
 
         <!-- Drag & Drop Widget Grid -->
         <div
@@ -86,7 +80,7 @@
                             <v-icon color="white" size="18">{{ definition(widget).icon }}</v-icon>
                         </v-avatar>
                         <div class="flex-grow-1">
-                            <div class="text-subtitle-1 font-weight-bold">{{ widgetTitle(widget) }}</div>
+                            <div class="text-subtitle-1 font-weight-medium">{{ widgetTitle(widget) }}</div>
                             <div class="text-caption text-medium-emphasis">{{ widget.subtitle }}</div>
                         </div>
                         <v-menu>
@@ -147,14 +141,15 @@
         </div>
 
         <!-- Widget Panel Dialog -->
-        <v-dialog v-model="showWidgetPanel" max-width="800">
+        <v-dialog v-model="showWidgetPanel" max-width="900">
             <v-card>
-                <v-card-title class="d-flex align-center pa-6">
-                    <v-icon color="primary" class="mr-3">mdi-widgets</v-icon>
-                    <span class="text-h5">{{ $t('dashboard.availableWidgets') }}</span>
+                <v-card-title class="text-h6 d-flex align-center">
+                    <v-icon color="primary" class="mr-2">mdi-widgets</v-icon>
+                    {{ $t('dashboard.availableWidgets') }}
                 </v-card-title>
+                <v-divider />
 
-                <v-card-text class="pa-6">
+                <v-card-text>
                     <v-row>
                         <v-col
                             v-for="widget in availableWidgets"
@@ -171,13 +166,13 @@
                                     <v-avatar :color="widget.color" size="48" class="mb-3">
                                         <v-icon color="white" size="24">{{ widget.icon }}</v-icon>
                                     </v-avatar>
-                                    <div class="text-subtitle-1 font-weight-bold mb-1">
+                                    <div class="text-subtitle-1 font-weight-medium mb-1">
                                         {{ $t(`dashboard.widgets.${widget.type}.title`) }}
                                     </div>
                                     <div class="text-caption text-medium-emphasis mb-2">
                                         {{ $t(`dashboard.widgets.${widget.type}.description`) }}
                                     </div>
-                                    <v-chip v-if="widget.count" color="primary" size="small">
+                                    <v-chip v-if="widget.count" color="primary" variant="tonal" size="small">
                                         {{ $t('dashboard.onDashboard', { count: widget.count }) }}
                                     </v-chip>
                                 </v-card-text>
@@ -186,9 +181,9 @@
                     </v-row>
                 </v-card-text>
 
-                <v-card-actions class="pa-6 pt-0">
+                <v-card-actions>
                     <v-spacer></v-spacer>
-                    <v-btn @click="showWidgetPanel = false">{{ $t('common.close') }}</v-btn>
+                    <v-btn variant="text" @click="showWidgetPanel = false">{{ $t('common.close') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -196,11 +191,12 @@
         <!-- Widget Settings Dialog -->
         <v-dialog v-model="showWidgetSettings" max-width="600">
             <v-card v-if="selectedWidget">
-                <v-card-title class="pa-6">
-                    <span class="text-h5">{{ $t('dashboard.widgetSettings') }}: {{ widgetTitle(selectedWidget) }}</span>
+                <v-card-title class="text-h6">
+                    {{ $t('dashboard.widgetSettings') }}: {{ widgetTitle(selectedWidget) }}
                 </v-card-title>
+                <v-divider />
 
-                <v-card-text class="pa-6">
+                <v-card-text>
                     <v-form>
                         <v-text-field
                             v-model="selectedWidget.title"
@@ -248,15 +244,15 @@
                     </v-form>
                 </v-card-text>
 
-                <v-card-actions class="pa-6 pt-0">
+                <v-card-actions>
                     <v-spacer></v-spacer>
-                    <v-btn @click="showWidgetSettings = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" @click="saveWidgetSettings">{{ $t('common.save') }}</v-btn>
+                    <v-btn variant="text" @click="showWidgetSettings = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" variant="flat" @click="saveWidgetSettings">{{ $t('common.save') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
-    </div>
     </v-container>
+    </div>
 </template>
 
 <script>
@@ -274,6 +270,9 @@ import ConversationsWidget from '@/components/dashboard/ConversationsWidget.vue'
 import SandboxWidget from '@/components/dashboard/SandboxWidget.vue';
 import GalleryWidget from '@/components/dashboard/GalleryWidget.vue';
 import TicketOverviewWidget from '@/components/dashboard/TicketOverviewWidget.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 /**
  * Personal dashboard: a drag & drop grid of widgets, each showing live
@@ -284,6 +283,9 @@ import TicketOverviewWidget from '@/components/dashboard/TicketOverviewWidget.vu
 export default {
     name: 'DynamicDashboard',
     components: {
+        PageHeader,
+        EmptyState,
+        LoadingState,
         EventsWidget,
         WikiWidget,
         NotificationsWidget,
@@ -687,26 +689,6 @@ export default {
 
 
 <style scoped>
-.dashboard-container {
-    padding: 24px;
-    min-height: 100vh;
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
-}
-
-.dashboard-header {
-    background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.08) 0%, rgba(var(--v-theme-surface), 0.1) 100%);
-    border-radius: 16px;
-    padding: 24px;
-    backdrop-filter: blur(10px);
-}
-
-.dashboard-title {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
 .widget-grid {
     position: relative;
     min-height: 600px;
@@ -744,28 +726,27 @@ export default {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(10px);
     background-color: rgb(var(--v-theme-surface));
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-/* Light theme widget cards */
 .v-theme--light .widget-card {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.v-theme--dark .widget-card {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+.widget-card:hover {
+    transform: translateY(-2px);
 }
 
 .v-theme--light .widget-card:hover {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
-    transform: translateY(-2px);
-}
-
-/* Dark theme widget cards */
-.v-theme--dark .widget-card {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .v-theme--dark .widget-card:hover {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6) !important;
-    transform: translateY(-2px);
 }
 
 .widget-card.drag-target {
@@ -795,16 +776,8 @@ export default {
 
 .widget-header {
     cursor: grab;
-}
-
-.v-theme--light .widget-header {
-    background: rgba(0, 0, 0, 0.02);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.v-theme--dark .widget-header {
-    background: rgba(255, 255, 255, 0.03);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(var(--v-theme-on-surface), 0.03);
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .widget-header:active {
@@ -871,14 +844,6 @@ export default {
 }
 
 @media (max-width: 960px) {
-    .dashboard-container {
-        padding: 16px;
-    }
-
-    .dashboard-header {
-        padding: 16px;
-    }
-
     .widget-grid {
         position: static;
         display: grid;
@@ -907,66 +872,23 @@ export default {
     width: 4px;
 }
 
-.v-theme--light .widget-content::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
+.widget-content::-webkit-scrollbar-track {
+    background: rgba(var(--v-theme-on-surface), 0.05);
     border-radius: 2px;
 }
 
-.v-theme--light .widget-content::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
+.widget-content::-webkit-scrollbar-thumb {
+    background: rgba(var(--v-theme-on-surface), 0.2);
     border-radius: 2px;
 }
 
-.v-theme--light .widget-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.3);
+.widget-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--v-theme-on-surface), 0.3);
 }
 
-.v-theme--dark .widget-content::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 2px;
-}
-
-.v-theme--dark .widget-content::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
-}
-
-.v-theme--dark .widget-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-/* Button styling */
-.v-btn {
-    border-radius: 12px !important;
-    text-transform: none !important;
-    font-weight: 600 !important;
-}
-
-/* Dialog styling */
-.v-dialog .v-card {
-    border-radius: 20px !important;
-}
-
-.v-theme--light .v-dialog .v-card {
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
-}
-
-.v-theme--dark .v-dialog .v-card {
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
-}
-
-/* Color picker styling */
+/* Color picker in the settings dialog */
 .v-color-picker {
-    border-radius: 12px !important;
     box-shadow: none !important;
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
-
-.v-theme--light .v-color-picker {
-    border: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.v-theme--dark .v-color-picker {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
 </style>

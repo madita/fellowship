@@ -1,5 +1,11 @@
 <template>
-    <div>
+    <widget-state
+        :loading="loading"
+        :error="error"
+        :empty="recentConversations.length === 0"
+        empty-icon="mdi-message-outline"
+        :empty-text="t('dashboard.widgets.conversations.empty')"
+    >
         <!-- Unread Count Summary -->
         <div v-if="totalUnreadCount > 0" class="mb-3">
             <v-card color="primary" variant="tonal">
@@ -7,7 +13,7 @@
                     <div class="d-flex align-center justify-space-between">
                         <div>
                             <div class="text-h5 font-weight-bold">{{ totalUnreadCount }}</div>
-                            <div class="text-caption">Unread Messages</div>
+                            <div class="text-caption">{{ t('dashboard.widgets.conversations.unread') }}</div>
                         </div>
                         <v-icon size="40" color="primary">mdi-message-badge</v-icon>
                     </div>
@@ -62,45 +68,27 @@
                         {{ truncateMessage(conversation.body) }}
                     </span>
                     <span v-else class="text-medium-emphasis">
-                        Start a conversation
+                        {{ t('dashboard.widgets.conversations.noMessages') }}
                     </span>
                     <div class="text-caption text-medium-emphasis mt-1">
-                        {{ conversation.created_at_human || 'Recently' }}
+                        {{ conversation.created_at_human || t('dashboard.widgets.conversations.recently') }}
                     </div>
                 </v-list-item-subtitle>
             </v-list-item>
-
-            <!-- Loading state -->
-            <v-list-item v-if="loading && conversations.length === 0">
-                <v-list-item-title class="text-center">
-                    <v-progress-circular indeterminate size="24" color="primary" />
-                </v-list-item-title>
-            </v-list-item>
-
-            <!-- Load failure: the same inline state the other widgets show -->
-            <v-list-item v-else-if="error">
-                <v-alert type="error" variant="tonal" density="compact" class="text-caption w-100">
-                    {{ error }}
-                </v-alert>
-            </v-list-item>
-
-            <!-- Empty state -->
-            <v-list-item v-else-if="!loading && recentConversations.length === 0">
-                <v-list-item-title class="text-center text-medium-emphasis">
-                    <v-icon size="32" color="grey-lighten-2" class="mb-2">mdi-message-outline</v-icon>
-                    <div class="text-caption">No conversations yet</div>
-                </v-list-item-title>
-            </v-list-item>
         </v-list>
-    </div>
+    </widget-state>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConversationsStore } from '@/store/conversationsStore.js'
 import { useUserStore } from '@/store/userStore.js'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import WidgetState from './WidgetState.vue'
 import eventBus from '@/components/common/eventBus.js'
+
+const { t } = useI18n()
 
 const props = defineProps({
     widgetData: {
@@ -149,11 +137,11 @@ function getConversationName(conversation) {
     if (participantCount > 1) {
         // Group chat
         const otherUsers = conversation.users?.filter(u => u.id !== userStore.user?.id) || []
-        return otherUsers.map(u => u.username).join(', ') || 'Group Chat'
+        return otherUsers.map(u => u.username).join(', ') || t('dashboard.widgets.conversations.groupChat')
     } else {
         // 1-on-1
         const otherUser = getOtherUser(conversation)
-        return otherUser?.username || 'User'
+        return otherUser?.username || t('dashboard.widgets.conversations.unknownUser')
     }
 }
 
@@ -200,14 +188,14 @@ onMounted(async () => {
 }
 
 .conversation-item:hover {
-    background-color: rgba(0, 0, 0, 0.04);
+    background-color: rgba(var(--v-theme-on-surface), 0.04);
 }
 
 .unread-item {
-    background-color: rgba(25, 118, 210, 0.08);
+    background-color: rgba(var(--v-theme-primary), 0.08);
 }
 
 .unread-item:hover {
-    background-color: rgba(25, 118, 210, 0.12);
+    background-color: rgba(var(--v-theme-primary), 0.12);
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <v-card class="my-2">
-    <v-card-title>{{ $t('users.edit.userInformation') }}</v-card-title>
+    <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('users.edit.userInformation') }}</v-card-title>
     <v-card-text>
       <v-form>
         <v-row>
@@ -20,15 +20,15 @@
               v-model="menu"
               :close-on-content-click="false"
               transition="scale-transition"
-              offset-y
+              location="bottom"
               min-width="290px"
             >
-              <template v-slot:activator="{ probs }">
+              <template v-slot:activator="{ props }">
                 <v-text-field
                   v-model="date"
                   :label="$t('users.edit.birthdayDate')"
                   readonly
-                  v-bind="probs"
+                  v-bind="props"
                 ></v-text-field>
               </template>
               <v-date-picker
@@ -49,9 +49,9 @@
         </v-row>
 
         <div class="d-flex">
-          <v-btn>{{ $t('users.edit.reset') }}</v-btn>
+          <v-btn variant="text">{{ $t('users.edit.reset') }}</v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="bg-primary">{{ $t('common.save') }}</v-btn>
+          <v-btn color="primary">{{ $t('common.save') }}</v-btn>
         </div>
       </v-form>
     </v-card-text>

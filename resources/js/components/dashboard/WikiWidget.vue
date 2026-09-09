@@ -15,6 +15,7 @@
             <div class="d-flex align-center mb-1">
                 <v-chip
                     :color="change.action === 'created' ? 'success' : 'warning'"
+                    variant="tonal"
                     size="x-small"
                     class="mr-2"
                 >

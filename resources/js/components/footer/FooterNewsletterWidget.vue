@@ -6,19 +6,18 @@
             {{ config.description }}
         </div>
 
-        <div class="d-flex flex-column flex-sm-row w-full">
+        <div class="d-flex flex-column flex-sm-row ga-2">
             <v-text-field
                 v-model="email"
-                variant="outlined"
                 :label="$t('common.yourEmail')"
                 density="compact"
-                class="mr-sm-2 mb-2 mb-sm-0"
                 :error-messages="error"
                 :disabled="loading"
                 @keyup.enter="subscribe"
             ></v-text-field>
             <v-btn
                 color="primary"
+                variant="elevated"
                 class="flex-shrink-0"
                 :loading="loading"
                 @click="subscribe"

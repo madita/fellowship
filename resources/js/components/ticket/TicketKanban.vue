@@ -121,17 +121,18 @@ onMounted(() => {
     <div class="kanban-board">
         <v-progress-linear v-if="loading || updatingIds.length > 0" indeterminate color="primary" />
 
-        <div class="kanban-columns">
+        <div class="kanban-columns d-flex ga-3 pa-4 flex-grow-1 overflow-x-auto">
             <div
                 v-for="col in columns"
                 :key="col.status"
-                class="kanban-column"
+                class="kanban-column d-flex flex-column flex-shrink-0 rounded-lg"
             >
                 <!-- Column Header -->
-                <div class="kanban-column-header pa-3">
+                <div class="flex-shrink-0 d-flex align-center pa-3 border-b">
                     <v-chip
                         :color="col.color"
                         size="small"
+                        variant="tonal"
                         label
                     >
                         {{ col.label }}
@@ -156,9 +157,10 @@ onMounted(() => {
                             class="kanban-card mb-2"
                             :class="{ 'kanban-card--busy': updatingIds.includes(element.id) }"
                             variant="outlined"
+                            rounded="lg"
                             role="button"
                             tabindex="0"
-                            :aria-label="`Open ticket: ${element.title}`"
+                            :aria-label="t('tickets.openTicket', { title: element.title })"
                             :loading="updatingIds.includes(element.id)"
                             @click="openTicket(element)"
                             @keydown.enter="openTicket(element)"
@@ -185,9 +187,9 @@ onMounted(() => {
                                         <span class="text-caption text-medium-emphasis">#{{ element.id }}</span>
                                         <v-chip
                                             v-if="element.ticket_type"
-                                            size="x-small"
+                                            size="small"
+                                            variant="tonal"
                                             :color="element.ticket_type.color"
-                                            variant="outlined"
                                         >
                                             {{ element.ticket_type.name }}
                                         </v-chip>
@@ -225,30 +227,14 @@ onMounted(() => {
 }
 
 .kanban-columns {
-    display: flex;
-    gap: 12px;
-    padding: 16px;
-    flex-grow: 1;
-    overflow-x: auto;
     min-height: 0;
 }
 
 .kanban-column {
-    min-width: 260px;
     width: 260px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
+    min-width: 260px;
     background-color: rgba(var(--v-theme-on-surface), 0.03);
-    border-radius: 12px;
     max-height: 100%;
-}
-
-.kanban-column-header {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
 }
 
 .kanban-column-body {
@@ -260,11 +246,10 @@ onMounted(() => {
 .kanban-card {
     cursor: grab;
     transition: box-shadow 0.2s, transform 0.1s;
-    border-radius: 8px !important;
 }
 
 .kanban-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(var(--v-theme-on-surface), 0.1);
 }
 
 .kanban-card:active {
@@ -291,6 +276,6 @@ onMounted(() => {
 
 .kanban-drag {
     transform: rotate(2deg);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 16px rgba(var(--v-theme-on-surface), 0.15);
 }
 </style>

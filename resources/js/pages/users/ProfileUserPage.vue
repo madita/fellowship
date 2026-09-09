@@ -1,42 +1,6 @@
 <template>
     <div class="user-profile-container">
         <v-container class="py-6">
-            <!-- Progress Section -->
-<!--            <div class="progress-section mb-6">-->
-<!--                <v-stepper-->
-<!--                    v-model="currentStep"-->
-<!--                    :items="steps"-->
-<!--                    color="primary"-->
-<!--                    variant="horizontal"-->
-<!--                    class="elevation-2"-->
-<!--                >-->
-<!--                    <template #item.1>-->
-<!--                        <v-stepper-item-->
-<!--                            :complete="user && user.email"-->
-<!--                            title="Overview"-->
-<!--                            subtitle="Profile summary"-->
-<!--                            value="1"-->
-<!--                        />-->
-<!--                    </template>-->
-<!--                    <template #item.2>-->
-<!--                        <v-stepper-item-->
-<!--                            :complete="activeTab === 'account'"-->
-<!--                            title="Account"-->
-<!--                            subtitle="Security & settings"-->
-<!--                            value="2"-->
-<!--                        />-->
-<!--                    </template>-->
-<!--                    <template #item.3>-->
-<!--                        <v-stepper-item-->
-<!--                            :complete="activeTab === 'info'"-->
-<!--                            title="Information"-->
-<!--                            subtitle="Personal details"-->
-<!--                            value="3"-->
-<!--                        />-->
-<!--                    </template>-->
-<!--                </v-stepper>-->
-<!--            </div>-->
-
             <!-- Enhanced Header Section -->
             <div class="profile-header mb-6">
                 <v-row align="center">
@@ -64,10 +28,10 @@
                                 </v-avatar>
 
                                 <div class="profile-info">
-                                    <h1 class="profile-title text-h4 font-weight-bold mb-1">
+                                    <h1 class="profile-title text-h4 font-weight-bold text-gradient mb-1">
                                         {{ user?.username || $t('userProfile.unknownUser') }}
                                     </h1>
-                                    <div class="d-flex align-center flex-wrap gap-2 mb-2">
+                                    <div class="d-flex align-center flex-wrap ga-2 mb-2">
                                         <v-chip
                                             :color="userStatus.color"
                                             variant="tonal"
@@ -116,11 +80,11 @@
                                 </template>
                                 <div class="d-flex justify-space-between align-center">
                                     <div>
-                                        <h4 class="mb-1">{{ $t('userProfile.administratorAccess') }}</h4>
+                                        <div class="text-subtitle-1 font-weight-medium mb-1">{{ $t('userProfile.administratorAccess') }}</div>
                                         <p class="mb-0 text-body-2">{{ $t('userProfile.adminPrivileges') }}</p>
                                     </div>
                                     <v-btn
-                                        variant="outlined"
+                                        variant="tonal"
                                         size="small"
                                         prepend-icon="mdi-cog"
                                         @click="showAdminSettings = true"
@@ -133,7 +97,7 @@
                     </v-col>
 
                     <v-col cols="12" lg="4" class="text-right">
-                        <div class="header-actions">
+                        <div class="header-actions d-flex align-center flex-wrap ga-2 justify-lg-end">
                             <v-btn-group variant="outlined" density="compact">
                                 <v-btn
                                     @click="refreshUser"
@@ -289,6 +253,7 @@
                         <v-chip
                             v-if="hasAccountChanges"
                             color="warning"
+                            variant="tonal"
                             size="x-small"
                             class="ml-2"
                         >
@@ -305,6 +270,7 @@
                         <v-chip
                             v-if="hasInfoChanges"
                             color="warning"
+                            variant="tonal"
                             size="x-small"
                             class="ml-2"
                         >
@@ -337,6 +303,7 @@
                         <v-chip
                             v-if="roles.length > 1"
                             color="info"
+                            variant="tonal"
                             size="x-small"
                             class="ml-2"
                         >
@@ -351,7 +318,7 @@
                     <v-window v-model="activeTab" class="tab-content">
                         <!-- Account Tab -->
                         <v-window-item value="account">
-                            <div class="tab-header mb-4">
+                            <div class="tab-header pb-4 mb-6">
                                 <h3 class="text-h6 font-weight-bold">{{ $t('userProfile.accountSettings') }}</h3>
                                 <p class="text-body-2 text-medium-emphasis">
                                     {{ $t('userProfile.accountSettingsDescription') }}
@@ -367,7 +334,7 @@
 
                         <!-- Information Tab -->
                         <v-window-item value="info">
-                            <div class="tab-header mb-4">
+                            <div class="tab-header pb-4 mb-6">
                                 <h3 class="text-h6 font-weight-bold">{{ $t('userProfile.personalInformation') }}</h3>
                                 <p class="text-body-2 text-medium-emphasis">
                                     {{ $t('userProfile.personalInfoDescription') }}
@@ -382,7 +349,7 @@
 
                         <!-- Social Accounts Tab -->
                         <v-window-item value="social">
-                            <div class="tab-header mb-4">
+                            <div class="tab-header pb-4 mb-6">
                                 <h3 class="text-h6 font-weight-bold">{{ $t('userProfile.connectedSocialAccounts') }}</h3>
                                 <p class="text-body-2 text-medium-emphasis">
                                     {{ $t('userProfile.connectedSocialDescription') }}
@@ -393,7 +360,7 @@
 
                         <!-- Activity Tab -->
                         <v-window-item value="activity">
-                            <div class="tab-header mb-4">
+                            <div class="tab-header pb-4 mb-6">
                                 <h3 class="text-h6 font-weight-bold">{{ $t('userProfile.userActivity') }}</h3>
                                 <p class="text-body-2 text-medium-emphasis">
                                     {{ $t('userProfile.userActivityDescription') }}
@@ -404,7 +371,7 @@
 
                         <!-- Permissions Tab -->
                         <v-window-item value="permissions">
-                            <div class="tab-header mb-4">
+                            <div class="tab-header pb-4 mb-6">
                                 <h3 class="text-h6 font-weight-bold">{{ $t('userProfile.rolesPermissions') }}</h3>
                                 <p class="text-body-2 text-medium-emphasis">
                                     {{ $t('userProfile.rolesPermissionsDescription') }}
@@ -451,10 +418,11 @@
         <!-- Admin Settings Dialog -->
         <v-dialog v-model="showAdminSettings" max-width="600">
             <v-card>
-                <v-card-title class="d-flex align-center">
+                <v-card-title class="text-h6 d-flex align-center">
                     <v-icon color="primary" class="mr-2">mdi-shield-crown</v-icon>
                     {{ $t('userProfile.administratorManagement') }}
                 </v-card-title>
+                <v-divider />
                 <v-card-text>
                     <v-alert type="warning" variant="tonal" class="mb-4">
                         <template #prepend>
@@ -463,10 +431,11 @@
                         {{ $t('userProfile.adminWarning') }}
                     </v-alert>
 
-                    <div class="admin-actions">
+                    <div class="admin-actions pa-4">
                         <v-btn
                             block
-                            variant="outlined"
+                            color="error"
+                            variant="tonal"
                             prepend-icon="mdi-account-minus"
                             class="mb-3"
                             :loading="confirming"
@@ -476,7 +445,7 @@
                         </v-btn>
                         <v-btn
                             block
-                            variant="outlined"
+                            variant="tonal"
                             prepend-icon="mdi-history"
                             @click="viewAdminHistory"
                         >
@@ -873,74 +842,55 @@ export default {
 
 <style scoped>
 .user-profile-container {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
     position: relative;
 }
 
-.progress-section {
-    background: rgba(255, 255, 255, 0.8);
+.profile-header {
+    background: linear-gradient(
+        135deg,
+        rgba(var(--v-theme-primary), 0.1) 0%,
+        rgba(var(--v-theme-secondary), 0.1) 100%
+    );
     border-radius: 16px;
-    padding: 16px;
+    padding: 24px;
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     backdrop-filter: blur(10px);
 }
 
-.profile-header {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%);
-    border-radius: 16px;
-    padding: 24px;
-    border: 1px solid rgba(59, 130, 246, 0.15);
-    backdrop-filter: blur(10px);
+.v-theme--dark .profile-header {
+    background: linear-gradient(
+        135deg,
+        rgba(var(--v-theme-primary), 0.18) 0%,
+        rgba(var(--v-theme-secondary), 0.12) 100%
+    );
 }
 
 .profile-avatar {
-    border: 3px solid rgba(59, 130, 246, 0.2);
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
+    border: 3px solid rgba(var(--v-theme-primary), 0.2);
+    box-shadow: 0 4px 16px rgba(var(--v-theme-primary), 0.1);
 }
 
 .profile-title {
-    background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
     line-height: 1.2;
 }
 
-.header-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
 .info-card {
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.95) !important;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .info-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
-}
-
-.tabs-card {
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 8px 25px rgba(var(--v-theme-on-surface), 0.1) !important;
 }
 
 .tabs-header {
-    background: linear-gradient(135deg, rgb(var(--v-theme-surface-variant)) 0%, rgba(var(--v-theme-surface-variant), 0.8) 100%);
-    border-bottom: 1px solid rgb(var(--v-border-color));
+    background: rgba(var(--v-theme-on-surface), 0.04);
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .tab-button {
     text-transform: none !important;
     font-weight: 500 !important;
-    border-radius: 12px 12px 0 0 !important;
-    transition: all 0.3s ease !important;
 }
 
 .tab-button:hover {
@@ -952,9 +902,7 @@ export default {
 }
 
 .tab-header {
-    border-bottom: 1px solid rgba(var(--v-border-color), 0.3);
-    padding-bottom: 16px;
-    margin-bottom: 24px;
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .fab-container {
@@ -969,14 +917,12 @@ export default {
 }
 
 @keyframes pulse {
-    0% {
-        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    0%,
+    100% {
+        box-shadow: 0 4px 16px rgba(var(--v-theme-primary), 0.3);
     }
     50% {
-        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.5);
-    }
-    100% {
-        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+        box-shadow: 0 4px 16px rgba(var(--v-theme-primary), 0.5);
     }
 }
 
@@ -985,10 +931,18 @@ export default {
 }
 
 .admin-actions {
-    padding: 16px;
-    background: rgba(var(--v-theme-surface-variant), 0.3);
+    background: rgba(var(--v-theme-on-surface), 0.04);
     border-radius: 12px;
-    border: 1px solid rgba(var(--v-border-color), 0.5);
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.copy-label {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.info-card:hover .copy-label {
+    opacity: 1;
 }
 
 /* Mobile optimizations */
@@ -1032,210 +986,9 @@ export default {
         display: none;
     }
 
-    .info-card {
-        margin-bottom: 12px;
-    }
-}
-
-/* Dark theme support */
-@media (prefers-color-scheme: dark) {
-    .user-profile-container {
-        background: linear-gradient(135deg, #0f1419 0%, #1a1a1a 100%);
-    }
-
-    .profile-header {
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
-        border-color: rgba(59, 130, 246, 0.2);
-    }
-
-    .info-card,
-    .tabs-card {
-        background: rgba(var(--v-theme-surface), 0.95) !important;
-    }
-}
-
-/* Animation for chips */
-.v-chip {
-    transition: all 0.3s ease !important;
-}
-
-.v-chip:hover {
-    transform: translateY(-1px) !important;
-}
-
-/* Focus styles */
-.v-btn:focus-visible {
-    transform: translateY(-1px);
-    transition: transform 0.2s ease;
-}
-
-/* Status indicators */
-.v-chip[color="success"] {
-    animation: breathe 2s ease-in-out infinite;
-}
-
-@keyframes breathe {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.7;
-    }
-}
-
-/* Loading states */
-.v-btn[loading] {
-    pointer-events: none;
-    opacity: 0.7;
-}
-
-/* Error states */
-.v-snackbar[color="error"] {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-}
-
-/* Success states */
-.v-snackbar[color="success"] {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-}
-
-/* Breadcrumb styling */
-.v-breadcrumbs {
-    padding: 0 !important;
-}
-
-.v-breadcrumbs .v-breadcrumbs-item {
-    font-size: 0.875rem;
-    color: rgb(var(--v-theme-on-surface-variant));
-}
-
-.v-breadcrumbs .v-breadcrumbs-item--disabled {
-    color: rgb(var(--v-theme-primary));
-    font-weight: 500;
-}
-
-/* Card hover effects */
-.info-card,
-.tabs-card {
-    position: relative;
-    overflow: hidden;
-}
-
-.info-card::before,
-.tabs-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
-}
-
-.info-card:hover::before,
-.tabs-card:hover::before {
-    left: 100%;
-}
-
-/* Alert styling */
-.v-alert {
-    border-radius: 12px !important;
-}
-
-.v-alert[type="info"] {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-}
-
-.v-alert[type="warning"] {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%) !important;
-    border: 1px solid rgba(245, 158, 11, 0.2);
-}
-
-/* Menu styling */
-.v-menu .v-list {
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.v-menu .v-list-item {
-    transition: all 0.2s ease;
-}
-
-.v-menu .v-list-item:hover {
-    background: rgba(var(--v-theme-primary), 0.1);
-    transform: translateX(4px);
-}
-
-/* Dialog styling */
-.v-dialog .v-card {
-    border-radius: 16px !important;
-    overflow: hidden;
-}
-
-.v-dialog .v-card-title {
-    background: linear-gradient(135deg, rgb(var(--v-theme-surface-variant)) 0%, rgba(var(--v-theme-surface-variant), 0.8) 100%);
-    border-bottom: 1px solid rgb(var(--v-border-color));
-}
-
-/* Tab transitions */
-.v-window-item {
-    animation: fadeInUp 0.3s ease;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Responsive text */
-@media (max-width: 600px) {
     .profile-title {
         font-size: 1.75rem !important;
     }
-
-    .text-h6 {
-        font-size: 1.25rem !important;
-    }
-}
-
-/* Copy button styling */
-.copy-label {
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-}
-
-.info-card:hover .copy-label {
-    opacity: 1;
-}
-
-/* Stepper styling */
-.v-stepper {
-    background: rgba(255, 255, 255, 0.9) !important;
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.v-stepper-item {
-    transition: all 0.3s ease;
-}
-
-.v-stepper-item[complete] {
-    color: rgb(var(--v-theme-success));
-}
-
-/* Accessibility improvements */
-.v-btn:focus-visible,
-.v-tab:focus-visible {
-    outline: 2px solid rgb(var(--v-theme-primary));
-    outline-offset: 2px;
 }
 
 /* Print styles */
@@ -1246,15 +999,11 @@ export default {
         display: none !important;
     }
 
-    .user-profile-container {
-        background: white !important;
-    }
-
     .profile-header,
     .info-card,
     .tabs-card {
-        background: white !important;
-        border: 1px solid #ddd !important;
+        background: rgb(var(--v-theme-surface)) !important;
+        border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)) !important;
         box-shadow: none !important;
     }
 }

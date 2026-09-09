@@ -4,19 +4,19 @@
         <v-row class="mb-6">
             <v-col cols="12">
                 <v-card class="roles-overview-card" elevation="2" rounded="lg">
-                    <v-card-title class="d-flex align-center">
+                    <v-card-title class="d-flex align-center text-subtitle-1 font-weight-medium">
                         <v-icon class="mr-2" color="primary">mdi-shield-account</v-icon>
                         {{ $t('users.edit.currentRoles') }}
                     </v-card-title>
 
                     <v-card-text>
-                        <div v-if="currentRoles.length === 0" class="text-center pa-4">
-                            <v-icon size="48" color="medium-emphasis">mdi-account</v-icon>
-                            <div class="text-h6 mt-2">{{ $t('users.edit.noRolesAssigned') }}</div>
-                            <div class="text-body-2 text-medium-emphasis">
-                                {{ $t('users.edit.noRolesDescription') }}
-                            </div>
-                        </div>
+                        <empty-state
+                            v-if="currentRoles.length === 0"
+                            compact
+                            icon="mdi-account-outline"
+                            :title="$t('users.edit.noRolesAssigned')"
+                            :text="$t('users.edit.noRolesDescription')"
+                        />
 
                         <v-row v-else>
                             <v-col
@@ -75,7 +75,7 @@
                                         </div>
 
                                         <div class="d-flex align-center">
-                                            <v-chip size="x-small" variant="outlined">
+                                            <v-chip size="small" variant="tonal">
                                                 {{ $t('users.edit.permissionsCount', { count: role.permissions?.length || 0 }) }}
                                             </v-chip>
                                             <v-spacer />
@@ -103,7 +103,7 @@
         <v-row class="mb-6">
             <v-col cols="12" lg="8">
                 <v-card class="role-management-card" elevation="2" rounded="lg">
-                    <v-card-title class="d-flex align-center justify-space-between">
+                    <v-card-title class="d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
                         <div class="d-flex align-center">
                             <v-icon class="mr-2" color="info">mdi-plus-circle</v-icon>
 
@@ -127,7 +127,7 @@
                             </v-btn>
                         </div>
                         <v-btn
-                            variant="outlined"
+                            variant="tonal"
                             size="small"
                             prepend-icon="mdi-refresh"
                             @click="refreshAvailableRoles"
@@ -194,6 +194,7 @@ import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { useDialog } from '@/composables/useDialog.js';
+import EmptyState from '@/components/common/EmptyState.vue';
 
 const { t } = useI18n();
 const dialog = useDialog();

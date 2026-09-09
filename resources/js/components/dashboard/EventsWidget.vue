@@ -9,7 +9,7 @@
         <v-card v-if="nextEvent" color="primary" variant="tonal" class="mb-3" :to="nextEvent.url">
             <v-card-text class="pa-3">
                 <div class="d-flex align-center mb-2">
-                    <v-chip color="primary" size="small" class="mr-2">{{ $t('dashboard.widgets.events.next') }}</v-chip>
+                    <v-chip color="primary" variant="tonal" size="small" class="mr-2">{{ $t('dashboard.widgets.events.next') }}</v-chip>
                     <div class="text-caption">{{ relative(nextEvent.start) }}</div>
                 </div>
                 <div class="text-subtitle-2 font-weight-bold mb-1">{{ nextEvent.title }}</div>

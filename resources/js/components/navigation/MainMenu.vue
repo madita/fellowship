@@ -1,5 +1,5 @@
 <template>
-  <v-list nav dense>
+  <v-list nav density="compact">
     <div v-for="(item, index) in menu" :key="index">
         <!-- The whole section is permission-gated: items of a section the
            user may not see (e.g. Administration) must not render either. -->
@@ -8,7 +8,7 @@
         <v-divider v-if="index > 0" class="mt-3 mb-1" />
         <div
           v-if="item.key || item.text"
-          class="pa-1 mt-2 overline"
+          class="pa-1 mt-2 text-overline"
           :class="{ 'text-primary': item.role === 'admin' }"
         >
           <v-icon v-if="item.role === 'admin'" size="x-small" class="mr-1">mdi-shield-crown-outline</v-icon>

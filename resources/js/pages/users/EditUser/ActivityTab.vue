@@ -3,12 +3,12 @@
         <!-- Activity Overview Cards -->
         <v-row class="mb-6">
             <v-col cols="12" sm="6" md="3">
-                <v-card class="activity-card" elevation="2" rounded="lg">
+                <v-card class="activity-card" rounded="lg">
                     <v-card-text class="pa-4">
                         <div class="d-flex align-center justify-space-between">
                             <div>
                                 <div class="text-h4 font-weight-bold text-primary">{{ loginCount }}</div>
-                                <div class="text-caption text-medium-emphasis">Total Logins</div>
+                                <div class="text-caption text-medium-emphasis">{{ $t('users.activity.totalLogins') }}</div>
                             </div>
                             <v-icon color="primary" size="32">mdi-login</v-icon>
                         </div>
@@ -17,12 +17,12 @@
             </v-col>
 
             <v-col cols="12" sm="6" md="3">
-                <v-card class="activity-card" elevation="2" rounded="lg">
+                <v-card class="activity-card" rounded="lg">
                     <v-card-text class="pa-4">
                         <div class="d-flex align-center justify-space-between">
                             <div>
                                 <div class="text-h4 font-weight-bold text-success">{{ sessionsToday }}</div>
-                                <div class="text-caption text-medium-emphasis">Sessions Today</div>
+                                <div class="text-caption text-medium-emphasis">{{ $t('users.activity.sessionsToday') }}</div>
                             </div>
                             <v-icon color="success" size="32">mdi-clock-outline</v-icon>
                         </div>
@@ -31,12 +31,12 @@
             </v-col>
 
             <v-col cols="12" sm="6" md="3">
-                <v-card class="activity-card" elevation="2" rounded="lg">
+                <v-card class="activity-card" rounded="lg">
                     <v-card-text class="pa-4">
                         <div class="d-flex align-center justify-space-between">
                             <div>
                                 <div class="text-h4 font-weight-bold text-info">{{ avgSessionTime }}</div>
-                                <div class="text-caption text-medium-emphasis">Avg Session</div>
+                                <div class="text-caption text-medium-emphasis">{{ $t('users.activity.avgSession') }}</div>
                             </div>
                             <v-icon color="info" size="32">mdi-timer-outline</v-icon>
                         </div>
@@ -45,12 +45,12 @@
             </v-col>
 
             <v-col cols="12" sm="6" md="3">
-                <v-card class="activity-card" elevation="2" rounded="lg">
+                <v-card class="activity-card" rounded="lg">
                     <v-card-text class="pa-4">
                         <div class="d-flex align-center justify-space-between">
                             <div>
                                 <div class="text-h4 font-weight-bold text-warning">{{ pageViews }}</div>
-                                <div class="text-caption text-medium-emphasis">Page Views</div>
+                                <div class="text-caption text-medium-emphasis">{{ $t('users.activity.pageViews') }}</div>
                             </div>
                             <v-icon color="warning" size="32">mdi-eye-outline</v-icon>
                         </div>
@@ -62,35 +62,17 @@
         <!-- Activity Timeline -->
         <v-row>
             <v-col cols="12" lg="8">
-                <v-card class="timeline-card" elevation="2" rounded="lg">
-                    <v-card-title class="d-flex align-center justify-space-between">
+                <v-card rounded="lg">
+                    <v-card-title class="d-flex flex-wrap align-center justify-space-between ga-2 text-subtitle-1 font-weight-medium">
                         <div class="d-flex align-center">
                             <v-icon class="mr-2" color="primary">mdi-timeline</v-icon>
-                            Recent Activity
+                            {{ $t('users.activity.recentActivity') }}
                         </div>
-                        <v-btn-group density="compact" variant="outlined">
-                            <v-btn
-                                size="small"
-                                :variant="timeFilter === 'today' ? 'flat' : 'outlined'"
-                                @click="timeFilter = 'today'"
-                            >
-                                Today
-                            </v-btn>
-                            <v-btn
-                                size="small"
-                                :variant="timeFilter === 'week' ? 'flat' : 'outlined'"
-                                @click="timeFilter = 'week'"
-                            >
-                                Week
-                            </v-btn>
-                            <v-btn
-                                size="small"
-                                :variant="timeFilter === 'month' ? 'flat' : 'outlined'"
-                                @click="timeFilter = 'month'"
-                            >
-                                Month
-                            </v-btn>
-                        </v-btn-group>
+                        <v-btn-toggle v-model="timeFilter" mandatory density="compact" variant="tonal" color="primary">
+                            <v-btn size="small" value="today">{{ $t('users.activity.today') }}</v-btn>
+                            <v-btn size="small" value="week">{{ $t('users.activity.week') }}</v-btn>
+                            <v-btn size="small" value="month">{{ $t('users.activity.month') }}</v-btn>
+                        </v-btn-toggle>
                     </v-card-title>
 
                     <v-card-text class="pa-0">
@@ -112,7 +94,7 @@
                                                 <div class="text-body-2 font-weight-medium">{{ activity.title }}</div>
                                                 <div class="text-caption text-medium-emphasis mb-1">{{ activity.description }}</div>
                                                 <div class="text-caption">
-                                                    <v-chip size="x-small" :color="activity.color" variant="tonal">
+                                                    <v-chip size="small" :color="activity.color" variant="tonal">
                                                         {{ activity.type }}
                                                     </v-chip>
                                                 </div>
@@ -128,12 +110,12 @@
                             <!-- Load More Button -->
                             <div v-if="hasMoreActivities" class="text-center pa-4">
                                 <v-btn
-                                    variant="outlined"
+                                    variant="tonal"
                                     @click="loadMoreActivities"
                                     :loading="loadingMore"
                                     prepend-icon="mdi-reload"
                                 >
-                                    Load More Activities
+                                    {{ $t('users.activity.loadMore') }}
                                 </v-btn>
                             </div>
                         </div>
@@ -144,10 +126,10 @@
             <!-- Login History & Device Info -->
             <v-col cols="12" lg="4">
                 <!-- Login History -->
-                <v-card class="login-history-card mb-4" elevation="2" rounded="lg">
-                    <v-card-title class="d-flex align-center">
+                <v-card class="mb-4" rounded="lg">
+                    <v-card-title class="d-flex align-center text-subtitle-1 font-weight-medium">
                         <v-icon class="mr-2" color="success">mdi-shield-check</v-icon>
-                        Login History
+                        {{ $t('users.activity.loginHistory') }}
                     </v-card-title>
 
                     <v-card-text class="pa-0">
@@ -173,10 +155,10 @@
                                 <template #append>
                                     <v-chip
                                         :color="login.success ? 'success' : 'error'"
-                                        size="x-small"
+                                        size="small"
                                         variant="tonal"
                                     >
-                                        {{ login.success ? 'Success' : 'Failed' }}
+                                        {{ login.success ? $t('users.activity.success') : $t('users.activity.failed') }}
                                     </v-chip>
                                 </template>
                             </v-list-item>
@@ -185,10 +167,10 @@
                 </v-card>
 
                 <!-- Device Information -->
-                <v-card class="device-info-card" elevation="2" rounded="lg">
-                    <v-card-title class="d-flex align-center">
+                <v-card rounded="lg">
+                    <v-card-title class="d-flex align-center text-subtitle-1 font-weight-medium">
                         <v-icon class="mr-2" color="info">mdi-devices</v-icon>
-                        Active Devices
+                        {{ $t('users.activity.activeDevices') }}
                     </v-card-title>
 
                     <v-card-text class="pa-0">
@@ -210,7 +192,7 @@
                                         {{ device.browser }} • {{ device.os }}
                                     </div>
                                     <div class="text-caption">
-                                        Last active: {{ formatTime(device.lastActive) }}
+                                        {{ $t('users.activity.lastActive') }}: {{ formatTime(device.lastActive) }}
                                     </div>
                                 </div>
 
@@ -219,6 +201,8 @@
                                         variant="text"
                                         size="small"
                                         icon="mdi-logout"
+                                        :aria-label="$t('users.activity.signOutDevice')"
+                                        :title="$t('users.activity.signOutDevice')"
                                         :loading="loggingOut === device.id"
                                         :disabled="loggingOut !== null && loggingOut !== device.id"
                                         @click="logoutDevice(device.id)"
@@ -235,22 +219,19 @@
         <!-- Activity Chart (Optional) -->
         <v-row class="mt-6">
             <v-col cols="12">
-                <v-card class="chart-card" elevation="2" rounded="lg">
-                    <v-card-title class="d-flex align-center">
+                <v-card rounded="lg">
+                    <v-card-title class="d-flex align-center text-subtitle-1 font-weight-medium">
                         <v-icon class="mr-2" color="primary">mdi-chart-line</v-icon>
-                        Activity Chart (Last 30 Days)
+                        {{ $t('users.activity.chartTitle') }}
                     </v-card-title>
 
                     <v-card-text>
-                        <div class="chart-placeholder">
-                            <div class="text-center pa-8">
-                                <v-icon size="64" color="medium-emphasis">mdi-chart-areaspline</v-icon>
-                                <div class="text-h6 mt-4">Activity Chart</div>
-                                <div class="text-body-2 text-medium-emphasis">
-                                    Chart component would be integrated here
-                                </div>
-                            </div>
-                        </div>
+                        <empty-state
+                            compact
+                            icon="mdi-chart-areaspline"
+                            :title="$t('users.activity.chartPlaceholderTitle')"
+                            :text="$t('users.activity.chartPlaceholderText')"
+                        />
                     </v-card-text>
                 </v-card>
             </v-col>
@@ -263,9 +244,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatDate, formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import { useDialog } from '@/composables/useDialog.js'
+import EmptyState from '@/components/common/EmptyState.vue'
 
 export default {
     name: 'ActivityTab',
+    components: { EmptyState },
     props: {
         user: {
             type: Object,
@@ -508,24 +491,12 @@ export default {
 }
 
 .activity-card {
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.95) !important;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .activity-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
-}
-
-.timeline-card,
-.login-history-card,
-.device-info-card,
-.chart-card {
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 8px 25px rgba(var(--v-theme-on-surface), 0.1) !important;
 }
 
 .timeline-container {
@@ -538,7 +509,7 @@ export default {
 }
 
 .timeline-container::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(var(--v-theme-on-surface), 0.08);
     border-radius: 3px;
 }
 
@@ -551,23 +522,23 @@ export default {
     padding: 8px 16px;
     border-radius: 8px;
     margin: 8px 0;
-    background: rgba(var(--v-theme-surface-variant), 0.3);
+    background: rgba(var(--v-theme-on-surface), 0.04);
     transition: all 0.2s ease;
 }
 
 .activity-item:hover {
-    background: rgba(var(--v-theme-surface-variant), 0.5);
+    background: rgba(var(--v-theme-on-surface), 0.08);
     transform: translateX(4px);
 }
 
 .login-item,
 .device-item {
-    transition: all 0.2s ease;
+    transition: background 0.2s ease;
 }
 
 .login-item:hover,
 .device-item:hover {
-    background: rgba(var(--v-theme-surface-variant), 0.3);
+    background: rgba(var(--v-theme-on-surface), 0.04);
 }
 
 .logout-btn {
@@ -575,17 +546,9 @@ export default {
     transition: opacity 0.2s ease;
 }
 
-.device-item:hover .logout-btn {
+.device-item:hover .logout-btn,
+.device-item:focus-within .logout-btn {
     opacity: 1;
-}
-
-.chart-placeholder {
-    min-height: 300px;
-    background: rgba(var(--v-theme-surface-variant), 0.2);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 /* Mobile optimizations */
@@ -611,6 +574,10 @@ export default {
 
     .device-details {
         min-width: 0;
+    }
+
+    .logout-btn {
+        opacity: 1;
     }
 }
 </style>

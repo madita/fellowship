@@ -16,7 +16,6 @@
                     @update:search="handleUserSearch"
                     :label="$t('conversation.selectRecipients')"
                     :placeholder="$t('conversation.searchUsersPlaceholder')"
-                    variant="outlined"
                     item-title="username"
                     item-value="id"
                     multiple
@@ -59,7 +58,6 @@
                     v-model="body"
                     :label="$t('conversation.messageBody')"
                     :placeholder="$t('conversation.messageBodyPlaceholder')"
-                    variant="outlined"
                     rows="4"
                     auto-grow
                     counter
@@ -70,9 +68,9 @@
                 />
 
                 <!-- Action Buttons -->
-                <div class="d-flex justify-end gap-2">
+                <div class="d-flex justify-end ga-2">
                     <v-btn
-                        variant="outlined"
+                        variant="text"
                         @click="handleCancel"
                         :disabled="isSubmitting"
                     >
@@ -81,6 +79,7 @@
 
                     <v-btn
                         color="primary"
+                        variant="flat"
                         type="submit"
                         :loading="isSubmitting"
                         :disabled="!isFormValid"
@@ -195,24 +194,6 @@ watch(recipients, (newRecipients) => {
 </script>
 
 <style scoped>
-.gap-2 {
-    gap: 8px;
-}
-
-/* Custom chip styling */
-:deep(.v-chip) {
-    margin: 2px;
-}
-
-/* Form styling */
-:deep(.v-field--variant-outlined) {
-    --v-field-border-width: 1px;
-}
-
-:deep(.v-field--variant-outlined.v-field--focused) {
-    --v-field-border-width: 2px;
-}
-
 /* Loading overlay */
 .v-autocomplete :deep(.v-progress-linear) {
     position: absolute;

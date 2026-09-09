@@ -3,6 +3,7 @@ import { ref, watch, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import UserAvatar from "../common/UserAvatar.vue";
+import EmptyState from '@/components/common/EmptyState.vue';
 import axios from "axios";
 import { useUserStore } from "@/store/userStore.js";
 import { useDateFormat } from '@/plugins/formatDate.js';
@@ -375,9 +376,9 @@ onMounted(() => {
         <!-- Header Section -->
         <div class="ticket-drawer-header" :class="{ 'edit-mode': localEditMode }">
             <div v-if="localEditMode" class="d-flex align-center py-3 px-4">
-                <h5 class="text-h5 font-weight-medium">
+                <h2 class="text-h6 font-weight-medium">
                     {{ localTicket?.id ? t('tickets.editTicket') : t('tickets.createTicket') }}
-                </h5>
+                </h2>
                 <VSpacer/>
                 <VBtn
                     v-if="localTicket?.id"
@@ -393,36 +394,36 @@ onMounted(() => {
 
             <div v-else class="d-flex align-center py-3 px-4">
                 <div class="flex-grow-1">
-                    <div class="d-flex align-center mb-1">
+                    <div class="d-flex align-center flex-wrap ga-2 mb-1">
                         <v-chip
                             v-if="localTicket?.ticket_type"
                             size="small"
+                            variant="tonal"
                             :color="localTicket.ticket_type.color"
-                            class="mr-2"
                         >
                             <v-icon start size="small">{{ localTicket.ticket_type.icon }}</v-icon>
                             {{ localTicket.ticket_type.name }}
                         </v-chip>
                         <v-chip
                             size="small"
+                            variant="tonal"
                             :color="getStatusColor(localTicket?.status)"
                         >
                             {{ localTicket?.status_label }}
                         </v-chip>
                     </div>
-                    <h5 class="text-h6 font-weight-medium">{{ localTicket?.title }}</h5>
+                    <h2 class="text-h6 font-weight-medium">{{ localTicket?.title }}</h2>
                 </div>
 
                 <VSpacer/>
 
-                <div class="action-buttons">
+                <div class="d-flex align-center ga-1">
                     <v-btn
                         v-if="canEdit"
                         icon="mdi-pencil"
                         variant="text"
                         color="primary"
                         density="comfortable"
-                        class="action-btn"
                         @click="localEditMode = true"
                         :title="t('tickets.edit')"
                     />
@@ -433,7 +434,6 @@ onMounted(() => {
                         variant="text"
                         color="error"
                         density="comfortable"
-                        class="action-btn"
                         :loading="saving"
                         @click="removeTicket"
                         :title="t('tickets.delete')"
@@ -443,7 +443,6 @@ onMounted(() => {
                         icon="mdi-close"
                         variant="text"
                         density="comfortable"
-                        class="action-btn"
                         @click="dialogModelValueUpdate(false)"
                         :title="t('tickets.close')"
                     />
@@ -540,22 +539,21 @@ onMounted(() => {
                                 </VSelect>
                             </VCol>
 
-                            <VCol cols="12" class="d-flex justify-end">
+                            <VCol cols="12" class="d-flex justify-end ga-2">
                                 <VBtn
-                                    type="submit"
-                                    color="primary"
-                                    class="me-3"
-                                    :loading="saving"
-                                >
-                                    {{ localTicket?.id ? t('tickets.update') : t('tickets.create') }}
-                                </VBtn>
-                                <VBtn
-                                    variant="outlined"
-                                    color="secondary"
+                                    variant="text"
                                     :disabled="saving"
                                     @click="onCancel"
                                 >
                                     {{ t('tickets.cancel') }}
+                                </VBtn>
+                                <VBtn
+                                    type="submit"
+                                    color="primary"
+                                    variant="flat"
+                                    :loading="saving"
+                                >
+                                    {{ localTicket?.id ? t('tickets.update') : t('tickets.create') }}
                                 </VBtn>
                             </VCol>
                         </VRow>
@@ -564,13 +562,13 @@ onMounted(() => {
             </VCard>
 
             <!-- View Mode Content -->
-            <div v-else class="ticket-view-content">
+            <div v-else class="pa-4">
                 <!-- Ticket Properties -->
-                <v-card flat class="ticket-info-card mb-4">
+                <v-card flat rounded="lg" class="mb-4">
                     <v-card-text>
                         <!-- Priority -->
-                        <div class="property-item mb-3">
-                            <div class="property-label">{{ t('tickets.fields.priority') }}</div>
+                        <div class="py-2 mb-3">
+                            <div class="text-caption text-uppercase font-weight-medium text-medium-emphasis mb-1">{{ t('tickets.fields.priority') }}</div>
                             <v-select
                                 v-if="isAdmin"
                                 :model-value="localTicket?.priority"
@@ -598,8 +596,8 @@ onMounted(() => {
                         </div>
 
                         <!-- Status -->
-                        <div class="property-item mb-3">
-                            <div class="property-label">{{ t('tickets.fields.status') }}</div>
+                        <div class="py-2 mb-3">
+                            <div class="text-caption text-uppercase font-weight-medium text-medium-emphasis mb-1">{{ t('tickets.fields.status') }}</div>
                             <v-select
                                 v-if="isAdmin"
                                 :model-value="localTicket?.status"
@@ -625,9 +623,9 @@ onMounted(() => {
                         </div>
 
                         <!-- Assignee -->
-                        <div class="property-item mb-3" v-if="isAdmin">
+                        <div class="py-2 mb-3" v-if="isAdmin">
                             <div class="d-flex align-center justify-space-between">
-                                <div class="property-label">{{ t('tickets.fields.assignee') }}</div>
+                                <div class="text-caption text-uppercase font-weight-medium text-medium-emphasis mb-1">{{ t('tickets.fields.assignee') }}</div>
                                 <v-btn
                                     v-if="localTicket?.assigned_to_user_id !== user.id"
                                     variant="text"
@@ -683,8 +681,8 @@ onMounted(() => {
                         </div>
 
                         <!-- Creator -->
-                        <div class="property-item mb-3">
-                            <div class="property-label">{{ t('tickets.fields.reporter') }}</div>
+                        <div class="py-2 mb-3">
+                            <div class="text-caption text-uppercase font-weight-medium text-medium-emphasis mb-1">{{ t('tickets.fields.reporter') }}</div>
                             <div class="d-flex align-center">
                                 <UserAvatar
                                     v-if="localTicket?.creator"
@@ -697,9 +695,9 @@ onMounted(() => {
                         </div>
 
                         <!-- Created Date -->
-                        <div class="property-item">
-                            <div class="property-label">{{ t('tickets.fields.created') }}</div>
-                            <div class="property-value">
+                        <div class="py-2">
+                            <div class="text-caption text-uppercase font-weight-medium text-medium-emphasis mb-1">{{ t('tickets.fields.created') }}</div>
+                            <div class="text-body-2">
                                 {{ formatDateUtil(localTicket?.created_at) }}
                             </div>
                         </div>
@@ -709,12 +707,13 @@ onMounted(() => {
                 <!-- Legacy account claim details -->
                 <v-card
                     flat
-                    class="description-card mb-4"
+                    rounded="lg"
+                    class="mb-4"
                     v-if="isAdmin && localTicket?.metadata?.legacy_username"
                 >
                     <v-card-text>
                         <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.legacyClaim.title') }}</h3>
-                        <div class="d-flex flex-wrap align-center mb-3" style="gap: 6px;">
+                        <div class="d-flex flex-wrap align-center ga-2 mb-3">
                             <v-chip size="small" variant="tonal" prepend-icon="mdi-account-clock">
                                 {{ localTicket.metadata.legacy_username }}
                             </v-chip>
@@ -744,7 +743,7 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Description -->
-                <v-card flat class="description-card mb-4" v-if="localTicket?.description">
+                <v-card flat rounded="lg" class="mb-4" v-if="localTicket?.description">
                     <v-card-text>
                         <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.fields.description') }}</h3>
                         <div class="description-content">{{ localTicket.description }}</div>
@@ -752,7 +751,7 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Related Content (Ticketable) -->
-                <v-card flat class="related-card mb-4" v-if="localTicket?.ticketable && ticketableLink">
+                <v-card flat rounded="lg" class="mb-4" v-if="localTicket?.ticketable && ticketableLink">
                     <v-card-text>
                         <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.sidebar.relatedTo') }}</h3>
                         <router-link
@@ -772,7 +771,7 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Approval Section -->
-                <v-card flat class="approval-card mb-4" v-if="isApprovable && isAdmin">
+                <v-card flat rounded="lg" class="mb-4" v-if="isApprovable && isAdmin">
                     <v-card-text>
                         <v-alert
                             v-if="!isApproved"
@@ -808,7 +807,7 @@ onMounted(() => {
                                 </v-btn>
                                 <v-btn
                                     color="error"
-                                    variant="outlined"
+                                    variant="tonal"
                                     size="small"
                                     :loading="approving === 'reject'"
                                     :disabled="!!approving"
@@ -821,7 +820,7 @@ onMounted(() => {
                             <v-btn
                                 v-else
                                 color="warning"
-                                variant="outlined"
+                                variant="tonal"
                                 size="small"
                                 :loading="approving === 'reject'"
                                 @click="rejectTicket"
@@ -834,7 +833,7 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Comments Section -->
-                <v-card flat class="comments-card">
+                <v-card flat rounded="lg">
                     <v-card-text>
                         <h3 class="text-subtitle-1 font-weight-medium mb-3">
                             {{ t('tickets.sidebar.activity', { count: ticketComments.length }) }}
@@ -863,7 +862,8 @@ onMounted(() => {
                                                 </span>
                                                 <v-chip
                                                     v-if="comment.is_internal"
-                                                    size="x-small"
+                                                    size="small"
+                                                    variant="tonal"
                                                     color="warning"
                                                     class="ml-2"
                                                 >
@@ -880,14 +880,17 @@ onMounted(() => {
                                                 @click="deleteComment(comment.id)"
                                             />
                                         </div>
-                                        <div class="comment-text">{{ comment.comment }}</div>
+                                        <div class="text-body-2 comment-text">{{ comment.comment }}</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div v-if="ticketComments.length === 0" class="text-center text-medium-emphasis py-4">
-                                {{ t('tickets.noComments') }}
-                            </div>
+                            <empty-state
+                                v-if="ticketComments.length === 0"
+                                compact
+                                icon="mdi-comment-outline"
+                                :title="t('tickets.noComments')"
+                            />
                         </div>
 
                         <!-- Add Comment -->
@@ -914,6 +917,7 @@ onMounted(() => {
                                 <VSpacer/>
                                 <VBtn
                                     color="primary"
+                                    variant="flat"
                                     size="small"
                                     @click="addComment"
                                     :loading="addingComment"
@@ -933,7 +937,7 @@ onMounted(() => {
 <style scoped>
 .ticket-drawer {
     max-height: 100%;
-    border-left: 1px solid rgba(0, 0, 0, 0.12);
+    border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .ticket-drawer-header {
@@ -944,45 +948,6 @@ onMounted(() => {
 
 .ticket-drawer-content {
     height: calc(100vh - 65px);
-}
-
-.action-buttons {
-    display: flex;
-    align-items: center;
-}
-
-.action-btn {
-    margin-left: 4px;
-}
-
-.ticket-view-content {
-    padding: 16px;
-}
-
-.ticket-info-card,
-.description-card,
-.related-card,
-.approval-card,
-.comments-card {
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.property-item {
-    padding: 8px 0;
-}
-
-.property-label {
-    font-size: 0.75rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-    opacity: 0.7;
-}
-
-.property-value {
-    font-size: 0.875rem;
 }
 
 .description-content {
@@ -1002,22 +967,21 @@ onMounted(() => {
 }
 
 .comment-item:hover {
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: rgba(var(--v-theme-on-surface), 0.04);
 }
 
 .comment-item.internal-comment {
-    background-color: rgba(255, 193, 7, 0.05);
+    background-color: rgba(var(--v-theme-warning), 0.08);
     border-left: 3px solid rgb(var(--v-theme-warning));
 }
 
 .comment-text {
-    font-size: 0.875rem;
     line-height: 1.5;
     white-space: pre-line;
 }
 
 .add-comment {
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     padding-top: 16px;
 }
 

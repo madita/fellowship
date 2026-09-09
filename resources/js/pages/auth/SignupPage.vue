@@ -1,8 +1,8 @@
 <template>
     <div>
         <v-card class="text-center pa-1" elevation="4">
-            <v-card-title class="justify-center display-1 mb-2">{{ $t('register.title') }}</v-card-title>
-            <v-card-subtitle>Let's build amazing products</v-card-subtitle>
+            <v-card-title class="justify-center text-h5 mb-2">{{ $t('register.title') }}</v-card-title>
+            <v-card-subtitle>{{ $t('register.subtitle') }}</v-card-subtitle>
 
             <!-- sign up form -->
             <v-card-text>
@@ -100,7 +100,7 @@
                     >{{ $t('register.button') }}
                     </v-btn>
 
-                    <div v-if="enabledProviders.length > 0" class="caption font-weight-bold text-uppercase my-3">{{ $t('register.orsign') }}</div>
+                    <div v-if="enabledProviders.length > 0" class="text-caption font-weight-bold text-uppercase my-3">{{ $t('register.orsign') }}</div>
 
                     <!-- Social Login Buttons -->
                     <v-row v-if="enabledProviders.length > 0" dense class="mb-3">
@@ -150,7 +150,7 @@
                         </v-col>
                     </v-row>
 
-                    <div v-if="termsUrl || policyUrl" class="mt-5 overline">
+                    <div v-if="termsUrl || policyUrl" class="mt-5 text-overline">
                         {{ $t('register.agree') }}
                         <br/>
                         <a v-if="termsUrl" :href="termsUrl" target="_blank" rel="noopener noreferrer">{{ $t('common.tos') }}</a>

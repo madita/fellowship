@@ -1,7 +1,7 @@
 <template>
     <div>
         <v-card class="text-center pa-1" elevation="4">
-            <v-card-title class="justify-center display-1 mb-2">{{ $t('forgot.title') }}</v-card-title>
+            <v-card-title class="justify-center text-h5 mb-2">{{ $t('forgot.title') }}</v-card-title>
             <v-card-subtitle>
                 {{ $t('forgot.subtitle') }}
             </v-card-subtitle>

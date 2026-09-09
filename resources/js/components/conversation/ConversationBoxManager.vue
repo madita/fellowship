@@ -1,7 +1,7 @@
 <template>
     <div class="conversation-manager">
         <!-- Minimized conversation avatars -->
-        <div class="minimized-conversations" :style="getMinimizedPosition()">
+        <div class="minimized-conversations ga-2" :style="getMinimizedPosition()">
             <v-tooltip
                 v-for="conv in minimizedConversations"
                 :key="conv.key"
@@ -18,10 +18,9 @@
                             :content="conv.unreadCount"
                             :model-value="conv.unreadCount > 0"
                             color="error"
-                            overlap
                         >
                             <v-avatar color="primary" size="48">
-                                <v-icon color="white">mdi-account-group</v-icon>
+                                <v-icon>mdi-account-group</v-icon>
                             </v-avatar>
                         </v-badge>
                         <v-badge
@@ -29,7 +28,6 @@
                             :content="conv.unreadCount"
                             :model-value="conv.unreadCount > 0"
                             color="error"
-                            overlap
                         >
                             <user-avatar :user="conv.user" />
                         </v-badge>
@@ -314,7 +312,6 @@ onUnmounted(() => {
     right: 16px;
     display: flex;
     flex-direction: row-reverse;
-    gap: 8px;
     z-index: 1999;
     transition: right 0.3s ease;
 }

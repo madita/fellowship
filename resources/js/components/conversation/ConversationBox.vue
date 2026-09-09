@@ -1,11 +1,11 @@
 <template>
     <v-card v-if="user || conversation" class="chat-component" elevation="2">
         <!-- Chat Header -->
-        <v-card-title class="chat-header bg-gradient-to-r from-blue-500 to-teal-500 text-white pa-4">
+        <v-card-title class="chat-header bg-gradient pa-4">
             <div class="d-flex align-center justify-space-between w-100">
                 <div class="d-flex align-center">
                     <!-- Group chat icon -->
-                    <v-avatar v-if="isGroupChat" color="white" size="45" class="mr-3">
+                    <v-avatar v-if="isGroupChat" color="surface" size="45" class="mr-3">
                         <v-icon color="primary" size="28">mdi-account-group</v-icon>
                     </v-avatar>
                     <!-- Single user avatar with online status -->
@@ -51,7 +51,6 @@
                     <v-btn
                         icon="mdi-minus"
                         variant="text"
-                        color="white"
                         size="small"
                         @click="minimizeChat"
                         class="mr-2"
@@ -59,7 +58,6 @@
                     <v-btn
                         icon="mdi-close"
                         variant="text"
-                        color="white"
                         size="small"
                         @click="closeChat"
                     />
@@ -70,11 +68,8 @@
         <!-- Messages Area -->
         <div ref="messageContainer" class="chat-messages pa-0">
             <!-- Loading state -->
-            <div v-if="loading && !conversation" class="d-flex align-center justify-center" style="height: 400px;">
-                <div class="text-center">
-                    <v-progress-circular indeterminate size="64" color="primary" class="mb-4" />
-                    <div class="text-body-1 text-medium-emphasis">{{ $t('conversation.loadingConversation') }}</div>
-                </div>
+            <div v-if="loading && !conversation" class="d-flex align-center justify-center chat-messages__state">
+                <loading-state compact :text="$t('conversation.loadingConversation')" />
             </div>
 
             <!-- Conversation messages -->
@@ -87,12 +82,13 @@
             </div>
 
             <!-- Empty state -->
-            <div v-else class="d-flex align-center justify-center" style="height: 400px;">
-                <div class="text-center">
-                    <v-icon size="64" color="medium-emphasis">mdi-chat-outline</v-icon>
-                    <div class="text-h6 mt-2">{{ $t('conversation.noConversationYet') }}</div>
-                    <div class="text-body-2 text-medium-emphasis">{{ $t('conversation.startTypingToBegin') }}</div>
-                </div>
+            <div v-else class="d-flex align-center justify-center chat-messages__state">
+                <empty-state
+                    compact
+                    icon="mdi-chat-outline"
+                    :title="$t('conversation.noConversationYet')"
+                    :text="$t('conversation.startTypingToBegin')"
+                />
             </div>
         </div>
 
@@ -111,7 +107,6 @@
                     clearable
                     :placeholder="$t('conversation.typeUsernameToAdd')"
                     class="mb-2"
-                    variant="outlined"
                     density="compact"
                     hide-details
                     :disabled="loading"
@@ -132,7 +127,6 @@
                     <v-text-field
                         v-model="body"
                         :placeholder="$t('conversation.typeYourMessage')"
-                        variant="outlined"
                         density="compact"
                         hide-details
                         class="flex-grow-1"
@@ -169,6 +163,8 @@ import { useOnlineUsers } from "@/composables/conversation/useOnlineUsers";
 import { useScrollToBottom } from "@/composables/conversation/useScrollToBottom";
 import { useDialog } from '@/composables/useDialog.js'
 import UserAvatar from "@/components/common/UserAvatar.vue";
+import EmptyState from "@/components/common/EmptyState.vue";
+import LoadingState from "@/components/common/LoadingState.vue";
 import {useUserStore} from "@/store/userStore.js";
 
 const { t } = useI18n()
@@ -528,16 +524,16 @@ watch(conversation, (newConv, oldConv) => {
     }
 }
 
-.chat-header {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
-}
-
 .chat-messages {
     background-color: rgb(var(--v-theme-surface));
     height: 400px;
     max-height: 400px;
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+.chat-messages__state {
+    height: 100%;
 }
 
 /* Custom scrollbar for chat messages */
@@ -559,29 +555,9 @@ watch(conversation, (newConv, oldConv) => {
     background: rgba(var(--v-theme-on-surface), 0.3);
 }
 
-.message-wrapper {
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-.message-bubble {
-    max-width: 70%;
-    word-wrap: break-word;
-}
-
 .chat-input {
-    border-top: 1px solid rgb(var(--v-border-color));
+    border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     background-color: rgb(var(--v-theme-surface));
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 /* Responsive design */
@@ -589,10 +565,6 @@ watch(conversation, (newConv, oldConv) => {
     .chat-component {
         max-width: 100%;
         height: 100vh;
-    }
-
-    .message-bubble {
-        max-width: 85%;
     }
 }
 </style>

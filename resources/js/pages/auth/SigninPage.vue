@@ -1,7 +1,7 @@
 <template>
     <div>
         <v-card class="text-center pa-1" elevation="4">
-            <v-card-title class="justify-center display-1 mb-2">{{ $t('login.welcome') }}</v-card-title>
+            <v-card-title class="justify-center text-h5 mb-2">{{ $t('login.welcome') }}</v-card-title>
             <v-card-subtitle>{{ $t('login.subtitle') }}</v-card-subtitle>
 
             <!-- sign in form -->
@@ -51,7 +51,7 @@
                     >{{ $t('login.button') }}
                     </v-btn>
 
-                    <div v-if="enabledProviders.length > 0" class="caption font-weight-bold text-uppercase my-3">{{ $t('login.orsign') }}</div>
+                    <div v-if="enabledProviders.length > 0" class="text-caption font-weight-bold text-uppercase my-3">{{ $t('login.orsign') }}</div>
 
                     <!-- Social Login Buttons -->
                     <v-row v-if="enabledProviders.length > 0" dense class="mb-3">

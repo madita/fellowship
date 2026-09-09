@@ -1,52 +1,51 @@
 <template>
     <div class="my-2">
         <div>
-            <v-card v-if="user.disabled" class="warning mb-4" light>
-                <v-card-title>{{ $t('users.edit.userDisabled') }}</v-card-title>
+            <v-card v-if="user.disabled" color="warning" variant="tonal" class="mb-4">
+                <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('users.edit.userDisabled') }}</v-card-title>
                 <v-card-subtitle>{{ $t('users.edit.userDisabledMessage') }}</v-card-subtitle>
                 <v-card-text>
-                    <v-btn dark @click="user.disabled = false">
-                        <v-icon left small>mdi-account-check</v-icon>
+                    <v-btn color="warning" variant="flat" prepend-icon="mdi-account-check" @click="user.disabled = false">
                         {{ $t('users.edit.enableUser') }}
                     </v-btn>
                 </v-card-text>
             </v-card>
 
             <v-card>
-                <v-card-title>{{ $t('users.edit.basicInfo') }}</v-card-title>
+                <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('users.edit.basicInfo') }}</v-card-title>
                 <v-card-text>
                     <div class="d-flex flex-column flex-sm-row">
                         <div>
                             <v-img
                                 :src="user.avatar"
                                 aspect-ratio="1"
-                                class="blue-grey lighten-4 rounded elevation-3"
+                                class="rounded elevation-3"
                                 max-width="90"
                                 max-height="90"
                             ></v-img>
-                            <!--                <v-text-field label="Select Image" @click='pickFile' v-model='avatar' prepend-icon='attach_file'></v-text-field>-->
                             <image-upload v-show="false" ref="avatarUploadRef" name="avatar" class="mr-1" @loaded="onLoad"></image-upload>
 
-                            <v-btn class="mt-1" :loading="uploadingAvatar" :disabled="savingUser" @click="trigger" small>{{ $t('users.edit.editAvatar') }}</v-btn>
+                            <v-btn class="mt-1" variant="tonal" size="small" :loading="uploadingAvatar" :disabled="savingUser" @click="trigger">{{ $t('users.edit.editAvatar') }}</v-btn>
                         </div>
                         <div class="flex-grow-1 pt-2 pa-sm-2">
                             <v-text-field v-model="user.name" :label="$t('users.edit.displayName')" :placeholder="$t('users.edit.namePlaceholder')" :disabled="savingUser"></v-text-field>
                             <v-text-field v-model="user.email" :label="$t('login.email')" hide-details :disabled="savingUser"></v-text-field>
 
                             <div class="d-flex flex-column">
-                                <v-checkbox v-model="user.email_verified_at" dense :label="$t('users.edit.emailVerified')" :disabled="savingUser"></v-checkbox>
+                                <v-checkbox v-model="user.email_verified_at" density="compact" :label="$t('users.edit.emailVerified')" :disabled="savingUser"></v-checkbox>
                                 <div>
                                     <v-btn
                                         v-if="!user.email_verified_at"
+                                        variant="tonal"
+                                        prepend-icon="mdi-email"
                                     >
-                                        <v-icon left small>mdi-email</v-icon>
                                         {{ $t('users.edit.sendVerificationEmail') }}
                                     </v-btn>
                                 </div>
                             </div>
 
                             <div class="mt-2">
-                                <v-btn color="bg-primary" :loading="savingUser" :disabled="uploadingAvatar" @click="updateUser">{{ $t('common.save') }}</v-btn>
+                                <v-btn color="primary" :loading="savingUser" :disabled="uploadingAvatar" @click="updateUser">{{ $t('common.save') }}</v-btn>
                             </div>
                         </div>
                     </div>
@@ -54,7 +53,7 @@
             </v-card>
 
             <v-card class="mt-4">
-                <v-card-title>{{ $t('users.edit.localizationPreferences') }}</v-card-title>
+                <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('users.edit.localizationPreferences') }}</v-card-title>
                 <v-card-subtitle>{{ $t('users.edit.localizationDescription') }}</v-card-subtitle>
                 <v-card-text>
                     <!-- Timezone Selection -->
@@ -65,7 +64,6 @@
                         item-title="label"
                         item-value="value"
                         prepend-inner-icon="mdi-clock-outline"
-                        variant="outlined"
                         clearable
                         :hint="timezoneHint"
                         persistent-hint
@@ -89,7 +87,6 @@
                         item-title="label"
                         item-value="value"
                         prepend-inner-icon="mdi-calendar"
-                        variant="outlined"
                         clearable
                         :hint="dateFormatHint"
                         persistent-hint
@@ -113,7 +110,6 @@
                         item-title="label"
                         item-value="value"
                         prepend-inner-icon="mdi-clock"
-                        variant="outlined"
                         clearable
                         :hint="timeFormatHint"
                         persistent-hint
@@ -132,7 +128,6 @@
                     <!-- Preview -->
                     <v-alert
                         type="info"
-                        variant="tonal"
                         border="start"
                         class="mt-4"
                     >
@@ -159,7 +154,7 @@
 
             <!-- Account Deletion (GDPR) - for own account -->
             <v-card class="mt-4">
-                <v-card-title>{{ $t('users.edit.dataPrivacy') }}</v-card-title>
+                <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('users.edit.dataPrivacy') }}</v-card-title>
                 <v-card-subtitle>{{ $t('users.edit.dataPrivacyDescription') }}</v-card-subtitle>
                 <v-card-text>
                     <account-deletion />
@@ -168,15 +163,16 @@
 
             <v-expansion-panels v-if="roles.includes('admin')" v-model="panel" multiple class="mt-3">
                 <v-expansion-panel>
-                    <v-expansion-panel-title class="title">{{ $t('users.edit.actions') }}</v-expansion-panel-title>
+                    <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">{{ $t('users.edit.actions') }}</v-expansion-panel-title>
                     <v-expansion-panel-text>
                         <div class="mb-2">
-                            <div class="title">{{ $t('users.edit.resetPassword') }}</div>
-                            <div class="subtitle mb-2">{{ $t('users.edit.resetPasswordDescription') }}</div>
+                            <div class="text-subtitle-1 font-weight-medium">{{ $t('users.edit.resetPassword') }}</div>
+                            <div class="text-body-2 text-medium-emphasis mb-2">{{ $t('users.edit.resetPasswordDescription') }}</div>
                             <v-btn
                                 class="mb-2"
+                                variant="tonal"
+                                prepend-icon="mdi-email"
                             >
-                                <v-icon left small>mdi-email</v-icon>
                                 {{ $t('users.edit.sendResetPasswordEmail') }}
                             </v-btn>
                         </div>
@@ -184,10 +180,9 @@
                         <v-divider></v-divider>
 
                         <div class="my-2">
-                            <div class="title">{{ $t('users.edit.exportData') }}</div>
-                            <div class="subtitle mb-2">{{ $t('users.edit.exportDataDescription') }}</div>
-                            <v-btn class="mb-2">
-                                <v-icon left small>mdi-clipboard-account</v-icon>
+                            <div class="text-subtitle-1 font-weight-medium">{{ $t('users.edit.exportData') }}</div>
+                            <div class="text-body-2 text-medium-emphasis mb-2">{{ $t('users.edit.exportDataDescription') }}</div>
+                            <v-btn class="mb-2" variant="tonal" prepend-icon="mdi-clipboard-account">
                                 {{ $t('users.edit.exportUserData') }}
                             </v-btn>
                         </div>
@@ -195,61 +190,62 @@
                         <v-divider></v-divider>
 
                         <div class="my-2">
-                            <div class="error--text title">{{ $t('users.edit.dangerZone') }}</div>
-                            <div class="subtitle mb-2">{{ $t('users.edit.adminAccessDescription') }}</div>
+                            <div class="text-error text-subtitle-1 font-weight-medium">{{ $t('users.edit.dangerZone') }}</div>
+                            <div class="text-body-2 text-medium-emphasis mb-2">{{ $t('users.edit.adminAccessDescription') }}</div>
 
                             <div class="my-2">
                                 <v-btn
                                     v-if="user.role === 'ADMIN'"
-                                    color="bg-primary"
+                                    color="primary"
+                                    variant="tonal"
+                                    prepend-icon="mdi-security"
                                     @click="user.role = 'USER'"
                                 >
-                                    <v-icon left small>mdi-security</v-icon>
                                     {{ $t('users.edit.removeAdminAccess') }}
                                 </v-btn>
-                                <v-btn v-else color="bg-primary" @click="user.role = 'ADMIN'">
-                                    <v-icon left small>mdi-security</v-icon>
+                                <v-btn v-else color="primary" variant="tonal" prepend-icon="mdi-security" @click="user.role = 'ADMIN'">
                                     {{ $t('users.edit.setAsAdmin') }}
                                 </v-btn>
                             </div>
 
                             <v-divider></v-divider>
 
-                            <div class="subtitle mt-3 mb-2">{{ $t('users.edit.preventSignIn') }}</div>
+                            <div class="text-body-2 text-medium-emphasis mt-3 mb-2">{{ $t('users.edit.preventSignIn') }}</div>
                             <div class="my-2">
                                 <v-btn
                                     v-if="user.disabled"
                                     color="warning"
+                                    variant="tonal"
+                                    prepend-icon="mdi-account-check"
                                     @click="user.disabled = false"
                                 >
-                                    <v-icon left small>mdi-account-check</v-icon>
                                     {{ $t('users.edit.enableUser') }}
                                 </v-btn>
                                 <v-btn
                                     v-else
                                     color="warning"
+                                    variant="tonal"
+                                    prepend-icon="mdi-cancel"
                                     @click="disableUser"
                                 >
-                                    <v-icon left small>mdi-cancel</v-icon>
                                     {{ $t('users.edit.disableUser') }}
                                 </v-btn>
                             </div>
 
                             <v-divider></v-divider>
                             <div
-                                class="subtitle mt-3 mb-2"
+                                class="text-body-2 text-medium-emphasis mt-3 mb-2"
                             >{{ $t('users.edit.deleteUserWarning') }}
                             </div>
-                            <v-btn color="error" @click="deleteUser">
-                                <v-icon left small>mdi-delete</v-icon>
+                            <v-btn color="error" variant="flat" prepend-icon="mdi-delete" @click="deleteUser">
                                 {{ $t('users.edit.deleteUser') }}
                             </v-btn>
                         </div>
                     </v-expansion-panel-text>
                 </v-expansion-panel>
                 <v-expansion-panel>
-                    <v-expansion-panel-title class="title">{{ $t('users.edit.metadata') }}</v-expansion-panel-title>
-                    <v-expansion-panel-text class="body-2">
+                    <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">{{ $t('users.edit.metadata') }}</v-expansion-panel-title>
+                    <v-expansion-panel-text class="text-body-2">
                         <span class="font-weight-bold">{{ $t('users.edit.created') }}</span>
                         {{ $formatDate(new Date(user?.created_at), 'd LLL yyyy') }}
                         <br/>
@@ -258,9 +254,9 @@
                     </v-expansion-panel-text>
                 </v-expansion-panel>
                 <v-expansion-panel>
-                    <v-expansion-panel-title class="title">{{ $t('users.edit.rawData') }}</v-expansion-panel-title>
+                    <v-expansion-panel-title class="text-subtitle-1 font-weight-medium">{{ $t('users.edit.rawData') }}</v-expansion-panel-title>
                     <v-expansion-panel-text>
-                        <pre class="body-2">{{ user }}</pre>
+                        <pre class="text-body-2">{{ user }}</pre>
                     </v-expansion-panel-text>
                 </v-expansion-panel>
             </v-expansion-panels>

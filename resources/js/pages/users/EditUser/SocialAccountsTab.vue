@@ -1,7 +1,7 @@
 <template>
     <div class="my-2">
         <v-card>
-            <v-card-title>{{ $t('socialAccounts.title') }}</v-card-title>
+            <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('socialAccounts.title') }}</v-card-title>
             <v-card-subtitle>
                 {{ $t('socialAccounts.subtitle') }}
             </v-card-subtitle>
@@ -16,9 +16,7 @@
                 </v-alert>
 
                 <!-- Loading State -->
-                <div v-if="loading" class="text-center py-6">
-                    <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                </div>
+                <loading-state v-if="loading" compact />
 
                 <!-- Connected Accounts -->
                 <div v-if="!loading && connectedAccounts.length > 0">
@@ -44,7 +42,7 @@
 
                             <template #append>
                                 <v-btn
-                                    variant="outlined"
+                                    variant="tonal"
                                     color="error"
                                     size="small"
                                     :loading="disconnecting === account.provider"
@@ -112,8 +110,10 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { useDialog } from '@/composables/useDialog.js';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 export default {
+    components: { LoadingState },
     props: {
         user: {
             default: () => ({})

@@ -1,17 +1,16 @@
 <template>
-    <v-menu offset-y left transition="slide-y-transition">
+    <v-menu location="bottom end" transition="slide-y-transition">
 
         <template v-slot:activator="{ props }">
             <v-badge
                 :content="unreadCount"
-                :value="unreadCount > 0"
+                :model-value="unreadCount > 0"
+                color="error"
                 offset-x="22"
                 offset-y="22"
                 v-bind="props"
             >
-                <v-btn>
-                    <v-icon>mdi-message-outline</v-icon>
-                </v-btn>
+                <v-btn icon="mdi-message-outline" variant="text" />
             </v-badge>
         </template>
 
@@ -21,31 +20,21 @@
             min-width="350"
             max-width="450"
         >
-            <v-card-title class="text-subtitle-1 font-weight-medium pa-3 bg-primary text-white">
-                <v-icon start class="mr-2">mdi-message-text</v-icon>
-                Messages
+            <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center ga-2">
+                <v-icon>mdi-message-text</v-icon>
+                {{ $t('conversation.messages') }}
             </v-card-title>
 
             <v-divider></v-divider>
 
-            <template v-if="loading">
-                <div class="text-center py-8">
-                    <v-progress-circular
-                        indeterminate
-                        color="primary"
-                        size="32"
-                    ></v-progress-circular>
-                </div>
-            </template>
+            <loading-state v-if="loading" compact />
 
-            <template v-else-if="recentConversations.length === 0">
-                <div class="text-center py-8">
-                    <v-icon size="48" color="grey-lighten-2">mdi-message-outline</v-icon>
-                    <p class="text-body-2 text-medium-emphasis mt-2">
-                        No recent messages
-                    </p>
-                </div>
-            </template>
+            <empty-state
+                v-else-if="recentConversations.length === 0"
+                compact
+                icon="mdi-message-outline"
+                :title="$t('conversation.noRecentMessages')"
+            />
 
             <v-list v-else class="py-0" max-height="400" style="overflow-y: auto;">
                 <template v-for="(conversation, index) in recentConversations" :key="conversation.uuid">
@@ -55,18 +44,6 @@
                         :class="{ 'unread': hasUnreadMessages(conversation) }"
                     >
                         <template v-slot:prepend>
-<!--                            <v-avatar size="40" :color="hasUnreadMessages(conversation) ? 'primary' : 'grey-lighten-3'">-->
-<!--                                <v-icon v-if="!getOtherUser(conversation)" color="white">-->
-<!--                                    mdi-account-multiple-->
-<!--                                </v-icon>-->
-<!--                                <v-img-->
-<!--                                    v-else-if="getOtherUser(conversation)?.avatar"-->
-<!--                                    :src="getOtherUser(conversation).avatar"-->
-<!--                                />-->
-<!--                                <span v-else class="text-white text-subtitle-2">-->
-<!--                                    {{ getOtherUser(conversation)?.initials || '?' }}-->
-<!--                                </span>-->
-<!--                            </v-avatar>-->
                             <user-avatar :user="getOtherUser(conversation)"></user-avatar>
                         </template>
 
@@ -74,8 +51,8 @@
                             {{ getConversationTitle(conversation) }}
                         </v-list-item-title>
 
-                        <v-list-item-subtitle class="text-caption text-truncate">
-                            {{ conversation.body || 'New conversation' }}
+                        <v-list-item-subtitle class="text-caption conversation-item__preview">
+                            {{ conversation.body || $t('conversation.newConversation') }}
                         </v-list-item-subtitle>
 
                         <template v-slot:append>
@@ -107,7 +84,7 @@
                     size="small"
                     color="primary"
                 >
-                    See all messages
+                    {{ $t('conversation.seeAllMessages') }}
                 </v-btn>
             </div>
         </v-card>
@@ -121,9 +98,11 @@ import { useConversationsStore } from "@/store/conversationsStore.js";
 import { useUserStore } from '@/store/userStore.js';
 import eventBus from '../common/eventBus.js';
 import UserAvatar from "@/components/common/UserAvatar.vue";
+import EmptyState from "@/components/common/EmptyState.vue";
+import LoadingState from "@/components/common/LoadingState.vue";
 
 export default {
-    components: {UserAvatar},
+    components: {UserAvatar, EmptyState, LoadingState},
     setup() {
         const router = useRouter();
         const conversationsStore = useConversationsStore();
@@ -237,7 +216,7 @@ export default {
 }
 
 .conversation-item:hover {
-    background-color: rgba(0, 0, 0, 0.04);
+    background-color: rgba(var(--v-theme-on-surface), 0.04);
 }
 
 .conversation-item.unread {
@@ -248,14 +227,10 @@ export default {
     font-weight: 700;
 }
 
-.text-truncate {
+.conversation-item__preview {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 250px;
-}
-
-.bg-primary {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
 }
 </style>

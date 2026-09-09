@@ -1,6 +1,6 @@
 <template>
     <v-form ref="formRef" @submit.prevent="addUser">
-        <div class="d-flex align-center gap-3">
+        <div class="d-flex align-center ga-3">
             <v-autocomplete
                 v-model="selectedUser"
                 :items="userList"
@@ -9,7 +9,6 @@
                 @update:search="handleUserSearch"
                 :label="$t('conversation.selectRecipients')"
                 :placeholder="$t('conversation.searchUsersPlaceholder')"
-                variant="outlined"
                 item-title="username"
                 item-value="id"
                 multiple
@@ -158,18 +157,10 @@ export default {
 </script>
 
 <style scoped>
-.gap-3 {
-    gap: 12px;
-}
-
 @media (max-width: 600px) {
     .d-flex.align-center {
         flex-direction: column;
         align-items: stretch;
-    }
-
-    .gap-3 {
-        gap: 16px;
     }
 }
 </style>

@@ -1,38 +1,37 @@
 <template>
     <div class="d-flex flex-column flex-grow-1">
+        <page-header
+            :title="$t('notifications.title')"
+            :subtitle="$t('notifications.subtitle')"
+            icon="mdi-bell-outline"
+        />
 
-        <v-container fluid>
-        <div class="d-flex align-center py-3">
-            <div>
-                <div class="display-1">My Notifications</div>
-                <v-breadcrumbs :items="breadcrumbs" class="pa-0 py-2" />
-            </div>
-            <v-spacer />
-        </div>
-        <v-app-bar dark>
-            <v-app-bar-title>Notifications</v-app-bar-title>
-            <v-spacer />
-            <v-btn icon>
-                <v-icon>mdi-magnify</v-icon>
-            </v-btn>
-        </v-app-bar>
-<!--        <v-card>-->
+        <v-container>
+            <loading-state v-if="isLoading && !hasNotifications" />
 
+            <empty-state
+                v-else-if="!hasNotifications"
+                icon="mdi-bell-off-outline"
+                :title="$t('notifications.noNotifications')"
+                :text="$t('notifications.emptyHint')"
+            />
 
+            <template v-else>
+                <v-card
+                    v-for="(item) in notifications"
+                    :key="item.id"
+                    class="mb-3"
+                    rounded="lg"
+                >
+                    <v-card-title class="text-subtitle-1 font-weight-medium">{{ item.data.subject }}</v-card-title>
+                    <v-card-text class="text-body-1 py-2" v-html="item.data.body"></v-card-text>
+                    <v-card-text v-if="item.data.url && item.data.action" class="pt-0">
+                        <v-btn :href="item.data.url" target="_blank" variant="tonal" size="small">{{ item.data.action }}</v-btn>
+                    </v-card-text>
 
-            <v-card v-model="notificationModel"
-                    v-for="(item) in notifications" :key="item.title"
-                class="mx-auto my-1 w-100"
-                :title="item.data.subject"
-            >
+                    <v-divider />
 
-
-                <v-card-text class="text-h5 py-2" v-html="item.data.body">
-                </v-card-text>
-                <v-btn :href="item.data.url" target="_blank" variant="flat" small>{{item.data.action}}</v-btn>
-
-                <v-card-actions>
-                    <v-list-item class="w-100">
+                    <v-list-item>
                         <template v-slot:prepend>
                             <user-avatar :user="item.data.notifier"></user-avatar>
                         </template>
@@ -42,70 +41,44 @@
                         <v-list-item-subtitle>{{ $formatDistanceToNow(item.created_at) }}</v-list-item-subtitle>
 
                         <template v-slot:append>
-                            <div class="justify-self-end">
-                                <v-btn
-                                    icon="mdi-delete"
-                                    variant="text"
-                                    color="red-darken-3"
-                                    size="small"
-                                    :loading="deleting.includes(item.id)"
-                                    :disabled="deleting.length > 0 && !deleting.includes(item.id)"
-                                    @click="deleteNotification(item.id)"
-                                />
-                            </div>
+                            <v-btn
+                                icon="mdi-delete"
+                                variant="text"
+                                color="error"
+                                size="small"
+                                :aria-label="$t('common.delete')"
+                                :title="$t('common.delete')"
+                                :loading="deleting.includes(item.id)"
+                                :disabled="deleting.length > 0 && !deleting.includes(item.id)"
+                                @click="deleteNotification(item.id)"
+                            />
                         </template>
                     </v-list-item>
-                </v-card-actions>
-            </v-card>
-
-
-<!--            <v-list three-line v-model="notificationModel">-->
-
-<!--                    <v-list-item v-for="(item) in notifications" :key="item.title">-->
-
-<!--                        <user-avatar :user="item.data.notifier"></user-avatar>-->
-<!--                        <v-list-item-title>-->
-<!--                                {{ item.data.subject }} - {{ item.data.notifier.username }}-->
-<!--                            </v-list-item-title>-->
-<!--                            <v-list-item-subtitle v-html="item.data.body"></v-list-item-subtitle>-->
-<!--                            <v-btn :href="item.data.url" target="_blank" variant="flat" small>{{item.data.action}}</v-btn>-->
-<!--                        <v-list-item-action>-->
-<!--                            {{ $formatDistanceToNow(item.created_at) }}-->
-<!--                            <v-icon @click="deleteNotification(item.id)" color="red darken-3">mdi-delete</v-icon>-->
-<!--                        </v-list-item-action>-->
-<!--                    </v-list-item>-->
-
-<!--            </v-list>-->
-<!--        </v-card>-->
+                </v-card>
+            </template>
         </v-container>
     </div>
 </template>
 
 <script>
-import { ref, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import UserAvatar from "@/components/common/UserAvatar.vue";
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 import { useDialog } from '@/composables/useDialog.js';
 
 export default {
-    components: {UserAvatar},
+    components: { UserAvatar, PageHeader, EmptyState, LoadingState },
     props: {
         id: {
             required: false,
             type: [String, Number]
         }
     },
-    data: () => ({
-        breadcrumbs: [{
-            text: 'Account',
-            disabled: false,
-            href: '#'
-        }, {
-            text: 'Notifications'
-        }]
-    }),
     setup(props) {
         const notificationModel = ref(null);
         const isLoading = ref(false);
@@ -116,6 +89,11 @@ export default {
         const { t } = useI18n();
         const dialog = useDialog();
 
+        const hasNotifications = computed(() => {
+            const list = notifications.value;
+            if (!list) return false;
+            return Array.isArray(list) ? list.length > 0 : Object.keys(list).length > 0;
+        });
 
         // Watch for changes in route params
         watch(() => route.params.id, (newId) => {
@@ -131,18 +109,18 @@ export default {
         });
 
         const getAllNotifications = async () => {
-            // your axios logic here
+            isLoading.value = true;
             try {
-                axios.get('/api/account/notifications').then((data) => {
-                    notifications.value = data.data
-                }).catch(err => {
-                    if (err.response.status === 404) {
-                        throw new Error(`${err.config.url} not found`);
-                    }
-                    throw err;
-                })
-            } catch (error) {
-                console.warn(error)
+                const { data } = await axios.get('/api/account/notifications');
+                notifications.value = data;
+            } catch (err) {
+                if (err.response?.status === 404) {
+                    console.warn(new Error(`${err.config.url} not found`));
+                } else {
+                    console.warn(err);
+                }
+            } finally {
+                isLoading.value = false;
             }
         };
 
@@ -166,102 +144,11 @@ export default {
             notificationModel,
             isLoading,
             notifications,
+            hasNotifications,
             deleting,
             getAllNotifications,
             deleteNotification
         };
     }
 }
-
-// export default {
-//     components: {
-//
-//     },
-//     // props() {
-//     //     id: {
-//     //         required: false
-//     //     }
-//     // },
-//     data() {
-//         return {
-//             notificationModel:null,
-//             isLoading: false,
-//             breadcrumbs: [{
-//                 text: 'Account',
-//                 disabled: false,
-//                 href: '#'
-//             }, {
-//                 text: 'Notifications'
-//             }],
-//
-//             searchQuery: '',
-//             selectedNotifications: [],
-//             notifications: {}
-//         }
-//     },
-//     watch: {
-//         '$route' () {
-//             this.notificationModel = this.$route.params.id;
-//         },
-//         selectedNotifications(val) {
-//
-//         }
-//     },
-//     methods: {
-//         getAllNotifications() {
-//             try {
-//                 axios.get('/api/account/notifications').then((data) => {
-//                     this.notifications = data.data
-//                 }).catch(err => {
-//                     if (err.response.status === 404) {
-//                         throw new Error(`${err.config.url} not found`);
-//                     }
-//                     throw err;
-//                 })
-//             } catch (error) {
-//                 console.warn(error)
-//             }
-//         },
-//         deleteNotification(id) {
-//             try {
-//                 axios.delete('/api/account/notification/delete/' + id).then(() => {
-//                     this.getAllNotifications();
-//                 }).catch(err => {
-//                     if (err.response.status === 404) {
-//                         throw new Error(`${err.config.url} not found`);
-//                     }
-//                     throw err;
-//                 })
-//             } catch (error) {
-//                 console.warn(error)
-//             }
-//         },
-//         searchNotifications() {
-//         },
-//         open() {
-//         }
-//     },
-//     mounted() {
-//         if(this.$route.params.id) {
-//             this.notificationModel = this.$route.params.id;
-//         }
-//         this.getAllNotifications();
-//     }
-// }
 </script>
-
-<style lang="scss" scoped>
-.slide-fade-enter-active {
-    transition: all 0.3s ease;
-}
-
-.slide-fade-leave-active {
-    transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1);
-}
-
-.slide-fade-enter,
-.slide-fade-leave-to {
-    transform: translateX(10px);
-    opacity: 0;
-}
-</style>

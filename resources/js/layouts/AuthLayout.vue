@@ -19,12 +19,11 @@
     <div class="auth-controls">
       <ToolbarLanguage :show-label="false" />
       <v-btn
-        icon
-        @click="toggleTheme"
+        :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
+        variant="text"
         :title="isDark ? $t('common.switchToLightMode') : $t('common.switchToDarkMode')"
-      >
-        <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
-      </v-btn>
+        @click="toggleTheme"
+      />
     </div>
 
     <v-sheet class="layout-side mx-auto mx-md-1 d-none d-md-flex flex-md-column justify-space-between px-2" color="surface">
@@ -39,11 +38,11 @@
             class="mx-auto"
           />
         </div>
-        <div class="display-2 font-weight-bold text-primary">
+        <div class="text-h3 font-weight-bold text-gradient">
           {{ appName }}
         </div>
-        <div class="title my-2">{{ siteTagline || $t('auth.welcomeTagline') }}</div>
-        <v-btn to="/" class="my-4">{{ $t('auth.takeMeBack') }}</v-btn>
+        <div class="text-h6 my-2">{{ siteTagline || $t('auth.welcomeTagline') }}</div>
+        <v-btn to="/" variant="tonal" color="primary" class="my-4">{{ $t('auth.takeMeBack') }}</v-btn>
       </div>
       <v-img v-if="!loginBrandingEnabled || !currentLogo" src="/images/illustrations/signin-illustration.svg" max-height="400" contain />
     </v-sheet>
@@ -52,7 +51,7 @@
       <div class="layout-content ma-auto w-full">
         <slot></slot>
       </div>
-      <div class="overline mt-4">{{ appName }} - {{ appVersion }}</div>
+      <div class="text-overline text-medium-emphasis mt-4">{{ appName }} - {{ appVersion }}</div>
     </div>
   </v-sheet>
 </template>

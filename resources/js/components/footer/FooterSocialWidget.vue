@@ -2,13 +2,14 @@
     <div>
         <footer-widget-heading :title="config.title" />
 
-        <div v-if="hasSocialLinks" class="d-flex gap-2 flex-wrap">
+        <div v-if="hasSocialLinks" class="d-flex ga-2 flex-wrap">
             <v-btn
                 v-if="config.showTwitter && socialTwitter"
                 :href="socialTwitter"
                 target="_blank"
                 icon
                 size="small"
+                variant="tonal"
                 color="primary"
                 :title="$t('settings.footer.social.twitter')"
             >
@@ -20,6 +21,7 @@
                 target="_blank"
                 icon
                 size="small"
+                variant="tonal"
                 color="primary"
                 :title="$t('settings.footer.social.facebook')"
             >
@@ -31,6 +33,7 @@
                 target="_blank"
                 icon
                 size="small"
+                variant="tonal"
                 color="primary"
                 :title="$t('settings.footer.social.instagram')"
             >
@@ -42,6 +45,7 @@
                 target="_blank"
                 icon
                 size="small"
+                variant="tonal"
                 color="primary"
                 :title="$t('settings.footer.social.linkedin')"
             >
@@ -53,6 +57,7 @@
                 target="_blank"
                 icon
                 size="small"
+                variant="tonal"
                 color="primary"
                 :title="$t('settings.footer.social.youtube')"
             >
@@ -64,6 +69,7 @@
                 target="_blank"
                 icon
                 size="small"
+                variant="tonal"
                 color="primary"
                 :title="$t('settings.footer.social.discord')"
             >

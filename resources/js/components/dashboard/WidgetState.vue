@@ -1,31 +1,30 @@
 <template>
-    <div v-if="loading && empty" class="text-center py-6">
-        <v-progress-circular indeterminate size="24" color="primary" />
-    </div>
+    <loading-state v-if="loading && empty" compact />
     <v-alert v-else-if="error" type="error" variant="tonal" density="compact" class="text-caption">
         {{ error }}
     </v-alert>
-    <div v-else-if="empty" class="text-center py-4 text-medium-emphasis">
-        <v-icon size="32" class="mb-2">{{ emptyIcon }}</v-icon>
-        <div class="text-caption">{{ emptyText }}</div>
-    </div>
+    <empty-state v-else-if="empty" compact :icon="emptyIcon" :title="emptyText" />
     <div v-else :class="{ 'widget-refreshing': loading }">
         <slot />
     </div>
 </template>
 
 <script>
+import LoadingState from '@/components/common/LoadingState.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+
 /**
  * Loading / error / empty states shared by the dashboard widgets; renders
  * the slot once there is data (dimmed while a refresh is in flight).
  */
 export default {
     name: 'WidgetState',
+    components: { LoadingState, EmptyState },
     props: {
         loading: { type: Boolean, default: false },
         error: { type: String, default: null },
         empty: { type: Boolean, default: false },
-        emptyIcon: { type: String, default: 'mdi-tray-remove' },
+        emptyIcon: { type: String, default: 'mdi-tray-remove-outline' },
         emptyText: { type: String, default: '' },
     },
 };

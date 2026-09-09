@@ -5,8 +5,8 @@
             {{ $t('auth.alreadyVerified') }}
         </v-alert>
         <v-card class="pa-2" elevation="4">
-            <h1>{{ $t('auth.verifyEmailTitle') }}</h1>
-            <div class="mb-6 overline">{{ $t('auth.verifyEmailHint') }}</div>
+            <v-card-title class="justify-center text-h5 mb-2">{{ $t('auth.verifyEmailTitle') }}</v-card-title>
+            <div class="mb-6 text-overline text-medium-emphasis">{{ $t('auth.verifyEmailHint') }}</div>
 
             <v-btn
                 :loading="isLoading"

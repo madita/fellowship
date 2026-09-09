@@ -6,6 +6,9 @@ import { useDebounceFn } from '@vueuse/core';
 import axios from 'axios';
 import TicketSidebar from './TicketSidebar.vue';
 import TicketKanban from './TicketKanban.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 import { useUserStore } from '@/store/userStore.js';
 import { useDateFormat } from '@/plugins/formatDate.js';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
@@ -316,371 +319,333 @@ onMounted(() => {
 </script>
 
 <template>
-    <v-container fluid class="ticket-layout pa-0">
-        <!-- Kanban View -->
-        <template v-if="viewMode === 'kanban'">
-            <div class="kanban-wrapper d-flex flex-column fill-height">
-                <!-- Kanban Header -->
-                <div class="kanban-header pa-4 d-flex align-center">
-                    <div class="flex-grow-1">
-                        <h3 class="text-h6 font-weight-bold">{{ pageTitle }}</h3>
-                        <p class="text-caption text-medium-emphasis mb-0">{{ pageSubtitle }}</p>
-                    </div>
-                    <v-btn-toggle v-model="viewMode" mandatory density="compact" class="mr-2">
-                        <v-btn value="list" size="small" :title="t('tickets.listView')">
-                            <v-icon>mdi-view-list</v-icon>
-                        </v-btn>
-                        <v-btn value="kanban" size="small" :title="t('tickets.kanbanView')">
-                            <v-icon>mdi-view-column</v-icon>
-                        </v-btn>
-                    </v-btn-toggle>
-                    <v-btn
-                        v-if="isAdmin"
-                        icon="mdi-plus"
-                        variant="tonal"
-                        color="primary"
-                        size="small"
-                        @click="createNewTicket"
-                        :title="t('tickets.createTicket')"
-                    />
-                </div>
+    <div class="ticket-page d-flex flex-column">
+        <page-header
+            fluid
+            :title="pageTitle"
+            :subtitle="pageSubtitle"
+            icon="mdi-ticket-outline"
+            class="flex-shrink-0"
+        >
+            <template #actions>
+                <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided>
+                    <v-btn value="list" size="small" icon="mdi-view-list" :title="t('tickets.listView')" :aria-label="t('tickets.listView')" />
+                    <v-btn value="kanban" size="small" icon="mdi-view-column" :title="t('tickets.kanbanView')" :aria-label="t('tickets.kanbanView')" />
+                </v-btn-toggle>
+                <v-btn
+                    v-if="isAdmin"
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-plus"
+                    @click="createNewTicket"
+                >
+                    {{ t('tickets.createTicket') }}
+                </v-btn>
+            </template>
+        </page-header>
 
-                <v-divider />
+        <v-container fluid class="ticket-layout pa-0 flex-grow-1">
+            <!-- Kanban View -->
+            <TicketKanban
+                v-if="viewMode === 'kanban'"
+                ref="kanbanRef"
+                class="fill-height"
+                @open-ticket="handleKanbanOpenTicket"
+                @ticket-updated="handleKanbanTicketUpdated"
+            />
 
-                <!-- Kanban Board -->
-                <TicketKanban
-                    ref="kanbanRef"
-                    class="flex-grow-1"
-                    @open-ticket="handleKanbanOpenTicket"
-                    @ticket-updated="handleKanbanTicketUpdated"
-                />
-            </div>
-        </template>
-
-        <!-- List View -->
-        <v-row v-else no-gutters class="fill-height">
-            <!-- Left Panel - Ticket List -->
-            <v-col cols="12" md="4" lg="3" class="left-panel d-flex flex-column">
-                <!-- Header -->
-                <div class="left-panel-header pa-4">
-                    <div class="d-flex align-center justify-space-between mb-2">
-                        <div>
-                            <h3 class="text-h6 font-weight-bold">{{ pageTitle }}</h3>
-                            <p class="text-caption text-medium-emphasis mb-0">{{ pageSubtitle }}</p>
-                        </div>
-                        <div class="d-flex align-center ga-1">
-                            <v-btn-toggle v-model="viewMode" mandatory density="compact">
-                                <v-btn value="list" size="small" :title="t('tickets.listView')">
-                                    <v-icon>mdi-view-list</v-icon>
-                                </v-btn>
-                                <v-btn value="kanban" size="small" :title="t('tickets.kanbanView')">
-                                    <v-icon>mdi-view-column</v-icon>
-                                </v-btn>
-                            </v-btn-toggle>
-                            <v-btn
-                                v-if="isAdmin"
-                                icon="mdi-plus"
-                                variant="tonal"
-                                color="primary"
-                                size="small"
-                                @click="createNewTicket"
-                                :title="t('tickets.createTicket')"
-                            />
-                        </div>
-                    </div>
-
-                    <!-- Search -->
-                    <v-text-field
-                        v-model="filters.search"
-                        :placeholder="t('tickets.filters.searchPlaceholder')"
-                        prepend-inner-icon="mdi-magnify"
-                        variant="outlined"
-                        density="compact"
-                        hide-details
-                        clearable
-                        class="mb-2"
-                        @update:model-value="debouncedApplyFilters"
-                    />
-
-                    <!-- Status + Filter toggle row -->
-                    <div class="d-flex align-center ga-2">
-                        <v-select
-                            v-model="filters.status"
-                            :items="statusFilterOptions()"
-                            item-title="label"
-                            item-value="value"
-                            variant="outlined"
+            <!-- List View -->
+            <v-row v-else no-gutters class="fill-height">
+                <!-- Left Panel - Ticket List -->
+                <v-col cols="12" md="4" lg="3" class="left-panel d-flex flex-column border-e">
+                    <!-- Search + filters -->
+                    <div class="flex-shrink-0 pa-4">
+                        <v-text-field
+                            v-model="filters.search"
+                            :placeholder="t('tickets.filters.searchPlaceholder')"
+                            prepend-inner-icon="mdi-magnify"
                             density="compact"
                             hide-details
-                            class="flex-grow-1"
-                            @update:model-value="applyFilters"
+                            clearable
+                            class="mb-2"
+                            @update:model-value="debouncedApplyFilters"
                         />
-                        <v-btn
-                            :icon="showFilters ? 'mdi-filter-off' : 'mdi-filter-variant'"
-                            variant="text"
-                            density="compact"
-                            size="small"
-                            @click="showFilters = !showFilters"
-                        >
-                            <v-icon>{{ showFilters ? 'mdi-filter-off' : 'mdi-filter-variant' }}</v-icon>
-                            <v-badge
-                                v-if="activeFilterCount > 0 && !showFilters"
-                                :content="activeFilterCount"
-                                color="primary"
-                                floating
-                            />
-                        </v-btn>
-                    </div>
 
-                    <!-- Expandable Filters -->
-                    <v-expand-transition>
-                        <div v-if="showFilters" class="mt-2">
+                        <!-- Status + Filter toggle row -->
+                        <div class="d-flex align-center ga-2">
                             <v-select
-                                v-model="filters.priority"
-                                :items="priorityFilterOptions()"
+                                v-model="filters.status"
+                                :items="statusFilterOptions()"
                                 item-title="label"
                                 item-value="value"
-                                :label="t('tickets.fields.priority')"
-                                variant="outlined"
                                 density="compact"
                                 hide-details
-                                class="mb-2"
-                                @update:model-value="applyFilters"
-                            />
-                            <v-select
-                                v-model="filters.type"
-                                :items="ticketTypes"
-                                item-title="name"
-                                item-value="slug"
-                                :label="t('tickets.fields.type')"
-                                variant="outlined"
-                                density="compact"
-                                hide-details
-                                class="mb-2"
-                                @update:model-value="applyFilters"
-                            />
-                            <v-select
-                                v-if="isAdmin"
-                                v-model="filters.assigned_to"
-                                :items="assigneeFilterOptions"
-                                item-title="label"
-                                item-value="value"
-                                :label="t('tickets.fields.assignee')"
-                                variant="outlined"
-                                density="compact"
-                                hide-details
-                                class="mb-2"
+                                class="flex-grow-1"
                                 @update:model-value="applyFilters"
                             />
                             <v-btn
+                                :icon="showFilters ? 'mdi-filter-off' : 'mdi-filter-variant'"
                                 variant="text"
                                 density="compact"
                                 size="small"
-                                color="secondary"
-                                block
-                                @click="resetFilters"
+                                @click="showFilters = !showFilters"
                             >
-                                {{ t('tickets.reset') }}
+                                <v-icon>{{ showFilters ? 'mdi-filter-off' : 'mdi-filter-variant' }}</v-icon>
+                                <v-badge
+                                    v-if="activeFilterCount > 0 && !showFilters"
+                                    :content="activeFilterCount"
+                                    color="primary"
+                                    floating
+                                />
                             </v-btn>
                         </div>
-                    </v-expand-transition>
-                </div>
 
-                <v-divider />
-
-                <!-- Ticket List -->
-                <div class="ticket-list-items flex-grow-1 overflow-y-auto">
-                    <v-progress-linear v-if="loading || saving" indeterminate color="primary" />
-
-                    <v-list v-if="tickets.length > 0" class="pa-0" density="compact">
-                        <v-list-item
-                            v-for="ticket in tickets"
-                            :key="ticket.id"
-                            :active="selectedTicket?.id === ticket.id"
-                            class="ticket-list-item"
-                            @click="selectTicket(ticket)"
-                        >
-                            <template #prepend>
-                                <v-icon
-                                    :color="getPriorityColor(ticket.priority)"
+                        <!-- Expandable Filters -->
+                        <v-expand-transition>
+                            <div v-if="showFilters" class="mt-2">
+                                <v-select
+                                    v-model="filters.priority"
+                                    :items="priorityFilterOptions()"
+                                    item-title="label"
+                                    item-value="value"
+                                    :label="t('tickets.fields.priority')"
+                                    density="compact"
+                                    hide-details
+                                    class="mb-2"
+                                    @update:model-value="applyFilters"
+                                />
+                                <v-select
+                                    v-model="filters.type"
+                                    :items="ticketTypes"
+                                    item-title="name"
+                                    item-value="slug"
+                                    :label="t('tickets.fields.type')"
+                                    density="compact"
+                                    hide-details
+                                    class="mb-2"
+                                    @update:model-value="applyFilters"
+                                />
+                                <v-select
+                                    v-if="isAdmin"
+                                    v-model="filters.assigned_to"
+                                    :items="assigneeFilterOptions"
+                                    item-title="label"
+                                    item-value="value"
+                                    :label="t('tickets.fields.assignee')"
+                                    density="compact"
+                                    hide-details
+                                    class="mb-2"
+                                    @update:model-value="applyFilters"
+                                />
+                                <v-btn
+                                    variant="text"
+                                    density="compact"
                                     size="small"
-                                    class="mr-1"
+                                    block
+                                    @click="resetFilters"
                                 >
-                                    {{ getPriorityIcon(ticket.priority) }}
-                                </v-icon>
-                            </template>
-
-                            <v-list-item-title class="text-body-2 font-weight-medium">
-                                {{ ticket.title }}
-                            </v-list-item-title>
-
-                            <v-list-item-subtitle class="d-flex align-center ga-2 mt-1">
-                                <v-chip
-                                    size="x-small"
-                                    :color="getStatusColor(ticket.status)"
-                                >
-                                    {{ ticket.status_label }}
-                                </v-chip>
-                                <v-chip
-                                    v-if="ticket.ticket_type"
-                                    size="x-small"
-                                    :color="ticket.ticket_type.color"
-                                    variant="outlined"
-                                >
-                                    {{ ticket.ticket_type.name }}
-                                </v-chip>
-                                <span class="text-caption text-medium-emphasis">#{{ ticket.id }}</span>
-                            </v-list-item-subtitle>
-                        </v-list-item>
-                    </v-list>
-
-                    <!-- Empty State -->
-                    <div v-else-if="!loading" class="text-center pa-8">
-                        <v-icon size="48" color="medium-emphasis" class="mb-3">
-                            mdi-ticket-outline
-                        </v-icon>
-                        <h4 class="text-subtitle-1 mb-1">{{ t('tickets.noTickets') }}</h4>
-                        <p class="text-caption text-medium-emphasis mb-3">
-                            {{ filters.status ? t('tickets.noTicketsFilterHint') : t('tickets.noTicketsCreateHint') }}
-                        </p>
-                        <v-btn
-                            v-if="isAdmin"
-                            color="primary"
-                            size="small"
-                            prepend-icon="mdi-plus"
-                            @click="createNewTicket"
-                        >
-                            {{ t('tickets.createTicket') }}
-                        </v-btn>
-                    </div>
-                </div>
-
-                <!-- Pagination -->
-                <div v-if="pagination.total > pagination.per_page" class="pa-2 border-t">
-                    <v-pagination
-                        v-model="pagination.page"
-                        :length="pagination.last_page"
-                        :total-visible="5"
-                        density="compact"
-                        rounded="circle"
-                    />
-                </div>
-            </v-col>
-
-            <!-- Right Panel - Related Content -->
-            <v-col cols="12" md="8" lg="9" class="right-panel d-flex flex-column">
-                <template v-if="selectedTicket?.id">
-                    <!-- Content Header Bar -->
-                    <div class="content-header pa-4 d-flex align-center">
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-center ga-2 mb-1">
-                                <v-chip
-                                    v-if="selectedTicket.ticket_type"
-                                    size="small"
-                                    :color="selectedTicket.ticket_type.color"
-                                >
-                                    <v-icon start size="small">{{ selectedTicket.ticket_type.icon }}</v-icon>
-                                    {{ selectedTicket.ticket_type.name }}
-                                </v-chip>
-                                <v-chip size="small" :color="getStatusColor(selectedTicket.status)">
-                                    {{ selectedTicket.status_label }}
-                                </v-chip>
-                                <v-chip size="small" :color="getPriorityColor(selectedTicket.priority)">
-                                    <v-icon start size="x-small">{{ getPriorityIcon(selectedTicket.priority) }}</v-icon>
-                                    {{ selectedTicket.priority_label }}
-                                </v-chip>
-                                <span class="text-caption text-medium-emphasis">#{{ selectedTicket.id }}</span>
+                                    {{ t('tickets.reset') }}
+                                </v-btn>
                             </div>
-                            <h2 class="text-h6 font-weight-medium">{{ selectedTicket.title }}</h2>
-                        </div>
-                        <v-btn
-                            color="primary"
-                            variant="tonal"
-                            prepend-icon="mdi-information-outline"
-                            @click="openDrawer"
-                        >
-                            {{ t('tickets.details') }}
-                        </v-btn>
+                        </v-expand-transition>
                     </div>
 
                     <v-divider />
 
-                    <!-- Related Content Area -->
-                    <div class="content-area flex-grow-1 overflow-y-auto pa-6">
-                        <!-- Ticket Description -->
-                        <div v-if="selectedTicket.description" class="mb-6">
-                            <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.fields.description') }}</h3>
-                            <div class="description-content">{{ selectedTicket.description }}</div>
+                    <!-- Ticket List -->
+                    <div class="ticket-list-items flex-grow-1 overflow-y-auto">
+                        <v-progress-linear v-if="loading || saving" indeterminate color="primary" />
+
+                        <v-list v-if="tickets.length > 0" class="pa-0" density="compact">
+                            <v-list-item
+                                v-for="ticket in tickets"
+                                :key="ticket.id"
+                                :active="selectedTicket?.id === ticket.id"
+                                class="ticket-list-item"
+                                @click="selectTicket(ticket)"
+                            >
+                                <template #prepend>
+                                    <v-icon
+                                        :color="getPriorityColor(ticket.priority)"
+                                        size="small"
+                                        class="mr-1"
+                                    >
+                                        {{ getPriorityIcon(ticket.priority) }}
+                                    </v-icon>
+                                </template>
+
+                                <v-list-item-title class="text-body-2 font-weight-medium">
+                                    {{ ticket.title }}
+                                </v-list-item-title>
+
+                                <v-list-item-subtitle class="d-flex align-center ga-2 mt-1">
+                                    <v-chip
+                                        size="small"
+                                        variant="tonal"
+                                        :color="getStatusColor(ticket.status)"
+                                    >
+                                        {{ ticket.status_label }}
+                                    </v-chip>
+                                    <v-chip
+                                        v-if="ticket.ticket_type"
+                                        size="small"
+                                        variant="tonal"
+                                        :color="ticket.ticket_type.color"
+                                    >
+                                        {{ ticket.ticket_type.name }}
+                                    </v-chip>
+                                    <span class="text-caption text-medium-emphasis">#{{ ticket.id }}</span>
+                                </v-list-item-subtitle>
+                            </v-list-item>
+                        </v-list>
+
+                        <!-- Empty State -->
+                        <empty-state
+                            v-else-if="!loading"
+                            compact
+                            icon="mdi-ticket-outline"
+                            :title="t('tickets.noTickets')"
+                            :text="filters.status ? t('tickets.noTicketsFilterHint') : t('tickets.noTicketsCreateHint')"
+                        >
+                            <template v-if="isAdmin" #actions>
+                                <v-btn
+                                    color="primary"
+                                    variant="flat"
+                                    size="small"
+                                    prepend-icon="mdi-plus"
+                                    @click="createNewTicket"
+                                >
+                                    {{ t('tickets.createTicket') }}
+                                </v-btn>
+                            </template>
+                        </empty-state>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div v-if="pagination.total > pagination.per_page" class="pa-2 border-t">
+                        <v-pagination
+                            v-model="pagination.page"
+                            :length="pagination.last_page"
+                            :total-visible="5"
+                            density="compact"
+                            rounded="circle"
+                        />
+                    </div>
+                </v-col>
+
+                <!-- Right Panel - Related Content -->
+                <v-col cols="12" md="8" lg="9" class="right-panel d-flex flex-column">
+                    <template v-if="selectedTicket?.id">
+                        <!-- Content Header Bar -->
+                        <div class="flex-shrink-0 pa-4 d-flex align-center ga-4">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-center flex-wrap ga-2 mb-1">
+                                    <v-chip
+                                        v-if="selectedTicket.ticket_type"
+                                        size="small"
+                                        variant="tonal"
+                                        :color="selectedTicket.ticket_type.color"
+                                    >
+                                        <v-icon start size="small">{{ selectedTicket.ticket_type.icon }}</v-icon>
+                                        {{ selectedTicket.ticket_type.name }}
+                                    </v-chip>
+                                    <v-chip size="small" variant="tonal" :color="getStatusColor(selectedTicket.status)">
+                                        {{ selectedTicket.status_label }}
+                                    </v-chip>
+                                    <v-chip size="small" variant="tonal" :color="getPriorityColor(selectedTicket.priority)">
+                                        <v-icon start size="x-small">{{ getPriorityIcon(selectedTicket.priority) }}</v-icon>
+                                        {{ selectedTicket.priority_label }}
+                                    </v-chip>
+                                    <span class="text-caption text-medium-emphasis">#{{ selectedTicket.id }}</span>
+                                </div>
+                                <h2 class="text-h6 font-weight-medium">{{ selectedTicket.title }}</h2>
+                            </div>
+                            <v-btn
+                                color="primary"
+                                variant="tonal"
+                                prepend-icon="mdi-information-outline"
+                                @click="openDrawer"
+                            >
+                                {{ t('tickets.details') }}
+                            </v-btn>
                         </div>
 
-                        <!-- Related Model Content -->
-                        <template v-if="selectedTicket.ticketable">
-                            <v-divider v-if="selectedTicket.description" class="mb-6" />
+                        <v-divider />
 
-                            <div class="d-flex align-center mb-4">
-                                <v-icon class="mr-2" color="primary">
-                                    {{ selectedTicket.ticketable_type === 'App\\Models\\Wiki' ? 'mdi-book-open-variant' : 'mdi-file-document-outline' }}
-                                </v-icon>
-                                <h3 class="text-subtitle-1 font-weight-medium">
-                                    {{ t('tickets.sidebar.relatedTo') }}: {{ relatedContentTitle || selectedTicket.ticketable.title || selectedTicket.ticketable.slug }}
-                                </h3>
-                                <v-spacer />
-                                <v-btn
-                                    v-if="selectedTicket.ticketable_type === 'App\\Models\\Wiki'"
-                                    :to="`/wiki/${selectedTicket.ticketable.slug}`"
-                                    variant="text"
-                                    size="small"
-                                    color="primary"
-                                    prepend-icon="mdi-open-in-new"
-                                >
-                                    {{ t('tickets.viewRelated') }}
-                                </v-btn>
-                                <v-btn
-                                    v-else-if="selectedTicket.ticketable_type === 'App\\Models\\Page'"
-                                    :to="`/pages/${selectedTicket.ticketable.slug}`"
-                                    variant="text"
-                                    size="small"
-                                    color="primary"
-                                    prepend-icon="mdi-open-in-new"
-                                >
-                                    {{ t('tickets.viewRelated') }}
-                                </v-btn>
+                        <!-- Related Content Area -->
+                        <div class="content-area flex-grow-1 overflow-y-auto pa-6">
+                            <!-- Ticket Description -->
+                            <div v-if="selectedTicket.description" class="mb-6">
+                                <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.fields.description') }}</h3>
+                                <div class="description-content">{{ selectedTicket.description }}</div>
                             </div>
 
-                            <!-- Loading State -->
-                            <div v-if="relatedContentLoading" class="text-center py-8">
-                                <v-progress-circular indeterminate color="primary" />
-                            </div>
+                            <!-- Related Model Content -->
+                            <template v-if="selectedTicket.ticketable">
+                                <v-divider v-if="selectedTicket.description" class="mb-6" />
 
-                            <!-- Content -->
-                            <v-card v-else-if="relatedContentHtml" flat class="related-content-card">
-                                <v-card-text>
-                                    <div class="wiki-content-body" v-html="relatedContentHtml" />
-                                </v-card-text>
-                            </v-card>
+                                <div class="d-flex align-center ga-2 mb-4">
+                                    <v-icon color="primary">
+                                        {{ selectedTicket.ticketable_type === 'App\\Models\\Wiki' ? 'mdi-book-open-variant' : 'mdi-file-document-outline' }}
+                                    </v-icon>
+                                    <h3 class="text-subtitle-1 font-weight-medium">
+                                        {{ t('tickets.sidebar.relatedTo') }}: {{ relatedContentTitle || selectedTicket.ticketable.title || selectedTicket.ticketable.slug }}
+                                    </h3>
+                                    <v-spacer />
+                                    <v-btn
+                                        v-if="selectedTicket.ticketable_type === 'App\\Models\\Wiki'"
+                                        :to="`/wiki/${selectedTicket.ticketable.slug}`"
+                                        variant="text"
+                                        size="small"
+                                        color="primary"
+                                        prepend-icon="mdi-open-in-new"
+                                    >
+                                        {{ t('tickets.viewRelated') }}
+                                    </v-btn>
+                                    <v-btn
+                                        v-else-if="selectedTicket.ticketable_type === 'App\\Models\\Page'"
+                                        :to="`/pages/${selectedTicket.ticketable.slug}`"
+                                        variant="text"
+                                        size="small"
+                                        color="primary"
+                                        prepend-icon="mdi-open-in-new"
+                                    >
+                                        {{ t('tickets.viewRelated') }}
+                                    </v-btn>
+                                </div>
 
-                            <!-- No Content -->
-                            <div v-else-if="!relatedContentLoading" class="text-medium-emphasis text-center py-4">
-                                {{ t('tickets.noRelatedContent') }}
-                            </div>
-                        </template>
+                                <!-- Loading State -->
+                                <loading-state v-if="relatedContentLoading" compact />
+
+                                <!-- Content -->
+                                <v-card v-else-if="relatedContentHtml" flat rounded="lg">
+                                    <v-card-text>
+                                        <div class="wiki-content-body" v-html="relatedContentHtml" />
+                                    </v-card-text>
+                                </v-card>
+
+                                <!-- No Content -->
+                                <empty-state
+                                    v-else
+                                    compact
+                                    icon="mdi-file-document-outline"
+                                    :title="t('tickets.noRelatedContent')"
+                                />
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- Empty State (no ticket selected) -->
+                    <div v-else class="d-flex align-center justify-center fill-height">
+                        <empty-state
+                            icon="mdi-ticket-outline"
+                            :title="t('tickets.selectTicket')"
+                            :text="t('tickets.selectTicketHint')"
+                        />
                     </div>
-                </template>
-
-                <!-- Empty State (no ticket selected) -->
-                <div v-else class="d-flex align-center justify-center fill-height">
-                    <div class="text-center">
-                        <v-icon size="64" color="medium-emphasis" class="mb-4">
-                            mdi-ticket-outline
-                        </v-icon>
-                        <h3 class="text-h5 mb-2">{{ t('tickets.selectTicket') }}</h3>
-                        <p class="text-body-1 text-medium-emphasis">
-                            {{ t('tickets.selectTicketHint') }}
-                        </p>
-                    </div>
-                </div>
-            </v-col>
-        </v-row>
+                </v-col>
+            </v-row>
+        </v-container>
 
         <!-- Ticket Detail Drawer -->
         <TicketSidebar
@@ -693,34 +658,35 @@ onMounted(() => {
             @remove-ticket="handleRemoveTicket"
             @ticket-updated="handleTicketUpdated"
         />
-    </v-container>
+    </div>
 </template>
 
 <style scoped>
-.ticket-layout {
+.ticket-page {
     height: 100%;
+}
+
+.ticket-layout {
+    min-height: 0;
 }
 
 .ticket-layout :deep(.v-row) {
     height: 100%;
 }
 
-.left-panel {
-    border-right: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+.left-panel,
+.right-panel {
     height: 100%;
     overflow: hidden;
 }
 
-.left-panel-header {
-    flex-shrink: 0;
-}
-
-.ticket-list-items {
+.ticket-list-items,
+.content-area {
     min-height: 0;
 }
 
 .ticket-list-item {
-    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     cursor: pointer;
     transition: background-color 0.2s;
 }
@@ -729,39 +695,8 @@ onMounted(() => {
     background-color: rgba(var(--v-theme-primary), 0.04);
 }
 
-.right-panel {
-    height: 100%;
-    overflow: hidden;
-}
-
-.content-header {
-    flex-shrink: 0;
-    border-bottom: none;
-}
-
-.content-area {
-    min-height: 0;
-}
-
 .description-content {
     white-space: pre-line;
     line-height: 1.6;
-}
-
-.related-content-card {
-    border-radius: 12px;
-}
-
-.border-t {
-    border-top: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-}
-
-.kanban-wrapper {
-    height: 100%;
-    overflow: hidden;
-}
-
-.kanban-header {
-    flex-shrink: 0;
 }
 </style>

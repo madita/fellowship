@@ -6,7 +6,7 @@
         <span class="text-subtitle-1 font-weight-medium">
           {{ $t('messaging.messages') }}
         </span>
-        <v-chip v-if="totalUnreadCount > 0" size="x-small" color="error" variant="flat" class="ml-2">
+        <v-chip v-if="totalUnreadCount > 0" size="x-small" color="error" variant="tonal" class="ml-2">
           {{ totalUnreadCount }}
         </v-chip>
       </div>
@@ -30,16 +30,16 @@
         <!-- Tabs for switching between views -->
         <v-tabs v-model="activeTab" density="compact" grow>
           <v-tab value="conversations">
-            <v-icon size="small" class="mr-1">mdi-message</v-icon>
+            <v-icon size="small" start>mdi-message</v-icon>
             {{ $t('messaging.chats') }}
-            <v-chip v-if="totalUnreadCount > 0" size="x-small" color="error" class="ml-1">
+            <v-chip v-if="totalUnreadCount > 0" size="x-small" color="error" variant="tonal" class="ml-1">
               {{ totalUnreadCount }}
             </v-chip>
           </v-tab>
           <v-tab value="users">
-            <v-icon size="small" class="mr-1">mdi-account-group</v-icon>
+            <v-icon size="small" start>mdi-account-group</v-icon>
             {{ $t('messaging.users') }}
-            <v-chip size="x-small" color="success" class="ml-1">
+            <v-chip size="x-small" color="success" variant="tonal" class="ml-1">
               {{ onlineCount }}
             </v-chip>
           </v-tab>
@@ -64,7 +64,7 @@
                   >
                     <template #prepend>
                       <v-avatar color="primary" size="40">
-                        <v-icon color="white">mdi-account-group</v-icon>
+                        <v-icon>mdi-account-group</v-icon>
                       </v-avatar>
                     </template>
 
@@ -78,7 +78,7 @@
                     </v-list-item-title>
 
                     <v-list-item-subtitle class="text-caption text-truncate">
-                      {{ conv.participant_count }} participants • {{ conv.created_at_human }}
+                      {{ $t('conversation.participants', { count: conv.participant_count }) }} • {{ conv.created_at_human }}
                     </v-list-item-subtitle>
                   </v-list-item>
                 </template>
@@ -113,7 +113,7 @@
                     </v-list-item-title>
 
                     <v-list-item-subtitle class="text-caption">
-                      <span :class="isUserOnline(getOtherUser(conv)?.id).value ? 'text-success' : 'text-grey'">
+                      <span :class="isUserOnline(getOtherUser(conv)?.id).value ? 'text-success' : 'text-medium-emphasis'">
                         {{ isUserOnline(getOtherUser(conv)?.id).value ? $t('messaging.online') : $t('messaging.offline') }}
                       </span>
                       • {{ conv.created_at_human }}
@@ -122,21 +122,16 @@
                 </template>
 
                 <!-- Loading state -->
-                <v-list-item v-if="conversationsLoading">
-                  <v-list-item-title class="text-center">
-                    <v-progress-circular indeterminate size="24" color="primary" />
-                  </v-list-item-title>
-                </v-list-item>
+                <loading-state v-if="conversationsLoading" compact />
 
                 <!-- Empty state -->
-                <v-list-item v-if="!conversationsLoading && allConversations.length === 0">
-                  <v-list-item-title class="text-medium-emphasis text-center">
-                    {{ $t('messaging.noConversationsYet') }}
-                  </v-list-item-title>
-                  <v-list-item-subtitle class="text-center text-caption">
-                    {{ $t('messaging.startChatFromUsersTab') }}
-                  </v-list-item-subtitle>
-                </v-list-item>
+                <empty-state
+                  v-if="!conversationsLoading && allConversations.length === 0"
+                  compact
+                  icon="mdi-message-outline"
+                  :title="$t('messaging.noConversationsYet')"
+                  :text="$t('messaging.startChatFromUsersTab')"
+                />
               </v-list>
             </v-window-item>
 
@@ -166,21 +161,20 @@
                   </v-list-item-title>
 
                   <v-list-item-subtitle class="text-caption">
-                    <span :class="isUserOnline(u.id).value ? 'text-success' : 'text-grey'">
+                    <span :class="isUserOnline(u.id).value ? 'text-success' : 'text-medium-emphasis'">
                       {{ isUserOnline(u.id).value ? $t('messaging.online') : $t('messaging.offline') }}
                     </span>
                   </v-list-item-subtitle>
                 </v-list-item>
 
-                <v-list-item v-if="loading">
-                  <v-list-item-title class="text-center">
-                    <v-progress-circular indeterminate size="24" color="primary" />
-                  </v-list-item-title>
-                </v-list-item>
+                <loading-state v-if="loading" compact />
 
-                <v-list-item v-if="!loading && allUsers.length === 0">
-                  <v-list-item-title class="text-medium-emphasis">{{ $t('messaging.noUsersFound') }}</v-list-item-title>
-                </v-list-item>
+                <empty-state
+                  v-if="!loading && allUsers.length === 0"
+                  compact
+                  icon="mdi-account-search-outline"
+                  :title="$t('messaging.noUsersFound')"
+                />
               </v-list>
             </v-window-item>
           </v-window>
@@ -199,6 +193,8 @@ import { useConversationsStore } from '@/store/conversationsStore.js'
 import { useOnlineUsers } from '@/composables/conversation/useOnlineUsers'
 import { useDialog } from '@/composables/useDialog.js'
 import UserAvatar from "@/components/common/UserAvatar.vue";
+import EmptyState from "@/components/common/EmptyState.vue";
+import LoadingState from "@/components/common/LoadingState.vue";
 import axios from 'axios'
 
 const emit = defineEmits(['close'])
@@ -363,15 +359,15 @@ onUnmounted(() => {
 
 .user-list-item:hover,
 .conversation-item:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
 }
 
 .unread-conversation {
-  background-color: rgba(25, 118, 210, 0.08);
+  background-color: rgba(var(--v-theme-primary), 0.08);
 }
 
 .unread-conversation:hover {
-  background-color: rgba(25, 118, 210, 0.12);
+  background-color: rgba(var(--v-theme-primary), 0.12);
 }
 
 .cursor-pointer {

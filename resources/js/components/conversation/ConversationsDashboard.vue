@@ -1,66 +1,68 @@
 <template>
-    <v-container fluid class="conversation-layout pa-0">
-        <v-row no-gutters class="fill-height">
-            <!-- Left Panel - Conversation List -->
-            <v-col cols="12" sm="5" md="4" lg="3" class="left-panel">
-                <v-card flat class="fill-height d-flex flex-column">
-                    <!-- Conversation Form -->
-                    <v-card-title class="conversation-header pa-4 border-b">
-                        <div class="d-flex align-center justify-space-between w-100">
-                            <h3 class="text-h6 font-weight-bold">Messages</h3>
-                            <v-btn
-                                icon="mdi-plus"
-                                variant="text"
-                                color="primary"
-                                size="small"
-                                @click="showNewConversationForm = !showNewConversationForm"
+    <div>
+        <page-header
+            :title="$t('conversation.messages')"
+            :subtitle="$t('conversation.subtitle')"
+            icon="mdi-message-text-outline"
+            fluid
+        >
+            <template #actions>
+                <v-btn
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-plus"
+                    @click="showNewConversationForm = !showNewConversationForm"
+                >
+                    {{ $t('conversation.newConversation') }}
+                </v-btn>
+            </template>
+        </page-header>
+
+        <v-container fluid class="conversation-layout pa-0">
+            <v-row no-gutters class="fill-height">
+                <!-- Left Panel - Conversation List -->
+                <v-col cols="12" sm="5" md="4" lg="3" class="left-panel">
+                    <v-card flat class="fill-height d-flex flex-column">
+                        <!-- New Conversation Form -->
+                        <v-expand-transition>
+                            <v-card-text v-if="showNewConversationForm" class="pa-4 border-b">
+                                <ConversationForm @conversation-created="handleConversationCreated" />
+                            </v-card-text>
+                        </v-expand-transition>
+
+                        <!-- Conversations List -->
+                        <v-card-text class="flex-grow-1 pa-0 overflow-y-auto">
+                            <Conversations
+                                :selected-id="selectedConversationId"
+                                @conversation-selected="handleConversationSelected"
+                            />
+                        </v-card-text>
+                    </v-card>
+                </v-col>
+
+                <!-- Right Panel - Active Conversation -->
+                <v-col cols="12" sm="7" md="8" lg="9" class="right-panel">
+                    <v-card flat class="fill-height">
+                        <div v-if="selectedConversationId" class="fill-height">
+                            <Conversation
+                                :id="selectedConversationId"
+                                :key="selectedConversationId"
                             />
                         </div>
-                    </v-card-title>
 
-                    <!-- New Conversation Form -->
-                    <v-expand-transition>
-                        <v-card-text v-if="showNewConversationForm" class="pa-4 border-b">
-                            <ConversationForm @conversation-created="handleConversationCreated" />
-                        </v-card-text>
-                    </v-expand-transition>
-
-                    <!-- Conversations List -->
-                    <v-card-text class="flex-grow-1 pa-0 overflow-y-auto">
-                        <Conversations
-                            :selected-id="selectedConversationId"
-                            @conversation-selected="handleConversationSelected"
-                        />
-                    </v-card-text>
-                </v-card>
-            </v-col>
-
-            <!-- Right Panel - Active Conversation -->
-            <v-col cols="12" sm="7" md="8" lg="9" class="right-panel">
-                <v-card flat class="fill-height">
-                    <div v-if="selectedConversationId" class="fill-height">
-                        <Conversation
-                            :id="selectedConversationId"
-                            :key="selectedConversationId"
-                        />
-                    </div>
-
-                    <!-- Empty State -->
-                    <div v-else class="d-flex align-center justify-center fill-height">
-                        <div class="text-center">
-                            <v-icon size="64" color="medium-emphasis" class="mb-4">
-                                mdi-chat-outline
-                            </v-icon>
-                            <h3 class="text-h5 mb-2">Select a conversation</h3>
-                            <p class="text-body-1 text-medium-emphasis">
-                                Choose a conversation from the list to start chatting
-                            </p>
+                        <!-- Empty State -->
+                        <div v-else class="d-flex align-center justify-center fill-height">
+                            <empty-state
+                                icon="mdi-chat-outline"
+                                :title="$t('conversation.noConversationSelected')"
+                                :text="$t('conversation.selectConversationHint')"
+                            />
                         </div>
-                    </div>
-                </v-card>
-            </v-col>
-        </v-row>
-    </v-container>
+                    </v-card>
+                </v-col>
+            </v-row>
+        </v-container>
+    </div>
 </template>
 
 <script setup>
@@ -68,6 +70,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useConversationStore } from '@/store/conversationStore.js'
 import { useConversationsStore } from '@/store/conversationsStore.js'
+import PageHeader from '@/components/common/PageHeader.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 import Conversation from '@/components/conversation/Conversation.vue'
 import Conversations from '@/components/conversation/Conversations.vue'
 import ConversationForm from '@/components/conversation/forms/ConversationForm.vue'
@@ -148,12 +152,11 @@ onMounted(async () => {
 
 <style scoped>
 .conversation-layout {
-    height: 100vh;
-    max-height: 100vh;
+    min-height: 60vh;
 }
 
 .left-panel {
-    border-right: 1px solid rgb(var(--v-border-color));
+    border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     background-color: rgb(var(--v-theme-surface));
 }
 
@@ -161,13 +164,8 @@ onMounted(async () => {
     background-color: rgb(var(--v-theme-background));
 }
 
-.conversation-header {
-    background-color: rgb(var(--v-theme-surface));
-    border-bottom: 1px solid rgb(var(--v-border-color));
-}
-
 .border-b {
-    border-bottom: 1px solid rgb(var(--v-border-color));
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .fill-height {
@@ -178,34 +176,7 @@ onMounted(async () => {
 @media (max-width: 960px) {
     .left-panel {
         border-right: none;
-        border-bottom: 1px solid rgb(var(--v-border-color));
-    }
-
-    .conversation-layout {
-        height: auto;
-        min-height: 100vh;
-    }
-}
-
-@media (max-width: 600px) {
-    .left-panel {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 1000;
-        height: 100vh;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease-in-out;
-    }
-
-    .left-panel.active {
-        transform: translateX(0);
-    }
-
-    .right-panel {
-        width: 100%;
-        height: 100vh;
+        border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     }
 }
 </style>

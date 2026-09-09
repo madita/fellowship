@@ -1,5 +1,5 @@
 <template>
-    <v-menu offset-y left transition="slide-y-transition" :close-on-content-click="false">
+    <v-menu transition="slide-y-transition" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
             <v-badge
                 :content="notifications.length"
@@ -8,9 +8,7 @@
                 offset-x="2"
                 offset-y="2"
             >
-                <v-btn icon variant="text" v-bind="props">
-                    <v-icon>mdi-bell-outline</v-icon>
-                </v-btn>
+                <v-btn icon="mdi-bell-outline" variant="text" v-bind="props" :title="$t('notifications.title')" />
             </v-badge>
         </template>
 
@@ -32,10 +30,12 @@
 
             <v-divider />
 
-            <div v-if="notifications.length === 0" class="text-center py-6 px-4">
-                <v-icon size="40" color="medium-emphasis" class="mb-2">mdi-bell-check-outline</v-icon>
-                <p class="text-body-2 text-medium-emphasis mb-0">{{ $t('notifications.noNotifications') }}</p>
-            </div>
+            <empty-state
+                v-if="notifications.length === 0"
+                compact
+                icon="mdi-bell-check-outline"
+                :title="$t('notifications.noNotifications')"
+            />
 
             <v-list v-else density="compact" class="py-0" max-height="400" style="overflow-y: auto;">
                 <v-list-item
@@ -117,8 +117,10 @@ import { useAuthStore } from '@/store/authStore.js'
 import { useUserStore } from '@/store/userStore.js'
 import { useDialog } from '@/composables/useDialog.js'
 import axios from 'axios'
+import EmptyState from '@/components/common/EmptyState.vue'
 
 export default {
+    components: { EmptyState },
     setup() {
         const allNotifications = ref([])
         const authStore = useAuthStore()
