@@ -1,42 +1,43 @@
 <template>
-  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" max-width="400">
+  <v-dialog :model-value="modelValue" max-width="480" @update:model-value="$emit('update:modelValue', $event)">
     <v-card>
-      <v-card-title>
-        Join IRC Channel
+      <v-card-title class="text-h6">
+        {{ $t('irc.joinDialog.title') }}
       </v-card-title>
+      <v-divider />
 
       <v-card-text>
         <v-form ref="form" v-model="valid">
-          <p class="text-subtitle-2 mb-2">
-            Server: {{ connection?.server?.name }}
+          <p class="text-body-2 text-medium-emphasis mb-4">
+            {{ $t('irc.joinDialog.server', { name: connection?.server?.name }) }}
           </p>
 
           <v-text-field
             v-model="channelName"
-            label="Channel Name"
+            :label="$t('irc.joinDialog.channel')"
             :rules="[rules.required]"
-            outlined
-            dense
             placeholder="#channelname"
-            hint="# prefix is optional"
+            :hint="$t('irc.joinDialog.channelHint')"
             persistent-hint
             autofocus
           />
         </v-form>
       </v-card-text>
 
+      <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn :disabled="joining" @click="$emit('update:modelValue', false)">
-          Cancel
+        <v-btn variant="text" :disabled="joining" @click="$emit('update:modelValue', false)">
+          {{ $t('common.cancel') }}
         </v-btn>
         <v-btn
           color="primary"
+          variant="flat"
           :loading="joining"
           :disabled="!valid"
           @click="join"
         >
-          Join
+          {{ $t('irc.joinDialog.join') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -59,7 +60,7 @@ export default {
       joining: false,
       channelName: '',
       rules: {
-        required: (v) => !!v || 'Required',
+        required: (v) => !!v || this.$t('irc.joinDialog.required'),
       },
     };
   },

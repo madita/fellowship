@@ -203,10 +203,9 @@ onBeforeUnmount(() => {
                         </div>
 
                         <div class="d-flex align-center justify-end">
-                            <div>
+                            <div class="d-flex ga-2">
                                 <v-btn
                                     variant="text"
-                                    class="mr-2"
                                     @click="cancel"
                                     :disabled="posting"
                                 >
@@ -214,6 +213,7 @@ onBeforeUnmount(() => {
                                 </v-btn>
                                 <v-btn
                                     color="primary"
+                                    variant="flat"
                                     @click="postStatus"
                                     :loading="posting"
                                     :disabled="!canPost"
@@ -224,7 +224,7 @@ onBeforeUnmount(() => {
                         </div>
 
                         <!-- Media/Feeling Options -->
-                        <div class="d-flex mt-3 pt-3" style="border-top: 1px solid rgba(0,0,0,0.08)">
+                        <div class="d-flex flex-wrap ga-2 mt-3 pt-3 composer-options">
                             <v-btn
                                 variant="text"
                                 size="small"
@@ -244,7 +244,6 @@ onBeforeUnmount(() => {
                                         variant="text"
                                         size="small"
                                         prepend-icon="mdi-emoticon-outline"
-                                        class="ml-2"
                                         v-bind="menuProps"
                                     >
                                         {{ t('timeline.feeling') }}
@@ -272,7 +271,7 @@ onBeforeUnmount(() => {
                                 </v-card>
                             </v-menu>
 
-                            <v-btn variant="text" size="small" prepend-icon="mdi-map-marker-outline" class="ml-2">
+                            <v-btn variant="text" size="small" prepend-icon="mdi-map-marker-outline">
                                 {{ t('timeline.location') }}
                             </v-btn>
                         </div>
@@ -300,6 +299,10 @@ onBeforeUnmount(() => {
 
 .status-composer:focus-within {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.composer-options {
+    border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .preview-grid {

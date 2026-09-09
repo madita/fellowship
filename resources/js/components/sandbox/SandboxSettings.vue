@@ -1,84 +1,94 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Sandbox Settings</h2>
-        <button @click="$emit('close')" class="close-btn">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
+  <v-dialog :model-value="true" max-width="600" scrollable @update:model-value="onDialogToggle">
+    <v-card>
+      <v-card-title class="text-h6 d-flex align-center">
+        <v-icon start>mdi-cog-outline</v-icon>
+        {{ $t('sandbox.settings.title') }}
+      </v-card-title>
+      <v-divider />
 
-      <form @submit.prevent="saveSettings" class="modal-body">
-        <div class="form-group">
-          <label for="title">Title</label>
-          <input
-            id="title"
+      <v-card-text>
+        <v-form @submit.prevent="saveSettings">
+          <v-text-field
             v-model="form.title"
-            type="text"
-            class="form-control"
+            :label="$t('common.title')"
             required
             :disabled="busy"
+            class="mb-3"
           />
-        </div>
 
-        <div class="form-group">
-          <label for="description">Description</label>
-          <textarea
-            id="description"
+          <v-textarea
             v-model="form.description"
-            class="form-control"
+            :label="$t('common.description')"
             rows="3"
             :disabled="busy"
-          ></textarea>
-        </div>
+            class="mb-3"
+          />
 
-        <div class="form-group">
-          <label for="visibility">Visibility</label>
-          <select id="visibility" v-model="form.visibility" class="form-control" :disabled="busy">
-            <option value="private">Private - Only you and collaborators</option>
-            <option value="members">Members - All site members can view</option>
-            <option v-if="publicEnabled" value="public">Public - Anyone can view</option>
-          </select>
-        </div>
+          <v-select
+            v-model="form.visibility"
+            :label="$t('sandbox.visibility.label')"
+            :items="visibilityOptions"
+            item-title="text"
+            item-value="value"
+            :disabled="busy"
+          />
 
-        <div class="form-group">
-          <label>Editor Settings</label>
-          <div class="checkbox-group">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="form.settings.showCursors" :disabled="busy" />
-              Show collaborator cursors
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="form.settings.autoSave" :disabled="busy" />
-              Auto-save changes
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="form.settings.allowComments" :disabled="busy" />
-              Allow comments
-            </label>
+          <div class="text-subtitle-1 font-weight-medium mt-4 mb-1">
+            {{ $t('sandbox.settings.editorSettings') }}
           </div>
-        </div>
+          <v-checkbox
+            v-model="form.settings.showCursors"
+            :label="$t('sandbox.settings.showCursors')"
+            density="compact"
+            hide-details
+            :disabled="busy"
+          />
+          <v-checkbox
+            v-model="form.settings.autoSave"
+            :label="$t('sandbox.settings.autoSave')"
+            density="compact"
+            hide-details
+            :disabled="busy"
+          />
+          <v-checkbox
+            v-model="form.settings.allowComments"
+            :label="$t('sandbox.settings.allowComments')"
+            density="compact"
+            hide-details
+            :disabled="busy"
+          />
 
-        <div class="danger-zone">
-          <h3>Danger Zone</h3>
-          <button type="button" @click="confirmDelete" class="btn btn-danger" :disabled="busy">
-            <i :class="deleting ? 'fas fa-spinner fa-spin' : 'fas fa-trash'"></i>
-            {{ deleting ? $t('sandbox.settings.deleting') : 'Delete Sandbox' }}
-          </button>
-        </div>
-      </form>
+          <v-divider class="my-4" />
 
-      <div class="modal-footer">
-        <button type="button" @click="$emit('close')" class="btn btn-secondary" :disabled="busy">
-          Cancel
-        </button>
-        <button type="button" @click="saveSettings" class="btn btn-primary" :disabled="busy">
-          <i v-if="saving" class="fas fa-spinner fa-spin"></i>
-          {{ saving ? $t('sandbox.settings.saving') : 'Save Changes' }}
-        </button>
-      </div>
-    </div>
-  </div>
+          <div class="text-subtitle-1 font-weight-medium text-error mb-2">
+            {{ $t('sandbox.settings.dangerZone') }}
+          </div>
+          <v-btn
+            color="error"
+            variant="tonal"
+            prepend-icon="mdi-delete-outline"
+            :loading="deleting"
+            :disabled="busy"
+            @click="confirmDelete"
+          >
+            {{ $t('sandbox.settings.deleteSandbox') }}
+          </v-btn>
+        </v-form>
+      </v-card-text>
+
+      <v-divider />
+      <v-card-actions>
+        <v-spacer />
+        <v-btn variant="text" :disabled="busy" @click="$emit('close')">
+          {{ $t('common.cancel') }}
+        </v-btn>
+        <v-btn color="primary" variant="flat" :loading="saving" :disabled="busy" @click="saveSettings">
+          {{ $t('common.save') }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>
@@ -119,12 +129,28 @@ export default {
       },
     })
 
+    const visibilityOptions = computed(() => {
+      const options = [
+        { value: 'private', text: t('sandbox.visibility.private') },
+        { value: 'members', text: t('sandbox.visibility.members') },
+      ]
+      if (publicEnabled.value) {
+        options.push({ value: 'public', text: t('sandbox.visibility.public') })
+      }
+      return options
+    })
+
     onMounted(() => {
       form.title = props.sandbox.title
       form.description = props.sandbox.description || ''
       form.visibility = props.sandbox.visibility
       form.settings = { ...form.settings, ...(props.sandbox.settings || {}) }
     })
+
+    // Outside click / Esc closes the dialog unless a request is running
+    const onDialogToggle = (open) => {
+      if (!open && !busy.value) emit('close')
+    }
 
     const saveSettings = async () => {
       if (busy.value) return
@@ -168,153 +194,11 @@ export default {
       deleting,
       busy,
       publicEnabled,
+      visibilityOptions,
+      onDialogToggle,
       saveSettings,
       confirmDelete,
     }
   },
 }
 </script>
-
-<style lang="scss" scoped>
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 0.5rem;
-  width: 100%;
-  max-width: 500px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-
-  h2 {
-    margin: 0;
-    font-size: 1.25rem;
-  }
-
-  .close-btn {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    cursor: pointer;
-    color: #6b7280;
-
-    &:hover {
-      color: #374151;
-    }
-  }
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.form-group {
-  margin-bottom: 1.25rem;
-
-  label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #374151;
-  }
-}
-
-.form-control {
-  width: 100%;
-  padding: 0.625rem 0.875rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-}
-
-.checkbox-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-
-  input[type="checkbox"] {
-    width: 1rem;
-    height: 1rem;
-  }
-}
-
-.danger-zone {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #fecaca;
-
-  h3 {
-    color: #dc2626;
-    font-size: 0.875rem;
-    margin-bottom: 0.75rem;
-  }
-}
-
-.btn {
-  padding: 0.625rem 1.25rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  &.btn-primary {
-    background: #3b82f6;
-    color: white;
-  }
-
-  &.btn-secondary {
-    background: #e5e7eb;
-    color: #374151;
-  }
-
-  &.btn-danger {
-    background: #dc2626;
-    color: white;
-  }
-}
-</style>

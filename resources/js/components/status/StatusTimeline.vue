@@ -5,6 +5,9 @@ import axios from 'axios';
 import StatusComposer from './StatusComposer.vue';
 import StatusCard from './StatusCard.vue';
 import UserAvatar from '../common/UserAvatar.vue';
+import PageHeader from '../common/PageHeader.vue';
+import EmptyState from '../common/EmptyState.vue';
+import LoadingState from '../common/LoadingState.vue';
 import { useUserStore } from '@/store/userStore.js';
 
 const { t } = useI18n();
@@ -82,20 +85,16 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container fluid class="pa-0">
-        <!-- Page Header -->
-        <div class="timeline-header">
-            <div class="timeline-header-inner">
-                <p class="timeline-eyebrow">{{ t('timeline.eyebrow') }}</p>
-                <h1 class="text-h4 text-md-h3 font-weight-bold timeline-title">{{ t('timeline.title') }}</h1>
-                <p class="text-subtitle-1 text-medium-emphasis mb-0">
-                    {{ t('timeline.subtitle') }}
-                </p>
-            </div>
-        </div>
+    <div>
+        <page-header
+            :title="t('timeline.title')"
+            :subtitle="t('timeline.subtitle')"
+            icon="mdi-timeline-text-outline"
+            fluid
+        />
 
-        <v-container class="timeline-body py-6 py-md-8">
-            <v-row justify="center">
+        <v-container fluid>
+            <v-row>
                 <!-- Aside: context rail (desktop only) -->
                 <v-col cols="12" md="4" lg="3" class="d-none d-md-block">
                     <div class="timeline-aside">
@@ -121,14 +120,12 @@ onMounted(() => {
                 </v-col>
 
                 <!-- Feed column -->
-                <v-col cols="12" md="8" lg="6" class="feed-col">
+                <v-col cols="12" md="8" lg="9" class="feed-col">
                     <!-- Status Composer -->
                     <StatusComposer @status-posted="handleStatusPosted" />
 
                     <!-- Loading Initial -->
-                    <div v-if="loading" class="text-center py-8">
-                        <v-progress-circular indeterminate color="primary" size="48" />
-                    </div>
+                    <loading-state v-if="loading" />
 
                     <!-- Timeline Feed -->
                     <div v-else>
@@ -163,72 +160,20 @@ onMounted(() => {
                         </div>
 
                         <!-- Empty State -->
-                        <v-card v-if="statuses.length === 0" flat class="empty-state text-center pa-8">
-                            <v-icon size="56" color="primary" class="mb-4 empty-icon">
-                                mdi-timeline-text-outline
-                            </v-icon>
-                            <h3 class="text-h6 mb-2">{{ t('timeline.noStatusYet') }}</h3>
-                            <p class="text-body-2 text-medium-emphasis mb-0">
-                                {{ t('timeline.beFirst') }}
-                            </p>
-                        </v-card>
+                        <empty-state
+                            v-if="statuses.length === 0"
+                            icon="mdi-timeline-text-outline"
+                            :title="t('timeline.noStatusYet')"
+                            :text="t('timeline.beFirst')"
+                        />
                     </div>
                 </v-col>
             </v-row>
         </v-container>
-    </v-container>
+    </div>
 </template>
 
 <style scoped>
-.status-timeline-container {
-    min-height: 100vh;
-    background-color: rgb(var(--v-theme-background));
-}
-
-/* ---------- Header band (full width, content constrained) ---------- */
-.timeline-header {
-    background-color: rgb(var(--v-theme-surface));
-    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-}
-
-.timeline-header-inner {
-    width: 100%;
-    padding: clamp(1.5rem, 4vw, 2.75rem) 1.25rem;
-}
-
-.timeline-eyebrow {
-    margin: 0 0 0.35rem;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgb(var(--v-theme-accent));
-}
-
-.timeline-title {
-    position: relative;
-    display: inline-block;
-    line-height: 1.1;
-    margin-bottom: 0.75rem;
-}
-
-/* One quiet signature: a short accent bar anchoring the title */
-.timeline-title::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: -0.35rem;
-    width: 48px;
-    height: 3px;
-    border-radius: 3px;
-    background: rgb(var(--v-theme-accent));
-}
-
-/* ---------- Body grid ---------- */
-.timeline-body {
-    max-width: 1160px;
-}
-
 /* Sticky context rail on desktop; clears a typical top app bar */
 .timeline-aside {
     position: sticky;
@@ -236,27 +181,15 @@ onMounted(() => {
 }
 
 .aside-card {
-    background-color: rgb(var(--v-theme-surface));
-    border: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .min-w-0 {
     min-width: 0;
 }
 
-/* ---------- States ---------- */
 .end-of-feed {
-    border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+    border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     margin-top: 0.5rem;
-}
-
-.empty-state {
-    background-color: rgb(var(--v-theme-surface));
-    border: 1px dashed rgba(var(--v-theme-primary), 0.28);
-    border-radius: 16px;
-}
-
-.empty-icon {
-    opacity: 0.7;
 }
 </style>

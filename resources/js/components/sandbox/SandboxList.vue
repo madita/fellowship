@@ -1,245 +1,244 @@
 <template>
-  <div :class="['sandbox-list-page', { 'compact-mode': compact }]">
-    <div class="page-header">
-      <div v-if="!compact">
-        <h1 class="text-h4 font-weight-bold">Sandboxes</h1>
-        <p class="text-body-2 text-medium-emphasis">Collaborate in real-time with others</p>
+  <div :class="['sandbox-list', { 'sandbox-list--compact': compact }]">
+    <page-header
+      v-if="!compact"
+      :title="$t('sandbox.title')"
+      :subtitle="$t('sandbox.subtitle')"
+      icon="mdi-file-document-edit-outline"
+      fluid
+    >
+      <template #actions>
+        <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showCreateModal = true">
+          {{ $t('sandbox.newSandbox') }}
+        </v-btn>
+      </template>
+    </page-header>
+
+    <v-container fluid :class="{ 'pa-0': compact }">
+      <!-- Filters -->
+      <div :class="['d-flex flex-wrap ga-2', compact ? 'pa-3 sandbox-list__filters' : 'mb-6']">
+        <v-chip
+          v-for="filter in filters"
+          :key="filter.value"
+          :color="activeFilter === filter.value ? 'primary' : undefined"
+          :variant="activeFilter === filter.value ? 'elevated' : 'tonal'"
+          size="small"
+          @click="activeFilter = filter.value"
+        >
+          {{ $t(filter.label) }}
+        </v-chip>
       </div>
-      <h3 v-else class="text-subtitle-1 font-weight-bold">Sandboxes</h3>
-      <v-btn color="primary" :size="compact ? 'small' : 'default'" @click="showCreateModal = true">
-        <v-icon start>mdi-plus</v-icon>
-        <span v-if="!compact">New Sandbox</span>
-      </v-btn>
-    </div>
 
-    <!-- Filters -->
-    <div class="filters">
-      <v-chip
-        v-for="filter in filters"
-        :key="filter.value"
-        :color="activeFilter === filter.value ? 'primary' : undefined"
-        :variant="activeFilter === filter.value ? 'elevated' : 'tonal'"
-        :size="compact ? 'x-small' : 'small'"
-        @click="activeFilter = filter.value"
+      <!-- Loading -->
+      <loading-state v-if="loading" :compact="compact" :text="compact ? '' : $t('sandbox.loading')" />
+
+      <!-- Empty State -->
+      <empty-state
+        v-else-if="filteredSandboxes.length === 0"
+        :compact="compact"
+        icon="mdi-file-document-outline"
+        :title="$t('sandbox.noSandboxes')"
+        :text="compact ? '' : $t('sandbox.noSandboxesText')"
       >
-        {{ filter.label }}
-      </v-chip>
-    </div>
-
-    <!-- Loading -->
-    <div v-if="loading" class="loading-state">
-      <v-progress-circular indeterminate color="primary" :size="compact ? 24 : 40" />
-      <span v-if="!compact" class="text-body-2 text-medium-emphasis ml-3">Loading sandboxes...</span>
-    </div>
-
-    <!-- Empty State -->
-    <div v-else-if="filteredSandboxes.length === 0" class="empty-state">
-      <v-icon :size="compact ? 40 : 64" color="medium-emphasis" class="mb-3">mdi-file-document-outline</v-icon>
-      <h3 class="text-subtitle-1 font-weight-medium mb-1">No sandboxes found</h3>
-      <p v-if="!compact" class="text-body-2 text-medium-emphasis mb-3">Create your first sandbox to start collaborating!</p>
-      <v-btn color="primary" size="small" @click="showCreateModal = true">
-        Create Sandbox
-      </v-btn>
-    </div>
-
-    <!-- Compact: Vertical list -->
-    <div v-else-if="compact" class="sandbox-compact-list">
-      <div
-        v-for="sandbox in filteredSandboxes"
-        :key="sandbox.id"
-        :class="['sandbox-item', { selected: selectedUuid === sandbox.uuid }]"
-        @click="selectSandbox(sandbox)"
-      >
-        <div class="item-top">
-          <span class="item-title text-body-2 font-weight-medium">{{ sandbox.title }}</span>
-          <div class="d-flex align-center ga-1">
-            <v-chip
-              v-if="sandbox.relationship === 'owner'"
-              color="primary"
-              variant="tonal"
-              size="x-small"
-              label
-            >Mine</v-chip>
-            <v-chip
-              v-else-if="sandbox.relationship === 'shared'"
-              color="info"
-              variant="tonal"
-              size="x-small"
-              label
-            >Shared</v-chip>
-            <v-icon :color="getVisibilityColor(sandbox.visibility)" size="14">
-              {{ getVisibilityIcon(sandbox.visibility) }}
-            </v-icon>
-          </div>
-        </div>
-        <div class="item-meta">
-          <span class="text-caption text-disabled">
-            <template v-if="sandbox.relationship !== 'owner'">{{ sandbox.owner?.username }}</template>
-            <template v-else>by you</template>
-          </span>
-          <span v-if="sandbox.last_edited_at" class="text-caption text-disabled">{{ formatDate(sandbox.last_edited_at) }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Full: Grid layout -->
-    <div v-else class="sandbox-grid">
-      <v-card
-        v-for="sandbox in filteredSandboxes"
-        :key="sandbox.id"
-        variant="outlined"
-        class="sandbox-card"
-        @click="openSandbox(sandbox)"
-      >
-        <v-card-text>
-          <div class="card-header mb-3">
-            <v-chip
-              :color="getVisibilityColor(sandbox.visibility)"
-              variant="tonal"
-              size="x-small"
-              :prepend-icon="getVisibilityIcon(sandbox.visibility)"
-            >
-              {{ sandbox.visibility }}
-            </v-chip>
-            <v-chip
-              v-if="sandbox.relationship === 'owner'"
-              color="primary"
-              variant="tonal"
-              size="x-small"
-              prepend-icon="mdi-account"
-            >
-              Mine
-            </v-chip>
-            <v-chip
-              v-else-if="sandbox.relationship === 'shared'"
-              color="info"
-              variant="tonal"
-              size="x-small"
-              prepend-icon="mdi-account-multiple"
-            >
-              Shared with me
-            </v-chip>
-          </div>
-
-          <h3 class="text-subtitle-1 font-weight-bold mb-1">{{ sandbox.title }}</h3>
-          <p class="text-body-2 text-medium-emphasis card-description mb-3">{{ sandbox.description || 'No description' }}</p>
-
-          <div class="card-meta mb-3">
-            <span class="text-caption text-disabled d-flex align-center ga-1">
-              <v-icon size="14">mdi-account-group-outline</v-icon>
-              {{ sandbox.collaborators_count || 0 }}
-            </span>
-            <span v-if="sandbox.last_edited_at" class="text-caption text-disabled">
-              {{ formatDate(sandbox.last_edited_at) }}
-            </span>
-          </div>
-
-          <v-divider class="mb-3" />
-
-          <div class="d-flex align-center ga-2">
-            <UserAvatar v-if="sandbox.owner" :user="sandbox.owner" size="24" />
-            <span class="text-body-2">{{ sandbox.owner?.username }}</span>
-          </div>
-        </v-card-text>
-      </v-card>
-    </div>
-
-    <!-- Pagination (full mode only) -->
-    <div v-if="!compact && totalPages > 1" class="pagination">
-      <v-btn
-        icon
-        variant="outlined"
-        size="small"
-        :disabled="currentPage <= 1"
-        @click="loadPage(currentPage - 1)"
-      >
-        <v-icon>mdi-chevron-left</v-icon>
-      </v-btn>
-      <span class="text-body-2 text-medium-emphasis">Page {{ currentPage }} of {{ totalPages }}</span>
-      <v-btn
-        icon
-        variant="outlined"
-        size="small"
-        :disabled="currentPage >= totalPages"
-        @click="loadPage(currentPage + 1)"
-      >
-        <v-icon>mdi-chevron-right</v-icon>
-      </v-btn>
-    </div>
-
-    <!-- Create Modal -->
-    <v-dialog v-model="showCreateModal" max-width="480" persistent>
-      <v-card>
-        <v-card-title class="d-flex align-center justify-space-between">
-          <span>Create New Sandbox</span>
-          <v-btn icon variant="text" size="small" :disabled="creating" @click="showCreateModal = false">
-            <v-icon>mdi-close</v-icon>
+        <template #actions>
+          <v-btn color="primary" variant="flat" size="small" prepend-icon="mdi-plus" @click="showCreateModal = true">
+            {{ $t('sandbox.createSandbox') }}
           </v-btn>
-        </v-card-title>
+        </template>
+      </empty-state>
+
+      <!-- Compact: Vertical list -->
+      <div v-else-if="compact" class="sandbox-compact-list">
+        <div
+          v-for="sandbox in filteredSandboxes"
+          :key="sandbox.id"
+          :class="['sandbox-item', { selected: selectedUuid === sandbox.uuid }]"
+          @click="selectSandbox(sandbox)"
+        >
+          <div class="d-flex justify-space-between align-center ga-2">
+            <span class="item-title text-body-2 font-weight-medium">{{ sandbox.title }}</span>
+            <div class="d-flex align-center ga-1">
+              <v-chip
+                v-if="sandbox.relationship === 'owner'"
+                color="primary"
+                variant="tonal"
+                size="x-small"
+                label
+              >{{ $t('sandbox.mine') }}</v-chip>
+              <v-chip
+                v-else-if="sandbox.relationship === 'shared'"
+                color="info"
+                variant="tonal"
+                size="x-small"
+                label
+              >{{ $t('sandbox.sharedWithMe') }}</v-chip>
+              <v-icon :color="getVisibilityColor(sandbox.visibility)" size="14">
+                {{ getVisibilityIcon(sandbox.visibility) }}
+              </v-icon>
+            </div>
+          </div>
+          <div class="d-flex justify-space-between mt-1">
+            <span class="text-caption text-disabled">
+              <template v-if="sandbox.relationship !== 'owner'">{{ sandbox.owner?.username }}</template>
+              <template v-else>{{ $t('sandbox.byYou') }}</template>
+            </span>
+            <span v-if="sandbox.last_edited_at" class="text-caption text-disabled">{{ formatDate(sandbox.last_edited_at) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full: Grid layout -->
+      <div v-else class="sandbox-grid">
+        <v-card
+          v-for="sandbox in filteredSandboxes"
+          :key="sandbox.id"
+          variant="outlined"
+          rounded="lg"
+          class="sandbox-card"
+          @click="openSandbox(sandbox)"
+        >
+          <v-card-text>
+            <div class="d-flex align-center flex-wrap ga-2 mb-3">
+              <v-chip
+                :color="getVisibilityColor(sandbox.visibility)"
+                variant="tonal"
+                size="x-small"
+                :prepend-icon="getVisibilityIcon(sandbox.visibility)"
+              >
+                {{ sandbox.visibility }}
+              </v-chip>
+              <v-chip
+                v-if="sandbox.relationship === 'owner'"
+                color="primary"
+                variant="tonal"
+                size="x-small"
+                prepend-icon="mdi-account"
+              >
+                {{ $t('sandbox.mine') }}
+              </v-chip>
+              <v-chip
+                v-else-if="sandbox.relationship === 'shared'"
+                color="info"
+                variant="tonal"
+                size="x-small"
+                prepend-icon="mdi-account-multiple"
+              >
+                {{ $t('sandbox.sharedWithMe') }}
+              </v-chip>
+            </div>
+
+            <h3 class="text-subtitle-1 font-weight-medium mb-1">{{ sandbox.title }}</h3>
+            <p class="text-body-2 text-medium-emphasis card-description mb-3">{{ sandbox.description || $t('sandbox.noDescription') }}</p>
+
+            <div class="d-flex ga-4 mb-3">
+              <span class="text-caption text-disabled d-flex align-center ga-1">
+                <v-icon size="14">mdi-account-group-outline</v-icon>
+                {{ sandbox.collaborators_count || 0 }}
+              </span>
+              <span v-if="sandbox.last_edited_at" class="text-caption text-disabled">
+                {{ formatDate(sandbox.last_edited_at) }}
+              </span>
+            </div>
+
+            <v-divider class="mb-3" />
+
+            <div class="d-flex align-center ga-2">
+              <UserAvatar v-if="sandbox.owner" :user="sandbox.owner" size="24" />
+              <span class="text-body-2">{{ sandbox.owner?.username }}</span>
+            </div>
+          </v-card-text>
+        </v-card>
+      </div>
+
+      <!-- Pagination (full mode only) -->
+      <div v-if="!compact && totalPages > 1" class="d-flex justify-center align-center ga-4 mt-8">
+        <v-btn
+          icon="mdi-chevron-left"
+          variant="text"
+          size="small"
+          :disabled="currentPage <= 1"
+          @click="loadPage(currentPage - 1)"
+        />
+        <span class="text-body-2 text-medium-emphasis">
+          {{ $t('sandbox.pageOf', { current: currentPage, total: totalPages }) }}
+        </span>
+        <v-btn
+          icon="mdi-chevron-right"
+          variant="text"
+          size="small"
+          :disabled="currentPage >= totalPages"
+          @click="loadPage(currentPage + 1)"
+        />
+      </div>
+    </v-container>
+
+    <!-- Create Dialog -->
+    <v-dialog v-model="showCreateModal" max-width="600" persistent>
+      <v-card>
+        <v-card-title class="text-h6">{{ $t('sandbox.create.title') }}</v-card-title>
+        <v-divider />
 
         <v-card-text>
           <v-text-field
             v-model="newSandbox.title"
-            label="Title *"
-            variant="outlined"
-            density="compact"
+            :label="$t('common.title') + ' *'"
             autofocus
+            :disabled="creating"
             class="mb-3"
           />
 
           <v-textarea
             v-model="newSandbox.description"
-            label="Description"
-            variant="outlined"
-            density="compact"
+            :label="$t('common.description')"
             rows="3"
-            placeholder="What's this sandbox about?"
+            :placeholder="$t('sandbox.create.descriptionPlaceholder')"
+            :disabled="creating"
             class="mb-3"
           />
 
           <v-select
             v-model="newSandbox.visibility"
-            label="Visibility"
-            variant="outlined"
-            density="compact"
+            :label="$t('sandbox.visibility.label')"
             :items="visibilityOptions"
             item-title="text"
             item-value="value"
+            :disabled="creating"
           />
         </v-card-text>
 
-        <v-card-actions class="px-4 pb-4">
+        <v-divider />
+        <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" :disabled="creating" @click="showCreateModal = false">Cancel</v-btn>
-          <v-btn color="primary" :loading="creating" :disabled="!newSandbox.title.trim()" @click="createSandbox">
-            Create Sandbox
+          <v-btn variant="text" :disabled="creating" @click="showCreateModal = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" variant="flat" :loading="creating" :disabled="!newSandbox.title.trim()" @click="createSandbox">
+            {{ $t('sandbox.createSandbox') }}
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
-
-    <!-- Error snackbar -->
-    <v-snackbar v-model="errorSnackbar" color="error" :timeout="4000" location="bottom">
-      {{ errorMessage }}
-      <template #actions>
-        <v-btn variant="text" @click="errorSnackbar = false">Close</v-btn>
-      </template>
-    </v-snackbar>
   </div>
 </template>
 
 <script>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { useSettingsStore } from '@/store/settingStore.js'
+import { useDialog } from '@/composables/useDialog.js'
 import UserAvatar from '../common/UserAvatar.vue'
+import PageHeader from '../common/PageHeader.vue'
+import EmptyState from '../common/EmptyState.vue'
+import LoadingState from '../common/LoadingState.vue'
 
 export default {
   name: 'SandboxList',
 
   components: {
     UserAvatar,
+    PageHeader,
+    EmptyState,
+    LoadingState,
   },
 
   props: {
@@ -257,32 +256,33 @@ export default {
 
   setup(props, { emit }) {
     const router = useRouter()
+    const { t } = useI18n()
+    const dialog = useDialog()
     const sandboxes = ref([])
     const loading = ref(true)
     const creating = ref(false)
     const showCreateModal = ref(false)
-    const errorSnackbar = ref(false)
-    const errorMessage = ref('')
     const currentPage = ref(1)
     const totalPages = ref(1)
     const activeFilter = ref('all')
     const currentUserId = ref(null)
 
+    // Labels are translation keys, resolved in the template
     const filters = [
-      { value: 'all', label: 'All' },
-      { value: 'owned', label: 'My Sandboxes' },
-      { value: 'shared', label: 'Shared with me' },
+      { value: 'all', label: 'sandbox.filters.all' },
+      { value: 'owned', label: 'sandbox.filters.owned' },
+      { value: 'shared', label: 'sandbox.filters.shared' },
     ]
 
     const settingsStore = useSettingsStore()
 
     const visibilityOptions = computed(() => {
       const options = [
-        { value: 'private', text: 'Private - Only you and collaborators' },
-        { value: 'members', text: 'Members - All site members can view' },
+        { value: 'private', text: t('sandbox.visibility.private') },
+        { value: 'members', text: t('sandbox.visibility.members') },
       ]
       if (settingsStore.sandboxPublicEnabled) {
-        options.push({ value: 'public', text: 'Public - Anyone can view' })
+        options.push({ value: 'public', text: t('sandbox.visibility.public') })
       }
       return options
     })
@@ -329,6 +329,11 @@ export default {
       }
     }
 
+    // Exposed so the parent page's CTA can open the create dialog
+    const openCreate = () => {
+      showCreateModal.value = true
+    }
+
     const createSandbox = async () => {
       if (!newSandbox.value.title.trim() || creating.value) return
 
@@ -349,8 +354,7 @@ export default {
         }
       } catch (error) {
         console.error('Failed to create sandbox:', error)
-        errorMessage.value = error.response?.data?.message || 'Failed to create sandbox'
-        errorSnackbar.value = true
+        await dialog.requestError(error, t('sandbox.create.failed'))
       } finally {
         creating.value = false
       }
@@ -424,9 +428,8 @@ export default {
       filteredSandboxes,
       newSandbox,
       currentUserId,
-      errorSnackbar,
-      errorMessage,
       loadPage,
+      openCreate,
       createSandbox,
       selectSandbox,
       openSandbox,
@@ -439,61 +442,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.sandbox-list-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-
-  &.compact-mode {
-    max-width: none;
-    padding: 0;
-  }
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
-
-  .compact-mode & {
-    align-items: center;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0;
-    border-bottom: 1px solid rgb(var(--v-border-color));
-  }
-}
-
-.filters {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-
-  .compact-mode & {
-    padding: 0.5rem 1rem;
-    margin-bottom: 0;
-    border-bottom: 1px solid rgb(var(--v-border-color));
-  }
-}
-
-.loading-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 2rem;
-
-  .compact-mode & {
-    padding: 2rem 1rem;
-  }
-}
-
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-
-  .compact-mode & {
-    padding: 2rem 1rem;
-  }
+.sandbox-list--compact .sandbox-list__filters {
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 // Compact list styles
@@ -504,7 +454,7 @@ export default {
 .sandbox-item {
   padding: 0.75rem 1rem;
   cursor: pointer;
-  border-bottom: 1px solid rgb(var(--v-border-color));
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   transition: background 0.15s;
 
   &:hover {
@@ -518,45 +468,26 @@ export default {
   }
 }
 
-.item-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .item-title {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.item-meta {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.25rem;
-}
-
 // Grid styles (full mode)
 .sandbox-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
+  gap: 24px;
 }
 
 .sandbox-card {
   cursor: pointer;
-  transition: all 0.15s;
+  transition: border-color 0.15s;
 
   &:hover {
     border-color: rgb(var(--v-theme-primary));
   }
-}
-
-.card-header {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
 }
 
 .card-description {
@@ -564,18 +495,5 @@ export default {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.card-meta {
-  display: flex;
-  gap: 1rem;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 2rem;
 }
 </style>

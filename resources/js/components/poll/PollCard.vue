@@ -1,11 +1,11 @@
 <template>
-  <v-card class="poll-card mb-4">
-    <v-card-title class="d-flex align-center">
-      <v-icon left>mdi-poll</v-icon>
+  <v-card class="poll-card mb-4" rounded="lg">
+    <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center ga-2">
+      <v-icon color="primary">mdi-poll</v-icon>
       {{ poll.title }}
-      <v-spacer></v-spacer>
-      <v-chip v-if="poll.is_open" color="success" small>Open</v-chip>
-      <v-chip v-else color="grey" small>Closed</v-chip>
+      <v-spacer />
+      <v-chip v-if="poll.is_open" color="success" variant="tonal" size="small">{{ $t('poll.open') }}</v-chip>
+      <v-chip v-else variant="tonal" size="small">{{ $t('poll.closed') }}</v-chip>
     </v-card-title>
 
     <v-card-subtitle v-if="poll.description">
@@ -25,7 +25,7 @@
             :key="option.id"
             :label="option.option_text"
             :value="option.id"
-          ></v-radio>
+          />
         </v-radio-group>
 
         <div v-else>
@@ -36,16 +36,17 @@
             :label="option.option_text"
             :value="option.id"
             :disabled="loading"
-          ></v-checkbox>
+          />
         </div>
 
         <v-btn
           color="primary"
+          variant="flat"
           :disabled="!canVote"
           :loading="loading"
           @click="submitVote"
         >
-          Submit Vote
+          {{ $t('poll.submitVote') }}
         </v-btn>
       </div>
 
@@ -59,42 +60,39 @@
       <!-- Change vote button -->
       <v-btn
         v-if="poll.is_open && poll.has_voted"
-        text
-        small
+        variant="text"
+        size="small"
         color="primary"
         class="mt-2"
         @click="changeVote"
       >
-        Change Vote
+        {{ $t('poll.changeVote') }}
       </v-btn>
     </v-card-text>
 
-    <v-card-actions class="px-4 pb-4">
-      <v-chip small>
-        <v-icon left small>mdi-account-multiple</v-icon>
-        {{ poll.total_votes }} {{ poll.total_votes === 1 ? 'vote' : 'votes' }}
+    <v-card-actions class="px-4 pb-4 ga-2">
+      <v-chip size="small" variant="tonal" prepend-icon="mdi-account-multiple">
+        {{ $t('poll.votesCount', poll.total_votes) }}
       </v-chip>
-      <v-chip v-if="poll.closes_at" small class="ml-2">
-        <v-icon left small>mdi-clock-outline</v-icon>
+      <v-chip v-if="poll.closes_at" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
         {{ formatClosingTime(poll.closes_at) }}
       </v-chip>
-      <v-spacer></v-spacer>
+      <v-spacer />
       <v-btn
         v-if="canEdit"
-        icon
-        small
+        icon="mdi-pencil"
+        variant="text"
+        size="small"
         @click="$emit('edit', poll)"
-      >
-        <v-icon>mdi-pencil</v-icon>
-      </v-btn>
+      />
       <v-btn
         v-if="canDelete"
-        icon
-        small
+        icon="mdi-delete"
+        variant="text"
+        size="small"
+        color="error"
         @click="$emit('delete', poll)"
-      >
-        <v-icon>mdi-delete</v-icon>
-      </v-btn>
+      />
     </v-card-actions>
   </v-card>
 </template>
@@ -165,18 +163,19 @@ export default {
       }
     },
     changeVote() {
-      this.selectedOptions = this.poll.type === 'single' 
+      this.selectedOptions = this.poll.type === 'single'
         ? (this.poll.user_votes[0] || null)
         : [...this.poll.user_votes]
     },
     formatClosingTime(closesAt) {
       const date = new Date(closesAt)
       const now = new Date()
-      
+      const time = formatDistanceToNow(date, { addSuffix: true })
+
       if (date < now) {
-        return 'Closed ' + formatDistanceToNow(date, { addSuffix: true })
+        return this.$t('poll.closedAt', { time })
       }
-      return 'Closes ' + formatDistanceToNow(date, { addSuffix: true })
+      return this.$t('poll.closesAt', { time })
     }
   },
   watch: {
@@ -196,6 +195,6 @@ export default {
 
 <style scoped>
 .poll-card {
-  border-left: 4px solid #1976d2;
+  border-left: 4px solid rgb(var(--v-theme-primary));
 }
 </style>

@@ -1,14 +1,32 @@
 <template>
-  <v-container fluid class="irc-client pa-0" :style="{ height: containerHeight }">
+  <v-container fluid class="irc-client pa-0 d-flex flex-column" :style="{ height: containerHeight }">
+    <page-header
+      :title="$t('irc.client.title')"
+      :subtitle="$t('irc.client.subtitle')"
+      icon="mdi-forum-outline"
+      fluid
+      class="irc-header mb-0 flex-shrink-0"
+    >
+      <template #actions>
+        <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showConnectionDialog = true">
+          {{ $t('irc.client.addConnection') }}
+        </v-btn>
+      </template>
+    </page-header>
+
     <v-row no-gutters class="irc-row">
       <!-- Server/Channel Sidebar -->
       <v-col cols="12" md="3" class="sidebar">
         <v-card flat height="100%">
-          <v-card-title class="d-flex justify-space-between align-center">
-            IRC Client
-            <v-btn icon size="small" @click="showConnectionDialog = true">
-              <v-icon>mdi-plus</v-icon>
-            </v-btn>
+          <v-card-title class="text-subtitle-1 font-weight-medium d-flex justify-space-between align-center">
+            {{ $t('irc.client.connections') }}
+            <v-btn
+              icon="mdi-plus"
+              variant="text"
+              size="small"
+              :title="$t('irc.client.addConnection')"
+              @click="showConnectionDialog = true"
+            />
           </v-card-title>
 
           <v-divider />
@@ -32,7 +50,7 @@
                 <template #append>
                   <v-menu>
                     <template #activator="{ props }">
-                      <v-btn icon size="small" v-bind="props" @click.stop>
+                      <v-btn icon variant="text" size="small" v-bind="props" @click.stop>
                         <v-icon>mdi-dots-vertical</v-icon>
                       </v-btn>
                     </template>
@@ -42,30 +60,30 @@
                         :disabled="busyConnectionIds.includes(connection.id)"
                         @click="connect(connection)"
                       >
-                        <v-list-item-title>Connect</v-list-item-title>
+                        <v-list-item-title>{{ $t('irc.client.connect') }}</v-list-item-title>
                       </v-list-item>
                       <v-list-item
                         v-else
                         :disabled="busyConnectionIds.includes(connection.id)"
                         @click="disconnect(connection)"
                       >
-                        <v-list-item-title>Disconnect</v-list-item-title>
+                        <v-list-item-title>{{ $t('irc.client.disconnect') }}</v-list-item-title>
                       </v-list-item>
                       <v-list-item @click="showJoinDialog(connection)">
-                        <v-list-item-title>Join Channel</v-list-item-title>
+                        <v-list-item-title>{{ $t('irc.client.joinChannel') }}</v-list-item-title>
                       </v-list-item>
                       <v-divider v-if="comicChatEnabled" />
                       <v-list-item v-if="comicChatEnabled" @click="showCharacterSelector(connection)">
-                        <v-list-item-title>Choose Character</v-list-item-title>
+                        <v-list-item-title>{{ $t('irc.client.chooseCharacter') }}</v-list-item-title>
                       </v-list-item>
                       <v-list-item @click="editConnection(connection)">
-                        <v-list-item-title>Edit</v-list-item-title>
+                        <v-list-item-title>{{ $t('common.edit') }}</v-list-item-title>
                       </v-list-item>
                       <v-list-item
                         :disabled="busyConnectionIds.includes(connection.id)"
                         @click="deleteConnection(connection)"
                       >
-                        <v-list-item-title class="text-error">Delete</v-list-item-title>
+                        <v-list-item-title class="text-error">{{ $t('common.delete') }}</v-list-item-title>
                       </v-list-item>
                     </v-list>
                   </v-menu>
@@ -77,7 +95,7 @@
                 <template #activator="{ props }">
                   <v-list-item v-bind="props" density="compact" class="pl-8">
                     <v-list-item-title class="text-caption">
-                      Channels ({{ getChannels(connection).length }})
+                      {{ $t('irc.client.channels', { count: getChannels(connection).length }) }}
                     </v-list-item-title>
                   </v-list-item>
                 </template>
@@ -91,7 +109,7 @@
                   density="compact"
                 >
                   <template #prepend>
-                    <v-icon size="small" :color="channel.is_joined ? 'success' : 'grey'">
+                    <v-icon size="small" :color="channel.is_joined ? 'success' : 'medium-emphasis'">
                       mdi-pound
                     </v-icon>
                   </template>
@@ -114,7 +132,7 @@
                       @click.stop="rejoinChannel(connection, channel)"
                     >
                       <v-icon size="small">mdi-login</v-icon>
-                      <v-tooltip activator="parent" location="top">Rejoin</v-tooltip>
+                      <v-tooltip activator="parent" location="top">{{ $t('irc.client.rejoin') }}</v-tooltip>
                     </v-btn>
                     <v-btn
                       icon
@@ -123,7 +141,7 @@
                       :loading="busyChannelIds.includes(channel.id)"
                       @click.stop="toggleFavorite(channel)"
                     >
-                      <v-icon size="small" :color="channel.is_favorite ? 'warning' : 'grey'">
+                      <v-icon size="small" :color="channel.is_favorite ? 'warning' : 'medium-emphasis'">
                         {{ channel.is_favorite ? 'mdi-star' : 'mdi-star-outline' }}
                       </v-icon>
                     </v-btn>
@@ -136,7 +154,7 @@
                 <template #activator="{ props }">
                   <v-list-item v-bind="props" density="compact" class="pl-8">
                     <v-list-item-title class="text-caption">
-                      Messages ({{ getPrivateChats(connection).length }})
+                      {{ $t('irc.client.privateMessages', { count: getPrivateChats(connection).length }) }}
                     </v-list-item-title>
                   </v-list-item>
                 </template>
@@ -165,10 +183,13 @@
               </v-list-group>
             </div>
 
-            <v-list-item v-if="!connections.length" class="text-center text-grey">
-              <v-list-item-title>No connections</v-list-item-title>
-              <v-list-item-subtitle>Click + to add one</v-list-item-subtitle>
-            </v-list-item>
+            <empty-state
+              v-if="!connections.length"
+              compact
+              icon="mdi-server-network-off"
+              :title="$t('irc.client.noConnections')"
+              :text="$t('irc.client.noConnectionsText')"
+            />
           </v-list>
         </v-card>
       </v-col>
@@ -180,37 +201,38 @@
           <v-card-title class="d-flex justify-space-between align-center flex-shrink-0">
             <div>
               <span class="text-h6">{{ activeChannel.name }}</span>
-              <span v-if="activeChannel.topic" class="text-caption text-grey ml-3">
+              <span v-if="activeChannel.topic" class="text-caption text-medium-emphasis ml-3">
                 {{ activeChannel.topic }}
               </span>
             </div>
-            <div class="d-flex gap-2 align-center">
+            <div class="d-flex ga-2 align-center">
               <!-- View Mode Toggle -->
               <v-btn-toggle v-if="comicChatEnabled" v-model="viewMode" mandatory density="compact">
                 <v-btn value="classic" size="small">
                   <v-icon>mdi-format-align-left</v-icon>
                   <v-tooltip activator="parent" location="bottom">
-                    Classic IRC View
+                    {{ $t('irc.client.classicView') }}
                   </v-tooltip>
                 </v-btn>
                 <v-btn value="comic" size="small">
                   <v-icon>mdi-book-open-variant</v-icon>
                   <v-tooltip activator="parent" location="bottom">
-                    Comic Chat View
+                    {{ $t('irc.client.comicView') }}
                   </v-tooltip>
                 </v-btn>
               </v-btn-toggle>
 
               <!-- Users Toggle -->
-              <v-btn icon size="small" :color="showUserList ? 'primary' : undefined" @click="toggleUserList()">
+              <v-btn icon variant="text" size="small" :color="showUserList ? 'primary' : undefined" @click="toggleUserList()">
                 <v-icon>mdi-account-group</v-icon>
                 <v-tooltip activator="parent" location="bottom">
-                  {{ showUserList ? 'Hide' : 'Show' }} Users
+                  {{ showUserList ? $t('irc.client.hideUsers') : $t('irc.client.showUsers') }}
                 </v-tooltip>
               </v-btn>
 
               <v-btn
                 icon
+                variant="text"
                 size="small"
                 :loading="busyChannelIds.includes(activeChannel.id)"
                 @click="partChannel(activeChannel)"
@@ -231,7 +253,7 @@
           >
             <div v-for="message in messages" :key="message.id" :class="getMessageClass(message)">
               <div class="message-line">
-                <span class="timestamp text-caption text-grey">
+                <span class="timestamp text-caption text-medium-emphasis">
                   {{ formatTime(message.sent_at) }}
                 </span>
                 <template v-if="message.type === 'action'">
@@ -263,9 +285,12 @@
               </div>
             </div>
 
-            <div v-if="!messages.length" class="text-center text-grey py-8">
-              No messages yet
-            </div>
+            <empty-state
+              v-if="!messages.length"
+              compact
+              icon="mdi-message-text-outline"
+              :title="$t('irc.client.noMessages')"
+            />
           </v-card-text>
 
           <!-- Comic Chat View -->
@@ -290,23 +315,23 @@
             <v-row dense>
               <!-- Emotion/Gesture Bar (Comic Mode Only) -->
               <v-col v-if="isComicMode" cols="12">
-                <div class="d-flex gap-2 flex-wrap">
+                <div class="d-flex ga-2 flex-wrap">
                   <v-chip-group v-model="selectedEmotion" mandatory>
-                    <v-chip size="small" value="normal">Normal</v-chip>
-                    <v-chip size="small" value="happy">Happy</v-chip>
-                    <v-chip size="small" value="sad">Sad</v-chip>
-                    <v-chip size="small" value="angry">Angry</v-chip>
-                    <v-chip size="small" value="surprised">Surprised</v-chip>
-                    <v-chip size="small" value="confused">Confused</v-chip>
+                    <v-chip size="small" variant="tonal" value="normal">{{ $t('irc.client.emotions.normal') }}</v-chip>
+                    <v-chip size="small" variant="tonal" value="happy">{{ $t('irc.client.emotions.happy') }}</v-chip>
+                    <v-chip size="small" variant="tonal" value="sad">{{ $t('irc.client.emotions.sad') }}</v-chip>
+                    <v-chip size="small" variant="tonal" value="angry">{{ $t('irc.client.emotions.angry') }}</v-chip>
+                    <v-chip size="small" variant="tonal" value="surprised">{{ $t('irc.client.emotions.surprised') }}</v-chip>
+                    <v-chip size="small" variant="tonal" value="confused">{{ $t('irc.client.emotions.confused') }}</v-chip>
                   </v-chip-group>
                   <v-divider vertical />
                   <v-chip-group v-model="selectedGesture">
-                    <v-chip size="small" value="none">None</v-chip>
-                    <v-chip size="small" value="wave">Wave</v-chip>
-                    <v-chip size="small" value="laugh">Laugh</v-chip>
-                    <v-chip size="small" value="think">Think</v-chip>
-                    <v-chip size="small" value="shout">Shout</v-chip>
-                    <v-chip size="small" value="whisper">Whisper</v-chip>
+                    <v-chip size="small" variant="tonal" value="none">{{ $t('irc.client.gestures.none') }}</v-chip>
+                    <v-chip size="small" variant="tonal" value="wave">{{ $t('irc.client.gestures.wave') }}</v-chip>
+                    <v-chip size="small" variant="tonal" value="laugh">{{ $t('irc.client.gestures.laugh') }}</v-chip>
+                    <v-chip size="small" variant="tonal" value="think">{{ $t('irc.client.gestures.think') }}</v-chip>
+                    <v-chip size="small" variant="tonal" value="shout">{{ $t('irc.client.gestures.shout') }}</v-chip>
+                    <v-chip size="small" variant="tonal" value="whisper">{{ $t('irc.client.gestures.whisper') }}</v-chip>
                   </v-chip-group>
                 </div>
               </v-col>
@@ -315,7 +340,7 @@
               <v-col cols="12">
                 <v-text-field
                   v-model="newMessage"
-                  placeholder="Type a message or /help for commands..."
+                  :placeholder="$t('irc.client.messagePlaceholder')"
                   variant="outlined"
                   density="compact"
                   hide-details
@@ -325,6 +350,7 @@
                   <template #append-inner>
                     <v-btn
                       icon
+                      variant="text"
                       size="small"
                       color="primary"
                       :disabled="!newMessage.trim()"
@@ -348,7 +374,7 @@
                 {{ getStatusIcon(activeServerLog.status) }}
               </v-icon>
               <span class="text-h6">{{ activeServerLog.server.name }}</span>
-              <span class="text-caption text-grey ml-3">
+              <span class="text-caption text-medium-emphasis ml-3">
                 {{ activeServerLog.server.host }}:{{ activeServerLog.server.port }} · {{ activeServerLog.status }}
               </span>
             </div>
@@ -361,7 +387,7 @@
               :loading="busyConnectionIds.includes(activeServerLog.id)"
               @click="connect(activeServerLog)"
             >
-              Connect
+              {{ $t('irc.client.connect') }}
             </v-btn>
             <v-btn
               v-else
@@ -371,7 +397,7 @@
               :loading="busyConnectionIds.includes(activeServerLog.id)"
               @click="disconnect(activeServerLog)"
             >
-              Disconnect
+              {{ $t('irc.client.disconnect') }}
             </v-btn>
           </v-card-title>
 
@@ -384,21 +410,24 @@
           >
             <div v-for="entry in currentServerLog" :key="entry.id" class="message">
               <div class="message-line">
-                <span class="timestamp text-caption text-grey">{{ formatTime(entry.sent_at) }}</span>
+                <span class="timestamp text-caption text-medium-emphasis">{{ formatTime(entry.sent_at) }}</span>
                 <span class="system-message">***</span>
                 <span class="message-text system-text">{{ entry.message }}</span>
               </div>
             </div>
-            <div v-if="!currentServerLog.length" class="text-center text-grey py-8">
-              No server messages yet
-            </div>
+            <empty-state
+              v-if="!currentServerLog.length"
+              compact
+              icon="mdi-console"
+              :title="$t('irc.client.noServerMessages')"
+            />
           </v-card-text>
 
           <v-divider />
           <v-card-actions class="pa-2 flex-shrink-0">
             <v-text-field
               v-model="newMessage"
-              placeholder="Server console — use /join #channel, /nick <name>, /help ..."
+              :placeholder="$t('irc.client.consolePlaceholder')"
               variant="outlined"
               density="compact"
               hide-details
@@ -407,6 +436,7 @@
               <template #append-inner>
                 <v-btn
                   icon
+                  variant="text"
                   size="small"
                   color="primary"
                   :disabled="!newMessage.trim()"
@@ -422,23 +452,23 @@
 
         <!-- Nothing Selected -->
         <v-card v-else flat class="d-flex align-center justify-center flex-grow-1">
-          <div class="text-center">
-            <v-icon size="64" color="grey-lighten-1">mdi-chat-outline</v-icon>
-            <p class="text-h6 mt-4">Select a channel to start chatting</p>
-            <p class="text-body-2 text-grey">Or click a server to open its connection log</p>
-          </div>
+          <empty-state
+            icon="mdi-chat-outline"
+            :title="$t('irc.client.selectChannel')"
+            :text="$t('irc.client.selectChannelText')"
+          />
         </v-card>
       </v-col>
 
       <!-- Online Users Sidebar -->
       <v-col v-if="activeChannel && showUserList" cols="12" md="3" class="users-sidebar d-flex flex-column">
         <v-card flat class="d-flex flex-column flex-grow-1" style="min-height: 0;">
-          <v-card-title class="d-flex justify-space-between align-center flex-shrink-0 text-body-1">
+          <v-card-title class="d-flex justify-space-between align-center flex-shrink-0 text-subtitle-1 font-weight-medium">
             <span>
               <v-icon size="small" class="mr-1">mdi-account-group</v-icon>
-              Users ({{ channelUsers.length }})
+              {{ $t('irc.client.users', { count: channelUsers.length }) }}
             </span>
-            <v-btn icon size="x-small" @click="toggleUserList()">
+            <v-btn icon variant="text" size="x-small" @click="toggleUserList()">
               <v-icon size="small">mdi-close</v-icon>
             </v-btn>
           </v-card-title>
@@ -450,7 +480,7 @@
               density="compact"
             >
               <template #prepend>
-                <v-icon size="small" :color="user.isOnline ? 'success' : 'grey'">
+                <v-icon size="small" :color="user.isOnline ? 'success' : 'medium-emphasis'">
                   mdi-circle
                 </v-icon>
               </template>
@@ -460,8 +490,8 @@
               </v-list-item-title>
             </v-list-item>
             <v-list-item v-if="!channelUsers.length">
-              <v-list-item-title class="text-caption text-grey text-center">
-                No users
+              <v-list-item-title class="text-caption text-medium-emphasis text-center">
+                {{ $t('irc.client.noUsers') }}
               </v-list-item-title>
             </v-list-item>
           </v-list>
@@ -501,6 +531,8 @@ import IrcConnectionDialog from './IrcConnectionDialog.vue';
 import IrcJoinDialog from './IrcJoinDialog.vue';
 import ComicChatView from './ComicChatView.vue';
 import ComicCharacterSelector from './ComicCharacterSelector.vue';
+import PageHeader from '../common/PageHeader.vue';
+import EmptyState from '../common/EmptyState.vue';
 
 export default {
   name: 'IrcClient',
@@ -509,6 +541,8 @@ export default {
     IrcJoinDialog,
     ComicChatView,
     ComicCharacterSelector,
+    PageHeader,
+    EmptyState,
   },
   data() {
     return {
@@ -1141,8 +1175,8 @@ export default {
       return {
         connected: 'success',
         connecting: 'warning',
-        disconnected: 'grey',
-      }[status] || 'grey';
+        disconnected: 'medium-emphasis',
+      }[status] || 'medium-emphasis';
     },
     getStatusIcon(status) {
       return {
@@ -1234,12 +1268,17 @@ export default {
   overflow: hidden;
 }
 
+.irc-header {
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
 .irc-row {
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .sidebar {
-  border-right: 1px solid rgba(0, 0, 0, 0.12);
+  border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   overflow-y: auto;
   height: 100%;
 }
@@ -1250,7 +1289,7 @@ export default {
 }
 
 .users-sidebar {
-  border-left: 1px solid rgba(0, 0, 0, 0.12);
+  border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   height: 100%;
   min-height: 0;
 }
@@ -1269,7 +1308,7 @@ export default {
 }
 
 .message.mention {
-  background-color: rgba(255, 193, 7, 0.1);
+  background-color: rgba(var(--v-theme-warning), 0.12);
 }
 
 .message.action .message-line {
@@ -1290,11 +1329,11 @@ export default {
 }
 
 .message.system .message-line {
-  background-color: rgba(0, 0, 0, 0.03);
+  background-color: rgba(var(--v-theme-on-surface), 0.03);
 }
 
 .message.system .system-text {
-  color: #666;
+  color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
   font-style: italic;
 }
 
@@ -1308,12 +1347,12 @@ export default {
 }
 
 .system-message {
-  color: #999;
+  color: rgba(var(--v-theme-on-surface), var(--v-disabled-opacity));
   margin-right: 8px;
 }
 
 .user-prefix {
-  color: #e53935;
+  color: rgb(var(--v-theme-error));
   margin-right: 1px;
 }
 

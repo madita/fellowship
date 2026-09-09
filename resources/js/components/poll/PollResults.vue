@@ -3,42 +3,50 @@
     <div
       v-for="result in poll.results"
       :key="result.id"
-      class="result-item mb-3"
+      class="mb-3"
     >
       <div class="d-flex justify-space-between align-center mb-1">
-        <span class="option-text">
+        <span class="text-body-2 font-weight-medium">
           {{ result.option_text }}
           <v-icon
             v-if="isUserVote(result.id)"
-            small
+            size="small"
             color="primary"
             class="ml-1"
           >
             mdi-check-circle
           </v-icon>
         </span>
-        <span class="result-stats">
-          <span v-if="showVotes">{{ result.votes }} {{ result.votes === 1 ? 'vote' : 'votes' }}</span>
+        <span class="text-caption text-medium-emphasis">
+          <span v-if="showVotes">{{ $t('poll.votesCount', result.votes) }}</span>
           <span class="ml-2 font-weight-bold">{{ result.percentage }}%</span>
         </span>
       </div>
       <v-progress-linear
-        :value="result.percentage"
+        :model-value="result.percentage"
         :color="getBarColor(result.percentage)"
         height="8"
         rounded
-      ></v-progress-linear>
+      />
     </div>
 
-    <div v-if="poll.total_votes === 0" class="text-center text--secondary">
-      No votes yet
-    </div>
+    <empty-state
+      v-if="poll.total_votes === 0"
+      compact
+      icon="mdi-poll"
+      :title="$t('poll.noVotes')"
+    />
   </div>
 </template>
 
 <script>
+import EmptyState from '../common/EmptyState.vue'
+
 export default {
   name: 'PollResults',
+  components: {
+    EmptyState
+  },
   props: {
     poll: {
       type: Object,
@@ -57,24 +65,8 @@ export default {
       if (percentage >= 50) return 'success'
       if (percentage >= 25) return 'primary'
       if (percentage > 0) return 'info'
-      return 'grey lighten-2'
+      return 'surface-variant'
     }
   }
 }
 </script>
-
-<style scoped>
-.result-item {
-  position: relative;
-}
-
-.option-text {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.result-stats {
-  font-size: 13px;
-  color: #666;
-}
-</style>

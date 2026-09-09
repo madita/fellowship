@@ -1,126 +1,141 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Share Sandbox</h2>
-        <button @click="$emit('close')" class="close-btn">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
+  <v-dialog :model-value="true" max-width="600" scrollable @update:model-value="onDialogToggle">
+    <v-card>
+      <v-card-title class="text-h6 d-flex align-center">
+        <v-icon start>mdi-share-variant-outline</v-icon>
+        {{ $t('sandbox.collaborators.title') }}
+      </v-card-title>
+      <v-divider />
 
-      <div class="modal-body">
+      <v-card-text>
         <!-- Share link -->
-        <div class="share-link-section">
-          <label>Share Link</label>
-          <div class="share-link-input">
-            <input
-              type="text"
-              :value="shareLink"
-              readonly
-              ref="linkInput"
+        <v-text-field
+          ref="linkInput"
+          :model-value="shareLink"
+          :label="$t('sandbox.collaborators.shareLink')"
+          :hint="sandbox.visibility === 'public'
+            ? $t('sandbox.collaborators.linkPublicHint')
+            : $t('sandbox.collaborators.linkPrivateHint')"
+          persistent-hint
+          readonly
+          class="mb-4"
+        >
+          <template #append-inner>
+            <v-btn
+              :icon="copied ? 'mdi-check' : 'mdi-content-copy'"
+              :color="copied ? 'success' : undefined"
+              variant="text"
+              size="small"
+              :title="copied ? $t('sandbox.collaborators.copied') : $t('common.copy')"
+              @click="copyLink"
             />
-            <button @click="copyLink" class="copy-btn">
-              <i :class="copied ? 'fas fa-check' : 'fas fa-copy'"></i>
-            </button>
-          </div>
-          <p class="hint">
-            {{ sandbox.visibility === 'public' 
-              ? 'Anyone with this link can view' 
-              : 'Only collaborators can access' }}
-          </p>
-        </div>
+          </template>
+        </v-text-field>
 
         <!-- Add collaborator -->
-        <div class="add-collaborator">
-          <label>Add People</label>
-          <div class="search-box">
-            <input
-              v-model="searchQuery"
-              @input="searchUsers"
-              type="text"
-              placeholder="Search by username..."
-              class="form-control"
-              :disabled="adding"
-            />
-            <div v-if="searchResults.length > 0" class="search-results">
-              <div
-                v-for="user in searchResults"
-                :key="user.id"
-                @click="addCollaborator(user)"
-                :class="['search-result-item', { busy: adding }]"
-              >
-                <span class="username">
-                  <i v-if="adding" class="fas fa-spinner fa-spin"></i>
-                  {{ user.username }}
-                </span>
-                <span class="email">{{ user.email }}</span>
-              </div>
-            </div>
-          </div>
+        <div class="text-subtitle-1 font-weight-medium mb-2">
+          {{ $t('sandbox.collaborators.addPeople') }}
         </div>
+        <v-text-field
+          v-model="searchQuery"
+          :placeholder="$t('sandbox.collaborators.searchPlaceholder')"
+          prepend-inner-icon="mdi-magnify"
+          hide-details
+          :disabled="adding"
+          @input="searchUsers"
+        />
+        <v-card v-if="searchResults.length > 0" variant="outlined" class="mt-2">
+          <v-list density="compact" class="py-0">
+            <v-list-item
+              v-for="user in searchResults"
+              :key="user.id"
+              :title="user.username"
+              :subtitle="user.email"
+              :disabled="adding"
+              @click="addCollaborator(user)"
+            >
+              <template #prepend>
+                <v-progress-circular v-if="adding" indeterminate size="20" width="2" class="mr-3" />
+                <v-icon v-else>mdi-account-plus-outline</v-icon>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-card>
 
         <!-- Current collaborators -->
-        <div class="collaborators-list">
-          <label>People with access</label>
-
+        <div class="text-subtitle-1 font-weight-medium mt-6 mb-1">
+          {{ $t('sandbox.collaborators.peopleWithAccess') }}
+        </div>
+        <v-list class="py-0">
           <!-- Owner -->
-          <div class="collaborator-item owner">
-            <div class="user-info">
-              <div class="avatar">{{ sandbox.owner?.username?.charAt(0).toUpperCase() }}</div>
-              <div class="details">
-                <span class="username">{{ sandbox.owner?.username }}</span>
-                <span class="role">Owner</span>
-              </div>
-            </div>
-          </div>
+          <v-list-item :title="sandbox.owner?.username">
+            <template #prepend>
+              <UserAvatar v-if="sandbox.owner" :user="sandbox.owner" size="36" class="mr-3" />
+            </template>
+            <template #subtitle>
+              <span class="text-success">{{ $t('sandbox.collaborators.owner') }}</span>
+            </template>
+          </v-list-item>
 
           <!-- Collaborators -->
-          <div
+          <v-list-item
             v-for="collab in collaborators"
             :key="collab.id"
-            class="collaborator-item"
+            :title="collab.username"
           >
-            <div class="user-info">
-              <div class="avatar">{{ collab.username?.charAt(0).toUpperCase() }}</div>
-              <div class="details">
-                <span class="username">{{ collab.username }}</span>
-                <span class="pending" v-if="!collab.pivot?.accepted_at">Pending</span>
+            <template #prepend>
+              <UserAvatar :user="collab" size="36" class="mr-3" />
+            </template>
+            <template v-if="!collab.pivot?.accepted_at" #subtitle>
+              <span class="text-warning">{{ $t('sandbox.collaborators.pending') }}</span>
+            </template>
+            <template #append>
+              <div class="d-flex align-center ga-1">
+                <v-select
+                  v-model="collab.pivot.role"
+                  :items="roleOptions"
+                  item-title="text"
+                  item-value="value"
+                  density="compact"
+                  hide-details
+                  class="role-select"
+                  :loading="isBusy(collab.id)"
+                  :disabled="isBusy(collab.id)"
+                  @update:model-value="updateRole(collab)"
+                />
+                <v-btn
+                  icon="mdi-close"
+                  variant="text"
+                  size="small"
+                  color="error"
+                  :loading="isBusy(collab.id)"
+                  :disabled="isBusy(collab.id)"
+                  :title="$t('dialogs.confirm.remove')"
+                  @click="removeCollaborator(collab)"
+                />
               </div>
-            </div>
-            <div class="actions">
-              <select
-                v-model="collab.pivot.role"
-                @change="updateRole(collab)"
-                class="role-select"
-                :disabled="isBusy(collab.id)"
-              >
-                <option value="viewer">Can view</option>
-                <option value="editor">Can edit</option>
-                <option value="admin">Admin</option>
-              </select>
-              <button
-                @click="removeCollaborator(collab)"
-                class="remove-btn"
-                :disabled="isBusy(collab.id)"
-              >
-                <i :class="isBusy(collab.id) ? 'fas fa-spinner fa-spin' : 'fas fa-times'"></i>
-              </button>
-            </div>
-          </div>
+            </template>
+          </v-list-item>
+        </v-list>
 
-          <p v-if="collaborators.length === 0" class="no-collaborators">
-            No collaborators yet. Invite people to collaborate!
-          </p>
-        </div>
-      </div>
+        <empty-state
+          v-if="collaborators.length === 0"
+          compact
+          icon="mdi-account-multiple-plus-outline"
+          :title="$t('sandbox.collaborators.noCollaborators')"
+          :text="$t('sandbox.collaborators.noCollaboratorsText')"
+        />
+      </v-card-text>
 
-      <div class="modal-footer">
-        <button @click="$emit('close')" class="btn btn-primary">
-          Done
-        </button>
-      </div>
-    </div>
-  </div>
+      <v-divider />
+      <v-card-actions>
+        <v-spacer />
+        <v-btn color="primary" variant="flat" @click="$emit('close')">
+          {{ $t('common.done') }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script>
@@ -128,9 +143,16 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import { useDialog } from '@/composables/useDialog.js'
+import UserAvatar from '../common/UserAvatar.vue'
+import EmptyState from '../common/EmptyState.vue'
 
 export default {
   name: 'SandboxCollaborators',
+
+  components: {
+    UserAvatar,
+    EmptyState,
+  },
 
   props: {
     sandbox: {
@@ -156,6 +178,12 @@ export default {
     const lastRoles = {}
     let searchTimeout = null
 
+    const roleOptions = computed(() => [
+      { value: 'viewer', text: t('sandbox.collaborators.roles.viewer') },
+      { value: 'editor', text: t('sandbox.collaborators.roles.editor') },
+      { value: 'admin', text: t('sandbox.collaborators.roles.admin') },
+    ])
+
     const isBusy = (id) => busyIds.value.includes(id)
     const setBusy = (id, busy) => {
       busyIds.value = busy
@@ -175,6 +203,10 @@ export default {
       rememberRoles()
     })
 
+    const onDialogToggle = (open) => {
+      if (!open) emit('close')
+    }
+
     const copyLink = async () => {
       try {
         await navigator.clipboard.writeText(shareLink.value)
@@ -182,7 +214,7 @@ export default {
         setTimeout(() => copied.value = false, 2000)
       } catch (error) {
         // Fallback for older browsers
-        linkInput.value?.select()
+        linkInput.value?.$el?.querySelector('input')?.select()
         document.execCommand('copy')
         copied.value = true
         setTimeout(() => copied.value = false, 2000)
@@ -291,8 +323,10 @@ export default {
       copied,
       linkInput,
       adding,
+      roleOptions,
       isBusy,
       shareLink,
+      onDialogToggle,
       copyLink,
       searchUsers,
       addCollaborator,
@@ -304,272 +338,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 0.5rem;
-  width: 100%;
-  max-width: 480px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-
-  h2 {
-    margin: 0;
-    font-size: 1.25rem;
-  }
-
-  .close-btn {
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    cursor: pointer;
-    color: #6b7280;
-  }
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-.modal-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #e5e7eb;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.share-link-section {
-  margin-bottom: 1.5rem;
-
-  label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-  }
-
-  .hint {
-    font-size: 0.75rem;
-    color: #6b7280;
-    margin-top: 0.25rem;
-  }
-}
-
-.share-link-input {
-  display: flex;
-  gap: 0.5rem;
-
-  input {
-    flex: 1;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    background: #f9fafb;
-  }
-
-  .copy-btn {
-    padding: 0.5rem 0.75rem;
-    background: #e5e7eb;
-    border: none;
-    border-radius: 0.375rem;
-    cursor: pointer;
-
-    &:hover {
-      background: #d1d5db;
-    }
-  }
-}
-
-.add-collaborator {
-  margin-bottom: 1.5rem;
-
-  label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-  }
-}
-
-.search-box {
-  position: relative;
-}
-
-.form-control {
-  width: 100%;
-  padding: 0.625rem 0.875rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-}
-
-.search-results {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  margin-top: 0.25rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-}
-
-.search-result-item {
-  padding: 0.625rem 0.875rem;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-
-  &:hover {
-    background: #f3f4f6;
-  }
-
-  &.busy {
-    opacity: 0.6;
-    pointer-events: none;
-  }
-
-  .username {
-    font-weight: 500;
-  }
-
-  .email {
-    color: #6b7280;
-    font-size: 0.875rem;
-  }
-}
-
-.collaborators-list {
-  label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 0.75rem;
-  }
-}
-
-.collaborator-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-
-  &:hover {
-    background: #f9fafb;
-  }
-
-  &.owner {
-    background: #f0fdf4;
-  }
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #3b82f6;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-}
-
-.details {
-  display: flex;
-  flex-direction: column;
-
-  .username {
-    font-weight: 500;
-  }
-
-  .role {
-    font-size: 0.75rem;
-    color: #059669;
-  }
-
-  .pending {
-    font-size: 0.75rem;
-    color: #d97706;
-  }
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .role-select {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  background: white;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
-}
-
-.remove-btn {
-  padding: 0.25rem 0.5rem;
-  background: none;
-  border: none;
-  color: #dc2626;
-  cursor: pointer;
-  border-radius: 0.25rem;
-
-  &:hover {
-    background: #fef2f2;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: default;
-  }
-}
-
-.no-collaborators {
-  text-align: center;
-  color: #6b7280;
-  padding: 1rem;
-}
-
-.btn {
-  padding: 0.625rem 1.25rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-
-  &.btn-primary {
-    background: #3b82f6;
-    color: white;
-  }
+  width: 150px;
 }
 </style>

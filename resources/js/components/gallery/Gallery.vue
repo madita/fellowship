@@ -1,50 +1,43 @@
 <template>
-    <v-container fluid class="pa-5">
-        <!-- Loading -->
-        <v-sheet v-if="loading" class="d-flex justify-center align-center py-16" color="transparent">
-            <v-progress-circular indeterminate color="primary" size="48" />
-        </v-sheet>
+    <div>
+        <page-header
+            :title="$t('gallery.title')"
+            :subtitle="$t('gallery.subtitle')"
+            icon="mdi-image-multiple-outline"
+            fluid
+        />
 
-        <!-- Empty State -->
-        <v-sheet
-            v-else-if="!collections.length"
-            class="d-flex flex-column align-center justify-center text-center py-16"
-            color="transparent"
-        >
-            <v-icon size="72" color="grey-lighten-1">mdi-image-off-outline</v-icon>
-            <h3 class="text-h6 mt-4">{{ $t('gallery.noCollections') }}</h3>
-            <p class="text-body-2 text-medium-emphasis mt-1" style="max-width: 420px;">
-                {{ $t('gallery.noCollectionsText') }}
-            </p>
-        </v-sheet>
+        <v-container fluid>
+            <!-- Loading -->
+            <loading-state v-if="loading" />
 
-        <!-- Gallery Collections -->
-        <v-row v-else justify="end" class="mt-5">
-            <v-col cols="12">
-                <v-row>
-                    <v-col cols="12" sm="6" md="4" v-for="(collection, index) in collections" :key="index">
-                        <v-card @click="openAlbum(collection.slug)"
-                            class="card-hover"
-                            elevation="10"
-                            rounded="md"
-                            link
-                            :class="`v-theme--ORANGE_THEME`"
-                        >
-                            <v-img :src="collection.coverImage" height="200"></v-img>
-                            <v-card-text>
-                                <div class="d-flex align-center gap-3">
-                                    <div>
-                                        <h6 class="text-h6 mb-1">{{ collection.name }}</h6>
-                                        <span class="d-block text-truncate d-flex align-center gap-2 textSecondary">{{ collection.taxonomy }}</span>
-                                    </div>
-                                </div>
-                            </v-card-text>
-                        </v-card>
-                    </v-col>
-                </v-row>
-            </v-col>
-        </v-row>
-    </v-container>
+            <!-- Empty State -->
+            <empty-state
+                v-else-if="!collections.length"
+                icon="mdi-image-off-outline"
+                :title="$t('gallery.noCollections')"
+                :text="$t('gallery.noCollectionsText')"
+            />
+
+            <!-- Gallery Collections -->
+            <v-row v-else>
+                <v-col cols="12" sm="6" md="4" v-for="(collection, index) in collections" :key="index">
+                    <v-card
+                        class="card-hover"
+                        rounded="lg"
+                        link
+                        @click="openAlbum(collection.slug)"
+                    >
+                        <v-img :src="collection.coverImage" height="200" cover />
+                        <v-card-text>
+                            <h3 class="text-subtitle-1 font-weight-medium mb-1">{{ collection.name }}</h3>
+                            <span class="d-block text-body-2 text-medium-emphasis text-truncate">{{ collection.taxonomy }}</span>
+                        </v-card-text>
+                    </v-card>
+                </v-col>
+            </v-row>
+        </v-container>
+    </div>
 </template>
 
 <script setup>
@@ -53,6 +46,9 @@ import {useI18n} from 'vue-i18n';
 import {useRouter} from 'vue-router';
 import axios from 'axios';
 import {useDialog} from '@/composables/useDialog.js';
+import PageHeader from '../common/PageHeader.vue';
+import EmptyState from '../common/EmptyState.vue';
+import LoadingState from '../common/LoadingState.vue';
 
 const {t} = useI18n();
 const dialog = useDialog();
@@ -158,37 +154,6 @@ const deleteMedia = async (mediaId) => {
 };
 
 onMounted(fetchCollections);
-// onMounted(() => {
-//     fetchCollections();
-// });
 
 watch(selectedTaxonomy, fetchCollections);
 </script>
-
-<style scoped>
-.gallery {
-    padding: 20px;
-}
-
-.create-collection {
-    margin-bottom: 20px;
-}
-
-.collection-list ul {
-    list-style: none;
-    padding: 0;
-}
-
-.collection-list li {
-    margin-bottom: 20px;
-}
-
-.media-item {
-    margin-bottom: 15px;
-}
-
-button {
-    cursor: pointer;
-    margin-left: 10px;
-}
-</style>

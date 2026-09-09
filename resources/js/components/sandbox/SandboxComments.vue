@@ -2,7 +2,7 @@
   <div class="comments-panel" :class="{ open: visible }">
     <!-- Header -->
     <div class="comments-panel-header">
-      <h3 class="text-subtitle-1 font-weight-bold">Comments</h3>
+      <h3 class="text-subtitle-1 font-weight-medium">{{ $t('sandbox.comments.title') }}</h3>
       <div class="d-flex ga-1">
         <v-btn
           icon
@@ -13,7 +13,7 @@
         >
           <v-icon>mdi-check-circle-outline</v-icon>
           <v-tooltip activator="parent" location="bottom">
-            {{ showResolved ? 'Hide resolved' : 'Show resolved' }}
+            {{ showResolved ? $t('sandbox.comments.hideResolved') : $t('sandbox.comments.showResolved') }}
           </v-tooltip>
         </v-btn>
         <v-btn
@@ -39,8 +39,7 @@
           <v-textarea
             ref="newCommentInput"
             v-model="pendingThread.content"
-            placeholder="Add a comment..."
-            variant="outlined"
+            :placeholder="$t('sandbox.comments.placeholder')"
             density="compact"
             rows="3"
             hide-details
@@ -51,32 +50,33 @@
           />
           <div class="d-flex justify-end ga-2 mt-2">
             <v-btn variant="text" size="small" @click="cancelNewThread">
-              Cancel
+              {{ $t('common.cancel') }}
             </v-btn>
             <v-btn
               color="primary"
+              variant="flat"
               size="small"
               :disabled="!pendingThread.content.trim()"
               :loading="submitting"
               @click="submitNewThread"
             >
-              Comment
+              {{ $t('sandbox.comments.comment') }}
             </v-btn>
           </div>
         </v-card-text>
       </v-card>
 
       <!-- Loading -->
-      <div v-if="loading" class="d-flex justify-center pa-6">
-        <v-progress-circular indeterminate color="primary" size="32" />
-      </div>
+      <loading-state v-if="loading" compact />
 
       <!-- Empty State -->
-      <div v-else-if="filteredThreads.length === 0 && !pendingThread" class="empty-comments">
-        <v-icon size="48" color="medium-emphasis" class="mb-3">mdi-comment-text-outline</v-icon>
-        <p class="text-body-2 text-medium-emphasis mb-1">No comments yet</p>
-        <p class="text-caption text-disabled">Select text and click the comment button to start a discussion</p>
-      </div>
+      <empty-state
+        v-else-if="filteredThreads.length === 0 && !pendingThread"
+        compact
+        icon="mdi-comment-text-outline"
+        :title="$t('sandbox.comments.noComments')"
+        :text="$t('sandbox.comments.noCommentsText')"
+      />
 
       <!-- Thread List -->
       <v-card
@@ -105,7 +105,7 @@
             prepend-icon="mdi-check-circle"
             class="mb-2"
           >
-            Resolved
+            {{ $t('sandbox.comments.resolved') }}
           </v-chip>
 
           <!-- Comments -->
@@ -117,7 +117,7 @@
             <div class="comment-header">
               <UserAvatar v-if="comment.user" :user="comment.user" class="comment-avatar" />
               <span class="comment-author text-body-2 font-weight-medium">
-                {{ comment.user?.username || 'Unknown' }}
+                {{ comment.user?.username || $t('sandbox.comments.unknownUser') }}
               </span>
               <span class="comment-time text-caption text-disabled">
                 {{ formatDate(comment.created_at) }}
@@ -134,7 +134,7 @@
                 @click.stop="deleteComment(thread, comment)"
               >
                 <v-icon size="14">mdi-delete-outline</v-icon>
-                <v-tooltip activator="parent" location="bottom">Delete</v-tooltip>
+                <v-tooltip activator="parent" location="bottom">{{ $t('common.delete') }}</v-tooltip>
               </v-btn>
             </div>
             <p class="comment-content text-body-2 mb-0">{{ comment.content }}</p>
@@ -144,8 +144,7 @@
           <div v-if="!thread.resolved_at" class="reply-box mt-2 pt-2">
             <v-text-field
               v-model="replyTexts[thread.id]"
-              :placeholder="thread.comments.length ? 'Reply...' : 'Add a comment...'"
-              variant="outlined"
+              :placeholder="thread.comments.length ? $t('sandbox.comments.replyPlaceholder') : $t('sandbox.comments.placeholder')"
               density="compact"
               hide-details
               :loading="replyingIds.includes(thread.id)"
@@ -180,7 +179,7 @@
               :disabled="!!threadAction[thread.id]"
               @click.stop="resolveThread(thread)"
             >
-              Resolve
+              {{ $t('sandbox.comments.resolve') }}
             </v-btn>
             <v-btn
               v-else
@@ -191,7 +190,7 @@
               :disabled="!!threadAction[thread.id]"
               @click.stop="unresolveThread(thread)"
             >
-              Reopen
+              {{ $t('sandbox.comments.reopen') }}
             </v-btn>
             <v-spacer />
             <v-btn
@@ -204,7 +203,7 @@
               :disabled="!!threadAction[thread.id]"
               @click.stop="deleteThread(thread)"
             >
-              Delete
+              {{ $t('common.delete') }}
             </v-btn>
           </div>
         </v-card-text>
@@ -218,6 +217,8 @@ import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import UserAvatar from '../common/UserAvatar.vue'
+import EmptyState from '../common/EmptyState.vue'
+import LoadingState from '../common/LoadingState.vue'
 import { useRelativeTime } from '@/composables/useRelativeTime.js'
 import { useDialog } from '@/composables/useDialog.js'
 
@@ -226,6 +227,8 @@ export default {
 
   components: {
     UserAvatar,
+    EmptyState,
+    LoadingState,
   },
 
   props: {
@@ -544,7 +547,7 @@ export default {
   width: 360px;
   height: 100%;
   background: rgb(var(--v-theme-surface));
-  border-left: 1px solid rgb(var(--v-border-color));
+  border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
@@ -561,7 +564,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgb(var(--v-border-color));
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 
   h3 {
     margin: 0;
@@ -572,11 +575,6 @@ export default {
   flex: 1;
   overflow-y: auto;
   padding: 0.75rem;
-}
-
-.empty-comments {
-  text-align: center;
-  padding: 2rem 1rem;
 }
 
 .thread-quote {
@@ -650,11 +648,11 @@ export default {
 }
 
 .reply-box {
-  border-top: 1px solid rgb(var(--v-border-color));
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .thread-actions {
-  border-top: 1px solid rgb(var(--v-border-color));
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 @media (max-width: 768px) {

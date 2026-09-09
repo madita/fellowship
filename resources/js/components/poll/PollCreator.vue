@@ -1,151 +1,141 @@
 <template>
-  <v-dialog v-model="dialog" max-width="700" persistent>
-    <template v-slot:activator="{ on, attrs }">
+  <v-dialog v-model="dialog" max-width="600" persistent>
+    <template v-slot:activator="{ props: activatorProps }">
       <v-btn
         color="primary"
-        v-bind="attrs"
-        v-on="on"
+        variant="elevated"
+        prepend-icon="mdi-poll"
+        v-bind="activatorProps"
       >
-        <v-icon left>mdi-poll</v-icon>
-        Create Poll
+        {{ $t('poll.createPoll') }}
       </v-btn>
     </template>
 
     <v-card>
-      <v-card-title>
-        <span class="text-h5">{{ editMode ? 'Edit Poll' : 'Create Poll' }}</span>
+      <v-card-title class="text-h6">
+        {{ editMode ? $t('poll.editPoll') : $t('poll.createPoll') }}
       </v-card-title>
+      <v-divider />
 
       <v-card-text>
         <v-form ref="form" v-model="valid">
           <v-text-field
             v-model="form.title"
-            label="Poll Title"
+            :label="$t('poll.pollTitle')"
             :rules="[rules.required]"
-            outlined
-            dense
-          ></v-text-field>
+            class="mb-2"
+          />
 
           <v-textarea
             v-model="form.description"
-            label="Description (optional)"
-            outlined
-            dense
+            :label="$t('poll.description')"
             rows="2"
-          ></v-textarea>
+            class="mb-2"
+          />
 
           <v-radio-group
             v-model="form.type"
-            label="Poll Type"
-            row
+            :label="$t('poll.type')"
+            inline
           >
-            <v-radio label="Single Choice" value="single"></v-radio>
-            <v-radio label="Multiple Choice" value="multiple"></v-radio>
+            <v-radio :label="$t('poll.singleChoice')" value="single" />
+            <v-radio :label="$t('poll.multipleChoice')" value="multiple" />
           </v-radio-group>
 
           <v-checkbox
             v-model="form.anonymous"
-            label="Anonymous voting (hide vote counts until poll closes)"
-            dense
-          ></v-checkbox>
+            :label="$t('poll.anonymous')"
+            density="compact"
+          />
 
           <v-menu
             v-model="dateMenu"
             :close-on-content-click="false"
-            :nudge-right="40"
             transition="scale-transition"
-            offset-y
             min-width="auto"
           >
-            <template v-slot:activator="{ on, attrs }">
+            <template v-slot:activator="{ props: menuProps }">
               <v-text-field
                 v-model="form.closes_at"
-                label="Closing Date (optional)"
-                prepend-icon="mdi-calendar"
+                :label="$t('poll.closingDate')"
+                prepend-inner-icon="mdi-calendar"
                 readonly
                 clearable
-                v-bind="attrs"
-                v-on="on"
-              ></v-text-field>
+                v-bind="menuProps"
+              />
             </template>
             <v-date-picker
-              v-model="form.closes_at"
-              @input="dateMenu = false"
               :min="minDate"
-            ></v-date-picker>
+              @update:model-value="onDateSelected"
+            />
           </v-menu>
 
-          <v-divider class="my-4"></v-divider>
+          <v-divider class="my-4" />
 
           <div class="d-flex justify-space-between align-center mb-2">
-            <span class="text-subtitle-1 font-weight-bold">Poll Options</span>
+            <span class="text-subtitle-1 font-weight-medium">{{ $t('poll.options') }}</span>
             <v-btn
-              small
+              size="small"
               color="primary"
-              @click="addOption"
+              variant="tonal"
+              prepend-icon="mdi-plus"
               :disabled="form.options.length >= 10"
+              @click="addOption"
             >
-              <v-icon left small>mdi-plus</v-icon>
-              Add Option
+              {{ $t('poll.addOption') }}
             </v-btn>
           </div>
 
-          <v-list dense>
-            <v-list-item
-              v-for="(option, index) in form.options"
-              :key="index"
-              class="px-0"
-            >
-              <v-text-field
-                v-model="option.option_text"
-                :label="`Option ${index + 1}`"
-                :rules="[rules.required]"
-                outlined
-                dense
-                hide-details
-              >
-                <template v-slot:append>
-                  <v-btn
-                    icon
-                    small
-                    @click="removeOption(index)"
-                    :disabled="form.options.length <= 2"
-                  >
-                    <v-icon small>mdi-close</v-icon>
-                  </v-btn>
-                </template>
-              </v-text-field>
-            </v-list-item>
-          </v-list>
+          <div
+            v-for="(option, index) in form.options"
+            :key="index"
+            class="d-flex align-center ga-2 mb-2"
+          >
+            <v-text-field
+              v-model="option.option_text"
+              :label="$t('poll.option', { n: index + 1 })"
+              :rules="[rules.required]"
+              density="compact"
+              hide-details
+            />
+            <v-btn
+              icon="mdi-close"
+              variant="text"
+              size="small"
+              :disabled="form.options.length <= 2"
+              @click="removeOption(index)"
+            />
+          </div>
 
           <v-alert
             v-if="form.options.length < 2"
             type="warning"
-            dense
-            text
+            density="compact"
             class="mt-2"
           >
-            A poll must have at least 2 options
+            {{ $t('poll.minOptions') }}
           </v-alert>
         </v-form>
       </v-card-text>
 
+      <v-divider />
       <v-card-actions>
-        <v-spacer></v-spacer>
+        <v-spacer />
         <v-btn
-          text
+          variant="text"
           :disabled="loading"
           @click="close"
         >
-          Cancel
+          {{ $t('common.cancel') }}
         </v-btn>
         <v-btn
           color="primary"
+          variant="flat"
           :disabled="!canSubmit"
           :loading="loading"
           @click="submit"
         >
-          {{ editMode ? 'Update' : 'Create' }} Poll
+          {{ editMode ? $t('poll.updatePoll') : $t('poll.createPoll') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -189,7 +179,7 @@ export default {
         ]
       },
       rules: {
-        required: value => !!value || 'Required.'
+        required: value => !!value || this.$t('poll.required')
       }
     }
   },
@@ -201,8 +191,8 @@ export default {
       return new Date().toISOString().substr(0, 10)
     },
     canSubmit() {
-      return this.valid && 
-             this.form.options.length >= 2 && 
+      return this.valid &&
+             this.form.options.length >= 2 &&
              this.form.options.every(opt => opt.option_text.trim())
     }
   },
@@ -216,6 +206,16 @@ export default {
       if (this.form.options.length > 2) {
         this.form.options.splice(index, 1)
       }
+    },
+    // The date picker hands back a Date; the form keeps the YYYY-MM-DD string the API expects
+    onDateSelected(value) {
+      if (value instanceof Date && !isNaN(value)) {
+        const pad = (n) => String(n).padStart(2, '0')
+        this.form.closes_at = `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`
+      } else if (typeof value === 'string') {
+        this.form.closes_at = value.substr(0, 10)
+      }
+      this.dateMenu = false
     },
     async submit() {
       if (this.loading) return

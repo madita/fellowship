@@ -1,9 +1,10 @@
 <template>
-  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" max-width="600">
+  <v-dialog :model-value="modelValue" max-width="600" @update:model-value="$emit('update:modelValue', $event)">
     <v-card>
-      <v-card-title>
-        {{ connection?.id ? 'Edit Connection' : 'New IRC Connection' }}
+      <v-card-title class="text-h6">
+        {{ connection?.id ? $t('irc.connectionDialog.editTitle') : $t('irc.connectionDialog.newTitle') }}
       </v-card-title>
+      <v-divider />
 
       <v-card-text>
         <v-form ref="form" v-model="valid">
@@ -12,10 +13,9 @@
             :items="servers"
             item-title="name"
             item-value="id"
-            label="IRC Server"
+            :label="$t('irc.connectionDialog.server')"
             :rules="[rules.required]"
-            outlined
-            dense
+            class="mb-2"
           >
             <template #item="{ props, item }">
               <v-list-item v-bind="props">
@@ -27,59 +27,59 @@
 
           <v-text-field
             v-model="form.nickname"
-            label="Nickname"
+            :label="$t('irc.connectionDialog.nickname')"
             :rules="[rules.required]"
-            outlined
-            dense
-            hint="Your IRC nickname"
+            :hint="$t('irc.connectionDialog.nicknameHint')"
             persistent-hint
+            class="mb-2"
           />
 
           <v-text-field
             v-model="form.username"
-            label="Username (optional)"
-            outlined
-            dense
-            hint="Defaults to nickname"
+            :label="$t('irc.connectionDialog.username')"
+            :hint="$t('irc.connectionDialog.usernameHint')"
+            class="mb-2"
           />
 
           <v-text-field
             v-model="form.realname"
-            label="Real Name (optional)"
-            outlined
-            dense
-            hint="Defaults to nickname"
+            :label="$t('irc.connectionDialog.realname')"
+            :hint="$t('irc.connectionDialog.realnameHint')"
+            class="mb-2"
           />
 
           <v-textarea
             v-model="channelsText"
-            label="Auto-join Channels"
-            outlined
+            :label="$t('irc.connectionDialog.autoJoin')"
             rows="3"
-            hint="One per line, e.g., #channel"
+            :hint="$t('irc.connectionDialog.autoJoinHint')"
             persistent-hint
+            class="mb-2"
           />
 
           <v-switch
             v-model="form.auto_connect"
-            label="Auto-connect on login"
+            :label="$t('irc.connectionDialog.autoConnect')"
             color="primary"
+            hide-details
           />
         </v-form>
       </v-card-text>
 
+      <v-divider />
       <v-card-actions>
         <v-spacer />
-        <v-btn :disabled="saving" @click="$emit('update:modelValue', false)">
-          Cancel
+        <v-btn variant="text" :disabled="saving" @click="$emit('update:modelValue', false)">
+          {{ $t('common.cancel') }}
         </v-btn>
         <v-btn
           color="primary"
+          variant="flat"
           :loading="saving"
           :disabled="!valid"
           @click="save"
         >
-          Save
+          {{ $t('common.save') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -111,7 +111,7 @@ export default {
       },
       channelsText: '',
       rules: {
-        required: (v) => !!v || 'Required',
+        required: (v) => !!v || this.$t('irc.connectionDialog.required'),
       },
     };
   },

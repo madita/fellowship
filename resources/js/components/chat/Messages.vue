@@ -1,37 +1,36 @@
 <template>
-
-
-<!--        <perfect-scrollbar >-->
-            <div id="messages" ref="messageContainer" style="height: calc(100vh - 290px)">
-            <div v-if="loading" class="d-flex justify-center py-8">
-                <v-progress-circular indeterminate color="primary" />
-            </div>
+    <div id="messages" ref="messageContainer">
+        <loading-state v-if="loading" />
+        <empty-state
+            v-else-if="!messages.length"
+            icon="mdi-chat-outline"
+            :title="$t('chat.noMessages')"
+        />
+        <template v-else>
             <chat-message
                 v-for="message in messages"
                 :key="message.id"
                 :message="message"
                 class="my-4 mr-5"
             />
-            </div>
-<!--        </perfect-scrollbar>-->
-<!--        <transition-group name="list">-->
-
-<!--        </transition-group>-->
-
+        </template>
+    </div>
 </template>
 
 <script>
-// import EventBus from '@/bus.js'
 import {ref, computed, onMounted,onUpdated, watch} from 'vue';
 import { useI18n } from 'vue-i18n';
 import ChatMessage from './Message.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 import {useChatStore} from "@/store/chatStore.js";
 import { useDialog } from '@/composables/useDialog.js';
 
-
 export default {
     components: {
-        ChatMessage
+        ChatMessage,
+        EmptyState,
+        LoadingState
     },
     setup() {
         const { t } = useI18n();
@@ -53,21 +52,10 @@ export default {
         };
 
         const scrollToEnd = () => {
-
-
-            // const container = messageContainer.value;
-            //
-            // console.log('messageContainer.value',messageContainer.value.scrollHeight)
-            // console.log('scrolltop',container.scrollTop)
-            // console.log('scrollheight',container.scrollHeight)
             if (messageContainer.value) {
-                // console.log('whyyyyy')
                 messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
             }
         }
-
-        // Watch for changes in messages array to trigger scrolling
-        // watch(messages, scrollToEnd, {deep: true});
 
         watch(
             () => messages.value,
@@ -79,19 +67,6 @@ export default {
             { deep: true }
         );
 
-        // watch(() => chatStore.messages, (newMessages, oldMessages) => {
-        //     console.log('Messages changed!', newMessages);
-        //     scrollToEnd();
-        // });
-
-        // watch(
-        //     () => chatStore.messages,
-        //     () => {
-        //         scrollToEnd()
-        //         //this.messages = chatStore.messages;
-        //     },
-        // )
-
         onUpdated( () => {
             scrollToEnd()
         })
@@ -99,9 +74,7 @@ export default {
         onMounted(() => {
             // Load messages
             axios.get('/api/chat/messages').then((response) => {
-                // messages = response.data;
                 chatStore.setMessages(response.data)
-                //this.messages = chatStore.messages
             }).catch((error) => {
                 dialog.requestError(error, t('chat.loadFailed'));
             }).finally(() => {
@@ -109,15 +82,6 @@ export default {
             });
 
             scrollToEnd()
-
-            /* EventBus integration if required
-            EventBus.on('message.added', (message) => {
-                messages.value.push(message);
-            });
-            EventBus.on('message.removed', (message) => {
-                removeMessage(message.id);
-            });
-            */
         });
 
         return {
@@ -133,14 +97,9 @@ export default {
 
 <style lang="scss">
 #messages {
-    overflow-y: scroll;
+    height: calc(100vh - 360px);
+    min-height: 320px;
+    overflow-y: auto;
     background: rgb(var(--v-theme-surface)) !important;
-}
-.chat {
-    &__messages {
-        height: 400px;
-        max-height: 400px;
-        overflow-y: scroll;
-    }
 }
 </style>

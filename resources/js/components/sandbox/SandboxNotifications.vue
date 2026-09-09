@@ -1,5 +1,5 @@
 <template>
-    <v-menu offset-y left transition="slide-y-transition" :close-on-content-click="false">
+    <v-menu location="bottom end" transition="slide-y-transition" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
             <v-badge
                 :content="unreadCount"
@@ -15,35 +15,36 @@
         </template>
 
         <v-card min-width="380" max-width="440">
-            <v-card-title class="d-flex align-center justify-space-between py-2 px-4 sandbox-header">
-                <div class="d-flex align-center ga-2">
-                    <v-icon size="20">mdi-file-document-edit-outline</v-icon>
-                    <span class="text-subtitle-1 font-weight-bold">Sandbox</span>
+            <v-card-title class="d-flex align-center justify-space-between py-2 px-4">
+                <div class="d-flex align-center ga-2 text-subtitle-1 font-weight-medium">
+                    <v-icon size="20" color="primary">mdi-file-document-edit-outline</v-icon>
+                    {{ $t('sandbox.notifications.title') }}
                 </div>
                 <v-btn
                     v-if="notifications.length > 0"
                     variant="text"
                     size="x-small"
+                    color="primary"
                     :loading="markingAll"
                     :disabled="busyIds.length > 0"
                     @click="markAllAsRead"
                 >
-                    Mark all read
+                    {{ $t('sandbox.notifications.markAllRead') }}
                 </v-btn>
             </v-card-title>
 
             <v-divider />
 
             <!-- Loading -->
-            <div v-if="loading" class="text-center py-6">
-                <v-progress-circular indeterminate color="primary" size="28" />
-            </div>
+            <loading-state v-if="loading" compact />
 
             <!-- Empty State -->
-            <div v-else-if="notifications.length === 0" class="text-center py-6 px-4">
-                <v-icon size="44" color="medium-emphasis" class="mb-2">mdi-bell-check-outline</v-icon>
-                <p class="text-body-2 text-medium-emphasis mb-0">No sandbox notifications</p>
-            </div>
+            <empty-state
+                v-else-if="notifications.length === 0"
+                compact
+                icon="mdi-bell-check-outline"
+                :title="$t('sandbox.notifications.empty')"
+            />
 
             <!-- Notification List -->
             <v-list v-else density="compact" class="py-0" max-height="420" style="overflow-y: auto;">
@@ -74,13 +75,12 @@
                                 icon
                                 variant="text"
                                 size="x-small"
-                                color="medium-emphasis"
                                 :loading="busyIds.includes(item.id)"
                                 :disabled="markingAll"
                                 @click.stop="dismiss(item.id)"
                             >
                                 <v-icon size="16">mdi-close</v-icon>
-                                <v-tooltip activator="parent" location="left">Dismiss</v-tooltip>
+                                <v-tooltip activator="parent" location="left">{{ $t('sandbox.notifications.dismiss') }}</v-tooltip>
                             </v-btn>
                         </template>
                     </v-list-item>
@@ -98,7 +98,7 @@
                     color="primary"
                     @click="$router.push('/sandbox')"
                 >
-                    Go to Sandboxes
+                    {{ $t('sandbox.notifications.goToSandboxes') }}
                 </v-btn>
             </div>
         </v-card>
@@ -113,9 +113,16 @@ import { useUserStore } from '@/store/userStore.js'
 import { useRelativeTime } from '@/composables/useRelativeTime.js'
 import { useDialog } from '@/composables/useDialog.js'
 import axios from 'axios'
+import EmptyState from '../common/EmptyState.vue'
+import LoadingState from '../common/LoadingState.vue'
 
 export default {
     name: 'SandboxNotifications',
+
+    components: {
+        EmptyState,
+        LoadingState,
+    },
 
     setup() {
         const router = useRouter()
@@ -285,15 +292,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.sandbox-header {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
-    color: white;
-
-    .v-btn {
-        color: white;
-    }
-}
-
 .notification-item {
     cursor: pointer;
     transition: background-color 0.15s;
