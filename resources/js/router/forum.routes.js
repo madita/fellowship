@@ -27,7 +27,14 @@ export const forum = [
         }
     },
     {
+        // Old thread address, kept for links already shared
         path: '/forum/:forumSlug/thread/:threadSlug',
+        redirect: to => ({ name: 'forum-thread', params: to.params, query: to.query, hash: to.hash }),
+    },
+    {
+        // Static siblings (/forum/search, /forum/:slug/new-thread) still win:
+        // vue-router ranks static segments above params.
+        path: '/forum/:forumSlug/:threadSlug',
         name: 'forum-thread',
         component: () => import(/* webpackChunkName: "forum-thread" */ '@/pages/forum/ForumThread.vue'),
         meta: {
