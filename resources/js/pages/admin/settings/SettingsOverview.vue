@@ -53,6 +53,7 @@
         <v-container fluid class="pa-2 pa-sm-4">
             <!-- Tab View -->
             <v-card v-if="viewMode === 'tabs'" variant="outlined">
+                <!-- One tab per settings category, driven by settingsConfig -->
                 <v-tabs
                     v-model="currentTab"
                     bg-color="transparent"
@@ -60,38 +61,13 @@
                     show-arrows
                     center-active
                 >
-                    <v-tab value="general" prepend-icon="mdi-cog-outline">
-                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabGeneral') }}</span>
-                    </v-tab>
-                    <v-tab value="localization" prepend-icon="mdi-earth">
-                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabLocalization') }}</span>
-                    </v-tab>
-                    <v-tab value="branding" prepend-icon="mdi-palette-outline">
-                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabBranding') }}</span>
-                    </v-tab>
-                    <v-tab value="theme" prepend-icon="mdi-theme-light-dark">
-                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabTheme') }}</span>
-                    </v-tab>
-                    <v-tab value="oauth" prepend-icon="mdi-login-variant">
-                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabOAuth') }}</span>
-                    </v-tab>
-                    <v-tab value="seo" prepend-icon="mdi-search-web">
-                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabSEO') }}</span>
-                    </v-tab>
-                    <v-tab value="homepage" prepend-icon="mdi-home-edit-outline">
-                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabHomepage') }}</span>
-                    </v-tab>
-                    <v-tab value="footer" prepend-icon="mdi-page-layout-footer">
-                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabFooter') }}</span>
-                    </v-tab>
-                    <v-tab value="moderation" prepend-icon="mdi-shield-check-outline">
-                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabModeration') }}</span>
-                    </v-tab>
-                    <v-tab value="sandbox" prepend-icon="mdi-notebook-edit-outline">
-                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabSandbox') }}</span>
-                    </v-tab>
-                    <v-tab value="advanced" prepend-icon="mdi-cog-sync-outline">
-                        <span class="d-none d-sm-inline">{{ $t('settings.overview.tabAdvanced') }}</span>
+                    <v-tab
+                        v-for="category in settingsCategories"
+                        :key="category.id"
+                        :value="category.id"
+                        :prepend-icon="category.icon"
+                    >
+                        <span class="d-none d-sm-inline">{{ tabLabel(category) }}</span>
                     </v-tab>
                 </v-tabs>
 
@@ -99,98 +75,53 @@
 
                 <v-card-text class="pa-4 pa-sm-6">
                     <v-window v-model="currentTab">
-                        <v-window-item value="general">
-                            <general-tab
+                        <v-window-item
+                            v-for="category in settingsCategories"
+                            :key="category.id"
+                            :value="category.id"
+                        >
+                            <!-- Categories with a form render their tab component -->
+                            <component
+                                :is="tabComponents[category.id]"
+                                v-if="tabComponents[category.id]"
                                 :settings="settings"
                                 :errors="errors"
                                 :is-saving="isSaving"
                                 @save="saveSettings"
                             />
-                        </v-window-item>
-                        <v-window-item value="localization">
-                            <localization-tab
-                                :settings="settings"
-                                :errors="errors"
-                                :is-saving="isSaving"
-                                @save="saveSettings"
-                            />
-                        </v-window-item>
-                        <v-window-item value="branding">
-                            <branding-tab
-                                :settings="settings"
-                                :errors="errors"
-                                :is-saving="isSaving"
-                                @save="saveSettings"
-                            />
-                        </v-window-item>
-                        <v-window-item value="theme">
-                            <theme-tab
-                                :settings="settings"
-                                :errors="errors"
-                                :is-saving="isSaving"
-                                @save="saveSettings"
-                            />
-                        </v-window-item>
-                        <v-window-item value="oauth">
-                            <o-auth-tab
-                                :settings="settings"
-                                :errors="errors"
-                                :is-saving="isSaving"
-                                @save="saveSettings"
-                            />
-                        </v-window-item>
-                        <v-window-item value="seo">
-                            <seo-tab
-                                :settings="settings"
-                                :errors="errors"
-                                :is-saving="isSaving"
-                                @save="saveSettings"
-                            />
-                        </v-window-item>
-                        <v-window-item value="homepage">
-                            <homepage-tab
-                                :settings="settings"
-                                :errors="errors"
-                                :is-saving="isSaving"
-                                @save="saveSettings"
-                            />
-                        </v-window-item>
-                        <v-window-item value="footer">
-                            <footer-tab
-                                :settings="settings"
-                                :errors="errors"
-                                :is-saving="isSaving"
-                                @save="saveSettings"
-                            />
-                        </v-window-item>
-                        <v-window-item value="moderation">
-                            <moderation-tab
-                                :settings="settings"
-                                :errors="errors"
-                                :is-saving="isSaving"
-                                @save="saveSettings"
-                            />
-                        </v-window-item>
-                        <v-window-item value="sandbox">
-                            <sandbox-tab
-                                :settings="settings"
-                                :errors="errors"
-                                :is-saving="isSaving"
-                                @save="saveSettings"
-                            />
-                        </v-window-item>
-                        <v-window-item value="advanced">
-                            <advanced-tab
-                                :settings="settings"
-                                :errors="errors"
-                                :is-saving="isSaving"
-                                @save="saveSettings"
-                            />
+
+                            <!-- Pages and tools outside the form are linked as cards -->
+                            <template v-if="linkedSettings(category).length">
+                                <div
+                                    v-if="tabComponents[category.id]"
+                                    class="text-subtitle-1 font-weight-medium mt-6 mb-3"
+                                >
+                                    {{ $t('settings.overview.moreInCategory') }}
+                                </div>
+                                <v-row>
+                                    <v-col
+                                        v-for="setting in linkedSettings(category)"
+                                        :key="`${category.id}-${setting.id}`"
+                                        cols="12"
+                                        sm="6"
+                                        lg="4"
+                                    >
+                                        <settings-item-card
+                                            :title="setting.title"
+                                            :description="setting.description"
+                                            :icon="setting.icon"
+                                            :color="category.color"
+                                            @click="navigateToSetting(category.id, setting)"
+                                        />
+                                    </v-col>
+                                </v-row>
+                            </template>
                         </v-window-item>
                     </v-window>
 
                     <!-- Mobile Save Button -->
                     <v-btn
+                        v-if="tabComponents[currentTab]"
                         :loading="isSaving"
                         block
                         size="large"
@@ -288,6 +219,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import { settingsCategories, getTotalSettingsCount } from '@/configs/settingsConfig';
 import { useSettings } from '@/composables/useSettings';
 import PageHeader from '@/components/common/PageHeader.vue';
@@ -307,8 +239,52 @@ import SandboxTab from '@/components/settings/tabs/SandboxTab.vue';
 import AdvancedTab from '@/components/settings/tabs/AdvancedTab.vue';
 import ModerationTab from '@/components/settings/tabs/ModerationTab.vue';
 
+const { t } = useI18n();
 const router = useRouter();
 const searchQuery = ref('');
+
+// Categories whose settings are edited in one form on the tabs view.
+// Every other category (and every routeName item) is linked as cards.
+const tabComponents = {
+    general: GeneralTab,
+    localization: LocalizationTab,
+    branding: BrandingTab,
+    theme: ThemeTab,
+    oauth: OAuthTab,
+    seo: SeoTab,
+    homepage: HomepageTab,
+    footer: FooterTab,
+    moderation: ModerationTab,
+    sandbox: SandboxTab,
+    advanced: AdvancedTab,
+};
+
+// Translated tab labels where a key exists; the config title otherwise.
+const tabLabelKeys = {
+    general: 'tabGeneral',
+    localization: 'tabLocalization',
+    branding: 'tabBranding',
+    theme: 'tabTheme',
+    oauth: 'tabOAuth',
+    seo: 'tabSEO',
+    homepage: 'tabHomepage',
+    footer: 'tabFooter',
+    moderation: 'tabModeration',
+    sandbox: 'tabSandbox',
+    advanced: 'tabAdvanced',
+};
+
+function tabLabel(category) {
+    const key = tabLabelKeys[category.id];
+    return key ? t(`settings.overview.${key}`) : category.title;
+}
+
+// Items shown as cards on a tab: everything for categories without a
+// form, only the dedicated pages (routeName) for categories with one.
+function linkedSettings(category) {
+    if (!tabComponents[category.id]) return category.settings;
+    return category.settings.filter(setting => setting.routeName);
+}
 
 // Settings composable for tab view
 const {

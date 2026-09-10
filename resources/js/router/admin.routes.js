@@ -152,7 +152,7 @@ export const admin = [{
         },
         component: () => import(/* webpackChunkName: "admin-permissions" */ '@/pages/admin/Terms.vue')
     }, {
-        path: '/admin/forums',
+        path: '/admin/settings/forum/categories',
         name: 'admin-forums',
         meta: {
             middleware: [
@@ -175,6 +175,7 @@ export const admin = [{
     { path: '/admin/permissions', redirect: '/admin/settings/access/permissions' },
     { path: '/admin/tags/taxonomie', redirect: '/admin/settings/taxonomy/taxonomies' },
     { path: '/admin/tags/terms', redirect: '/admin/settings/taxonomy/terms' },
+    { path: '/admin/forums', redirect: '/admin/settings/forum/categories' },
     { path: '/admin/translations', redirect: '/admin/settings/localization/translations' },
     { path: '/admin/migrations', redirect: to => ({ path: '/admin/settings/tools/migrations', query: to.query }) },
     // Settings routes - hierarchical structure

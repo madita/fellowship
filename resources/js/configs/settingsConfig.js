@@ -196,6 +196,16 @@ export const settingsCategories = [
         ]
     },
     {
+        id: 'forum',
+        title: 'Forum',
+        description: 'Forum categories, their order and visibility',
+        icon: 'mdi-forum-outline',
+        color: 'blue-grey',
+        settings: [
+            { id: 'categories', title: 'Forum Categories', description: 'Create, order, lock and hide the forum categories', icon: 'mdi-forum', routeName: 'admin-forums' },
+        ]
+    },
+    {
         id: 'taxonomy',
         title: 'Taxonomy',
         description: 'Tag and category vocabularies shared by all content',

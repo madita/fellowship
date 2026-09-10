@@ -26,7 +26,6 @@ export default {
                 {icon: 'mdi-account-group-outline', key: 'menu.adminUsers', text: 'Users', link: '/admin/users'},
                 {icon: 'mdi-file-document-outline', key: 'menu.adminPages', text: 'Pages', link: '/admin/pages'},
                 {icon: 'mdi-post-outline', key: 'menu.adminPosts', text: 'Posts', link: '/admin/posts'},
-                {icon: 'mdi-forum-outline', key: 'menu.adminForums', text: 'Forums', link: '/admin/forums'},
                 {
                     icon: 'mdi-calendar-text',
                     key: 'menu.adminEvents',
@@ -41,7 +40,7 @@ export default {
                 {icon: 'mdi-folder-multiple-image', key: 'menu.adminMedia', text: 'Media Center', link: '/admin/media'},
                 {icon: 'mdi-ticket-outline', key: 'menu.adminTickets', text: 'Tickets', link: '/admin/tickets'},
                 {icon: 'mdi-bullhorn-outline', key: 'menu.adminAnnouncement', text: 'Announcement', link: '/admin/announcements'},
-                // Roles, permissions, taxonomies, translations and the migration tool live in the settings overview.
+                // Roles, permissions, taxonomies, forum categories, translations and the migration tool live in the settings overview.
                 {icon: 'mdi-cog-outline', key: 'menu.adminSettings', text: 'Settings', link: '/admin/settings'},
             ]
         }
