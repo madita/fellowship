@@ -3152,6 +3152,8 @@ export default {
         }
     },
     'notifications': {
+        'statusMention': '{name} mentioned you in a post',
+        'statusCommentMention': '{name} mentioned you in a comment',
         'title': 'Notifications',
         'markAllRead': 'Mark All as Read',
         'clearAll': 'Clear All',
@@ -3998,6 +4000,8 @@ export default {
         'byCollection': 'By Collection'
     },
     'editor': {
+        'mentionNoResults': 'No members found',
+        'mentionHint': 'Type @ to mention a member',
         'bold': 'Bold',
         'italic': 'Italic',
         'strikeThrough': 'Strike Through',

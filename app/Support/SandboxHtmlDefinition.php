@@ -16,5 +16,10 @@ class SandboxHtmlDefinition extends Html5Definition
 
         // TipTap Highlight/Mark extension uses data-color on mark
         $definition->addAttribute('mark', 'data-color', 'Text');
+
+        //  mentions from the MentionEditor (span) and the full editor (a)
+        $definition->addAttribute('span', 'data-username', 'Text');
+        $definition->addAttribute('span', 'data-user-id', 'Text');
+        $definition->addAttribute('a', 'data-username', 'Text');
     }
 }

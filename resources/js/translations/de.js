@@ -3315,6 +3315,8 @@ export default {
         }
     },
     'notifications': {
+        'statusMention': '{name} hat dich in einem Beitrag erwähnt',
+        'statusCommentMention': '{name} hat dich in einem Kommentar erwähnt',
         'title': 'Benachrichtigungen',
         'markAllRead': 'Alle als gelesen markieren',
         'clearAll': 'Alle löschen',
@@ -4157,6 +4159,8 @@ export default {
         'byCollection': 'Nach Sammlung'
     },
     'editor': {
+        'mentionNoResults': 'Keine Mitglieder gefunden',
+        'mentionHint': 'Tippe @, um jemanden zu erwähnen',
         'bold': 'Fett',
         'italic': 'Kursiv',
         'strikeThrough': 'Durchgestrichen',

@@ -3,6 +3,7 @@ import { ref, computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import UserAvatar from '../common/UserAvatar.vue';
 import PollForm from '../poll/PollForm.vue';
+import SimpleEditor from '../common/tiptap/SimpleEditor.vue';
 import axios from 'axios';
 import { useUserStore } from '@/store/userStore.js';
 import { useDialog } from '@/composables/useDialog.js';
@@ -58,9 +59,9 @@ const togglePoll = () => {
     expanded.value = true;
 };
 
-const canPost = computed(() => {
-    return content.value.trim() || selectedFiles.value.length > 0;
-});
+// The editor yields HTML; a post needs visible text or an image
+const hasText = computed(() => content.value.replace(/<[^>]*>/g, '').trim().length > 0);
+const canPost = computed(() => hasText.value || selectedFiles.value.length > 0);
 
 const triggerFileInput = () => {
     fileInput.value?.click();
@@ -169,27 +170,26 @@ onBeforeUnmount(() => {
             <div class="d-flex">
                 <UserAvatar :user="user" size="48" class="mr-3" />
                 <div class="flex-grow-1">
-                    <!-- Collapsed State -->
-                    <v-textarea
+                    <!-- Collapsed State: one line that opens the composer on focus -->
+                    <SimpleEditor
                         v-if="!expanded"
                         v-model="content"
                         :placeholder="t('timeline.whatsOnYourMind')"
-                        variant="outlined"
-                        rows="1"
-                        hide-details
+                        :toolbar="false"
+                        min-height="24px"
                         @focus="expanded = true"
                     />
 
                     <!-- Expanded State -->
                     <div v-else>
-                        <v-textarea
+                        <SimpleEditor
                             v-model="content"
                             :placeholder="t('timeline.whatsOnYourMind')"
-                            variant="outlined"
-                            rows="3"
-                            auto-grow
-                            hide-details
+                            :disabled="posting"
+                            min-height="88px"
+                            autofocus
                             class="mb-3"
+                            @submit="postStatus"
                         />
 
                         <!-- Selected Feeling Chip -->

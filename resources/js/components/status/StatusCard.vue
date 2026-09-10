@@ -6,6 +6,8 @@ import TinyBox from '../gallery/TinyBox.vue';
 import EmptyState from '../common/EmptyState.vue';
 import LoadingState from '../common/LoadingState.vue';
 import PollCard from '../poll/PollCard.vue';
+import SimpleEditor from '../common/tiptap/SimpleEditor.vue';
+import { sanitizeHtml } from '@/utils/sanitize.js';
 import axios from 'axios';
 import { useUserStore } from '@/store/userStore.js';
 import { useDialog } from '@/composables/useDialog.js';
@@ -62,6 +64,23 @@ const replyingTo = ref(null);
 const showActions = ref(false);
 const editMode = ref(false);
 const editedContent = ref(props.status.content);
+
+// Posts written before the editor are plain text: keep their line breaks.
+// Everything else is sanitised HTML from the editor.
+const escapeHtml = (text) => text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const renderContent = (raw) => {
+    raw = raw || '';
+    if (!/<[a-z][\s\S]*>/i.test(raw)) {
+        return '<p>' + escapeHtml(raw).replace(/\n/g, '<br>') + '</p>';
+    }
+    return sanitizeHtml(raw);
+};
+const renderedContent = computed(() => renderContent(props.status.content));
+const hasText = (html) => (html || '').replace(/<[^>]*>/g, '').trim().length > 0;
+const newCommentHasText = computed(() => hasText(newComment.value));
+const editedHasText = computed(() => hasText(editedContent.value));
 const saving = ref(false);
 
 // Image editing state (only used while in edit mode)
@@ -201,7 +220,7 @@ const cancelReply = () => {
 };
 
 const addComment = async () => {
-    if (!newComment.value.trim() || addingComment.value) return;
+    if (!newCommentHasText.value || addingComment.value) return;
 
     addingComment.value = true;
     try {
@@ -271,7 +290,7 @@ const cancelEdit = () => {
 };
 
 const saveEdit = async () => {
-    if (!editedContent.value.trim() || saving.value) return;
+    if (!editedHasText.value || saving.value) return;
 
     saving.value = true;
     try {
@@ -384,18 +403,17 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- Content -->
-            <div v-if="!editMode" class="status-content mb-3">
-                <p class="text-body-1" style="white-space: pre-line">{{ status.content }}</p>
-            </div>
+            <div v-if="!editMode" class="status-content rich-content text-body-1 mb-3" v-html="renderedContent"></div>
 
             <!-- Edit Mode -->
             <div v-else class="mb-3">
-                <v-textarea
+                <SimpleEditor
                     v-model="editedContent"
-                    variant="outlined"
-                    rows="3"
-                    hide-details
+                    :disabled="saving"
+                    min-height="88px"
+                    autofocus
                     class="mb-3"
+                    @submit="saveEdit"
                 />
 
                 <!-- Existing + newly added images -->
@@ -461,7 +479,7 @@ onBeforeUnmount(() => {
                             variant="flat"
                             @click="saveEdit"
                             :loading="saving"
-                            :disabled="!editedContent.trim()"
+                            :disabled="!editedHasText"
                         >
                             {{ t('common.save') }}
                         </v-btn>
@@ -584,7 +602,7 @@ onBeforeUnmount(() => {
                                             @click="deleteComment(comment.id)"
                                         />
                                     </div>
-                                    <p class="text-body-2 mb-0" style="white-space: pre-line">{{ comment.content }}</p>
+                                    <div class="text-body-2 rich-content" v-html="renderContent(comment.content)"></div>
                                 </v-card>
                                 <div class="d-flex align-center mt-1 text-caption text-medium-emphasis ml-2">
                                     <span>{{ comment.time_ago }}</span>
@@ -613,7 +631,7 @@ onBeforeUnmount(() => {
                                                             @click="deleteComment(reply.id)"
                                                         />
                                                     </div>
-                                                    <p class="text-body-2 mb-0" style="white-space: pre-line">{{ reply.content }}</p>
+                                                    <div class="text-body-2 rich-content" v-html="renderContent(reply.content)"></div>
                                                 </v-card>
                                                 <div class="d-flex align-center mt-1 text-caption text-medium-emphasis ml-2">
                                                     <span>{{ reply.time_ago }}</span>
@@ -654,15 +672,14 @@ onBeforeUnmount(() => {
 
                     <div class="d-flex">
                         <UserAvatar :user="user" size="32" class="mr-2" />
-                        <v-textarea
+                        <SimpleEditor
                             v-model="newComment"
                             :placeholder="replyingTo ? t('timeline.replyToPlaceholder', { name: replyingTo.user.name }) : t('timeline.writeComment')"
-                            density="compact"
-                            rows="2"
-                            hide-details
+                            :disabled="addingComment"
+                            :limit="2000"
+                            min-height="40px"
                             class="flex-grow-1"
-                            @keydown.ctrl.enter="addComment"
-                            @keydown.meta.enter="addComment"
+                            @submit="addComment"
                         />
                     </div>
                     <div class="d-flex justify-end ga-2 mt-2">
@@ -680,7 +697,7 @@ onBeforeUnmount(() => {
                             variant="flat"
                             @click="addComment"
                             :loading="addingComment"
-                            :disabled="!newComment.trim()"
+                            :disabled="!newCommentHasText"
                         >
                             {{ replyingTo ? t('timeline.reply') : t('timeline.postComment') }}
                         </v-btn>

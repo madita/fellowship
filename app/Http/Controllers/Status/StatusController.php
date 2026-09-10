@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Status;
 
 use App\Http\Controllers\Controller;
 use App\Models\Status\Status;
+use App\Models\Status\StatusComment;
+use App\Notifications\StatusMentionNotification;
+use App\Services\MentionService;
 use App\Services\PollService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Stevebauman\Purify\Facades\Purify;
 
 class StatusController extends Controller
 {
@@ -74,7 +78,7 @@ class StatusController extends Controller
         $status = DB::transaction(function () use ($request, $user, $validated, $pollData) {
             $status = Status::create([
                 'user_id' => $user->id,
-                'content' => $validated['content'],
+                'content' => Purify::config('sandbox')->clean($validated['content']),
                 'feeling' => $validated['feeling'] ?? null,
             ]);
 
@@ -94,6 +98,8 @@ class StatusController extends Controller
 
             return $status;
         });
+
+        $this->notifyMentions($status, $status->content);
 
         $status->load(array_merge(['user', 'media'], Status::POLL_RELATIONS));
 
@@ -120,7 +126,9 @@ class StatusController extends Controller
         ]);
 
         if ($request->has('content')) {
-            $status->update(['content' => $validated['content']]);
+            $previous = $status->content;
+            $status->update(['content' => Purify::config('sandbox')->clean($validated['content'])]);
+            $this->notifyMentions($status, $status->content, $previous);
         }
 
         // Remove images the user deleted (scoped to this status only)
@@ -217,10 +225,30 @@ class StatusController extends Controller
 
         $comment = $status->addComment(
             $user,
-            $validated['content'],
+            Purify::config('sandbox')->clean($validated['content']),
             $validated['parent_id'] ?? null
         );
 
+        $this->notifyMentions($status, $comment->content, null, $comment);
+
         return response()->json($comment->load('user', 'replies.user'), 201);
+    }
+
+    /**
+     * Notify every member mentioned as @username in the text, except the
+     * author and anyone who was already mentioned in the previous version.
+     */
+    protected function notifyMentions(Status $status, string $content, ?string $previous = null, ?StatusComment $comment = null): void
+    {
+        $service = app(MentionService::class);
+        $already = $previous ? $service->parseMentions($previous)->pluck('id') : collect();
+        $author  = $comment ? $comment->user_id : $status->user_id;
+
+        foreach ($service->parseMentions($content) as $mentioned) {
+            if ($mentioned->id === $author || $already->contains($mentioned->id)) {
+                continue;
+            }
+            $mentioned->notify(new StatusMentionNotification($status, $comment));
+        }
     }
 }

@@ -56,7 +56,7 @@ return [
         'sandbox' => [
             'Core.Encoding'            => 'utf-8',
             'HTML.Doctype'             => 'HTML 4.01 Transitional',
-            'HTML.Allowed'             => 'h1,h2,h3,h4,h5,h6,b,strong,i,em,s,u,sub,sup,a[href|title|target|rel],ul,ol,li,p[style|class],br,span[class|data-thread-id|style],img[width|height|alt|src|class],blockquote,pre,code[class],hr,table[class],thead,tbody,tr,td[colspan|rowspan|class],th[colspan|rowspan|class],div[class],mark[class|data-color]',
+            'HTML.Allowed'             => 'h1,h2,h3,h4,h5,h6,b,strong,i,em,s,u,sub,sup,a[href|title|target|rel|class|data-username],ul,ol,li,p[style|class],br,span[class|data-thread-id|style|data-username|data-user-id],img[width|height|alt|src|class],blockquote,pre,code[class],hr,table[class],thead,tbody,tr,td[colspan|rowspan|class],th[colspan|rowspan|class],div[class],mark[class|data-color]',
             'HTML.ForbiddenElements'   => 'script,style,iframe,object,embed,form,input,textarea,select,button',
             'CSS.AllowedProperties'    => 'font,font-size,font-weight,font-style,font-family,text-decoration,padding-left,color,background-color,text-align,margin-left,text-indent,list-style-type',
             'AutoFormat.AutoParagraph' => false,

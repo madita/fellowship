@@ -84,11 +84,15 @@ export default {
         },
         subject(notification) {
             const d = notification.data || {};
+            if (d.type === 'status_mention' || d.type === 'status_comment_mention') {
+                return this.$t(`notifications.${d.type === 'status_mention' ? 'statusMention' : 'statusCommentMention'}`, { name: d.mentioned_by });
+            }
             return d.subject || d.thread_title || d.sandbox_title || this.$t('dashboard.widgets.notifications.title');
         },
         icon(notification) {
             const type = notification.data?.type || '';
             if (type.startsWith('forum_')) return type === 'forum_mention' ? 'mdi-at' : 'mdi-forum-outline';
+            if (type.startsWith('status_')) return 'mdi-at';
             if (type.startsWith('sandbox_')) return 'mdi-file-document-edit-outline';
             return 'mdi-bell-outline';
         },

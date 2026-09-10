@@ -52,7 +52,7 @@
                     </template>
 
                     <v-list-item-title class="text-body-2 font-weight-medium text-wrap">
-                        {{ item.data.subject || $t('notifications.title') }}
+                        {{ subjectOf(item) }}
                     </v-list-item-title>
                     <v-list-item-subtitle class="text-caption text-wrap">
                         {{ item.data.body || '' }}
@@ -210,6 +210,15 @@ export default {
             }
         }
 
+        // Mentions carry no subject; build one from the mentioning member
+        const subjectOf = (item) => {
+            const d = item.data || {}
+            if (d.type === 'status_mention' || d.type === 'status_comment_mention') {
+                return t(d.type === 'status_mention' ? 'notifications.statusMention' : 'notifications.statusCommentMention', { name: d.mentioned_by })
+            }
+            return d.subject || d.thread_title || t('notifications.title')
+        }
+
         const getNotificationIcon = (item) => {
             const type = item.data?.type || ''
 
@@ -224,6 +233,8 @@ export default {
                 }
                 return iconMap[type] || 'mdi-file-document-edit-outline'
             }
+
+            if (type.startsWith('status_')) return 'mdi-at'
 
             if (type.startsWith('forum_')) {
                 const iconMap = {
@@ -286,6 +297,7 @@ export default {
         })
 
         return {
+            subjectOf,
             notifications,
             busy,
             busyAll,
