@@ -27,7 +27,7 @@ import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 // import VueDatePicker from '@vuepic/vue-datepicker';
 // import '@vuepic/vue-datepicker/dist/main.css';
-import EventDatePicker from './EventDatePicker.vue'
+import EventDatePicker from '@/components/event/EventDatePicker.vue'
 import Tiptap from "@/components/common/tiptap/Tiptap.vue";
 import { useRoute } from 'vue-router';
 import axios from 'axios';

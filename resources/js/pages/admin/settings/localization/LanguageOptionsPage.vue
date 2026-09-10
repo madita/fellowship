@@ -58,7 +58,7 @@
 <script setup>
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
-import { languages } from '@/composables/settingsConstants';
+import { languages } from '@/configs/settingsConstants';
 
 const props = defineProps({
     settings: Object,

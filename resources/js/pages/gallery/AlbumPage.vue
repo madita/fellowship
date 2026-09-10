@@ -104,11 +104,11 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import { useDialog } from '@/composables/useDialog.js';
-import TinyBox from "./TinyBox.vue";
-import FileUploader from '../common/FileUploader.vue';
-import PageHeader from '../common/PageHeader.vue';
-import EmptyState from '../common/EmptyState.vue';
-import LoadingState from '../common/LoadingState.vue';
+import TinyBox from "@/components/gallery/TinyBox.vue";
+import FileUploader from '@/components/common/FileUploader.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 const { t } = useI18n();
 const dialog = useDialog();

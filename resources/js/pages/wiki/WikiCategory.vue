@@ -123,9 +123,9 @@
 
 <script>
 import { useAuthStore } from '@/store/authStore.js';
-import PageHeader from '../common/PageHeader.vue';
-import EmptyState from '../common/EmptyState.vue';
-import LoadingState from '../common/LoadingState.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 export default {
     components: {

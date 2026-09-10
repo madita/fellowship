@@ -41,7 +41,7 @@
 import { useI18n } from 'vue-i18n';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
-import { themeModes } from '@/composables/settingsConstants';
+import { themeModes } from '@/configs/settingsConstants';
 
 const { t } = useI18n();
 

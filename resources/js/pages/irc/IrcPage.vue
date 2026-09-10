@@ -527,12 +527,12 @@
 <script>
 import axios from 'axios';
 import { useSettingsStore } from '@/store/settingStore.js';
-import IrcConnectionDialog from './IrcConnectionDialog.vue';
-import IrcJoinDialog from './IrcJoinDialog.vue';
-import ComicChatView from './ComicChatView.vue';
-import ComicCharacterSelector from './ComicCharacterSelector.vue';
-import PageHeader from '../common/PageHeader.vue';
-import EmptyState from '../common/EmptyState.vue';
+import IrcConnectionDialog from '@/components/irc/IrcConnectionDialog.vue';
+import IrcJoinDialog from '@/components/irc/IrcJoinDialog.vue';
+import ComicChatView from '@/components/irc/ComicChatView.vue';
+import ComicCharacterSelector from '@/components/irc/ComicCharacterSelector.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 
 export default {
   name: 'IrcClient',

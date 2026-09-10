@@ -70,9 +70,9 @@
 <script>
 
 // import {mapGetters} from "vuex";
-import Tiptap from '../common/tiptap/Tiptap.vue'
-import PageHeader from '../common/PageHeader.vue'
-import LoadingState from '../common/LoadingState.vue'
+import Tiptap from '@/components/common/tiptap/Tiptap.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
 import { useAuthStore } from '@/store/authStore.js';
 
 export default {

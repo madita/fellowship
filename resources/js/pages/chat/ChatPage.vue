@@ -49,9 +49,9 @@
 <script>
 import {onMounted, ref} from 'vue';
 import { useI18n } from 'vue-i18n';
-import ChatMessages from './Messages.vue';
-import Users from './Users.vue';
-import PageHeader from '../common/PageHeader.vue';
+import ChatMessages from '@/components/chat/Messages.vue';
+import Users from '@/components/chat/Users.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
 import { useUserStore } from "@/store/userStore.js";
 import { useChatStore } from '@/store/chatStore';
 import {useOnlineUsersStore} from "@/store/onlineUsersStore.js";

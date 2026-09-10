@@ -164,7 +164,7 @@
 <script setup>
 import SettingsCard from '../SettingsCard.vue';
 import ImageUpload from '../ImageUpload.vue';
-import { twitterCardTypes } from '../../../composables/settingsConstants';
+import { twitterCardTypes } from '@/configs/settingsConstants';
 
 const props = defineProps({
     settings: Object,

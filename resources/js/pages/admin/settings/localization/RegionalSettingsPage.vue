@@ -75,7 +75,7 @@ import {
     timezones,
     dateFormats,
     timeFormats
-} from '@/composables/settingsConstants';
+} from '@/configs/settingsConstants';
 
 const props = defineProps({
     settings: Object,

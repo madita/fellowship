@@ -46,9 +46,9 @@ import {useI18n} from 'vue-i18n';
 import {useRouter} from 'vue-router';
 import axios from 'axios';
 import {useDialog} from '@/composables/useDialog.js';
-import PageHeader from '../common/PageHeader.vue';
-import EmptyState from '../common/EmptyState.vue';
-import LoadingState from '../common/LoadingState.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 const {t} = useI18n();
 const dialog = useDialog();

@@ -8,7 +8,7 @@ vi.mock('@/components/irc/ComicChatView.vue', () => ({ default: { name: 'ComicCh
 vi.mock('@/components/irc/ComicCharacterSelector.vue', () => ({ default: { name: 'ComicCharacterSelector' } }));
 vi.mock('axios', () => ({ default: { get: vi.fn(() => Promise.resolve({ data: [] })), post: vi.fn() } }));
 
-import IrcClient from '@/components/irc/IrcClient.vue';
+import IrcClient from '@/pages/irc/IrcPage.vue';
 
 // Build a minimal `this` for the Options API method under test.
 const makeContext = ({ channelQuery, connections = [], activeChannel = null } = {}) => ({

@@ -502,7 +502,7 @@ import { useI18n } from 'vue-i18n';
 import { useDialog } from '@/composables/useDialog.js';
 import SettingsCard from '../SettingsCard.vue';
 import ImageUpload from '../ImageUpload.vue';
-import { themeModes, fontFamilies } from '../../../composables/settingsConstants';
+import { themeModes, fontFamilies } from '@/configs/settingsConstants';
 
 const { t } = useI18n();
 const dialog = useDialog();

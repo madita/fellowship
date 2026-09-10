@@ -2,12 +2,12 @@
 import { ref, onMounted, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
-import StatusComposer from './StatusComposer.vue';
-import StatusCard from './StatusCard.vue';
-import UserAvatar from '../common/UserAvatar.vue';
-import PageHeader from '../common/PageHeader.vue';
-import EmptyState from '../common/EmptyState.vue';
-import LoadingState from '../common/LoadingState.vue';
+import StatusComposer from '@/components/status/StatusComposer.vue';
+import StatusCard from '@/components/status/StatusCard.vue';
+import UserAvatar from '@/components/common/UserAvatar.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 import { useUserStore } from '@/store/userStore.js';
 
 const { t } = useI18n();

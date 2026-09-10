@@ -1,4 +1,3 @@
-// import menuAdmin from './menus/admin.menu.js'
 
 export default {
     // main navigation - side menu
@@ -38,7 +37,7 @@ export default {
                     ]
                 },
                 {icon: 'mdi-folder-multiple-image', key: 'menu.adminMedia', text: 'Media Center', link: '/admin/media'},
-                {icon: 'mdi-ticket-outline', key: 'menu.adminTickets', text: 'Tickets', link: '/admin/tickets'},
+                {icon: 'mdi-ticket-outline', key: 'menu.adminTickets', text: 'Tickets', link: '/admin/tickets'},
                 {icon: 'mdi-poll', key: 'menu.adminPolls', text: 'Polls', link: '/admin/polls'},
                 {icon: 'mdi-bullhorn-outline', key: 'menu.adminAnnouncement', text: 'Announcement', link: '/admin/announcements'},
                 // Roles, permissions, taxonomies, forum categories, translations and the migration tool live in the settings overview.

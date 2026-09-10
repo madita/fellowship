@@ -300,7 +300,7 @@ import SandboxCollaborators from './SandboxCollaborators.vue'
 import SandboxVersions from './SandboxVersions.vue'
 import SandboxComments from './SandboxComments.vue'
 import UserAvatar from '../common/UserAvatar.vue'
-import colourHelper from '@/helpers/colour.js'
+import colourHelper from '@/utils/colour.js'
 import { useSettingsStore } from '@/store/settingStore.js'
 import { useDialog } from '@/composables/useDialog.js'
 

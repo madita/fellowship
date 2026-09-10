@@ -41,16 +41,6 @@ export const routes = [{
     ...SandboxRoutes,
     ...AdminRoutes,
     {
-        path: '/blank',
-        name: 'blank',
-        meta: {
-            middleware: [
-                auth
-            ]
-        },
-        component: () => import(/* webpackChunkName: "blank" */ '@/pages/BlankPage.vue')
-    },
-    {
         path: '/error',
         name: 'access-denied',
         component: () => import(/* webpackChunkName: "error" */ '@/pages/error/NotFoundPage.vue'),
@@ -65,7 +55,7 @@ export const routes = [{
                 auth, verified
             ]
         },
-        component: () => import(/* webpackChunkName: "timeline" */ '@/components/status/StatusTimeline.vue')
+        component: () => import(/* webpackChunkName: "timeline" */ '@/pages/timeline/TimelinePage.vue')
     },
     {
         path: '/:slug([\\w-]+)',

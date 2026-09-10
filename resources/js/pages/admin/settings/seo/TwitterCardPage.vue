@@ -50,7 +50,7 @@
 <script setup>
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
-import { twitterCardTypes } from '@/composables/settingsConstants';
+import { twitterCardTypes } from '@/configs/settingsConstants';
 
 const props = defineProps({
     settings: Object,

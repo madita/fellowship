@@ -94,9 +94,9 @@ import { useRoute } from 'vue-router'
 import { useDateFormat } from '@/plugins/formatDate.js' // Adjust path as needed
 import { useUserStore } from '@/store/userStore.js'
 import { useSettingsStore } from '@/store/settingStore.js'
-//import EventDatePicker from './EventDatePicker.vue'
-import UserAvatar from '../common/UserAvatar.vue'
-import PageHeader from '../common/PageHeader.vue'
+//import EventDatePicker from '@/components/event/EventDatePicker.vue'
+import UserAvatar from '@/components/common/UserAvatar.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
 import axios from 'axios'
 import { useDialog } from '@/composables/useDialog.js'
 

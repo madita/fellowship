@@ -67,10 +67,10 @@ import dialogs from './plugins/dialogs.js'
 // import './plugins/lodash'
 
 //HELPERS
-import helpers from './helpers'
+import helpers from './utils/helpers.js'
 
 // FILTERS
-import { capitalize } from './helpers/filters.js';
+import { capitalize } from './utils/filters.js';
 
 // STYLES
 

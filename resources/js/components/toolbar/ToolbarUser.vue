@@ -61,7 +61,7 @@ import { useUserStore } from '@/store/userStore.js'
 import { useDialog } from '@/composables/useDialog.js'
 import {useRouter} from "vue-router";
 import eventBus from '../common/eventBus.js'
-import permission from '../../helpers/permission.js'
+import permission from '@/utils/permission.js'
 
 export default {
     components: {

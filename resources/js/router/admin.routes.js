@@ -228,7 +228,7 @@ export const admin = [{
                 auth, permission, verified
             ]
         },
-        component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/components/ticket/TicketList.vue')
+        component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/pages/tickets/TicketList.vue')
     },
     {
         path: '/admin/polls',
