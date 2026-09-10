@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Status\Status;
+use App\Services\PollService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class StatusController extends Controller
@@ -15,8 +17,10 @@ class StatusController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Status::with(['user', 'likes', 'comments.user', 'comments.replies.user'])
-            ->recent();
+        $query = Status::with(array_merge(
+            ['user', 'likes', 'comments.user', 'comments.replies.user'],
+            Status::POLL_RELATIONS
+        ))->recent();
 
         // Filter by user if specified
         if ($request->has('user_id')) {
@@ -33,7 +37,10 @@ class StatusController extends Controller
      */
     public function show(Status $status): JsonResponse
     {
-        $status->load(['user', 'likes.user', 'allComments.user', 'allComments.replies.user']);
+        $status->load(array_merge(
+            ['user', 'likes.user', 'allComments.user', 'allComments.replies.user'],
+            Status::POLL_RELATIONS
+        ));
 
         return response()->json($status);
     }
@@ -54,25 +61,42 @@ class StatusController extends Controller
             'images'   => 'array|max:10',
             'images.*' => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
             'feeling'  => 'nullable|string|max:50',
+            'poll'     => 'nullable',
         ]);
 
-        $status = Status::create([
-            'user_id' => $user->id,
-            'content' => $validated['content'],
-            'feeling' => $validated['feeling'] ?? null,
-        ]);
-
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
-
-                $status->addMedia($image)
-                    ->usingFileName($filename)
-                    ->toMediaCollection('images');
-            }
+        // Multipart bodies carry the poll as a JSON string; validate it up front
+        $pollData = PollService::fromRequestValue($request->input('poll'));
+        if ($pollData !== null) {
+            $pollData = PollService::validate($pollData);
         }
 
-        return response()->json($status->load('user', 'media'), 201);
+        $status = DB::transaction(function () use ($request, $user, $validated, $pollData) {
+            $status = Status::create([
+                'user_id' => $user->id,
+                'content' => $validated['content'],
+                'feeling' => $validated['feeling'] ?? null,
+            ]);
+
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $image) {
+                    $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
+
+                    $status->addMedia($image)
+                        ->usingFileName($filename)
+                        ->toMediaCollection('images');
+                }
+            }
+
+            if ($pollData !== null) {
+                PollService::create($status, $user, $pollData);
+            }
+
+            return $status;
+        });
+
+        $status->load(array_merge(['user', 'media'], Status::POLL_RELATIONS));
+
+        return response()->json($status, 201);
     }
 
     /**
@@ -126,7 +150,7 @@ class StatusController extends Controller
             }
         }
 
-        return response()->json($status->fresh());
+        return response()->json($status->fresh()->load(Status::POLL_RELATIONS));
     }
 
     /**

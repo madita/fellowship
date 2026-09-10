@@ -2,6 +2,7 @@
 import { ref, computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import UserAvatar from '../common/UserAvatar.vue';
+import PollForm from '../poll/PollForm.vue';
 import axios from 'axios';
 import { useUserStore } from '@/store/userStore.js';
 import { useDialog } from '@/composables/useDialog.js';
@@ -43,6 +44,19 @@ const feelingOptions = [
     { key: 'proud', emoji: '\u{1F4AA}' },
     { key: 'relaxed', emoji: '\u{1F60C}' },
 ];
+
+// Poll
+const pollEnabled = ref(false);
+const poll = ref(null);
+const pollForm = ref(null);
+
+const togglePoll = () => {
+    pollEnabled.value = !pollEnabled.value;
+    if (!pollEnabled.value) {
+        poll.value = null;
+    }
+    expanded.value = true;
+};
 
 const canPost = computed(() => {
     return content.value.trim() || selectedFiles.value.length > 0;
@@ -90,6 +104,7 @@ const removeFeeling = () => {
 
 const postStatus = async () => {
     if (!canPost.value || posting.value) return;
+    if (pollEnabled.value && !(pollForm.value?.validate() && poll.value)) return;
 
     posting.value = true;
     try {
@@ -104,6 +119,11 @@ const postStatus = async () => {
             formData.append('images[]', file);
         });
 
+        if (pollEnabled.value && poll.value) {
+            // Multipart body: the poll travels as a JSON string
+            formData.append('poll', JSON.stringify(poll.value));
+        }
+
         const response = await axios.post('/api/statuses', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -114,6 +134,8 @@ const postStatus = async () => {
         selectedFiles.value = [];
         imagePreviews.value = [];
         selectedFeeling.value = null;
+        pollEnabled.value = false;
+        poll.value = null;
         expanded.value = false;
 
         emit('statusPosted', response.data);
@@ -131,6 +153,8 @@ const cancel = () => {
     selectedFiles.value = [];
     imagePreviews.value = [];
     selectedFeeling.value = null;
+    pollEnabled.value = false;
+    poll.value = null;
     expanded.value = false;
 };
 
@@ -202,6 +226,28 @@ onBeforeUnmount(() => {
                             </div>
                         </div>
 
+                        <!-- Poll -->
+                        <v-expand-transition>
+                            <v-card v-if="pollEnabled" variant="tonal" rounded="lg" class="mb-3">
+                                <v-card-title class="text-subtitle-2 d-flex align-center ga-2 pb-0">
+                                    <v-icon color="primary" size="small">mdi-poll</v-icon>
+                                    {{ t('poll.attachPoll') }}
+                                    <v-spacer />
+                                    <v-btn
+                                        icon="mdi-close"
+                                        size="x-small"
+                                        variant="text"
+                                        :aria-label="t('poll.removePoll')"
+                                        :disabled="posting"
+                                        @click="togglePoll"
+                                    />
+                                </v-card-title>
+                                <v-card-text>
+                                    <PollForm ref="pollForm" v-model="poll" :disabled="posting" />
+                                </v-card-text>
+                            </v-card>
+                        </v-expand-transition>
+
                         <div class="d-flex align-center justify-end">
                             <div class="d-flex ga-2">
                                 <v-btn
@@ -236,6 +282,17 @@ onBeforeUnmount(() => {
                                 <span v-if="selectedFiles.length > 0" class="ml-1 text-caption">
                                     ({{ selectedFiles.length }}/{{ MAX_IMAGES }})
                                 </span>
+                            </v-btn>
+
+                            <v-btn
+                                :variant="pollEnabled ? 'tonal' : 'text'"
+                                :color="pollEnabled ? 'primary' : undefined"
+                                size="small"
+                                prepend-icon="mdi-poll"
+                                :disabled="posting"
+                                @click="togglePoll"
+                            >
+                                {{ t('poll.poll') }}
                             </v-btn>
 
                             <v-menu v-model="showFeelingMenu" :close-on-content-click="false">

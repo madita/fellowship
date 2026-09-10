@@ -100,6 +100,18 @@
                                 <v-btn variant="text" :disabled="forumStore.submitting" @click="cancelEditThread">{{ $t('forum.cancel') }}</v-btn>
                             </div>
                         </div>
+
+                        <!-- Poll attached to the thread -->
+                        <poll-card
+                            v-if="forumStore.currentThread.poll"
+                            :key="forumStore.currentThread.poll.id"
+                            :poll="forumStore.currentThread.poll"
+                            :current-user="currentUser"
+                            class="mt-4 mb-0"
+                            @voted="onPollChanged"
+                            @updated="onPollChanged"
+                            @deleted="onPollDeleted"
+                        />
                     </v-card-text>
                 </v-card>
 
@@ -215,10 +227,11 @@ import ForumPostItem from '@/components/forum/ForumPostItem.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
+import PollCard from '@/components/poll/PollCard.vue'
 
 export default {
     name: 'ForumThread',
-    components: {UserAvatar, Tiptap, ForumPostItem, PageHeader, EmptyState, LoadingState},
+    components: {UserAvatar, Tiptap, ForumPostItem, PageHeader, EmptyState, LoadingState, PollCard},
     setup() {
         const forumStore = useForumStore()
         const userStore = useUserStore()
@@ -381,6 +394,17 @@ export default {
         },
         onMarkSolution(postId) {
             return this.runPostAction(postId, () => this.forumStore.markAsSolution(postId), 'forum.errorSubmitting')
+        },
+        // Keep the store's thread in step with the poll card
+        onPollChanged(poll) {
+            if (this.forumStore.currentThread) {
+                this.forumStore.currentThread.poll = poll
+            }
+        },
+        onPollDeleted() {
+            if (this.forumStore.currentThread) {
+                this.forumStore.currentThread.poll = null
+            }
         },
         startEditThread() {
             this.editingThread = true

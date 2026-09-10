@@ -32,6 +32,7 @@ export default function permission({ to, next }) {
         "admin-settings-menus": "manage-page",
         "admin-tickets": "manage-page",
         "admin-forums": "manage-page",
+        "admin-polls": "manage-post",
     };
 
     const requiredPermission = permissionsMap[to.name];

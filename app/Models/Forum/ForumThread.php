@@ -2,6 +2,7 @@
 
 namespace App\Models\Forum;
 
+use App\Models\Concerns\HasPolls;
 use App\Models\Concerns\SafeSearchable;
 use App\Models\Tag\Taxonomy;
 use App\Models\User;
@@ -22,7 +23,7 @@ use Illuminate\Support\Str;
  */
 class ForumThread extends Model
 {
-    use HasFactory, SafeSearchable, SoftDeletes;
+    use HasFactory, HasPolls, SafeSearchable, SoftDeletes;
 
     protected $fillable = [
         'taxonomy_id',

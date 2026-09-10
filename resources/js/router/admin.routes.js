@@ -229,6 +229,16 @@ export const admin = [{
             ]
         },
         component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/components/ticket/TicketList.vue')
+    },
+    {
+        path: '/admin/polls',
+        name: 'admin-polls',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-polls" */ '@/pages/admin/PollsDashboard.vue')
     }]
 
 export default admin

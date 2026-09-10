@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Poll\Poll;
+use App\Services\PollService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,8 +17,8 @@ class PollController extends Controller
      */
     protected array $allowedPollableTypes = [
         'App\\Models\\Page',
-        'App\\Models\\Forum\\Forum',
         'App\\Models\\Forum\\ForumThread',
+        'App\\Models\\Status\\Status',
         'App\\Models\\Ticket\\Ticket',
     ];
 
@@ -42,8 +43,8 @@ class PollController extends Controller
         $polls = $query->latest()->paginate($request->get('per_page', 15));
 
         return response()->json([
-            'polls' => $polls->getCollection()->map(function ($poll) use ($request) {
-                return $this->formatPoll($poll, $request->user());
+            'polls' => $polls->getCollection()->map(function (Poll $poll) use ($request) {
+                return $poll->toPayload($request->user());
             }),
             'meta' => [
                 'current_page' => $polls->currentPage(),
@@ -59,59 +60,44 @@ class PollController extends Controller
         $poll->load(['creator', 'options', 'votes']);
 
         return response()->json([
-            'poll' => $this->formatPoll($poll, $request->user()),
+            'poll' => $poll->toPayload($request->user()),
         ]);
     }
 
     public function store(Request $request): JsonResponse
     {
+        $request->merge(PollService::normalize($request->all()));
+
         $validated = $request->validate([
-            'pollable_type'         => 'required|string|in:' . implode(',', $this->allowedPollableTypes),
-            'pollable_id'           => 'required|integer',
-            'title'                 => 'required|string|max:255',
-            'description'           => 'nullable|string|max:1000',
-            'type'                  => 'required|in:single,multiple',
-            'anonymous'             => 'boolean',
-            'closes_at'             => 'nullable|date|after:now',
-            'options'               => 'required|array|min:2|max:20',
-            'options.*.option_text' => 'required|string|max:255',
-        ]);
+            'pollable_type' => 'required|string|in:' . implode(',', $this->allowedPollableTypes),
+            'pollable_id'   => 'required|integer',
+        ] + PollService::rules());
 
         // Verify the pollable model exists
         $pollableClass = $validated['pollable_type'];
-        if ( ! class_exists($pollableClass) || ! $pollableClass::find($validated['pollable_id'])) {
+        $pollable      = class_exists($pollableClass) ? $pollableClass::find($validated['pollable_id']) : null;
+        if ( ! $pollable) {
             return response()->json([
                 'message' => 'The specified model does not exist',
             ], 422);
         }
 
+        // Only the author of the thread/status/page/ticket (or an admin) may attach a poll
+        if ( ! PollService::canAttach($pollable, $request->user())) {
+            return response()->json([
+                'message' => 'You do not have permission to attach a poll to this item',
+            ], 403);
+        }
+
         DB::beginTransaction();
 
         try {
-            $poll = Poll::create([
-                'pollable_type' => $pollableClass,
-                'pollable_id'   => $validated['pollable_id'],
-                'title'         => $validated['title'],
-                'description'   => $validated['description'] ?? null,
-                'type'          => $validated['type'],
-                'anonymous'     => $validated['anonymous'] ?? false,
-                'closes_at'     => $validated['closes_at'] ?? null,
-                'created_by'    => $request->user()->id,
-            ]);
-
-            foreach ($validated['options'] as $index => $option) {
-                $poll->options()->create([
-                    'option_text' => $option['option_text'],
-                    'position'    => $index,
-                ]);
-            }
+            $poll = PollService::create($pollable, $request->user(), $validated);
 
             DB::commit();
 
-            $poll->load(['creator', 'options']);
-
             return response()->json([
-                'poll'    => $this->formatPoll($poll, $request->user()),
+                'poll'    => $poll->toPayload($request->user()),
                 'message' => 'Poll created successfully',
             ], 201);
         } catch (\Exception $e) {
@@ -130,7 +116,7 @@ class PollController extends Controller
     public function update(Request $request, Poll $poll): JsonResponse
     {
         // Only creator can update (or admin)
-        if ($poll->created_by !== $request->user()->id && ! $request->user()->hasRole('admin')) {
+        if ( ! $poll->canManage($request->user())) {
             return response()->json([
                 'message' => 'You do not have permission to update this poll',
             ], 403);
@@ -143,26 +129,31 @@ class PollController extends Controller
             ], 422);
         }
 
+        $request->merge(PollService::normalize($request->all()));
+
         $validated = $request->validate([
-            'title'                 => 'sometimes|string|max:255',
-            'description'           => 'nullable|string|max:1000',
-            'type'                  => 'sometimes|in:single,multiple',
-            'anonymous'             => 'sometimes|boolean',
-            'closes_at'             => 'nullable|date|after:now',
-            'options'               => 'sometimes|array|min:2|max:20',
-            'options.*.option_text' => 'required_with:options|string|max:255',
+            'title'       => 'sometimes|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'type'        => 'sometimes|in:single,multiple',
+            'anonymous'   => 'sometimes|boolean',
+            'closes_at'   => 'nullable|date|after:now',
+            'options'     => 'sometimes|array|min:' . PollService::MIN_OPTIONS . '|max:' . PollService::MAX_OPTIONS,
+            'options.*'   => 'required_with:options|string|max:255',
         ]);
 
         DB::beginTransaction();
 
         try {
+            $options = $validated['options'] ?? null;
+            unset($validated['options']);
+
             $poll->update($validated);
 
-            if (isset($validated['options'])) {
+            if ($options !== null) {
                 $poll->options()->delete();
-                foreach ($validated['options'] as $index => $option) {
+                foreach ($options as $index => $text) {
                     $poll->options()->create([
-                        'option_text' => $option['option_text'],
+                        'option_text' => $text,
                         'position'    => $index,
                     ]);
                 }
@@ -170,10 +161,10 @@ class PollController extends Controller
 
             DB::commit();
 
-            $poll->load(['creator', 'options']);
+            $poll->load(['creator', 'options', 'votes']);
 
             return response()->json([
-                'poll'    => $this->formatPoll($poll, $request->user()),
+                'poll'    => $poll->toPayload($request->user()),
                 'message' => 'Poll updated successfully',
             ]);
         } catch (\Exception $e) {
@@ -193,7 +184,7 @@ class PollController extends Controller
     public function destroy(Request $request, Poll $poll): JsonResponse
     {
         // Only creator can delete (or admin)
-        if ($poll->created_by !== $request->user()->id && ! $request->user()->hasRole('admin')) {
+        if ( ! $poll->canManage($request->user())) {
             return response()->json([
                 'message' => 'You do not have permission to delete this poll',
             ], 403);
@@ -204,37 +195,5 @@ class PollController extends Controller
         return response()->json([
             'message' => 'Poll deleted successfully',
         ]);
-    }
-
-    protected function formatPoll(Poll $poll, $user): array
-    {
-        return [
-            'id'            => $poll->id,
-            'pollable_type' => $poll->pollable_type,
-            'pollable_id'   => $poll->pollable_id,
-            'title'         => $poll->title,
-            'description'   => $poll->description,
-            'type'          => $poll->type,
-            'anonymous'     => $poll->anonymous,
-            'closes_at'     => $poll->closes_at?->toIso8601String(),
-            'is_open'       => $poll->is_open,
-            'total_votes'   => $poll->total_votes,
-            'creator'       => [
-                'id'   => $poll->creator->id,
-                'name' => $poll->creator->name,
-            ],
-            'options' => $poll->options->map(function ($option) {
-                return [
-                    'id'          => $option->id,
-                    'option_text' => $option->option_text,
-                    'position'    => $option->position,
-                ];
-            }),
-            'results'    => $poll->results(),
-            'user_votes' => $poll->userVotes($user),
-            'has_voted'  => $poll->hasVoted($user),
-            'created_at' => $poll->created_at->toIso8601String(),
-            'updated_at' => $poll->updated_at->toIso8601String(),
-        ];
     }
 }

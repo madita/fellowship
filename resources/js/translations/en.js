@@ -647,6 +647,7 @@ export default {
         'adminEventsProfiles': 'Profiles',
         'adminMedia': 'Media Center',
         'adminTickets': 'Tickets',
+        'adminPolls': 'Polls',
         'adminTranslations': 'Translations',
         'adminDashboard': 'Dashboard',
         'myTickets': 'My Tickets'
@@ -720,6 +721,72 @@ export default {
                 'disk': 'Disk free',
                 'lastMigration': 'Last data import: {name} — {status}, {time}.'
             }
+        },
+        'polls': {
+            'title': 'Polls',
+            'subtitle': 'Every poll attached to forum threads and timeline posts — numbers, results and moderation',
+            'stats': {
+                'total': 'Polls',
+                'open': 'Open',
+                'closed': 'Closed',
+                'votes': 'Votes',
+                'votes_7d': 'Votes this week',
+                'polls_7d': 'New this week'
+            },
+            'byType': 'Where polls live',
+            'mostVoted': 'Most voted',
+            'mostVotedEmpty': 'No votes have been cast yet',
+            'filters': {
+                'search': 'Search polls…',
+                'status': 'Status',
+                'type': 'Type',
+                'pollable': 'Attached to',
+                'all': 'All',
+                'reset': 'Reset filters'
+            },
+            'status': {
+                'open': 'Open',
+                'closed': 'Closed'
+            },
+            'type': {
+                'single': 'Single choice',
+                'multiple': 'Multiple choice'
+            },
+            'pollable': {
+                'thread': 'Forum thread',
+                'status': 'Timeline post',
+                'page': 'Page',
+                'ticket': 'Ticket',
+                'unknown': 'Not attached'
+            },
+            'headers': {
+                'title': 'Poll',
+                'pollable': 'Attached to',
+                'creator': 'Created by',
+                'type': 'Type',
+                'votes': 'Votes',
+                'status': 'Status',
+                'created': 'Created'
+            },
+            'anonymous': 'Anonymous',
+            'closesAt': 'closes {time}',
+            'closedAt': 'closed {time}',
+            'actions': {
+                'results': 'View results',
+                'close': 'Close poll',
+                'reopen': 'Reopen poll',
+                'delete': 'Delete poll'
+            },
+            'confirm': {
+                'closeTitle': 'Close this poll?',
+                'close': 'Voting on “{title}” ends right away. You can reopen the poll later.',
+                'reopenTitle': 'Reopen this poll?',
+                'reopen': '“{title}” accepts votes again and its closing date is removed.',
+                'delete': 'Delete the poll “{title}” together with all of its votes? This cannot be undone.'
+            },
+            'empty': 'No polls yet',
+            'emptyHint': 'Polls are created from forum threads and timeline posts. They show up here as soon as someone attaches one.',
+            'emptyFiltered': 'No polls match the current filters'
         },
         'forums': {
             'title': 'Forum Management',
@@ -4879,7 +4946,26 @@ export default {
         'voteSubmitted': 'Your vote has been submitted',
         'voteFailed': 'Your vote could not be submitted',
         'saved': 'Poll saved',
-        'saveFailed': 'The poll could not be saved'
+        'saveFailed': 'The poll could not be saved',
+        'poll': 'Poll',
+        'addPoll': 'Add a poll',
+        'removePoll': 'Remove poll',
+        'attachPoll': 'Attach a poll',
+        'closingDateHint': 'Leave empty to keep the poll open indefinitely',
+        'closingDateFuture': 'The closing date must be in the future',
+        'invalidDate': 'Please enter a valid date and time',
+        'titleRequired': 'Please give the poll a title',
+        'optionRequired': 'Please fill in this option or remove it',
+        'maxOptions': 'A poll can have at most {max} options',
+        'tooLong': 'Must be at most {max} characters',
+        'removeOption': 'Remove option',
+        'removeVote': 'Remove vote',
+        'removeVoteFailed': 'Your vote could not be removed',
+        'anonymousNotice': 'Vote counts are hidden until the poll closes',
+        'deletePoll': 'Delete poll',
+        'confirmDelete': 'Delete the poll "{title}"? All votes will be lost.',
+        'deleted': 'The poll has been deleted',
+        'deleteFailed': 'The poll could not be deleted'
     },
     'dialogs': {
         'message': {

@@ -647,6 +647,7 @@ export default {
         'adminEventsProfiles': 'Profile',
         'adminMedia': 'Mediencenter',
         'adminTickets': 'Tickets',
+        'adminPolls': 'Umfragen',
         'adminTranslations': 'Übersetzungen',
         'adminDashboard': 'Dashboard',
         'myTickets': 'Meine Tickets'
@@ -720,6 +721,72 @@ export default {
                 'disk': 'Freier Speicher',
                 'lastMigration': 'Letzter Datenimport: {name} — {status}, {time}.'
             }
+        },
+        'polls': {
+            'title': 'Umfragen',
+            'subtitle': 'Alle Umfragen an Forenthemen und Timeline-Beiträgen — Zahlen, Ergebnisse und Moderation',
+            'stats': {
+                'total': 'Umfragen',
+                'open': 'Offen',
+                'closed': 'Geschlossen',
+                'votes': 'Stimmen',
+                'votes_7d': 'Stimmen diese Woche',
+                'polls_7d': 'Neu diese Woche'
+            },
+            'byType': 'Wo Umfragen hängen',
+            'mostVoted': 'Meiste Stimmen',
+            'mostVotedEmpty': 'Bisher wurde noch nicht abgestimmt',
+            'filters': {
+                'search': 'Umfragen durchsuchen…',
+                'status': 'Status',
+                'type': 'Typ',
+                'pollable': 'Angehängt an',
+                'all': 'Alle',
+                'reset': 'Filter zurücksetzen'
+            },
+            'status': {
+                'open': 'Offen',
+                'closed': 'Geschlossen'
+            },
+            'type': {
+                'single': 'Einfachauswahl',
+                'multiple': 'Mehrfachauswahl'
+            },
+            'pollable': {
+                'thread': 'Forenthema',
+                'status': 'Timeline-Beitrag',
+                'page': 'Seite',
+                'ticket': 'Ticket',
+                'unknown': 'Nicht angehängt'
+            },
+            'headers': {
+                'title': 'Umfrage',
+                'pollable': 'Angehängt an',
+                'creator': 'Erstellt von',
+                'type': 'Typ',
+                'votes': 'Stimmen',
+                'status': 'Status',
+                'created': 'Erstellt'
+            },
+            'anonymous': 'Anonym',
+            'closesAt': 'schließt {time}',
+            'closedAt': 'geschlossen {time}',
+            'actions': {
+                'results': 'Ergebnisse ansehen',
+                'close': 'Umfrage schließen',
+                'reopen': 'Umfrage wieder öffnen',
+                'delete': 'Umfrage löschen'
+            },
+            'confirm': {
+                'closeTitle': 'Umfrage schließen?',
+                'close': 'Die Abstimmung zu „{title}“ endet sofort. Du kannst die Umfrage später wieder öffnen.',
+                'reopenTitle': 'Umfrage wieder öffnen?',
+                'reopen': '„{title}“ nimmt wieder Stimmen an und das Enddatum wird entfernt.',
+                'delete': 'Die Umfrage „{title}“ samt aller Stimmen löschen? Das lässt sich nicht rückgängig machen.'
+            },
+            'empty': 'Noch keine Umfragen',
+            'emptyHint': 'Umfragen werden in Forenthemen und Timeline-Beiträgen erstellt. Sobald jemand eine anhängt, erscheint sie hier.',
+            'emptyFiltered': 'Keine Umfragen passen zu den aktuellen Filtern'
         },
         'forums': {
             'title': 'Forenverwaltung',
@@ -5038,7 +5105,26 @@ export default {
         'voteSubmitted': 'Deine Stimme wurde abgegeben',
         'voteFailed': 'Deine Stimme konnte nicht abgegeben werden',
         'saved': 'Umfrage gespeichert',
-        'saveFailed': 'Die Umfrage konnte nicht gespeichert werden'
+        'saveFailed': 'Die Umfrage konnte nicht gespeichert werden',
+        'poll': 'Umfrage',
+        'addPoll': 'Umfrage hinzufügen',
+        'removePoll': 'Umfrage entfernen',
+        'attachPoll': 'Umfrage anhängen',
+        'closingDateHint': 'Leer lassen, damit die Umfrage unbegrenzt offen bleibt',
+        'closingDateFuture': 'Das Enddatum muss in der Zukunft liegen',
+        'invalidDate': 'Bitte ein gültiges Datum mit Uhrzeit eingeben',
+        'titleRequired': 'Bitte gib der Umfrage einen Titel',
+        'optionRequired': 'Bitte fülle diese Option aus oder entferne sie',
+        'maxOptions': 'Eine Umfrage kann höchstens {max} Optionen haben',
+        'tooLong': 'Darf höchstens {max} Zeichen lang sein',
+        'removeOption': 'Option entfernen',
+        'removeVote': 'Stimme zurückziehen',
+        'removeVoteFailed': 'Deine Stimme konnte nicht zurückgezogen werden',
+        'anonymousNotice': 'Die Stimmenzahlen werden erst nach Ende der Umfrage angezeigt',
+        'deletePoll': 'Umfrage löschen',
+        'confirmDelete': 'Die Umfrage „{title}“ löschen? Alle Stimmen gehen verloren.',
+        'deleted': 'Die Umfrage wurde gelöscht',
+        'deleteFailed': 'Die Umfrage konnte nicht gelöscht werden'
     },
     'dialogs': {
         'message': {

@@ -2,6 +2,7 @@
 
 namespace App\Models\Status;
 
+use App\Models\Concerns\HasPolls;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,12 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Status extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia, SoftDeletes;
+    use HasFactory, HasPolls, InteractsWithMedia, SoftDeletes;
+
+    /**
+     * Relations needed to build the `poll` attribute without extra queries.
+     */
+    public const POLL_RELATIONS = ['latestPoll.creator', 'latestPoll.options', 'latestPoll.votes'];
 
     protected $fillable = [
         'user_id',
@@ -31,7 +37,26 @@ class Status extends Model implements HasMedia
 
     protected $with = ['user', 'media'];
 
-    protected $appends = ['is_liked_by_me', 'time_ago', 'media_urls'];
+    // The raw relation is only a data source for the `poll` attribute
+    protected $hidden = ['latestPoll'];
+
+    protected $appends = ['is_liked_by_me', 'time_ago', 'media_urls', 'poll'];
+
+    /**
+     * The status' latest poll formatted for the current user (null when
+     * there is none). Controllers eager load POLL_RELATIONS on lists so
+     * this does not query per status.
+     */
+    public function getPollAttribute(): ?array
+    {
+        if ( ! $this->exists) {
+            return null;
+        }
+
+        $this->loadMissing(self::POLL_RELATIONS);
+
+        return $this->latestPoll?->toPayload(auth()->user());
+    }
 
     public function registerMediaConversions(?Media $media = null): void
     {

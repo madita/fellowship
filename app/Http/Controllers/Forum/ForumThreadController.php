@@ -7,10 +7,12 @@ use App\Models\Forum\ForumPostLike;
 use App\Models\Forum\ForumThread;
 use App\Models\Forum\ForumThreadRead;
 use App\Models\Tag\Taxonomy;
+use App\Services\PollService;
 use App\Services\SpamDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Stevebauman\Purify\Facades\Purify;
 
 class ForumThreadController extends Controller
@@ -23,7 +25,7 @@ class ForumThreadController extends Controller
         $user = Auth::user();
 
         $thread = ForumThread::where('slug', $threadSlug)
-            ->with(['category.term', 'author'])
+            ->with(['category.term', 'author', 'latestPoll.creator', 'latestPoll.options', 'latestPoll.votes'])
             ->firstOrFail();
 
         // Check access via category properties
@@ -89,8 +91,12 @@ class ForumThreadController extends Controller
             }
         }
 
+        $threadData         = $thread->toArray();
+        $threadData['poll'] = $thread->latestPoll?->toPayload($user);
+        unset($threadData['latest_poll']);
+
         return response()->json([
-            'thread'            => $thread,
+            'thread'            => $threadData,
             'posts'             => $postsData,
             'can_reply'         => $thread->canReply($user),
             'can_edit'          => $thread->canEdit($user),
@@ -137,10 +143,19 @@ class ForumThreadController extends Controller
             }
         }
 
-        $validated = $request->validate([
+        $rules = [
             'title' => 'required|string|max:255',
             'body'  => 'required|string',
-        ]);
+            'poll'  => 'nullable|array',
+        ];
+
+        // Optional inline poll — same rules as POST /api/polls
+        if (is_array($request->input('poll'))) {
+            $request->merge(['poll' => PollService::normalize($request->input('poll'))]);
+            $rules += PollService::rules('poll.');
+        }
+
+        $validated = $request->validate($rules);
 
         // Spam check
         $spamResult = $spamService->checkThreadCreation($user, $validated['body']);
@@ -148,14 +163,22 @@ class ForumThreadController extends Controller
             abort($spamResult['status'], $spamResult['message']);
         }
 
-        $thread = $category->forumThreads()->create([
-            'user_id' => $user->id,
-            'title'   => $validated['title'],
-            // The 'sandbox' config matches the TipTap editor's output
-            // (tables, code blocks, blockquotes, …) — the default config
-            // would silently strip those elements.
-            'body' => Purify::config('sandbox')->clean($validated['body']),
-        ]);
+        [$thread, $poll] = DB::transaction(function () use ($category, $user, $validated) {
+            $thread = $category->forumThreads()->create([
+                'user_id' => $user->id,
+                'title'   => $validated['title'],
+                // The 'sandbox' config matches the TipTap editor's output
+                // (tables, code blocks, blockquotes, …) — the default config
+                // would silently strip those elements.
+                'body' => Purify::config('sandbox')->clean($validated['body']),
+            ]);
+
+            $poll = ! empty($validated['poll'])
+                ? PollService::create($thread, $user, $validated['poll'])
+                : null;
+
+            return [$thread, $poll];
+        });
 
         // Auto-subscribe thread author
         $thread->subscribe($user);
@@ -168,7 +191,10 @@ class ForumThreadController extends Controller
             ->event('thread_created')
             ->log('created a new thread');
 
-        return response()->json($thread->load('author'), 201);
+        $data         = $thread->load('author')->toArray();
+        $data['poll'] = $poll?->toPayload($user);
+
+        return response()->json($data, 201);
     }
 
     /**

@@ -1,27 +1,28 @@
 <template>
-  <v-card class="poll-card mb-4" rounded="lg">
+  <v-card class="poll-card mb-4" rounded="lg" variant="outlined">
     <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center ga-2">
       <v-icon color="primary">mdi-poll</v-icon>
-      {{ poll.title }}
+      <span class="poll-card-title">{{ current.title }}</span>
       <v-spacer />
-      <v-chip v-if="poll.is_open" color="success" variant="tonal" size="small">{{ $t('poll.open') }}</v-chip>
+      <v-chip v-if="current.is_open" color="success" variant="tonal" size="small">{{ $t('poll.open') }}</v-chip>
       <v-chip v-else variant="tonal" size="small">{{ $t('poll.closed') }}</v-chip>
     </v-card-title>
 
-    <v-card-subtitle v-if="poll.description">
-      {{ poll.description }}
+    <v-card-subtitle v-if="current.description" class="poll-card-description">
+      {{ current.description }}
     </v-card-subtitle>
 
     <v-card-text>
-      <!-- Voting UI (if poll is open and user hasn't voted) -->
-      <div v-if="poll.is_open && !poll.has_voted">
+      <!-- Voting UI (open poll, no vote yet or changing the vote) -->
+      <div v-if="showVotingUi">
         <v-radio-group
-          v-if="poll.type === 'single'"
+          v-if="current.type === 'single'"
           v-model="selectedOptions"
-          :disabled="loading"
+          :disabled="busy"
+          hide-details
         >
           <v-radio
-            v-for="option in poll.options"
+            v-for="option in current.options"
             :key="option.id"
             :label="option.option_text"
             :value="option.id"
@@ -30,52 +31,82 @@
 
         <div v-else>
           <v-checkbox
-            v-for="option in poll.options"
+            v-for="option in current.options"
             :key="option.id"
             v-model="selectedOptions"
             :label="option.option_text"
             :value="option.id"
-            :disabled="loading"
+            :disabled="busy"
+            density="compact"
+            hide-details
           />
         </div>
 
-        <v-btn
-          color="primary"
-          variant="flat"
-          :disabled="!canVote"
-          :loading="loading"
-          @click="submitVote"
-        >
-          {{ $t('poll.submitVote') }}
-        </v-btn>
+        <div class="d-flex flex-wrap ga-2 mt-3">
+          <v-btn
+            color="primary"
+            variant="flat"
+            :disabled="!canVote || busy"
+            :loading="voting"
+            @click="submitVote"
+          >
+            {{ $t('poll.submitVote') }}
+          </v-btn>
+          <v-btn
+            v-if="changingVote"
+            variant="text"
+            :disabled="busy"
+            @click="cancelChangeVote"
+          >
+            {{ $t('common.cancel') }}
+          </v-btn>
+        </div>
       </div>
 
-      <!-- Results (if user has voted or poll is closed) -->
-      <poll-results
-        v-else
-        :poll="poll"
-        :show-votes="!poll.anonymous || !poll.is_open"
-      />
+      <!-- Results (after voting or when closed) -->
+      <template v-else>
+        <poll-results
+          :poll="current"
+          :show-votes="!current.anonymous || !current.is_open"
+        />
+        <div v-if="current.anonymous && current.is_open" class="text-caption text-medium-emphasis mt-1">
+          {{ $t('poll.anonymousNotice') }}
+        </div>
 
-      <!-- Change vote button -->
-      <v-btn
-        v-if="poll.is_open && poll.has_voted"
-        variant="text"
-        size="small"
-        color="primary"
-        class="mt-2"
-        @click="changeVote"
-      >
-        {{ $t('poll.changeVote') }}
-      </v-btn>
+        <div v-if="current.is_open && current.has_voted" class="d-flex flex-wrap ga-2 mt-2">
+          <v-btn
+            variant="text"
+            size="small"
+            color="primary"
+            prepend-icon="mdi-pencil-outline"
+            :disabled="busy"
+            @click="changeVote"
+          >
+            {{ $t('poll.changeVote') }}
+          </v-btn>
+          <v-btn
+            variant="text"
+            size="small"
+            prepend-icon="mdi-undo-variant"
+            :disabled="busy"
+            :loading="removing"
+            @click="removeVote"
+          >
+            {{ $t('poll.removeVote') }}
+          </v-btn>
+        </div>
+      </template>
     </v-card-text>
 
-    <v-card-actions class="px-4 pb-4 ga-2">
+    <v-card-actions class="px-4 pb-4 ga-2 flex-wrap">
       <v-chip size="small" variant="tonal" prepend-icon="mdi-account-multiple">
-        {{ $t('poll.votesCount', poll.total_votes) }}
+        {{ $t('poll.votesCount', current.total_votes || 0) }}
       </v-chip>
-      <v-chip v-if="poll.closes_at" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
-        {{ formatClosingTime(poll.closes_at) }}
+      <v-chip v-if="current.closes_at" size="small" variant="tonal" prepend-icon="mdi-clock-outline">
+        {{ formatClosingTime(current.closes_at) }}
+      </v-chip>
+      <v-chip v-if="current.creator" size="small" variant="text" prepend-icon="mdi-account-outline">
+        {{ current.creator.name || current.creator.username }}
       </v-chip>
       <v-spacer />
       <v-btn
@@ -83,7 +114,9 @@
         icon="mdi-pencil"
         variant="text"
         size="small"
-        @click="$emit('edit', poll)"
+        :aria-label="$t('poll.editPoll')"
+        :disabled="busy"
+        @click="openEditor"
       />
       <v-btn
         v-if="canDelete"
@@ -91,81 +124,186 @@
         variant="text"
         size="small"
         color="error"
-        @click="$emit('delete', poll)"
+        :aria-label="$t('poll.deletePoll')"
+        :disabled="busy"
+        :loading="deleting"
+        @click="deletePoll"
       />
     </v-card-actions>
+
+    <poll-creator
+      v-if="canEdit"
+      ref="editor"
+      hide-activator
+      :pollable-type="current.pollable_type"
+      :pollable-id="current.pollable_id"
+      :existing-poll="current"
+      @updated="onUpdated"
+    />
   </v-card>
 </template>
 
 <script>
 import axios from 'axios'
 import PollResults from './PollResults.vue'
-import { format, formatDistanceToNow } from 'date-fns'
+import PollCreator from './PollCreator.vue'
+import { formatDistanceToNow } from 'date-fns'
 
+/**
+ * Shows a poll, lets the user vote / change / remove the vote and, for the
+ * creator or an admin, edit (while no votes exist) or delete it.
+ * Keeps its own copy of the poll and emits `voted`, `updated` (both with the
+ * fresh poll payload) and `deleted` (with the poll id) so the owner can sync.
+ */
 export default {
   name: 'PollCard',
   components: {
-    PollResults
+    PollResults,
+    PollCreator
   },
   props: {
     poll: {
       type: Object,
       required: true
     },
+    // Kept for callers that still pass it; permissions now come from the payload
     currentUser: {
       type: Object,
       default: null
     }
   },
+  emits: ['voted', 'updated', 'deleted', 'edit', 'delete'],
   data() {
     return {
+      current: { ...this.poll },
       selectedOptions: this.poll.type === 'single' ? null : [],
-      loading: false
+      changingVote: false,
+      voting: false,
+      removing: false,
+      deleting: false
     }
   },
   computed: {
-    canVote() {
-      if (this.poll.type === 'single') {
-        return this.selectedOptions !== null
-      }
-      return this.selectedOptions.length > 0
+    busy() {
+      return this.voting || this.removing || this.deleting
     },
+    showVotingUi() {
+      return this.current.is_open && (!this.current.has_voted || this.changingVote)
+    },
+    canVote() {
+      if (this.current.type === 'single') {
+        return this.selectedOptions !== null && this.selectedOptions !== undefined
+      }
+      return Array.isArray(this.selectedOptions) && this.selectedOptions.length > 0
+    },
+    // The API refuses updates once a vote exists, so only offer editing before that
     canEdit() {
-      return this.currentUser && this.currentUser.id === this.poll.creator.id && !this.poll.has_voted
+      return !!this.current.can_edit && (this.current.total_votes || 0) === 0
     },
     canDelete() {
-      return this.currentUser && this.currentUser.id === this.poll.creator.id
+      return !!this.current.can_delete
+    }
+  },
+  watch: {
+    poll: {
+      handler(poll) {
+        this.current = { ...poll }
+        this.syncSelection()
+      },
+      deep: true
+    },
+    'current.user_votes': {
+      handler() {
+        this.syncSelection()
+      },
+      immediate: true
     }
   },
   methods: {
+    syncSelection() {
+      const votes = this.current.user_votes || []
+      if (this.current.type === 'single') {
+        this.selectedOptions = votes[0] ?? null
+      } else {
+        this.selectedOptions = [...votes]
+      }
+    },
+    applyPoll(poll) {
+      if (!poll) return
+      this.current = { ...this.current, ...poll }
+      this.changingVote = false
+    },
     async submitVote() {
-      if (this.loading) return
+      if (this.busy || !this.canVote) return
 
-      this.loading = true
+      this.voting = true
       try {
-        const optionIds = this.poll.type === 'single'
+        const optionIds = this.current.type === 'single'
           ? [this.selectedOptions]
           : this.selectedOptions
 
-        const response = await axios.post(`/api/polls/${this.poll.id}/vote`, {
+        const response = await axios.post(`/api/polls/${this.current.id}/vote`, {
           option_ids: optionIds
         })
 
-        // Update poll data
-        Object.assign(this.poll, response.data.poll)
-        this.$emit('voted', this.poll)
-
-        await this.$dialog.success(response.data.message || this.$t('poll.voteSubmitted'))
+        this.applyPoll(response.data.poll)
+        this.$emit('voted', this.current)
       } catch (error) {
         await this.$dialog.requestError(error, this.$t('poll.voteFailed'))
       } finally {
-        this.loading = false
+        this.voting = false
+      }
+    },
+    async removeVote() {
+      if (this.busy) return
+
+      this.removing = true
+      try {
+        const response = await axios.delete(`/api/polls/${this.current.id}/vote`)
+        this.applyPoll(response.data.poll)
+        this.$emit('voted', this.current)
+      } catch (error) {
+        await this.$dialog.requestError(error, this.$t('poll.removeVoteFailed'))
+      } finally {
+        this.removing = false
       }
     },
     changeVote() {
-      this.selectedOptions = this.poll.type === 'single'
-        ? (this.poll.user_votes[0] || null)
-        : [...this.poll.user_votes]
+      this.syncSelection()
+      this.changingVote = true
+    },
+    cancelChangeVote() {
+      this.syncSelection()
+      this.changingVote = false
+    },
+    openEditor() {
+      if (this.busy) return
+      this.$emit('edit', this.current)
+      this.$refs.editor?.open()
+    },
+    onUpdated(poll) {
+      this.applyPoll(poll)
+      this.$emit('updated', this.current)
+    },
+    async deletePoll() {
+      if (this.busy) return
+
+      const ok = await this.$dialog.confirmDelete(this.$t('poll.confirmDelete', { title: this.current.title }), {
+        title: this.$t('poll.deletePoll')
+      })
+      if (!ok) return
+
+      this.deleting = true
+      try {
+        const response = await axios.delete(`/api/polls/${this.current.id}`)
+        this.$emit('delete', this.current)
+        this.$emit('deleted', this.current.id)
+        await this.$dialog.success(response.data?.message || this.$t('poll.deleted'))
+      } catch (error) {
+        await this.$dialog.requestError(error, this.$t('poll.deleteFailed'))
+      } finally {
+        this.deleting = false
+      }
     },
     formatClosingTime(closesAt) {
       const date = new Date(closesAt)
@@ -177,18 +315,6 @@ export default {
       }
       return this.$t('poll.closesAt', { time })
     }
-  },
-  watch: {
-    'poll.user_votes': {
-      handler(newVotes) {
-        if (this.poll.type === 'single') {
-          this.selectedOptions = newVotes[0] || null
-        } else {
-          this.selectedOptions = [...newVotes]
-        }
-      },
-      immediate: true
-    }
   }
 }
 </script>
@@ -196,5 +322,14 @@ export default {
 <style scoped>
 .poll-card {
   border-left: 4px solid rgb(var(--v-theme-primary));
+}
+
+.poll-card-title {
+  white-space: normal;
+  word-break: break-word;
+}
+
+.poll-card-description {
+  white-space: pre-line;
 }
 </style>

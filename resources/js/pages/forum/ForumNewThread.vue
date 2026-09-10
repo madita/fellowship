@@ -30,6 +30,36 @@
                             {{ bodyErrors[0] }}
                         </div>
                     </div>
+
+                    <!-- Poll -->
+                    <div class="mb-2">
+                        <v-btn
+                            :variant="pollEnabled ? 'flat' : 'tonal'"
+                            color="primary"
+                            size="small"
+                            :prepend-icon="pollEnabled ? 'mdi-close' : 'mdi-poll'"
+                            :disabled="forumStore.submitting"
+                            @click="togglePoll"
+                        >
+                            {{ pollEnabled ? $t('poll.removePoll') : $t('poll.addPoll') }}
+                        </v-btn>
+                    </div>
+
+                    <v-expand-transition>
+                        <v-card v-if="pollEnabled" variant="tonal" rounded="lg" class="mb-2">
+                            <v-card-title class="text-subtitle-1 d-flex align-center ga-2">
+                                <v-icon color="primary">mdi-poll</v-icon>
+                                {{ $t('poll.attachPoll') }}
+                            </v-card-title>
+                            <v-card-text>
+                                <poll-form
+                                    ref="pollForm"
+                                    v-model="poll"
+                                    :disabled="forumStore.submitting"
+                                />
+                            </v-card-text>
+                        </v-card>
+                    </v-expand-transition>
                 </v-card-text>
 
                 <v-card-actions class="px-4 pb-4">
@@ -60,10 +90,11 @@
 import { useForumStore } from '@/store/forumStore.js'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import PollForm from '@/components/poll/PollForm.vue'
 
 export default {
     name: 'ForumNewThread',
-    components: { Tiptap, PageHeader },
+    components: { Tiptap, PageHeader, PollForm },
     setup() {
         const forumStore = useForumStore()
         return { forumStore }
@@ -73,7 +104,9 @@ export default {
             title: '',
             body: '',
             titleErrors: [],
-            bodyErrors: []
+            bodyErrors: [],
+            pollEnabled: false,
+            poll: null
         }
     },
     computed: {
@@ -98,7 +131,14 @@ export default {
             if (!this.body.trim()) {
                 this.bodyErrors.push(this.$t('forum.bodyRequired'))
             }
-            return this.titleErrors.length === 0 && this.bodyErrors.length === 0
+            const pollValid = !this.pollEnabled || (this.$refs.pollForm?.validate() ?? false)
+            return this.titleErrors.length === 0 && this.bodyErrors.length === 0 && pollValid
+        },
+        togglePoll() {
+            this.pollEnabled = !this.pollEnabled
+            if (!this.pollEnabled) {
+                this.poll = null
+            }
         },
         async submitThread() {
             if (this.forumStore.submitting || !this.validate()) return
@@ -112,7 +152,8 @@ export default {
             try {
                 const thread = await this.forumStore.createThread(forumId, {
                     title: this.title,
-                    body: this.body
+                    body: this.body,
+                    poll: this.pollEnabled ? this.poll : null
                 })
 
                 // Redirect to new thread

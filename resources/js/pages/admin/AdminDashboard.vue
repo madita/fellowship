@@ -237,6 +237,7 @@ export default {
                 { to: '/admin/settings', icon: 'mdi-cog-outline', key: 'menu.adminSettings' },
                 { to: '/admin/users', icon: 'mdi-account-group-outline', key: 'menu.adminUsers' },
                 { to: '/admin/tickets', icon: 'mdi-ticket-outline', key: 'menu.adminTickets' },
+                { to: '/admin/polls', icon: 'mdi-poll', key: 'menu.adminPolls' },
                 { to: '/admin/media', icon: 'mdi-folder-multiple-image', key: 'menu.adminMedia' },
                 { to: '/admin/announcements', icon: 'mdi-bullhorn-outline', key: 'menu.adminAnnouncement' },
                 { to: '/admin/settings/localization/translations', icon: 'mdi-translate', key: 'menu.adminTranslations' },

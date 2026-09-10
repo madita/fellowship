@@ -382,6 +382,13 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     // Admin overview
     Route::get('/dashboard', 'App\Http\Controllers\Admin\AdminDashboardController@index');
 
+    // Polls
+    Route::get('/polls', 'App\Http\Controllers\Admin\PollAdminController@index');
+    Route::get('/polls/stats', 'App\Http\Controllers\Admin\PollAdminController@stats');
+    Route::patch('/polls/{poll}/close', 'App\Http\Controllers\Admin\PollAdminController@close');
+    Route::patch('/polls/{poll}/reopen', 'App\Http\Controllers\Admin\PollAdminController@reopen');
+    Route::delete('/polls/{poll}', 'App\Http\Controllers\Admin\PollAdminController@destroy');
+
     // Settings
     Route::get('/settings', 'App\Http\Controllers\Admin\SettingsController@index');
     Route::post('/settings', 'App\Http\Controllers\Admin\SettingsController@update');

@@ -66,13 +66,7 @@ class PollVoteController extends Controller
 
             return response()->json([
                 'message' => 'Vote recorded successfully',
-                'poll'    => [
-                    'id'          => $poll->id,
-                    'total_votes' => $poll->total_votes,
-                    'results'     => $poll->results(),
-                    'user_votes'  => $poll->userVotes($user),
-                    'has_voted'   => $poll->hasVoted($user),
-                ],
+                'poll'    => $poll->toPayload($user),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -114,13 +108,7 @@ class PollVoteController extends Controller
 
         return response()->json([
             'message' => 'Vote removed successfully',
-            'poll'    => [
-                'id'          => $poll->id,
-                'total_votes' => $poll->total_votes,
-                'results'     => $poll->results(),
-                'user_votes'  => $poll->userVotes($user),
-                'has_voted'   => $poll->hasVoted($user),
-            ],
+            'poll'    => $poll->toPayload($user),
         ]);
     }
 }

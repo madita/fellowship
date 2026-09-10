@@ -5,6 +5,7 @@ import UserAvatar from '../common/UserAvatar.vue';
 import TinyBox from '../gallery/TinyBox.vue';
 import EmptyState from '../common/EmptyState.vue';
 import LoadingState from '../common/LoadingState.vue';
+import PollCard from '../poll/PollCard.vue';
 import axios from 'axios';
 import { useUserStore } from '@/store/userStore.js';
 import { useDialog } from '@/composables/useDialog.js';
@@ -132,6 +133,15 @@ const galleryImages = computed(() =>
 
 const openLightbox = (index) => {
     lightboxIndex.value = index;
+};
+
+// `status` is a read-only prop: hand the timeline a copy with the fresh poll
+const onPollChanged = (poll) => {
+    emit('updated', { ...props.status, poll });
+};
+
+const onPollDeleted = () => {
+    emit('updated', { ...props.status, poll: null });
 };
 
 const toggleLike = async () => {
@@ -468,6 +478,18 @@ onBeforeUnmount(() => {
                     @change="onEditFilesSelected"
                 />
             </div>
+
+            <!-- Poll (if attached) -->
+            <PollCard
+                v-if="status.poll"
+                :key="status.poll.id"
+                :poll="status.poll"
+                :current-user="user"
+                class="mb-3"
+                @voted="onPollChanged"
+                @updated="onPollChanged"
+                @deleted="onPollDeleted"
+            />
 
             <!-- Media (if exists) -->
             <div v-if="images.length > 0" class="status-media mb-3">
