@@ -263,10 +263,17 @@ export default {
         'widgetSettings': 'Widget Settings',
         'widgetTitle': 'Widget Title',
         'widgetSize': 'Widget Size',
+        'widgetHeight': 'Widget Height',
+        'heightSingle': 'Single row',
+        'heightDouble': 'Double row',
+        'dropHere': 'Drop here',
         'small': 'Small',
         'medium': 'Medium',
         'large': 'Large',
         'extraLarge': 'Extra Large',
+        'sizeStandard': 'Standard (one column)',
+        'sizeWide': 'Wide (two columns)',
+        'sizeExtraWide': 'Extra wide (three columns)',
         'widgetLimit': 'Items to show',
         'onDashboard': '{count} on dashboard',
         'emptyTitle': 'Your dashboard is empty',
@@ -2233,7 +2240,8 @@ export default {
             'tabSandbox': 'Sandbox',
             'tabAdvanced': 'Advanced',
             'subtitle': 'Configure how the application looks and behaves',
-            'settingsCount': '{count} setting | {count} settings'
+            'settingsCount': '{count} setting | {count} settings',
+            'moreInCategory': 'More in this category'
         },
         'page': {
             'loading': 'Loading settings...',

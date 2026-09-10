@@ -263,10 +263,17 @@ export default {
         'widgetSettings': 'Widget-Einstellungen',
         'widgetTitle': 'Widget-Titel',
         'widgetSize': 'Widget-Größe',
+        'widgetHeight': 'Widget-Höhe',
+        'heightSingle': 'Eine Zeile',
+        'heightDouble': 'Zwei Zeilen',
+        'dropHere': 'Hier ablegen',
         'small': 'Klein',
         'medium': 'Mittel',
         'large': 'Groß',
         'extraLarge': 'Extra groß',
+        'sizeStandard': 'Standard (eine Spalte)',
+        'sizeWide': 'Breit (zwei Spalten)',
+        'sizeExtraWide': 'Extra breit (drei Spalten)',
         'widgetLimit': 'Anzahl Einträge',
         'onDashboard': '{count} auf dem Dashboard',
         'emptyTitle': 'Dein Dashboard ist leer',
@@ -2234,7 +2241,8 @@ export default {
             'tabSandbox': 'Sandbox',
             'tabAdvanced': 'Erweitert',
             'subtitle': 'Legen Sie fest, wie die Anwendung aussieht und sich verhält',
-            'settingsCount': '{count} Einstellung | {count} Einstellungen'
+            'settingsCount': '{count} Einstellung | {count} Einstellungen',
+            'moreInCategory': 'Mehr in dieser Kategorie'
         },
         'page': {
             'loading': 'Einstellungen werden geladen...',

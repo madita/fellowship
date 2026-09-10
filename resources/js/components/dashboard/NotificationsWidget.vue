@@ -6,29 +6,31 @@
         empty-icon="mdi-bell-check-outline"
         :empty-text="$t('dashboard.widgets.notifications.empty')"
     >
-        <div
-            v-for="notification in notifications"
-            :key="notification.id"
-            class="d-flex align-center mb-3 notification-row"
-            :class="{ 'notification-row--busy': isBusy(notification) }"
-            @click="open(notification)"
-        >
-            <v-avatar :color="color(notification)" size="24" class="mr-3">
-                <v-icon color="white" size="12">{{ icon(notification) }}</v-icon>
-            </v-avatar>
-            <div class="flex-grow-1 overflow-hidden">
-                <div class="text-body-2 text-truncate">{{ subject(notification) }}</div>
-                <div class="text-caption text-medium-emphasis">{{ relative(notification.created_at) }}</div>
-            </div>
-            <v-btn
-                icon="mdi-eye-check-outline"
-                size="x-small"
-                variant="text"
-                :title="$t('dashboard.widgets.notifications.markRead')"
-                :loading="isBusy(notification)"
-                :disabled="busyAll"
-                @click.stop="markRead(notification)"
-            />
+        <div class="widget-list">
+            <div
+                v-for="notification in notifications"
+                :key="notification.id"
+                class="d-flex align-center mb-3 notification-row"
+                :class="{ 'notification-row--busy': isBusy(notification) }"
+                @click="open(notification)"
+            >
+                <v-avatar :color="color(notification)" size="24" class="mr-3">
+                    <v-icon color="white" size="12">{{ icon(notification) }}</v-icon>
+                </v-avatar>
+                <div class="flex-grow-1 overflow-hidden">
+                    <div class="text-body-2 text-truncate">{{ subject(notification) }}</div>
+                    <div class="text-caption text-medium-emphasis">{{ relative(notification.created_at) }}</div>
+                </div>
+                <v-btn
+                    icon="mdi-eye-check-outline"
+                    size="x-small"
+                    variant="text"
+                    :title="$t('dashboard.widgets.notifications.markRead')"
+                    :loading="isBusy(notification)"
+                    :disabled="busyAll"
+                    @click.stop="markRead(notification)"
+                />
+        </div>
         </div>
         <v-btn
             v-if="notifications.length > 1"

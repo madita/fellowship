@@ -46,15 +46,36 @@
         <div
             ref="widgetGrid"
             class="widget-grid"
-            @dragover.prevent
+            :class="{ 'widget-grid--dragging': draggingWidgetId }"
+            :style="gridStyle"
+            @dragover.prevent="onGridDragOver"
+            @dragleave="onGridDragLeave"
             @drop="onDrop"
         >
+            <!-- The cells that are available while a widget is being dragged -->
+            <div
+                v-if="draggingWidgetId"
+                class="grid-cells"
+                :style="{ width: `${pxOfCells(gridColumns)}px` }"
+            ></div>
+
+            <!-- Where the dragged widget will land -->
+            <div
+                v-if="dropPreview"
+                class="drop-marker"
+                :style="dropPreviewStyle"
+            >
+                <v-icon size="28">mdi-arrow-down-bold-box-outline</v-icon>
+                <span class="text-caption font-weight-medium mt-1">{{ $t('dashboard.dropHere') }}</span>
+            </div>
+
             <div
                 v-for="widget in activeWidgets"
                 :key="widget.id"
                 :class="[
           'widget-container',
           `widget-size-${widget.size}`,
+          `widget-height-${widget.height || 'single'}`,
           { 'widget-dragging': widget.id === draggingWidgetId }
         ]"
                 :style="getWidgetStyle(widget)"
@@ -62,17 +83,11 @@
                 draggable="true"
                 @dragstart="onDragStart(widget, $event)"
                 @dragend="onDragEnd"
-                @dragover="onDragOver($event, widget)"
-                @dragenter="onDragEnter($event, widget)"
-                @dragleave="onDragLeave($event, widget)"
             >
                 <v-card
                     class="widget-card h-100"
                     variant="elevated"
-                    :class="{
-            'dragging': widget.id === draggingWidgetId,
-            'drag-target': widget.id === dragTargetId && widget.id !== draggingWidgetId
-          }"
+                    :class="{ 'dragging': widget.id === draggingWidgetId }"
                 >
                     <!-- Widget Header -->
                     <v-card-title class="widget-header d-flex align-center pa-4 pb-2">
@@ -118,6 +133,8 @@
                         <component
                             :is="definition(widget).component"
                             :widget-config="widget.config"
+                            :columns="columnsFor(widget)"
+                            :rows="rowsOf(widget.height)"
                             :refresh-key="widget.refreshKey"
                             @update-meta="updateWidgetMeta(widget.id, $event)"
                         />
@@ -216,6 +233,14 @@
                         ></v-select>
 
                         <v-select
+                            v-model="selectedWidget.height"
+                            :items="widgetHeights"
+                            :label="$t('dashboard.widgetHeight')"
+                            variant="outlined"
+                            class="mb-4"
+                        ></v-select>
+
+                        <v-select
                             v-for="setting in widgetSettings(selectedWidget)"
                             :key="setting.key"
                             v-model="selectedWidget.config[setting.key]"
@@ -274,6 +299,26 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
 
+// Widgets are all one row tall; only the column span differs. Older
+// layouts may still carry the removed "small" size.
+const SIZE_ALIASES = { small: 'medium' };
+const normalizeSize = size => SIZE_ALIASES[size] || size || 'medium';
+// Grid columns a size spans, and rows a height spans.
+const SIZE_COLUMNS = { medium: 1, large: 2, xl: 3 };
+const normalizeHeight = height => (height === 'double' ? 'double' : 'single');
+const rowsOf = height => (normalizeHeight(height) === 'double' ? 2 : 1);
+const columnsOf = size => SIZE_COLUMNS[normalizeSize(size)] || 1;
+const GRID_CELL = 300;
+const GRID_GAP = 20;
+const GRID_STEP = GRID_CELL + GRID_GAP;
+const pxOfCells = n => n * GRID_STEP - GRID_GAP;
+// Do two widgets' cell rectangles intersect?
+const overlaps = (a, b, span) =>
+    a.position.x < b.position.x + span(b) &&
+    b.position.x < a.position.x + span(a) &&
+    a.position.y < b.position.y + rowsOf(b.height) &&
+    b.position.y < a.position.y + rowsOf(a.height);
+
 /**
  * Personal dashboard: a drag & drop grid of widgets, each showing live
  * data of one feature (see configs/dashboardWidgets.js). The layout —
@@ -303,7 +348,15 @@ export default {
             showWidgetSettings: false,
             selectedWidget: null,
             draggingWidgetId: null,
-            dragTargetId: null,
+            // Pointer offset inside the dragged widget, so the marker follows
+            // the widget's top-left corner rather than the cursor.
+            dragOffset: { x: 0, y: 0 },
+            // Cell the dragged widget will land in: { x, y, cols, rows }
+            dropPreview: null,
+            // Width of the grid container, kept current by a ResizeObserver;
+            // decides how many columns fit.
+            gridWidth: 0,
+            gridObserver: null,
             activeWidgets: [],
             loadingLayout: true,
             saveTimer: null,
@@ -318,10 +371,37 @@ export default {
         },
         widgetSizes() {
             return [
-                { title: this.$t('dashboard.small'), value: 'small' },
-                { title: this.$t('dashboard.medium'), value: 'medium' },
-                { title: this.$t('dashboard.large'), value: 'large' },
-                { title: this.$t('dashboard.extraLarge'), value: 'xl' }
+                { title: this.$t('dashboard.sizeStandard'), value: 'medium' },
+                { title: this.$t('dashboard.sizeWide'), value: 'large' },
+                { title: this.$t('dashboard.sizeExtraWide'), value: 'xl' }
+            ];
+        },
+        // As many columns as fit in the grid's width, at least one.
+        gridColumns() {
+            const width = this.gridWidth || (this.$vuetify.display.width - 48);
+            return Math.max(1, Math.floor((width + GRID_GAP) / GRID_STEP));
+        },
+        // The grid grows with its lowest widget (plus one spare row while
+        // dragging, so a widget can be dropped below everything).
+        gridStyle() {
+            const rows = Math.max(1, ...this.activeWidgets.map(w => w.position.y + rowsOf(w.height)));
+            const spare = this.draggingWidgetId ? 1 : 0;
+            return { height: `${pxOfCells(rows + spare)}px` };
+        },
+        dropPreviewStyle() {
+            const p = this.dropPreview;
+            if (!p) return {};
+            return {
+                left: `${p.x * GRID_STEP}px`,
+                top: `${p.y * GRID_STEP}px`,
+                width: `${pxOfCells(p.cols)}px`,
+                height: `${pxOfCells(p.rows)}px`,
+            };
+        },
+        widgetHeights() {
+            return [
+                { title: this.$t('dashboard.heightSingle'), value: 'single' },
+                { title: this.$t('dashboard.heightDouble'), value: 'double' }
             ];
         },
         // Widgets of enabled features, with how many of each are already placed.
@@ -356,8 +436,12 @@ export default {
                 title: saved.title || null,
                 subtitle: '',
                 color: saved.color || def.color,
-                size: saved.size || def.size,
-                position: saved.position || this.findAvailablePosition(),
+                size: normalizeSize(saved.size || def.size),
+                height: normalizeHeight(saved.height),
+                position: saved.position || this.findAvailablePosition(
+                    Math.min(columnsOf(saved.size || def.size), this.gridColumns),
+                    rowsOf(saved.height)
+                ),
                 config: { limit: 5, ...defaults, ...(saved.config || {}) },
                 refreshKey: 0,
             };
@@ -378,25 +462,35 @@ export default {
             }));
         },
 
-        getWidgetStyle(widget) {
-            const gridSize = 300; // Base grid size
-            const gap = 20;
+        pxOfCells,
+        rowsOf,
 
+        // Columns a widget occupies on this screen: its size, capped to
+        // what the grid can show.
+        spanOf(widget) {
+            return Math.min(columnsOf(widget.size), this.gridColumns);
+        },
+
+        getWidgetStyle(widget) {
             return {
-                left: `${widget.position.x * (gridSize + gap)}px`,
-                top: `${widget.position.y * (gridSize + gap)}px`,
+                left: `${widget.position.x * GRID_STEP}px`,
+                top: `${widget.position.y * GRID_STEP}px`,
+                width: `${pxOfCells(this.spanOf(widget))}px`,
+                height: `${pxOfCells(rowsOf(widget.height))}px`,
                 zIndex: widget.id === this.draggingWidgetId ? 1000 : 1
             };
         },
 
         onDragStart(widget, event) {
             this.draggingWidgetId = widget.id;
+            const rect = event.currentTarget.getBoundingClientRect();
+            this.dragOffset = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+            this.dropPreview = { ...widget.position, cols: this.spanOf(widget), rows: rowsOf(widget.height) };
 
-            // Set drag data
             event.dataTransfer.setData('text/plain', widget.id);
             event.dataTransfer.effectAllowed = 'move';
 
-            // Add visual feedback
+            // Fade the source while its ghost is being dragged
             setTimeout(() => {
                 event.target.style.opacity = '0.5';
             }, 0);
@@ -405,113 +499,90 @@ export default {
         onDragEnd(event) {
             event.target.style.opacity = '';
             this.draggingWidgetId = null;
-            this.dragTargetId = null;
-
-            // Remove any remaining visual feedback
-            document.querySelectorAll('.widget-card').forEach(card => {
-                card.style.transition = '';
-                card.style.transform = '';
-            });
+            this.dropPreview = null;
         },
 
-        onDragOver(event, targetWidget) {
-            if (this.draggingWidgetId && this.draggingWidgetId !== targetWidget.id) {
-                event.preventDefault();
-                event.dataTransfer.dropEffect = 'move';
+        // Cell under the dragged widget's top-left corner, clamped so the
+        // widget stays inside the grid.
+        cellFromPointer(event, cols) {
+            const rect = this.$refs.widgetGrid.getBoundingClientRect();
+            const left = event.clientX - rect.left - this.dragOffset.x;
+            const top = event.clientY - rect.top - this.dragOffset.y;
+            return {
+                x: Math.min(Math.max(0, Math.round(left / GRID_STEP)), Math.max(0, this.gridColumns - cols)),
+                y: Math.max(0, Math.round(top / GRID_STEP)),
+            };
+        },
+
+        onGridDragOver(event) {
+            if (!this.draggingWidgetId || !this.dropPreview) return;
+            event.dataTransfer.dropEffect = 'move';
+            const cell = this.cellFromPointer(event, this.dropPreview.cols);
+            if (cell.x !== this.dropPreview.x || cell.y !== this.dropPreview.y) {
+                this.dropPreview = { ...this.dropPreview, ...cell };
             }
         },
 
-        onDragEnter(event, targetWidget) {
-            if (this.draggingWidgetId && this.draggingWidgetId !== targetWidget.id) {
-                event.preventDefault();
-                this.dragTargetId = targetWidget.id;
-
-                // Add visual feedback for swap target
-                const targetElement = event.currentTarget.querySelector('.widget-card');
-                if (targetElement) {
-                    targetElement.style.transition = 'all 0.3s ease';
-                    targetElement.style.transform = 'scale(0.95)';
-                    targetElement.style.opacity = '0.7';
-                }
-            }
-        },
-
-        onDragLeave(event, targetWidget) {
-            // Only remove highlight if we're actually leaving the widget area
-            const rect = event.currentTarget.getBoundingClientRect();
-            const x = event.clientX;
-            const y = event.clientY;
-
-            if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-                if (this.dragTargetId === targetWidget.id) {
-                    this.dragTargetId = null;
-
-                    // Remove visual feedback
-                    const targetElement = event.currentTarget.querySelector('.widget-card');
-                    if (targetElement) {
-                        targetElement.style.transform = '';
-                        targetElement.style.opacity = '';
-                    }
-                }
+        onGridDragLeave(event) {
+            // Leaving the grid itself (not moving between its children)
+            if (!this.$refs.widgetGrid.contains(event.relatedTarget)) {
+                this.dropPreview = null;
             }
         },
 
         onDrop(event) {
             event.preventDefault();
-            const widgetId = event.dataTransfer.getData('text/plain');
-
-            if (!widgetId) return;
-
+            const widgetId = event.dataTransfer.getData('text/plain') || this.draggingWidgetId;
             const draggedWidget = this.activeWidgets.find(w => w.id === widgetId);
             if (!draggedWidget) return;
 
-            // Calculate new position based on drop location
-            const rect = this.$refs.widgetGrid.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+            const target = this.dropPreview
+                ? { x: this.dropPreview.x, y: this.dropPreview.y }
+                : this.cellFromPointer(event, this.spanOf(draggedWidget));
 
-            const gridSize = 300;
-            const gap = 20;
+            draggedWidget.position = target;
+            // Whatever it now covers moves out of the way; the dropped widget stays put.
+            this.resolveOverlaps(draggedWidget.id);
 
-            const newPosition = {
-                x: Math.max(0, Math.round(x / (gridSize + gap))),
-                y: Math.max(0, Math.round(y / (gridSize + gap)))
+            this.draggingWidgetId = null;
+            this.dropPreview = null;
+            this.saveLayout();
+        },
+
+        // Guarantee that no two widgets share a cell and none sticks out of
+        // the grid. The pinned widget (just dropped or resized) keeps its
+        // place; anything it collides with is moved to the nearest free spot
+        // at or below its current row.
+        resolveOverlaps(pinnedId = null) {
+            const byPosition = () => [...this.activeWidgets].sort((a, b) =>
+                a.position.y - b.position.y || a.position.x - b.position.x
+            );
+            const relocate = widget => {
+                widget.position = this.findAvailablePosition(this.spanOf(widget), rowsOf(widget.height), {
+                    except: widget.id,
+                    fromY: widget.position.y,
+                });
             };
 
-            // Store original position in case we need to revert
-            const originalPosition = { ...draggedWidget.position };
+            this.activeWidgets.forEach(w => {
+                if (w.position.x + this.spanOf(w) > this.gridColumns || w.position.x < 0 || w.position.y < 0) {
+                    relocate(w);
+                }
+            });
 
-            // Check if the new position is occupied by another widget
-            const occupyingWidget = this.activeWidgets.find(w =>
-                w.id !== widgetId &&
-                w.position.x === newPosition.x &&
-                w.position.y === newPosition.y
-            );
-
-            if (occupyingWidget) {
-                // Swap positions instead of stacking
-                occupyingWidget.position = originalPosition;
-                draggedWidget.position = newPosition;
-
-                // Add visual feedback for the swap
-                this.$nextTick(() => {
-                    [occupyingWidget, draggedWidget].forEach(widget => {
-                        const element = document.querySelector(`[data-widget-id="${widget.id}"]`);
-                        if (element) {
-                            element.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-                            element.style.transform = 'scale(1.05)';
-                            setTimeout(() => {
-                                element.style.transform = '';
-                            }, 200);
-                        }
-                    });
-                });
-            } else {
-                // Position is free, just move there
-                draggedWidget.position = newPosition;
+            for (let guard = 0; guard < 200; guard++) {
+                const list = byPosition();
+                let mover = null;
+                outer: for (let i = 0; i < list.length; i++) {
+                    for (let j = i + 1; j < list.length; j++) {
+                        if (!overlaps(list[i], list[j], this.spanOf)) continue;
+                        mover = list[i].id === pinnedId ? list[j] : list[j].id === pinnedId ? list[i] : list[j];
+                        break outer;
+                    }
+                }
+                if (!mover) return;
+                relocate(mover);
             }
-
-            this.saveLayout();
         },
 
         addWidget(type) {
@@ -558,6 +629,7 @@ export default {
                 }
             }
             this.showWidgetSettings = false;
+            if (this.selectedWidget) this.resolveOverlaps(this.selectedWidget.id);
             this.saveLayout();
         },
 
@@ -586,22 +658,44 @@ export default {
             this.saveLayout();
         },
 
-        findAvailablePosition() {
-            const occupiedPositions = new Set(
-                this.activeWidgets.map(w => `${w.position.x},${w.position.y}`)
-            );
-
-            for (let y = 0; y < 10; y++) {
-                for (let x = 0; x < 4; x++) {
-                    if (!occupiedPositions.has(`${x},${y}`)) {
-                        return { x, y };
+        // First grid cell where a widget spanning cols × rows fits without
+        // overlapping the cells the other widgets already cover.
+        findAvailablePosition(cols = 1, rows = 1, { except = null, fromY = 0 } = {}) {
+            const occupied = new Set();
+            this.activeWidgets.forEach(w => {
+                if (w.id === except) return;
+                for (let dx = 0; dx < this.spanOf(w); dx++) {
+                    for (let dy = 0; dy < rowsOf(w.height); dy++) {
+                        occupied.add(`${w.position.x + dx},${w.position.y + dy}`);
                     }
+                }
+            });
+            const fits = (x, y) => {
+                if (x + cols > this.gridColumns) return false;
+                for (let dx = 0; dx < cols; dx++) {
+                    for (let dy = 0; dy < rows; dy++) {
+                        if (occupied.has(`${x + dx},${y + dy}`)) return false;
+                    }
+                }
+                return true;
+            };
+
+            for (let y = fromY; y < fromY + 50; y++) {
+                for (let x = 0; x < this.gridColumns; x++) {
+                    if (fits(x, y)) return { x, y };
                 }
             }
 
-            // If no free position found, place at end of grid
-            const maxY = Math.max(...this.activeWidgets.map(w => w.position.y), -1);
-            return { x: 0, y: maxY + 1 };
+            // Below everything else
+            const bottom = Math.max(...this.activeWidgets.filter(w => w.id !== except).map(w => w.position.y + rowsOf(w.height)), 0);
+            return { x: 0, y: bottom };
+        },
+
+        // Columns the widget really spans on this screen, so lists inside
+        // can lay their items out side by side.
+        columnsFor(widget) {
+            if (this.$vuetify.display.width < 960) return 1;
+            return this.spanOf(widget);
         },
 
         updateWidgetMeta(widgetId, meta) {
@@ -619,6 +713,7 @@ export default {
                 color: w.color,
                 position: w.position,
                 size: w.size,
+                height: w.height,
                 config: w.config
             }));
         },
@@ -645,6 +740,7 @@ export default {
             layout
                 .filter(saved => saved?.type && enabled.has(saved.type))
                 .forEach(saved => this.activeWidgets.push(this.createWidget(saved.type, saved)));
+            this.resolveOverlaps();
         },
 
         // Restore the account's layout; widgets of unknown (retired) or
@@ -681,8 +777,23 @@ export default {
         }
     },
 
+    watch: {
+        // Fewer or more columns: keep every widget inside the grid and
+        // apart from the others. Not saved — the layout is only persisted
+        // when the user changes something.
+        gridColumns() {
+            if (!this.loadingLayout) this.resolveOverlaps();
+        },
+    },
     mounted() {
         this.loadLayout();
+        this.gridObserver = new ResizeObserver(entries => {
+            this.gridWidth = entries[0]?.contentRect?.width || 0;
+        });
+        this.gridObserver.observe(this.$el);
+    },
+    beforeUnmount() {
+        this.gridObserver?.disconnect();
     }
 }
 </script>
@@ -691,8 +802,37 @@ export default {
 <style scoped>
 .widget-grid {
     position: relative;
-    min-height: 600px;
+    min-height: 320px;
     width: 100%;
+    transition: height 0.2s ease;
+}
+
+/* The available cells, shown while a widget is being dragged */
+.grid-cells {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+    background-image:
+        repeating-linear-gradient(90deg, rgba(var(--v-theme-primary), 0.05) 0 300px, transparent 300px 320px),
+        repeating-linear-gradient(180deg, rgba(var(--v-theme-primary), 0.05) 0 300px, transparent 300px 320px);
+}
+
+/* Landing spot of the dragged widget */
+.drop-marker {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed rgb(var(--v-theme-primary));
+    border-radius: 16px;
+    background: rgba(var(--v-theme-primary), 0.1);
+    color: rgb(var(--v-theme-primary));
+    pointer-events: none;
+    z-index: 500;
+    transition: left 0.15s ease, top 0.15s ease;
 }
 
 .widget-container {
@@ -701,25 +841,8 @@ export default {
     cursor: move;
 }
 
-.widget-size-small {
-    width: 280px;
-    height: 200px;
-}
-
-.widget-size-medium {
-    width: 280px;
-    height: 300px;
-}
-
-.widget-size-large {
-    width: 600px;
-    height: 300px;
-}
-
-.widget-size-xl {
-    width: 600px;
-    height: 400px;
-}
+/* Widget width and height come from getWidgetStyle(): one grid row per
+   height step, one column per size step, capped to the columns that fit. */
 
 .widget-card {
     border-radius: 16px !important;
@@ -747,13 +870,6 @@ export default {
 
 .v-theme--dark .widget-card:hover {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6) !important;
-}
-
-.widget-card.drag-target {
-    border: 2px dashed rgb(var(--v-theme-primary)) !important;
-    background: rgba(var(--v-theme-primary), 0.1) !important;
-    transform: scale(0.95) !important;
-    opacity: 0.7 !important;
 }
 
 .widget-card.dragging {
@@ -784,9 +900,22 @@ export default {
     cursor: grabbing;
 }
 
+/* The card is a flex column: header, scrolling content, action pinned
+   to the bottom whatever the widget height. */
+.widget-card {
+    display: flex;
+    flex-direction: column;
+}
+
 .widget-content {
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
-    max-height: calc(100% - 120px);
+}
+
+.widget-card > .v-card-actions {
+    margin-top: auto;
+    flex: 0 0 auto;
 }
 
 .widget-preview {
@@ -831,18 +960,7 @@ export default {
     animation: slideInUp 0.5s ease-out;
 }
 
-/* Responsive design */
-@media (max-width: 1200px) {
-    .widget-size-large,
-    .widget-size-xl {
-        width: 280px;
-    }
-
-    .widget-size-xl {
-        height: 350px;
-    }
-}
-
+/* Phones and small tablets: a plain stacked list */
 @media (max-width: 960px) {
     .widget-grid {
         position: static;
@@ -851,19 +969,19 @@ export default {
         gap: 16px;
     }
 
+    .widget-grid {
+        height: auto !important;
+    }
+
+    .drop-marker {
+        display: none;
+    }
+
     .widget-container {
         position: static !important;
         width: 100% !important;
         height: auto !important;
         min-height: 200px;
-    }
-
-    .widget-size-small,
-    .widget-size-medium,
-    .widget-size-large,
-    .widget-size-xl {
-        width: 100% !important;
-        height: auto !important;
     }
 }
 
