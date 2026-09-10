@@ -2,7 +2,7 @@
 
 namespace App\Models\Forum;
 
-use App\Models\Concerns\SafeSearchable;
+use App\Traits\SafeSearchable;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

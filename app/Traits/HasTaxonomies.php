@@ -8,7 +8,7 @@ use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-// use App\Helpers\TaxonomyHelper;
+// use App\Support\TaxonomyHelper;
 // use App\Models\Tag\Taxable;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Collection;

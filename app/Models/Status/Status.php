@@ -2,7 +2,7 @@
 
 namespace App\Models\Status;
 
-use App\Models\Concerns\HasPolls;
+use App\Traits\HasPolls;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

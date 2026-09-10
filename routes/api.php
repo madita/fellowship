@@ -33,8 +33,8 @@ Route::middleware(['cache.control'])->group(function () {
     Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
 
     // Public menu access
-    Route::get('menus/location/{location}', 'App\Http\Controllers\MenuController@getByLocation');
-    Route::get('menus/slug/{slug}', 'App\Http\Controllers\MenuController@getBySlug');
+    Route::get('menus/location/{location}', 'App\Http\Controllers\Menu\MenuController@getByLocation');
+    Route::get('menus/slug/{slug}', 'App\Http\Controllers\Menu\MenuController@getBySlug');
 });
 
 // Forum Routes (public read, auth for write)
@@ -133,44 +133,44 @@ Route::group(['prefix' => '/chat', 'middleware' => ['auth:sanctum']], function (
 });
 
 // Ticket System Routes
-Route::get('/ticket-types', 'App\Http\Controllers\TicketController@types');
+Route::get('/ticket-types', 'App\Http\Controllers\Ticket\TicketController@types');
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
     // Tickets
-    Route::get('/tickets', 'App\Http\Controllers\TicketController@index');
-    Route::get('/tickets/{ticket}', 'App\Http\Controllers\TicketController@show');
-    Route::post('/tickets', 'App\Http\Controllers\TicketController@store');
-    Route::patch('/tickets/{ticket}', 'App\Http\Controllers\TicketController@update');
-    Route::delete('/tickets/{ticket}', 'App\Http\Controllers\TicketController@destroy');
-    Route::post('/tickets/{ticket}/assign', 'App\Http\Controllers\TicketController@assign');
-    Route::post('/tickets/{ticket}/unassign', 'App\Http\Controllers\TicketController@unassign');
-    Route::post('/tickets/{ticket}/approve', 'App\Http\Controllers\TicketController@approve');
-    Route::post('/tickets/{ticket}/reject', 'App\Http\Controllers\TicketController@reject');
+    Route::get('/tickets', 'App\Http\Controllers\Ticket\TicketController@index');
+    Route::get('/tickets/{ticket}', 'App\Http\Controllers\Ticket\TicketController@show');
+    Route::post('/tickets', 'App\Http\Controllers\Ticket\TicketController@store');
+    Route::patch('/tickets/{ticket}', 'App\Http\Controllers\Ticket\TicketController@update');
+    Route::delete('/tickets/{ticket}', 'App\Http\Controllers\Ticket\TicketController@destroy');
+    Route::post('/tickets/{ticket}/assign', 'App\Http\Controllers\Ticket\TicketController@assign');
+    Route::post('/tickets/{ticket}/unassign', 'App\Http\Controllers\Ticket\TicketController@unassign');
+    Route::post('/tickets/{ticket}/approve', 'App\Http\Controllers\Ticket\TicketController@approve');
+    Route::post('/tickets/{ticket}/reject', 'App\Http\Controllers\Ticket\TicketController@reject');
 
     // Ticket Comments
-    Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\TicketCommentController@store');
-    Route::patch('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@update');
-    Route::delete('/ticket-comments/{comment}', 'App\Http\Controllers\TicketCommentController@destroy');
+    Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\Ticket\TicketCommentController@store');
+    Route::patch('/ticket-comments/{comment}', 'App\Http\Controllers\Ticket\TicketCommentController@update');
+    Route::delete('/ticket-comments/{comment}', 'App\Http\Controllers\Ticket\TicketCommentController@destroy');
 });
 
 // Status Timeline Routes
-Route::get('/statuses', 'App\Http\Controllers\StatusController@index');
-Route::get('/statuses/{status}', 'App\Http\Controllers\StatusController@show');
+Route::get('/statuses', 'App\Http\Controllers\Status\StatusController@index');
+Route::get('/statuses/{status}', 'App\Http\Controllers\Status\StatusController@show');
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
     // Status CRUD
-    Route::post('/statuses', 'App\Http\Controllers\StatusController@store');
-    Route::patch('/statuses/{status}', 'App\Http\Controllers\StatusController@update');
-    Route::delete('/statuses/{status}', 'App\Http\Controllers\StatusController@destroy');
+    Route::post('/statuses', 'App\Http\Controllers\Status\StatusController@store');
+    Route::patch('/statuses/{status}', 'App\Http\Controllers\Status\StatusController@update');
+    Route::delete('/statuses/{status}', 'App\Http\Controllers\Status\StatusController@destroy');
 
     // Likes
-    Route::post('/statuses/{status}/like', 'App\Http\Controllers\StatusController@toggleLike');
-    Route::get('/statuses/{status}/likes', 'App\Http\Controllers\StatusController@likes');
+    Route::post('/statuses/{status}/like', 'App\Http\Controllers\Status\StatusController@toggleLike');
+    Route::get('/statuses/{status}/likes', 'App\Http\Controllers\Status\StatusController@likes');
 
     // Comments
-    Route::post('/statuses/{status}/comments', 'App\Http\Controllers\StatusController@addComment');
-    Route::patch('/status-comments/{comment}', 'App\Http\Controllers\StatusCommentController@update');
-    Route::delete('/status-comments/{comment}', 'App\Http\Controllers\StatusCommentController@destroy');
+    Route::post('/statuses/{status}/comments', 'App\Http\Controllers\Status\StatusController@addComment');
+    Route::patch('/status-comments/{comment}', 'App\Http\Controllers\Status\StatusCommentController@update');
+    Route::delete('/status-comments/{comment}', 'App\Http\Controllers\Status\StatusCommentController@destroy');
 });
 
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');
@@ -193,19 +193,19 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/posts/{page}/edit', '\App\Http\Controllers\PostController@show');
     Route::patch('/posts/{page}/edit', '\App\Http\Controllers\PostController@update');
 
-    Route::get('/events/{event}/going/{answer}', "\App\Http\Controllers\EventController@isGoing");
-    Route::get('/events/types', "\App\Http\Controllers\EventController@getTypes");
-    Route::get('/events/upcoming', "\App\Http\Controllers\EventController@upcoming");
-    Route::post('/events/{event}/answer', "\App\Http\Controllers\EventController@joinEvent");
-    //    Route::resource('events', "\App\Http\Controllers\EventController");
-    Route::get('events/create', ['as' => 'event.create', 'uses' => "\App\Http\Controllers\EventController@create"]);
-    Route::get('events', ['as' => 'event.index', 'uses' => "\App\Http\Controllers\EventController@index"]);
-    Route::post('events', ['as' => 'event.store', 'uses' => "\App\Http\Controllers\EventController@store"]);
-    Route::get('events/{event}', ['as' => 'event.show', 'uses' => "\App\Http\Controllers\EventController@show"]);
-    Route::patch('events/{event}', ['as' => 'event.update', 'uses' => "\App\Http\Controllers\EventController@update"]);
-    Route::delete('events/{event}', ['as' => 'event.destroy', 'uses' => "\App\Http\Controllers\EventController@destroy"]);
-    Route::get('events/{event}/edit', ['as' => 'event.edit', 'uses' => "\App\Http\Controllers\EventController@edit"]);
-    Route::post('events/{event}/approve-guest', ['as' => 'event.approve', 'uses' => "\App\Http\Controllers\EventController@approveGuest"]);
+    Route::get('/events/{event}/going/{answer}', "\App\Http\Controllers\Event\EventController@isGoing");
+    Route::get('/events/types', "\App\Http\Controllers\Event\EventController@getTypes");
+    Route::get('/events/upcoming', "\App\Http\Controllers\Event\EventController@upcoming");
+    Route::post('/events/{event}/answer', "\App\Http\Controllers\Event\EventController@joinEvent");
+    //    Route::resource('events', "\App\Http\Controllers\Event\EventController");
+    Route::get('events/create', ['as' => 'event.create', 'uses' => "\App\Http\Controllers\Event\EventController@create"]);
+    Route::get('events', ['as' => 'event.index', 'uses' => "\App\Http\Controllers\Event\EventController@index"]);
+    Route::post('events', ['as' => 'event.store', 'uses' => "\App\Http\Controllers\Event\EventController@store"]);
+    Route::get('events/{event}', ['as' => 'event.show', 'uses' => "\App\Http\Controllers\Event\EventController@show"]);
+    Route::patch('events/{event}', ['as' => 'event.update', 'uses' => "\App\Http\Controllers\Event\EventController@update"]);
+    Route::delete('events/{event}', ['as' => 'event.destroy', 'uses' => "\App\Http\Controllers\Event\EventController@destroy"]);
+    Route::get('events/{event}/edit', ['as' => 'event.edit', 'uses' => "\App\Http\Controllers\Event\EventController@edit"]);
+    Route::post('events/{event}/approve-guest', ['as' => 'event.approve', 'uses' => "\App\Http\Controllers\Event\EventController@approveGuest"]);
 });
 
 // Collections (Photo Gallery)
@@ -248,9 +248,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 // Poll System Routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
-    Route::resource('polls', 'App\Http\Controllers\PollController');
-    Route::post('/polls/{poll}/vote', 'App\Http\Controllers\PollVoteController@vote');
-    Route::delete('/polls/{poll}/vote', 'App\Http\Controllers\PollVoteController@unvote');
+    Route::resource('polls', 'App\Http\Controllers\Poll\PollController');
+    Route::post('/polls/{poll}/vote', 'App\Http\Controllers\Poll\PollVoteController@vote');
+    Route::delete('/polls/{poll}/vote', 'App\Http\Controllers\Poll\PollVoteController@unvote');
 });
 
 // Collaborative Sandbox
@@ -402,15 +402,15 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::post('/settings/clear-cache', 'App\Http\Controllers\Admin\SettingsController@clearCache');
 
     // Menu Management
-    Route::get('/menus', 'App\Http\Controllers\MenuController@index');
-    Route::post('/menus', 'App\Http\Controllers\MenuController@store');
-    Route::patch('/menus/{menu}', 'App\Http\Controllers\MenuController@update');
-    Route::delete('/menus/{menu}', 'App\Http\Controllers\MenuController@destroy');
-    Route::get('/menus/{menu}/items', 'App\Http\Controllers\MenuController@getItems');
-    Route::post('/menus/{menu}/items', 'App\Http\Controllers\MenuController@addItem');
-    Route::patch('/menu-items/{item}', 'App\Http\Controllers\MenuController@updateItem');
-    Route::delete('/menu-items/{item}', 'App\Http\Controllers\MenuController@deleteItem');
-    Route::post('/menus/{menu}/reorder', 'App\Http\Controllers\MenuController@reorderItems');
+    Route::get('/menus', 'App\Http\Controllers\Menu\MenuController@index');
+    Route::post('/menus', 'App\Http\Controllers\Menu\MenuController@store');
+    Route::patch('/menus/{menu}', 'App\Http\Controllers\Menu\MenuController@update');
+    Route::delete('/menus/{menu}', 'App\Http\Controllers\Menu\MenuController@destroy');
+    Route::get('/menus/{menu}/items', 'App\Http\Controllers\Menu\MenuController@getItems');
+    Route::post('/menus/{menu}/items', 'App\Http\Controllers\Menu\MenuController@addItem');
+    Route::patch('/menu-items/{item}', 'App\Http\Controllers\Menu\MenuController@updateItem');
+    Route::delete('/menu-items/{item}', 'App\Http\Controllers\Menu\MenuController@deleteItem');
+    Route::post('/menus/{menu}/reorder', 'App\Http\Controllers\Menu\MenuController@reorderItems');
 
     // Homepage Widgets
     Route::get('/homepage/widgets', 'App\Http\Controllers\Admin\HomepageWidgetController@index');
@@ -571,31 +571,31 @@ Route::post('/login', function (Request $request) {
 // IRC Client Routes
 Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {
     // Servers
-    Route::get('/servers', 'App\Http\Controllers\IrcController@getServers');
+    Route::get('/servers', 'App\Http\Controllers\Irc\IrcController@getServers');
 
     // Connections
-    Route::get('/connections', 'App\Http\Controllers\IrcController@getConnections');
-    Route::post('/connections', 'App\Http\Controllers\IrcController@createConnection');
-    Route::patch('/connections/{connection}', 'App\Http\Controllers\IrcController@updateConnection');
-    Route::delete('/connections/{connection}', 'App\Http\Controllers\IrcController@deleteConnection');
-    Route::post('/connections/{connection}/connect', 'App\Http\Controllers\IrcController@connect');
-    Route::post('/connections/{connection}/disconnect', 'App\Http\Controllers\IrcController@disconnect');
+    Route::get('/connections', 'App\Http\Controllers\Irc\IrcController@getConnections');
+    Route::post('/connections', 'App\Http\Controllers\Irc\IrcController@createConnection');
+    Route::patch('/connections/{connection}', 'App\Http\Controllers\Irc\IrcController@updateConnection');
+    Route::delete('/connections/{connection}', 'App\Http\Controllers\Irc\IrcController@deleteConnection');
+    Route::post('/connections/{connection}/connect', 'App\Http\Controllers\Irc\IrcController@connect');
+    Route::post('/connections/{connection}/disconnect', 'App\Http\Controllers\Irc\IrcController@disconnect');
 
     // Channels
-    Route::get('/available-channels', 'App\Http\Controllers\IrcController@availableChannels');
-    Route::get('/connections/{connection}/channels', 'App\Http\Controllers\IrcController@getServerChannels');
-    Route::post('/connections/{connection}/join', 'App\Http\Controllers\IrcController@joinChannel');
-    Route::post('/channels/{channel}/part', 'App\Http\Controllers\IrcController@partChannel');
-    Route::post('/channels/{channel}/favorite', 'App\Http\Controllers\IrcController@toggleFavorite');
+    Route::get('/available-channels', 'App\Http\Controllers\Irc\IrcController@availableChannels');
+    Route::get('/connections/{connection}/channels', 'App\Http\Controllers\Irc\IrcController@getServerChannels');
+    Route::post('/connections/{connection}/join', 'App\Http\Controllers\Irc\IrcController@joinChannel');
+    Route::post('/channels/{channel}/part', 'App\Http\Controllers\Irc\IrcController@partChannel');
+    Route::post('/channels/{channel}/favorite', 'App\Http\Controllers\Irc\IrcController@toggleFavorite');
 
     // Messages
-    Route::get('/channels/{channel}/users', 'App\Http\Controllers\IrcController@getChannelUsers');
-    Route::get('/channels/{channel}/messages', 'App\Http\Controllers\IrcController@getChannelMessages');
-    Route::post('/channels/{channel}/messages', 'App\Http\Controllers\IrcController@sendMessage');
-    Route::get('/connections/{connection}/unread', 'App\Http\Controllers\IrcController@getUnreadCount');
-    Route::post('/connections/{connection}/nick', 'App\Http\Controllers\IrcController@changeNick');
-    Route::post('/connections/{connection}/pm', 'App\Http\Controllers\IrcController@sendPrivateMessage');
+    Route::get('/channels/{channel}/users', 'App\Http\Controllers\Irc\IrcController@getChannelUsers');
+    Route::get('/channels/{channel}/messages', 'App\Http\Controllers\Irc\IrcController@getChannelMessages');
+    Route::post('/channels/{channel}/messages', 'App\Http\Controllers\Irc\IrcController@sendMessage');
+    Route::get('/connections/{connection}/unread', 'App\Http\Controllers\Irc\IrcController@getUnreadCount');
+    Route::post('/connections/{connection}/nick', 'App\Http\Controllers\Irc\IrcController@changeNick');
+    Route::post('/connections/{connection}/pm', 'App\Http\Controllers\Irc\IrcController@sendPrivateMessage');
 
     // Events polling
-    Route::get('/events', 'App\Http\Controllers\IrcController@pollEvents');
+    Route::get('/events', 'App\Http\Controllers\Irc\IrcController@pollEvents');
 });

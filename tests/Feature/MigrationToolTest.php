@@ -7,9 +7,9 @@ use App\Jobs\Migrations\MigrateLinkGalleryJob;
 use App\Models\Collection;
 use App\Models\Event\Event;
 use App\Models\Event\EventType;
-use App\Models\MigrationLog;
-use App\Models\MigrationMapping;
-use App\Models\MigrationSource;
+use App\Models\Migration\MigrationLog;
+use App\Models\Migration\MigrationMapping;
+use App\Models\Migration\MigrationSource;
 use App\Models\Page;
 use App\Models\User;
 use App\Models\Wiki;
@@ -619,7 +619,7 @@ class MigrationToolTest extends TestCase
             ->postJson("/api/admin/migrations/mappings/{$mapping->id}/run")
             ->assertStatus(200);
 
-        $this->assertSame(2, \App\Models\MigrationAttribution::where('legacy_username', 'OldVimes')->where('legacy_source', 'treffen')->count());
+        $this->assertSame(2, \App\Models\Migration\MigrationAttribution::where('legacy_username', 'OldVimes')->where('legacy_source', 'treffen')->count());
 
         // The same username in a DIFFERENT legacy system is a separate identity.
         $otherSystemEvent = new Event();
@@ -629,7 +629,7 @@ class MigrationToolTest extends TestCase
         $otherSystemEvent->startDate = '2020-01-01';
         $otherSystemEvent->endDate = '2020-01-01';
         $otherSystemEvent->save();
-        \App\Models\MigrationAttribution::record($otherSystemEvent, 'OldVimes', 'forum');
+        \App\Models\Migration\MigrationAttribution::record($otherSystemEvent, 'OldVimes', 'forum');
 
         // The returning user checks and claims their legacy account.
         $vimes = User::factory()->create(['username' => 'vimes']);
@@ -662,7 +662,7 @@ class MigrationToolTest extends TestCase
         // carries the old e-mail, which matches vimes' registered e-mail —
         // so the listing marks the claim as e-mail-verified and suggests
         // the match even without a claim.
-        \App\Models\MigrationLegacyUser::create([
+        \App\Models\Migration\MigrationLegacyUser::create([
             'legacy_source' => 'treffen',
             'username' => 'OldVimes',
             'email' => $vimes->email,
@@ -700,7 +700,7 @@ class MigrationToolTest extends TestCase
             ->assertStatus(409);
         // An e-mail-only claim for another directory account names the
         // resolved username on the ticket, e-mail kept as proof.
-        \App\Models\MigrationLegacyUser::create([
+        \App\Models\Migration\MigrationLegacyUser::create([
             'legacy_source' => 'forum',
             'username' => 'OldCarrot',
             'email' => 'carrot-old@example.org',
@@ -928,7 +928,7 @@ class MigrationToolTest extends TestCase
             $this->assertSame('2008-01-10 21:28:20', $thread->fresh()->last_post_at->format('Y-m-d H:i:s'));
 
             // Poster attribution recorded per identity.
-            $this->assertSame(1, \App\Models\MigrationAttribution::where('legacy_username', 'Vimes')->where('legacy_source', 'forum')->count());
+            $this->assertSame(1, \App\Models\Migration\MigrationAttribution::where('legacy_username', 'Vimes')->where('legacy_source', 'forum')->count());
 
             // Re-runs skip everything (legacy id dedup).
             foreach ([$threads, $posts] as $mapping) {

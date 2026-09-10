@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Jobs\Migrations\GenericImportJob;
-use App\Models\MigrationLog;
-use App\Models\MigrationMapping;
+use App\Models\Migration\MigrationLog;
+use App\Models\Migration\MigrationMapping;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 

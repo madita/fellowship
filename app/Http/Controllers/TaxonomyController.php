@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\TaxonomyHelper;
+use App\Support\TaxonomyHelper;
 use App\Models\Tag\Taxable;
 // use App\Models\Tag\Taxonomy;
 

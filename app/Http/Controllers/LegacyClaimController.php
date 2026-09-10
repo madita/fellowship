@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MigrationAttribution;
-use App\Models\MigrationLegacyUser;
+use App\Models\Migration\MigrationAttribution;
+use App\Models\Migration\MigrationLegacyUser;
 use App\Models\Ticket\Ticket;
 use App\Models\Ticket\TicketType;
 use Illuminate\Http\JsonResponse;

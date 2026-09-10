@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Contracts\CanHaveTaxonomies;
-use App\Models\Concerns\HasPolls;
+use App\Traits\HasPolls;
 use App\Traits\HasCache;
 use App\Traits\HasTaxonomies;
 use App\Traits\Revisionable;

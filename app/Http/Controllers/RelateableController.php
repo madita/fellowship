@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\RelateableHelper;
+use App\Support\RelateableHelper;
 use App\Models\Collection;
 use App\Models\Relateable;
 use Illuminate\Http\JsonResponse;

@@ -2,8 +2,8 @@
 
 namespace App\Models\Forum;
 
-use App\Models\Concerns\HasPolls;
-use App\Models\Concerns\SafeSearchable;
+use App\Traits\HasPolls;
+use App\Traits\SafeSearchable;
 use App\Models\Tag\Taxonomy;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

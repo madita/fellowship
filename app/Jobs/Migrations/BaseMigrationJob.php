@@ -2,7 +2,7 @@
 
 namespace App\Jobs\Migrations;
 
-use App\Models\MigrationLog;
+use App\Models\Migration\MigrationLog;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

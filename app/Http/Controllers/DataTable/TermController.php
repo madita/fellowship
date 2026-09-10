@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use App\Helpers\TaxonomyHelper;
+use App\Support\TaxonomyHelper;
 use App\Models\Tag\Term;
 use Illuminate\Http\Request;
 
