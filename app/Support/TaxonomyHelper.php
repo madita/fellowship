@@ -25,22 +25,14 @@ class TaxonomyHelper
 
     public static function createTerms(array $terms)
     {
-        if (count($terms) > 0) {
-            $found = Term::whereIn('title', $terms)->pluck('title')->all();
+        // Titles live in term_translations, so each one is looked up through the translation
+        $titles = array_unique(array_filter(
+            array_map(fn ($title) => trim((string) $title), $terms),
+            fn ($title) => $title !== ''
+        ));
 
-            if ( ! is_array($found)) {
-                $found = [];
-            }
-
-            foreach (array_diff($terms, $found) as $title) {
-                if (Term::where('title', $title)->first()) {
-                    continue;
-                }
-
-                $term        = new Term;
-                $term->title = $title;
-                $term->save();
-            }
+        foreach ($titles as $title) {
+            Term::firstOrCreateByTitle($title);
         }
     }
 
@@ -52,12 +44,13 @@ class TaxonomyHelper
     public static function createTaxonomies(array $terms, $taxonomy, $parent = 0, $order = 0)
     {
         if (count($terms) > 0) {
-            // only keep terms with existing entries in terms table
-            $terms = Term::whereIn('title', $terms)->pluck('title')->all();
-
-            // create taxonomy entries for given terms
-            foreach ($terms as $term) {
-                $term_id = Term::where('title', $term)->first()->id;
+            // create taxonomy entries for the given terms that exist (titles are translated)
+            foreach ($terms as $title) {
+                $term = Term::whereTranslation('title', trim((string) $title))->first();
+                if ($term === null) {
+                    continue;
+                }
+                $term_id = $term->id;
 
                 if (Taxonomy::where('taxonomy', $taxonomy)->where('term_id', $term_id)->first()) {
                     // ->where('sort', $order)->first()

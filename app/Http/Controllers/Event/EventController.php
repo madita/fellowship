@@ -468,14 +468,13 @@ class EventController extends Controller
 
                         foreach ($json[$item->name] as $index => $termItem) {
                             if (is_string($termItem)) {
-                                $term = Term::where('title', $termItem)->first();
+                                // Creates the term (its title is translated) and links it to
+                                // this field's taxonomy when either is missing.
+                                TaxonomyHelper::createTaxables($termItem, $item->options, $parentId);
+                                $term = Term::whereTranslation('title', $termItem)->first();
 
-                                if ($term !== null) {
-                                    $taxonomy = Taxonomy::where('taxonomy', $item->options)
-                                        ->where('term_id', $term->id)->get();
-                                } else {
-                                    $taxonomy = TaxonomyHelper::createTaxables($termItem, $item->options, $parentId);
-                                    $term     = Term::find($taxonomy->term_id);
+                                if ($term === null) {
+                                    continue;
                                 }
 
                                 $jsonTerm = [
