@@ -648,6 +648,7 @@ export default {
         'adminMedia': 'Media Center',
         'adminTickets': 'Tickets',
         'adminPolls': 'Polls',
+        'adminRelations': 'Related content',
         'adminTranslations': 'Translations',
         'adminDashboard': 'Dashboard',
         'myTickets': 'My Tickets'
@@ -5034,14 +5035,74 @@ export default {
         'deletionError': 'Error deleting account. Please try again.'
     },
     'relatedContent': {
-        'title': 'Relate Content',
-        'selectRelationType': 'Select the type of relation for',
-        'relationType': 'Relation Type',
-        'selectSourceType': 'Select source type',
-        'selectItem': 'Select Item',
-        'selectAnItem': 'Select an item',
-        'modelType': 'Model Type',
-        'selectModelType': 'Select model type'
+        'kinds': {
+            'wiki': 'Wiki page',
+            'page': 'Page',
+            'post': 'Post',
+            'event': 'Event',
+            'collection': 'Album'
+        },
+        'kindsPlural': {
+            'wiki': 'Wiki pages',
+            'page': 'Pages',
+            'post': 'Posts',
+            'event': 'Events',
+            'collection': 'Albums'
+        },
+        'dialog': {
+            'title': 'Link content',
+            'linking': 'Linking:',
+            'pickSource': 'First choose the content you want to link from.',
+            'changeSource': 'Change',
+            'search': 'Search by title…',
+            'selected': 'Selected ({n})',
+            'alreadyLinked': 'Already linked',
+            'noResults': 'Nothing found',
+            'noResultsHint': 'Try another search term or content type.',
+            'link': 'Link | Link {count} item | Link {count} items',
+            'linked': '{count} item linked. | {count} items linked.'
+        },
+        'list': {
+            'title': 'Related content',
+            'link': 'Link content',
+            'unlink': 'Unlink',
+            'unlinkTitle': 'Remove link?',
+            'confirmUnlink': 'Unlink "{title}"? The content itself stays untouched.',
+            'empty': 'Nothing linked yet',
+            'emptyHint': 'Link wiki pages, pages, posts, events or albums that belong with this.',
+            'loadError': 'Related content could not be loaded',
+            'retry': 'Try again',
+            'linksHere': 'Links to this'
+        },
+        'admin': {
+            'title': 'Related content',
+            'subtitle': 'Links between wiki pages, pages, posts, events and albums',
+            'linkContent': 'Link content',
+            'stats': {
+                'total': 'Links',
+                'recent_7d': 'New in the last 7 days'
+            },
+            'mostLinked': 'Most linked',
+            'mostLinkedEmpty': 'Nothing linked yet',
+            'linksCount': '{count} link | {count} links',
+            'pairs': 'Kind pairs',
+            'pairsEmpty': 'No links yet',
+            'filters': {
+                'search': 'Search titles…',
+                'kind': 'Content type',
+                'all': 'All types',
+                'reset': 'Reset filters'
+            },
+            'headers': {
+                'source': 'Source',
+                'related': 'Linked to',
+                'created': 'Created'
+            },
+            'empty': 'No links yet',
+            'emptyHint': 'Use "Link content" to connect two pieces of content.',
+            'emptyFiltered': 'No links match these filters',
+            'confirmUnlink': 'Remove the link between "{source}" and "{related}"? The content itself stays untouched.'
+        }
     },
     'wiki': {
         'title': 'Knowledge Base',

@@ -301,16 +301,14 @@ Route::prefix('sandbox')->group(function () {
     }); // sandbox.enabled
 });
 
-Route::get('/models', [RelateableController::class, 'getModels']);
-Route::get('/source-models', [RelateableController::class, 'getSourceModels']);
-Route::get('/model-items', [RelateableController::class, 'getModelItems']);
-// Relateable System (Link any content to any content)
-Route::get('/source-models', [RelateableController::class, 'getSourceModels']); // Get models that can be sources
-Route::get('/models', [RelateableController::class, 'getModels']); // Get all relateable models
-Route::get('/model-items', [RelateableController::class, 'getModelItems']); // Get items of a specific model
-Route::post('/relate-models', [RelateableController::class, 'relateModels']); // Create relationship
-Route::delete('/unrelate-models', [RelateableController::class, 'unrelateModels']); // Remove relationship
-Route::post('/related-items', [RelateableController::class, 'getRelatedItems']); // Get related items for a model
+// Related content (links between wiki pages, pages, posts, events and albums)
+Route::prefix('relateable')->group(function () {
+    Route::get('/kinds', [RelateableController::class, 'kinds']);
+    Route::get('/items', [RelateableController::class, 'items']);
+    Route::get('/related', [RelateableController::class, 'related']);
+    Route::post('/relations', [RelateableController::class, 'store'])->middleware('auth:sanctum');
+    Route::delete('/relations', [RelateableController::class, 'destroy'])->middleware('auth:sanctum');
+});
 
 Route::get('/common/items', [CommonController::class, 'getItems']);
 
@@ -388,6 +386,11 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     Route::patch('/polls/{poll}/close', 'App\Http\Controllers\Admin\PollAdminController@close');
     Route::patch('/polls/{poll}/reopen', 'App\Http\Controllers\Admin\PollAdminController@reopen');
     Route::delete('/polls/{poll}', 'App\Http\Controllers\Admin\PollAdminController@destroy');
+
+    // Related content
+    Route::get('/relations', 'App\Http\Controllers\Admin\RelationAdminController@index');
+    Route::get('/relations/stats', 'App\Http\Controllers\Admin\RelationAdminController@stats');
+    Route::delete('/relations', 'App\Http\Controllers\Admin\RelationAdminController@destroy');
 
     // Settings
     Route::get('/settings', 'App\Http\Controllers\Admin\SettingsController@index');

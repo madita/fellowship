@@ -42,6 +42,15 @@ export const admin = [{
     },
     component: () => import(/* webpackChunkName: "admin-migrations" */ '@/pages/admin/MigrationDashboard.vue')
 }, {
+    path: '/admin/related-content',
+    name: 'admin-relations',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-relations" */ '@/pages/admin/RelationsDashboard.vue')
+}, {
     path: '/admin/posts',
     name: 'admin-posts',
     meta: {

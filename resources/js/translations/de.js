@@ -648,6 +648,7 @@ export default {
         'adminMedia': 'Mediencenter',
         'adminTickets': 'Tickets',
         'adminPolls': 'Umfragen',
+        'adminRelations': 'Verwandte Inhalte',
         'adminTranslations': 'Übersetzungen',
         'adminDashboard': 'Dashboard',
         'myTickets': 'Meine Tickets'
@@ -5193,14 +5194,74 @@ export default {
         'deletionError': 'Fehler beim Löschen des Kontos. Bitte versuchen Sie es erneut.'
     },
     'relatedContent': {
-        'title': 'Inhalt verknüpfen',
-        'selectRelationType': 'Wählen Sie den Beziehungstyp für',
-        'relationType': 'Beziehungstyp',
-        'selectSourceType': 'Quelltyp auswählen',
-        'selectItem': 'Element auswählen',
-        'selectAnItem': 'Ein Element auswählen',
-        'modelType': 'Modelltyp',
-        'selectModelType': 'Modelltyp auswählen'
+        'kinds': {
+            'wiki': 'Wiki-Seite',
+            'page': 'Seite',
+            'post': 'Beitrag',
+            'event': 'Termin',
+            'collection': 'Album'
+        },
+        'kindsPlural': {
+            'wiki': 'Wiki-Seiten',
+            'page': 'Seiten',
+            'post': 'Beiträge',
+            'event': 'Termine',
+            'collection': 'Alben'
+        },
+        'dialog': {
+            'title': 'Inhalte verknüpfen',
+            'linking': 'Verknüpfen von:',
+            'pickSource': 'Wähle zuerst den Inhalt, von dem aus du verknüpfen möchtest.',
+            'changeSource': 'Ändern',
+            'search': 'Nach Titel suchen…',
+            'selected': 'Ausgewählt ({n})',
+            'alreadyLinked': 'Bereits verknüpft',
+            'noResults': 'Nichts gefunden',
+            'noResultsHint': 'Probier einen anderen Suchbegriff oder Inhaltstyp.',
+            'link': 'Verknüpfen | {count} Eintrag verknüpfen | {count} Einträge verknüpfen',
+            'linked': '{count} Eintrag verknüpft. | {count} Einträge verknüpft.'
+        },
+        'list': {
+            'title': 'Verwandte Inhalte',
+            'link': 'Inhalte verknüpfen',
+            'unlink': 'Verknüpfung lösen',
+            'unlinkTitle': 'Verknüpfung entfernen?',
+            'confirmUnlink': 'Verknüpfung mit „{title}“ lösen? Der Inhalt selbst bleibt erhalten.',
+            'empty': 'Noch nichts verknüpft',
+            'emptyHint': 'Verknüpfe Wiki-Seiten, Seiten, Beiträge, Termine oder Alben, die hierzu gehören.',
+            'loadError': 'Verwandte Inhalte konnten nicht geladen werden',
+            'retry': 'Nochmal versuchen',
+            'linksHere': 'Verweist hierher'
+        },
+        'admin': {
+            'title': 'Verwandte Inhalte',
+            'subtitle': 'Verknüpfungen zwischen Wiki-Seiten, Seiten, Beiträgen, Terminen und Alben',
+            'linkContent': 'Inhalte verknüpfen',
+            'stats': {
+                'total': 'Verknüpfungen',
+                'recent_7d': 'Neu in den letzten 7 Tagen'
+            },
+            'mostLinked': 'Am häufigsten verknüpft',
+            'mostLinkedEmpty': 'Noch nichts verknüpft',
+            'linksCount': '{count} Verknüpfung | {count} Verknüpfungen',
+            'pairs': 'Typ-Paare',
+            'pairsEmpty': 'Noch keine Verknüpfungen',
+            'filters': {
+                'search': 'Titel durchsuchen…',
+                'kind': 'Inhaltstyp',
+                'all': 'Alle Typen',
+                'reset': 'Filter zurücksetzen'
+            },
+            'headers': {
+                'source': 'Quelle',
+                'related': 'Verknüpft mit',
+                'created': 'Erstellt'
+            },
+            'empty': 'Noch keine Verknüpfungen',
+            'emptyHint': 'Mit „Inhalte verknüpfen“ verbindest du zwei Inhalte miteinander.',
+            'emptyFiltered': 'Keine Verknüpfungen passen zu diesen Filtern',
+            'confirmUnlink': 'Verknüpfung zwischen „{source}“ und „{related}“ entfernen? Die Inhalte selbst bleiben erhalten.'
+        }
     },
     'wiki': {
         'title': 'Wissensdatenbank',

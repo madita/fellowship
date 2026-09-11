@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\CanHaveTaxonomies;
 use App\Traits\HasCache;
+use App\Traits\HasRelateableContent;
 use App\Traits\HasTaxonomies;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 class Post extends Model implements CanHaveTaxonomies, TranslatableContract
 {
     use HasCache;
+    use HasRelateableContent;
     use HasTaxonomies;
     use Sluggable;
     use Translatable;

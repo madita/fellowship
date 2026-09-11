@@ -104,6 +104,15 @@
                     </v-chip>
                 </div>
             </div>
+
+            <related-content-list
+                v-if="page.id && !showHistory && !showHistoryItem"
+                class="mt-8"
+                type="App\Models\Page"
+                :id="page.id"
+                :title="page.title || ''"
+                :can-edit="canLinkContent"
+            />
         </v-container>
     </div>
 </template>
@@ -111,9 +120,11 @@
 <script>
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
+import RelatedContentList from '@/components/common/RelatedContentList.vue';
+import { useUserStore } from '@/store/userStore.js';
 
 export default {
-    components: { PageHeader, EmptyState },
+    components: { PageHeader, EmptyState, RelatedContentList },
     data() {
         return {
             loading: true,
@@ -129,6 +140,14 @@ export default {
             parents:[],
             breadcrumbs: [],
         }
+    },
+
+    computed: {
+        // No per-item edit right on the frontend, so linking is for admins
+        canLinkContent() {
+            const userStore = useUserStore();
+            return !!userStore.user?.isAdmin || userStore.hasRole('admin');
+        },
     },
 
     methods: {

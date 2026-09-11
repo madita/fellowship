@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Contracts\CanHaveTaxonomies;
 use App\Traits\HasPolls;
 use App\Traits\HasCache;
+use App\Traits\HasRelateableContent;
 use App\Traits\HasTaxonomies;
 use App\Traits\Revisionable;
 // use Lecturize\Taxonomies\Traits\HasCategories;
@@ -19,6 +20,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Page extends Model implements CanHaveTaxonomies, HasMedia, TranslatableContract
 {
     use HasCache;
+    use HasRelateableContent;
     use HasPolls;
     use HasTaxonomies;
     use InteractsWithMedia;

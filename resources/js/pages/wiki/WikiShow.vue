@@ -123,6 +123,15 @@
                                 />
                             </v-card-text>
                         </v-card>
+
+                        <related-content-list
+                            v-if="wiki?.id && mode === 'edit'"
+                            class="mt-6"
+                            type="App\Models\Wiki"
+                            :id="wiki.id"
+                            :title="wikipage.title || ''"
+                            :can-edit="canLinkContent"
+                        />
                     </v-col>
 
                     <!-- Sidebar -->
@@ -222,6 +231,7 @@ import axios from 'axios'
 import { useDialog } from '@/composables/useDialog.js'
 import PageHeader from '@/components/common/PageHeader.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
+import RelatedContentList from '@/components/common/RelatedContentList.vue'
 
 const { t } = useI18n()
 const dialog = useDialog()
@@ -257,6 +267,12 @@ const approving = ref(false)
 const authenticated = computed(() => authStore.isLoggedIn)
 const user = computed(() => authStore.user)
 const isAdmin = computed(() => userStore.user?.isAdmin || false)
+// Same right as the wiki-edit route (manage-page); the API has the final say
+const canLinkContent = computed(() => {
+    if (!authStore.isLoggedIn || mode.value !== 'edit') return false
+    const permissions = userStore.permissions || []
+    return isAdmin.value || permissions.some(permission => (permission?.name ?? permission) === 'manage-page')
+})
 const pageSubtitle = computed(() => {
     if (mode.value !== 'edit') return ''
     const parts = [`${t('wiki.author')}: ${wikiuser.value?.username || t('wiki.anonymous')}`]

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Tag\Taxonomy;
+use App\Traits\HasRelateableContent;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
@@ -15,6 +16,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class Collection extends Model implements HasMedia, TranslatableContract
 {
     use HasFactory;
+    use HasRelateableContent;
     use InteractsWithMedia;
     use Sluggable;
     use Translatable;

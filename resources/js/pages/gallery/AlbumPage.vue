@@ -94,6 +94,15 @@
                 :title="$t('gallery.noImages')"
                 :text="$t('gallery.noImagesText')"
             />
+
+            <related-content-list
+                v-if="album?.id"
+                class="mt-8"
+                type="App\Models\Collection"
+                :id="album.id"
+                :title="album.name || ''"
+                :can-edit="canLinkContent"
+            />
         </v-container>
     </div>
 </template>
@@ -109,9 +118,14 @@ import FileUploader from '@/components/common/FileUploader.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
+import RelatedContentList from '@/components/common/RelatedContentList.vue';
+import { useUserStore } from '@/store/userStore.js';
 
 const { t } = useI18n();
 const dialog = useDialog();
+const userStore = useUserStore();
+// Albums have no per-album edit right on the frontend, so linking is for admins
+const canLinkContent = computed(() => !!userStore.user?.isAdmin || userStore.hasRole('admin'));
 const route = useRoute();
 const album = ref(null);
 const loading = ref(true);

@@ -38,15 +38,26 @@
                     </v-chip>
                 </div>
             </div>
+
+            <related-content-list
+                v-if="post.id"
+                class="mt-8"
+                type="App\Models\Post"
+                :id="post.id"
+                :title="post.title || ''"
+                :can-edit="canLinkContent"
+            />
         </v-container>
     </div>
 </template>
 
 <script>
 import PageHeader from '@/components/common/PageHeader.vue';
+import RelatedContentList from '@/components/common/RelatedContentList.vue';
+import { useUserStore } from '@/store/userStore.js';
 
 export default {
-    components: { PageHeader },
+    components: { PageHeader, RelatedContentList },
     data() {
         return {
             loading: true,
@@ -55,6 +66,14 @@ export default {
             taxonomies: {},
             slug:""
         }
+    },
+
+    computed: {
+        // No per-item edit right on the frontend, so linking is for admins
+        canLinkContent() {
+            const userStore = useUserStore();
+            return !!userStore.user?.isAdmin || userStore.hasRole('admin');
+        },
     },
 
     methods: {

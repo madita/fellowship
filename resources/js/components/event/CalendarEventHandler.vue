@@ -16,7 +16,7 @@ import { useCalendarStore } from '@/store/calendarStore.js';
 import { useDialog } from '@/composables/useDialog.js';
 import ProfileDialog from '../common/ProfileDialog.vue';
 import DetailsDialog from '../common/DetailsDialog.vue';
-import RelatedContent from '../common/RelatedContent.vue';
+import RelatedContentList from '../common/RelatedContentList.vue';
 import { useUserStore } from "@/store/userStore.js";
 import { useSettingsStore } from "@/store/settingStore.js";
 import { useDateFormat } from '@/plugins/formatDate.js';
@@ -42,7 +42,6 @@ const dialog = useDialog();
 
 const selectedStatus = ref(null);
 const showProfileDialog = ref(false);
-const showRelateContentDialog = ref(false);
 const showDetailsDialog = ref(false);
 const guestResponses = ref({});
 
@@ -72,7 +71,8 @@ const isStartDateValid = ref(true);
 const isEndDateValid = ref(true);
 const profileAnswer = ref(null);
 
-const relatedItems = ref([]);
+// Related content section; its "Link content" dialog also opens from the header
+const relatedListRef = ref(null);
 // RSVP answer currently being sent (null when idle)
 const answering = ref(null);
 // Guest whose approval/rejection request is in flight (null when idle)
@@ -92,7 +92,6 @@ watch(
             : null;
         if (localEvent.value?.id) {
             getEvent(localEvent.value.id);
-            fetchRelatedItems('App\\Models\\Event\\Event', localEvent.value.id);
         }
     },
     { immediate: true }
@@ -162,6 +161,16 @@ const eventType = computed(() => {
 
 const user = computed(() => {
     return userStore.user || { id: null };
+});
+
+// Same rule as EventController@update: the owner, or anyone with manage-posts.
+const canEditEvent = computed(() => {
+    if (!localEvent.value?.id || !user.value.id) return false;
+    const ownerId = localEvent.value.extendedProps?.user_id ?? localEvent.value.user_id;
+    const permissions = userStore.permissions || [];
+    return ownerId === user.value.id
+        || !!userStore.user?.isAdmin
+        || permissions.some(permission => (permission?.name ?? permission) === 'manage-posts');
 });
 
 const resetEvent = () => {
@@ -239,17 +248,6 @@ const getEvent = async (eventId) => {
         console.error('Failed to load event details:', err);
     } finally {
         loadEventDetails.value = false;
-    }
-};
-
-const fetchRelatedItems = async (model, eventId) => {
-    try {
-        const response = await axios.post('/api/related-items', {
-            modelType: model, modelId: eventId,
-        });
-        relatedItems.value = response.data.items;
-    } catch (error) {
-        console.error('Failed to fetch related items:', error);
     }
 };
 
@@ -486,10 +484,6 @@ const handleProfile = (isConfirmed) => {
     }
 };
 
-const handleRelationConfirmed = (relation) => {
-    // Handle the relation
-};
-
 const formatDateRange = computed(() => {
     if (!localEvent.value) return '';
 
@@ -678,12 +672,14 @@ onMounted(() => {
                     />
 
                     <v-btn
+                        v-if="canEditEvent"
                         icon="mdi-link-variant"
                         variant="text"
                         color="primary"
                         density="comfortable"
-                        @click="showRelateContentDialog = true"
-                        :title="$t('events.relatedContent')"
+                        @click="relatedListRef?.openDialog()"
+                        :title="$t('relatedContent.list.link')"
+                        :aria-label="$t('relatedContent.list.link')"
                     />
 
                     <v-btn
@@ -1111,46 +1107,16 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Related Content Section -->
-                <v-card flat rounded="lg" v-if="relatedItems.length > 0">
-                    <v-card-text>
-                        <h3 class="text-h6 mb-3">{{ $t('events.relatedContent') }}</h3>
-
-                        <div class="related-items-grid">
-                            <v-card
-                                v-for="item in relatedItems"
-                                :key="item.id"
-                                class="related-item-card"
-                                elevation="2"
-                                rounded="lg"
-                                :to="`/gallery/${item.related.slug}`"
-                            >
-                                <v-img
-                                    v-if="item.related.coverImage"
-                                    :src="item.related.coverImage"
-                                    height="140"
-                                    cover
-                                    class="related-item-image"
-                                ></v-img>
-                                <v-img
-                                    v-else
-                                    src="https://via.placeholder.com/300x140"
-                                    height="140"
-                                    cover
-                                    class="related-item-image"
-                                ></v-img>
-
-                                <v-card-text class="pa-3">
-                                    <h4 class="text-subtitle-1 font-weight-medium text-truncate mb-1">
-                                        {{ item.related.title }}
-                                    </h4>
-                                    <p class="text-caption text-medium-emphasis text-truncate">
-                                        {{ item.related.description || $t('events.relatedContent') }}
-                                    </p>
-                                </v-card-text>
-                            </v-card>
-                        </div>
-                    </v-card-text>
-                </v-card>
+                <related-content-list
+                    v-if="localEvent?.id"
+                    ref="relatedListRef"
+                    class="pa-4"
+                    type="App\Models\Event\Event"
+                    :id="localEvent.id"
+                    :title="localEvent.title"
+                    :can-edit="canEditEvent"
+                    compact
+                />
             </div>
         </PerfectScrollbar>
     </VNavigationDrawer>
@@ -1163,14 +1129,6 @@ onMounted(() => {
         :is-going="isGoing"
         :answer="profileAnswer"
         :resolve="handleProfile"
-    />
-
-    <RelatedContent
-        v-model="showRelateContentDialog"
-        :contentName="$t('events.currentEvent')"
-        initialSourceType="App\Models\Event\Event"
-        :initialSourceItem="String(localEvent?.id)"
-        @confirmRelation="handleRelationConfirmed"
     />
 
     <DetailsDialog
@@ -1206,26 +1164,6 @@ onMounted(() => {
     max-width: 120px;
     font-weight: 500;
     letter-spacing: 0.5px;
-}
-
-.related-items-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 12px;
-}
-
-.related-item-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.related-item-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(var(--v-theme-on-surface), 0.1) !important;
-}
-
-.related-item-image {
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
 }
 
 .pending-guest-item {
