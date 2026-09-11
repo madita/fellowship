@@ -122,6 +122,19 @@ class PageController extends DataTableController
             'sign_in_only' => 'checkbox', ];
     }
 
+    /**
+     * published / sign_in_only are integer flags in the pages table.
+     */
+    public function getColumnTypes(): array
+    {
+        return [
+            'published'    => 'boolean',
+            'sign_in_only' => 'boolean',
+            'created_at' => 'date',
+            'updated_at' => 'date',
+        ];
+    }
+
     public function getToggleFilters()
     {
         return [

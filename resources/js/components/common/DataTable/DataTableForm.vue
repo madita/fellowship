@@ -8,6 +8,8 @@ import Tiptap from "@/components/common/tiptap/Tiptap.vue";
 import DataTableJson from "@/components/common/DataTable/DataTableJson.vue";
 import DataTableModel from "@/components/common/DataTable/DataTableModel.vue";
 import DataTableTaxonomy from "@/components/common/DataTable/DataTableTaxonomy.vue";
+import { fieldLabel } from '@/utils/dataTableCells.js';
+import DataTableRelation from '@/components/common/DataTable/DataTableRelation.vue';
 
 const { t } = useI18n();
 
@@ -38,6 +40,9 @@ const props = defineProps({
         default: false
     }
 });
+
+// Readable field labels: column_map, then the header title, then the humanised key
+const labelFor = (column) => fieldLabel(column, { columnMap: props.response?.column_map, headers: props.response?.headers });
 
 // 👉 Emits
 const emit = defineEmits([
@@ -364,7 +369,7 @@ onMounted(() => {
                                             v-if="'select' in response.column_fields[column]"
                                             :items="response.column_fields[column]['select']"
                                             v-model="editedItem[column]"
-                                            :label="column"
+                                            :label="labelFor(column)"
                                             :readonly="!localEditMode"
                                             variant="outlined"
                                             density="compact"
@@ -384,7 +389,7 @@ onMounted(() => {
                                         <!-- Textarea -->
                                         <VTextarea
                                             v-if="response.column_fields?.[column] === 'textarea'"
-                                            :label="column"
+                                            :label="labelFor(column)"
                                             v-model="editedItem[column]"
                                             :readonly="!localEditMode"
                                             variant="outlined"
@@ -406,7 +411,7 @@ onMounted(() => {
                                             v-else-if="response.column_fields?.[column] === 'checkbox'"
                                             :model-value="!!editedItem[column]"
                                             @update:modelValue="editedItem[column] = $event ? 1 : 0"
-                                            :label="column"
+                                            :label="labelFor(column)"
                                             :readonly="!localEditMode"
                                             density="compact"
                                         />
@@ -442,7 +447,7 @@ onMounted(() => {
                                         <VTextField
                                             v-else
                                             v-model="editedItem[column]"
-                                            :label="column"
+                                            :label="labelFor(column)"
                                             :readonly="!localEditMode"
                                             variant="outlined"
                                             density="compact"
@@ -504,6 +509,18 @@ onMounted(() => {
                             </VCol>
                         </VRow>
                     </VForm>
+
+                    <!-- Related records of this item, e.g. a user's event profiles -->
+                    <template v-if="item.id && response.relations?.length">
+                        <VDivider class="my-6" />
+                        <DataTableRelation
+                            v-for="relation in response.relations"
+                            :key="`${relation.key}-${item.id}`"
+                            :relation="relation"
+                            :item-id="item.id"
+                            class="mb-6"
+                        />
+                    </template>
 
                     <!-- View Mode Actions -->
                     <VRow v-if="!localEditMode && item.id">

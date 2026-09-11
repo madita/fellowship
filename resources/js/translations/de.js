@@ -1400,7 +1400,19 @@ export default {
         'other': 'niemand | {n} anderer | {n} andere'
     },
     'dataTable': {
-        'search': 'Suchen',
+        'relation': {
+            'empty': 'Noch nichts vorhanden',
+            'loadFailed': 'Die Liste konnte nicht geladen werden',
+            'noDetails': 'Keine Profilangaben',
+            'open': 'Öffnen',
+            'status': {
+                'approved': 'Bestätigt',
+                'pending': 'Wartet auf Bestätigung'
+            }
+        },
+        'relations': {
+            'event_profiles': 'Termin-Profile'
+        },
         'searchPlaceholder': 'Suchen...',
         'noData': 'Keine Daten verfügbar',
         'noResults': 'Keine passenden Einträge gefunden',
@@ -1419,7 +1431,6 @@ export default {
         'sortDesc': 'Absteigend sortieren',
         'filter': 'Filtern',
         'filters': 'Filter',
-        'clearFilter': 'Filter löschen',
         'export': 'Exportieren',
         'refresh': 'Aktualisieren',
         'columns': 'Spalten',
@@ -1427,11 +1438,9 @@ export default {
         'compact': 'Kompakt',
         'comfortable': 'Komfortabel',
         'spacious': 'Geräumig',
-        'operators': 'Operatoren',
         'searchValue': 'Suchwert',
         'newItem': 'Neuer Eintrag',
         'editItem': 'Eintrag bearbeiten',
-        'quickSearch': 'Schnellsuche',
         'list': 'Liste',
         'viewItem': 'Eintrag ansehen',
         'deleteConfirm': 'Möchten Sie diesen Eintrag wirklich löschen?',
@@ -1447,6 +1456,24 @@ export default {
         'operatorLessThan': '<',
         'operatorGreaterThanOrEqual': '>=',
         'operatorLessThanOrEqual': '<=',
+        'searchAll': 'In allen Spalten suchen',
+        'advancedFilter': 'Erweiterter Filter',
+        'column': 'Spalte',
+        'operator': 'Operator',
+        'apply': 'Anwenden',
+        'activeFilters': 'Aktive Filter',
+        'searchChip': 'Suche: {term}',
+        'removeFilter': 'Filter entfernen',
+        'clearAll': 'Alle entfernen',
+        'clearFilters': 'Filter zurücksetzen',
+        'clearSelection': 'Auswahl aufheben',
+        'deleteSelected': 'Ausgewählte löschen',
+        'quickEdit': 'Schnellbearbeitung',
+        'moreActions': 'Weitere Aktionen',
+        'showAllColumns': 'Alle anzeigen',
+        'entries': 'keine Einträge | {n} Eintrag | {n} Einträge',
+        'noResultsHint': 'Versuchen Sie einen anderen Suchbegriff oder setzen Sie die Filter zurück.',
+        'loadError': 'Die Tabelle konnte nicht geladen werden.',
         'taxonomy': {
             'searchOrCreate': 'Tippen, um zu suchen oder {label} neu anzulegen',
             'enterToAdd': 'Eingabetaste drücken, um einen neuen Eintrag hinzuzufügen',
@@ -3827,7 +3854,13 @@ export default {
     },
     '$vuetify': {
         'badge': 'Abzeichen',
+        'open': 'Öffnen',
         'close': 'Schließen',
+        'dismiss': 'Verwerfen',
+        'confirmEdit': {
+            'ok': 'OK',
+            'cancel': 'Abbrechen'
+        },
         'dataIterator': {
             'noResultsText': 'Keine übereinstimmenden Einträge gefunden',
             'loadingText': 'Elemente werden geladen...'
@@ -3853,8 +3886,20 @@ export default {
             'lastPage': 'Letzte Seite',
             'pageText': '{0}-{1} von {2}'
         },
+        'dateRangeInput': {
+            'divider': 'bis'
+        },
         'datePicker': {
             'itemsSelected': '{0} ausgewählt',
+            'range': {
+                'title': 'Daten auswählen',
+                'header': 'Daten eingeben'
+            },
+            'title': 'Datum auswählen',
+            'header': 'Datum eingeben',
+            'input': {
+                'placeholder': 'Datum eingeben'
+            },
             'nextMonthAriaLabel': 'Nächster Monat',
             'nextYearAriaLabel': 'Nächstes Jahr',
             'prevMonthAriaLabel': 'Vorheriger Monat',
@@ -3869,24 +3914,67 @@ export default {
             }
         },
         'calendar': {
-            'moreEvents': '{0} weitere'
+            'moreEvents': '{0} weitere',
+            'today': 'Heute'
+        },
+        'input': {
+            'clear': '{0} leeren',
+            'prependAction': '{0} vorangestellte Aktion',
+            'appendAction': '{0} angehängte Aktion',
+            'otp': 'Bitte OTP-Zeichen {0} eingeben'
         },
         'fileInput': {
             'counter': '{0} Dateien',
             'counterSize': '{0} Dateien (insgesamt {1})'
         },
+        'fileUpload': {
+            'title': 'Datei hier ablegen',
+            'divider': 'oder',
+            'browse': 'Dateien durchsuchen'
+        },
         'timePicker': {
             'am': 'AM',
-            'pm': 'PM'
+            'pm': 'PM',
+            'title': 'Uhrzeit auswählen'
         },
         'pagination': {
             'ariaLabel': {
-                'wrapper': 'Seitennavigation',
+                'root': 'Seitennavigation',
                 'next': 'Nächste Seite',
                 'previous': 'Vorherige Seite',
                 'page': 'Gehe zu Seite {0}',
-                'currentPage': 'Aktuelle Seite, Seite {0}'
+                'currentPage': 'Aktuelle Seite, Seite {0}',
+                'first': 'Erste Seite',
+                'last': 'Letzte Seite',
+                'wrapper': 'Seitennavigation'
             }
+        },
+        'stepper': {
+            'next': 'Weiter',
+            'prev': 'Zurück'
+        },
+        'rating': {
+            'ariaLabel': {
+                'item': 'Bewertung {0} von {1}'
+            }
+        },
+        'loading': 'Laden...',
+        'infiniteScroll': {
+            'loadMore': 'Mehr laden',
+            'empty': 'Nichts weiteres'
+        },
+        'rules': {
+            'required': 'Dieses Feld ist erforderlich',
+            'email': 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
+            'number': 'Dieses Feld darf nur Zahlen enthalten',
+            'integer': 'Dieses Feld darf nur Ganzzahlen enthalten',
+            'capital': 'Dieses Feld darf nur Großbuchstaben enthalten',
+            'maxLength': 'Sie dürfen maximal {0} Zeichen eingeben',
+            'minLength': 'Sie müssen mindestens {0} Zeichen eingeben',
+            'strictLength': 'Die Länge des eingegebenen Feldes ist ungültig',
+            'exclude': 'Das Zeichen {0} ist nicht erlaubt',
+            'notEmpty': 'Bitte wählen Sie mindestens einen Wert aus',
+            'pattern': 'Ungültiges Format'
         }
     },
     'blog': {

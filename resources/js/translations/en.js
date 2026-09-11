@@ -1453,7 +1453,19 @@ export default {
         'other': 'no one | {n} other | {n} others'
     },
     'dataTable': {
-        'search': 'Search',
+        'relation': {
+            'empty': 'Nothing here yet',
+            'loadFailed': 'Could not load this list',
+            'noDetails': 'No profile answers',
+            'open': 'Open',
+            'status': {
+                'approved': 'Approved',
+                'pending': 'Waiting for approval'
+            }
+        },
+        'relations': {
+            'event_profiles': 'Event profiles'
+        },
         'searchPlaceholder': 'Search...',
         'noData': 'No data available',
         'noResults': 'No matching records found',
@@ -1472,7 +1484,6 @@ export default {
         'sortDesc': 'Sort descending',
         'filter': 'Filter',
         'filters': 'Filters',
-        'clearFilter': 'Clear filter',
         'export': 'Export',
         'refresh': 'Refresh',
         'columns': 'Columns',
@@ -1480,11 +1491,9 @@ export default {
         'compact': 'Compact',
         'comfortable': 'Comfortable',
         'spacious': 'Spacious',
-        'operators': 'Operators',
         'searchValue': 'Search value',
         'newItem': 'New Item',
         'editItem': 'Edit Item',
-        'quickSearch': 'Quick Search',
         'list': 'List',
         'viewItem': 'View Item',
         'deleteConfirm': 'Are you sure you want to delete this item?',
@@ -1500,6 +1509,24 @@ export default {
         'operatorLessThan': '<',
         'operatorGreaterThanOrEqual': '>=',
         'operatorLessThanOrEqual': '<=',
+        'searchAll': 'Search all columns',
+        'advancedFilter': 'Advanced filter',
+        'column': 'Column',
+        'operator': 'Operator',
+        'apply': 'Apply',
+        'activeFilters': 'Active filters',
+        'searchChip': 'Search: {term}',
+        'removeFilter': 'Remove filter',
+        'clearAll': 'Clear all',
+        'clearFilters': 'Clear filters',
+        'clearSelection': 'Clear selection',
+        'deleteSelected': 'Delete selected',
+        'quickEdit': 'Quick edit',
+        'moreActions': 'More actions',
+        'showAllColumns': 'Show all',
+        'entries': 'no entries | {n} entry | {n} entries',
+        'noResultsHint': 'Try a different search term or clear the filters.',
+        'loadError': 'The table could not be loaded.',
         'taxonomy': {
             'searchOrCreate': 'Type to search or create a new {label}',
             'enterToAdd': 'Press Enter to add a new entry',
@@ -3668,7 +3695,13 @@ export default {
     },
     '$vuetify': {
         'badge': 'Badge',
+        'open': 'Open',
         'close': 'Close',
+        'dismiss': 'Dismiss',
+        'confirmEdit': {
+            'ok': 'OK',
+            'cancel': 'Cancel'
+        },
         'dataIterator': {
             'noResultsText': 'No matching records found',
             'loadingText': 'Loading items...'
@@ -3694,8 +3727,20 @@ export default {
             'lastPage': 'Last page',
             'pageText': '{0}-{1} of {2}'
         },
+        'dateRangeInput': {
+            'divider': 'to'
+        },
         'datePicker': {
             'itemsSelected': '{0} selected',
+            'range': {
+                'title': 'Select dates',
+                'header': 'Enter dates'
+            },
+            'title': 'Select date',
+            'header': 'Enter date',
+            'input': {
+                'placeholder': 'Enter date'
+            },
             'nextMonthAriaLabel': 'Next month',
             'nextYearAriaLabel': 'Next year',
             'prevMonthAriaLabel': 'Previous month',
@@ -3710,24 +3755,67 @@ export default {
             }
         },
         'calendar': {
-            'moreEvents': '{0} more'
+            'moreEvents': '{0} more',
+            'today': 'Today'
+        },
+        'input': {
+            'clear': 'Clear {0}',
+            'prependAction': '{0} prepended action',
+            'appendAction': '{0} appended action',
+            'otp': 'Please enter OTP character {0}'
         },
         'fileInput': {
             'counter': '{0} files',
             'counterSize': '{0} files ({1} in total)'
         },
+        'fileUpload': {
+            'title': 'Drag and drop files here',
+            'divider': 'or',
+            'browse': 'Browse Files'
+        },
         'timePicker': {
             'am': 'AM',
-            'pm': 'PM'
+            'pm': 'PM',
+            'title': 'Select Time'
         },
         'pagination': {
             'ariaLabel': {
-                'wrapper': 'Pagination Navigation',
+                'root': 'Pagination Navigation',
                 'next': 'Next page',
                 'previous': 'Previous page',
                 'page': 'Goto Page {0}',
-                'currentPage': 'Current Page, Page {0}'
+                'currentPage': 'Current Page, Page {0}',
+                'first': 'First page',
+                'last': 'Last page',
+                'wrapper': 'Pagination Navigation'
             }
+        },
+        'stepper': {
+            'next': 'Next',
+            'prev': 'Previous'
+        },
+        'rating': {
+            'ariaLabel': {
+                'item': 'Rating {0} of {1}'
+            }
+        },
+        'loading': 'Loading...',
+        'infiniteScroll': {
+            'loadMore': 'Load more',
+            'empty': 'No more'
+        },
+        'rules': {
+            'required': 'This field is required',
+            'email': 'Please enter a valid email',
+            'number': 'This field can only contain numbers',
+            'integer': 'This field can only contain integer values',
+            'capital': 'This field can only contain uppercase letters',
+            'maxLength': 'You must enter a maximum of {0} characters',
+            'minLength': 'You must enter a minimum of {0} characters',
+            'strictLength': 'The length of the entered field is invalid',
+            'exclude': 'The {0} character is not allowed',
+            'notEmpty': 'Please choose at least one value',
+            'pattern': 'Invalid format'
         }
     },
     'blog': {

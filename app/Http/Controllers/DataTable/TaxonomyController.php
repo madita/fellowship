@@ -52,6 +52,18 @@ class TaxonomyController extends DataTableController
             'parent_id'   => 'parent', ];
     }
 
+    /**
+     * color is a TEXT column holding a short colour value, not long text.
+     */
+    public function getColumnTypes(): array
+    {
+        return [
+            'color' => 'text',
+            'created_at' => 'date',
+            'updated_at' => 'date',
+        ];
+    }
+
     public function getDisplayableColumns()
     {
         return [

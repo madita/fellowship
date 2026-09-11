@@ -223,6 +223,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');
     //    Route::get('datatable/pages/categories/{taxonomy}', 'App\Http\Controllers\DataTable\PageController@getCategories');
     Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\PostController');
+    Route::get('datatable/users/{id}/event-profiles', 'App\Http\Controllers\DataTable\UserController@eventProfiles');
     Route::resource('datatable/users', 'App\Http\Controllers\DataTable\UserController');
     Route::resource('datatable/roles', 'App\Http\Controllers\DataTable\RoleController');
     Route::resource('datatable/taxonomies', 'App\Http\Controllers\DataTable\TaxonomyController');

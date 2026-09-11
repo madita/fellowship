@@ -15,7 +15,8 @@ import * as labs from 'vuetify/labs/components';
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 import i18n from './vue-i18n';
-import config from '../configs';
+import { useI18n } from 'vue-i18n';
+import { createVueI18nAdapter } from 'vuetify/locale/adapters/vue-i18n';
 
 // Get colors and font from localStorage if available (settings may have been cached)
 function getThemeColors() {
@@ -175,9 +176,10 @@ const vuetify = createVuetify({
             },
         },
     },
-    lang: {
-        current: config.locales.locale,
-        t: (key, ...params) => i18n.t(key, params),
+    // Vuetify's own texts ($vuetify.* in translations/{en,de}.js) come from vue-i18n and
+    // follow its locale. Positional params arrive as a list, so those messages use {0}, {1}.
+    locale: {
+        adapter: createVueI18nAdapter({ i18n, useI18n }),
     },
 });
 

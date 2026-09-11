@@ -83,7 +83,7 @@ const loadingRoles = ref(false);
 async function fetchRoles() {
     loadingRoles.value = true;
     try {
-        const response = await api.get('/datatable/roles');
+        const response = await api.get('/datatable/roles?per_page=100');
         const records = response.data?.data?.records;
         roles.value = Array.isArray(records) ? records : (records?.data || []);
     } catch (error) {

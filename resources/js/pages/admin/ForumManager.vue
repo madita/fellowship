@@ -315,9 +315,10 @@ export default {
 
         async fetchRoles() {
             try {
-                const response = await axios.get('/api/datatable/roles')
-                const records = response.data?.data?.records || []
-                this.roles = records.map(r => r.name)
+                const response = await axios.get('/api/datatable/roles', { params: { per_page: 100 } })
+                const records = response.data?.data?.records
+                // Paginated since the table rework; older responses were a plain array
+                this.roles = (Array.isArray(records) ? records : (records?.data || [])).map(r => r.name)
             } catch (error) {
                 console.error('Failed to load roles', error)
             }

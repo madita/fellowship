@@ -88,11 +88,20 @@ const getPage = () => {
     });
 };
 
-const getPages = () => {
-    return axios.get(`/api/datatable/pages?page=1&itemsPerPage=100000&pageStart=-1&pageStop=100000000&pageCount=-1&itemsLength=-1`).then((response) => {
-        pages.value = response.data.data.records.data;
+// Every page for the parent picker; the table API returns at most 100 per request
+const getPages = async () => {
+    const all = [];
+    try {
+        for (let page = 1, last = 1; page <= last && page <= 50; page++) {
+            const { data } = await axios.get('/api/datatable/pages', { params: { page, per_page: 100, sort_by: 'id', sort_dir: 'asc' } });
+            const records = data.data.records;
+            all.push(...(records.data || []));
+            last = records.last_page || 1;
+        }
+        pages.value = all;
+    } finally {
         loading.value = false;
-    });
+    }
 };
 
 const getTaxonomy = () => {
