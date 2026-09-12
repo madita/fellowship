@@ -1,17 +1,17 @@
 <template>
     <v-menu location="bottom end" transition="slide-y-transition" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
-            <v-badge
-                :content="unreadCount"
-                :model-value="unreadCount > 0"
-                color="error"
-                offset-x="2"
-                offset-y="2"
-            >
-                <v-btn icon variant="text" v-bind="props">
+            <v-btn icon variant="text" v-bind="props">
+                <!-- The badge sits on the icon, not the 48px button, so it stays close and inside the bar -->
+                <v-badge
+                    :content="unreadCount"
+                    :model-value="unreadCount > 0"
+                    color="error"
+                    max="99"
+                >
                     <v-icon>mdi-file-document-edit-outline</v-icon>
-                </v-btn>
-            </v-badge>
+                </v-badge>
+            </v-btn>
         </template>
 
         <v-card min-width="380" max-width="440">

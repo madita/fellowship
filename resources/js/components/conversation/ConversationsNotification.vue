@@ -2,16 +2,17 @@
     <v-menu location="bottom end" transition="slide-y-transition">
 
         <template v-slot:activator="{ props }">
-            <v-badge
-                :content="unreadCount"
-                :model-value="unreadCount > 0"
-                color="error"
-                offset-x="22"
-                offset-y="22"
-                v-bind="props"
-            >
-                <v-btn icon="mdi-message-outline" variant="text" />
-            </v-badge>
+            <v-btn icon variant="text" v-bind="props">
+                <!-- The badge sits on the icon, not the 48px button, so it stays close and inside the bar -->
+                <v-badge
+                    :content="unreadCount"
+                    :model-value="unreadCount > 0"
+                    color="error"
+                    max="99"
+                >
+                    <v-icon>mdi-message-outline</v-icon>
+                </v-badge>
+            </v-btn>
         </template>
 
         <!-- Conversations menu list -->

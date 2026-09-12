@@ -2,7 +2,7 @@
     <v-menu transition="slide-y-transition">
         <template v-slot:activator="{ props }">
             <v-btn icon variant="text" v-bind="props">
-                <v-badge color="success" offset-x="5" offset-y="5">
+                <v-badge color="success" dot location="bottom end" offset-x="4" offset-y="4">
                     <user-avatar :user="user"></user-avatar>
                 </v-badge>
             </v-btn>
