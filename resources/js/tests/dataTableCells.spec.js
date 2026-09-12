@@ -10,6 +10,7 @@ import {
     inferType,
     resolveType,
     describeCell,
+    describePublish,
     normalizeHeaders,
     fieldLabel,
     parseTableQuery,
@@ -130,6 +131,38 @@ describe('dataTableCells: describeCell', () => {
     });
 });
 
+describe('dataTableCells: publish state', () => {
+    const NOW = Date.parse('2026-06-15T12:00:00Z');
+    const header = { key: 'published_at', type: 'publish' };
+
+    it('treats a missing date as a draft, not as an empty cell', () => {
+        expect(describeCell(header, null, { now: NOW })).toEqual({ kind: 'publish', status: 'draft', value: null });
+        expect(describeCell(header, '', { now: NOW }).status).toBe('draft');
+    });
+
+    it('marks past dates published and future dates scheduled', () => {
+        expect(describeCell(header, '2026-06-14T12:00:00Z', { now: NOW }))
+            .toEqual({ kind: 'publish', status: 'published', value: '2026-06-14T12:00:00Z' });
+        expect(describeCell(header, '2026-06-16T12:00:00Z', { now: NOW }).status).toBe('scheduled');
+        expect(describeCell(header, '2026-06-14 12:00:00', { now: NOW }).status).toBe('published');
+    });
+
+    it('puts the exact boundary on the published side', () => {
+        expect(describePublish('2026-06-15T12:00:00Z', { now: NOW }).status).toBe('published');
+        expect(describePublish('2026-06-15T12:00:00.001Z', { now: NOW }).status).toBe('scheduled');
+    });
+
+    it('accepts Date objects and falls back to text when unparsable', () => {
+        expect(describePublish(new Date(NOW - 1000), { now: NOW }).status).toBe('published');
+        expect(describePublish('someday', { now: NOW })).toEqual({ kind: 'text', text: 'someday' });
+    });
+
+    it('uses the real clock when no now is given', () => {
+        expect(describeCell(header, '2000-01-01T00:00:00Z').status).toBe('published');
+        expect(describeCell(header, '2999-01-01T00:00:00Z').status).toBe('scheduled');
+    });
+});
+
 describe('dataTableCells: headers and labels', () => {
     it('normalizes the new header shape and keeps one trailing actions column', () => {
         const headers = normalizeHeaders([
@@ -150,6 +183,15 @@ describe('dataTableCells: headers and labels', () => {
         expect(headers[0]).toMatchObject({ key: 'created_at', title: 'Created at', sortable: false, align: 'start', type: null });
         expect(headers[1]).toMatchObject({ key: 'name', title: 'Display name', sortable: true });
         expect(headers[2].key).toBe('actions');
+    });
+
+    it('types a column that column_fields flags as a publication date', () => {
+        const headers = normalizeHeaders([
+            { key: 'published_at', title: 'Published at', type: 'datetime' },
+            { key: 'created_at', title: 'Created at', type: 'datetime' },
+        ], { actionsTitle: 'Actions', columnFields: { published_at: 'publish' } });
+        expect(headers[0].type).toBe('publish');
+        expect(headers[1].type).toBe('datetime');
     });
 
     it('builds field labels from column_map, header titles, then the key', () => {

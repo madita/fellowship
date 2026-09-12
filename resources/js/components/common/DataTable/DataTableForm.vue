@@ -9,6 +9,7 @@ import DataTableJson from "@/components/common/DataTable/DataTableJson.vue";
 import DataTableModel from "@/components/common/DataTable/DataTableModel.vue";
 import DataTableTaxonomy from "@/components/common/DataTable/DataTableTaxonomy.vue";
 import { fieldLabel } from '@/utils/dataTableCells.js';
+import PublishControl from '@/components/common/PublishControl.vue';
 import DataTableRelation from '@/components/common/DataTable/DataTableRelation.vue';
 
 const { t } = useI18n();
@@ -414,6 +415,14 @@ onMounted(() => {
                                             :label="labelFor(column)"
                                             :readonly="!localEditMode"
                                             density="compact"
+                                        />
+
+                                        <!-- Publication state (null = draft, future = scheduled) -->
+                                        <PublishControl
+                                            v-else-if="response.column_fields?.[column] === 'publish'"
+                                            v-model="editedItem[column]"
+                                            :label="labelFor(column)"
+                                            :disabled="!localEditMode"
                                         />
 
                                         <!-- Color Picker -->

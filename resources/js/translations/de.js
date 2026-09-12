@@ -4711,6 +4711,19 @@ export default {
         'cancelBatchTitle': 'Batch abbrechen',
         'cancelBatchConfirm': 'Den laufenden Migrations-Batch stoppen? Bereits abgeschlossene Migrationen bleiben erhalten.'
     },
+    'publish': {
+        'label': 'Veröffentlichung',
+        'draft': 'Entwurf',
+        'published': 'Veröffentlicht',
+        'scheduled': 'Geplant',
+        'scheduleForLater': 'Für später planen',
+        'publishAt': 'Veröffentlichungsdatum',
+        'publishAtHint': 'Wähle einen Zeitpunkt in der Zukunft, um die Veröffentlichung zu planen.',
+        'goesLiveAt': 'Geht am {date} online.',
+        'publishedOn': 'Veröffentlicht am {date}',
+        'scheduledFor': 'Geplant für {date}',
+        'draftHint': 'Noch nicht veröffentlicht'
+    },
     'pageForm': {
         'taxonomy': 'Taxonomie',
         'category': 'Kategorie',

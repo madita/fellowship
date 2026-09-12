@@ -6,6 +6,7 @@ use App\Contracts\CanHaveTaxonomies;
 use App\Traits\HasCache;
 use App\Traits\HasRelateableContent;
 use App\Traits\HasTaxonomies;
+use App\Traits\Publishable;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
@@ -16,13 +17,13 @@ class Post extends Model implements CanHaveTaxonomies, TranslatableContract
     use HasCache;
     use HasRelateableContent;
     use HasTaxonomies;
+    use Publishable;
     use Sluggable;
     use Translatable;
 
     public $translatedAttributes = ['title', 'body'];
 
     protected $fillable = [
-        'status',
         'slug',
         'user_id',
     ];

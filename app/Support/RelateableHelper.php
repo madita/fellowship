@@ -379,8 +379,8 @@ class RelateableHelper
     }
 
     /**
-     * Hide unpublished pages/posts and unapproved wiki entries from everyone
-     * except editors and (for pages/posts) their author.
+     * Hide draft and scheduled pages/posts and unapproved wiki entries from
+     * everyone except editors and (for pages/posts) their author.
      */
     public static function applyVisibility(Builder $query, string $kind, ?User $viewer): Builder
     {
@@ -392,14 +392,8 @@ class RelateableHelper
         $userId = $viewer?->id;
 
         return match ($kind) {
-            'page' => $query->where(function (Builder $q) use ($table, $userId) {
-                $q->where($table . '.published', '>', 0);
-                if ($userId) {
-                    $q->orWhere($table . '.user_id', $userId);
-                }
-            }),
-            'post' => $query->where(function (Builder $q) use ($table, $userId) {
-                $q->where($table . '.status', 'published');
+            'page', 'post' => $query->where(function (Builder $q) use ($table, $userId) {
+                $q->published();
                 if ($userId) {
                     $q->orWhere($table . '.user_id', $userId);
                 }
@@ -418,8 +412,7 @@ class RelateableHelper
         $own = $viewer && self::authorId($model) === (int) $viewer->id;
 
         return match (self::kindForType($model->getMorphClass())) {
-            'page'  => (bool) $model->published || $own,
-            'post'  => $model->status === 'published' || $own,
+            'page', 'post' => $model->isPublished() || $own,
             'wiki'  => $model->relationLoaded('approval') ? $model->approval !== null : $model->isApproved(),
             null    => false,
             default => true,

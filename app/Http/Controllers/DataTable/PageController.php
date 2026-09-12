@@ -27,7 +27,6 @@ class PageController extends DataTableController
         //        dd($request);
 
         $data                 = $request->only($this->getUpdatableColumns());
-        $data['published']    = ! empty($data['published']) ? 1 : 0;
         $data['sign_in_only'] = ! empty($data['sign_in_only']) ? 1 : 0;
 
         $page = auth()->user()->pages()->create($data);
@@ -110,7 +109,7 @@ class PageController extends DataTableController
         return [
             'title',
             'content',
-            'published',
+            'published_at',
             'sign_in_only', ];
     }
 
@@ -118,17 +117,18 @@ class PageController extends DataTableController
     {
         return [
             'content'      => 'wysiwyg',
-            'published'    => 'checkbox',
+            'published_at' => 'publish',
             'sign_in_only' => 'checkbox', ];
     }
 
     /**
-     * published / sign_in_only are integer flags in the pages table.
+     * published_at is the publish timestamp (null = draft, a future date =
+     * scheduled); sign_in_only stays an integer flag on the pages table.
      */
     public function getColumnTypes(): array
     {
         return [
-            'published'    => 'boolean',
+            'published_at' => 'datetime',
             'sign_in_only' => 'boolean',
             'created_at' => 'date',
             'updated_at' => 'date',
@@ -146,7 +146,7 @@ class PageController extends DataTableController
     {
         return [
             'id',
-            'published',
+            'published_at',
             'sign_in_only',
             'slug',
             'title',

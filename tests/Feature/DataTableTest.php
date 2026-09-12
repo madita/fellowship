@@ -73,7 +73,7 @@ class DataTableTest extends TestCase
 
     private function makePost(string $title, string $slug): Post
     {
-        $post = new Post(['status' => 'published', 'user_id' => $this->admin->id, 'slug' => $slug]);
+        $post = new Post(['published_at' => now(), 'user_id' => $this->admin->id, 'slug' => $slug]);
         $post->translateOrNew(app()->getLocale())->title = $title;
         $post->translateOrNew(app()->getLocale())->body  = '<p>' . $title . '</p>';
         $post->save();
@@ -355,7 +355,7 @@ class DataTableTest extends TestCase
         $this->assertSame('Title', $headers['title']['title']);
         $this->assertSame('text', $headers['title']['type']);
         $this->assertTrue($headers['title']['sortable']);
-        $this->assertSame('boolean', $headers['published']['type']);
+        $this->assertSame('datetime', $headers['published_at']['type']);
         $this->assertContains('title', $response->json('data.searchable'));
         $this->assertEqualsCanonicalizing(
             ['Zebra crossing', 'Apple pie', 'Mango lassi'],

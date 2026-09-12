@@ -31,7 +31,7 @@ class PageController extends Controller
         $parent = null;
         // $pages = Page::all();
 
-        if ( ! $page || ! $page->published) {
+        if ( ! $page || ! $page->isPublished()) {
             return abort(404);
         }
 
@@ -78,7 +78,7 @@ class PageController extends Controller
     //    public function showWithCategory($taxonomy, $category)
     //    {
     //
-    //        $pages = Page::withTerm($category, 'tags')->where('published', true)->get();
+    //        $pages = Page::withTerm($category, 'tags')->published()->get();
     //
     //        return response()
     //            ->json(['pages' => $pages]);
@@ -88,7 +88,7 @@ class PageController extends Controller
     {
         //        $page = Page::where('slug', '=', $slug)->first();
 
-        if ( ! $page || ! $page->published) {
+        if ( ! $page || ! $page->isPublished()) {
             return abort(404);
         }
 

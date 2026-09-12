@@ -231,7 +231,7 @@ class SitemapController extends Controller
         $baseUrl = config('app.url');
         $urls    = [];
 
-        $pages = Page::where('published', true)->get();
+        $pages = Page::published()->get();
         foreach ($pages as $page) {
             $urls[] = [
                 'loc'        => $baseUrl . '/pages/' . $page->slug,
@@ -253,7 +253,7 @@ class SitemapController extends Controller
         $urls    = [];
 
         try {
-            $posts = Post::where('status', 'published')->get();
+            $posts = Post::published()->get();
             foreach ($posts as $post) {
                 $urls[] = [
                     'loc'        => $baseUrl . '/posts/' . $post->slug,

@@ -58,10 +58,10 @@ class RelatedContentTest extends TestCase
         ]);
 
         $this->page = Page::create([
-            'title'     => 'House Rules',
-            'slug'      => 'house-rules',
-            'user_id'   => $this->admin->id,
-            'published' => 1,
+            'title'        => 'House Rules',
+            'slug'         => 'house-rules',
+            'user_id'      => $this->admin->id,
+            'published_at' => now(),
         ]);
 
         $this->wiki = Wiki::create([
@@ -74,10 +74,10 @@ class RelatedContentTest extends TestCase
         $this->wiki->approve($this->admin);
 
         $this->post = Post::create([
-            'title'   => 'Season Recap',
-            'slug'    => 'season-recap',
-            'user_id' => $this->admin->id,
-            'status'  => 'published',
+            'title'        => 'Season Recap',
+            'slug'         => 'season-recap',
+            'user_id'      => $this->admin->id,
+            'published_at' => now(),
         ]);
 
         $this->album = Album::create(['name' => 'Castle Photos', 'user_id' => $this->admin->id]);
@@ -169,7 +169,7 @@ class RelatedContentTest extends TestCase
     {
         $this->getJson('/api/relateable/items?kind=user')->assertStatus(422);
 
-        Post::create(['title' => 'Draft Recap', 'slug' => 'draft-recap', 'user_id' => $this->author->id, 'status' => 'draft']);
+        Post::create(['title' => 'Draft Recap', 'slug' => 'draft-recap', 'user_id' => $this->author->id, 'published_at' => null]);
 
         $this->getJson('/api/relateable/items?kind=post&search=recap')
             ->assertOk()->assertJsonCount(1, 'data');

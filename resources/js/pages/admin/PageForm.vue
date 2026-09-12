@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import Tiptap from '../../components/common/tiptap/Tiptap.vue';
 import PageHeader from '../../components/common/PageHeader.vue';
+import PublishControl from '@/components/common/PublishControl.vue';
 import { useDialog } from '@/composables/useDialog.js';
 
 const route = useRoute();
@@ -17,7 +18,7 @@ const dataReady = ref(false);
 const saving = ref(false);
 const savingCategory = ref(false);
 const addCategory = ref(false);
-const page = ref({ title: '', content: '', parent: null, taxonomy: [], terms: [], categories: [] });
+const page = ref({ title: '', content: '', parent: null, taxonomy: [], terms: [], categories: [], published_at: null });
 const pages = ref([]);
 const endpoint = '/api/datatable/pages';
 const form = ref('create');
@@ -68,6 +69,8 @@ const getPage = () => {
     return axios.get(`/api/pages/${id.value}/edit`).then((response) => {
         page.value = response.data.page;
         page.value.parent = response.data.parent;
+        // null = draft, past = live, future = scheduled
+        page.value.published_at = response.data.page?.published_at ?? null;
 
         const taxonomies = { ...(response.data.taxonomies || {}) };
 
@@ -165,15 +168,19 @@ const save = async () => {
     page.value.taxonomy = getTaxonomyName();
     page.value.categories = categoryValue.value.map(x => x.title ?? x);
 
+    // `published_at` is the single source of truth; never send the legacy flag back
+    const payload = { ...page.value, published_at: page.value.published_at ?? null };
+    delete payload.published;
+
     saving.value = true;
     try {
         if (form.value === 'edit') {
-            await axios.patch(`${endpoint}/${id.value}`, page.value);
+            await axios.patch(`${endpoint}/${id.value}`, payload);
             saving.value = false;
             dialog.success(t('pageForm.pageUpdated'));
         } else {
-            await axios.post(`${endpoint}`, page.value);
-            page.value = { title: '', content: '' };
+            await axios.post(`${endpoint}`, payload);
+            page.value = { title: '', content: '', published_at: null };
             saving.value = false;
             dialog.success(t('pageForm.pageSaved'));
         }
@@ -439,11 +446,10 @@ Promise.all([
                             {{ $t('pageForm.settings') }}
                         </v-card-title>
                         <v-card-text>
-                            <v-checkbox
-                                v-model="page.published"
-                                :label="$t('pageForm.published')"
-                                density="compact"
-                                hide-details
+                            <publish-control
+                                v-model="page.published_at"
+                                :label="$t('publish.label')"
+                                class="mb-3"
                             />
                             <v-checkbox
                                 v-model="page.sign_in_only"

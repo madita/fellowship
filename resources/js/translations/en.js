@@ -4552,6 +4552,19 @@ export default {
         'cancelBatchTitle': 'Cancel batch',
         'cancelBatchConfirm': 'Stop the running migration batch? Migrations that already finished are kept.'
     },
+    'publish': {
+        'label': 'Publication',
+        'draft': 'Draft',
+        'published': 'Published',
+        'scheduled': 'Scheduled',
+        'scheduleForLater': 'Schedule for later',
+        'publishAt': 'Publication date',
+        'publishAtHint': 'Pick a date in the future to schedule this.',
+        'goesLiveAt': 'Goes live on {date}.',
+        'publishedOn': 'Published on {date}',
+        'scheduledFor': 'Scheduled for {date}',
+        'draftHint': 'Not published yet'
+    },
     'pageForm': {
         'taxonomy': 'Taxonomy',
         'category': 'Category',

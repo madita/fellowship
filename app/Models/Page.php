@@ -7,6 +7,7 @@ use App\Traits\HasPolls;
 use App\Traits\HasCache;
 use App\Traits\HasRelateableContent;
 use App\Traits\HasTaxonomies;
+use App\Traits\Publishable;
 use App\Traits\Revisionable;
 // use Lecturize\Taxonomies\Traits\HasCategories;
 use App\Traits\Wikiable;
@@ -24,6 +25,7 @@ class Page extends Model implements CanHaveTaxonomies, HasMedia, TranslatableCon
     use HasPolls;
     use HasTaxonomies;
     use InteractsWithMedia;
+    use Publishable;
     use Revisionable;
     use Sluggable;
     use Translatable;
@@ -33,7 +35,7 @@ class Page extends Model implements CanHaveTaxonomies, HasMedia, TranslatableCon
 
     protected $fillable = [
         'title',
-        'published',
+        'sign_in_only',
         'slug',
         'parent_id',
         'user_id',

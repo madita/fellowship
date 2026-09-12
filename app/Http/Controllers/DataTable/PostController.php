@@ -76,15 +76,26 @@ class PostController extends DataTableController
         return [
             'title',
             'body',
-            'status',
+            'published_at',
         ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'body'   => 'wysiwyg',
-            'status' => ['select' => ['draft', 'published']],
+            'body'         => 'wysiwyg',
+            'published_at' => 'publish',
+        ];
+    }
+
+    /**
+     * published_at is the publish timestamp (null = draft, a future date =
+     * scheduled).
+     */
+    public function getColumnTypes(): array
+    {
+        return [
+            'published_at' => 'datetime',
         ];
     }
 }

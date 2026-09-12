@@ -299,6 +299,16 @@
                         >
                             {{ cellFor(header, item).value ? $t('common.yes') : $t('common.no') }}
                         </v-chip>
+                        <v-chip
+                            v-else-if="cellFor(header, item).kind === 'publish'"
+                            size="small"
+                            variant="tonal"
+                            :color="publishChip(cellFor(header, item).status).color"
+                            :prepend-icon="publishChip(cellFor(header, item).status).icon"
+                            :title="publishCellTitle(cellFor(header, item))"
+                        >
+                            {{ publishCellLabel(cellFor(header, item)) }}
+                        </v-chip>
                         <span
                             v-else-if="cellFor(header, item).kind === 'date' || cellFor(header, item).kind === 'datetime'"
                             class="text-no-wrap"
@@ -645,6 +655,7 @@ export default {
         const allHeaders = computed(() => normalizeHeaders(state.response.headers, {
             actionsTitle: t('dataTable.actions'),
             columnMap: state.response.column_map || {},
+            columnFields: state.response.column_fields || {},
         }))
         const columnHeaders = computed(() => allHeaders.value.filter(h => h.key !== 'actions'))
         const visibleHeaders = computed(() => allHeaders.value.filter(h => h.key === 'actions' || !state.hiddenColumns.includes(h.key)))
@@ -715,6 +726,20 @@ export default {
                 return String(value)
             }
         }
+
+        // Draft / Scheduled / Published, matching components/common/PublishControl.vue
+        const PUBLISH_CHIPS = {
+            draft: { color: 'grey', icon: 'mdi-file-outline' },
+            scheduled: { color: 'info', icon: 'mdi-clock-outline' },
+            published: { color: 'success', icon: 'mdi-check-circle-outline' },
+        }
+        const publishChip = status => PUBLISH_CHIPS[status] || PUBLISH_CHIPS.draft
+        const publishCellLabel = cell => {
+            const label = t(`publish.${cell.status}`)
+            if (!cell.value || cell.status === 'draft') return label
+            return `${label} · ${formatCellDate(cell.value, 'datetime')}`
+        }
+        const publishCellTitle = cell => (cell.value ? formatCellDate(cell.value, 'datetime', true) : t('publish.draftHint'))
 
         // --- Permissions / flags ---------------------------------------------------
         const canDelete = computed(() => !!state.response.allow.deletion)
@@ -1134,6 +1159,9 @@ export default {
             columnHeaders,
             visibleHeaders,
             cellHeaders,
+            publishChip,
+            publishCellLabel,
+            publishCellTitle,
             visibleColumnCount,
             isColumnVisible,
             setColumnVisible,

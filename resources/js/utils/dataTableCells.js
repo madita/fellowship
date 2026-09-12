@@ -7,7 +7,7 @@
 export const EMPTY_CELL = '—';
 export const LONGTEXT_LENGTH = 80;
 export const DEFAULT_PER_PAGE_OPTIONS = [10, 25, 50, 100];
-export const CELL_TYPES = ['id', 'text', 'longtext', 'boolean', 'number', 'date', 'datetime', 'json', 'image'];
+export const CELL_TYPES = ['id', 'text', 'longtext', 'boolean', 'number', 'date', 'datetime', 'json', 'image', 'publish'];
 
 const isPlainObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date);
 
@@ -105,6 +105,22 @@ export function inferType(key, value) {
     return 'text';
 }
 
+/**
+ * Publication state of a `published_at` value: null is a draft, a future
+ * timestamp is scheduled, anything else is already published. `now` is
+ * injectable so the boundary is testable.
+ */
+export function describePublish(value, { now = Date.now() } = {}) {
+    if (isEmptyValue(value)) return { kind: 'publish', status: 'draft', value: null };
+    if (!looksLikeDate(value)) return { kind: 'text', text: String(value) };
+
+    const date = value instanceof Date ? value : new Date(String(value).replace(' ', 'T'));
+    const time = date.getTime();
+    if (Number.isNaN(time)) return { kind: 'text', text: String(value) };
+
+    return { kind: 'publish', status: time > now ? 'scheduled' : 'published', value };
+}
+
 export function resolveType(header, value) {
     const type = header && header.type;
     return CELL_TYPES.includes(type) ? type : inferType(header && header.key, value);
@@ -114,9 +130,11 @@ export function resolveType(header, value) {
  * What a cell should render. `kind` is one of CELL_TYPES or 'empty'; the template
  * picks the markup, formatting that needs the app (dates, i18n) stays there.
  */
-export function describeCell(header, value, { maxLength = LONGTEXT_LENGTH } = {}) {
-    if (isEmptyValue(value)) return { kind: 'empty', text: EMPTY_CELL };
+export function describeCell(header, value, { maxLength = LONGTEXT_LENGTH, now } = {}) {
     const type = resolveType(header, value);
+    // A missing publication date is a draft, not an empty cell
+    if (type === 'publish') return describePublish(value, now === undefined ? {} : { now });
+    if (isEmptyValue(value)) return { kind: 'empty', text: EMPTY_CELL };
 
     switch (type) {
         case 'boolean': {
@@ -161,7 +179,7 @@ export function describeCell(header, value, { maxLength = LONGTEXT_LENGTH } = {}
  * ({ key, title, sortable, type, align }) and the legacy one ({ text, value }).
  * Always ends with a single, non-sortable, end-aligned 'actions' column.
  */
-export function normalizeHeaders(rawHeaders, { actionsTitle = '', columnMap = {} } = {}) {
+export function normalizeHeaders(rawHeaders, { actionsTitle = '', columnMap = {}, columnFields = {} } = {}) {
     const list = Array.isArray(rawHeaders) ? rawHeaders : [];
     const headers = [];
     let actions = null;
@@ -176,7 +194,9 @@ export function normalizeHeaders(rawHeaders, { actionsTitle = '', columnMap = {}
         }
         let title = raw.title ?? raw.text ?? '';
         if (!title || title === key) title = (columnMap && columnMap[key]) || humanizeKey(key);
-        const type = CELL_TYPES.includes(raw.type) ? raw.type : null;
+        // The response flags publication dates through column_fields, not the header type
+        const isPublish = columnFields && columnFields[key] === 'publish';
+        const type = isPublish ? 'publish' : (CELL_TYPES.includes(raw.type) ? raw.type : null);
         headers.push({
             key,
             title,
