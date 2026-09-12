@@ -18,9 +18,8 @@ class CreateSystemTables extends Migration
          */
         Schema::create('pages', function (Blueprint $table) {
             $table->integer('id', true);
-            //$table->integer('published')->default(0);
+            $table->integer('published')->default(0);
             $table->integer('sign_in_only')->default(0);
-            $table->timestamp('published_at')->nullable()->index();
             // $table->string('title'); // Moved to page_translations
             $table->string('slug')->unique();
             $table->string('type')->default('page'); // page, wiki
@@ -39,8 +38,7 @@ class CreateSystemTables extends Migration
             $table->string('slug')->unique();
             // $table->text('content')->nullable(); // Moved to post_translations
             $table->integer('user_id')->unsigned()->index('posts_user_id_index');
-            $table->timestamp('published_at')->nullable()->index();
-            //$table->string('status'); // published, draft
+            $table->string('status'); // published, draft
             $table->timestamps();
         });
 
