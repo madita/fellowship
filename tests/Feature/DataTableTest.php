@@ -95,19 +95,16 @@ class DataTableTest extends TestCase
     }
 
     /**
-     * Pins the CURRENT middleware: the datatable group is auth:sanctum only
-     * (the admin gate is commented out in routes/api.php, and AccountTab.vue
-     * PATCHes /api/datatable/users/{id} for self-service). Flip this to 403
-     * once an admin gate is added to the group.
+     * Every table needs the permission its admin screen requires;
+     * DataTablePermissionsTest covers those rules in full.
      */
-    public function test_non_admin_passes_the_existing_auth_only_middleware(): void
+    public function test_a_member_without_permissions_is_rejected(): void
     {
         $user = $this->makeUser('Plain User', 'plainuser', 'plain@user.test');
 
         $this->actingAs($user, 'sanctum')
             ->getJson('/api/datatable/roles')
-            ->assertOk()
-            ->assertJsonStructure(['data' => ['records' => ['data']]]);
+            ->assertForbidden();
     }
 
     // ------------------------------------------------------------ pagination

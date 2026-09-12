@@ -22,6 +22,7 @@ return [
         'validation'        => 'Validierung fehlgeschlagen',
         'too_many_requests' => 'Zu viele Anfragen. Bitte versuchen Sie es später erneut.',
         'admin_required'    => 'Nicht autorisiert. Administrator-Zugriff erforderlich.',
+        'permission_required' => 'Dir fehlt die Berechtigung dafür.',
     ],
 
     // Media
@@ -151,6 +152,7 @@ return [
     // User
     'user' => [
         'preferences_updated' => 'Einstellungen erfolgreich aktualisiert',
+        'profile_updated' => 'Profil erfolgreich aktualisiert',
     ],
 
     // Conversations

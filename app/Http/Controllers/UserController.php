@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 
 class UserController extends Controller
@@ -56,6 +57,28 @@ class UserController extends Controller
                 'initials' => $user->initials,
             ];
         });
+    }
+
+    /**
+     * Update the signed-in member's own name, username and e-mail. The users
+     * table is for admins editing somebody else.
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'name'     => 'required|string|max:255',
+            'username' => ['required', 'string', 'max:255', Rule::unique('users', 'username')->ignore($user->id)],
+            'email'    => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+        ]);
+
+        $user->update($validated);
+
+        return response()->json([
+            'message' => __('messages.user.profile_updated'),
+            'user'    => $user,
+        ]);
     }
 
     /**

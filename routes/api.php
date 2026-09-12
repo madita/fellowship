@@ -116,6 +116,7 @@ Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 
 
     Route::post('/avatar', 'App\Http\Controllers\UserController@uploadAvatar');
     Route::patch('/preferences', 'App\Http\Controllers\UserController@updatePreferences');
+    Route::patch('/profile', 'App\Http\Controllers\UserController@updateProfile');
 
     // Social Account Management
     Route::get('/social-accounts', [SocialAccountController::class, 'index'])
@@ -219,22 +220,47 @@ Route::delete('/collections/{collection}', [CollectionController::class, 'destro
 Route::delete('/media/{media}', [CollectionController::class, 'deleteMedia']); // Delete a media item
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
-    // Route::group(['middleware' => ['role_or_permission:admin|manage-*']], function () {
-    Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\PageController');
-    //    Route::get('datatable/pages/categories/{taxonomy}', 'App\Http\Controllers\DataTable\PageController@getCategories');
-    Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\PostController');
-    Route::get('datatable/users/{id}/event-profiles', 'App\Http\Controllers\DataTable\UserController@eventProfiles');
-    Route::resource('datatable/users', 'App\Http\Controllers\DataTable\UserController');
-    Route::resource('datatable/roles', 'App\Http\Controllers\DataTable\RoleController');
-    Route::resource('datatable/taxonomies', 'App\Http\Controllers\DataTable\TaxonomyController');
-    Route::resource('datatable/terms', 'App\Http\Controllers\DataTable\TermController');
-    Route::get('datatable/permissions/roles', 'App\Http\Controllers\DataTable\PermissionController@roles');
-    Route::post('datatable/permissions/roles', 'App\Http\Controllers\DataTable\PermissionController@updateRolePermissions');
-    Route::get('datatable/permissions/permissions', 'App\Http\Controllers\DataTable\PermissionController@permissions');
-    Route::resource('datatable/permissions', 'App\Http\Controllers\DataTable\PermissionController');
-    Route::resource('datatable/events', 'App\Http\Controllers\DataTable\EventController');
-    Route::resource('datatable/event-types', 'App\Http\Controllers\DataTable\EventTypeController');
-    Route::resource('datatable/event-profiles', 'App\Http\Controllers\DataTable\EventProfileController');
+    // Each table needs the permission its admin screen already requires;
+    // admins pass everything (see EnsureUserHasPermission).
+
+    // Members load this form when they answer an event, so it stays readable
+    Route::get('datatable/event-profiles/{id}', 'App\Http\Controllers\DataTable\\EventProfileController@show');
+
+    Route::middleware('permission.any:manage-user')->group(function () {
+        Route::get('datatable/users/{id}/event-profiles', 'App\Http\Controllers\DataTable\\UserController@eventProfiles');
+        Route::resource('datatable/users', 'App\Http\Controllers\DataTable\\UserController');
+    });
+
+    Route::middleware('permission.any:manage-role')->group(function () {
+        Route::post('datatable/permissions/roles', 'App\Http\Controllers\DataTable\\PermissionController@updateRolePermissions');
+        Route::resource('datatable/permissions', 'App\Http\Controllers\DataTable\\PermissionController')
+            ->where(['permission' => '[0-9]+']);
+        Route::resource('datatable/roles', 'App\Http\Controllers\DataTable\\RoleController');
+    });
+
+    Route::middleware('permission.any:manage-page')->group(function () {
+        Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\\PageController');
+        Route::resource('datatable/taxonomies', 'App\Http\Controllers\DataTable\\TaxonomyController');
+        Route::resource('datatable/terms', 'App\Http\Controllers\DataTable\\TermController');
+    });
+
+    // Role and permission names are only read by several admin screens (forum
+    // categories, moderation, sandbox limits), so reading the lists needs any
+    // admin-area permission while changing them needs manage-role. These come
+    // after the resources on purpose: a later route with the same URI replaces
+    // the earlier one, so registering them last keeps their own middleware.
+    Route::middleware('permission.any:manage-role,manage-post,manage-page')->group(function () {
+        Route::get('datatable/roles', 'App\Http\Controllers\DataTable\\RoleController@index');
+        Route::get('datatable/permissions/roles', 'App\Http\Controllers\DataTable\\PermissionController@roles');
+        Route::get('datatable/permissions/permissions', 'App\Http\Controllers\DataTable\\PermissionController@permissions');
+    });
+
+    Route::middleware('permission.any:manage-post')->group(function () {
+        Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\\PostController');
+        Route::resource('datatable/events', 'App\Http\Controllers\DataTable\\EventController');
+        Route::resource('datatable/event-types', 'App\Http\Controllers\DataTable\\EventTypeController');
+        Route::resource('datatable/event-profiles', 'App\Http\Controllers\DataTable\\EventProfileController');
+    });
 });
 
 Route::group(['middleware' => ['auth:sanctum']], function () {

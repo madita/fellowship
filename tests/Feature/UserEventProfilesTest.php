@@ -8,6 +8,7 @@ use App\Models\Event\EventProfile;
 use App\Models\Event\EventType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class UserEventProfilesTest extends TestCase
@@ -25,6 +26,12 @@ class UserEventProfilesTest extends TestCase
         parent::setUp();
 
         $this->viewer = User::factory()->create();
+        Permission::firstOrCreate(
+            ['name' => 'manage-user', 'guard_name' => 'api'],
+            ['display_name' => 'Manage user']
+        );
+        $this->viewer->givePermissionTo('manage-user');
+
         $this->member = User::factory()->create();
 
         $profile = EventProfile::create([

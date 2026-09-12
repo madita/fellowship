@@ -437,7 +437,12 @@ export default {
             if (savingUser.value) return;
             savingUser.value = true;
             try {
-                await axios.patch(`/api/datatable/users/${props.user.id}`, props.user);
+                // Members save their own profile through the account endpoint;
+                // the users table is for admins editing someone else.
+                const { name, username, email } = props.user;
+                await (userStore.user?.id === props.user.id
+                    ? axios.patch('/api/account/profile', { name, username, email })
+                    : axios.patch(`/api/datatable/users/${props.user.id}`, props.user));
                 await dialog.success(t('users.edit.userSaved'));
             } catch (error) {
                 console.error('Failed to save user:', error);
