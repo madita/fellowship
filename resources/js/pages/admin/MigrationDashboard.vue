@@ -8,67 +8,148 @@
             fluid
         >
             <template #actions>
-                <v-btn
-                    color="primary"
-                    variant="elevated"
-                    prepend-icon="mdi-play"
-                    :disabled="isRunning || selectedMigrations.length === 0"
-                    :loading="starting"
-                    @click="startMigrations"
-                >
-                    {{ $t('migrationDashboard.runSelected', { count: selectedMigrations.length }) }}
-                </v-btn>
-                <v-btn
-                    color="warning"
-                    variant="tonal"
-                    prepend-icon="mdi-play-circle"
-                    :disabled="isRunning"
-                    :loading="starting"
-                    @click="runAll"
-                >
-                    {{ $t('migrationDashboard.runAll') }}
-                </v-btn>
+                <template v-if="tab === 'runs'">
+                    <v-btn
+                        color="primary"
+                        variant="elevated"
+                        prepend-icon="mdi-play"
+                        :disabled="isRunning || selectedMigrations.length === 0"
+                        :loading="starting"
+                        @click="startMigrations"
+                    >
+                        {{ $t('migrationDashboard.runSelected', { count: selectedMigrations.length }) }}
+                    </v-btn>
+                    <v-btn
+                        color="warning"
+                        variant="tonal"
+                        prepend-icon="mdi-play-circle"
+                        :disabled="isRunning"
+                        :loading="starting"
+                        @click="runAll"
+                    >
+                        {{ $t('migrationDashboard.runAll') }}
+                    </v-btn>
+                </template>
             </template>
 
+            <!-- Tab order follows the real migration order. The tab *values*
+                 stay as they are — other screens deep-link to them. -->
             <v-tabs v-model="tab" color="primary">
-                <v-tab value="runs">
-                    <v-icon start>mdi-play-box-multiple-outline</v-icon>{{ $t('migrationTool.tabRuns') }}
-                </v-tab>
                 <v-tab value="sources">
-                    <v-icon start>mdi-database-outline</v-icon>{{ $t('migrationTool.tabSources') }}
+                    <v-icon start>mdi-database-outline</v-icon>
+                    <span class="font-weight-bold me-1">1.</span>{{ $t('migrationTool.tabSources') }}
                 </v-tab>
                 <v-tab value="mappings">
-                    <v-icon start>mdi-swap-horizontal</v-icon>{{ $t('migrationTool.tabMappings') }}
+                    <v-icon start>mdi-swap-horizontal</v-icon>
+                    <span class="font-weight-bold me-1">2.</span>{{ $t('migrationTool.tabMappings') }}
+                </v-tab>
+                <v-tab value="runs">
+                    <v-icon start>mdi-auto-fix</v-icon>
+                    <span class="font-weight-bold me-1">3.</span>{{ $t('migrationTool.tabRuns') }}
                 </v-tab>
                 <v-tab value="legacyUsers">
-                    <v-icon start>mdi-account-convert</v-icon>{{ $t('migrationTool.tabLegacyUsers') }}
+                    <v-icon start>mdi-account-convert</v-icon>
+                    <span class="font-weight-bold me-1">4.</span>{{ $t('migrationTool.tabLegacyUsers') }}
                 </v-tab>
             </v-tabs>
         </page-header>
 
         <v-container fluid>
-        <v-window v-model="tab">
+        <!-- The order of the whole migration, with live state per step. -->
+        <v-card class="mb-4">
+            <v-card-title class="d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
+                <span class="d-flex align-center">
+                    <v-icon icon="mdi-map-marker-path" class="me-2" />
+                    {{ $t('migrationDashboard.guideTitle') }}
+                </span>
+                <v-btn
+                    variant="text"
+                    size="small"
+                    :prepend-icon="guideOpen ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                    @click="toggleGuide"
+                >
+                    {{ guideOpen ? $t('migrationDashboard.guideHide') : $t('migrationDashboard.guideShow') }}
+                </v-btn>
+            </v-card-title>
+            <v-expand-transition>
+                <div v-show="guideOpen">
+                    <v-card-text class="pt-0">
+                        <div class="text-body-2 text-medium-emphasis mb-4">{{ $t('migrationDashboard.guideIntro') }}</div>
+                        <div class="d-flex flex-wrap ga-4">
+                            <div
+                                v-for="step in guideSteps"
+                                :key="step.key"
+                                class="guide-step"
+                                :class="{
+                                    'guide-step--done': step.done,
+                                    'guide-step--current': step.current && !step.done,
+                                }"
+                            >
+                                <div class="d-flex align-center ga-2 mb-1">
+                                    <v-avatar
+                                        size="28"
+                                        :color="step.done ? 'success' : (step.current ? 'primary' : undefined)"
+                                        :variant="step.done || step.current ? 'flat' : 'tonal'"
+                                    >
+                                        <v-icon v-if="step.done" icon="mdi-check" size="small" />
+                                        <span v-else class="text-caption font-weight-bold">{{ step.number }}</span>
+                                    </v-avatar>
+                                    <span class="text-subtitle-2">{{ $t('migrationDashboard.' + stepTitleKeys[step.key]) }}</span>
+                                </div>
+                                <div class="text-caption text-medium-emphasis mb-2 guide-step__state">{{ stepState(step) }}</div>
+                                <v-btn
+                                    size="small"
+                                    :variant="step.current && !step.done ? 'tonal' : 'text'"
+                                    :color="step.current && !step.done ? 'primary' : undefined"
+                                    append-icon="mdi-arrow-right"
+                                    @click="tab = step.tab"
+                                >
+                                    {{ $t('migrationDashboard.guideOpen') }}
+                                </v-btn>
+                            </div>
+                        </div>
+                    </v-card-text>
+                </div>
+            </v-expand-transition>
+        </v-card>
+
+        <v-skeleton-loader v-if="!tab" type="card" />
+        <v-window v-else v-model="tab">
         <v-window-item value="sources">
-            <migration-sources @notify="onNotify" />
+            <migration-sources
+                @notify="onNotify"
+                @changed="fetchOverview"
+                @tested="sourceTested = true"
+            />
         </v-window-item>
 
         <v-window-item value="mappings">
-            <migration-mappings @notify="onNotify" @run="onImportRun" />
+            <migration-mappings @notify="onNotify" @run="onImportRun" @changed="fetchOverview" />
         </v-window-item>
 
         <v-window-item value="legacyUsers">
-            <migration-legacy-users :initial-search="legacyUsersSearch" @notify="onNotify" />
+            <migration-legacy-users :initial-search="legacyUsersSearch" @notify="onNotify" @changed="fetchOverview" />
         </v-window-item>
 
         <v-window-item value="runs">
         <v-row>
-            <!-- Migration Selection -->
+            <!-- Post-import steps -->
             <v-col cols="12" md="5">
                 <v-card>
-                    <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('migrationDashboard.availableMigrations') }}</v-card-title>
+                    <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('migrationDashboard.postStepsTitle') }}</v-card-title>
                     <v-card-text>
+                        <div class="text-body-2 text-medium-emphasis mb-3">{{ $t('migrationDashboard.postStepsIntro') }}</div>
+                        <v-alert
+                            v-if="!anyImportRun"
+                            type="warning"
+                            density="compact"
+                            class="mb-3"
+                        >
+                            {{ $t('migrationDashboard.postStepsNoImports') }}
+                        </v-alert>
+
                         <div v-for="group in groups" :key="group.key" class="mb-4">
-                            <div class="d-flex align-center mb-2">
+                            <div v-if="groups.length > 1" class="d-flex align-center mb-2">
                                 <v-checkbox
                                     :model-value="isGroupSelected(group.key)"
                                     :indeterminate="isGroupPartiallySelected(group.key)"
@@ -80,9 +161,9 @@
                                 <span class="text-subtitle-1 font-weight-medium">{{ group.name }}</span>
                             </div>
 
-                            <v-list density="compact" class="ml-6">
+                            <v-list density="compact">
                                 <v-list-item
-                                    v-for="migration in getMigrationsForGroup(group.key)"
+                                    v-for="(migration, index) in getMigrationsForGroup(group.key)"
                                     :key="migration.key"
                                 >
                                     <template #prepend>
@@ -94,10 +175,13 @@
                                             density="compact"
                                         />
                                     </template>
-                                    <v-list-item-title>{{ migration.name }}</v-list-item-title>
+                                    <v-list-item-title>
+                                        <span class="text-medium-emphasis me-1">{{ migration.order || index + 1 }}.</span>
+                                        {{ migration.name }}
+                                    </v-list-item-title>
                                     <v-list-item-subtitle>{{ migration.description }}</v-list-item-subtitle>
                                     <template #append>
-                                        <MigrationStatusChip
+                                        <migration-status-chip
                                             v-if="getMigrationStatus(migration.key)"
                                             :status="getMigrationStatus(migration.key)"
                                         />
@@ -330,6 +414,7 @@ import MigrationLegacyUsers from '@/components/admin/migration/MigrationLegacyUs
 import PageHeader from '../../components/common/PageHeader.vue';
 import EmptyState from '../../components/common/EmptyState.vue';
 import { useDialog } from '@/composables/useDialog.js';
+import { buildGuideSteps, postStepsDone, sortByOrder } from '@/utils/migrationGuide.js';
 
 const { t } = useI18n();
 const dialog = useDialog();
@@ -357,7 +442,12 @@ const MigrationStatusChip = {
 
 // State — deep-linkable: /admin/migrations?tab=legacyUsers&search=Name
 const route = useRoute();
-const tab = ref(['runs', 'sources', 'mappings', 'legacyUsers'].includes(route.query.tab) ? route.query.tab : 'runs');
+const deepLinkedTab = ['runs', 'sources', 'mappings', 'legacyUsers'].includes(route.query.tab)
+    ? route.query.tab
+    : null;
+// Without a deep link the tab is decided once the overview is in: sources
+// first when there is nothing to import from yet, mappings otherwise.
+const tab = ref(deepLinkedTab);
 const legacyUsersSearch = ref(typeof route.query.search === 'string' ? route.query.search : '');
 const migrations = ref([]);
 const groups = ref([]);
@@ -373,6 +463,26 @@ const terminalRef = ref(null);
 const selectedLogMigration = ref(null);
 const pollingInterval = ref(null);
 
+// Guide state — counts only, fetched alongside the tabs so the guide is
+// right even for tabs that were never opened.
+const sources = ref([]);
+const mappings = ref([]);
+const legacyUsers = ref([]);
+const sourceTested = ref(false);
+const importsRunFlag = ref(null);
+const ranPostKeys = ref([]);
+
+const GUIDE_STORAGE_KEY = 'migrationGuideOpen';
+const guideOpen = ref(true);
+
+const stepTitleKeys = {
+    source: 'stepSourceTitle',
+    mappings: 'stepMappingsTitle',
+    imports: 'stepImportsTitle',
+    post: 'stepPostTitle',
+    legacy: 'stepLegacyTitle',
+};
+
 const snackbar = reactive({
     show: false,
     text: '',
@@ -384,6 +494,66 @@ const isRunning = computed(() => {
     return batchStatus.value?.status === 'running' || batchStatus.value?.status === 'pending';
 });
 
+const importedMappingCount = computed(() =>
+    mappings.value.filter(mapping => mapping.last_run?.status === 'completed').length
+);
+
+// The backend tells us whether anything was imported; fall back to what
+// the mappings report.
+const anyImportRun = computed(() =>
+    importsRunFlag.value === null ? importedMappingCount.value > 0 : !!importsRunFlag.value
+);
+
+const guideSteps = computed(() => buildGuideSteps({
+    sourceCount: sources.value.length,
+    sourceTested: sourceTested.value,
+    mappingCount: mappings.value.length,
+    importedMappingCount: importedMappingCount.value,
+    importsRun: anyImportRun.value,
+    postStepCount: migrations.value.length,
+    postDone: postStepsDone(migrations.value, ranPostKeys.value),
+    legacyUserCount: legacyUsers.value.length,
+    unassignedLegacyUsers: legacyUsers.value.filter(row => !row.assigned_user).length,
+}));
+
+const stepState = (step) => {
+    const key = (name, params) => t(`migrationDashboard.${name}`, params || {});
+
+    switch (step.key) {
+        case 'source':
+            if (!step.stat.count) return key('stepSourceTodo');
+            return step.stat.tested
+                ? key('stepSourceTested', { count: step.stat.count })
+                : key('stepSourceDone', { count: step.stat.count });
+        case 'mappings':
+            return step.stat.count
+                ? key('stepMappingsDone', { count: step.stat.count })
+                : key('stepMappingsTodo');
+        case 'imports':
+            if (!step.stat.total) return key('stepImportsTodo');
+            return key('stepImportsProgress', { done: step.stat.done, total: step.stat.total });
+        case 'post':
+            if (step.blocked) return key('stepPostBlocked');
+            return step.done ? key('stepPostDone') : key('stepPostTodo', { count: step.stat.count });
+        case 'legacy':
+            if (!step.stat.total) return key('stepLegacyEmpty');
+            return step.stat.open
+                ? key('stepLegacyTodo', { count: step.stat.open })
+                : key('stepLegacyDone', { count: step.stat.total });
+        default:
+            return '';
+    }
+};
+
+const toggleGuide = () => {
+    guideOpen.value = !guideOpen.value;
+    try {
+        localStorage.setItem(GUIDE_STORAGE_KEY, guideOpen.value ? '1' : '0');
+    } catch (e) {
+        // Private mode / blocked storage — the guide simply reopens next time.
+    }
+};
+
 const logMigrationOptions = computed(() => {
     if (!batchStatus.value?.migrations) return [];
     return [
@@ -393,7 +563,7 @@ const logMigrationOptions = computed(() => {
 });
 
 const getMigrationsForGroup = (groupKey) => {
-    return migrations.value.filter(m => m.group === groupKey);
+    return sortByOrder(migrations.value.filter(m => m.group === groupKey));
 };
 
 const isGroupSelected = (groupKey) => {
@@ -419,6 +589,7 @@ const fetchMigrations = async () => {
         const response = await axios.get('/api/admin/migrations');
         migrations.value = response.data.migrations;
         groups.value = response.data.groups;
+        importsRunFlag.value = response.data.imports_run ?? null;
 
         // If there's an active batch, resume polling
         if (response.data.activeBatches?.length > 0) {
@@ -428,6 +599,22 @@ const fetchMigrations = async () => {
     } catch (error) {
         showSnackbar(t('migrationDashboard.failedToLoadMigrations'), 'error');
     }
+};
+
+// Counts behind the guide. Errors stay silent — a failing count must not
+// bury the tab that could fix it.
+const fetchOverview = async () => {
+    const [sourcesRes, mappingsRes, legacyRes] = await Promise.allSettled([
+        axios.get('/api/admin/migrations/sources'),
+        axios.get('/api/admin/migrations/mappings'),
+        axios.get('/api/admin/migrations/legacy-users'),
+    ]);
+
+    if (sourcesRes.status === 'fulfilled') sources.value = sourcesRes.value.data || [];
+    if (mappingsRes.status === 'fulfilled') mappings.value = mappingsRes.value.data || [];
+    if (legacyRes.status === 'fulfilled') legacyUsers.value = legacyRes.value.data?.legacyUsers || [];
+
+    if (!tab.value) tab.value = sources.value.length ? 'mappings' : 'sources';
 };
 
 const fetchHistory = async () => {
@@ -541,6 +728,14 @@ const fetchBatchStatus = async () => {
         const prevStatus = batchStatus.value?.status;
         batchStatus.value = response.data;
 
+        // Remember which post-import steps we watched finish — the guide
+        // uses it when the API reports no run state of its own.
+        for (const migration of response.data.migrations || []) {
+            if (migration.status === 'completed' && !ranPostKeys.value.includes(migration.key)) {
+                ranPostKeys.value = [...ranPostKeys.value, migration.key];
+            }
+        }
+
         // Fetch logs for running/completed migrations
         await fetchLogs();
 
@@ -548,6 +743,7 @@ const fetchBatchStatus = async () => {
         if (response.data.status === 'completed' || response.data.status === 'completed_with_errors') {
             stopPolling();
             fetchHistory();
+            fetchOverview();
 
             if (prevStatus === 'running') {
                 if (response.data.status === 'completed') {
@@ -692,7 +888,7 @@ const archiveForum = async () => {
     }
 };
 
-// A mapping import was queued — jump to the runs tab and follow its batch.
+// A mapping import was queued — jump to the run view and follow its batch.
 const onImportRun = (batchId) => {
     tab.value = 'runs';
     currentBatchId.value = batchId;
@@ -707,7 +903,14 @@ watch(selectedLogMigration, () => {
 
 // Lifecycle
 onMounted(() => {
+    try {
+        const stored = localStorage.getItem(GUIDE_STORAGE_KEY);
+        if (stored !== null) guideOpen.value = stored === '1';
+    } catch (e) {
+        // Storage unavailable — keep the guide open.
+    }
     fetchMigrations();
+    fetchOverview();
     fetchHistory();
 });
 
@@ -717,6 +920,25 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.guide-step {
+    flex: 1 1 200px;
+    min-width: 190px;
+    padding-left: 12px;
+    border-left: 3px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.guide-step--current {
+    border-left-color: rgb(var(--v-theme-primary));
+}
+
+.guide-step--done {
+    border-left-color: rgb(var(--v-theme-success));
+}
+
+.guide-step__state {
+    min-height: 32px;
+}
+
 .migration-row--running {
     background: rgba(var(--v-theme-primary), 0.08);
 }

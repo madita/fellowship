@@ -978,6 +978,158 @@ class MigrationToolTest extends TestCase
         }
     }
 
+    /**
+     * Order matters for imports (posts need their threads, images their
+     * collections), so every target declares which step it belongs to and
+     * what has to exist first.
+     */
+    public function test_targets_declare_their_step_and_dependencies(): void
+    {
+        $targets = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/targets')
+            ->assertStatus(200)
+            ->json('targets');
+
+        $byKey = collect($targets)->keyBy('key');
+
+        // The existing payload is untouched.
+        $this->assertSame('Users', $byKey['users']['label']);
+        $this->assertNotEmpty($byKey['users']['description']);
+        $this->assertContains('username', array_column($byKey['users']['fields'], 'key'));
+
+        // Accounts and the legacy roster come first, content after it.
+        $this->assertSame(1, $byKey['users']['step']);
+        $this->assertSame([], $byKey['users']['requires']);
+        $this->assertSame(1, $byKey['legacy_users']['step']);
+        $this->assertSame(2, $byKey['events']['step']);
+        $this->assertSame(2, $byKey['forum_categories']['step']);
+        $this->assertSame(2, $byKey['gallery_collections']['step']);
+        $this->assertSame(2, $byKey['wiki_terms']['step']);
+
+        // The real dependency chain.
+        $this->assertSame(3, $byKey['gallery_images']['step']);
+        $this->assertSame(['gallery_collections'], $byKey['gallery_images']['requires']);
+        $this->assertSame(3, $byKey['wiki_pages']['step']);
+        $this->assertSame(['wiki_terms'], $byKey['wiki_pages']['requires']);
+        $this->assertSame(3, $byKey['forum_threads']['step']);
+        $this->assertSame(['forum_categories'], $byKey['forum_threads']['requires']);
+        $this->assertSame(4, $byKey['forum_posts']['step']);
+        $this->assertSame(['forum_threads'], $byKey['forum_posts']['requires']);
+
+        // Nothing may depend on something that runs later (or not at all).
+        foreach ($targets as $target) {
+            $this->assertIsInt($target['step'], "{$target['key']} has no step");
+            foreach ($target['requires'] as $required) {
+                $this->assertTrue($byKey->has($required), "{$target['key']} requires unknown target {$required}");
+                $this->assertLessThan(
+                    $target['step'],
+                    $byKey[$required]['step'],
+                    "{$target['key']} requires {$required}, which does not run earlier"
+                );
+            }
+        }
+
+        // The gotchas that cost a re-import are spelled out.
+        $this->assertNotEmpty($byKey['wiki_pages']['hint']);
+        $this->assertNotEmpty($byKey['gallery_images']['hint']);
+        $this->assertStringContainsString('migration:run-mapping', $byKey['forum_posts']['hint']);
+    }
+
+    /**
+     * The mapping listing carries the newest run of each mapping, so the
+     * dashboard can show what already imported.
+     */
+    public function test_mappings_expose_their_last_run(): void
+    {
+        $source = $this->createSource();
+        $mapping = $this->createEventsMapping($source);
+        MigrationMapping::create([
+            'migration_source_id' => $source->id,
+            'name' => 'Untouched mapping',
+            'target' => 'events',
+            'source_table' => 'treffen',
+            'field_map' => ['title' => ['source' => 'location']],
+        ]);
+
+        $listing = fn () => collect($this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/mappings')
+            ->assertStatus(200)
+            ->json())->keyBy('name');
+
+        $rows = $listing();
+        // Existing fields stay intact; nothing ran yet.
+        $this->assertSame('events', $rows['Legacy events']['target']);
+        $this->assertSame('Legacy DB', $rows['Legacy events']['source']['name']);
+        $this->assertNull($rows['Legacy events']['last_run']);
+
+        // An earlier run shows up…
+        MigrationLog::create([
+            'batch_id' => 'old-batch',
+            'migration_key' => GenericImportJob::migrationKeyFor($mapping->id),
+            'migration_name' => $mapping->name,
+            'status' => 'failed',
+        ]);
+        $this->assertSame('failed', $listing()['Legacy events']['last_run']['status']);
+
+        // …and the newest one wins.
+        $batchId = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/admin/migrations/mappings/{$mapping->id}/run")
+            ->assertStatus(200)
+            ->json('batchId');
+
+        $rows = $listing();
+        $lastRun = $rows['Legacy events']['last_run'];
+        $this->assertSame('completed', $lastRun['status']);
+        $this->assertSame($batchId, $lastRun['batch_id']);
+        $this->assertSame(3, $lastRun['total_items']);
+        $this->assertSame(2, $lastRun['processed_items']); // the broken row only counts as an error
+        $this->assertSame(1, $lastRun['error_count']);
+        $this->assertNotNull($lastRun['started_at']);
+        $this->assertNotNull($lastRun['completed_at']);
+
+        // Runs belong to one mapping only.
+        $this->assertNull($rows['Untouched mapping']['last_run']);
+    }
+
+    public function test_dashboard_index_orders_post_steps_and_reports_imports(): void
+    {
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations')
+            ->assertStatus(200)
+            ->json();
+
+        // The post-import steps are numbered in the order they should run.
+        $this->assertSame(['linkGallery', 'wikiLinking', 'wikiTermsLinking'], array_column($response['migrations'], 'key'));
+        $this->assertSame([1, 2, 3], array_column($response['migrations'], 'order'));
+        $this->assertSame('Link Gallery to Events', $response['migrations'][0]['name']);
+        $this->assertSame('post', $response['migrations'][0]['group']);
+        $this->assertNotEmpty($response['migrations'][0]['description']);
+        $this->assertSame('post', $response['groups'][0]['key']);
+        $this->assertSame([], $response['activeBatches']);
+
+        // Nothing imported yet — running the post steps now would be a no-op.
+        $this->assertFalse($response['imports_run']);
+
+        $mapping = $this->createEventsMapping($this->createSource());
+        $log = MigrationLog::create([
+            'batch_id' => (string) Str::uuid(),
+            'migration_key' => GenericImportJob::migrationKeyFor($mapping->id),
+            'migration_name' => $mapping->name,
+            'status' => 'running',
+        ]);
+
+        // An import still in flight does not count…
+        $this->assertFalse(
+            $this->actingAs($this->admin, 'sanctum')->getJson('/api/admin/migrations')->json('imports_run')
+        );
+
+        // …a finished one does.
+        $log->markCompleted();
+        $this->assertTrue(
+            $this->actingAs($this->admin, 'sanctum')->getJson('/api/admin/migrations')->json('imports_run')
+        );
+    }
+
     public function test_non_admins_cannot_use_the_tool(): void
     {
         $source = $this->createSource();

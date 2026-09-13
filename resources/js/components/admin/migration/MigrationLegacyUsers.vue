@@ -136,7 +136,7 @@ import EmptyState from '../../common/EmptyState.vue';
 
 const { t } = useI18n();
 const feedback = useDialog();
-const emit = defineEmits(['notify']);
+const emit = defineEmits(['notify', 'changed']);
 const props = defineProps({
     // Pre-fill the search, e.g. deep-linked from a claim ticket.
     initialSearch: { type: String, default: '' },
@@ -191,6 +191,7 @@ const assign = async () => {
         emit('notify', { text: data.message });
         dialog.value = false;
         await fetchAll();
+        emit('changed');
     } catch (e) {
         feedback.requestError(e);
     } finally {

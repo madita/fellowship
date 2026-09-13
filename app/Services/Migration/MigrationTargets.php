@@ -32,6 +32,8 @@ class MigrationTargets
         return [
             'users' => [
                 'label'       => 'Users',
+                'step'        => 1,
+                'requires'    => [],
                 'description' => 'Import user accounts. Existing emails/usernames are skipped.',
                 'fields'      => [
                     ['key' => 'username', 'label' => 'Username', 'required' => true],
@@ -43,6 +45,8 @@ class MigrationTargets
             ],
             'legacy_users' => [
                 'label'       => 'Legacy Users',
+                'step'        => 1,
+                'requires'    => [],
                 'description' => 'Import the user roster of a legacy system into the legacy-user directory (no accounts are created). Shows up on the Legacy Users tab with e-mails, used to verify claims and suggest matches with registered users. Re-runs update existing entries.',
                 'fields'      => [
                     ['key' => 'username', 'label' => 'Username', 'required' => true],
@@ -55,6 +59,8 @@ class MigrationTargets
             ],
             'events' => [
                 'label'       => 'Events',
+                'step'        => 2,
+                'requires'    => [],
                 'description' => 'Import calendar events (with optional coordinates into event details).',
                 'fields'      => [
                     ['key' => 'title', 'label' => 'Title', 'required' => true],
@@ -78,6 +84,8 @@ class MigrationTargets
             ],
             'forum_categories' => [
                 'label'       => 'Forum Categories',
+                'step'        => 2,
+                'requires'    => [],
                 'description' => 'Import the forum category tree (forum_cat taxonomies) with descriptions and hierarchy — so empty forums exist too. Import BEFORE the threads. For phpBB map phpbb3_forums, ordered by left_id so parents come first.',
                 'fields'      => [
                     ['key' => 'name', 'label' => 'Name', 'required' => true, 'hint' => 'phpBB: forum_name, html_decode transform'],
@@ -90,6 +98,8 @@ class MigrationTargets
             ],
             'forum_threads' => [
                 'label'       => 'Forum Threads',
+                'step'        => 3,
+                'requires'    => ['forum_categories'],
                 'description' => 'Import forum threads; the category is created (forum_cat taxonomy) if missing. For phpBB: map phpbb3_topics, join phpbb3_forums for the category and phpbb3_posts (on topic_first_post_id) for the body.',
                 'fields'      => [
                     ['key' => 'title', 'label' => 'Title', 'required' => true, 'hint' => 'phpBB: topic_title, html_decode transform'],
@@ -108,6 +118,9 @@ class MigrationTargets
             ],
             'forum_posts' => [
                 'label'       => 'Forum Posts',
+                'step'        => 4,
+                'requires'    => ['forum_threads'],
+                'hint'        => 'Must run after Forum Threads (posts find their thread via the legacy topic id) and is big enough to belong on php artisan migration:run-mapping.',
                 'description' => 'Import forum replies into threads imported earlier (matched via the legacy thread id). Import the threads first. Filter out each topic\'s first post — it already became the thread body.',
                 'fields'      => [
                     ['key' => 'thread_legacy_id', 'label' => 'Legacy thread id', 'required' => true, 'hint' => 'phpBB: topic_id — must match the threads\' "Legacy thread id"'],
@@ -122,6 +135,9 @@ class MigrationTargets
             ],
             'wiki_pages' => [
                 'label'       => 'Wiki Pages',
+                'step'        => 3,
+                'requires'    => ['wiki_terms'],
+                'hint'        => 'Needs the MediaWiki text table joined in via revision — it is not part of a plain page dump.',
                 'description' => 'Import wiki pages (e.g. from MediaWiki: map the page table and join revision + text for the content). Wikitext is converted to HTML, categories in the text become wiki terms, and pages are approved automatically. Existing slugs are skipped.',
                 'fields'      => [
                     ['key' => 'title', 'label' => 'Title', 'required' => true, 'hint' => 'MediaWiki page_title → transform underscores_to_spaces'],
@@ -139,6 +155,8 @@ class MigrationTargets
             ],
             'gallery_collections' => [
                 'label'       => 'Gallery Collections',
+                'step'        => 2,
+                'requires'    => [],
                 'description' => 'Import gallery collections (albums). One collection per distinct name — duplicates are skipped, so a per-image table can be mapped directly. Use the Gallery Images target for the files.',
                 'fields'      => [
                     ['key' => 'name', 'label' => 'Name', 'required' => true],
@@ -151,6 +169,9 @@ class MigrationTargets
             ],
             'gallery_images' => [
                 'label'       => 'Gallery Images',
+                'step'        => 3,
+                'requires'    => ['gallery_collections'],
+                'hint'        => 'One of the two big runs — start it with php artisan migration:run-mapping <name> instead of the dashboard button.',
                 'description' => 'Attach image files from a folder on this server to existing gallery collections (import the collections first). One row per image; already-attached file names are skipped.',
                 'fields'      => [
                     ['key' => 'collection', 'label' => 'Collection name', 'required' => true],
@@ -164,6 +185,8 @@ class MigrationTargets
             ],
             'wiki_terms' => [
                 'label'       => 'Wiki Terms',
+                'step'        => 2,
+                'requires'    => [],
                 'description' => 'Import wiki categories as terms/taxonomies, with optional parent relations (e.g. MediaWiki: map namespace-14 pages joined with revision + text for descriptions, or categorylinks rows for the hierarchy).',
                 'fields'      => [
                     ['key' => 'name', 'label' => 'Category name', 'required' => true, 'hint' => 'underscores become spaces'],

@@ -15,49 +15,93 @@
             </div>
         </v-card-title>
         <v-card-text class="pa-0">
-            <v-table v-if="mappings.length" density="comfortable">
-                <thead>
-                    <tr>
-                        <th>{{ $t('common.name') }}</th>
-                        <th>{{ $t('migrationTool.source') }}</th>
-                        <th>{{ $t('migrationTool.mappingFlow') }}</th>
-                        <th class="text-right">{{ $t('common.actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="mapping in mappings" :key="mapping.id">
-                        <td>{{ mapping.name }}</td>
-                        <td>{{ mapping.source?.name }}</td>
-                        <td class="text-caption">
-                            <code>{{ mapping.source_table }}</code>
-                            <v-icon size="x-small" class="mx-1">mdi-arrow-right</v-icon>
-                            <v-chip size="x-small" variant="tonal" color="primary">{{ targetLabel(mapping.target) }}</v-chip>
-                        </td>
-                        <td class="text-right">
-                            <v-btn
-                                icon size="small" variant="text" color="success"
-                                :title="$t('migrationTool.runImport')"
-                                :loading="runningId === mapping.id"
-                                :disabled="rowBusy"
-                                @click="run(mapping)"
-                            >
-                                <v-icon size="small">mdi-play</v-icon>
-                            </v-btn>
-                            <v-btn icon size="small" variant="text" :disabled="rowBusy" @click="openEditor(mapping)">
-                                <v-icon size="small">mdi-pencil</v-icon>
-                            </v-btn>
-                            <v-btn
-                                icon size="small" variant="text" color="error"
-                                :loading="deletingId === mapping.id"
-                                :disabled="rowBusy"
-                                @click="deleteMapping(mapping)"
-                            >
-                                <v-icon size="small">mdi-delete</v-icon>
-                            </v-btn>
-                        </td>
-                    </tr>
-                </tbody>
-            </v-table>
+            <template v-if="mappings.length">
+                <div class="text-caption text-medium-emphasis px-4 pb-2">{{ $t('migrationTool.mappingsIntro') }}</div>
+                <!-- One block per import step: the steps run top to bottom. -->
+                <div v-for="group in mappingGroups" :key="group.step">
+                    <div class="d-flex align-center flex-wrap ga-2 px-4 pt-3 pb-1">
+                        <v-avatar size="24" color="primary" variant="tonal">
+                            <span class="text-caption font-weight-bold">{{ group.step }}</span>
+                        </v-avatar>
+                        <span class="text-subtitle-2">{{ stepTitle(group.step) }}</span>
+                        <v-chip size="x-small" variant="tonal">
+                            {{ $t('migrationTool.stepMappingCount', { count: group.rows.length }) }}
+                        </v-chip>
+                    </div>
+                    <v-table density="comfortable">
+                        <thead>
+                            <tr>
+                                <th>{{ $t('common.name') }}</th>
+                                <th>{{ $t('migrationTool.source') }}</th>
+                                <th>{{ $t('migrationTool.mappingFlow') }}</th>
+                                <th>{{ $t('migrationTool.lastRun') }}</th>
+                                <th class="text-right">{{ $t('common.actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="row in group.rows" :key="row.mapping.id">
+                                <td>
+                                    <div>{{ row.mapping.name }}</div>
+                                    <div v-if="row.blocked" class="text-caption text-warning">
+                                        <v-icon size="x-small" class="me-1">mdi-alert-outline</v-icon>{{ row.blockedText }}
+                                    </div>
+                                    <div v-if="row.heavy" class="text-caption text-medium-emphasis">
+                                        <v-icon size="x-small" class="me-1">mdi-console</v-icon>{{ $t('migrationTool.heavyHint') }}
+                                    </div>
+                                </td>
+                                <td>{{ row.mapping.source?.name }}</td>
+                                <td class="text-caption">
+                                    <code>{{ row.mapping.source_table }}</code>
+                                    <v-icon size="x-small" class="mx-1">mdi-arrow-right</v-icon>
+                                    <v-chip size="x-small" variant="tonal" color="primary">{{ targetLabel(row.mapping.target) }}</v-chip>
+                                    <div v-if="row.hint" class="text-caption text-medium-emphasis mt-1 mapping-hint">{{ row.hint }}</div>
+                                </td>
+                                <td>
+                                    <v-chip
+                                        :color="row.chip.color"
+                                        :prepend-icon="row.chip.icon"
+                                        variant="tonal"
+                                        size="small"
+                                    >
+                                        {{ row.chip.label }}
+                                    </v-chip>
+                                </td>
+                                <td class="text-right text-no-wrap">
+                                    <v-btn
+                                        v-if="row.heavy"
+                                        icon size="small" variant="text"
+                                        :title="$t('migrationTool.copyCli')"
+                                        @click="copyCli(row.mapping)"
+                                    >
+                                        <v-icon size="small">mdi-console-line</v-icon>
+                                    </v-btn>
+                                    <v-btn
+                                        icon size="small" variant="text"
+                                        :title="row.blocked ? row.blockedText : $t('migrationTool.runImport')"
+                                        :loading="runningId === row.mapping.id"
+                                        :color="row.blocked ? 'warning' : 'success'"
+                                        :disabled="rowBusy"
+                                        @click="run(row.mapping)"
+                                    >
+                                        <v-icon size="small">mdi-play</v-icon>
+                                    </v-btn>
+                                    <v-btn icon size="small" variant="text" :disabled="rowBusy" @click="openEditor(row.mapping)">
+                                        <v-icon size="small">mdi-pencil</v-icon>
+                                    </v-btn>
+                                    <v-btn
+                                        icon size="small" variant="text" color="error"
+                                        :loading="deletingId === row.mapping.id"
+                                        :disabled="rowBusy"
+                                        @click="deleteMapping(row.mapping)"
+                                    >
+                                        <v-icon size="small">mdi-delete</v-icon>
+                                    </v-btn>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </v-table>
+                </div>
+            </template>
             <empty-state v-else compact icon="mdi-swap-horizontal" :title="$t('migrationTool.noMappings')" />
         </v-card-text>
 
@@ -369,10 +413,17 @@ import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { useDialog } from '@/composables/useDialog.js';
 import EmptyState from '../../common/EmptyState.vue';
+import {
+    groupMappingsByStep,
+    missingPrerequisites,
+    isHeavyMapping,
+    runChip,
+    cliCommandFor,
+} from '@/utils/migrationGuide.js';
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 const dialog = useDialog();
-const emit = defineEmits(['notify', 'run']);
+const emit = defineEmits(['notify', 'run', 'changed']);
 
 const mappings = ref([]);
 const sources = ref([]);
@@ -432,6 +483,58 @@ const canSave = computed(() =>
 );
 
 const targetLabel = (key) => targets.value.find(target => target.key === key)?.label || key;
+
+// What the "last run" chip reads: the state, plus the date for runs that
+// are over.
+const chipLabel = (chip) => {
+    const base = t(`migrationTool.${chip.key}`, { ...chip.params });
+    const finished = ['completed', 'completedWithErrors', 'failed'].includes(chip.state);
+    if (!finished || !chip.date) return base;
+
+    return t('migrationTool.lastRunOn', { text: base, date: new Date(chip.date).toLocaleDateString() });
+};
+
+// Mappings grouped into the import steps, each row carrying everything it
+// needs to explain itself: the target hint, its last run, whether another
+// import has to go first and whether the table is too big for the button.
+const mappingGroups = computed(() =>
+    groupMappingsByStep(mappings.value, targets.value).map(group => ({
+        step: group.step,
+        rows: group.mappings.map(mapping => {
+            const target = targets.value.find(item => item.key === mapping.target);
+            const missing = missingPrerequisites(mapping, targets.value, mappings.value);
+            const chip = runChip(mapping);
+
+            return {
+                mapping,
+                hint: target?.hint || '',
+                heavy: isHeavyMapping(mapping, target),
+                blocked: missing.length > 0,
+                blockedText: missing.length
+                    ? t('migrationTool.prereqBlocked', { targets: missing.map(item => item.label).join(', ') })
+                    : '',
+                chip: { ...chip, label: chipLabel(chip) },
+            };
+        }),
+    }))
+);
+
+// A name for the step where we have one, "Step N" otherwise.
+const stepTitle = (step) => {
+    const key = `migrationTool.mappingStep${step}`;
+    return te(key) ? t(key) : t('migrationTool.mappingStepFallback', { step });
+};
+
+// Big tables belong on the command line — the dashboard request can time out.
+const copyCli = async (mapping) => {
+    const command = cliCommandFor(mapping);
+    try {
+        await navigator.clipboard.writeText(command);
+        emit('notify', { text: t('migrationTool.cliCopied') });
+    } catch (e) {
+        emit('notify', { text: t('migrationTool.cliCopyFailed', { command }), color: 'warning' });
+    }
+};
 const sampleFor = (column) => {
     if (!column) return null;
     if (sample.value && sample.value[column] !== undefined) return sample.value[column];
@@ -620,6 +723,7 @@ const save = async () => {
             editing.value = data;
         }
         await fetchAll();
+        emit('changed');
         emit('notify', { text: t('migrationTool.mappingSaved') });
         return true;
     } catch (e) {
@@ -648,11 +752,21 @@ const doPreview = async () => {
 
 const run = async (mapping) => {
     if (rowBusy.value) return;
+    // The rows find each other by legacy id, so running an import before its
+    // prerequisite can produce orphans. That is a warning, not a wall: the data
+    // may have been imported earlier, through the CLI, or from a mapping that no
+    // longer exists, and only the person running it can tell.
+    const missing = missingPrerequisites(mapping, targets.value, mappings.value);
     const ok = await dialog.confirm({
         title: t('migrationTool.runImport'),
-        content: t('migrationTool.confirmRun', { name: mapping.name }),
+        content: missing.length
+            ? t('migrationTool.confirmRunBlocked', {
+                name: mapping.name,
+                targets: missing.map(item => item.label).join(', '),
+            })
+            : t('migrationTool.confirmRun', { name: mapping.name }),
         confirmationText: t('migrationTool.runImport'),
-        color: 'primary',
+        color: missing.length ? 'warning' : 'primary',
     });
     if (!ok) return;
     runningId.value = mapping.id;
@@ -660,6 +774,8 @@ const run = async (mapping) => {
         const { data } = await axios.post(`/api/admin/migrations/mappings/${mapping.id}/run`);
         emit('run', data.batchId);
         emit('notify', { text: t('migrationTool.importStarted') });
+        await fetchAll();
+        emit('changed');
     } catch (e) {
         emit('notify', { text: e.response?.data?.message || e.message, color: 'error' });
     } finally {
@@ -701,6 +817,7 @@ const doImport = async () => {
         const { data } = await axios.post('/api/admin/migrations/mappings/import', payload);
         importErrors.value = data.errors || [];
         await fetchAll();
+        emit('changed');
         emit('notify', { text: t('migrationTool.importResult', { created: data.created, updated: data.updated }) });
         if (!importErrors.value.length) {
             importDialog.value = false;
@@ -725,6 +842,7 @@ const deleteMapping = async (mapping) => {
     try {
         await axios.delete(`/api/admin/migrations/mappings/${mapping.id}`);
         await fetchAll();
+        emit('changed');
     } catch (e) {
         emit('notify', { text: e.response?.data?.message || e.message, color: 'error' });
     } finally {
@@ -742,6 +860,10 @@ defineExpose({ fetchAll });
     padding-top: 6px;
     padding-bottom: 6px;
     vertical-align: top;
+}
+
+.mapping-hint {
+    max-width: 320px;
 }
 
 .preview-table {

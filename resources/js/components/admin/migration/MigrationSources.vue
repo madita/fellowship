@@ -116,7 +116,7 @@ import EmptyState from '../../common/EmptyState.vue';
 
 const { t } = useI18n();
 const feedback = useDialog();
-const emit = defineEmits(['notify', 'changed']);
+const emit = defineEmits(['notify', 'changed', 'tested']);
 
 const drivers = ['mysql', 'mariadb', 'pgsql', 'sqlite', 'sqlsrv'];
 const sources = ref([]);
@@ -182,6 +182,8 @@ const testSource = async (source) => {
     try {
         const { data } = await axios.post(`/api/admin/migrations/sources/${source.id}/test`);
         emit('notify', { text: t('migrationTool.connectionOk', { tables: data.tables }) });
+        // Lets the guide on the dashboard tick off "connection tested".
+        emit('tested', source.id);
     } catch (e) {
         emit('notify', { text: t('migrationTool.connectionFailed', { error: e.response?.data?.error || e.message }), color: 'error' });
     } finally {
