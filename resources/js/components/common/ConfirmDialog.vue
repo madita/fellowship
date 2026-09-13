@@ -60,7 +60,10 @@ function cancel() {
 }
 
 // Disable the confirmation button if keyword is required but not matched
+// Must be a real boolean: Vue casts an empty string on a Boolean prop to true,
+// so returning '' here disabled the confirm button on every dialog that asks
+// for no keyword.
 const confirmationButtonDisabled = computed(() => {
-    return props.confirmationKeyword && props.confirmationKeyword !== textField.value;
+    return !!props.confirmationKeyword && props.confirmationKeyword !== textField.value;
 });
 </script>
