@@ -11,6 +11,10 @@
 // of target keys it `requires` and sometimes a `hint`. The fallbacks below
 // keep the UI sensible against an older backend that does not send them.
 
+// How long a run may go silent before its row counts as stopped rather than
+// working. Shared with the dashboard so both read the same rule.
+import { RUN_STALLED_AFTER_MS } from './migrationRun.js';
+
 // Import phases as documented in docs/migration-mappings.stadtwache.json.
 export const FALLBACK_TARGET_STEPS = {
     users: 1,
@@ -100,7 +104,7 @@ export const groupMappingsByStep = (mappings = [], targets = []) => {
 
 // What the "last run" chip says. Returns the pieces; the component does
 // the translating and date formatting.
-export const runChip = (mapping) => {
+export const runChip = (mapping, now = Date.now()) => {
     const run = mapping?.last_run;
     if (!run || !run.status) {
         return { state: 'never', color: undefined, icon: 'mdi-minus-circle-outline', key: 'lastRunNever', params: {} };
@@ -110,12 +114,30 @@ export const runChip = (mapping) => {
     const errors = Number(run.error_count ?? 0) || 0;
 
     if (run.status === 'pending' || run.status === 'running') {
+        const total = Number(run.total_items ?? 0) || 0;
+
+        // A run writes to its log on every row, so the log's last update is a
+        // heartbeat. Once that stops the process is gone, and a row that keeps
+        // saying "running" is how a dead import goes on looking alive. With no
+        // heartbeat to judge by we say nothing rather than guess.
+        const beat = run.updated_at ? new Date(run.updated_at).getTime() : NaN;
+        if (!Number.isNaN(beat) && now - beat >= RUN_STALLED_AFTER_MS) {
+            return {
+                state: 'stopped',
+                color: 'warning',
+                icon: 'mdi-alert-circle-outline',
+                key: 'lastRunStopped',
+                params: { count: rows, total },
+                date: run.updated_at,
+            };
+        }
+
         return {
             state: 'running',
             color: 'primary',
             icon: 'mdi-progress-clock',
             key: run.status === 'pending' ? 'lastRunPending' : 'lastRunRunning',
-            params: { count: rows, total: Number(run.total_items ?? 0) || 0 },
+            params: { count: rows, total },
             date: run.started_at || null,
         };
     }

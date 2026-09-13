@@ -457,6 +457,10 @@ class MigrationController extends Controller
                         'error_count'     => $log->error_count,
                         'started_at'      => $log->started_at?->toIso8601String(),
                         'completed_at'    => $log->completed_at?->toIso8601String(),
+                        // Heartbeat. Without it the row chip cannot tell a slow
+                        // import from one whose process died, and says "running"
+                        // for a run that stopped hours ago.
+                        'updated_at'      => $log->updated_at?->toIso8601String(),
                         'batch_id'        => $log->batch_id,
                     ] : null,
                 ];

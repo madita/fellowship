@@ -4528,6 +4528,7 @@ export default {
         'lastRunNever': 'Never run',
         'lastRunPending': 'Queued',
         'lastRunRunning': 'Running — {count} of {total}',
+        'lastRunStopped': 'Stopped after {count} of {total}',
         'lastRunCompleted': 'Imported {count} rows',
         'lastRunCompletedErrors': 'Imported {count} rows, {errors} errors',
         'lastRunFailed': 'Run failed',

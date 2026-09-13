@@ -4687,6 +4687,7 @@ export default {
         'lastRunNever': 'Noch nie gelaufen',
         'lastRunPending': 'In der Warteschlange',
         'lastRunRunning': 'Läuft — {count} von {total}',
+        'lastRunStopped': 'Abgebrochen nach {count} von {total}',
         'lastRunCompleted': '{count} Zeilen importiert',
         'lastRunCompletedErrors': '{count} Zeilen importiert, {errors} Fehler',
         'lastRunFailed': 'Lauf fehlgeschlagen',

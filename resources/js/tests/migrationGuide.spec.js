@@ -139,6 +139,42 @@ describe('runChip', () => {
     });
 });
 
+describe('runChip staleness', () => {
+    const NOW = Date.UTC(2026, 8, 13, 12, 0, 0);
+    const ago = (ms) => new Date(NOW - ms).toISOString();
+    const running = (extra) => mapping('Gallery Images', 'gallery_images', {
+        status: 'running',
+        processed_items: 4542,
+        total_items: 6841,
+        error_count: 0,
+        started_at: ago(3600000),
+        ...extra,
+    });
+
+    it('says running while the log is still being written', () => {
+        expect(runChip(running({ updated_at: ago(5000) }), NOW).state).toBe('running');
+    });
+
+    it('says stopped once the log has gone silent, so a dead import stops looking alive', () => {
+        const chip = runChip(running({ updated_at: ago(10 * 60 * 1000) }), NOW);
+
+        expect(chip.state).toBe('stopped');
+        expect(chip.color).toBe('warning');
+        expect(chip.key).toBe('lastRunStopped');
+        expect(chip.params).toEqual({ count: 4542, total: 6841 });
+    });
+
+    it('keeps saying running when there is no heartbeat to judge by', () => {
+        expect(runChip(running({ updated_at: null }), NOW).state).toBe('running');
+        expect(runChip(running({ updated_at: 'not a date' }), NOW).state).toBe('running');
+    });
+
+    it('leaves a finished run alone however old it is', () => {
+        const old = mapping('X', 'events', { status: 'completed', processed_items: 5, updated_at: ago(86400000) });
+        expect(runChip(old, NOW).state).toBe('completed');
+    });
+});
+
 describe('prerequisites', () => {
     const targets = [
         target('forum_categories', { step: 2 }),

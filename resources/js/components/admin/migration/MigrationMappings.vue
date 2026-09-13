@@ -501,7 +501,7 @@ const targetLabel = (key) => targets.value.find(target => target.key === key)?.l
 // are over.
 const chipLabel = (chip) => {
     const base = t(`migrationTool.${chip.key}`, { ...chip.params });
-    const finished = ['completed', 'completedWithErrors', 'failed'].includes(chip.state);
+    const finished = ['completed', 'completedWithErrors', 'failed', 'stopped'].includes(chip.state);
     if (!finished || !chip.date) return base;
 
     return t('migrationTool.lastRunOn', { text: base, date: new Date(chip.date).toLocaleDateString() });

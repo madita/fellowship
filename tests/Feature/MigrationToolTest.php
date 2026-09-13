@@ -1086,6 +1086,8 @@ class MigrationToolTest extends TestCase
         $this->assertSame(1, $lastRun['error_count']);
         $this->assertNotNull($lastRun['started_at']);
         $this->assertNotNull($lastRun['completed_at']);
+        // The row chip needs a heartbeat to tell a slow run from a dead one.
+        $this->assertNotNull($lastRun['updated_at']);
 
         // Runs belong to one mapping only.
         $this->assertNull($rows['Untouched mapping']['last_run']);
@@ -1211,13 +1213,17 @@ class MigrationToolTest extends TestCase
         // The list says what ran, rather than only how many things ran.
         $this->assertSame([$mapping->name], $batch['names']);
 
-        // A batch still in flight keeps saying so.
-        $log((string) Str::uuid());
+        // A batch still in flight keeps saying so. Both batches are created
+        // within the same second, so their order in the list is not decided:
+        // find this one by its id rather than by position.
+        $runningBatchId = (string) Str::uuid();
+        $log($runningBatchId);
 
-        $running = $this->actingAs($this->admin, 'sanctum')
+        $running = collect($this->actingAs($this->admin, 'sanctum')
             ->getJson('/api/admin/migrations/history')
             ->assertOk()
-            ->json('batches.0');
+            ->json('batches'))
+            ->firstWhere('batchId', $runningBatchId);
 
         $this->assertSame('running', $running['status']);
         $this->assertSame(0, $running['completed']);
