@@ -71,12 +71,16 @@ class MigrationController extends Controller
     public function index(): JsonResponse
     {
         $migrations = [];
+        $order      = 0;
         foreach ($this->migrations as $key => $migration) {
             $migrations[] = [
                 'key'         => $key,
                 'name'        => $migration['name'],
                 'description' => $migration['description'],
                 'group'       => $migration['group'],
+                // The steps build on each other: gallery links first, then
+                // the wiki link rewrites (declaration order = run order).
+                'order' => ++$order,
             ];
         }
 
@@ -86,12 +90,21 @@ class MigrationController extends Controller
             ->distinct()
             ->pluck('batch_id');
 
+        // Post-import steps only do something once rows were imported —
+        // the UI warns when they are run on an empty site. "import_%" is
+        // the key GenericImportJob logs mapping runs under (the "_" is a
+        // single-character wildcard here, which no other key collides with).
+        $importsRun = MigrationLog::where('migration_key', 'like', 'import_%')
+            ->where('status', 'completed')
+            ->exists();
+
         return response()->json([
             'migrations' => $migrations,
             'groups'     => [
                 ['key' => 'post', 'name' => 'Post-import steps'],
             ],
             'activeBatches' => $activeBatches,
+            'imports_run'   => $importsRun,
         ]);
     }
 
@@ -397,8 +410,35 @@ class MigrationController extends Controller
 
     public function mappings(): JsonResponse
     {
+        $mappings = MigrationMapping::with('source:id,name,driver')->orderBy('name')->get();
+
+        // Newest run per mapping in a single grouped query — the listing
+        // shows "last run" for every mapping, so a per-mapping lookup would
+        // be an N+1.
+        $keys     = $mappings->map(fn ($mapping) => GenericImportJob::migrationKeyFor($mapping->id))->all();
+        $lastRuns = MigrationLog::whereIn('id', function ($query) use ($keys) {
+            $query->from('migration_logs')
+                ->selectRaw('MAX(id)')
+                ->whereIn('migration_key', $keys)
+                ->groupBy('migration_key');
+        })->get()->keyBy('migration_key');
+
         return response()->json(
-            MigrationMapping::with('source:id,name,driver')->orderBy('name')->get()
+            $mappings->map(function (MigrationMapping $mapping) use ($lastRuns) {
+                $log = $lastRuns->get(GenericImportJob::migrationKeyFor($mapping->id));
+
+                return $mapping->toArray() + [
+                    'last_run' => $log ? [
+                        'status'          => $log->status,
+                        'total_items'     => $log->total_items,
+                        'processed_items' => $log->processed_items,
+                        'error_count'     => $log->error_count,
+                        'started_at'      => $log->started_at?->toIso8601String(),
+                        'completed_at'    => $log->completed_at?->toIso8601String(),
+                        'batch_id'        => $log->batch_id,
+                    ] : null,
+                ];
+            })->values()
         );
     }
 
@@ -846,6 +886,11 @@ class MigrationController extends Controller
             'field_map.*.transform'      => ['nullable', Rule::in(RowMapper::TRANSFORMS)],
             'field_map.*.format'         => 'nullable|string|max:64',
             'field_map.*.template'       => 'nullable|string|max:1024',
+            // Without this the validator drops default-only fields: validated()
+            // returns just the keys it knows, so a spec like
+            // {"legacy_source": {"default": "wiki"}} was saved as an empty
+            // field and every imported row then failed its required check.
+            'field_map.*.default'        => 'nullable',
             'options'                    => 'nullable|array',
             'options.locale'             => 'nullable|string|max:10|regex:/^[a-z]{2}(-[A-Za-z]{2,4})?$/',
             'options.joins'              => 'nullable|array',
