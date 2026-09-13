@@ -46,6 +46,12 @@
                 <v-tab value="runs">
                     <v-icon start>mdi-auto-fix</v-icon>
                     <span class="font-weight-bold me-1">3.</span>{{ $t('migrationTool.tabRuns') }}
+                    <v-badge
+                        v-if="isRunning"
+                        dot
+                        inline
+                        :color="runStalled ? 'warning' : 'primary'"
+                    />
                 </v-tab>
                 <v-tab value="legacyUsers">
                     <v-icon start>mdi-account-convert</v-icon>
@@ -55,6 +61,65 @@
         </page-header>
 
         <v-container fluid>
+        <!-- An import keeps running while this page is closed, so after a
+             reload this banner is what says so. It sits above the tabs'
+             content on purpose: the run view is only one of four tabs. -->
+        <v-alert
+            v-if="currentBatchId && isRunning"
+            :type="runStalled ? 'warning' : 'info'"
+            variant="tonal"
+            border="start"
+            class="mb-4"
+        >
+            <div class="d-flex flex-wrap align-center ga-3">
+                <v-progress-circular v-if="!runStalled" indeterminate size="22" width="2" />
+                <div class="flex-grow-1" style="min-width: 220px;">
+                    <div class="text-subtitle-2">
+                        {{ runStalled ? $t('migrationDashboard.stalledTitle') : $t('migrationDashboard.runningTitle') }}
+                    </div>
+                    <div class="text-body-2">{{ runningLine }}</div>
+                    <div v-if="runProgress.currentItem && !runStalled" class="text-caption text-medium-emphasis">
+                        {{ $t('migrationDashboard.runningItem', { item: runProgress.currentItem }) }}
+                    </div>
+                    <div v-if="runStalled" class="text-body-2 mt-1">
+                        {{ $t('migrationDashboard.stalledText', { count: runStalledMinutes }) }}
+                    </div>
+                    <div v-else class="text-caption text-medium-emphasis">
+                        {{ $t('migrationDashboard.runningKeepOpen') }}
+                    </div>
+                </div>
+                <div class="d-flex align-center ga-2">
+                    <v-btn
+                        v-if="tab !== 'runs'"
+                        size="small"
+                        variant="tonal"
+                        append-icon="mdi-arrow-right"
+                        @click="tab = 'runs'"
+                    >
+                        {{ $t('migrationDashboard.runningOpen') }}
+                    </v-btn>
+                    <v-btn
+                        size="small"
+                        color="error"
+                        variant="text"
+                        :loading="cancelling"
+                        :disabled="cancelling"
+                        @click="cancelBatch"
+                    >
+                        {{ $t('common.cancel') }}
+                    </v-btn>
+                </div>
+            </div>
+            <v-progress-linear
+                v-if="runProgress.percentage !== null"
+                :model-value="runProgress.percentage"
+                :color="runStalled ? 'warning' : 'primary'"
+                height="6"
+                rounded
+                class="mt-3"
+            />
+        </v-alert>
+
         <!-- The order of the whole migration, with live state per step. -->
         <v-card class="mb-4">
             <v-card-title class="d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
@@ -415,6 +480,7 @@ import PageHeader from '../../components/common/PageHeader.vue';
 import EmptyState from '../../components/common/EmptyState.vue';
 import { useDialog } from '@/composables/useDialog.js';
 import { buildGuideSteps, postStepsDone, sortByOrder } from '@/utils/migrationGuide.js';
+import { isRunStalled, minutesSinceUpdate, runSummary } from '@/utils/migrationRun.js';
 
 const { t } = useI18n();
 const dialog = useDialog();
@@ -462,6 +528,8 @@ const history = ref([]);
 const terminalRef = ref(null);
 const selectedLogMigration = ref(null);
 const pollingInterval = ref(null);
+const OVERVIEW_REFRESH_EVERY = 5;
+let pollTick = 0;
 
 // Guide state — counts only, fetched alongside the tabs so the guide is
 // right even for tabs that were never opened.
@@ -492,6 +560,26 @@ const snackbar = reactive({
 // Computed
 const isRunning = computed(() => {
     return batchStatus.value?.status === 'running' || batchStatus.value?.status === 'pending';
+});
+
+// Re-read on every poll so "no progress for N minutes" keeps counting up.
+const runNow = ref(Date.now());
+const runProgress = computed(() => runSummary(batchStatus.value));
+const runStalled = computed(() => isRunStalled(batchStatus.value, runNow.value));
+const runStalledMinutes = computed(() => minutesSinceUpdate(batchStatus.value, runNow.value));
+
+const runningLine = computed(() => {
+    const run = runProgress.value;
+    if (!run.name || run.status === 'pending') return t('migrationDashboard.runningQueued');
+
+    const rows = run.total > 0
+        ? t('migrationDashboard.runningRows', { name: run.name, processed: run.processed, total: run.total })
+        : t('migrationDashboard.runningRowsUnknown', { name: run.name, processed: run.processed });
+
+    // A batch of post-import steps runs several migrations in a row.
+    return run.steps > 1
+        ? rows + ' · ' + t('migrationDashboard.runningSteps', { done: run.stepsDone, total: run.steps })
+        : rows;
 });
 
 const importedMappingCount = computed(() =>
@@ -727,6 +815,13 @@ const fetchBatchStatus = async () => {
         const response = await axios.get(`/api/admin/migrations/status/${currentBatchId.value}`);
         const prevStatus = batchStatus.value?.status;
         batchStatus.value = response.data;
+        runNow.value = Date.now();
+
+        // Every fifth poll (~10s): the mapping rows and the guide read their
+        // state from the overview, so refresh it while an import is working.
+        if (isRunning.value && ++pollTick % OVERVIEW_REFRESH_EVERY === 0) {
+            fetchOverview();
+        }
 
         // Remember which post-import steps we watched finish — the guide
         // uses it when the API reports no run state of its own.

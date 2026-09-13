@@ -1130,6 +1130,55 @@ class MigrationToolTest extends TestCase
         );
     }
 
+    /**
+     * An import runs in the background, so the screen has to be able to find
+     * it again after a reload: the dashboard restores the newest active batch
+     * and then watches the log's heartbeat to tell a slow run from a dead one.
+     */
+    public function test_a_running_import_is_reported_so_the_page_can_pick_it_up_again(): void
+    {
+        $mapping = $this->createEventsMapping($this->createSource());
+
+        $log = fn (string $status) => MigrationLog::create([
+            'batch_id'       => (string) Str::uuid(),
+            'migration_key'  => GenericImportJob::migrationKeyFor($mapping->id),
+            'migration_name' => $mapping->name,
+            'status'         => $status,
+        ]);
+
+        $done   = $log('completed');
+        $older  = $log('running');
+        $newer  = $log('pending');
+
+        $index = $this->actingAs($this->admin, 'sanctum')->getJson('/api/admin/migrations')->json();
+
+        // Newest first: the page follows activeBatches[0] after a reload, and
+        // a batch that already finished is not something to follow at all.
+        $this->assertSame([$newer->batch_id, $older->batch_id], $index['activeBatches']);
+        $this->assertNotContains($done->batch_id, $index['activeBatches']);
+
+        $older->markRunning(10);
+        $older->incrementProgress('Town Hall');
+
+        $status = fn () => $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/status/' . $older->batch_id)
+            ->assertOk()
+            ->json();
+
+        $first = $status();
+        $this->assertSame('running', $first['status']);
+        $this->assertSame(1, $first['migrations'][0]['processed']);
+        $this->assertNotNull($first['migrations'][0]['updatedAt']);
+        $this->assertNotNull($first['lastUpdateAt']);
+
+        // The heartbeat has to move while rows come in — a frozen one is how
+        // the UI spots a run whose process is gone.
+        $this->travel(2)->minutes();
+        $older->incrementProgress('Old Docks');
+
+        $this->assertNotSame($first['lastUpdateAt'], $status()['lastUpdateAt']);
+    }
+
     public function test_non_admins_cannot_use_the_tool(): void
     {
         $source = $this->createSource();

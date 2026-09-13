@@ -85,9 +85,11 @@ class MigrationController extends Controller
         }
 
         // Get any active batches
+        // Newest first: after a reload the screen should pick up the run that
+        // is going on now, not whichever batch the database listed first.
         $activeBatches = MigrationLog::whereIn('status', ['pending', 'running'])
-            ->select('batch_id')
-            ->distinct()
+            ->groupBy('batch_id')
+            ->orderByRaw('MAX(id) desc')
             ->pluck('batch_id');
 
         // Post-import steps only do something once rows were imported —
@@ -184,6 +186,9 @@ class MigrationController extends Controller
                 'lastError'   => $log->last_error,
                 'startedAt'   => $log->started_at?->toIso8601String(),
                 'completedAt' => $log->completed_at?->toIso8601String(),
+                // Every imported row writes to the log, so its last update is a
+                // heartbeat: it tells a slow run apart from one whose process died.
+                'updatedAt'   => $log->updated_at?->toIso8601String(),
             ];
         });
 
@@ -202,8 +207,9 @@ class MigrationController extends Controller
         }
 
         return response()->json([
-            'batchId' => $batchId,
-            'status'  => $overallStatus,
+            'batchId'      => $batchId,
+            'status'       => $overallStatus,
+            'lastUpdateAt' => $logs->max('updated_at')?->toIso8601String(),
             'summary' => [
                 'pending'   => $pending,
                 'running'   => $running,
