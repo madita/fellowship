@@ -174,6 +174,12 @@ export const isHeavyMapping = (mapping, target = null) => {
 export const cliCommandFor = (mapping) =>
     `php artisan migration:run-mapping "${mapping?.name ?? ''}"`;
 
+// A whole step as commands, one per line, in the order the rows are listed.
+// Several imports in a row outlive any browser request, so the shell is where
+// they belong.
+export const cliCommandsFor = (mappings = []) =>
+    (mappings || []).filter(Boolean).map(cliCommandFor).join('\n');
+
 // Have the post-import steps run? The backend may report it per step
 // (`last_run` / `has_run`); otherwise we count what this session watched
 // finish.

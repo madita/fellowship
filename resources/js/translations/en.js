@@ -4536,6 +4536,8 @@ export default {
         'heavyHint': 'Big table — run this one from the command line, the button can time out.',
         'copyCli': 'Copy the command line for this import',
         'cliCopied': 'Command copied — paste it into your terminal',
+        'copyStepCli': 'Copy commands for this step',
+        'cliStepCopied': '{count} commands copied. Run them one after another in a terminal.',
         'cliCopyFailed': 'Could not copy. Run: {command}',
     },
     'migrationDashboard': {
@@ -4582,6 +4584,8 @@ export default {
         'runningKeepOpen': 'Come back to this page at any time to see where the import got to.',
         'stalledTitle': 'This import may have stopped',
         'stalledText': 'Nothing has been written for {count} minutes. A run started from a browser tab stops when the request times out. Start it again, or run it from the command line for large tables.',
+        'markStopped': 'Mark as stopped',
+        'markStoppedConfirm': 'Nothing has been written for {count} minutes, so the process behind this run is gone. Marking it stopped clears it from the dashboard and frees the next step. Rows that were already imported stay, and running the import again continues where it left off.',
         'guideTitle': 'How a migration runs',
         'guideIntro': 'Work through the five steps in order — each one needs the one before it.',
         'guideHide': 'Hide',

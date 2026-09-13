@@ -4,6 +4,7 @@ import {
     isRunStalled,
     lastUpdateTime,
     minutesSinceUpdate,
+    runIsLive,
     runSummary,
     RUN_STALLED_AFTER_MS,
 } from '@/utils/migrationRun.js';
@@ -97,6 +98,25 @@ describe('isRunStalled', () => {
         const blind = batch('running', [migration({ startedAt: null, updatedAt: null, completedAt: null })]);
         expect(isRunStalled(blind, NOW)).toBe(false);
         expect(minutesSinceUpdate(blind, NOW)).toBe(0);
+    });
+});
+
+describe('runIsLive', () => {
+    it('is true only while an active batch is still writing', () => {
+        expect(runIsLive(batch('running', [migration({ updatedAt: iso(5000) })]), NOW)).toBe(true);
+    });
+
+    it('is false for a batch whose heartbeat stopped, so the next step stays usable', () => {
+        const dead = batch('running', [migration({
+            startedAt: iso(RUN_STALLED_AFTER_MS + 5000),
+            updatedAt: iso(RUN_STALLED_AFTER_MS + 1000),
+        })]);
+        expect(runIsLive(dead, NOW)).toBe(false);
+    });
+
+    it('is false when nothing is running at all', () => {
+        expect(runIsLive(batch('completed', [migration({ status: 'completed' })]), NOW)).toBe(false);
+        expect(runIsLive(null, NOW)).toBe(false);
     });
 });
 

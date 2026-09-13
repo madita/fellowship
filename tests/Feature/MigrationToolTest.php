@@ -1179,6 +1179,50 @@ class MigrationToolTest extends TestCase
         $this->assertNotSame($first['lastUpdateAt'], $status()['lastUpdateAt']);
     }
 
+    /**
+     * The history list feeds "Recent Batches". It reported every finished batch
+     * as still running, because MySQL returns COUNT() as an int and SUM() as a
+     * string and the status check compared the two strictly. Sqlite returns both
+     * as ints, which is why the tests never saw it — so this test pins the cast
+     * and the types, not just the label.
+     */
+    public function test_history_names_each_batch_and_reports_finished_ones_as_completed(): void
+    {
+        $mapping = $this->createEventsMapping($this->createSource());
+
+        $log = fn (string $batchId) => MigrationLog::create([
+            'batch_id'       => $batchId,
+            'migration_key'  => GenericImportJob::migrationKeyFor($mapping->id),
+            'migration_name' => $mapping->name,
+            'status'         => 'running',
+        ]);
+
+        $log((string) Str::uuid())->markCompleted();
+
+        $batch = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/history')
+            ->assertOk()
+            ->json('batches.0');
+
+        $this->assertSame('completed', $batch['status']);
+        $this->assertSame(1, $batch['completed'], 'counts come back as integers, whatever the driver returns');
+        $this->assertSame(1, $batch['totalMigrations']);
+
+        // The list says what ran, rather than only how many things ran.
+        $this->assertSame([$mapping->name], $batch['names']);
+
+        // A batch still in flight keeps saying so.
+        $log((string) Str::uuid());
+
+        $running = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/history')
+            ->assertOk()
+            ->json('batches.0');
+
+        $this->assertSame('running', $running['status']);
+        $this->assertSame(0, $running['completed']);
+    }
+
     public function test_non_admins_cannot_use_the_tool(): void
     {
         $source = $this->createSource();

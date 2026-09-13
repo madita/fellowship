@@ -13,7 +13,7 @@
                         color="primary"
                         variant="elevated"
                         prepend-icon="mdi-play"
-                        :disabled="isRunning || selectedMigrations.length === 0"
+                        :disabled="runBlocksControls || selectedMigrations.length === 0"
                         :loading="starting"
                         @click="startMigrations"
                     >
@@ -23,7 +23,7 @@
                         color="warning"
                         variant="tonal"
                         prepend-icon="mdi-play-circle"
-                        :disabled="isRunning"
+                        :disabled="runBlocksControls"
                         :loading="starting"
                         @click="runAll"
                     >
@@ -218,7 +218,7 @@
                                 <v-checkbox
                                     :model-value="isGroupSelected(group.key)"
                                     :indeterminate="isGroupPartiallySelected(group.key)"
-                                    :disabled="isRunning"
+                                    :disabled="runBlocksControls"
                                     hide-details
                                     density="compact"
                                     @update:model-value="toggleGroup(group.key, $event)"
@@ -235,7 +235,7 @@
                                         <v-checkbox
                                             v-model="selectedMigrations"
                                             :value="migration.key"
-                                            :disabled="isRunning"
+                                            :disabled="runBlocksControls"
                                             hide-details
                                             density="compact"
                                         />
@@ -290,29 +290,41 @@
                 <!-- Current Batch Progress -->
                 <v-card v-if="currentBatchId" class="mt-4">
                     <v-card-title class="d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
-                        <span>
+                        <span class="d-flex align-center">
+                            <!-- Spin only while the run is really writing: a
+                                 spinner on a dead run is what made a stopped
+                                 import look like it was still working. -->
                             <v-progress-circular
-                                v-if="isRunning"
+                                v-if="runBlocksControls"
                                 indeterminate
                                 size="20"
                                 width="2"
                                 class="mr-2"
                             />
-                            {{ $t('migrationDashboard.batchProgress') }}
+                            <v-icon
+                                v-else-if="runStalled"
+                                icon="mdi-alert-circle-outline"
+                                color="warning"
+                                class="mr-2"
+                            />
+                            {{ runStalled ? $t('migrationDashboard.stalledTitle') : $t('migrationDashboard.batchProgress') }}
                         </span>
                         <v-btn
                             v-if="isRunning"
-                            color="error"
+                            :color="runStalled ? 'warning' : 'error'"
                             variant="text"
                             size="small"
                             :loading="cancelling"
                             :disabled="cancelling"
                             @click="cancelBatch"
                         >
-                            {{ $t('common.cancel') }}
+                            {{ runStalled ? $t('migrationDashboard.markStopped') : $t('common.cancel') }}
                         </v-btn>
                     </v-card-title>
                     <v-card-text>
+                        <v-alert v-if="runStalled" type="warning" density="compact" class="mb-3">
+                            {{ $t('migrationDashboard.stalledText', { count: runStalledMinutes }) }}
+                        </v-alert>
                         <div class="text-body-2 mb-2">
                             {{ $t('migrationDashboard.progressStatus', { completed: batchStatus?.summary?.completed || 0, total: batchStatus?.summary?.total || 0 }) }}
                             <span v-if="batchStatus?.summary?.failed" class="text-error">
@@ -324,12 +336,12 @@
                             <v-list-item
                                 v-for="migration in batchStatus?.migrations || []"
                                 :key="migration.key"
-                                :class="{ 'migration-row--running': migration.status === 'running' }"
+                                :class="{ 'migration-row--running': migration.status === 'running' && !runStalled }"
                             >
                                 <template #prepend>
                                     <v-icon
-                                        :icon="getStatusIcon(migration.status)"
-                                        :color="getStatusColor(migration.status)"
+                                        :icon="rowStatusIcon(migration)"
+                                        :color="rowStatusColor(migration)"
                                         size="small"
                                     />
                                 </template>
@@ -347,7 +359,7 @@
                                         <v-progress-linear
                                             v-if="migration.status === 'running'"
                                             :model-value="migration.percentage"
-                                            color="primary"
+                                            :color="runStalled ? 'warning' : 'primary'"
                                             style="width: 60px;"
                                             height="6"
                                             rounded
@@ -436,8 +448,8 @@
                                         :color="getStatusColor(batch.status)"
                                     />
                                 </template>
-                                <v-list-item-title class="text-body-2">
-                                    {{ $t('migrationDashboard.migrationsCount', { count: batch.totalMigrations }) }}
+                                <v-list-item-title class="text-body-2 text-truncate">
+                                    {{ batchTitle(batch) }}
                                 </v-list-item-title>
                                 <v-list-item-subtitle>
                                     {{ formatDate(batch.startedAt) }}
@@ -480,7 +492,7 @@ import PageHeader from '../../components/common/PageHeader.vue';
 import EmptyState from '../../components/common/EmptyState.vue';
 import { useDialog } from '@/composables/useDialog.js';
 import { buildGuideSteps, postStepsDone, sortByOrder } from '@/utils/migrationGuide.js';
-import { isRunStalled, minutesSinceUpdate, runSummary } from '@/utils/migrationRun.js';
+import { isRunStalled, minutesSinceUpdate, runIsLive, runSummary, RUNNING_STATES } from '@/utils/migrationRun.js';
 
 const { t } = useI18n();
 const dialog = useDialog();
@@ -567,6 +579,10 @@ const runNow = ref(Date.now());
 const runProgress = computed(() => runSummary(batchStatus.value));
 const runStalled = computed(() => isRunStalled(batchStatus.value, runNow.value));
 const runStalledMinutes = computed(() => minutesSinceUpdate(batchStatus.value, runNow.value));
+
+// Only a run that is actually writing may hold the post-import controls shut.
+// A dead import would otherwise block the next step with no way out.
+const runBlocksControls = computed(() => runIsLive(batchStatus.value, runNow.value));
 
 const runningLine = computed(() => {
     const run = runProgress.value;
@@ -762,9 +778,11 @@ const cancelBatch = async () => {
     if (!currentBatchId.value || cancelling.value) return;
 
     const ok = await dialog.confirm({
-        title: t('migrationDashboard.cancelBatchTitle'),
-        content: t('migrationDashboard.cancelBatchConfirm'),
-        confirmationText: t('migrationDashboard.cancelBatchTitle'),
+        title: runStalled.value ? t('migrationDashboard.markStopped') : t('migrationDashboard.cancelBatchTitle'),
+        content: runStalled.value
+            ? t('migrationDashboard.markStoppedConfirm', { count: runStalledMinutes.value })
+            : t('migrationDashboard.cancelBatchConfirm'),
+        confirmationText: runStalled.value ? t('migrationDashboard.markStopped') : t('migrationDashboard.cancelBatchTitle'),
         cancellationText: t('dialogs.confirm.close'),
         color: 'warning',
     });
@@ -775,6 +793,8 @@ const cancelBatch = async () => {
         await axios.post(`/api/admin/migrations/cancel/${currentBatchId.value}`);
         showSnackbar(t('migrationDashboard.batchCancelled'));
         addLog('warning', t('migrationDashboard.batchCancelledByUser'));
+        // Don't wait for the next poll to clear the banner and free the buttons.
+        await fetchBatchStatus();
     } catch (error) {
         showSnackbar(t('migrationDashboard.failedToCancelBatch'), 'error');
     } finally {
@@ -933,6 +953,18 @@ const getStatusColor = (status) => {
     };
     return colors[status];
 };
+
+// A stalled batch has no live rows: show the ones it left mid-flight as
+// stopped rather than as a spinning icon.
+const rowIsStuck = (migration) => runStalled.value && RUNNING_STATES.includes(migration?.status);
+const rowStatusIcon = (migration) => (rowIsStuck(migration) ? 'mdi-alert-circle-outline' : getStatusIcon(migration?.status));
+const rowStatusColor = (migration) => (rowIsStuck(migration) ? 'warning' : getStatusColor(migration?.status));
+
+// Name what ran instead of counting it. An older payload carries no names,
+// so the count stays as the fallback.
+const batchTitle = (batch) => (batch?.names?.length
+    ? batch.names.join(', ')
+    : t('migrationDashboard.migrationsCount', { count: batch?.totalMigrations || 0 }));
 
 const formatTimestamp = (timestamp) => {
     if (!timestamp) return '';

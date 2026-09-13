@@ -4695,6 +4695,8 @@ export default {
         'heavyHint': 'Große Tabelle — starte diesen Import lieber auf der Kommandozeile, der Button kann in ein Timeout laufen.',
         'copyCli': 'Kommandozeilen-Befehl kopieren',
         'cliCopied': 'Befehl kopiert — füge ihn in deinem Terminal ein',
+        'copyStepCli': 'Befehle für diesen Schritt kopieren',
+        'cliStepCopied': '{count} Befehle kopiert. Führe sie nacheinander im Terminal aus.',
         'cliCopyFailed': 'Kopieren hat nicht geklappt. Führe aus: {command}',
     },
     'migrationDashboard': {
@@ -4741,6 +4743,8 @@ export default {
         'runningKeepOpen': 'Komm jederzeit auf diese Seite zurück, um den Stand des Imports zu sehen.',
         'stalledTitle': 'Dieser Import steht möglicherweise',
         'stalledText': 'Seit {count} Minuten wurde nichts geschrieben. Ein aus dem Browser gestarteter Lauf bricht ab, wenn die Anfrage in eine Zeitüberschreitung läuft. Starte ihn erneut oder nutze für große Tabellen die Kommandozeile.',
+        'markStopped': 'Als gestoppt markieren',
+        'markStoppedConfirm': 'Seit {count} Minuten wurde nichts geschrieben, der Prozess hinter diesem Lauf ist also weg. Als gestoppt markieren räumt ihn aus dem Dashboard und gibt den nächsten Schritt frei. Bereits importierte Zeilen bleiben erhalten, ein erneuter Import macht dort weiter, wo er aufgehört hat.',
         'guideTitle': 'So läuft eine Migration',
         'guideIntro': 'Arbeite die fünf Schritte der Reihe nach ab — jeder braucht den davor.',
         'guideHide': 'Ausblenden',

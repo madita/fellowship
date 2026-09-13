@@ -27,6 +27,18 @@
                         <v-chip size="x-small" variant="tonal">
                             {{ $t('migrationTool.stepMappingCount', { count: group.rows.length }) }}
                         </v-chip>
+                        <v-spacer />
+                        <!-- The step as commands. Imports run one at a time here,
+                             and several in a row outlive a browser request, so a
+                             whole step belongs in a shell. -->
+                        <v-btn
+                            size="small"
+                            variant="text"
+                            prepend-icon="mdi-console-line"
+                            @click="copyStepCli(group)"
+                        >
+                            {{ $t('migrationTool.copyStepCli') }}
+                        </v-btn>
                     </div>
                     <v-table density="comfortable">
                         <thead>
@@ -419,6 +431,7 @@ import {
     isHeavyMapping,
     runChip,
     cliCommandFor,
+    cliCommandsFor,
 } from '@/utils/migrationGuide.js';
 
 const { t, te } = useI18n();
@@ -535,6 +548,17 @@ const copyCli = async (mapping) => {
         emit('notify', { text: t('migrationTool.cliCopyFailed', { command }), color: 'warning' });
     }
 };
+// Every import in this step, one command per line, to run back to back.
+const copyStepCli = async (group) => {
+    const commands = cliCommandsFor(group.rows.map(row => row.mapping));
+    try {
+        await navigator.clipboard.writeText(commands);
+        emit('notify', { text: t('migrationTool.cliStepCopied', { count: group.rows.length }) });
+    } catch (e) {
+        emit('notify', { text: t('migrationTool.cliCopyFailed', { command: commands }), color: 'warning' });
+    }
+};
+
 const sampleFor = (column) => {
     if (!column) return null;
     if (sample.value && sample.value[column] !== undefined) return sample.value[column];

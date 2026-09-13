@@ -46,6 +46,12 @@ export const isRunStalled = (batchStatus, now = Date.now(), threshold = RUN_STAL
     return last === null ? false : now - last >= threshold;
 };
 
+// A batch that is working for real. A run whose heartbeat stopped is doing
+// nothing, so it must not keep the controls for the next step disabled —
+// otherwise a dead import blocks the migration with no way out.
+export const runIsLive = (batchStatus, now = Date.now(), threshold = RUN_STALLED_AFTER_MS) =>
+    isRunActive(batchStatus) && !isRunStalled(batchStatus, now, threshold);
+
 export const minutesSinceUpdate = (batchStatus, now = Date.now()) => {
     const last = lastUpdateTime(batchStatus);
     return last === null ? 0 : Math.max(0, Math.floor((now - last) / 60000));

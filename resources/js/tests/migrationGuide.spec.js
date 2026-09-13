@@ -10,6 +10,7 @@ import {
     canRunMapping,
     isHeavyMapping,
     cliCommandFor,
+    cliCommandsFor,
     postStepsDone,
     sortByOrder,
     buildGuideSteps,
@@ -201,6 +202,20 @@ describe('heavy imports', () => {
     it('builds the CLI command with the mapping name quoted', () => {
         expect(cliCommandFor(mapping('Forum Posts', 'forum_posts')))
             .toBe('php artisan migration:run-mapping "Forum Posts"');
+    });
+});
+
+describe('cliCommandsFor', () => {
+    it('gives one command per mapping, in the order listed', () => {
+        expect(cliCommandsFor([mapping('Users', 'users'), mapping('Events', 'events')])).toBe(
+            'php artisan migration:run-mapping "Users"\nphp artisan migration:run-mapping "Events"'
+        );
+    });
+
+    it('is empty for nothing, and skips gaps rather than emitting a broken command', () => {
+        expect(cliCommandsFor([])).toBe('');
+        expect(cliCommandsFor()).toBe('');
+        expect(cliCommandsFor([null, mapping('Users', 'users')])).toBe('php artisan migration:run-mapping "Users"');
     });
 });
 

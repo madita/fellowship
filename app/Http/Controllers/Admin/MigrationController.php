@@ -285,17 +285,33 @@ class MigrationController extends Controller
             ->limit(20)
             ->get();
 
+        // What actually ran, so the list can say more than "1 migrations".
+        // One query for every batch on the page, in the order they were logged.
+        $names = MigrationLog::whereIn('batch_id', $batches->pluck('batch_id'))
+            ->orderBy('id')
+            ->get(['batch_id', 'migration_name'])
+            ->groupBy('batch_id');
+
         return response()->json([
-            'batches' => $batches->map(function ($batch) {
+            'batches' => $batches->map(function ($batch) use ($names) {
+                // MySQL returns COUNT() as an int but SUM() as a string, so the
+                // strict comparison that used to sit here was never true and
+                // every finished batch was reported as still running.
+                $total     = (int) $batch->total_migrations;
+                $completed = (int) $batch->completed;
+                $failed    = (int) $batch->failed;
+
                 return [
                     'batchId'         => $batch->batch_id,
                     'startedAt'       => $batch->started_at,
                     'completedAt'     => $batch->completed_at,
-                    'totalMigrations' => $batch->total_migrations,
-                    'completed'       => $batch->completed,
-                    'failed'          => $batch->failed,
-                    'status'          => $batch->failed > 0 ? 'completed_with_errors' :
-                        ($batch->completed === $batch->total_migrations ? 'completed' : 'running'),
+                    'totalMigrations' => $total,
+                    'completed'       => $completed,
+                    'failed'          => $failed,
+                    'names'           => ($names->get($batch->batch_id) ?? collect())->pluck('migration_name')->all(),
+                    'status'          => $failed > 0
+                        ? 'completed_with_errors'
+                        : ($completed === $total ? 'completed' : 'running'),
                 ];
             }),
         ]);
