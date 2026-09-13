@@ -521,6 +521,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
         Route::get('/migrations/legacy-users', 'App\Http\Controllers\Admin\MigrationController@legacyUsers');
         Route::post('/migrations/forum/archive', 'App\Http\Controllers\Admin\MigrationController@archiveForumImport');
         Route::post('/migrations/legacy-users/assign', 'App\Http\Controllers\Admin\MigrationController@assignLegacyUser');
+        Route::post('/migrations/legacy-users/delete', 'App\Http\Controllers\Admin\MigrationController@deleteLegacyUsers');
         Route::get('/migrations/mappings', 'App\Http\Controllers\Admin\MigrationController@mappings');
         Route::get('/migrations/mappings/export', 'App\Http\Controllers\Admin\MigrationController@exportMappings');
         Route::post('/migrations/mappings/import', 'App\Http\Controllers\Admin\MigrationController@importMappings');

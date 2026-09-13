@@ -810,6 +810,67 @@ class MigrationController extends Controller
     }
 
     /**
+     * Remove legacy identities from the roster.
+     *
+     * Old sites arrive with their whole user table, spam registrations and
+     * bots included, and most of those never wrote anything. Imported content
+     * is never deleted here. An identity that is credited with content keeps
+     * it: dropping the attribution rows would cut that content loose from its
+     * old author and make it unassignable, so it is skipped unless the caller
+     * asks for it explicitly.
+     */
+    public function deleteLegacyUsers(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'users'                   => 'required|array|min:1|max:5000',
+            'users.*.legacy_source'   => 'required|string|max:255',
+            'users.*.legacy_username' => 'required|string|max:255',
+            'with_content'            => 'sometimes|boolean',
+        ]);
+
+        $withContent  = (bool) ($data['with_content'] ?? false);
+        $removed      = 0;
+        $entries      = 0;
+        $attributions = 0;
+        $skipped      = [];
+
+        DB::transaction(function () use ($data, $withContent, &$removed, &$entries, &$attributions, &$skipped) {
+            foreach ($data['users'] as $identity) {
+                $source   = $identity['legacy_source'];
+                $username = $identity['legacy_username'];
+
+                $credited = MigrationAttribution::where('legacy_source', $source)
+                    ->where('legacy_username', $username);
+
+                $owned = (clone $credited)->count();
+
+                if ($owned > 0 && ! $withContent) {
+                    $skipped[] = $username;
+
+                    continue;
+                }
+
+                if ($owned > 0) {
+                    $attributions += $credited->delete();
+                }
+
+                $entries += MigrationLegacyUser::where('legacy_source', $source)
+                    ->where('username', $username)
+                    ->delete();
+
+                $removed++;
+            }
+        });
+
+        return response()->json([
+            'removed'              => $removed,
+            'entries_deleted'      => $entries,
+            'attributions_deleted' => $attributions,
+            'skipped'              => $skipped,
+        ]);
+    }
+
+    /**
      * Move the imported forum into an archive category chosen by the
      * admin: top-level imported categories are re-parented under it
      * (internal hierarchy preserved), and imported threads can be locked.

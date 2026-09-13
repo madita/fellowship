@@ -7,6 +7,8 @@ use App\Jobs\Migrations\MigrateLinkGalleryJob;
 use App\Models\Collection;
 use App\Models\Event\Event;
 use App\Models\Event\EventType;
+use App\Models\Migration\MigrationAttribution;
+use App\Models\Migration\MigrationLegacyUser;
 use App\Models\Migration\MigrationLog;
 use App\Models\Migration\MigrationMapping;
 use App\Models\Migration\MigrationSource;
@@ -1227,6 +1229,73 @@ class MigrationToolTest extends TestCase
 
         $this->assertSame('running', $running['status']);
         $this->assertSame(0, $running['completed']);
+    }
+
+    /**
+     * Old sites arrive with their whole user table, spam registrations and
+     * bots included. Those can be cleared out, but an identity that imported
+     * content is credited to is kept unless it is deleted deliberately: losing
+     * its attributions would leave that content unassignable.
+     */
+    public function test_legacy_users_can_be_deleted_without_touching_their_content(): void
+    {
+        MigrationLegacyUser::create(['legacy_source' => 'forum', 'username' => 'SpamBot', 'email' => 'bot@example.com']);
+        MigrationLegacyUser::create(['legacy_source' => 'wiki', 'username' => 'Vimes']);
+
+        MigrationAttribution::create([
+            'attributable_type' => Wiki::class,
+            'attributable_id'   => 4242,
+            'legacy_source'     => 'wiki',
+            'legacy_username'   => 'Vimes',
+        ]);
+
+        $delete = fn (array $payload) => $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/migrations/legacy-users/delete', $payload)
+            ->assertOk()
+            ->json();
+
+        // Both at once: the bot goes, the author is kept and reported back.
+        $result = $delete(['users' => [
+            ['legacy_source' => 'forum', 'legacy_username' => 'SpamBot'],
+            ['legacy_source' => 'wiki', 'legacy_username' => 'Vimes'],
+        ]]);
+
+        $this->assertSame(1, $result['removed']);
+        $this->assertSame(['Vimes'], $result['skipped']);
+        $this->assertSame(0, $result['attributions_deleted']);
+
+        $this->assertFalse(MigrationLegacyUser::where('username', 'SpamBot')->exists());
+        $this->assertTrue(MigrationLegacyUser::where('username', 'Vimes')->exists());
+        $this->assertSame(1, MigrationAttribution::where('legacy_username', 'Vimes')->count());
+
+        // Asked for explicitly, the credited one goes too, attributions and all.
+        $result = $delete([
+            'users'        => [['legacy_source' => 'wiki', 'legacy_username' => 'Vimes']],
+            'with_content' => true,
+        ]);
+
+        $this->assertSame(1, $result['removed']);
+        $this->assertSame(1, $result['attributions_deleted']);
+        $this->assertSame([], $result['skipped']);
+        $this->assertFalse(MigrationLegacyUser::where('username', 'Vimes')->exists());
+        $this->assertSame(0, MigrationAttribution::where('legacy_username', 'Vimes')->count());
+    }
+
+    public function test_deleting_legacy_users_is_scoped_to_one_legacy_system(): void
+    {
+        MigrationLegacyUser::create(['legacy_source' => 'wiki', 'username' => 'Vimes']);
+        MigrationLegacyUser::create(['legacy_source' => 'forum', 'username' => 'Vimes']);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/migrations/legacy-users/delete', [
+                'users' => [['legacy_source' => 'wiki', 'legacy_username' => 'Vimes']],
+            ])
+            ->assertOk()
+            ->assertJsonPath('removed', 1);
+
+        // The same name in another system is a different person.
+        $this->assertFalse(MigrationLegacyUser::where('legacy_source', 'wiki')->where('username', 'Vimes')->exists());
+        $this->assertTrue(MigrationLegacyUser::where('legacy_source', 'forum')->where('username', 'Vimes')->exists());
     }
 
     public function test_non_admins_cannot_use_the_tool(): void
