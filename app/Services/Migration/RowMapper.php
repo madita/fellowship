@@ -62,9 +62,10 @@ class RowMapper
             'é' => 'e', 'è' => 'e', 'ê' => 'e',
         ]);
 
+        // Only what a filesystem refuses. Anything legal in a name stays as
+        // it is, or the lookup misses folders that are really there.
         return strtr($value, [
             '/' => '_', '\\' => '_', ':' => '_', '?' => '_',
-            '&' => '_', '(' => '_', ')' => '_',
         ]);
     }
 
