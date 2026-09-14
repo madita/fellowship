@@ -29,6 +29,7 @@ class CreateUsersTable extends Migration
             $table->string('time_format', 32)->nullable();
             $table->string('theme_mode', 16)->nullable();
             $table->string('language', 8)->nullable();
+            $table->json('dashboard_layout')->nullable();
             $table->timestamps();
         });
     }
