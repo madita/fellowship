@@ -134,6 +134,17 @@ class UserController extends DataTableController
         ]);
     }
 
+    public function update($id, Request $request)
+    {
+        $this->validate($request, [
+            'name'       => 'required',
+            'email'      => 'required|unique:users,email,' . $id . '|email',
+            'created_at' => 'date',
+        ]);
+
+        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
+    }
+
     /**
      * Field name => label of an event profile form.
      */
@@ -204,17 +215,6 @@ class UserController extends DataTableController
         $match   = collect($options['answers'] ?? [])->firstWhere('key', $answer);
 
         return $match['value'] ?? $answer;
-    }
-
-    public function update($id, Request $request)
-    {
-        $this->validate($request, [
-            'name'       => 'required',
-            'email'      => 'required|unique:users,email,' . $id . '|email',
-            'created_at' => 'date',
-        ]);
-
-        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
     }
 
     //    public function getAppends()

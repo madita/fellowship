@@ -58,7 +58,7 @@ class TaxonomyController extends DataTableController
     public function getColumnTypes(): array
     {
         return [
-            'color' => 'text',
+            'color'      => 'text',
             'created_at' => 'date',
             'updated_at' => 'date',
         ];

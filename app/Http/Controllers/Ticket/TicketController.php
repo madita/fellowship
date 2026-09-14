@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Ticket;
 
 use App\Http\Controllers\Controller;
-use App\Traits\Approvable;
 use App\Models\Ticket\Ticket;
 use App\Models\Ticket\TicketType;
 use App\Models\User;
+use App\Traits\Approvable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

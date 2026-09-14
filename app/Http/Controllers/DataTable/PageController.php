@@ -130,8 +130,8 @@ class PageController extends DataTableController
         return [
             'published_at' => 'datetime',
             'sign_in_only' => 'boolean',
-            'created_at' => 'date',
-            'updated_at' => 'date',
+            'created_at'   => 'date',
+            'updated_at'   => 'date',
         ];
     }
 

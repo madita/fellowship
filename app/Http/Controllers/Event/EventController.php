@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Event;
 
 use App\Http\Controllers\Controller;
-use App\Support\TaxonomyHelper;
 use App\Models\Event\Event;
 use App\Models\Event\EventDetail;
 use App\Models\Event\EventGuest;
@@ -14,6 +13,7 @@ use App\Models\Irc\IrcConnection;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use App\Models\User;
+use App\Support\TaxonomyHelper;
 // use Lecturize\Taxonomies\Models\Taxonomy;
 // use Lecturize\Taxonomies\Models\Term;
 use DateTime;

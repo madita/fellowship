@@ -210,7 +210,7 @@ class MigrationController extends Controller
             'batchId'      => $batchId,
             'status'       => $overallStatus,
             'lastUpdateAt' => $logs->max('updated_at')?->toIso8601String(),
-            'summary' => [
+            'summary'      => [
                 'pending'   => $pending,
                 'running'   => $running,
                 'completed' => $completed,

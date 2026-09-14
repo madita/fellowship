@@ -557,9 +557,9 @@ abstract class DataTableController extends Controller
         $base = explode(':', $cast, 2)[0];
 
         return match (true) {
-            in_array($base, ['bool', 'boolean'], true)                                                              => 'boolean',
-            in_array($base, ['int', 'integer', 'float', 'double', 'real', 'decimal'], true)                         => 'number',
-            in_array($base, ['date', 'immutable_date'], true)                                                       => 'date',
+            in_array($base, ['bool', 'boolean'], true)                                                                             => 'boolean',
+            in_array($base, ['int', 'integer', 'float', 'double', 'real', 'decimal'], true)                                        => 'number',
+            in_array($base, ['date', 'immutable_date'], true)                                                                      => 'date',
             in_array($base, ['datetime', 'immutable_datetime', 'custom_datetime', 'immutable_custom_datetime', 'timestamp'], true) => 'datetime',
             in_array($base, ['array', 'json', 'object', 'collection'], true),
             str_contains($cast, 'asarrayobject'),
@@ -578,13 +578,13 @@ abstract class DataTableController extends Controller
         $fullType = strtolower((string) ($meta['type'] ?? ''));
 
         return match (true) {
-            $fullType === 'tinyint(1)', in_array($typeName, ['bool', 'boolean'], true) => 'boolean',
+            $fullType === 'tinyint(1)', in_array($typeName, ['bool', 'boolean'], true)                                                                                                               => 'boolean',
             in_array($typeName, ['tinyint', 'smallint', 'mediumint', 'int', 'integer', 'bigint', 'decimal', 'numeric', 'float', 'double', 'real', 'int2', 'int4', 'int8', 'float4', 'float8'], true) => 'number',
-            $typeName === 'date' => 'date',
-            in_array($typeName, ['datetime', 'datetime2', 'datetimeoffset', 'timestamp', 'timestamptz'], true) => 'datetime',
-            in_array($typeName, ['json', 'jsonb'], true) => 'json',
-            in_array($typeName, ['text', 'tinytext', 'mediumtext', 'longtext', 'clob'], true) => 'longtext',
-            default => 'text',
+            $typeName === 'date'                                                                                                                                                                     => 'date',
+            in_array($typeName, ['datetime', 'datetime2', 'datetimeoffset', 'timestamp', 'timestamptz'], true)                                                                                       => 'datetime',
+            in_array($typeName, ['json', 'jsonb'], true)                                                                                                                                             => 'json',
+            in_array($typeName, ['text', 'tinytext', 'mediumtext', 'longtext', 'clob'], true)                                                                                                        => 'longtext',
+            default                                                                                                                                                                                  => 'text',
         };
     }
 

@@ -2,8 +2,8 @@
 
 namespace App\Models\Status;
 
-use App\Traits\HasPolls;
 use App\Models\User;
+use App\Traits\HasPolls;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

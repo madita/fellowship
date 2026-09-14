@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use App\Traits\Approvable;
-use App\Traits\HasTickets;
 use App\Models\Translations\WikiTranslation;
+use App\Traits\Approvable;
 use App\Traits\HasCache;
 use App\Traits\HasRelateableContent;
+use App\Traits\HasTickets;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;

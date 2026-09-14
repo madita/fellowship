@@ -230,6 +230,100 @@ class RelateableHelper
         ];
     }
 
+    // ─── Visibility & permissions ───
+
+    /**
+     * Admins and users with manage-page / manage-post may link (and see) anything.
+     */
+    public static function isEditor(?User $user): bool
+    {
+        if ( ! $user) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        foreach (self::EDITOR_PERMISSIONS as $permission) {
+            try {
+                if ($user->hasPermissionTo($permission)) {
+                    return true;
+                }
+            } catch (Throwable) {
+                // Permission not seeded in this install.
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The author of a model: user_id, created_by or author_id, whichever it has.
+     */
+    public static function authorId(Model $model): ?int
+    {
+        $attributes = $model->getAttributes();
+
+        foreach (['user_id', 'created_by', 'author_id'] as $column) {
+            if (isset($attributes[$column])) {
+                return (int) $attributes[$column];
+            }
+        }
+
+        return null;
+    }
+
+    public static function canEdit(Model $model, ?User $user): bool
+    {
+        if ( ! $user) {
+            return false;
+        }
+
+        return self::isEditor($user) || self::authorId($model) === (int) $user->id;
+    }
+
+    /**
+     * Hide draft and scheduled pages/posts and unapproved wiki entries from
+     * everyone except editors and (for pages/posts) their author.
+     */
+    public static function applyVisibility(Builder $query, string $kind, ?User $viewer): Builder
+    {
+        if (self::isEditor($viewer)) {
+            return $query;
+        }
+
+        $table  = $query->getModel()->getTable();
+        $userId = $viewer?->id;
+
+        return match ($kind) {
+            'page', 'post' => $query->where(function (Builder $q) use ($table, $userId) {
+                $q->published();
+                if ($userId) {
+                    $q->orWhere($table . '.user_id', $userId);
+                }
+            }),
+            'wiki'  => $query->whereHas('approval'),
+            default => $query,
+        };
+    }
+
+    public static function isVisible(Model $model, ?User $viewer): bool
+    {
+        if (self::isEditor($viewer)) {
+            return true;
+        }
+
+        $own = $viewer && self::authorId($model) === (int) $viewer->id;
+
+        return match (self::kindForType($model->getMorphClass())) {
+            'page', 'post' => $model->isPublished() || $own,
+            'wiki'         => $model->relationLoaded('approval') ? $model->approval !== null : $model->isApproved(),
+            null           => false,
+            default        => true,
+        };
+    }
+
     private static function titleOf(Model $model, ?string $kind): string
     {
         $attribute = $kind ? self::titleAttribute($kind) : 'title';
@@ -323,99 +417,5 @@ class RelateableHelper
         }
 
         return self::$wikiCategoryCache[$key] = $category;
-    }
-
-    // ─── Visibility & permissions ───
-
-    /**
-     * Admins and users with manage-page / manage-post may link (and see) anything.
-     */
-    public static function isEditor(?User $user): bool
-    {
-        if ( ! $user) {
-            return false;
-        }
-
-        if ($user->isAdmin()) {
-            return true;
-        }
-
-        foreach (self::EDITOR_PERMISSIONS as $permission) {
-            try {
-                if ($user->hasPermissionTo($permission)) {
-                    return true;
-                }
-            } catch (Throwable) {
-                // Permission not seeded in this install.
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * The author of a model: user_id, created_by or author_id, whichever it has.
-     */
-    public static function authorId(Model $model): ?int
-    {
-        $attributes = $model->getAttributes();
-
-        foreach (['user_id', 'created_by', 'author_id'] as $column) {
-            if (isset($attributes[$column])) {
-                return (int) $attributes[$column];
-            }
-        }
-
-        return null;
-    }
-
-    public static function canEdit(Model $model, ?User $user): bool
-    {
-        if ( ! $user) {
-            return false;
-        }
-
-        return self::isEditor($user) || self::authorId($model) === (int) $user->id;
-    }
-
-    /**
-     * Hide draft and scheduled pages/posts and unapproved wiki entries from
-     * everyone except editors and (for pages/posts) their author.
-     */
-    public static function applyVisibility(Builder $query, string $kind, ?User $viewer): Builder
-    {
-        if (self::isEditor($viewer)) {
-            return $query;
-        }
-
-        $table  = $query->getModel()->getTable();
-        $userId = $viewer?->id;
-
-        return match ($kind) {
-            'page', 'post' => $query->where(function (Builder $q) use ($table, $userId) {
-                $q->published();
-                if ($userId) {
-                    $q->orWhere($table . '.user_id', $userId);
-                }
-            }),
-            'wiki'  => $query->whereHas('approval'),
-            default => $query,
-        };
-    }
-
-    public static function isVisible(Model $model, ?User $viewer): bool
-    {
-        if (self::isEditor($viewer)) {
-            return true;
-        }
-
-        $own = $viewer && self::authorId($model) === (int) $viewer->id;
-
-        return match (self::kindForType($model->getMorphClass())) {
-            'page', 'post' => $model->isPublished() || $own,
-            'wiki'  => $model->relationLoaded('approval') ? $model->approval !== null : $model->isApproved(),
-            null    => false,
-            default => true,
-        };
     }
 }

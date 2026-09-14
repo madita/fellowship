@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Contracts\CanHaveTaxonomies;
-use App\Traits\HasPolls;
 use App\Traits\HasCache;
+use App\Traits\HasPolls;
 use App\Traits\HasRelateableContent;
 use App\Traits\HasTaxonomies;
 use App\Traits\Publishable;

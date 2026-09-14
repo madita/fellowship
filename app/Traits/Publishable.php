@@ -92,7 +92,7 @@ trait Publishable
     }
 
     /**
-     * published | scheduled | draft
+     * published | scheduled | draft.
      */
     public function getPublishStatusAttribute(): string
     {

@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\TaxonomyHelper;
 use App\Models\Tag\Taxable;
+use App\Models\Tag\Taxonomy;
 // use App\Models\Tag\Taxonomy;
 
-use App\Models\Tag\Taxonomy;
-// use App\Models\Tag\Term;
 use App\Models\Tag\Term;
+// use App\Models\Tag\Term;
+use App\Support\TaxonomyHelper;
 // use Lecturize\Taxonomies\Models\Taxonomy;
 // use Lecturize\Taxonomies\Models\Term;
 use Illuminate\Http\Request;

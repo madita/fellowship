@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use App\Support\TaxonomyHelper;
 use App\Models\Tag\Term;
+use App\Support\TaxonomyHelper;
 use Illuminate\Http\Request;
 
 class TermController extends DataTableController
