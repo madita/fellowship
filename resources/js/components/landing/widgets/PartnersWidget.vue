@@ -1,6 +1,6 @@
 <template>
   <v-container v-if="content.showContent" class="py-8 text-center">
-    <p v-if="content.message" class="text-body-1 text-grey">
+    <p v-if="content.message" class="text-body-1 text-medium-emphasis">
       {{ content.message }}
     </p>
   </v-container>

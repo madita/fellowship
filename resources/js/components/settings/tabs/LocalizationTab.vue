@@ -98,7 +98,7 @@ import {
     timezones,
     dateFormats,
     timeFormats
-} from '../../../composables/settingsConstants';
+} from '@/configs/settingsConstants';
 
 defineProps({
     settings: Object,

@@ -9,12 +9,12 @@ use App\Jobs\Migrations\MigrateWikiLinkingJob;
 use App\Jobs\Migrations\MigrateWikiTermsLinkingJob;
 use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
-use App\Models\MigrationAttribution;
-use App\Models\MigrationIdMap;
-use App\Models\MigrationLegacyUser;
-use App\Models\MigrationLog;
-use App\Models\MigrationMapping;
-use App\Models\MigrationSource;
+use App\Models\Migration\MigrationAttribution;
+use App\Models\Migration\MigrationIdMap;
+use App\Models\Migration\MigrationLegacyUser;
+use App\Models\Migration\MigrationLog;
+use App\Models\Migration\MigrationMapping;
+use App\Models\Migration\MigrationSource;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use App\Models\Ticket\Ticket;
@@ -71,20 +71,34 @@ class MigrationController extends Controller
     public function index(): JsonResponse
     {
         $migrations = [];
+        $order      = 0;
         foreach ($this->migrations as $key => $migration) {
             $migrations[] = [
                 'key'         => $key,
                 'name'        => $migration['name'],
                 'description' => $migration['description'],
                 'group'       => $migration['group'],
+                // The steps build on each other: gallery links first, then
+                // the wiki link rewrites (declaration order = run order).
+                'order' => ++$order,
             ];
         }
 
         // Get any active batches
+        // Newest first: after a reload the screen should pick up the run that
+        // is going on now, not whichever batch the database listed first.
         $activeBatches = MigrationLog::whereIn('status', ['pending', 'running'])
-            ->select('batch_id')
-            ->distinct()
+            ->groupBy('batch_id')
+            ->orderByRaw('MAX(id) desc')
             ->pluck('batch_id');
+
+        // Post-import steps only do something once rows were imported —
+        // the UI warns when they are run on an empty site. "import_%" is
+        // the key GenericImportJob logs mapping runs under (the "_" is a
+        // single-character wildcard here, which no other key collides with).
+        $importsRun = MigrationLog::where('migration_key', 'like', 'import_%')
+            ->where('status', 'completed')
+            ->exists();
 
         return response()->json([
             'migrations' => $migrations,
@@ -92,6 +106,7 @@ class MigrationController extends Controller
                 ['key' => 'post', 'name' => 'Post-import steps'],
             ],
             'activeBatches' => $activeBatches,
+            'imports_run'   => $importsRun,
         ]);
     }
 
@@ -171,6 +186,9 @@ class MigrationController extends Controller
                 'lastError'   => $log->last_error,
                 'startedAt'   => $log->started_at?->toIso8601String(),
                 'completedAt' => $log->completed_at?->toIso8601String(),
+                // Every imported row writes to the log, so its last update is a
+                // heartbeat: it tells a slow run apart from one whose process died.
+                'updatedAt'   => $log->updated_at?->toIso8601String(),
             ];
         });
 
@@ -189,9 +207,10 @@ class MigrationController extends Controller
         }
 
         return response()->json([
-            'batchId' => $batchId,
-            'status'  => $overallStatus,
-            'summary' => [
+            'batchId'      => $batchId,
+            'status'       => $overallStatus,
+            'lastUpdateAt' => $logs->max('updated_at')?->toIso8601String(),
+            'summary'      => [
                 'pending'   => $pending,
                 'running'   => $running,
                 'completed' => $completed,
@@ -266,17 +285,33 @@ class MigrationController extends Controller
             ->limit(20)
             ->get();
 
+        // What actually ran, so the list can say more than "1 migrations".
+        // One query for every batch on the page, in the order they were logged.
+        $names = MigrationLog::whereIn('batch_id', $batches->pluck('batch_id'))
+            ->orderBy('id')
+            ->get(['batch_id', 'migration_name'])
+            ->groupBy('batch_id');
+
         return response()->json([
-            'batches' => $batches->map(function ($batch) {
+            'batches' => $batches->map(function ($batch) use ($names) {
+                // MySQL returns COUNT() as an int but SUM() as a string, so the
+                // strict comparison that used to sit here was never true and
+                // every finished batch was reported as still running.
+                $total     = (int) $batch->total_migrations;
+                $completed = (int) $batch->completed;
+                $failed    = (int) $batch->failed;
+
                 return [
                     'batchId'         => $batch->batch_id,
                     'startedAt'       => $batch->started_at,
                     'completedAt'     => $batch->completed_at,
-                    'totalMigrations' => $batch->total_migrations,
-                    'completed'       => $batch->completed,
-                    'failed'          => $batch->failed,
-                    'status'          => $batch->failed > 0 ? 'completed_with_errors' :
-                        ($batch->completed === $batch->total_migrations ? 'completed' : 'running'),
+                    'totalMigrations' => $total,
+                    'completed'       => $completed,
+                    'failed'          => $failed,
+                    'names'           => ($names->get($batch->batch_id) ?? collect())->pluck('migration_name')->all(),
+                    'status'          => $failed > 0
+                        ? 'completed_with_errors'
+                        : ($completed === $total ? 'completed' : 'running'),
                 ];
             }),
         ]);
@@ -397,8 +432,39 @@ class MigrationController extends Controller
 
     public function mappings(): JsonResponse
     {
+        $mappings = MigrationMapping::with('source:id,name,driver')->orderBy('name')->get();
+
+        // Newest run per mapping in a single grouped query — the listing
+        // shows "last run" for every mapping, so a per-mapping lookup would
+        // be an N+1.
+        $keys     = $mappings->map(fn ($mapping) => GenericImportJob::migrationKeyFor($mapping->id))->all();
+        $lastRuns = MigrationLog::whereIn('id', function ($query) use ($keys) {
+            $query->from('migration_logs')
+                ->selectRaw('MAX(id)')
+                ->whereIn('migration_key', $keys)
+                ->groupBy('migration_key');
+        })->get()->keyBy('migration_key');
+
         return response()->json(
-            MigrationMapping::with('source:id,name,driver')->orderBy('name')->get()
+            $mappings->map(function (MigrationMapping $mapping) use ($lastRuns) {
+                $log = $lastRuns->get(GenericImportJob::migrationKeyFor($mapping->id));
+
+                return $mapping->toArray() + [
+                    'last_run' => $log ? [
+                        'status'          => $log->status,
+                        'total_items'     => $log->total_items,
+                        'processed_items' => $log->processed_items,
+                        'error_count'     => $log->error_count,
+                        'started_at'      => $log->started_at?->toIso8601String(),
+                        'completed_at'    => $log->completed_at?->toIso8601String(),
+                        // Heartbeat. Without it the row chip cannot tell a slow
+                        // import from one whose process died, and says "running"
+                        // for a run that stopped hours ago.
+                        'updated_at'      => $log->updated_at?->toIso8601String(),
+                        'batch_id'        => $log->batch_id,
+                    ] : null,
+                ];
+            })->values()
         );
     }
 
@@ -744,6 +810,67 @@ class MigrationController extends Controller
     }
 
     /**
+     * Remove legacy identities from the roster.
+     *
+     * Old sites arrive with their whole user table, spam registrations and
+     * bots included, and most of those never wrote anything. Imported content
+     * is never deleted here. An identity that is credited with content keeps
+     * it: dropping the attribution rows would cut that content loose from its
+     * old author and make it unassignable, so it is skipped unless the caller
+     * asks for it explicitly.
+     */
+    public function deleteLegacyUsers(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'users'                   => 'required|array|min:1|max:5000',
+            'users.*.legacy_source'   => 'required|string|max:255',
+            'users.*.legacy_username' => 'required|string|max:255',
+            'with_content'            => 'sometimes|boolean',
+        ]);
+
+        $withContent  = (bool) ($data['with_content'] ?? false);
+        $removed      = 0;
+        $entries      = 0;
+        $attributions = 0;
+        $skipped      = [];
+
+        DB::transaction(function () use ($data, $withContent, &$removed, &$entries, &$attributions, &$skipped) {
+            foreach ($data['users'] as $identity) {
+                $source   = $identity['legacy_source'];
+                $username = $identity['legacy_username'];
+
+                $credited = MigrationAttribution::where('legacy_source', $source)
+                    ->where('legacy_username', $username);
+
+                $owned = (clone $credited)->count();
+
+                if ($owned > 0 && ! $withContent) {
+                    $skipped[] = $username;
+
+                    continue;
+                }
+
+                if ($owned > 0) {
+                    $attributions += $credited->delete();
+                }
+
+                $entries += MigrationLegacyUser::where('legacy_source', $source)
+                    ->where('username', $username)
+                    ->delete();
+
+                $removed++;
+            }
+        });
+
+        return response()->json([
+            'removed'              => $removed,
+            'entries_deleted'      => $entries,
+            'attributions_deleted' => $attributions,
+            'skipped'              => $skipped,
+        ]);
+    }
+
+    /**
      * Move the imported forum into an archive category chosen by the
      * admin: top-level imported categories are re-parented under it
      * (internal hierarchy preserved), and imported threads can be locked.
@@ -846,6 +973,11 @@ class MigrationController extends Controller
             'field_map.*.transform'      => ['nullable', Rule::in(RowMapper::TRANSFORMS)],
             'field_map.*.format'         => 'nullable|string|max:64',
             'field_map.*.template'       => 'nullable|string|max:1024',
+            // Without this the validator drops default-only fields: validated()
+            // returns just the keys it knows, so a spec like
+            // {"legacy_source": {"default": "wiki"}} was saved as an empty
+            // field and every imported row then failed its required check.
+            'field_map.*.default'        => 'nullable',
             'options'                    => 'nullable|array',
             'options.locale'             => 'nullable|string|max:10|regex:/^[a-z]{2}(-[A-Za-z]{2,4})?$/',
             'options.joins'              => 'nullable|array',

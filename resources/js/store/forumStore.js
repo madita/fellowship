@@ -124,11 +124,13 @@ export const useForumStore = defineStore('forum', {
             }
         },
 
-        async createThread(forumId, { title, body }) {
+        async createThread(forumId, { title, body, poll = null }) {
             this.submitting = true
             this.error = null
             try {
-                const response = await axios.post(`/api/forums/${forumId}/threads`, { title, body })
+                const payload = { title, body }
+                if (poll) payload.poll = poll
+                const response = await axios.post(`/api/forums/${forumId}/threads`, payload)
                 return response.data
             } catch (error) {
                 this.error = error.response?.data?.message || 'Failed to create thread'
@@ -144,7 +146,11 @@ export const useForumStore = defineStore('forum', {
             try {
                 const response = await axios.patch(`/api/threads/${threadId}`, data)
                 if (this.currentThread && this.currentThread.id === threadId) {
-                    this.currentThread = response.data
+                    // The update response may omit the poll; keep the one we already have
+                    this.currentThread = {
+                        ...response.data,
+                        poll: response.data.poll !== undefined ? response.data.poll : this.currentThread.poll
+                    }
                 }
                 return response.data
             } catch (error) {

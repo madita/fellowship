@@ -32,7 +32,7 @@ class WikiController extends Controller
                 return [
                     'title',
                     'content',
-                    'published',
+                    'published_at',
                     'sign_in_only', ];
         }
     }
@@ -301,7 +301,7 @@ class WikiController extends Controller
             'title'        => $validated['title'],
             'content'      => $content,
             'sign_in_only' => 0,
-            'published'    => 1]);
+            'published_at' => now()]);
 
         if ($request->get('categories')) {
             //            $taxonomy = $request->get('taxonomy');

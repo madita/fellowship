@@ -5,7 +5,7 @@
         <div v-if="content.title" class="text-h5 font-weight-bold">
           {{ content.title }}
         </div>
-        <div v-if="content.subtitle" class="text-subtitle-2 text--secondary">
+        <div v-if="content.subtitle" class="text-subtitle-2 text-medium-emphasis">
           {{ content.subtitle }}
         </div>
       </div>
@@ -13,20 +13,19 @@
         v-if="content.viewAllUrl"
         :href="content.viewAllUrl"
         :to="content.viewAllInternal ? content.viewAllUrl : undefined"
-        text
-        small
+        variant="text"
+        size="small"
         color="primary"
+        append-icon="mdi-arrow-right"
       >
-        {{ content.viewAllText || 'View All' }}
-        <v-icon right small>mdi-arrow-right</v-icon>
+        {{ content.viewAllText || t('widgets.landing.viewAll') }}
       </v-btn>
     </div>
 
     <v-card :elevation="config.elevation || 1">
-      <v-list :two-line="config.twoLine !== false" :three-line="config.threeLine">
-        <template v-for="(item, index) in activities">
+      <v-list :lines="config.threeLine ? 'three' : (config.twoLine !== false ? 'two' : 'one')">
+        <template v-for="(item, index) in activities" :key="`item-${index}`">
           <v-list-item
-            :key="`item-${index}`"
             :to="item.internal ? item.url : undefined"
             :href="!item.internal ? safeUrl(item.url) : undefined"
             :target="!item.internal && item.external ? '_blank' : undefined"
@@ -46,6 +45,7 @@
               <v-chip
                 v-if="item.badge"
                 :color="item.badgeColor || 'primary'"
+                variant="tonal"
                 size="x-small"
                 class="ml-2"
               >
@@ -66,15 +66,15 @@
 
           <v-divider
             v-if="index < activities.length - 1"
-            :key="`divider-${index}`"
           ></v-divider>
         </template>
 
-        <v-list-item v-if="activities.length === 0">
-          <v-list-item-title class="text-center text-medium-emphasis">
-            {{ content.emptyText || 'No recent activity' }}
-          </v-list-item-title>
-        </v-list-item>
+        <empty-state
+          v-if="activities.length === 0"
+          compact
+          icon="mdi-timeline-text-outline"
+          :title="content.emptyText || t('widgets.landing.noActivity')"
+        />
       </v-list>
     </v-card>
   </v-container>
@@ -82,6 +82,10 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import EmptyState from '@/components/common/EmptyState.vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   content: {
@@ -170,6 +174,6 @@ const activities = computed(() => {
 }
 
 .v-list-item:hover {
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
 }
 </style>

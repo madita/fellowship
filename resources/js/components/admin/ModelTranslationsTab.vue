@@ -5,7 +5,7 @@
             <v-col cols="12">
                 <v-card variant="outlined" class="mb-4">
                     <v-card-title class="d-flex align-center justify-space-between">
-                        <span>{{ $t('modelTranslations.translationCoverage') }}</span>
+                        <span class="text-subtitle-1 font-weight-medium">{{ $t('modelTranslations.translationCoverage') }}</span>
                         <v-btn
                             variant="tonal"
                             color="primary"
@@ -52,7 +52,7 @@
             <!-- Model List -->
             <v-col cols="12" md="4">
                 <v-card variant="outlined">
-                    <v-card-title>{{ $t('modelTranslations.models') }}</v-card-title>
+                    <v-card-title class="text-subtitle-1 font-weight-medium">{{ $t('modelTranslations.models') }}</v-card-title>
                     <v-divider />
                     <v-list density="compact" nav>
                         <v-list-item
@@ -66,7 +66,7 @@
                             </template>
                             <v-list-item-title>{{ model.label }}</v-list-item-title>
                             <template #append>
-                                <v-chip size="x-small" color="grey">
+                                <v-chip size="x-small" variant="tonal">
                                     {{ model.count }}
                                 </v-chip>
                             </template>
@@ -106,17 +106,15 @@
             <!-- Items List -->
             <v-col cols="12" md="8">
                 <v-card v-if="!selectedModel" variant="outlined">
-                    <v-card-text class="text-center pa-8">
-                        <v-icon icon="mdi-translate" size="64" color="grey" />
-                        <div class="text-h6 text-grey mt-4">
-                            {{ $t('modelTranslations.selectModelToManage') }}
-                        </div>
-                    </v-card-text>
+                    <empty-state
+                        icon="mdi-translate"
+                        :title="$t('modelTranslations.selectModelToManage')"
+                    />
                 </v-card>
 
                 <v-card v-else variant="outlined">
-                    <v-card-title class="d-flex align-center justify-space-between">
-                        <span>{{ getSelectedModelLabel() }}</span>
+                    <v-card-title class="d-flex align-center justify-space-between ga-2">
+                        <span class="text-subtitle-1 font-weight-medium">{{ getSelectedModelLabel() }}</span>
                         <v-text-field
                             v-model="search"
                             :placeholder="$t('common.search')"
@@ -165,6 +163,8 @@
                                 size="small"
                                 variant="text"
                                 color="primary"
+                                :loading="loadingItemId === item.id"
+                                :disabled="loadingItemId !== null"
                                 @click="editItem(item)"
                             >
                                 <v-icon icon="mdi-pencil" size="small" />
@@ -203,6 +203,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import TranslationEditor from './TranslationEditor.vue';
+import EmptyState from '../common/EmptyState.vue';
 
 const { t, locale } = useI18n();
 
@@ -223,6 +224,7 @@ const stats = reactive({
 
 const loadingStats = ref(false);
 const loadingItems = ref(false);
+const loadingItemId = ref(null);
 const saving = ref(false);
 
 const editDialog = ref(false);
@@ -265,6 +267,7 @@ const fetchModels = async () => {
 };
 
 const fetchStats = async () => {
+    if (loadingStats.value) return;
     loadingStats.value = true;
     try {
         const response = await axios.get('/api/admin/model-translations/stats');
@@ -318,6 +321,8 @@ const debouncedSearch = () => {
 };
 
 const editItem = async (item) => {
+    if (loadingItemId.value !== null) return;
+    loadingItemId.value = item.id;
     editingItem.value = item;
     try {
         const response = await axios.get(`/api/admin/model-translations/${selectedModel.value}/${item.id}`);
@@ -326,10 +331,13 @@ const editItem = async (item) => {
     } catch (error) {
         console.error('Failed to load translations:', error);
         showSnackbar(t('modelTranslations.failedToLoadTranslations'), 'error');
+    } finally {
+        loadingItemId.value = null;
     }
 };
 
 const saveTranslations = async (translations) => {
+    if (saving.value) return;
     saving.value = true;
     try {
         await axios.put(`/api/admin/model-translations/${selectedModel.value}/${editingItem.value.id}`, {
@@ -406,9 +414,5 @@ onMounted(async () => {
 <style scoped>
 .model-translations-tab :deep(.v-data-table) {
     font-size: 14px;
-}
-
-.ga-1 {
-    gap: 4px;
 }
 </style>

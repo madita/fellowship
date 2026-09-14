@@ -8,6 +8,9 @@ import Tiptap from "@/components/common/tiptap/Tiptap.vue";
 import DataTableJson from "@/components/common/DataTable/DataTableJson.vue";
 import DataTableModel from "@/components/common/DataTable/DataTableModel.vue";
 import DataTableTaxonomy from "@/components/common/DataTable/DataTableTaxonomy.vue";
+import { fieldLabel } from '@/utils/dataTableCells.js';
+import PublishControl from '@/components/common/PublishControl.vue';
+import DataTableRelation from '@/components/common/DataTable/DataTableRelation.vue';
 
 const { t } = useI18n();
 
@@ -39,6 +42,9 @@ const props = defineProps({
     }
 });
 
+// Readable field labels: column_map, then the header title, then the humanised key
+const labelFor = (column) => fieldLabel(column, { columnMap: props.response?.column_map, headers: props.response?.headers });
+
 // 👉 Emits
 const emit = defineEmits([
     'update:isDrawerOpen',
@@ -59,7 +65,6 @@ const title = ref('');
 const item = ref(JSON.parse(JSON.stringify(props.item || props.defaultItem)));
 const itemDetails = ref({});
 const parentItems = ref({});
-const loading = ref({});
 const initialSnapshot = ref('');
 
 // Validation states
@@ -209,9 +214,9 @@ const endDateTimePickerConfig = computed(() => {
 
 const formTitle = computed(() => {
     if (localEditMode.value) {
-        return item.value?.id ? 'Update Item' : 'Add Item';
+        return item.value?.id ? t('dataTable.editItem') : t('dataTable.newItem');
     }
-    return 'View Item';
+    return t('dataTable.viewItem');
 });
 
 const hasUpdatableFields = computed(() => {
@@ -281,16 +286,16 @@ onMounted(() => {
     >
         <!-- Header -->
         <div class="pa-4 d-flex align-center">
-            <h5 class="text-h5 me-3">
+            <h2 class="text-h6 me-3">
                 {{ formTitle }}
-            </h5>
+            </h2>
 
             <VSpacer />
 
             <slot name="beforeClose" />
 
             <!-- Action buttons in header -->
-            <div class="d-flex gap-2">
+            <div class="d-flex ga-2">
                 <VBtn
                     v-if="!localEditMode && item.id"
                     icon="mdi-pencil"
@@ -365,7 +370,7 @@ onMounted(() => {
                                             v-if="'select' in response.column_fields[column]"
                                             :items="response.column_fields[column]['select']"
                                             v-model="editedItem[column]"
-                                            :label="column"
+                                            :label="labelFor(column)"
                                             :readonly="!localEditMode"
                                             variant="outlined"
                                             density="compact"
@@ -385,7 +390,7 @@ onMounted(() => {
                                         <!-- Textarea -->
                                         <VTextarea
                                             v-if="response.column_fields?.[column] === 'textarea'"
-                                            :label="column"
+                                            :label="labelFor(column)"
                                             v-model="editedItem[column]"
                                             :readonly="!localEditMode"
                                             variant="outlined"
@@ -407,9 +412,17 @@ onMounted(() => {
                                             v-else-if="response.column_fields?.[column] === 'checkbox'"
                                             :model-value="!!editedItem[column]"
                                             @update:modelValue="editedItem[column] = $event ? 1 : 0"
-                                            :label="column"
+                                            :label="labelFor(column)"
                                             :readonly="!localEditMode"
                                             density="compact"
+                                        />
+
+                                        <!-- Publication state (null = draft, future = scheduled) -->
+                                        <PublishControl
+                                            v-else-if="response.column_fields?.[column] === 'publish'"
+                                            v-model="editedItem[column]"
+                                            :label="labelFor(column)"
+                                            :disabled="!localEditMode"
                                         />
 
                                         <!-- Color Picker -->
@@ -443,7 +456,7 @@ onMounted(() => {
                                         <VTextField
                                             v-else
                                             v-model="editedItem[column]"
-                                            :label="column"
+                                            :label="labelFor(column)"
                                             :readonly="!localEditMode"
                                             variant="outlined"
                                             density="compact"
@@ -475,58 +488,71 @@ onMounted(() => {
                         <!-- Form Actions -->
                         <VRow v-if="localEditMode">
                             <VCol cols="12">
-                                <div class="d-flex gap-3 mt-4">
+                                <div class="d-flex flex-wrap align-center ga-2 mt-4">
+                                    <VBtn
+                                        v-if="item.id"
+                                        variant="text"
+                                        color="error"
+                                        @click="removeItem"
+                                    >
+                                        {{ $t('common.delete') }}
+                                    </VBtn>
+
+                                    <VSpacer />
+
+                                    <VBtn
+                                        variant="text"
+                                        @click="onCancel"
+                                    >
+                                        {{ $t('common.cancel') }}
+                                    </VBtn>
+
                                     <VBtn
                                         type="submit"
                                         color="primary"
-                                        variant="elevated"
-                                        :loading="loading.submit"
+                                        variant="flat"
                                     >
-                                        {{ item.id ? 'Update' : 'Create' }}
-                                    </VBtn>
-
-                                    <VBtn
-                                        variant="outlined"
-                                        color="secondary"
-                                        @click="onCancel"
-                                    >
-                                        Cancel
-                                    </VBtn>
-
-                                    <VBtn
-                                        v-if="item.id"
-                                        variant="outlined"
-                                        color="error"
-                                        @click="removeItem"
-                                        :loading="loading.delete"
-                                    >
-                                        Delete
+                                        {{ item.id ? $t('common.update') : $t('common.create') }}
                                     </VBtn>
                                 </div>
                             </VCol>
                         </VRow>
                     </VForm>
 
+                    <!-- Related records of this item, e.g. a user's event profiles -->
+                    <template v-if="item.id && response.relations?.length">
+                        <VDivider class="my-6" />
+                        <DataTableRelation
+                            v-for="relation in response.relations"
+                            :key="`${relation.key}-${item.id}`"
+                            :relation="relation"
+                            :item-id="item.id"
+                            class="mb-6"
+                        />
+                    </template>
+
                     <!-- View Mode Actions -->
                     <VRow v-if="!localEditMode && item.id">
                         <VCol cols="12">
-                            <div class="d-flex gap-3 mt-4">
+                            <div class="d-flex flex-wrap align-center ga-2 mt-4">
                                 <VBtn
-                                    color="primary"
-                                    variant="elevated"
-                                    prepend-icon="mdi-pencil"
-                                    @click="localEditMode = true"
-                                >
-                                    Edit
-                                </VBtn>
-
-                                <VBtn
-                                    variant="outlined"
+                                    variant="text"
                                     color="error"
                                     prepend-icon="mdi-delete"
                                     @click="removeItem"
                                 >
-                                    Delete
+                                    {{ $t('common.delete') }}
+                                </VBtn>
+
+                                <VSpacer />
+
+                                <VBtn
+                                    color="primary"
+                                    variant="flat"
+                                    prepend-icon="mdi-pencil"
+                                    @click="localEditMode = true"
+                                >
+                                    {{ $t('common.edit') }}
                                 </VBtn>
                             </div>
                         </VCol>
@@ -566,21 +592,5 @@ onMounted(() => {
 .v-select,
 .v-checkbox {
     margin-bottom: 8px;
-}
-
-/* Improved button styling */
-.v-btn {
-    text-transform: none;
-    font-weight: 600;
-}
-
-/* Header styling */
-.pa-4 {
-    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-/* Loading states */
-.v-btn--loading {
-    pointer-events: none;
 }
 </style>

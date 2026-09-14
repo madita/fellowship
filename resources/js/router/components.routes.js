@@ -4,7 +4,7 @@ import verified from "@/router/middleware/verified.js";
 export const componentsRoutes = [{
     path: '/chat',
     name: 'chat',
-    component: () => import(/* webpackChunkName: "chat" */ '@/components/chat/Chat.vue'),
+    component: () => import(/* webpackChunkName: "chat" */ '@/pages/chat/ChatPage.vue'),
     meta: {
         middleware: [
             auth
@@ -14,7 +14,7 @@ export const componentsRoutes = [{
     {
         path: '/events',
         name: 'events',
-        component: () => import(/* webpackChunkName: "events" */ '@/components/event/EventPage.vue'),
+        component: () => import(/* webpackChunkName: "events" */ '@/pages/events/EventPage.vue'),
         meta: {
             middleware: [
                 auth
@@ -24,7 +24,7 @@ export const componentsRoutes = [{
     {
         path: '/events/create',
         name: 'event-create',
-        component: () => import(/* webpackChunkName: "event-create" */ '@/components/event/EventForm.vue'),
+        component: () => import(/* webpackChunkName: "event-create" */ '@/pages/events/EventForm.vue'),
         meta: {
             middleware: [
                 auth
@@ -34,7 +34,7 @@ export const componentsRoutes = [{
     {
         path: '/events/:id',
         name: 'event-show',
-        component: () => import(/* webpackChunkName: "event-show" */ '@/components/event/EventShow.vue'),
+        component: () => import(/* webpackChunkName: "event-show" */ '@/pages/events/EventShow.vue'),
         meta: {
             middleware: [
                 auth
@@ -44,7 +44,7 @@ export const componentsRoutes = [{
     {
         path: '/events/:id/edit',
         name: 'event-edit',
-        component: () => import(/* webpackChunkName: "event-edit" */ '@/components/event/EventForm.vue'),
+        component: () => import(/* webpackChunkName: "event-edit" */ '@/pages/events/EventForm.vue'),
         meta: {
             middleware: [
                 auth
@@ -54,7 +54,7 @@ export const componentsRoutes = [{
     {
         path: '/gallery',
         name: 'gallery-index',
-        component: () => import(/* webpackChunkName: "gallery-index" */ '@/components/gallery/Gallery.vue'),
+        component: () => import(/* webpackChunkName: "gallery-index" */ '@/pages/gallery/GalleryPage.vue'),
         meta: {
             layout: 'landing',
             middleware: [
@@ -65,7 +65,7 @@ export const componentsRoutes = [{
     {
         path: '/gallery/:album',
         name: 'gallery-album',
-        component: () => import(/* webpackChunkName: "gallery-album" */ '@/components/gallery/Album.vue'),
+        component: () => import(/* webpackChunkName: "gallery-album" */ '@/pages/gallery/AlbumPage.vue'),
         meta: {
             layout: 'landing',
             middleware: [
@@ -76,7 +76,7 @@ export const componentsRoutes = [{
     {
         path: '/conversations',
         name: 'conversations',
-        component: () => import(/* webpackChunkName: "conversations" */ '@/components/conversation/ConversationsDashboard.vue'),
+        component: () => import(/* webpackChunkName: "conversations" */ '@/pages/conversation/ConversationsPage.vue'),
         meta: {
             middleware: [
                 auth, verified
@@ -86,7 +86,7 @@ export const componentsRoutes = [{
     {
         path: '/irc',
         name: 'irc-client',
-        component: () => import(/* webpackChunkName: "irc-client" */ '@/components/irc/IrcClient.vue'),
+        component: () => import(/* webpackChunkName: "irc-client" */ '@/pages/irc/IrcPage.vue'),
         meta: {
             middleware: [
                 auth, verified

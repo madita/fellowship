@@ -3,7 +3,7 @@
         <v-container class="py-4 py-lg-8">
             <v-row :class="{ 'flex-row-reverse': imagePosition === 'left' }">
                 <v-col cols="12" lg="6">
-                    <div v-if="content.subtitle" class="text-uppercase font-weight-bold body-2 text-primary mb-2 mt-0 mt-xl-10">
+                    <div v-if="content.subtitle" class="text-uppercase font-weight-bold text-body-2 text-primary mb-2 mt-0 mt-xl-10">
                         {{ content.subtitle }}
                     </div>
                     <h2 class="text-h3">{{ content.title }}</h2>

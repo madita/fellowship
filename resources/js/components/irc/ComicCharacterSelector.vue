@@ -133,7 +133,7 @@ export default {
 }
 
 .selected-character {
-  border-color: #1976d2;
+  border-color: rgb(var(--v-theme-primary));
   box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
 }
 

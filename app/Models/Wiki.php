@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\Approvable;
-use App\Models\Concerns\HasTickets;
 use App\Models\Translations\WikiTranslation;
+use App\Traits\Approvable;
 use App\Traits\HasCache;
+use App\Traits\HasRelateableContent;
+use App\Traits\HasTickets;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
@@ -15,6 +16,7 @@ class Wiki extends Model implements TranslatableContract
 {
     use Approvable;
     use HasCache;
+    use HasRelateableContent;
     use HasTickets;
     use Sluggable;
     use Translatable;

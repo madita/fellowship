@@ -3,8 +3,14 @@ import { ref, computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import UserAvatar from '../common/UserAvatar.vue';
 import TinyBox from '../gallery/TinyBox.vue';
+import EmptyState from '../common/EmptyState.vue';
+import LoadingState from '../common/LoadingState.vue';
+import PollCard from '../poll/PollCard.vue';
+import SimpleEditor from '../common/tiptap/SimpleEditor.vue';
+import { sanitizeHtml } from '@/utils/sanitize.js';
 import axios from 'axios';
 import { useUserStore } from '@/store/userStore.js';
+import { useDialog } from '@/composables/useDialog.js';
 
 const MAX_IMAGES = 10;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -20,6 +26,7 @@ const emit = defineEmits(['updated', 'deleted']);
 
 const { t } = useI18n();
 const userStore = useUserStore();
+const dialog = useDialog();
 
 const user = computed(() => userStore.user || { id: null });
 const isMyStatus = computed(() => user.value.id === props.status.user_id);
@@ -27,12 +34,15 @@ const isMyStatus = computed(() => user.value.id === props.status.user_id);
 const isLiked = ref(props.status.is_liked_by_me);
 const likesCount = ref(props.status.likes_count);
 const commentsCount = ref(props.status.comments_count);
+const liking = ref(false);
 
 const showComments = ref(false);
 const comments = ref(props.status.comments || []);
 const newComment = ref('');
 const loadingComments = ref(false);
 const addingComment = ref(false);
+const deletingCommentId = ref(null);
+const deleting = ref(false);
 
 const feelingMap = {
     happy: '\u{1F60A}',
@@ -54,6 +64,23 @@ const replyingTo = ref(null);
 const showActions = ref(false);
 const editMode = ref(false);
 const editedContent = ref(props.status.content);
+
+// Posts written before the editor are plain text: keep their line breaks.
+// Everything else is sanitised HTML from the editor.
+const escapeHtml = (text) => text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const renderContent = (raw) => {
+    raw = raw || '';
+    if (!/<[a-z][\s\S]*>/i.test(raw)) {
+        return '<p>' + escapeHtml(raw).replace(/\n/g, '<br>') + '</p>';
+    }
+    return sanitizeHtml(raw);
+};
+const renderedContent = computed(() => renderContent(props.status.content));
+const hasText = (html) => (html || '').replace(/<[^>]*>/g, '').trim().length > 0;
+const newCommentHasText = computed(() => hasText(newComment.value));
+const editedHasText = computed(() => hasText(editedContent.value));
 const saving = ref(false);
 
 // Image editing state (only used while in edit mode)
@@ -78,12 +105,12 @@ const triggerEditFileInput = () => {
     editFileInput.value?.click();
 };
 
-const onEditFilesSelected = (event) => {
+const onEditFilesSelected = async (event) => {
     for (const file of Array.from(event.target.files)) {
         if (editImageCount.value >= MAX_IMAGES) break;
         if (!file.type.startsWith('image/')) continue;
         if (file.size > MAX_FILE_SIZE) {
-            alert(`"${file.name}" exceeds the 5MB size limit.`);
+            await dialog.warning(t('timeline.fileTooLarge', { name: file.name, size: 5 }));
             continue;
         }
         newFiles.value.push(file);
@@ -127,7 +154,18 @@ const openLightbox = (index) => {
     lightboxIndex.value = index;
 };
 
+// `status` is a read-only prop: hand the timeline a copy with the fresh poll
+const onPollChanged = (poll) => {
+    emit('updated', { ...props.status, poll });
+};
+
+const onPollDeleted = () => {
+    emit('updated', { ...props.status, poll: null });
+};
+
 const toggleLike = async () => {
+    if (liking.value) return;
+
     const previousState = isLiked.value;
     const previousCount = likesCount.value;
 
@@ -135,6 +173,7 @@ const toggleLike = async () => {
     isLiked.value = !isLiked.value;
     likesCount.value += isLiked.value ? 1 : -1;
 
+    liking.value = true;
     try {
         const response = await axios.post(`/api/statuses/${props.status.id}/like`);
         isLiked.value = response.data.liked;
@@ -144,6 +183,9 @@ const toggleLike = async () => {
         isLiked.value = previousState;
         likesCount.value = previousCount;
         console.error('Failed to toggle like:', error);
+        await dialog.requestError(error, t('timeline.likeFailed'));
+    } finally {
+        liking.value = false;
     }
 };
 
@@ -178,7 +220,7 @@ const cancelReply = () => {
 };
 
 const addComment = async () => {
-    if (!newComment.value.trim()) return;
+    if (!newCommentHasText.value || addingComment.value) return;
 
     addingComment.value = true;
     try {
@@ -208,18 +250,30 @@ const addComment = async () => {
         replyingTo.value = null;
     } catch (error) {
         console.error('Failed to add comment:', error);
+        await dialog.requestError(error, t('timeline.commentFailed'));
     } finally {
         addingComment.value = false;
     }
 };
 
 const deleteComment = async (commentId) => {
+    if (deletingCommentId.value !== null) return;
+
+    const confirmed = await dialog.confirmDelete(t('timeline.deleteCommentConfirm'), {
+        title: t('timeline.deleteCommentTitle'),
+    });
+    if (!confirmed) return;
+
+    deletingCommentId.value = commentId;
     try {
         await axios.delete(`/api/status-comments/${commentId}`);
         comments.value = comments.value.filter(c => c.id !== commentId);
         commentsCount.value--;
     } catch (error) {
         console.error('Failed to delete comment:', error);
+        await dialog.requestError(error, t('timeline.deleteCommentFailed'));
+    } finally {
+        deletingCommentId.value = null;
     }
 };
 
@@ -236,7 +290,7 @@ const cancelEdit = () => {
 };
 
 const saveEdit = async () => {
-    if (!editedContent.value.trim()) return;
+    if (!editedHasText.value || saving.value) return;
 
     saving.value = true;
     try {
@@ -266,19 +320,29 @@ const saveEdit = async () => {
         emit('updated', response.data);
     } catch (error) {
         console.error('Failed to update status:', error);
+        await dialog.requestError(error, t('timeline.updateFailed'));
     } finally {
         saving.value = false;
     }
 };
 
 const deleteStatus = async () => {
-    if (!confirm('Are you sure you want to delete this status?')) return;
+    if (deleting.value) return;
 
+    const confirmed = await dialog.confirmDelete(t('timeline.deleteStatusConfirm'), {
+        title: t('timeline.deleteStatusTitle'),
+    });
+    if (!confirmed) return;
+
+    deleting.value = true;
     try {
         await axios.delete(`/api/statuses/${props.status.id}`);
         emit('deleted', props.status.id);
     } catch (error) {
         console.error('Failed to delete status:', error);
+        await dialog.requestError(error, t('timeline.deleteStatusFailed'));
+    } finally {
+        deleting.value = false;
     }
 };
 
@@ -321,36 +385,35 @@ onBeforeUnmount(() => {
                     </template>
 
                     <v-list density="compact">
-                        <v-list-item @click="editStatus">
+                        <v-list-item :disabled="deleting" @click="editStatus">
                             <template #prepend>
                                 <v-icon size="small">mdi-pencil</v-icon>
                             </template>
-                            <v-list-item-title>Edit</v-list-item-title>
+                            <v-list-item-title>{{ t('common.edit') }}</v-list-item-title>
                         </v-list-item>
 
-                        <v-list-item @click="deleteStatus">
+                        <v-list-item :disabled="deleting" @click="deleteStatus">
                             <template #prepend>
                                 <v-icon size="small" color="error">mdi-delete</v-icon>
                             </template>
-                            <v-list-item-title class="text-error">Delete</v-list-item-title>
+                            <v-list-item-title class="text-error">{{ t('common.delete') }}</v-list-item-title>
                         </v-list-item>
                     </v-list>
                 </v-menu>
             </div>
 
             <!-- Content -->
-            <div v-if="!editMode" class="status-content mb-3">
-                <p class="text-body-1" style="white-space: pre-line">{{ status.content }}</p>
-            </div>
+            <div v-if="!editMode" class="status-content rich-content text-body-1 mb-3" v-html="renderedContent"></div>
 
             <!-- Edit Mode -->
             <div v-else class="mb-3">
-                <v-textarea
+                <SimpleEditor
                     v-model="editedContent"
-                    variant="outlined"
-                    rows="3"
-                    hide-details
+                    :disabled="saving"
+                    min-height="88px"
+                    autofocus
                     class="mb-3"
+                    @submit="saveEdit"
                 />
 
                 <!-- Existing + newly added images -->
@@ -395,30 +458,32 @@ onBeforeUnmount(() => {
                         :disabled="editImageCount >= MAX_IMAGES"
                         @click="triggerEditFileInput"
                     >
-                        Add photos
+                        {{ t('timeline.addPhotos') }}
                         <span v-if="editImageCount > 0" class="ml-1 text-caption">
                             ({{ editImageCount }}/{{ MAX_IMAGES }})
                         </span>
                     </v-btn>
                     <v-spacer />
-                    <v-btn
-                        size="small"
-                        variant="text"
-                        class="mr-2"
-                        @click="cancelEdit"
-                        :disabled="saving"
-                    >
-                        Cancel
-                    </v-btn>
-                    <v-btn
-                        size="small"
-                        color="primary"
-                        @click="saveEdit"
-                        :loading="saving"
-                        :disabled="!editedContent.trim()"
-                    >
-                        Save
-                    </v-btn>
+                    <div class="d-flex ga-2">
+                        <v-btn
+                            size="small"
+                            variant="text"
+                            @click="cancelEdit"
+                            :disabled="saving"
+                        >
+                            {{ t('timeline.cancel') }}
+                        </v-btn>
+                        <v-btn
+                            size="small"
+                            color="primary"
+                            variant="flat"
+                            @click="saveEdit"
+                            :loading="saving"
+                            :disabled="!editedHasText"
+                        >
+                            {{ t('common.save') }}
+                        </v-btn>
+                    </div>
                 </div>
 
                 <!-- Hidden file input for adding images during edit -->
@@ -431,6 +496,18 @@ onBeforeUnmount(() => {
                     @change="onEditFilesSelected"
                 />
             </div>
+
+            <!-- Poll (if attached) -->
+            <PollCard
+                v-if="status.poll"
+                :key="status.poll.id"
+                :poll="status.poll"
+                :current-user="user"
+                class="mb-3"
+                @voted="onPollChanged"
+                @updated="onPollChanged"
+                @deleted="onPollDeleted"
+            />
 
             <!-- Media (if exists) -->
             <div v-if="images.length > 0" class="status-media mb-3">
@@ -464,11 +541,11 @@ onBeforeUnmount(() => {
             <!-- Stats -->
             <div class="d-flex align-center justify-space-between mb-3 text-caption text-medium-emphasis">
                 <div>
-                    <span v-if="likesCount > 0">{{ likesCount }} {{ likesCount === 1 ? 'like' : 'likes' }}</span>
+                    <span v-if="likesCount > 0">{{ t('timeline.likesCount', likesCount) }}</span>
                 </div>
                 <div>
                     <span v-if="commentsCount > 0" class="cursor-pointer" @click="toggleComments">
-                        {{ commentsCount }} {{ commentsCount === 1 ? 'comment' : 'comments' }}
+                        {{ t('timeline.commentsCount', commentsCount) }}
                     </span>
                 </div>
             </div>
@@ -479,12 +556,13 @@ onBeforeUnmount(() => {
             <div class="d-flex justify-space-around">
                 <v-btn
                     variant="text"
-                    :color="isLiked ? 'pink' : 'default'"
+                    :color="isLiked ? 'error' : undefined"
+                    :loading="liking"
                     @click="toggleLike"
                     class="flex-grow-1"
                 >
-                    <v-icon :start="true">{{ isLiked ? 'mdi-heart' : 'mdi-heart-outline' }}</v-icon>
-                    Like
+                    <v-icon start>{{ isLiked ? 'mdi-heart' : 'mdi-heart-outline' }}</v-icon>
+                    {{ t('timeline.like') }}
                 </v-btn>
 
                 <v-btn
@@ -493,7 +571,7 @@ onBeforeUnmount(() => {
                     class="flex-grow-1"
                 >
                     <v-icon start>mdi-comment-outline</v-icon>
-                    Comment
+                    {{ t('timeline.comment') }}
                 </v-btn>
 
             </div>
@@ -503,9 +581,7 @@ onBeforeUnmount(() => {
                 <v-divider class="mb-3" />
 
                 <!-- Loading -->
-                <div v-if="loadingComments" class="text-center py-4">
-                    <v-progress-circular indeterminate color="primary" size="32" />
-                </div>
+                <loading-state v-if="loadingComments" compact />
 
                 <!-- Comments List -->
                 <div v-else>
@@ -513,7 +589,7 @@ onBeforeUnmount(() => {
                         <div class="d-flex">
                             <UserAvatar :user="comment.user" size="32" class="mr-2" />
                             <div class="flex-grow-1">
-                                <v-card variant="flat" color="grey-lighten-4" class="pa-2" rounded="lg">
+                                <v-card variant="tonal" class="pa-2" rounded="lg">
                                     <div class="d-flex align-center justify-space-between">
                                         <span class="font-weight-medium text-caption">{{ comment.user.name }}</span>
                                         <v-btn
@@ -521,17 +597,19 @@ onBeforeUnmount(() => {
                                             icon="mdi-delete"
                                             size="x-small"
                                             variant="text"
+                                            :loading="deletingCommentId === comment.id"
+                                            :disabled="deletingCommentId !== null && deletingCommentId !== comment.id"
                                             @click="deleteComment(comment.id)"
                                         />
                                     </div>
-                                    <p class="text-body-2 mb-0" style="white-space: pre-line">{{ comment.content }}</p>
+                                    <div class="text-body-2 rich-content" v-html="renderContent(comment.content)"></div>
                                 </v-card>
                                 <div class="d-flex align-center mt-1 text-caption text-medium-emphasis ml-2">
                                     <span>{{ comment.time_ago }}</span>
                                     <span class="mx-2">&middot;</span>
-                                    <span class="cursor-pointer">Like</span>
+                                    <span class="cursor-pointer">{{ t('timeline.like') }}</span>
                                     <span class="mx-2">&middot;</span>
-                                    <span class="cursor-pointer" @click="startReply(comment)">Reply</span>
+                                    <span class="cursor-pointer" @click="startReply(comment)">{{ t('timeline.reply') }}</span>
                                 </div>
 
                                 <!-- Replies -->
@@ -540,7 +618,7 @@ onBeforeUnmount(() => {
                                         <div class="d-flex">
                                             <UserAvatar :user="reply.user" size="24" class="mr-2" />
                                             <div class="flex-grow-1">
-                                                <v-card variant="flat" color="grey-lighten-4" class="pa-2" rounded="lg">
+                                                <v-card variant="tonal" class="pa-2" rounded="lg">
                                                     <div class="d-flex align-center justify-space-between">
                                                         <span class="font-weight-medium text-caption">{{ reply.user.name }}</span>
                                                         <v-btn
@@ -548,10 +626,12 @@ onBeforeUnmount(() => {
                                                             icon="mdi-delete"
                                                             size="x-small"
                                                             variant="text"
+                                                            :loading="deletingCommentId === reply.id"
+                                                            :disabled="deletingCommentId !== null && deletingCommentId !== reply.id"
                                                             @click="deleteComment(reply.id)"
                                                         />
                                                     </div>
-                                                    <p class="text-body-2 mb-0" style="white-space: pre-line">{{ reply.content }}</p>
+                                                    <div class="text-body-2 rich-content" v-html="renderContent(reply.content)"></div>
                                                 </v-card>
                                                 <div class="d-flex align-center mt-1 text-caption text-medium-emphasis ml-2">
                                                     <span>{{ reply.time_ago }}</span>
@@ -565,9 +645,13 @@ onBeforeUnmount(() => {
                     </div>
 
                     <!-- No Comments -->
-                    <div v-if="comments.length === 0" class="text-center text-medium-emphasis py-4">
-                        No comments yet. Be the first to comment!
-                    </div>
+                    <empty-state
+                        v-if="comments.length === 0"
+                        compact
+                        icon="mdi-comment-outline"
+                        :title="t('timeline.noComments')"
+                        :text="t('timeline.noCommentsText')"
+                    />
                 </div>
 
                 <!-- Add Comment -->
@@ -575,7 +659,7 @@ onBeforeUnmount(() => {
                     <!-- Reply indicator -->
                     <div v-if="replyingTo" class="d-flex align-center mb-2 text-caption text-medium-emphasis">
                         <v-icon size="14" class="mr-1">mdi-reply</v-icon>
-                        Replying to <span class="font-weight-medium ml-1">{{ replyingTo.user.name }}</span>
+                        {{ t('timeline.replyingTo') }} <span class="font-weight-medium ml-1">{{ replyingTo.user.name }}</span>
                         <v-btn
                             icon="mdi-close"
                             size="x-small"
@@ -588,36 +672,34 @@ onBeforeUnmount(() => {
 
                     <div class="d-flex">
                         <UserAvatar :user="user" size="32" class="mr-2" />
-                        <v-textarea
+                        <SimpleEditor
                             v-model="newComment"
-                            :placeholder="replyingTo ? `Reply to ${replyingTo.user.name}...` : 'Write a comment...'"
-                            variant="outlined"
-                            density="compact"
-                            rows="2"
-                            hide-details
+                            :placeholder="replyingTo ? t('timeline.replyToPlaceholder', { name: replyingTo.user.name }) : t('timeline.writeComment')"
+                            :disabled="addingComment"
+                            :limit="2000"
+                            min-height="40px"
                             class="flex-grow-1"
-                            @keydown.ctrl.enter="addComment"
-                            @keydown.meta.enter="addComment"
+                            @submit="addComment"
                         />
                     </div>
-                    <div class="d-flex justify-end mt-2">
+                    <div class="d-flex justify-end ga-2 mt-2">
                         <v-btn
                             v-if="replyingTo"
                             size="small"
                             variant="text"
-                            class="mr-2"
                             @click="cancelReply"
                         >
-                            Cancel
+                            {{ t('timeline.cancel') }}
                         </v-btn>
                         <v-btn
                             size="small"
                             color="primary"
+                            variant="flat"
                             @click="addComment"
                             :loading="addingComment"
-                            :disabled="!newComment.trim()"
+                            :disabled="!newCommentHasText"
                         >
-                            {{ replyingTo ? 'Reply' : 'Post Comment' }}
+                            {{ replyingTo ? t('timeline.reply') : t('timeline.postComment') }}
                         </v-btn>
                     </div>
                 </div>

@@ -2,7 +2,7 @@
     <div>
         <v-app-bar app flat :height="$vuetify.display.mobile ? 56 : 80">
             <a class="skip-nav-link" href="#main-content">
-                skip navigation
+                {{ $t('layout.skipNavigation') }}
             </a>
             <v-container class="py-0 px-2 px-sm-3 fill-height d-flex align-center">
                 <router-link to="/dashboard" class="text-decoration-none logo-container">
@@ -23,36 +23,28 @@
                         variant="text"
                         size="small"
                         @click="toggleTheme"
-                        :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+                        :title="isDark ? $t('common.switchToLightMode') : $t('common.switchToDarkMode')"
                     >
                         <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
                     </v-btn>
                     <template v-if="!authenticated">
-                        <v-btn class="d-none d-sm-flex" size="small" to="/auth/signin">
-                            Sign In
+                        <v-btn class="d-none d-sm-flex" size="small" variant="text" to="/auth/signin">
+                            {{ $t('layout.signIn') }}
                         </v-btn>
-                        <v-btn icon size="small" class="d-flex d-sm-none" to="/auth/signin" :title="$t ? $t('auth.signin') : 'Sign In'">
-                            <v-icon>mdi-login</v-icon>
-                        </v-btn>
+                        <v-btn icon="mdi-login" size="small" variant="text" class="d-flex d-sm-none" to="/auth/signin" :title="$t('auth.signin')" />
 
-                        <v-btn variant="outlined" class="d-none d-sm-flex" to="/auth/signup">
-                            Sign Up
+                        <v-btn variant="outlined" color="primary" class="d-none d-sm-flex" to="/auth/signup">
+                            {{ $t('auth.signup') }}
                         </v-btn>
-                        <v-btn icon size="small" variant="outlined" class="d-flex d-sm-none" to="/auth/signup" :title="$t ? $t('auth.signup') : 'Sign Up'">
-                            <v-icon>mdi-account-plus</v-icon>
-                        </v-btn>
+                        <v-btn icon="mdi-account-plus" size="small" variant="outlined" color="primary" class="d-flex d-sm-none" to="/auth/signup" :title="$t('auth.signup')" />
                     </template>
 
                     <template v-else>
                             <toolbar-notifications/>
                             <sandbox-notifications v-if="sandboxEnabled"/>
                             <conversations-notification/>
-                            <v-btn icon variant="text" size="small" class="d-none d-md-flex" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
-                                <v-icon>mdi-account-group</v-icon>
-                            </v-btn>
-                            <v-btn icon variant="text" size="small" class="d-none d-md-flex" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t ? $t('toolbar.settings') : 'Settings'">
-                                <v-icon>mdi-cog</v-icon>
-                            </v-btn>
+                            <v-btn icon="mdi-account-group" variant="text" size="small" class="d-none d-md-flex" @click="showUsersDrawer = !showUsersDrawer" :title="$t('toolbar.users')" />
+                            <v-btn icon="mdi-cog" variant="text" size="small" class="d-none d-md-flex" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t('toolbar.settings')" />
                             <toolbar-user/>
                     </template>
 
@@ -72,12 +64,12 @@
                 class="ma-0 rounded-0 px-3 px-sm-4"
                 density="comfortable"
             >
-                <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+                <div class="d-flex align-center justify-space-between flex-wrap ga-2">
                     <div class="d-flex align-center">
                         <v-icon class="mr-2" size="small">mdi-wrench</v-icon>
                         <div>
-                            <strong class="text-body-2 text-sm-body-1">Maintenance Mode Active</strong>
-                            <div class="text-caption d-none d-sm-block">Non-admin users cannot access the site.</div>
+                            <strong class="text-body-2 text-sm-body-1">{{ $t('layout.maintenanceModeActive') }}</strong>
+                            <div class="text-caption d-none d-sm-block">{{ $t('layout.nonAdminAccess') }}</div>
                         </div>
                     </div>
                     <v-btn
@@ -86,9 +78,10 @@
                         variant="elevated"
                         :to="{ name: 'admin-settings' }"
                         class="flex-shrink-0"
+                        prepend-icon="mdi-cog"
                     >
-                        <v-icon class="mr-1" size="small">mdi-cog</v-icon>
-                        <span class="d-none d-sm-inline">Manage </span>Settings
+                        <span class="d-none d-sm-inline">{{ $t('layout.manageSettings') }}</span>
+                        <span class="d-sm-none">{{ $t('toolbar.settings') }}</span>
                     </v-btn>
                 </div>
             </v-alert>
@@ -138,7 +131,7 @@
                     <!-- No widgets -->
                     <v-row v-else>
                         <v-col cols="12" class="text-center text-caption text-medium-emphasis">
-                            No footer widgets configured. Go to Settings → Footer to add widgets.
+                            {{ $t('layout.noFooterWidgets') }}
                         </v-col>
                     </v-row>
 
@@ -658,13 +651,6 @@ export default {
 
     .toolbar-actions {
         gap: 4px;
-    }
-}
-
-/* Responsive footer text */
-@media (max-width: 960px) {
-    .w-half {
-        width: 100% !important;
     }
 }
 

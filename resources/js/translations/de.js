@@ -25,6 +25,7 @@ export default {
         'confirmAction': 'Aktion bestätigen',
         'confirm': 'Bestätigen',
         'close': 'Schließen',
+        'back': 'Zurück',
         'search': 'Suchen',
         'copy': 'Kopie',
         'upload': 'Hochladen',
@@ -42,7 +43,8 @@ export default {
         'customize': 'Anpassen',
         'showLess': 'Weniger anzeigen',
         'showDetails': 'Details anzeigen',
-        'refresh': 'Aktualisieren'
+        'refresh': 'Aktualisieren',
+        'edit': 'Bearbeiten'
     },
     'cookie': {
         'consentTitle': 'Cookie-Zustimmung',
@@ -87,6 +89,7 @@ export default {
         'sentSuccess': 'Ankündigung erfolgreich gesendet!'
     },
     'profileDialog': {
+        'title': 'Ihre Angaben',
         'days': 'Tage'
     },
     'board': {
@@ -102,6 +105,9 @@ export default {
         }
     },
     'chat': {
+        'title': 'Chat',
+        'subtitle': 'Unterhalte dich mit allen, die gerade online sind',
+        'noUsersOnline': 'Gerade ist sonst niemand online',
         'online': 'Benutzer online ({count})',
         'addChannel': 'Kanal hinzufügen',
         'channel': 'Kanal | Kanäle',
@@ -126,7 +132,9 @@ export default {
         'replyTo': 'Antworten auf',
         'forwarded': 'Weitergeleitet',
         'attachment': 'Anhang',
-        'attachFile': 'Datei anhängen'
+        'attachFile': 'Datei anhängen',
+        'sendFailed': 'Die Nachricht konnte nicht gesendet werden',
+        'loadFailed': 'Die Nachrichten konnten nicht geladen werden'
     },
     'conversation': {
         'newConversation': 'Neue Unterhaltung',
@@ -174,7 +182,15 @@ export default {
         'new': 'neu',
         'noConversationsYet': 'Noch keine Unterhaltungen',
         'startToSee': 'Starten Sie eine Unterhaltung, um sie hier zu sehen',
-        'startNew': 'Neue Unterhaltung starten'
+        'startNew': 'Neue Unterhaltung starten',
+        'sendFailed': 'Ihre Nachricht konnte nicht gesendet werden.',
+        'createFailed': 'Die Unterhaltung konnte nicht erstellt werden.',
+        'loadFailed': 'Die Unterhaltung konnte nicht geladen werden.',
+        'subtitle': 'Private Nachrichten mit anderen Mitgliedern',
+        'noMessagesYet': 'Noch keine Nachrichten',
+        'noMessagesYetHint': 'Schreiben Sie die erste Antwort!',
+        'noRecentMessages': 'Keine neuen Nachrichten',
+        'seeAllMessages': 'Alle Nachrichten anzeigen'
     },
     'formBuilder': {
         'formFields': 'Formularfelder',
@@ -187,7 +203,10 @@ export default {
         'value': 'Wert',
         'noUpdatableFields': 'Keine aktualisierbaren Felder für dieses Formular konfiguriert.',
         'unknownFieldConfiguration': 'Unbekannte Feldkonfiguration',
-        'unsavedChangesWarning': 'Sie haben ungespeicherte Änderungen. Bitte „Speichern“ oder „Abbrechen“ verwenden – ein Klick außerhalb schließt das Formular nicht.'
+        'unsavedChangesWarning': 'Sie haben ungespeicherte Änderungen. Bitte „Speichern“ oder „Abbrechen“ verwenden – ein Klick außerhalb schließt das Formular nicht.',
+        'options': 'Optionen',
+        'addOption': '{name} hinzufügen',
+        'addField': 'Feld hinzufügen'
     },
     'email': {
         'compose': 'E-Mail verfassen',
@@ -244,16 +263,26 @@ export default {
         'widgetSettings': 'Widget-Einstellungen',
         'widgetTitle': 'Widget-Titel',
         'widgetSize': 'Widget-Größe',
+        'widgetHeight': 'Widget-Höhe',
+        'heightSingle': 'Eine Zeile',
+        'heightDouble': 'Zwei Zeilen',
+        'dropHere': 'Hier ablegen',
         'small': 'Klein',
         'medium': 'Mittel',
         'large': 'Groß',
         'extraLarge': 'Extra groß',
+        'sizeStandard': 'Standard (eine Spalte)',
+        'sizeWide': 'Breit (zwei Spalten)',
+        'sizeExtraWide': 'Extra breit (drei Spalten)',
         'widgetLimit': 'Anzahl Einträge',
         'onDashboard': '{count} auf dem Dashboard',
         'emptyTitle': 'Dein Dashboard ist leer',
         'emptyHint': 'Füge Widgets hinzu, um kommende Events, Benachrichtigungen, Wiki-Änderungen und mehr auf einen Blick zu sehen.',
         'loadFailed': 'Widget konnte nicht geladen werden',
         'saveFailed': 'Dein Dashboard-Layout konnte nicht gespeichert werden: {error}',
+        'layoutLoadFailed': 'Dein Dashboard-Layout konnte nicht geladen werden: {error}',
+        'confirmReset': 'Das ersetzt dein angepasstes Dashboard durch die Standard-Widgets. Fortfahren?',
+        'confirmRemove': 'Widget „{title}" vom Dashboard entfernen?',
         'widgets': {
             'events': {
                 'title': 'Kommende Events',
@@ -285,7 +314,13 @@ export default {
             'conversations': {
                 'title': 'Nachrichten',
                 'description': 'Deine letzten Unterhaltungen',
-                'action': 'Alle Unterhaltungen anzeigen'
+                'action': 'Alle Unterhaltungen anzeigen',
+                'empty': 'Noch keine Unterhaltungen',
+                'unread': 'Ungelesene Nachrichten',
+                'noMessages': 'Unterhaltung starten',
+                'recently': 'Kürzlich',
+                'groupChat': 'Gruppenchat',
+                'unknownUser': 'Benutzer'
             },
             'tickets': {
                 'title': 'Ticket-Warteschlange',
@@ -402,6 +437,7 @@ export default {
         'subtitle': 'Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen Ihres Passworts.',
         'email': 'E-Mail',
         'button': 'Passwort-Reset anfordern',
+        'sent': 'Wir haben Ihnen einen Link zum Zurücksetzen Ihres Passworts per E-Mail gesendet.',
         'backtosign': 'Zurück zur Anmeldung'
     },
     'login': {
@@ -421,6 +457,7 @@ export default {
     },
     'register': {
         'title': 'Konto erstellen',
+        'subtitle': 'Erstellen Sie Ihr Konto, um loszulegen',
         'name': 'Vollständiger Name',
         'username': 'Benutzername',
         'email': 'E-Mail',
@@ -430,6 +467,8 @@ export default {
         'agree': 'Mit der Registrierung stimmen Sie zu',
         'account': 'Bereits ein Konto?',
         'signin': 'Anmelden',
+        'ageRequired': 'Sie müssen Ihr Alter bestätigen, um sich zu registrieren',
+        'failed': 'Die Registrierung ist fehlgeschlagen. Bitte versuchen Sie es erneut.',
         'ageConfirmation': 'Ich bestätige, dass ich mindestens {age} Jahre alt bin'
     },
     'utility': {
@@ -534,6 +573,12 @@ export default {
         'resettingPassword': 'Passwort wird zurückgesetzt',
         'newPassword': 'Neues Passwort',
         'setNewPasswordAndSignIn': 'Neues Passwort festlegen und anmelden',
+        'passwordResetDone': 'Ihr Passwort wurde geändert. Sie können sich jetzt anmelden.',
+        'verifyEmailTitle': 'Bitte bestätigen Sie Ihre E-Mail-Adresse',
+        'verifyEmailHint': 'Prüfen Sie Ihr Postfach – dort finden Sie den Link zur Bestätigung Ihrer E-Mail-Adresse.',
+        'alreadyVerified': 'Ihre E-Mail-Adresse ist bereits bestätigt.',
+        'verificationSent': 'Die Bestätigungs-E-Mail wurde gesendet.',
+        'resendEmail': 'E-Mail erneut senden',
         'required': 'Erforderlich'
     },
     'menu': {
@@ -602,6 +647,8 @@ export default {
         'adminEventsProfiles': 'Profile',
         'adminMedia': 'Mediencenter',
         'adminTickets': 'Tickets',
+        'adminPolls': 'Umfragen',
+        'adminRelations': 'Verwandte Inhalte',
         'adminTranslations': 'Übersetzungen',
         'adminDashboard': 'Dashboard',
         'myTickets': 'Meine Tickets'
@@ -675,6 +722,72 @@ export default {
                 'disk': 'Freier Speicher',
                 'lastMigration': 'Letzter Datenimport: {name} — {status}, {time}.'
             }
+        },
+        'polls': {
+            'title': 'Umfragen',
+            'subtitle': 'Alle Umfragen an Forenthemen und Timeline-Beiträgen — Zahlen, Ergebnisse und Moderation',
+            'stats': {
+                'total': 'Umfragen',
+                'open': 'Offen',
+                'closed': 'Geschlossen',
+                'votes': 'Stimmen',
+                'votes_7d': 'Stimmen diese Woche',
+                'polls_7d': 'Neu diese Woche'
+            },
+            'byType': 'Wo Umfragen hängen',
+            'mostVoted': 'Meiste Stimmen',
+            'mostVotedEmpty': 'Bisher wurde noch nicht abgestimmt',
+            'filters': {
+                'search': 'Umfragen durchsuchen…',
+                'status': 'Status',
+                'type': 'Typ',
+                'pollable': 'Angehängt an',
+                'all': 'Alle',
+                'reset': 'Filter zurücksetzen'
+            },
+            'status': {
+                'open': 'Offen',
+                'closed': 'Geschlossen'
+            },
+            'type': {
+                'single': 'Einfachauswahl',
+                'multiple': 'Mehrfachauswahl'
+            },
+            'pollable': {
+                'thread': 'Forenthema',
+                'status': 'Timeline-Beitrag',
+                'page': 'Seite',
+                'ticket': 'Ticket',
+                'unknown': 'Nicht angehängt'
+            },
+            'headers': {
+                'title': 'Umfrage',
+                'pollable': 'Angehängt an',
+                'creator': 'Erstellt von',
+                'type': 'Typ',
+                'votes': 'Stimmen',
+                'status': 'Status',
+                'created': 'Erstellt'
+            },
+            'anonymous': 'Anonym',
+            'closesAt': 'schließt {time}',
+            'closedAt': 'geschlossen {time}',
+            'actions': {
+                'results': 'Ergebnisse ansehen',
+                'close': 'Umfrage schließen',
+                'reopen': 'Umfrage wieder öffnen',
+                'delete': 'Umfrage löschen'
+            },
+            'confirm': {
+                'closeTitle': 'Umfrage schließen?',
+                'close': 'Die Abstimmung zu „{title}“ endet sofort. Du kannst die Umfrage später wieder öffnen.',
+                'reopenTitle': 'Umfrage wieder öffnen?',
+                'reopen': '„{title}“ nimmt wieder Stimmen an und das Enddatum wird entfernt.',
+                'delete': 'Die Umfrage „{title}“ samt aller Stimmen löschen? Das lässt sich nicht rückgängig machen.'
+            },
+            'empty': 'Noch keine Umfragen',
+            'emptyHint': 'Umfragen werden in Forenthemen und Timeline-Beiträgen erstellt. Sobald jemand eine anhängt, erscheint sie hier.',
+            'emptyFiltered': 'Keine Umfragen passen zu den aktuellen Filtern'
         },
         'forums': {
             'title': 'Forenverwaltung',
@@ -1113,6 +1226,7 @@ export default {
         },
         'announcements': {
             'title': 'Ankündigungsverwaltung',
+            'subtitle': 'Sende eine Benachrichtigungs-E-Mail an alle Mitglieder der Community.',
             'list': 'Ankündigungsliste',
             'create': 'Ankündigung erstellen',
             'edit': 'Ankündigung bearbeiten',
@@ -1286,7 +1400,19 @@ export default {
         'other': 'niemand | {n} anderer | {n} andere'
     },
     'dataTable': {
-        'search': 'Suchen',
+        'relation': {
+            'empty': 'Noch nichts vorhanden',
+            'loadFailed': 'Die Liste konnte nicht geladen werden',
+            'noDetails': 'Keine Profilangaben',
+            'open': 'Öffnen',
+            'status': {
+                'approved': 'Bestätigt',
+                'pending': 'Wartet auf Bestätigung'
+            }
+        },
+        'relations': {
+            'event_profiles': 'Termin-Profile'
+        },
         'searchPlaceholder': 'Suchen...',
         'noData': 'Keine Daten verfügbar',
         'noResults': 'Keine passenden Einträge gefunden',
@@ -1305,7 +1431,6 @@ export default {
         'sortDesc': 'Absteigend sortieren',
         'filter': 'Filtern',
         'filters': 'Filter',
-        'clearFilter': 'Filter löschen',
         'export': 'Exportieren',
         'refresh': 'Aktualisieren',
         'columns': 'Spalten',
@@ -1313,13 +1438,13 @@ export default {
         'compact': 'Kompakt',
         'comfortable': 'Komfortabel',
         'spacious': 'Geräumig',
-        'operators': 'Operatoren',
         'searchValue': 'Suchwert',
         'newItem': 'Neuer Eintrag',
         'editItem': 'Eintrag bearbeiten',
-        'quickSearch': 'Schnellsuche',
         'list': 'Liste',
+        'viewItem': 'Eintrag ansehen',
         'deleteConfirm': 'Möchten Sie diesen Eintrag wirklich löschen?',
+        'deleteSelectedConfirm': 'Möchten Sie die {count} ausgewählten Einträge wirklich löschen?',
         'ok': 'OK',
         'required': 'Erforderlich.',
         'invalidEmail': 'Ungültige E-Mail-Adresse.',
@@ -1330,7 +1455,33 @@ export default {
         'operatorGreaterThan': '>',
         'operatorLessThan': '<',
         'operatorGreaterThanOrEqual': '>=',
-        'operatorLessThanOrEqual': '<='
+        'operatorLessThanOrEqual': '<=',
+        'searchAll': 'In allen Spalten suchen',
+        'advancedFilter': 'Erweiterter Filter',
+        'column': 'Spalte',
+        'operator': 'Operator',
+        'apply': 'Anwenden',
+        'activeFilters': 'Aktive Filter',
+        'searchChip': 'Suche: {term}',
+        'removeFilter': 'Filter entfernen',
+        'clearAll': 'Alle entfernen',
+        'clearFilters': 'Filter zurücksetzen',
+        'clearSelection': 'Auswahl aufheben',
+        'deleteSelected': 'Ausgewählte löschen',
+        'quickEdit': 'Schnellbearbeitung',
+        'moreActions': 'Weitere Aktionen',
+        'showAllColumns': 'Alle anzeigen',
+        'entries': 'keine Einträge | {n} Eintrag | {n} Einträge',
+        'noResultsHint': 'Versuchen Sie einen anderen Suchbegriff oder setzen Sie die Filter zurück.',
+        'loadError': 'Die Tabelle konnte nicht geladen werden.',
+        'taxonomy': {
+            'searchOrCreate': 'Tippen, um zu suchen oder {label} neu anzulegen',
+            'enterToAdd': 'Eingabetaste drücken, um einen neuen Eintrag hinzuzufügen',
+            'noMatch': 'Keine Treffer für „{search}“ – Eingabetaste drücken, um den Eintrag anzulegen',
+            'startTyping': 'Tippen, um zu suchen oder neu anzulegen',
+            'addNew': '{label} hinzufügen',
+            'newLabel': 'Neu: {label}'
+        }
     },
     'calendar': {
         'today': 'Heute',
@@ -1361,6 +1512,7 @@ export default {
     },
     'events': {
         'title': 'Termine',
+        'subtitle': 'Kalender, anstehende Termine und alles, was die Community plant',
         'upcoming': 'Anstehende Termine',
         'past': 'Vergangene Termine',
         'all': 'Alle Termine',
@@ -1500,6 +1652,9 @@ export default {
             'multi': 'Multi',
         },
         'viewDetailedAttendeeList': 'Detaillierte Teilnehmerliste anzeigen',
+        'saveError': 'Der Termin konnte nicht gespeichert werden',
+        'deleteError': 'Der Termin konnte nicht gelöscht werden',
+        'guestApprovalError': 'Die Gastfreigabe konnte nicht aktualisiert werden',
     },
     'gallery': {
         'title': 'Galerie',
@@ -1522,17 +1677,37 @@ export default {
         'pause': 'Pause',
         'fullscreen': 'Vollbild',
         'exitFullscreen': 'Vollbild beenden',
+        'selectFileFirst': 'Bitte wähle zuerst eine Datei aus',
         'pleaseSelectFile': 'Bitte wählen Sie zuerst eine Datei aus',
         'selectTaxonomy': 'Taxonomie auswählen',
         'collectionName': 'Sammlungsname',
         'createCollection': 'Sammlung erstellen',
         'backToGallery': 'Zurück zur Galerie',
+        'subtitle': 'Stöbere in den Fotoalben der Community',
+        'album': 'Album',
+        'addImages': 'Bilder hinzufügen',
+        'uploadedBy': 'Hochgeladen von {name}',
+        'uploadedOn': 'Hochgeladen am {date}',
+        'manageTitle': 'Galerie verwalten',
+        'manageSubtitle': 'Sammlungen anlegen und Bilder hochladen',
+        'selectTaxonomyHint': 'Wähle eine Taxonomie, um ihre Sammlungen zu sehen.',
         'editCaption': 'Beschriftung bearbeiten',
         'addCaption': 'Beschriftung hinzufügen',
         'updateCaption': 'Beschriftung aktualisieren',
         'selectFile': 'Datei auswählen',
         'uploadToAlbum': 'In Album hochladen',
-        'uploadToCollection': 'In Sammlung hochladen'
+        'uploadToCollection': 'In Sammlung hochladen',
+        'uploadSuccess': 'Bild hochgeladen',
+        'uploadFailed': 'Das Bild konnte nicht hochgeladen werden',
+        'captionSaved': 'Beschriftung gespeichert',
+        'captionSaveFailed': 'Die Beschriftung konnte nicht gespeichert werden',
+        'deleteImageTitle': 'Bild löschen',
+        'deleteImageConfirm': 'Möchtest du dieses Bild wirklich löschen?',
+        'deleteImageFailed': 'Das Bild konnte nicht gelöscht werden',
+        'collectionCreated': 'Sammlung erstellt',
+        'collectionCreateFailed': 'Die Sammlung konnte nicht erstellt werden',
+        'collectionNameRequired': 'Bitte gib zuerst einen Namen für die Sammlung ein',
+        'loadFailed': 'Die Galerie konnte nicht geladen werden'
     },
     'landing': {
         'hero': {
@@ -2147,6 +2322,7 @@ export default {
             'results': 'Ergebnisse',
             'saved': 'Einstellungen erfolgreich gespeichert!',
             'saveError': 'Fehler beim Speichern der Einstellungen',
+            'loadError': 'Einstellungen konnten nicht geladen werden',
             'noResultsMessage': 'Keine Einstellungen gefunden für "{query}". Versuchen Sie einen anderen Suchbegriff.',
             'tabGeneral': 'Allgemein',
             'tabLocalization': 'Lokalisierung',
@@ -2157,7 +2333,17 @@ export default {
             'tabHomepage': 'Homepage',
             'tabFooter': 'Fußzeile',
             'tabModeration': 'Moderation',
-            'tabAdvanced': 'Erweitert'
+            'tabSandbox': 'Sandbox',
+            'tabAdvanced': 'Erweitert',
+            'subtitle': 'Legen Sie fest, wie die Anwendung aussieht und sich verhält',
+            'settingsCount': '{count} Einstellung | {count} Einstellungen',
+            'moreInCategory': 'Mehr in dieser Kategorie'
+        },
+        'page': {
+            'loading': 'Einstellungen werden geladen...',
+            'loadError': 'Fehler beim Laden der Einstellungen',
+            'notFound': 'Einstellung nicht gefunden',
+            'notFoundMessage': 'Die gesuchte Einstellungsseite existiert nicht.'
         },
         'category': {
             'notFound': 'Kategorie nicht gefunden',
@@ -2190,7 +2376,9 @@ export default {
             'uploadFailed': 'Fehler beim Hochladen des Bildes. Bitte versuchen Sie es erneut.',
             'deleteConfirm': 'Sind Sie sicher, dass Sie das {label} löschen möchten?',
             'deleteFailed': 'Fehler beim Löschen von {key}',
-            'confirmDelete': 'Sind Sie sicher, dass Sie dieses Bild löschen möchten?'
+            'confirmDelete': 'Sind Sie sicher, dass Sie dieses Bild löschen möchten?',
+            'uploadSuccess': 'Bild erfolgreich hochgeladen',
+            'deleteSuccess': 'Bild erfolgreich gelöscht'
         },
         'footerBuilder': {
             'addSection': 'Abschnitt hinzufügen',
@@ -2214,6 +2402,7 @@ export default {
             'add': 'Hinzufügen',
             'confirmDelete': 'Löschen bestätigen',
             'deleteSectionConfirm': 'Sind Sie sicher, dass Sie den Abschnitt "{title}" löschen möchten? Alle Widgets in diesem Abschnitt werden ebenfalls gelöscht.',
+            'deleteWidgetConfirm': 'Sind Sie sicher, dass Sie das Widget "{title}" löschen möchten?',
             'layout1Col': '1 Spalte (Volle Breite)',
             'layout2Col': '2 Spalten (Gleich)',
             'layout3Col': '3 Spalten (Gleich)',
@@ -2362,6 +2551,7 @@ export default {
             'add': 'Hinzufügen',
             'confirmDelete': 'Löschen bestätigen',
             'deleteSectionConfirm': 'Sind Sie sicher, dass Sie den Abschnitt "{title}" löschen möchten? Alle Widgets in diesem Abschnitt werden ebenfalls gelöscht.',
+            'deleteWidgetConfirm': 'Sind Sie sicher, dass Sie das Widget "{title}" löschen möchten?',
             'layout1Col': '1 Spalte (Volle Breite)',
             'layout2Col': '2 Spalten (Gleich)',
             'layout3Col': '3 Spalten (Gleich)',
@@ -2428,6 +2618,7 @@ export default {
             'customHtmlPlaceholder': 'Geben Sie hier Ihr benutzerdefiniertes HTML ein...',
             'loadSimpleTemplate': 'Einfache Vorlage laden',
             'loadComplexTemplate': 'Komplexe Vorlage laden',
+            'templateOverwriteConfirm': 'Beim Laden einer Vorlage wird das aktuelle Footer-HTML ersetzt. Fortfahren?',
             'availableVariables': 'Verfügbare Variablen',
             'varAppName': 'Anwendungsname',
             'varCopyright': 'Copyright-Text',
@@ -2759,6 +2950,12 @@ export default {
             'pwaIconInstructions': 'Gehen Sie zum Branding-Tab → App-Symbol (PWA), um ein geeignetes Symbol hochzuladen.',
             'viewManifest': 'Manifest anzeigen',
             'testServiceWorker': 'Service Worker testen',
+            'cacheCleared': 'Cache erfolgreich geleert: {types}',
+            'cacheClearFailed': 'Fehler beim Leeren des Caches',
+            'clearAllConfirm': 'Dadurch werden alle Caches der Anwendung geleert. Fortfahren?',
+            'swActive': 'Service Worker ist aktiv und registriert. Details finden Sie in der Browser-Konsole.',
+            'swNotRegistered': 'Service Worker ist noch nicht registriert. Er wird mit dem Produktions-Build registriert.',
+            'swNotSupported': 'Service Worker werden in diesem Browser nicht unterstützt.',
             'newsletterIntegration': 'Newsletter-Integration',
             'newsletterDesc': 'Verbinden Sie Ihren Newsletter-Dienst, um E-Mail-Abonnements über Ihre Website zu ermöglichen.',
             'enableNewsletter': 'Newsletter aktivieren',
@@ -2985,7 +3182,8 @@ export default {
                 'posts': 'Posts',
                 'clearAllCaches': 'Alle Caches leeren',
                 'cacheCleared': 'Cache erfolgreich geleert: {types}',
-                'cacheClearFailed': 'Fehler beim Leeren des Caches'
+                'cacheClearFailed': 'Fehler beim Leeren des Caches',
+                'clearAllConfirm': 'Dadurch werden alle Caches der Anwendung geleert. Fortfahren?'
             },
             'pwa': {
                 'title': 'Progressive Web App',
@@ -3035,6 +3233,23 @@ export default {
         }
     },
     'widgets': {
+        'landing': {
+            'viewAll': 'Alle anzeigen',
+            'noActivity': 'Keine aktuellen Aktivitäten',
+            'noPolls': 'Keine Umfragen verfügbar',
+            'loadingPolls': 'Umfragen werden geladen...',
+            'noHtml': 'Kein eigener HTML-Inhalt hinterlegt',
+            'noHtmlHint': 'Fügen Sie Ihren HTML-Inhalt im Widget-Editor hinzu.',
+            'noVideo': 'Keine Video-URL angegeben',
+            'categories': 'Kategorien',
+            'threads': 'Themen',
+            'posts': 'Beiträge',
+            'threadsCount': '{count} Themen',
+            'popularCategories': 'Beliebte Kategorien',
+            'recentActivity': 'Letzte Aktivitäten',
+            'noCategories': 'Noch keine Forenkategorien',
+            'noForumActivity': 'Keine aktuellen Aktivitäten'
+        },
         'hero': {
             'defaultTitle': 'Willkommen auf unserer Plattform',
             'defaultSubtitle': 'Entdecken Sie großartige Funktionen und Möglichkeiten',
@@ -3128,6 +3343,8 @@ export default {
         }
     },
     'notifications': {
+        'statusMention': '{name} hat dich in einem Beitrag erwähnt',
+        'statusCommentMention': '{name} hat dich in einem Kommentar erwähnt',
         'title': 'Benachrichtigungen',
         'markAllRead': 'Alle als gelesen markieren',
         'clearAll': 'Alle löschen',
@@ -3139,7 +3356,14 @@ export default {
         'minutesAgo': 'vor {count} Minuten',
         'hoursAgo': 'vor {count} Stunden',
         'daysAgo': 'vor {count} Tagen',
-        'settings': 'Benachrichtigungseinstellungen'
+        'settings': 'Benachrichtigungseinstellungen',
+        'markRead': 'Als gelesen markieren',
+        'dismiss': 'Verwerfen',
+        'confirmDelete': 'Diese Benachrichtigung löschen?',
+        'deleteFailed': 'Die Benachrichtigung konnte nicht gelöscht werden.',
+        'updateFailed': 'Die Benachrichtigung konnte nicht aktualisiert werden.',
+        'subtitle': 'Alles, was passiert ist, während Sie weg waren',
+        'emptyHint': 'Sie sind auf dem neuesten Stand. Neue Benachrichtigungen erscheinen hier.'
     },
     'relativeTime': {
         'justNow': 'Gerade eben',
@@ -3543,6 +3767,18 @@ export default {
         'invertSelection': 'Auswahl umkehren'
     },
     'timeline': {
+        'addPhotos': 'Fotos hinzufügen',
+        'likesCount': '{count} Like | {count} Likes',
+        'commentsCount': '{count} Kommentar | {count} Kommentare',
+        'like': 'Gefällt mir',
+        'comment': 'Kommentieren',
+        'reply': 'Antworten',
+        'replyingTo': 'Antwort an',
+        'replyToPlaceholder': 'Antwort an {name}...',
+        'writeComment': 'Schreibe einen Kommentar...',
+        'postComment': 'Kommentar posten',
+        'noComments': 'Noch keine Kommentare',
+        'noCommentsText': 'Sei die erste Person, die kommentiert!',
         'eyebrow': 'Community-Feed',
         'title': 'Zeitleiste',
         'subtitle': 'Teile deine Gedanken mit der Community',
@@ -3561,6 +3797,17 @@ export default {
         'beFirst': 'Sei der Erste, der etwas teilt!',
         'howAreYouFeeling': 'Wie fühlst du dich?',
         'isFeeling': 'fühlt sich',
+        'fileTooLarge': '„{name}" überschreitet die maximale Dateigröße von {size} MB.',
+        'postFailed': 'Der Status konnte nicht gepostet werden',
+        'updateFailed': 'Der Status konnte nicht aktualisiert werden',
+        'deleteStatusTitle': 'Status löschen',
+        'deleteStatusConfirm': 'Möchtest du diesen Status wirklich löschen?',
+        'deleteStatusFailed': 'Der Status konnte nicht gelöscht werden',
+        'commentFailed': 'Der Kommentar konnte nicht gepostet werden',
+        'deleteCommentTitle': 'Kommentar löschen',
+        'deleteCommentConfirm': 'Diesen Kommentar löschen?',
+        'deleteCommentFailed': 'Der Kommentar konnte nicht gelöscht werden',
+        'likeFailed': 'Dein Like konnte nicht gespeichert werden',
         'feelings': {
             'happy': 'glücklich',
             'excited': 'aufgeregt',
@@ -3607,7 +3854,13 @@ export default {
     },
     '$vuetify': {
         'badge': 'Abzeichen',
+        'open': 'Öffnen',
         'close': 'Schließen',
+        'dismiss': 'Verwerfen',
+        'confirmEdit': {
+            'ok': 'OK',
+            'cancel': 'Abbrechen'
+        },
         'dataIterator': {
             'noResultsText': 'Keine übereinstimmenden Einträge gefunden',
             'loadingText': 'Elemente werden geladen...'
@@ -3633,8 +3886,20 @@ export default {
             'lastPage': 'Letzte Seite',
             'pageText': '{0}-{1} von {2}'
         },
+        'dateRangeInput': {
+            'divider': 'bis'
+        },
         'datePicker': {
             'itemsSelected': '{0} ausgewählt',
+            'range': {
+                'title': 'Daten auswählen',
+                'header': 'Daten eingeben'
+            },
+            'title': 'Datum auswählen',
+            'header': 'Datum eingeben',
+            'input': {
+                'placeholder': 'Datum eingeben'
+            },
             'nextMonthAriaLabel': 'Nächster Monat',
             'nextYearAriaLabel': 'Nächstes Jahr',
             'prevMonthAriaLabel': 'Vorheriger Monat',
@@ -3649,27 +3914,95 @@ export default {
             }
         },
         'calendar': {
-            'moreEvents': '{0} weitere'
+            'moreEvents': '{0} weitere',
+            'today': 'Heute'
+        },
+        'input': {
+            'clear': '{0} leeren',
+            'prependAction': '{0} vorangestellte Aktion',
+            'appendAction': '{0} angehängte Aktion',
+            'otp': 'Bitte OTP-Zeichen {0} eingeben'
         },
         'fileInput': {
             'counter': '{0} Dateien',
             'counterSize': '{0} Dateien (insgesamt {1})'
         },
+        'fileUpload': {
+            'title': 'Datei hier ablegen',
+            'divider': 'oder',
+            'browse': 'Dateien durchsuchen'
+        },
         'timePicker': {
             'am': 'AM',
-            'pm': 'PM'
+            'pm': 'PM',
+            'title': 'Uhrzeit auswählen'
         },
         'pagination': {
             'ariaLabel': {
-                'wrapper': 'Seitennavigation',
+                'root': 'Seitennavigation',
                 'next': 'Nächste Seite',
                 'previous': 'Vorherige Seite',
                 'page': 'Gehe zu Seite {0}',
-                'currentPage': 'Aktuelle Seite, Seite {0}'
+                'currentPage': 'Aktuelle Seite, Seite {0}',
+                'first': 'Erste Seite',
+                'last': 'Letzte Seite',
+                'wrapper': 'Seitennavigation'
             }
+        },
+        'stepper': {
+            'next': 'Weiter',
+            'prev': 'Zurück'
+        },
+        'rating': {
+            'ariaLabel': {
+                'item': 'Bewertung {0} von {1}'
+            }
+        },
+        'loading': 'Laden...',
+        'infiniteScroll': {
+            'loadMore': 'Mehr laden',
+            'empty': 'Nichts weiteres'
+        },
+        'rules': {
+            'required': 'Dieses Feld ist erforderlich',
+            'email': 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
+            'number': 'Dieses Feld darf nur Zahlen enthalten',
+            'integer': 'Dieses Feld darf nur Ganzzahlen enthalten',
+            'capital': 'Dieses Feld darf nur Großbuchstaben enthalten',
+            'maxLength': 'Sie dürfen maximal {0} Zeichen eingeben',
+            'minLength': 'Sie müssen mindestens {0} Zeichen eingeben',
+            'strictLength': 'Die Länge des eingegebenen Feldes ist ungültig',
+            'exclude': 'Das Zeichen {0} ist nicht erlaubt',
+            'notEmpty': 'Bitte wählen Sie mindestens einen Wert aus',
+            'pattern': 'Ungültiges Format'
         }
     },
+    'blog': {
+        'title': 'Blog',
+        'subtitle': 'Neuigkeiten und Geschichten aus der Community',
+        'noPosts': 'Noch keine Blogbeiträge',
+        'noPostsText': 'Schauen Sie bald wieder vorbei, neue Beiträge erscheinen hier.',
+        'backToBlog': 'Zurück zum Blog'
+    },
     'pages': {
+        'show': {
+            'history': 'Verlauf',
+            'showPage': 'Seite anzeigen',
+            'field': 'Feld',
+            'oldValue': 'Alter Wert',
+            'newValue': 'Neuer Wert',
+            'noHistory': 'Noch kein Verlauf',
+            'noHistoryText': 'Änderungen an dieser Seite werden hier aufgelistet.'
+        },
+        'tagged': {
+            'title': 'Verschlagwortete Inhalte',
+            'subtitle': 'Alles mit dem Schlagwort „{term}“',
+            'noResults': 'Noch nichts verschlagwortet',
+            'noResultsText': 'Es wurden keine Inhalte mit „{term}“ verschlagwortet.',
+            'pagesIn': 'Seiten in „{category}“',
+            'noPages': 'Noch keine Seiten',
+            'noPagesText': 'Unter „{category}“ wurden noch keine Seiten abgelegt.'
+        },
         'soon': {
             'title': 'Wir kommen bald',
             'description': 'Wir sind fast da! Wenn Sie benachrichtigt werden möchten, sobald die Website online geht, abonnieren Sie unsere Mailingliste!',
@@ -3740,6 +4073,7 @@ export default {
             'preview': 'Vorschau:',
             'savePreferences': 'Einstellungen speichern',
             'preferencesSaved': 'Einstellungen erfolgreich gespeichert',
+            'preferencesFailed': 'Einstellungen konnten nicht gespeichert werden',
             'dataPrivacy': 'Daten & Datenschutz',
             'dataPrivacyDescription': 'Verwalten Sie Ihre Daten und Optionen zur Kontolöschung',
             'actions': 'Aktionen',
@@ -3779,6 +4113,11 @@ export default {
             'deleteUserWarning': 'Um den Benutzer zu löschen, übertragen Sie bitte das Eigentum oder löschen Sie die Abonnements des Benutzers.',
             'leaveEmptyForDefault': 'Leer lassen, um Systemstandard zu verwenden ({value})',
             'previewUnavailable': 'Vorschau nicht verfügbar',
+            'userSaved': 'Der Benutzer wurde gespeichert.',
+            'saveFailed': 'Der Benutzer konnte nicht gespeichert werden.',
+            'preferencesSaveFailed': 'Die Einstellungen konnten nicht gespeichert werden.',
+            'avatarUploadFailed': 'Der Avatar konnte nicht hochgeladen werden.',
+            'rolesLoadFailed': 'Die Rollen konnten nicht geladen werden.',
             'userInformation': 'Benutzerinformationen',
             'addressLine1': 'Adresszeile 1',
             'addressLine2': 'Adresszeile 2',
@@ -3805,11 +4144,42 @@ export default {
             'hideAdmin': 'Admin ausblenden',
             'refresh': 'Aktualisieren',
             'selectRoleToAssign': 'Rolle zum Zuweisen auswählen',
-            'assignRole': 'Rolle zuweisen'
+            'assignRole': 'Rolle zuweisen',
+            'administrator': 'Administrator',
+            'id': 'ID',
+            'adminAccessDescription': 'Vollen Administratorzugriff für diesen Benutzer gewähren oder entziehen.',
+            'tabs': {
+                'account': 'Konto',
+                'information': 'Informationen',
+                'socialAccounts': 'Soziale Konten',
+                'apiKeys': 'API-Schlüssel'
+            }
+        },
+        'activity': {
+            'totalLogins': 'Anmeldungen gesamt',
+            'sessionsToday': 'Sitzungen heute',
+            'avgSession': 'Ø Sitzungsdauer',
+            'pageViews': 'Seitenaufrufe',
+            'recentActivity': 'Letzte Aktivitäten',
+            'today': 'Heute',
+            'week': 'Woche',
+            'month': 'Monat',
+            'loadMore': 'Weitere Aktivitäten laden',
+            'loginHistory': 'Anmeldeverlauf',
+            'success': 'Erfolgreich',
+            'failed': 'Fehlgeschlagen',
+            'activeDevices': 'Aktive Geräte',
+            'lastActive': 'Zuletzt aktiv',
+            'signOutDevice': 'Dieses Gerät abmelden',
+            'chartTitle': 'Aktivitätsdiagramm (letzte 30 Tage)',
+            'chartPlaceholderTitle': 'Aktivitätsdiagramm',
+            'chartPlaceholderText': 'Hier wird die Diagrammkomponente eingebunden'
         }
     },
     'mediaCenter': {
         'title': 'Medienbibliothek',
+        'subtitle': 'Die Dateien Ihrer Inhalte durchsuchen, hochladen und verwalten',
+        'folders': 'Ordner',
         'allMedia': 'Alle Medien',
         'storageUsed': 'Speicher verwendet',
         'upload': 'Hochladen',
@@ -3878,6 +4248,8 @@ export default {
         'byCollection': 'Nach Sammlung'
     },
     'editor': {
+        'mentionNoResults': 'Keine Mitglieder gefunden',
+        'mentionHint': "Tippe {'@'}, um jemanden zu erwähnen",
         'bold': 'Fett',
         'italic': 'Kursiv',
         'strikeThrough': 'Durchgestrichen',
@@ -3928,7 +4300,8 @@ export default {
         'startChatFromUsersTab': 'Starten Sie einen Chat über die Benutzer-Registerkarte',
         'noUsersFound': 'Keine Benutzer gefunden',
         'participants': '{count} Teilnehmer',
-        'groupChat': 'Gruppenchat'
+        'groupChat': 'Gruppenchat',
+        'loadUsersFailed': 'Die Benutzerliste konnte nicht geladen werden.'
     },
     'userProfile': {
         'unknownUser': 'Unbekannter Benutzer',
@@ -3994,7 +4367,8 @@ export default {
         'overview': 'Übersicht',
         'profileSummary': 'Profilzusammenfassung',
         'securitySettings': 'Sicherheit & Einstellungen',
-        'personalDetails': 'Persönliche Angaben'
+        'personalDetails': 'Persönliche Angaben',
+        'logoutDeviceConfirm': 'Dieses Gerät abmelden?'
     },
     'socialAccounts': {
         'title': 'Verbundene soziale Konten',
@@ -4030,7 +4404,8 @@ export default {
         'role': 'Rolle',
         'created': 'Erstellt',
         'lastSignIn': 'Letzte Anmeldung',
-        'disabled': 'Deaktiviert'
+        'disabled': 'Deaktiviert',
+        'subtitle': 'Mitglieder dieser Community verwalten'
     },
     'errorPages': {
         'notFound': {
@@ -4074,6 +4449,7 @@ export default {
         'nonAdminAccess': 'Nicht-Admin-Benutzer können nicht auf die Website zugreifen.',
         'maintenanceAdminMessage': 'Nicht-Admin-Benutzer können nicht auf die Website zugreifen.',
         'manageSettings': 'Einstellungen verwalten',
+        'noFooterWidgets': 'Keine Footer-Widgets konfiguriert. Unter Einstellungen → Footer lassen sich Widgets hinzufügen.',
         'toggleSidebar': 'Seitenleiste umschalten',
         'toggleDarkMode': 'Dunkelmodus umschalten',
         'notifications': 'Benachrichtigungen',
@@ -4211,7 +4587,7 @@ export default {
         'failedToSaveTranslations': 'Übersetzungen konnten nicht gespeichert werden'
     },
     'migrationTool': {
-        'tabRuns': 'Läufe',
+        'tabRuns': 'Nachbearbeitung',
         'tabSources': 'Datenquellen',
         'tabMappings': 'Mappings',
         'sources': 'Datenquellen',
@@ -4252,7 +4628,8 @@ export default {
         'confirmDeleteMapping': 'Mapping "{name}" löschen?',
         'runImport': 'Import starten',
         'confirmRun': 'Import "{name}" jetzt ausführen?',
-        'importStarted': 'Import gestartet — Verlauf im Tab „Läufe"',
+        'confirmRunBlocked': "Import {name} jetzt starten? Für {targets} ist kein abgeschlossener Import vermerkt, verknüpfte Zeilen können also ins Leere zeigen. Starte ihn trotzdem, wenn diese Daten früher oder per Kommandozeile importiert wurden.",
+        'importStarted': 'Import gestartet — Verlauf im Tab „Nachbearbeitung"',
         'loadFailed': 'Migrations-Tool-Daten konnten nicht geladen werden',
         'joins': 'Verknüpfte Tabellen (Relationen)',
         'addJoin': 'Join hinzufügen',
@@ -4267,10 +4644,10 @@ export default {
         'filterColumn': 'Spalte',
         'filterValue': 'Wert',
         'template': 'Vorlage',
-        'templatePlaceholder': '{spalte|fold}/{id}.jpg',
+        'templatePlaceholder': "{'{spalte|fold}/{id}.jpg'}",
         'importJson': 'JSON importieren',
         'exportJson': 'JSON exportieren',
-        'importHint': 'Mappings-JSON einfügen: { "mappings": [ { "source": "<Quellenname>", "name", "target", "source_table", "field_map", "options" } ] }. Vorhandene Mappings mit gleichem Namen werden aktualisiert.',
+        'importHint': "Mappings-JSON einfügen: {'{ \"mappings\": [ { \"source\": \"<Quellenname>\", \"name\", \"target\", \"source_table\", \"field_map\", \"options\" } ] }'}. Vorhandene Mappings mit gleichem Namen werden aktualisiert.",
         'importResult': 'Import abgeschlossen: {created} erstellt, {updated} aktualisiert',
         'invalidJson': 'Ungültiges JSON — bitte den eingefügten Text prüfen',
         'contentLocale': 'Inhaltssprache',
@@ -4278,6 +4655,17 @@ export default {
         'tabLegacyUsers': 'Alte Benutzer',
         'legacyUsers': 'Alte Benutzer',
         'legacyUsersHint': 'Importierte Inhalte kennen ihre alten Besitzer. Registriert sich die Person hier (oder stellt eine Anfrage in den Kontoeinstellungen), weise den alten Namen zu, um alle Inhalte zu übertragen.',
+        'importFilter': 'Importe',
+        'importFilterCount': '{type} ({count})',
+        'importFilterNoneCount': 'Nichts zu übernehmen ({count})',
+        'deleteLegacyUser': 'Aus der Liste entfernen',
+        'deleteSelected': 'Ausgewählte löschen ({count})',
+        'confirmDeleteLegacy': '{name} aus der Liste der alten Benutzer entfernen? Es wird nichts gelöscht, was dieses Konto geschrieben hat.',
+        'confirmDeleteLegacyWithContent': '{name} sind {count} importierte Inhalte zugeordnet. Der Eintrag verschwindet, die Inhalte bleiben, verlieren aber die Verbindung zu ihrem alten Autor und lassen sich keinem Mitglied mehr zuweisen.',
+        'confirmDeleteLegacyBulk': '{count} Einträge aus der Liste der alten Benutzer entfernen? Es wird nichts gelöscht, was sie geschrieben haben.',
+        'confirmDeleteLegacyBulkKept': '{count} Einträge aus der Liste der alten Benutzer entfernen? Weitere {kept} sind importierten Inhalten zugeordnet und bleiben erhalten, damit diese Inhalte später noch zugewiesen werden können.',
+        'legacyDeleted': '{count} Einträge entfernt',
+        'legacyDeletedKept': '{count} Einträge entfernt. {kept} wurden behalten, weil ihnen importierte Inhalte zugeordnet sind.',
         'legacyUsername': 'Alter Benutzername',
         'legacySource': 'Altes System',
         'claimEmailVerified': 'E-Mail des Anfragenden stimmt mit der E-Mail des alten Kontos überein',
@@ -4290,6 +4678,7 @@ export default {
         'forumArchiveRun': 'Jetzt archivieren',
         'forumArchiveMoved': 'Kategorien verschoben',
         'forumArchiveLocked': 'Themen gesperrt',
+        'forumArchiveConfirm': 'Alle importierten Forenkategorien jetzt unter „{category}" verschieben? Das ändert die Forenstruktur für alle.',
         'legacyItems': 'Importierte Einträge',
         'legacyClaim': 'Anfrage',
         'assignedTo': 'Zugewiesen an',
@@ -4298,6 +4687,29 @@ export default {
         'assignHint': 'Alle importierten Inhalte dieses alten Kontos werden dem angegebenen registrierten Benutzer übertragen. Eine offene Anfrage wird automatisch erledigt.',
         'assignUserLabel': 'Registrierter Benutzername oder E-Mail',
         'noLegacyUsers': 'Noch keine alten Besitzer erfasst — Importe erfassen sie, wenn ein Mapping das Feld „Legacy owner" befüllt.',
+        'mappingsIntro': 'Die Importe laufen in Schritten: erst alles aus Schritt 1, dann Schritt 2 und so weiter — spätere Zeilen hängen sich an das, was die früheren Schritte importiert haben.',
+        'stepMappingCount': '{count} Mappings',
+        'mappingStep1': 'Personen und Konten',
+        'mappingStep2': 'Kategorien, Begriffe und Container',
+        'mappingStep3': 'Hauptinhalte',
+        'mappingStep4': 'Inhalte, die auf Schritt 3 aufbauen',
+        'mappingStepFallback': 'Schritt {step}',
+        'lastRun': 'Letzter Lauf',
+        'lastRunNever': 'Noch nie gelaufen',
+        'lastRunPending': 'In der Warteschlange',
+        'lastRunRunning': 'Läuft — {count} von {total}',
+        'lastRunStopped': 'Abgebrochen nach {count} von {total}',
+        'lastRunCompleted': '{count} Zeilen importiert',
+        'lastRunCompletedErrors': '{count} Zeilen importiert, {errors} Fehler',
+        'lastRunFailed': 'Lauf fehlgeschlagen',
+        'lastRunOn': '{text} am {date}',
+        'prereqBlocked': 'Führe zuerst den Import {targets} aus',
+        'heavyHint': 'Große Tabelle — starte diesen Import lieber auf der Kommandozeile, der Button kann in ein Timeout laufen.',
+        'copyCli': 'Kommandozeilen-Befehl kopieren',
+        'cliCopied': 'Befehl kopiert — füge ihn in deinem Terminal ein',
+        'copyStepCli': 'Befehle für diesen Schritt kopieren',
+        'cliStepCopied': '{count} Befehle kopiert. Führe sie nacheinander im Terminal aus.',
+        'cliCopyFailed': 'Kopieren hat nicht geklappt. Führe aus: {command}',
     },
     'migrationDashboard': {
         'title': 'Migrations-Dashboard',
@@ -4330,7 +4742,60 @@ export default {
         'failedToCancelBatch': 'Batch konnte nicht abgebrochen werden',
         'allMigrationsCompletedSuccessfully': 'Alle Migrationen erfolgreich abgeschlossen',
         'migrationsCompleted': 'Migrationen abgeschlossen',
-        'migrationsCompletedWithErrors': 'Migrationen mit Fehlern abgeschlossen'
+        'migrationsCompletedWithErrors': 'Migrationen mit Fehlern abgeschlossen',
+        'cancelBatchTitle': 'Batch abbrechen',
+        'cancelBatchConfirm': 'Den laufenden Migrations-Batch stoppen? Bereits abgeschlossene Migrationen bleiben erhalten.',
+        'runningTitle': 'Ein Import läuft gerade',
+        'runningQueued': 'In der Warteschlange — startet gleich',
+        'runningRows': '{name}: {processed} von {total} Zeilen',
+        'runningRowsUnknown': '{name}: bisher {processed} Zeilen',
+        'runningItem': 'Aktuell: {item}',
+        'runningSteps': 'Schritt {done} von {total} in diesem Lauf',
+        'runningOpen': 'Details anzeigen',
+        'runningKeepOpen': 'Komm jederzeit auf diese Seite zurück, um den Stand des Imports zu sehen.',
+        'stalledTitle': 'Dieser Import steht möglicherweise',
+        'stalledText': 'Seit {count} Minuten wurde nichts geschrieben. Ein aus dem Browser gestarteter Lauf bricht ab, wenn die Anfrage in eine Zeitüberschreitung läuft. Starte ihn erneut oder nutze für große Tabellen die Kommandozeile.',
+        'markStopped': 'Als gestoppt markieren',
+        'markStoppedConfirm': 'Seit {count} Minuten wurde nichts geschrieben, der Prozess hinter diesem Lauf ist also weg. Als gestoppt markieren räumt ihn aus dem Dashboard und gibt den nächsten Schritt frei. Bereits importierte Zeilen bleiben erhalten, ein erneuter Import macht dort weiter, wo er aufgehört hat.',
+        'guideTitle': 'So läuft eine Migration',
+        'guideIntro': 'Arbeite die fünf Schritte der Reihe nach ab — jeder braucht den davor.',
+        'guideHide': 'Ausblenden',
+        'guideShow': 'Einblenden',
+        'guideOpen': 'Dorthin',
+        'stepSourceTitle': 'Alte Datenbank verbinden',
+        'stepSourceTodo': 'Noch keine Datenquelle',
+        'stepSourceDone': '{count} verbunden — teste die Verbindung',
+        'stepSourceTested': '{count} verbunden, Verbindung getestet',
+        'stepMappingsTitle': 'Festlegen, was importiert wird',
+        'stepMappingsTodo': 'Noch kein Mapping — lege eins an oder importiere das JSON',
+        'stepMappingsDone': '{count} Mappings bereit',
+        'stepImportsTitle': 'Importe Schritt für Schritt starten',
+        'stepImportsTodo': 'Noch nichts zu starten',
+        'stepImportsProgress': '{done} von {total} Mappings importiert',
+        'stepPostTitle': 'Nachbearbeitung starten',
+        'stepPostBlocked': 'Importiere zuerst etwas',
+        'stepPostTodo': 'Noch {count} Schritte offen',
+        'stepPostDone': 'Alle Schritte erledigt',
+        'stepLegacyTitle': 'Alte Benutzer zuweisen',
+        'stepLegacyEmpty': 'Noch keine alten Besitzer erfasst',
+        'stepLegacyTodo': '{count} warten noch auf ein Mitglied',
+        'stepLegacyDone': 'Alle {count} zugewiesen',
+        'postStepsTitle': 'Nachbearbeitung (läuft zuletzt)',
+        'postStepsIntro': 'Diese Jobs arbeiten auf bereits importierten Daten: Sie hängen Galerien an Termine und schreiben interne Wiki-Links um. Starte sie, wenn die Importe im Tab „Mappings" durch sind.',
+        'postStepsNoImports': 'Es wurde noch nichts importiert, es gibt also nichts nachzubearbeiten. Starte zuerst deine Mappings im Tab „Mappings".'
+    },
+    'publish': {
+        'label': 'Veröffentlichung',
+        'draft': 'Entwurf',
+        'published': 'Veröffentlicht',
+        'scheduled': 'Geplant',
+        'scheduleForLater': 'Für später planen',
+        'publishAt': 'Veröffentlichungsdatum',
+        'publishAtHint': 'Wähle einen Zeitpunkt in der Zukunft, um die Veröffentlichung zu planen.',
+        'goesLiveAt': 'Geht am {date} online.',
+        'publishedOn': 'Veröffentlicht am {date}',
+        'scheduledFor': 'Geplant für {date}',
+        'draftHint': 'Noch nicht veröffentlicht'
     },
     'pageForm': {
         'taxonomy': 'Taxonomie',
@@ -4364,6 +4829,7 @@ export default {
     },
     'menuAdmin': {
         'title': 'Menüverwaltung',
+        'subtitle': 'Erstelle die Navigationsmenüs für Header, Footer und Seitenleiste.',
         'menus': 'Menüs',
         'newMenu': 'Neues Menü',
         'itemsCount': '{count} Einträge | {count} Eintrag | {count} Einträge',
@@ -4451,7 +4917,401 @@ export default {
         'name': 'Name',
         'size': 'Größe'
     },
+    'sandbox': {
+        'title': 'Sandboxes',
+        'subtitle': 'Gemeinsam in Echtzeit an Dokumenten arbeiten',
+        'newSandbox': 'Neue Sandbox',
+        'createSandbox': 'Sandbox erstellen',
+        'loading': 'Sandboxes werden geladen...',
+        'noSandboxes': 'Keine Sandboxes gefunden',
+        'noSandboxesText': 'Erstelle deine erste Sandbox, um mit der Zusammenarbeit zu beginnen.',
+        'selectSandbox': 'Sandbox auswählen',
+        'selectSandboxText': 'Wähle eine Sandbox aus der Liste oder erstelle eine neue, um loszulegen.',
+        'mine': 'Meine',
+        'sharedWithMe': 'Mit mir geteilt',
+        'byYou': 'von dir',
+        'noDescription': 'Keine Beschreibung',
+        'pageOf': 'Seite {current} von {total}',
+        'filters': {
+            'all': 'Alle',
+            'owned': 'Meine Sandboxes',
+            'shared': 'Mit mir geteilt'
+        },
+        'visibility': {
+            'label': 'Sichtbarkeit',
+            'private': 'Privat - Nur du und deine Mitarbeitenden',
+            'members': 'Mitglieder - Alle Mitglieder der Seite können sie sehen',
+            'public': 'Öffentlich - Jeder kann sie sehen'
+        },
+        'create': {
+            'title': 'Neue Sandbox erstellen',
+            'descriptionPlaceholder': 'Worum geht es in dieser Sandbox?',
+            'failed': 'Die Sandbox konnte nicht erstellt werden'
+        },
+        'collaborators': {
+            'title': 'Sandbox teilen',
+            'shareLink': 'Link zum Teilen',
+            'linkPublicHint': 'Jeder mit diesem Link kann die Sandbox sehen',
+            'linkPrivateHint': 'Nur Mitarbeitende haben Zugriff',
+            'copied': 'Link kopiert',
+            'addPeople': 'Personen hinzufügen',
+            'searchPlaceholder': 'Nach Benutzername suchen...',
+            'peopleWithAccess': 'Personen mit Zugriff',
+            'owner': 'Besitzer',
+            'pending': 'Ausstehend',
+            'roles': {
+                'viewer': 'Darf ansehen',
+                'editor': 'Darf bearbeiten',
+                'admin': 'Admin'
+            },
+            'noCollaborators': 'Noch keine Mitarbeitenden',
+            'noCollaboratorsText': 'Lade Personen ein, um gemeinsam an dieser Sandbox zu arbeiten.',
+            'addFailed': 'Die Person konnte nicht hinzugefügt werden',
+            'roleUpdateFailed': 'Die Rolle konnte nicht geändert werden',
+            'removeTitle': 'Person entfernen',
+            'removeConfirm': '{name} aus dieser Sandbox entfernen?',
+            'removeFailed': 'Die Person konnte nicht entfernt werden'
+        },
+        'comments': {
+            'title': 'Kommentare',
+            'showResolved': 'Erledigte anzeigen',
+            'hideResolved': 'Erledigte ausblenden',
+            'placeholder': 'Kommentar hinzufügen...',
+            'replyPlaceholder': 'Antworten...',
+            'comment': 'Kommentieren',
+            'noComments': 'Noch keine Kommentare',
+            'noCommentsText': 'Markiere Text und klicke auf das Kommentar-Symbol, um eine Diskussion zu starten.',
+            'resolved': 'Erledigt',
+            'resolve': 'Erledigen',
+            'reopen': 'Wieder öffnen',
+            'unknownUser': 'Unbekannt',
+            'createFailed': 'Der Kommentar konnte nicht gepostet werden',
+            'replyFailed': 'Die Antwort konnte nicht gepostet werden',
+            'resolveFailed': 'Der Thread konnte nicht aktualisiert werden',
+            'deleteThreadTitle': 'Thread löschen',
+            'deleteThreadConfirm': 'Diesen Kommentar-Thread löschen?',
+            'deleteThreadFailed': 'Der Thread konnte nicht gelöscht werden',
+            'deleteCommentTitle': 'Kommentar löschen',
+            'deleteCommentConfirm': 'Diesen Kommentar löschen?',
+            'deleteLastCommentConfirm': 'Wenn du den letzten Kommentar löschst, wird auch der Thread gelöscht. Fortfahren?',
+            'deleteCommentFailed': 'Der Kommentar konnte nicht gelöscht werden'
+        },
+        'settings': {
+            'title': 'Sandbox-Einstellungen',
+            'editorSettings': 'Editor-Einstellungen',
+            'showCursors': 'Cursor der Mitarbeitenden anzeigen',
+            'autoSave': 'Änderungen automatisch speichern',
+            'allowComments': 'Kommentare erlauben',
+            'dangerZone': 'Gefahrenbereich',
+            'deleteSandbox': 'Sandbox löschen',
+            'saved': 'Sandbox-Einstellungen gespeichert',
+            'saveFailed': 'Die Einstellungen konnten nicht gespeichert werden',
+            'saving': 'Wird gespeichert...',
+            'deleteTitle': 'Sandbox löschen',
+            'deleteConfirm': 'Möchtest du diese Sandbox wirklich löschen? Das kann nicht rückgängig gemacht werden.',
+            'deleteFailed': 'Die Sandbox konnte nicht gelöscht werden',
+            'deleting': 'Wird gelöscht...'
+        },
+        'editor': {
+            'untitled': 'Unbenannt',
+            'exitFullscreen': 'Beenden',
+            'exitFullscreenHint': 'Vollbild beenden (Esc)',
+            'focusMode': 'Fokusmodus',
+            'comments': 'Kommentare',
+            'saveVersion': 'Version speichern',
+            'history': 'Verlauf',
+            'settings': 'Einstellungen',
+            'share': 'Teilen',
+            'connecting': 'Verbindung zum Kollaborationsserver wird hergestellt...',
+            'versionSaved': 'Version gespeichert',
+            'saveFailed': 'Die Sandbox konnte nicht gespeichert werden',
+            'autoSaveFailed': 'Das automatische Speichern ist fehlgeschlagen. Deine letzten Änderungen sind möglicherweise noch nicht gesichert - bitte speichere manuell eine Version.',
+            'titleSaveFailed': 'Der Titel konnte nicht gespeichert werden'
+        },
+        'versions': {
+            'history': 'Verlauf',
+            'versions': 'Versionen',
+            'activity': 'Aktivität',
+            'noVersions': 'Keine gespeicherten Versionen',
+            'noVersionsText': 'Klicke im Editor auf „Version speichern", um einen Wiederherstellungspunkt anzulegen.',
+            'noActivity': 'Noch keine Aktivität',
+            'noActivityText': 'Änderungen an der Sandbox erscheinen hier.',
+            'view': 'Ansehen',
+            'diff': 'Vergleich',
+            'loadMore': 'Mehr laden',
+            'preview': 'Vorschau',
+            'changes': 'Änderungen',
+            'removed': 'Entfernt',
+            'added': 'Hinzugefügt',
+            'unknownUser': 'Unbekannt',
+            'by': 'von',
+            'untitled': 'Unbenannte Version',
+            'restoreTitle': 'Version wiederherstellen',
+            'restoreConfirm': '„{title}" wiederherstellen? Der aktuelle Stand wird vorher als Version gespeichert.',
+            'restore': 'Wiederherstellen'
+        },
+        'notifications': {
+            'title': 'Sandbox',
+            'markAllRead': 'Alle als gelesen markieren',
+            'empty': 'Keine Sandbox-Benachrichtigungen',
+            'dismiss': 'Entfernen',
+            'goToSandboxes': 'Zu den Sandboxes',
+            'markReadFailed': 'Die Benachrichtigung konnte nicht als gelesen markiert werden',
+            'dismissFailed': 'Die Benachrichtigung konnte nicht entfernt werden',
+            'markAllFailed': 'Einige Benachrichtigungen konnten nicht als gelesen markiert werden'
+        },
+        'admin': {
+            'featuresTitle': 'Funktionen',
+            'featuresDescription': 'Sandbox- und Kollaborationsfunktionen aktivieren oder deaktivieren',
+            'featuresCard': 'Sandbox-Funktionen',
+            'limitsTitle': 'Limits & Kontingente',
+            'limitsDescription': 'Sandbox-Limits pro Rolle festlegen',
+            'limitsCard': 'Rollenbasierte Limits',
+            'typicallyUnlimited': 'Üblicherweise unbegrenzt',
+            'serverTitle': 'WebSocket-Server',
+            'serverDescription': 'Status und Verbindungsdaten des Yjs-WebSocket-Servers',
+            'serverStatusCard': 'Serverstatus',
+            'serverConfigCard': 'Serverkonfiguration',
+            'connectionStatus': 'Verbindungsstatus',
+            'connected': 'Verbunden',
+            'disconnected': 'Getrennt',
+            'running': 'Läuft',
+            'notRunning': 'Läuft nicht',
+            'host': 'Host',
+            'port': 'Port',
+            'latency': 'Latenz',
+            'status': 'Status',
+            'statisticsTitle': 'Statistiken',
+            'statisticsDescription': 'Nutzung und Aktivität der Sandboxes',
+            'statisticsCard': 'Sandbox-Statistiken',
+            'usageOverview': 'Nutzungsübersicht',
+            'totalSandboxes': 'Sandboxes gesamt',
+            'active24h': 'Aktiv (24h)',
+            'totalVersions': 'Versionen gesamt',
+            'totalCollaborators': 'Mitarbeitende gesamt',
+            'websocketServer': 'WebSocket-Server',
+            'saveSettings': 'Einstellungen speichern',
+            'statsLoadFailed': 'Die Sandbox-Statistiken konnten nicht geladen werden'
+        }
+    },
+    'irc': {
+        'client': {
+            'title': 'IRC-Client',
+            'subtitle': 'Chatte direkt im Browser in IRC-Netzwerken',
+            'connections': 'Verbindungen',
+            'addConnection': 'Verbindung hinzufügen',
+            'connect': 'Verbinden',
+            'disconnect': 'Trennen',
+            'joinChannel': 'Channel betreten',
+            'chooseCharacter': 'Charakter wählen',
+            'channels': 'Channels ({count})',
+            'privateMessages': 'Nachrichten ({count})',
+            'rejoin': 'Erneut betreten',
+            'noConnections': 'Noch keine Verbindungen',
+            'noConnectionsText': 'Füge eine Verbindung hinzu, um loszulegen.',
+            'classicView': 'Klassische IRC-Ansicht',
+            'comicView': 'Comic-Chat-Ansicht',
+            'showUsers': 'Nutzer anzeigen',
+            'hideUsers': 'Nutzer ausblenden',
+            'noMessages': 'Noch keine Nachrichten',
+            'noServerMessages': 'Noch keine Servernachrichten',
+            'messagePlaceholder': 'Nachricht eingeben oder /help für Befehle...',
+            'consolePlaceholder': 'Serverkonsole - nutze /join #channel, /nick <name>, /help ...',
+            'selectChannel': 'Wähle einen Channel, um zu chatten',
+            'selectChannelText': 'Oder klicke auf einen Server, um sein Verbindungsprotokoll zu öffnen.',
+            'users': 'Nutzer ({count})',
+            'noUsers': 'Keine Nutzer',
+            'emotions': {
+                'normal': 'Normal',
+                'happy': 'Fröhlich',
+                'sad': 'Traurig',
+                'angry': 'Wütend',
+                'surprised': 'Überrascht',
+                'confused': 'Verwirrt'
+            },
+            'gestures': {
+                'none': 'Keine',
+                'wave': 'Winken',
+                'laugh': 'Lachen',
+                'think': 'Nachdenken',
+                'shout': 'Rufen',
+                'whisper': 'Flüstern'
+            },
+            'deleteConnectionTitle': 'Verbindung löschen',
+            'deleteConnectionConfirm': 'Die Verbindung zu {server} löschen?',
+            'deleteConnectionFailed': 'Die Verbindung konnte nicht gelöscht werden',
+            'leaveChannelTitle': 'Channel verlassen',
+            'leaveChannelConfirm': '{channel} verlassen?',
+            'leaveChannel': 'Verlassen',
+            'leaveChannelFailed': 'Der Channel konnte nicht verlassen werden',
+            'sendFailed': 'Die Nachricht konnte nicht gesendet werden',
+            'favoriteFailed': 'Der Favorit konnte nicht aktualisiert werden',
+            'characterSaveFailed': 'Der Charakter konnte nicht gespeichert werden'
+        },
+        'connectionDialog': {
+            'newTitle': 'Neue IRC-Verbindung',
+            'editTitle': 'Verbindung bearbeiten',
+            'server': 'IRC-Server',
+            'nickname': 'Nickname',
+            'nicknameHint': 'Dein IRC-Nickname',
+            'username': 'Benutzername (optional)',
+            'usernameHint': 'Standard ist der Nickname',
+            'realname': 'Echter Name (optional)',
+            'realnameHint': 'Standard ist der Nickname',
+            'autoJoin': 'Channels automatisch betreten',
+            'autoJoinHint': 'Einer pro Zeile, z. B. #channel',
+            'autoConnect': 'Beim Anmelden automatisch verbinden',
+            'required': 'Pflichtfeld',
+            'saveFailed': 'Die Verbindung konnte nicht gespeichert werden'
+        },
+        'joinDialog': {
+            'title': 'IRC-Channel betreten',
+            'server': 'Server: {name}',
+            'channel': 'Channel-Name',
+            'channelHint': 'Das # am Anfang ist optional',
+            'join': 'Betreten',
+            'required': 'Pflichtfeld',
+            'joinFailed': 'Der Channel konnte nicht betreten werden'
+        },
+        'admin': {
+            'clientTitle': 'Client-Einstellungen',
+            'clientDescription': 'Optionen für den IRC-Client',
+            'comicChat': 'Comic-Chat',
+            'connectionsTitle': 'IRC-Verbindungen',
+            'connectionsDescription': 'Aktive IRC-Verbindungen ansehen und verwalten',
+            'activeConnections': 'Aktive Verbindungen',
+            'noConnections': 'Keine Verbindungen gefunden',
+            'dashboardTitle': 'IRC-Dashboard',
+            'dashboardDescription': 'IRC-Daemon, Server und Aktivität überwachen',
+            'daemonStatus': 'Daemon-Status',
+            'daemon': 'Daemon',
+            'running': 'Läuft',
+            'stopped': 'Gestoppt',
+            'joinedChannels': 'Betretene Channels',
+            'pendingCommands': 'Ausstehende Befehle',
+            'lastHeartbeat': 'Letzter Heartbeat: {time}',
+            'never': 'Nie',
+            'activeServers': 'Aktive Server: {count}',
+            'daemonNotRunning': 'Der IRC-Daemon läuft nicht. Starte ihn mit:',
+            'activity': 'Aktivität',
+            'totalMessages': 'Nachrichten gesamt',
+            'messagesToday': 'Nachrichten heute',
+            'uniqueUsers': 'Eindeutige Nutzer',
+            'totalConnections': 'Verbindungen gesamt',
+            'serverStatus': 'Serverstatus',
+            'noServers': 'Keine Server konfiguriert',
+            'noServersText': 'Klicke auf „Server hinzufügen", um loszulegen.',
+            'serversTitle': 'IRC-Server',
+            'serversDescription': 'IRC-Server hinzufügen, bearbeiten und überwachen',
+            'servers': 'Server',
+            'addServer': 'Server hinzufügen',
+            'editServer': 'Server bearbeiten',
+            'checkServer': 'Erreichbarkeit prüfen',
+            'unknown': 'Unbekannt',
+            'online': 'Online',
+            'offline': 'Offline',
+            'saveSettings': 'Einstellungen speichern',
+            'table': {
+                'user': 'Nutzer',
+                'server': 'Server',
+                'nickname': 'Nickname',
+                'status': 'Status',
+                'channels': 'Channels',
+                'connectedSince': 'Verbunden seit',
+                'actions': 'Aktionen',
+                'name': 'Name',
+                'host': 'Host',
+                'port': 'Port',
+                'ssl': 'SSL',
+                'active': 'Aktiv',
+                'connections': 'Verbindungen'
+            },
+            'form': {
+                'name': 'Servername',
+                'host': 'Host',
+                'hostHint': 'z. B. irc.libera.chat',
+                'port': 'Port',
+                'invalidPort': 'Ungültiger Port',
+                'useSsl': 'SSL/TLS verwenden',
+                'password': 'Serverpasswort',
+                'passwordHint': 'Leer lassen, falls nicht erforderlich',
+                'description': 'Beschreibung',
+                'sortOrder': 'Sortierung',
+                'active': 'Aktiv',
+                'required': 'Pflichtfeld'
+            },
+            'loadFailed': 'Die IRC-Daten konnten nicht geladen werden',
+            'disconnectTitle': 'Verbindung trennen',
+            'disconnectConfirm': '{nickname} von {server} trennen?',
+            'disconnect': 'Trennen',
+            'disconnectFailed': 'Die Verbindung konnte nicht getrennt werden',
+            'deleteConnectionTitle': 'Verbindung löschen',
+            'deleteConnectionConfirm': 'Die Verbindung von {nickname} löschen? Alle Channels und Nachrichten werden dabei entfernt.',
+            'deleteConnectionFailed': 'Die Verbindung konnte nicht gelöscht werden',
+            'serverSaved': 'Server gespeichert',
+            'serverSaveFailed': 'Der Server konnte nicht gespeichert werden',
+            'deleteServerTitle': 'Server löschen',
+            'deleteServerConfirm': 'Server „{name}" löschen? Das kann nicht rückgängig gemacht werden.',
+            'deleteServerFailed': 'Der Server konnte nicht gelöscht werden',
+            'toggleFailed': 'Der Server konnte nicht aktualisiert werden',
+            'checkFailed': 'Der Server konnte nicht geprüft werden'
+        }
+    },
+    'poll': {
+        'open': 'Offen',
+        'closed': 'Geschlossen',
+        'submitVote': 'Abstimmen',
+        'changeVote': 'Stimme ändern',
+        'votesCount': '{count} Stimme | {count} Stimmen',
+        'closesAt': 'Endet {time}',
+        'closedAt': 'Beendet {time}',
+        'noVotes': 'Noch keine Stimmen',
+        'createPoll': 'Umfrage erstellen',
+        'editPoll': 'Umfrage bearbeiten',
+        'updatePoll': 'Umfrage aktualisieren',
+        'pollTitle': 'Titel der Umfrage',
+        'description': 'Beschreibung (optional)',
+        'type': 'Art der Umfrage',
+        'singleChoice': 'Einfachauswahl',
+        'multipleChoice': 'Mehrfachauswahl',
+        'anonymous': 'Anonyme Abstimmung (Stimmen erst nach Ende der Umfrage anzeigen)',
+        'closingDate': 'Enddatum (optional)',
+        'options': 'Antwortmöglichkeiten',
+        'addOption': 'Option hinzufügen',
+        'option': 'Option {n}',
+        'minOptions': 'Eine Umfrage braucht mindestens 2 Optionen',
+        'required': 'Pflichtfeld',
+        'voteSubmitted': 'Deine Stimme wurde abgegeben',
+        'voteFailed': 'Deine Stimme konnte nicht abgegeben werden',
+        'saved': 'Umfrage gespeichert',
+        'saveFailed': 'Die Umfrage konnte nicht gespeichert werden',
+        'poll': 'Umfrage',
+        'addPoll': 'Umfrage hinzufügen',
+        'removePoll': 'Umfrage entfernen',
+        'attachPoll': 'Umfrage anhängen',
+        'closingDateHint': 'Leer lassen, damit die Umfrage unbegrenzt offen bleibt',
+        'closingDateFuture': 'Das Enddatum muss in der Zukunft liegen',
+        'invalidDate': 'Bitte ein gültiges Datum mit Uhrzeit eingeben',
+        'titleRequired': 'Bitte gib der Umfrage einen Titel',
+        'optionRequired': 'Bitte fülle diese Option aus oder entferne sie',
+        'maxOptions': 'Eine Umfrage kann höchstens {max} Optionen haben',
+        'tooLong': 'Darf höchstens {max} Zeichen lang sein',
+        'removeOption': 'Option entfernen',
+        'removeVote': 'Stimme zurückziehen',
+        'removeVoteFailed': 'Deine Stimme konnte nicht zurückgezogen werden',
+        'anonymousNotice': 'Die Stimmenzahlen werden erst nach Ende der Umfrage angezeigt',
+        'deletePoll': 'Umfrage löschen',
+        'confirmDelete': 'Die Umfrage „{title}“ löschen? Alle Stimmen gehen verloren.',
+        'deleted': 'Die Umfrage wurde gelöscht',
+        'deleteFailed': 'Die Umfrage konnte nicht gelöscht werden'
+    },
     'dialogs': {
+        'message': {
+            'error': 'Etwas ist schiefgelaufen',
+            'warning': 'Bitte beachten',
+            'success': 'Erledigt',
+            'info': 'Information'
+        },
         'confirm': {
             'title': 'Sind Sie sicher?',
             'typeToConfirm': 'Zur Bestätigung eingeben',
@@ -4508,14 +5368,74 @@ export default {
         'deletionError': 'Fehler beim Löschen des Kontos. Bitte versuchen Sie es erneut.'
     },
     'relatedContent': {
-        'title': 'Inhalt verknüpfen',
-        'selectRelationType': 'Wählen Sie den Beziehungstyp für',
-        'relationType': 'Beziehungstyp',
-        'selectSourceType': 'Quelltyp auswählen',
-        'selectItem': 'Element auswählen',
-        'selectAnItem': 'Ein Element auswählen',
-        'modelType': 'Modelltyp',
-        'selectModelType': 'Modelltyp auswählen'
+        'kinds': {
+            'wiki': 'Wiki-Seite',
+            'page': 'Seite',
+            'post': 'Beitrag',
+            'event': 'Termin',
+            'collection': 'Album'
+        },
+        'kindsPlural': {
+            'wiki': 'Wiki-Seiten',
+            'page': 'Seiten',
+            'post': 'Beiträge',
+            'event': 'Termine',
+            'collection': 'Alben'
+        },
+        'dialog': {
+            'title': 'Inhalte verknüpfen',
+            'linking': 'Verknüpfen von:',
+            'pickSource': 'Wähle zuerst den Inhalt, von dem aus du verknüpfen möchtest.',
+            'changeSource': 'Ändern',
+            'search': 'Nach Titel suchen…',
+            'selected': 'Ausgewählt ({n})',
+            'alreadyLinked': 'Bereits verknüpft',
+            'noResults': 'Nichts gefunden',
+            'noResultsHint': 'Probier einen anderen Suchbegriff oder Inhaltstyp.',
+            'link': 'Verknüpfen | {count} Eintrag verknüpfen | {count} Einträge verknüpfen',
+            'linked': '{count} Eintrag verknüpft. | {count} Einträge verknüpft.'
+        },
+        'list': {
+            'title': 'Verwandte Inhalte',
+            'link': 'Inhalte verknüpfen',
+            'unlink': 'Verknüpfung lösen',
+            'unlinkTitle': 'Verknüpfung entfernen?',
+            'confirmUnlink': 'Verknüpfung mit „{title}“ lösen? Der Inhalt selbst bleibt erhalten.',
+            'empty': 'Noch nichts verknüpft',
+            'emptyHint': 'Verknüpfe Wiki-Seiten, Seiten, Beiträge, Termine oder Alben, die hierzu gehören.',
+            'loadError': 'Verwandte Inhalte konnten nicht geladen werden',
+            'retry': 'Nochmal versuchen',
+            'linksHere': 'Verweist hierher'
+        },
+        'admin': {
+            'title': 'Verwandte Inhalte',
+            'subtitle': 'Verknüpfungen zwischen Wiki-Seiten, Seiten, Beiträgen, Terminen und Alben',
+            'linkContent': 'Inhalte verknüpfen',
+            'stats': {
+                'total': 'Verknüpfungen',
+                'recent_7d': 'Neu in den letzten 7 Tagen'
+            },
+            'mostLinked': 'Am häufigsten verknüpft',
+            'mostLinkedEmpty': 'Noch nichts verknüpft',
+            'linksCount': '{count} Verknüpfung | {count} Verknüpfungen',
+            'pairs': 'Typ-Paare',
+            'pairsEmpty': 'Noch keine Verknüpfungen',
+            'filters': {
+                'search': 'Titel durchsuchen…',
+                'kind': 'Inhaltstyp',
+                'all': 'Alle Typen',
+                'reset': 'Filter zurücksetzen'
+            },
+            'headers': {
+                'source': 'Quelle',
+                'related': 'Verknüpft mit',
+                'created': 'Erstellt'
+            },
+            'empty': 'Noch keine Verknüpfungen',
+            'emptyHint': 'Mit „Inhalte verknüpfen“ verbindest du zwei Inhalte miteinander.',
+            'emptyFiltered': 'Keine Verknüpfungen passen zu diesen Filtern',
+            'confirmUnlink': 'Verknüpfung zwischen „{source}“ und „{related}“ entfernen? Die Inhalte selbst bleiben erhalten.'
+        }
     },
     'wiki': {
         'title': 'Wissensdatenbank',
@@ -4659,6 +5579,19 @@ export default {
         'unapprove': 'Genehmigung widerrufen',
         'approveSuccess': 'Wiki-Seite erfolgreich genehmigt',
         'unapproveSuccess': 'Wiki-Seitengenehmigung widerrufen',
+        'approveError': 'Die Wiki-Seite konnte nicht genehmigt werden',
+        'categoryCreated': 'Kategorie erfolgreich erstellt',
+        'categoryUpdated': 'Kategorie erfolgreich aktualisiert',
+        'errorSavingCategory': 'Beim Speichern der Kategorie ist ein Fehler aufgetreten. Bitte versuche es erneut.',
+        'editCategory': 'Kategorie bearbeiten',
+        'creatingCategory': 'Kategorie wird erstellt: „{slug}“',
+        'categoriesSubtitle': 'Alle Wiki-Seiten nach Kategorie durchstöbern',
+        'noCategories': 'Keine Kategorien gefunden',
+        'noCategoriesHint': 'Versuche es mit einem anderen Suchbegriff',
+        'noPagesHint': 'Seiten, die dieser Kategorie zugeordnet sind, erscheinen hier',
+        'moreCount': '+{count} weitere',
+        'unsaved': 'Nicht gespeichert',
+        'saved': 'Gespeichert',
     },
     'map': {
         'title': 'Kartentitel',
@@ -4902,6 +5835,7 @@ export default {
         'details': 'Details',
         'listView': 'Listenansicht',
         'kanbanView': 'Kanban-Board',
+        'openTicket': 'Ticket öffnen: {title}',
         'noComments': 'Noch keine Kommentare',
         'unassigned': 'Nicht zugewiesen',
         'unknown': 'Unbekannt',
@@ -4967,6 +5901,20 @@ export default {
             'deleteMessage': 'Sind Sie sicher, dass Sie dieses Ticket löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
             'deleteConfirm': 'Löschen',
             'deleteCancel': 'Abbrechen',
+            'deleteCommentMessage': 'Diesen Kommentar löschen?',
+        },
+        'messages': {
+            'created': 'Das Ticket wurde erstellt.',
+            'updated': 'Das Ticket wurde aktualisiert.',
+            'deleted': 'Das Ticket wurde gelöscht.',
+            'commentDeleted': 'Der Kommentar wurde gelöscht.',
+            'createFailed': 'Das Ticket konnte nicht erstellt werden.',
+            'updateFailed': 'Das Ticket konnte nicht aktualisiert werden.',
+            'deleteFailed': 'Das Ticket konnte nicht gelöscht werden.',
+            'commentFailed': 'Der Kommentar konnte nicht gespeichert werden.',
+            'commentDeleteFailed': 'Der Kommentar konnte nicht gelöscht werden.',
+            'loadFailed': 'Die Tickets konnten nicht geladen werden.',
+            'approvalFailed': 'Die Genehmigung konnte nicht geändert werden.',
         },
         'validation': {
             'titleRequired': 'Titel ist erforderlich',
@@ -5118,6 +6066,7 @@ export default {
         'sortOldest': 'Älteste',
         'sortMostViews': 'Meiste Aufrufe',
         'recentActivity': 'Letzte Aktivitäten',
+        'noActivity': 'Noch keine Aktivitäten',
         'activityThreadCreated': 'hat ein neues Thema erstellt: „{title}"',
         'activityPostCreated': 'hat in „{title}" geantwortet',
         'activityPostLiked': 'hat einen Beitrag in „{title}" geliked',
@@ -5131,11 +6080,13 @@ export default {
         'noThreadResults': 'Keine Themen gefunden.',
         'noPostResults': 'Keine Beiträge gefunden.',
         'noSearchResults': 'Keine Ergebnisse gefunden',
+        'noSearchResultsHint': 'Versuche es mit anderen Suchbegriffen oder prüfe die Schreibweise.',
         'searchDegradedWarning': 'Die Volltextsuche ist vorübergehend nicht verfügbar. Es werden stattdessen einfache Suchergebnisse angezeigt.',
         'replyIn': 'antwortete in',
         'viewChronological': 'Chronologisch',
         'viewThreaded': 'Verschachtelt',
-        'new': 'NEU'
+        'new': 'NEU',
+        'forumNotFound': 'Forum nicht gefunden'
     },
     'session': {
         'timeout': {

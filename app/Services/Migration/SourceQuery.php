@@ -2,7 +2,7 @@
 
 namespace App\Services\Migration;
 
-use App\Models\MigrationMapping;
+use App\Models\Migration\MigrationMapping;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 

@@ -5,7 +5,7 @@
         </v-alert>
 
         <template v-else>
-            <div class="d-flex justify-space-between align-center mb-4">
+            <div class="d-flex justify-space-between align-center flex-wrap ga-2 mb-4">
                 <div>
                     <div class="text-h6">{{ $t('apiKeys.title') }}</div>
                     <div class="text-caption text-medium-emphasis">
@@ -14,6 +14,7 @@
                 </div>
                 <v-btn
                     color="primary"
+                    variant="elevated"
                     prepend-icon="mdi-plus"
                     @click="showCreateDialog = true"
                 >
@@ -21,17 +22,13 @@
                 </v-btn>
             </div>
 
-            <v-alert v-if="error" type="error" variant="tonal" class="mb-4" closable @click:close="error = ''">
-                {{ error }}
-            </v-alert>
-
             <!-- API Keys List -->
             <v-card v-if="apiKeys.length > 0" variant="outlined">
                 <v-list>
                     <template v-for="(key, index) in apiKeys" :key="key.id">
                         <v-list-item>
                             <template v-slot:prepend>
-                                <v-icon :color="key.is_active ? 'success' : 'grey'">
+                                <v-icon :color="key.is_active ? 'success' : undefined" :class="{ 'text-medium-emphasis': !key.is_active }">
                                     {{ key.is_active ? 'mdi-key' : 'mdi-key-off' }}
                                 </v-icon>
                             </template>
@@ -60,6 +57,8 @@
                                     icon
                                     variant="text"
                                     size="small"
+                                    :loading="isBusy(key, 'toggle')"
+                                    :disabled="busy.id !== null"
                                     @click="toggleKey(key)"
                                     :title="key.is_active ? $t('apiKeys.deactivate') : $t('apiKeys.activate')"
                                 >
@@ -69,6 +68,8 @@
                                     icon
                                     variant="text"
                                     size="small"
+                                    :loading="isBusy(key, 'regenerate')"
+                                    :disabled="busy.id !== null"
                                     @click="confirmRegenerate(key)"
                                     :title="$t('apiKeys.regenerate')"
                                 >
@@ -79,6 +80,8 @@
                                     variant="text"
                                     size="small"
                                     color="error"
+                                    :loading="isBusy(key, 'delete')"
+                                    :disabled="busy.id !== null"
                                     @click="confirmDelete(key)"
                                     :title="$t('common.delete')"
                                 >
@@ -91,22 +94,27 @@
                 </v-list>
             </v-card>
 
-            <v-card v-else variant="outlined" class="pa-8 text-center">
-                <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-key-outline</v-icon>
-                <div class="text-h6 text-medium-emphasis mb-2">{{ $t('apiKeys.noKeys') }}</div>
-                <div class="text-body-2 text-medium-emphasis mb-4">
-                    {{ $t('apiKeys.noKeysDescription') }}
-                </div>
-                <v-btn color="primary" @click="showCreateDialog = true">
-                    {{ $t('apiKeys.createFirstKey') }}
-                </v-btn>
+            <v-card v-else variant="outlined">
+                <empty-state
+                    compact
+                    icon="mdi-key-outline"
+                    :title="$t('apiKeys.noKeys')"
+                    :text="$t('apiKeys.noKeysDescription')"
+                >
+                    <template #actions>
+                        <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showCreateDialog = true">
+                            {{ $t('apiKeys.createFirstKey') }}
+                        </v-btn>
+                    </template>
+                </empty-state>
             </v-card>
         </template>
 
         <!-- Create Dialog -->
-        <v-dialog v-model="showCreateDialog" max-width="500">
+        <v-dialog v-model="showCreateDialog" max-width="600">
             <v-card>
-                <v-card-title>{{ $t('apiKeys.createKey') }}</v-card-title>
+                <v-card-title class="text-h6">{{ $t('apiKeys.createKey') }}</v-card-title>
+                <v-divider></v-divider>
                 <v-card-text>
                     <v-text-field
                         v-model="newKey.name"
@@ -129,8 +137,8 @@
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn variant="text" @click="showCreateDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" :loading="isCreating" @click="createKey">{{ $t('common.create') }}</v-btn>
+                    <v-btn variant="text" :disabled="isCreating" @click="showCreateDialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" variant="flat" :loading="isCreating" @click="createKey">{{ $t('common.create') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -138,7 +146,7 @@
         <!-- Secret Display Dialog -->
         <v-dialog v-model="showSecretDialog" max-width="600" persistent>
             <v-card>
-                <v-card-title class="d-flex align-center">
+                <v-card-title class="d-flex align-center text-h6">
                     <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
                     {{ $t('apiKeys.saveYourSecret') }}
                 </v-card-title>
@@ -174,44 +182,14 @@
                     <v-alert type="info" variant="tonal" density="compact">
                         <div class="text-caption">
                             <strong>{{ $t('apiKeys.usage') }}:</strong> {{ $t('apiKeys.usageDescription') }}
-                            <pre class="mt-2 pa-2 bg-grey-darken-3 rounded text-white">X-API-Key: {{ createdKey?.key }}
+                            <pre class="mt-2 pa-2 bg-surface-variant rounded">X-API-Key: {{ createdKey?.key }}
 X-API-Secret: {{ createdKey?.secret }}</pre>
                         </div>
                     </v-alert>
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn color="primary" @click="closeSecretDialog">{{ $t('apiKeys.savedSecret') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <!-- Confirm Delete Dialog -->
-        <v-dialog v-model="showDeleteDialog" max-width="400">
-            <v-card>
-                <v-card-title>{{ $t('apiKeys.deleteKey') }}</v-card-title>
-                <v-card-text>
-                    {{ $t('apiKeys.confirmDelete', { name: keyToDelete?.name }) }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" @click="showDeleteDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="error" :loading="isDeleting" @click="deleteKey">{{ $t('common.delete') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <!-- Confirm Regenerate Dialog -->
-        <v-dialog v-model="showRegenerateDialog" max-width="400">
-            <v-card>
-                <v-card-title>{{ $t('apiKeys.regenerateKey') }}</v-card-title>
-                <v-card-text>
-                    {{ $t('apiKeys.confirmRegenerate', { name: keyToRegenerate?.name }) }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" @click="showRegenerateDialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="warning" :loading="isRegenerating" @click="regenerateKey">{{ $t('apiKeys.regenerate') }}</v-btn>
+                    <v-btn color="primary" variant="flat" @click="closeSecretDialog">{{ $t('apiKeys.savedSecret') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -223,14 +201,35 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { formatDate as formatDateUtil } from '@/plugins/formatDate.js';
+import { useDialog } from '@/composables/useDialog.js';
+import EmptyState from '@/components/common/EmptyState.vue';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const isEnabled = ref(false);
 const rateLimit = ref(60);
 const apiKeys = ref([]);
 const isLoading = ref(false);
-const error = ref('');
+
+// Which key row has a request in flight, and for which action
+const busy = ref({ id: null, action: null });
+
+function isBusy(key, action) {
+    return busy.value.id === key.id && busy.value.action === action;
+}
+
+async function runForKey(key, action, work) {
+    if (busy.value.id !== null) return;
+    busy.value = { id: key.id, action };
+    try {
+        await work();
+    } catch (err) {
+        dialog.requestError(err);
+    } finally {
+        busy.value = { id: null, action: null };
+    }
+}
 
 // Create dialog
 const showCreateDialog = ref(false);
@@ -241,16 +240,6 @@ const formErrors = ref({});
 // Secret display dialog
 const showSecretDialog = ref(false);
 const createdKey = ref(null);
-
-// Delete dialog
-const showDeleteDialog = ref(false);
-const keyToDelete = ref(null);
-const isDeleting = ref(false);
-
-// Regenerate dialog
-const showRegenerateDialog = ref(false);
-const keyToRegenerate = ref(null);
-const isRegenerating = ref(false);
 
 const minDate = computed(() => {
     const tomorrow = new Date();
@@ -276,13 +265,14 @@ async function fetchKeys() {
         const response = await axios.get('/api/api-keys');
         apiKeys.value = response.data.api_keys;
     } catch (err) {
-        error.value = err.response?.data?.message || 'Failed to fetch API keys';
+        dialog.requestError(err);
     } finally {
         isLoading.value = false;
     }
 }
 
 async function createKey() {
+    if (isCreating.value) return;
     formErrors.value = {};
     isCreating.value = true;
 
@@ -304,7 +294,7 @@ async function createKey() {
         if (err.response?.data?.errors) {
             formErrors.value = err.response.data.errors;
         } else {
-            error.value = err.response?.data?.message || 'Failed to create API key';
+            dialog.requestError(err);
         }
     } finally {
         isCreating.value = false;
@@ -316,55 +306,45 @@ function closeSecretDialog() {
     createdKey.value = null;
 }
 
-async function toggleKey(key) {
-    try {
+function toggleKey(key) {
+    return runForKey(key, 'toggle', async () => {
         await axios.patch(`/api/api-keys/${key.id}`, {
             is_active: !key.is_active,
         });
         await fetchKeys();
-    } catch (err) {
-        error.value = err.response?.data?.message || 'Failed to toggle API key';
-    }
+    });
 }
 
-function confirmDelete(key) {
-    keyToDelete.value = key;
-    showDeleteDialog.value = true;
-}
+async function confirmDelete(key) {
+    if (busy.value.id !== null) return;
+    const ok = await dialog.confirmDelete(
+        t('apiKeys.confirmDelete', { name: key.name }),
+        { title: t('apiKeys.deleteKey') }
+    );
+    if (!ok) return;
 
-async function deleteKey() {
-    isDeleting.value = true;
-    try {
-        await axios.delete(`/api/api-keys/${keyToDelete.value.id}`);
-        showDeleteDialog.value = false;
-        keyToDelete.value = null;
+    await runForKey(key, 'delete', async () => {
+        await axios.delete(`/api/api-keys/${key.id}`);
         await fetchKeys();
-    } catch (err) {
-        error.value = err.response?.data?.message || 'Failed to delete API key';
-    } finally {
-        isDeleting.value = false;
-    }
+    });
 }
 
-function confirmRegenerate(key) {
-    keyToRegenerate.value = key;
-    showRegenerateDialog.value = true;
-}
+async function confirmRegenerate(key) {
+    if (busy.value.id !== null) return;
+    const ok = await dialog.confirm({
+        title: t('apiKeys.regenerateKey'),
+        content: t('apiKeys.confirmRegenerate', { name: key.name }),
+        confirmationText: t('apiKeys.regenerate'),
+        color: 'warning',
+    });
+    if (!ok) return;
 
-async function regenerateKey() {
-    isRegenerating.value = true;
-    try {
-        const response = await axios.post(`/api/api-keys/${keyToRegenerate.value.id}/regenerate`);
+    await runForKey(key, 'regenerate', async () => {
+        const response = await axios.post(`/api/api-keys/${key.id}/regenerate`);
         createdKey.value = response.data.api_key;
-        showRegenerateDialog.value = false;
-        keyToRegenerate.value = null;
         showSecretDialog.value = true;
         await fetchKeys();
-    } catch (err) {
-        error.value = err.response?.data?.message || 'Failed to regenerate API key';
-    } finally {
-        isRegenerating.value = false;
-    }
+    });
 }
 
 function copyToClipboard(text, label) {

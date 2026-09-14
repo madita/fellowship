@@ -2,13 +2,17 @@
 import { ref, computed, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import UserAvatar from '../common/UserAvatar.vue';
+import PollForm from '../poll/PollForm.vue';
+import SimpleEditor from '../common/tiptap/SimpleEditor.vue';
 import axios from 'axios';
 import { useUserStore } from '@/store/userStore.js';
+import { useDialog } from '@/composables/useDialog.js';
 
 const emit = defineEmits(['statusPosted']);
 
 const { t } = useI18n();
 const userStore = useUserStore();
+const dialog = useDialog();
 
 const user = computed(() => userStore.user || { id: null });
 
@@ -42,9 +46,22 @@ const feelingOptions = [
     { key: 'relaxed', emoji: '\u{1F60C}' },
 ];
 
-const canPost = computed(() => {
-    return content.value.trim() || selectedFiles.value.length > 0;
-});
+// Poll
+const pollEnabled = ref(false);
+const poll = ref(null);
+const pollForm = ref(null);
+
+const togglePoll = () => {
+    pollEnabled.value = !pollEnabled.value;
+    if (!pollEnabled.value) {
+        poll.value = null;
+    }
+    expanded.value = true;
+};
+
+// The editor yields HTML; a post needs visible text or an image
+const hasText = computed(() => content.value.replace(/<[^>]*>/g, '').trim().length > 0);
+const canPost = computed(() => hasText.value || selectedFiles.value.length > 0);
 
 const triggerFileInput = () => {
     fileInput.value?.click();
@@ -57,11 +74,11 @@ const onFilesSelected = (event) => {
     event.target.value = '';
 };
 
-const addFiles = (files) => {
+const addFiles = async (files) => {
     for (const file of files) {
         if (selectedFiles.value.length >= MAX_IMAGES) break;
         if (file.size > MAX_FILE_SIZE) {
-            alert(`"${file.name}" exceeds the 5MB size limit.`);
+            await dialog.warning(t('timeline.fileTooLarge', { name: file.name, size: 5 }));
             continue;
         }
         if (!file.type.startsWith('image/')) continue;
@@ -87,7 +104,8 @@ const removeFeeling = () => {
 };
 
 const postStatus = async () => {
-    if (!canPost.value) return;
+    if (!canPost.value || posting.value) return;
+    if (pollEnabled.value && !(pollForm.value?.validate() && poll.value)) return;
 
     posting.value = true;
     try {
@@ -102,6 +120,11 @@ const postStatus = async () => {
             formData.append('images[]', file);
         });
 
+        if (pollEnabled.value && poll.value) {
+            // Multipart body: the poll travels as a JSON string
+            formData.append('poll', JSON.stringify(poll.value));
+        }
+
         const response = await axios.post('/api/statuses', formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
@@ -112,11 +135,14 @@ const postStatus = async () => {
         selectedFiles.value = [];
         imagePreviews.value = [];
         selectedFeeling.value = null;
+        pollEnabled.value = false;
+        poll.value = null;
         expanded.value = false;
 
         emit('statusPosted', response.data);
     } catch (error) {
         console.error('Failed to post status:', error);
+        await dialog.requestError(error, t('timeline.postFailed'));
     } finally {
         posting.value = false;
     }
@@ -128,6 +154,8 @@ const cancel = () => {
     selectedFiles.value = [];
     imagePreviews.value = [];
     selectedFeeling.value = null;
+    pollEnabled.value = false;
+    poll.value = null;
     expanded.value = false;
 };
 
@@ -142,27 +170,26 @@ onBeforeUnmount(() => {
             <div class="d-flex">
                 <UserAvatar :user="user" size="48" class="mr-3" />
                 <div class="flex-grow-1">
-                    <!-- Collapsed State -->
-                    <v-textarea
+                    <!-- Collapsed State: one line that opens the composer on focus -->
+                    <SimpleEditor
                         v-if="!expanded"
                         v-model="content"
                         :placeholder="t('timeline.whatsOnYourMind')"
-                        variant="outlined"
-                        rows="1"
-                        hide-details
+                        :toolbar="false"
+                        min-height="24px"
                         @focus="expanded = true"
                     />
 
                     <!-- Expanded State -->
                     <div v-else>
-                        <v-textarea
+                        <SimpleEditor
                             v-model="content"
                             :placeholder="t('timeline.whatsOnYourMind')"
-                            variant="outlined"
-                            rows="3"
-                            auto-grow
-                            hide-details
+                            :disabled="posting"
+                            min-height="88px"
+                            autofocus
                             class="mb-3"
+                            @submit="postStatus"
                         />
 
                         <!-- Selected Feeling Chip -->
@@ -199,11 +226,32 @@ onBeforeUnmount(() => {
                             </div>
                         </div>
 
+                        <!-- Poll -->
+                        <v-expand-transition>
+                            <v-card v-if="pollEnabled" variant="tonal" rounded="lg" class="mb-3">
+                                <v-card-title class="text-subtitle-2 d-flex align-center ga-2 pb-0">
+                                    <v-icon color="primary" size="small">mdi-poll</v-icon>
+                                    {{ t('poll.attachPoll') }}
+                                    <v-spacer />
+                                    <v-btn
+                                        icon="mdi-close"
+                                        size="x-small"
+                                        variant="text"
+                                        :aria-label="t('poll.removePoll')"
+                                        :disabled="posting"
+                                        @click="togglePoll"
+                                    />
+                                </v-card-title>
+                                <v-card-text>
+                                    <PollForm ref="pollForm" v-model="poll" :disabled="posting" />
+                                </v-card-text>
+                            </v-card>
+                        </v-expand-transition>
+
                         <div class="d-flex align-center justify-end">
-                            <div>
+                            <div class="d-flex ga-2">
                                 <v-btn
                                     variant="text"
-                                    class="mr-2"
                                     @click="cancel"
                                     :disabled="posting"
                                 >
@@ -211,6 +259,7 @@ onBeforeUnmount(() => {
                                 </v-btn>
                                 <v-btn
                                     color="primary"
+                                    variant="flat"
                                     @click="postStatus"
                                     :loading="posting"
                                     :disabled="!canPost"
@@ -221,7 +270,7 @@ onBeforeUnmount(() => {
                         </div>
 
                         <!-- Media/Feeling Options -->
-                        <div class="d-flex mt-3 pt-3" style="border-top: 1px solid rgba(0,0,0,0.08)">
+                        <div class="d-flex flex-wrap ga-2 mt-3 pt-3 composer-options">
                             <v-btn
                                 variant="text"
                                 size="small"
@@ -235,13 +284,23 @@ onBeforeUnmount(() => {
                                 </span>
                             </v-btn>
 
+                            <v-btn
+                                :variant="pollEnabled ? 'tonal' : 'text'"
+                                :color="pollEnabled ? 'primary' : undefined"
+                                size="small"
+                                prepend-icon="mdi-poll"
+                                :disabled="posting"
+                                @click="togglePoll"
+                            >
+                                {{ t('poll.poll') }}
+                            </v-btn>
+
                             <v-menu v-model="showFeelingMenu" :close-on-content-click="false">
                                 <template #activator="{ props: menuProps }">
                                     <v-btn
                                         variant="text"
                                         size="small"
                                         prepend-icon="mdi-emoticon-outline"
-                                        class="ml-2"
                                         v-bind="menuProps"
                                     >
                                         {{ t('timeline.feeling') }}
@@ -269,7 +328,7 @@ onBeforeUnmount(() => {
                                 </v-card>
                             </v-menu>
 
-                            <v-btn variant="text" size="small" prepend-icon="mdi-map-marker-outline" class="ml-2">
+                            <v-btn variant="text" size="small" prepend-icon="mdi-map-marker-outline">
                                 {{ t('timeline.location') }}
                             </v-btn>
                         </div>
@@ -297,6 +356,10 @@ onBeforeUnmount(() => {
 
 .status-composer:focus-within {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.composer-options {
+    border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .preview-grid {

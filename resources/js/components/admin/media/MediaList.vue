@@ -1,16 +1,13 @@
 <template>
     <div>
-        <div v-if="loading" class="d-flex justify-center pa-8">
-            <v-progress-circular indeterminate color="primary" />
-        </div>
+        <loading-state v-if="loading" />
 
-        <div v-else-if="!media.length" class="text-center pa-8">
-            <v-icon icon="mdi-image-off" size="64" color="grey" />
-            <div class="text-h6 text-grey mt-4">{{ $t('mediaCenter.noMediaFound') }}</div>
-            <div class="text-body-2 text-grey">
-                {{ $t('mediaCenter.adjustFiltersHint') }}
-            </div>
-        </div>
+        <empty-state
+            v-else-if="!media.length"
+            icon="mdi-image-off"
+            :title="$t('mediaCenter.noMediaFound')"
+            :text="$t('mediaCenter.adjustFiltersHint')"
+        />
 
         <v-table v-else>
             <thead>
@@ -81,24 +78,24 @@
                     </td>
                     <td>{{ formatDate(item.created_at) }}</td>
                     <td @click.stop>
-                        <v-btn
-                            icon
-                            size="small"
-                            variant="text"
-                            color="primary"
-                            @click="$emit('click', item)"
-                        >
-                            <v-icon icon="mdi-eye" size="small" />
-                        </v-btn>
-                        <v-btn
-                            icon
-                            size="small"
-                            variant="text"
-                            color="error"
-                            @click="$emit('delete', item)"
-                        >
-                            <v-icon icon="mdi-delete" size="small" />
-                        </v-btn>
+                        <div class="d-flex ga-1">
+                            <v-btn
+                                icon="mdi-eye"
+                                size="small"
+                                variant="text"
+                                color="primary"
+                                :aria-label="$t('common.show')"
+                                @click="$emit('click', item)"
+                            />
+                            <v-btn
+                                icon="mdi-delete"
+                                size="small"
+                                variant="text"
+                                color="error"
+                                :aria-label="$t('common.delete')"
+                                @click="$emit('delete', item)"
+                            />
+                        </div>
                     </td>
                 </tr>
             </tbody>
@@ -108,6 +105,8 @@
 
 <script setup>
 import { computed } from 'vue';
+import EmptyState from '../../common/EmptyState.vue';
+import LoadingState from '../../common/LoadingState.vue';
 
 const props = defineProps({
     media: {

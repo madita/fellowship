@@ -13,10 +13,10 @@ const translateTypeName = (name) => {
 import UserAvatar from "../common/UserAvatar.vue";
 import axios from "axios";
 import { useCalendarStore } from '@/store/calendarStore.js';
-import ConfirmDialog from '../common/ConfirmDialog.vue';
+import { useDialog } from '@/composables/useDialog.js';
 import ProfileDialog from '../common/ProfileDialog.vue';
 import DetailsDialog from '../common/DetailsDialog.vue';
-import RelatedContent from '../common/RelatedContent.vue';
+import RelatedContentList from '../common/RelatedContentList.vue';
 import { useUserStore } from "@/store/userStore.js";
 import { useSettingsStore } from "@/store/settingStore.js";
 import { useDateFormat } from '@/plugins/formatDate.js';
@@ -26,6 +26,9 @@ const props = defineProps({
     isDrawerOpen: Boolean,
     editMode: Boolean,
     event: Object,
+    // True while the parent is persisting an add/update/remove; the drawer
+    // stays open with a loader until the parent closes it on success.
+    saving: Boolean,
 });
 
 const emit = defineEmits([
@@ -35,10 +38,10 @@ const emit = defineEmits([
     'removeEvent',
 ]);
 
+const dialog = useDialog();
+
 const selectedStatus = ref(null);
-const showConfirmationDialog = ref(false);
 const showProfileDialog = ref(false);
-const showRelateContentDialog = ref(false);
 const showDetailsDialog = ref(false);
 const guestResponses = ref({});
 
@@ -68,12 +71,12 @@ const isStartDateValid = ref(true);
 const isEndDateValid = ref(true);
 const profileAnswer = ref(null);
 
-const confirmationDialog = ref(null);
-const relatedItems = ref([]);
-
-const openConfirmationDialog = () => {
-    confirmationDialog.value.isOpen = true;
-};
+// Related content section; its "Link content" dialog also opens from the header
+const relatedListRef = ref(null);
+// RSVP answer currently being sent (null when idle)
+const answering = ref(null);
+// Guest whose approval/rejection request is in flight (null when idle)
+const busyGuestId = ref(null);
 
 const localEvent = ref(null);
 const initialSnapshot = ref('');
@@ -89,7 +92,6 @@ watch(
             : null;
         if (localEvent.value?.id) {
             getEvent(localEvent.value.id);
-            fetchRelatedItems('App\\Models\\Event\\Event', localEvent.value.id);
         }
     },
     { immediate: true }
@@ -161,6 +163,16 @@ const user = computed(() => {
     return userStore.user || { id: null };
 });
 
+// Same rule as EventController@update: the owner, or anyone with manage-posts.
+const canEditEvent = computed(() => {
+    if (!localEvent.value?.id || !user.value.id) return false;
+    const ownerId = localEvent.value.extendedProps?.user_id ?? localEvent.value.user_id;
+    const permissions = userStore.permissions || [];
+    return ownerId === user.value.id
+        || !!userStore.user?.isAdmin
+        || permissions.some(permission => (permission?.name ?? permission) === 'manage-posts');
+});
+
 const resetEvent = () => {
     isStartDateValid.value = true;
     isEndDateValid.value = true;
@@ -178,9 +190,15 @@ const canJoinEvent = computed(() => {
     return localEvent.value.end ? new Date(localEvent.value.end) >= utcDate : new Date(localEvent.value.start) >= utcDate;
 });
 
-const removeEvent = () => {
+// Confirms, then hands the delete to the parent. The parent closes the
+// drawer once the request succeeded (and reports failures itself).
+const removeEvent = async () => {
+    if (props.saving) return;
+    const ok = await dialog.confirmDelete(t('events.confirmDeleteEvent'), {
+        title: t('events.deleteEvent'),
+    });
+    if (!ok) return;
     emit('removeEvent', String(localEvent.value.id));
-    emit('update:isDrawerOpen', false);
 };
 
 const openDialog = () => {
@@ -188,19 +206,18 @@ const openDialog = () => {
 };
 
 const handleSubmit = () => {
+    if (props.saving) return;
     validateStartDate();
     validateEndDate();
 
     refForm.value?.validate().then(({ valid }) => {
         if (valid) {
-            localEditMode.value = false;
-
+            // The parent persists the event and closes the drawer on success;
+            // until then the form stays open with the submit button loading.
             if ('id' in localEvent.value)
                 emit('updateEvent', localEvent.value);
             else
                 emit('addEvent', localEvent.value);
-
-            emit('update:isDrawerOpen', false);
         }
     });
 };
@@ -234,18 +251,9 @@ const getEvent = async (eventId) => {
     }
 };
 
-const fetchRelatedItems = async (model, eventId) => {
-    try {
-        const response = await axios.post('/api/related-items', {
-            modelType: model, modelId: eventId,
-        });
-        relatedItems.value = response.data.items;
-    } catch (error) {
-        console.error('Failed to fetch related items:', error);
-    }
-};
-
 const approveGuest = async (guestId, action) => {
+    if (busyGuestId.value !== null) return;
+    busyGuestId.value = guestId;
     try {
         await axios.post(`/api/events/${localEvent.value.id}/approve-guest`, {
             guestId,
@@ -279,7 +287,9 @@ const approveGuest = async (guestId, action) => {
         // Refresh the event data to ensure we have the latest state
         getEvent(localEvent.value.id);
     } catch (error) {
-        console.error(`Failed to ${action} guest:`, error);
+        await dialog.requestError(error, t('events.guestApprovalError'));
+    } finally {
+        busyGuestId.value = null;
     }
 };
 
@@ -315,6 +325,9 @@ const validateEndDate = () => {
 };
 const joinEvent = (answer) => {
     const type = eventType.value;
+
+    // One answer request at a time
+    if (answering.value) return;
 
     // Don't do anything if selecting the same option that's already selected, but do if profile can be changed...
     if (isGoing.value && isGoing.value.type === answer && !type?.options?.profile?.includes(answer)) {
@@ -383,6 +396,7 @@ const joinEvent = (answer) => {
             return;
         }
 
+        answering.value = answer;
         axios.post(`/api/events/${localEvent.value.id}/answer`, {answer})
             .then(response => {
                 // Server confirmed the update
@@ -443,7 +457,10 @@ const joinEvent = (answer) => {
                 // Replace entire object
                 eventAnswers.value = recoveryAnswers;
 
-                if (error.response?.status === 422) console.error('Validation failed:', error.response.data);
+                dialog.requestError(error, t('events.rsvpError'));
+            })
+            .finally(() => {
+                answering.value = null;
             });
     }
 };
@@ -460,21 +477,11 @@ const rules = {
     date: [v => !!v || t('events.dateRequired')]
 };
 
-const handleConfirmation = (isConfirmed) => {
-    if (isConfirmed) {
-        removeEvent(localEvent.value.id);
-    }
-};
-
 const handleProfile = (isConfirmed) => {
     // Perform the profile save action
     if (!isConfirmed) {
         //console.log('AAAcancelprofile')
     }
-};
-
-const handleRelationConfirmed = (relation) => {
-    // Handle the relation
 };
 
 const formatDateRange = computed(() => {
@@ -618,7 +625,7 @@ onMounted(() => {
 <template>
     <VNavigationDrawer
         temporary
-        :persistent="isDirty"
+        :persistent="isDirty || saving"
         location="end"
         :model-value="props.isDrawerOpen"
         width="420"
@@ -626,9 +633,9 @@ onMounted(() => {
         @update:model-value="dialogModelValueUpdate"
     >
         <!-- Header Section -->
-        <div class="event-drawer-header" :class="{ 'edit-mode': localEditMode }">
+        <div class="event-drawer-header">
             <div v-if="localEditMode" class="d-flex align-center py-3 px-4">
-                <h5 class="text-h5 font-weight-medium">{{ localEvent?.id ? $t('events.updateEvent') : $t('events.addEvent') }}</h5>
+                <h5 class="text-h6">{{ localEvent?.id ? $t('events.updateEvent') : $t('events.addEvent') }}</h5>
                 <VSpacer/>
                 <VBtn
                     v-if="localEvent?.id"
@@ -643,9 +650,9 @@ onMounted(() => {
 
             <div v-else class="d-flex align-center py-3 px-4">
                 <div>
-                    <h5 class="text-h5 font-weight-medium mb-1">{{ localEvent?.title }}</h5>
+                    <h5 class="text-h6 mb-1">{{ localEvent?.title }}</h5>
                     <div class="text-subtitle-2 text-medium-emphasis">
-                        <v-icon size="small" class="me-1">mdi-calendar</v-icon>
+                        <v-icon size="small" start>mdi-calendar</v-icon>
                         {{ formatDateRange }}
                     </div>
                 </div>
@@ -654,27 +661,25 @@ onMounted(() => {
 
                 <slot name="beforeClose"/>
 
-                <div class="action-buttons">
-                    <!-- Removed the details icon from header -->
-
+                <div class="d-flex align-center ga-1">
                     <v-btn
                         icon="mdi-pencil"
                         variant="text"
                         color="primary"
                         density="comfortable"
-                        class="action-btn"
                         @click="localEditMode = true"
                         :title="$t('events.edit')"
                     />
 
                     <v-btn
+                        v-if="canEditEvent"
                         icon="mdi-link-variant"
                         variant="text"
                         color="primary"
                         density="comfortable"
-                        class="action-btn"
-                        @click="showRelateContentDialog = true"
-                        :title="$t('events.relatedContent')"
+                        @click="relatedListRef?.openDialog()"
+                        :title="$t('relatedContent.list.link')"
+                        :aria-label="$t('relatedContent.list.link')"
                     />
 
                     <v-btn
@@ -682,8 +687,8 @@ onMounted(() => {
                         variant="text"
                         color="error"
                         density="comfortable"
-                        class="action-btn"
-                        @click="showConfirmationDialog = true"
+                        :loading="saving"
+                        @click="removeEvent"
                         :title="$t('events.delete')"
                     />
 
@@ -691,7 +696,7 @@ onMounted(() => {
                         icon="mdi-close"
                         variant="text"
                         density="comfortable"
-                        class="action-btn"
+                        :disabled="saving"
                         @click="dialogModelValueUpdate(false)"
                         :title="$t('common.close')"
                     />
@@ -899,20 +904,21 @@ onMounted(() => {
                                 </VCol>
                             </template>
 
-                            <VCol cols="12" class="d-flex justify-end">
+                            <VCol cols="12" class="d-flex justify-end ga-2">
                                 <VBtn
-                                    type="submit"
-                                    color="primary"
-                                    class="me-3"
-                                >
-                                    {{ $t('events.submit') }}
-                                </VBtn>
-                                <VBtn
-                                    variant="outlined"
-                                    color="secondary"
+                                    variant="text"
+                                    :disabled="saving"
                                     @click="onCancel"
                                 >
                                     {{ $t('common.cancel') }}
+                                </VBtn>
+                                <VBtn
+                                    type="submit"
+                                    color="primary"
+                                    variant="flat"
+                                    :loading="saving"
+                                >
+                                    {{ $t('events.submit') }}
                                 </VBtn>
                             </VCol>
                         </VRow>
@@ -921,17 +927,17 @@ onMounted(() => {
             </VCard>
 
             <!-- View Mode Content -->
-            <div v-else class="event-view-content">
+            <div v-else class="pa-4">
                 <!-- Event Info Section -->
-                <v-card flat class="event-info-card mb-4">
+                <v-card flat rounded="lg" class="mb-4">
                     <v-card-text>
                         <!-- Location Info -->
-                        <div class="event-info-item mb-4">
-                            <div class="info-label">
-                                <v-icon color="primary" class="mr-2">mdi-map-marker</v-icon>
+                        <div class="mb-4">
+                            <div class="d-flex align-center font-weight-medium mb-1">
+                                <v-icon color="primary" start>mdi-map-marker</v-icon>
                                 <span>{{ $t('events.location') }}</span>
                             </div>
-                            <div class="info-content">
+                            <div class="pl-8">
                                 <template v-if="viewLocation">
                                     <a
                                         v-if="viewLocation.external"
@@ -958,12 +964,12 @@ onMounted(() => {
                         </div>
 
                         <!-- Description Info -->
-                        <div class="event-info-item" v-if="localEvent?.extendedProps?.description">
-                            <div class="info-label">
-                                <v-icon color="primary" class="mr-2">mdi-text-box-outline</v-icon>
+                        <div v-if="localEvent?.extendedProps?.description">
+                            <div class="d-flex align-center font-weight-medium mb-1">
+                                <v-icon color="primary" start>mdi-text-box-outline</v-icon>
                                 <span>{{ $t('common.description') }}</span>
                             </div>
-                            <div class="info-content description-content"
+                            <div class="pl-8 description-content"
                                  v-html="localEvent.extendedProps.description"></div>
                         </div>
                     </v-card-text>
@@ -973,26 +979,26 @@ onMounted(() => {
                 <v-card
                     v-if="canJoinEvent"
                     flat
-                    class="mb-4 response-card"
                     rounded="lg"
-                    elevation="0"
+                    class="mb-4"
                 >
                     <v-card-text>
                         <h3 class="text-h6 mb-3">{{ $t('events.areYouComing') }}</h3>
-                        <div class="d-flex flex-wrap gap-2">
+                        <div class="d-flex flex-wrap ga-2">
                             <VBtn
                                 v-for="(answer, value) in eventTypeOptions.answers"
                                 :key="`answer-${value}`"
                                 :color="['going', 'participant'].includes(answer.key) ? 'success' : answer.key === 'notgoing' ? 'error' : 'primary'"
-                                :variant="isGoing && isGoing.type === value ? 'elevated' : 'outlined'"
-                                class="response-btn mr-1"
+                                :variant="isGoing && isGoing.type === value ? 'elevated' : 'tonal'"
+                                class="response-btn"
+                                :loading="answering === answer.key"
+                                :disabled="!!answering && answering !== answer.key"
                                 @click="joinEvent(answer.key)"
                             >
                                 <v-icon
                                     v-if="isGoing && isGoing.type === value"
                                     size="small"
                                     start
-                                    class="me-1"
                                 >
                                     mdi-check-circle
                                 </v-icon>
@@ -1003,7 +1009,7 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Attendees Section -->
-                <v-card flat class="attendees-card mb-4" v-if="Object.keys(eventAnswers).length > 0">
+                <v-card flat rounded="lg" class="mb-4" v-if="Object.keys(eventAnswers).length > 0">
                     <v-card-text>
                         <div class="d-flex align-center justify-space-between mb-3">
                             <h3 class="text-h6">{{ $t('events.attendees') }}</h3>
@@ -1021,23 +1027,22 @@ onMounted(() => {
                         <div v-for="(guests, status) in filterGuestsByApproval(eventAnswers).approvedGuests"
                              :key="`status-${status}`"
                              class="mb-4">
-                            <div class="d-flex align-center mb-2">
+                            <div class="d-flex align-center ga-2 mb-2">
                                 <v-chip
                                     :color="['going', 'participant'].includes(status) ? 'success' : status === 'notgoing' ? 'error' : 'primary'"
                                     size="small"
-                                    class="me-2"
+                                    variant="tonal"
                                 >
                                     {{ te('events.rsvp.' + status) ? t('events.rsvp.' + status) : status }}
                                 </v-chip>
                                 <span class="text-subtitle-2">{{ $t('events.peopleCount', { count: guests.length }) }}</span>
                             </div>
 
-                            <div class="d-flex flex-wrap gap-1">
+                            <div class="d-flex flex-wrap ga-1">
                                 <UserAvatar
                                     v-for="guest in guests"
                                     :key="guest.id"
                                     :user="guest"
-                                    class="mr-1 mb-1"
                                 />
                             </div>
                         </div>
@@ -1047,7 +1052,8 @@ onMounted(() => {
                 <!-- Pending Approvals Section TODO only show if creator(done) or admin-->
                 <v-card
                     flat
-                    class="approval-card mb-4"
+                    rounded="lg"
+                    class="mb-4"
                     v-if="localEvent?.extendedProps?.user_id === user.id &&
                          eventTypeOptions.guest &&
                          eventTypeOptions.guest.includes('approval')"
@@ -1073,13 +1079,14 @@ onMounted(() => {
                                     <v-list-item-title>{{ guest.name }}</v-list-item-title>
 
                                     <template #append>
-                                        <div class="d-flex">
+                                        <div class="d-flex ga-1">
                                             <v-btn
                                                 size="small"
                                                 color="success"
                                                 variant="text"
                                                 icon="mdi-check"
-                                                class="me-1"
+                                                :loading="busyGuestId === guest.pivot.user_id"
+                                                :disabled="busyGuestId !== null && busyGuestId !== guest.pivot.user_id"
                                                 @click="approveGuest(guest.pivot.user_id, 'approve')"
                                             ></v-btn>
                                             <v-btn
@@ -1087,6 +1094,8 @@ onMounted(() => {
                                                 color="error"
                                                 variant="text"
                                                 icon="mdi-close"
+                                                :loading="busyGuestId === guest.pivot.user_id"
+                                                :disabled="busyGuestId !== null && busyGuestId !== guest.pivot.user_id"
                                                 @click="approveGuest(guest.pivot.user_id, 'reject')"
                                             ></v-btn>
                                         </div>
@@ -1098,46 +1107,16 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Related Content Section -->
-                <v-card flat class="related-content-card" v-if="relatedItems.length > 0">
-                    <v-card-text>
-                        <h3 class="text-h6 mb-3">{{ $t('events.relatedContent') }}</h3>
-
-                        <div class="related-items-grid">
-                            <v-card
-                                v-for="item in relatedItems"
-                                :key="item.id"
-                                class="related-item-card"
-                                elevation="2"
-                                rounded="lg"
-                                :to="`/gallery/${item.related.slug}`"
-                            >
-                                <v-img
-                                    v-if="item.related.coverImage"
-                                    :src="item.related.coverImage"
-                                    height="140"
-                                    cover
-                                    class="related-item-image"
-                                ></v-img>
-                                <v-img
-                                    v-else
-                                    src="https://via.placeholder.com/300x140"
-                                    height="140"
-                                    cover
-                                    class="related-item-image"
-                                ></v-img>
-
-                                <v-card-text class="pa-3">
-                                    <h4 class="text-subtitle-1 font-weight-medium text-truncate mb-1">
-                                        {{ item.related.title }}
-                                    </h4>
-                                    <p class="text-caption text-medium-emphasis text-truncate">
-                                        {{ item.related.description || $t('events.relatedContent') }}
-                                    </p>
-                                </v-card-text>
-                            </v-card>
-                        </div>
-                    </v-card-text>
-                </v-card>
+                <related-content-list
+                    v-if="localEvent?.id"
+                    ref="relatedListRef"
+                    class="pa-4"
+                    type="App\Models\Event\Event"
+                    :id="localEvent.id"
+                    :title="localEvent.title"
+                    :can-edit="canEditEvent"
+                    compact
+                />
             </div>
         </PerfectScrollbar>
     </VNavigationDrawer>
@@ -1152,23 +1131,6 @@ onMounted(() => {
         :resolve="handleProfile"
     />
 
-    <ConfirmDialog
-        v-model="showConfirmationDialog"
-        :title="$t('events.deleteEvent')"
-        :content="$t('events.confirmDeleteEvent')"
-        :confirmationText="$t('common.delete')"
-        :cancellationText="$t('common.cancel')"
-        :resolve="handleConfirmation"
-    />
-
-    <RelatedContent
-        v-model="showRelateContentDialog"
-        :contentName="$t('events.currentEvent')"
-        initialSourceType="App\Models\Event\Event"
-        :initialSourceItem="String(localEvent?.id)"
-        @confirmRelation="handleRelationConfirmed"
-    />
-
     <DetailsDialog
         v-if="localEvent.id > 0"
         v-model="showDetailsDialog"
@@ -1180,68 +1142,17 @@ onMounted(() => {
 <style scoped>
 .event-drawer {
     max-height: 100%;
-    border-left: 1px solid rgba(0, 0, 0, 0.12);
+    border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .event-drawer-header {
-    /*background-color: rgb(var(--v-theme-surface));*/
     position: sticky;
     top: 0;
     z-index: 10;
 }
 
-.event-drawer-header.edit-mode {
-    /*background-color: rgb(var(--v-theme-surface-variant));*/
-}
-
 .event-drawer-content {
     height: calc(100vh - 65px);
-}
-
-.action-buttons {
-    display: flex;
-    align-items: center;
-}
-
-.action-btn {
-    margin-left: 4px;
-}
-
-.event-view-content {
-    padding: 16px;
-}
-
-.event-info-card,
-.attendees-card,
-.approval-card,
-.related-content-card {
-    /*border: 1px solid rgba(var(--v-theme-on-surface), 0.08);*/
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.response-card {
-    /*border: 1px solid rgba(var(--v-theme-primary), 0.15);*/
-    border-radius: 12px;
-    overflow: hidden;
-    /*background-color: rgba(var(--v-theme-primary), 0.03);*/
-}
-
-.event-info-item {
-    margin-bottom: 12px;
-}
-
-.info-label {
-    display: flex;
-    align-items: center;
-    font-weight: 500;
-    /*color: rgb(var(--v-theme-primary));*/
-    margin-bottom: 4px;
-}
-
-.info-content {
-    padding-left: 28px;
-    /*color: rgb(var(--v-theme-on-surface));*/
 }
 
 .description-content {
@@ -1255,32 +1166,8 @@ onMounted(() => {
     letter-spacing: 0.5px;
 }
 
-.related-items-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 12px;
-}
-
-.related-item-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.related-item-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
-}
-
-.related-item-image {
-    border-top-left-radius: 8px;
-    border-top-right-radius: 8px;
-}
-
 .pending-guest-item {
     border-radius: 8px;
     margin-bottom: 4px;
-}
-
-.pending-guest-item:hover {
-    /*background-color: rgba(var(--v-theme-on-surface), 0.04);*/
 }
 </style>

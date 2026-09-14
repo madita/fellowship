@@ -1,32 +1,45 @@
 <template>
     <div>
-        <v-sheet>
-            <v-container class="py-6 pt-lg-15">
-                <v-list class="bg-transparent">
-                    <template
-                        v-for="(taxable, type) in taxables.type"
-                        :key="type"
+        <page-header
+            :title="$t('pages.tagged.title')"
+            :subtitle="$t('pages.tagged.subtitle', { term })"
+            icon="mdi-tag-multiple-outline"
+        />
+
+        <v-container>
+            <loading-state v-if="loading" />
+            <v-list v-else-if="hasResults" class="bg-transparent">
+                <template
+                    v-for="(taxable, type) in taxables.type"
+                    :key="type"
+                >
+                    <v-list-subheader>{{ type }}</v-list-subheader>
+                    <v-list-item
+                        v-for="model in taxable"
+                        :key="model.data.slug"
+                        @click="goTo(model.data.slug, type)"
                     >
-                        <v-list-subheader>{{ type }}</v-list-subheader>
-                        <v-list-item
-                            v-for="model in taxable"
-                            :key="model.data.slug"
-                            @click="goTo(model.data.slug, type)"
-                        >
-                            <v-list-item-title v-text="model.taxable_title"></v-list-item-title>
-                        </v-list-item>
-                    </template>
-                </v-list>
-            </v-container>
-        </v-sheet>
+                        <v-list-item-title v-text="model.taxable_title"></v-list-item-title>
+                    </v-list-item>
+                </template>
+            </v-list>
+            <empty-state
+                v-else
+                icon="mdi-tag-off-outline"
+                :title="$t('pages.tagged.noResults')"
+                :text="$t('pages.tagged.noResultsText', { term })"
+            />
+        </v-container>
     </div>
 </template>
 
 <script>
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 export default {
-    components: {
-    },
+    components: { PageHeader, EmptyState, LoadingState },
     data() {
         return {
             loading: true,
@@ -34,6 +47,13 @@ export default {
             taxonomy:"",
             term:"",
             model:""
+        }
+    },
+
+    computed: {
+        hasResults() {
+            const types = this.taxables?.type || {}
+            return Object.values(types).some(list => list && list.length)
         }
     },
 
@@ -50,6 +70,8 @@ export default {
                 if (error.response.status === 401) {
                     this.$router.push('/auth/signin')
                 }
+            }).finally(() => {
+                this.loading = false
             });
         },
         goTo(slug, type) {

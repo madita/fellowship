@@ -1,150 +1,48 @@
 <template>
-  <v-dialog v-model="dialog" max-width="700" persistent>
-    <template v-slot:activator="{ on, attrs }">
+  <v-dialog v-model="dialog" max-width="640" persistent scrollable>
+    <template v-if="!hideActivator" v-slot:activator="{ props: activatorProps }">
       <v-btn
         color="primary"
-        v-bind="attrs"
-        v-on="on"
+        variant="elevated"
+        prepend-icon="mdi-poll"
+        v-bind="activatorProps"
       >
-        <v-icon left>mdi-poll</v-icon>
-        Create Poll
+        {{ editMode ? $t('poll.editPoll') : $t('poll.createPoll') }}
       </v-btn>
     </template>
 
     <v-card>
-      <v-card-title>
-        <span class="text-h5">{{ editMode ? 'Edit Poll' : 'Create Poll' }}</span>
+      <v-card-title class="text-h6 d-flex align-center ga-2">
+        <v-icon color="primary">mdi-poll</v-icon>
+        {{ editMode ? $t('poll.editPoll') : $t('poll.createPoll') }}
       </v-card-title>
+      <v-divider />
 
       <v-card-text>
-        <v-form ref="form" v-model="valid">
-          <v-text-field
-            v-model="form.title"
-            label="Poll Title"
-            :rules="[rules.required]"
-            outlined
-            dense
-          ></v-text-field>
-
-          <v-textarea
-            v-model="form.description"
-            label="Description (optional)"
-            outlined
-            dense
-            rows="2"
-          ></v-textarea>
-
-          <v-radio-group
-            v-model="form.type"
-            label="Poll Type"
-            row
-          >
-            <v-radio label="Single Choice" value="single"></v-radio>
-            <v-radio label="Multiple Choice" value="multiple"></v-radio>
-          </v-radio-group>
-
-          <v-checkbox
-            v-model="form.anonymous"
-            label="Anonymous voting (hide vote counts until poll closes)"
-            dense
-          ></v-checkbox>
-
-          <v-menu
-            v-model="dateMenu"
-            :close-on-content-click="false"
-            :nudge-right="40"
-            transition="scale-transition"
-            offset-y
-            min-width="auto"
-          >
-            <template v-slot:activator="{ on, attrs }">
-              <v-text-field
-                v-model="form.closes_at"
-                label="Closing Date (optional)"
-                prepend-icon="mdi-calendar"
-                readonly
-                clearable
-                v-bind="attrs"
-                v-on="on"
-              ></v-text-field>
-            </template>
-            <v-date-picker
-              v-model="form.closes_at"
-              @input="dateMenu = false"
-              :min="minDate"
-            ></v-date-picker>
-          </v-menu>
-
-          <v-divider class="my-4"></v-divider>
-
-          <div class="d-flex justify-space-between align-center mb-2">
-            <span class="text-subtitle-1 font-weight-bold">Poll Options</span>
-            <v-btn
-              small
-              color="primary"
-              @click="addOption"
-              :disabled="form.options.length >= 10"
-            >
-              <v-icon left small>mdi-plus</v-icon>
-              Add Option
-            </v-btn>
-          </div>
-
-          <v-list dense>
-            <v-list-item
-              v-for="(option, index) in form.options"
-              :key="index"
-              class="px-0"
-            >
-              <v-text-field
-                v-model="option.option_text"
-                :label="`Option ${index + 1}`"
-                :rules="[rules.required]"
-                outlined
-                dense
-                hide-details
-              >
-                <template v-slot:append>
-                  <v-btn
-                    icon
-                    small
-                    @click="removeOption(index)"
-                    :disabled="form.options.length <= 2"
-                  >
-                    <v-icon small>mdi-close</v-icon>
-                  </v-btn>
-                </template>
-              </v-text-field>
-            </v-list-item>
-          </v-list>
-
-          <v-alert
-            v-if="form.options.length < 2"
-            type="warning"
-            dense
-            text
-            class="mt-2"
-          >
-            A poll must have at least 2 options
-          </v-alert>
-        </v-form>
+        <poll-form
+          ref="pollForm"
+          v-model="poll"
+          :disabled="loading"
+        />
       </v-card-text>
 
+      <v-divider />
       <v-card-actions>
-        <v-spacer></v-spacer>
+        <v-spacer />
         <v-btn
-          text
+          variant="text"
+          :disabled="loading"
           @click="close"
         >
-          Cancel
+          {{ $t('common.cancel') }}
         </v-btn>
         <v-btn
           color="primary"
-          :disabled="!canSubmit"
+          variant="flat"
           :loading="loading"
           @click="submit"
         >
-          {{ editMode ? 'Update' : 'Create' }} Poll
+          {{ editMode ? $t('poll.updatePoll') : $t('poll.createPoll') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -152,8 +50,17 @@
 </template>
 
 <script>
+import axios from 'axios'
+import PollForm from './PollForm.vue'
+
+/**
+ * Dialog that creates a poll on an existing pollable (POST /api/polls)
+ * or, when `existingPoll` is given, edits it (PUT /api/polls/{id}).
+ * Emits `created` with the saved poll in both cases and `updated` in edit mode.
+ */
 export default {
   name: 'PollCreator',
+  components: { PollForm },
   props: {
     pollableType: {
       type: String,
@@ -166,131 +73,93 @@ export default {
     existingPoll: {
       type: Object,
       default: null
+    },
+    // Render no activator button; open the dialog through `open()` instead
+    hideActivator: {
+      type: Boolean,
+      default: false
     }
   },
+  emits: ['created', 'updated'],
   data() {
     return {
       dialog: false,
-      dateMenu: false,
-      valid: false,
       loading: false,
-      form: {
-        title: '',
-        description: '',
-        type: 'single',
-        anonymous: false,
-        closes_at: null,
-        options: [
-          { option_text: '' },
-          { option_text: '' }
-        ]
-      },
-      rules: {
-        required: value => !!value || 'Required.'
-      }
+      poll: this.pollFromExisting(this.existingPoll)
     }
   },
   computed: {
     editMode() {
       return !!this.existingPoll
+    }
+  },
+  watch: {
+    existingPoll(poll) {
+      this.poll = this.pollFromExisting(poll)
     },
-    minDate() {
-      return new Date().toISOString().substr(0, 10)
-    },
-    canSubmit() {
-      return this.valid && 
-             this.form.options.length >= 2 && 
-             this.form.options.every(opt => opt.option_text.trim())
+    dialog(open) {
+      if (open) {
+        this.poll = this.pollFromExisting(this.existingPoll)
+      }
     }
   },
   methods: {
-    addOption() {
-      if (this.form.options.length < 10) {
-        this.form.options.push({ option_text: '' })
-      }
+    open() {
+      this.dialog = true
     },
-    removeOption(index) {
-      if (this.form.options.length > 2) {
-        this.form.options.splice(index, 1)
+    pollFromExisting(poll) {
+      if (!poll) return null
+      return {
+        title: poll.title,
+        description: poll.description || '',
+        type: poll.type,
+        anonymous: !!poll.anonymous,
+        closes_at: poll.closes_at || null,
+        options: (poll.options || []).map(opt => (typeof opt === 'string' ? opt : opt.option_text))
       }
     },
     async submit() {
-      if (!this.$refs.form.validate()) {
-        return
-      }
+      if (this.loading) return
+      if (!this.$refs.pollForm?.validate() || !this.poll) return
 
       this.loading = true
       try {
+        // /api/polls expects options as objects, unlike the inline thread/status payload
         const payload = {
           pollable_type: this.pollableType,
           pollable_id: this.pollableId,
-          title: this.form.title,
-          description: this.form.description || null,
-          type: this.form.type,
-          anonymous: this.form.anonymous,
-          closes_at: this.form.closes_at ? `${this.form.closes_at}T23:59:59` : null,
-          options: this.form.options.filter(opt => opt.option_text.trim())
+          title: this.poll.title,
+          description: this.poll.description || null,
+          type: this.poll.type,
+          anonymous: this.poll.anonymous,
+          closes_at: this.poll.closes_at,
+          options: this.poll.options.map(text => ({ option_text: text }))
         }
 
         let response
         if (this.editMode) {
-          response = await this.$axios.put(`/polls/${this.existingPoll.id}`, payload)
+          response = await axios.put(`/api/polls/${this.existingPoll.id}`, payload)
         } else {
-          response = await this.$axios.post('/polls', payload)
+          response = await axios.post('/api/polls', payload)
         }
 
-        this.$emit('created', response.data.poll)
-        this.$notify({
-          type: 'success',
-          title: 'Success',
-          text: response.data.message
-        })
+        const saved = response.data.poll
+        this.$emit('created', saved)
+        if (this.editMode) {
+          this.$emit('updated', saved)
+        }
+        this.dialog = false
 
-        this.close()
+        await this.$dialog.success(response.data.message || this.$t('poll.saved'))
       } catch (error) {
-        this.$notify({
-          type: 'error',
-          title: 'Error',
-          text: error.response?.data?.message || 'Failed to save poll'
-        })
+        await this.$dialog.requestError(error, this.$t('poll.saveFailed'))
       } finally {
         this.loading = false
       }
     },
     close() {
+      if (this.loading) return
       this.dialog = false
-      this.resetForm()
-    },
-    resetForm() {
-      this.form = {
-        title: '',
-        description: '',
-        type: 'single',
-        anonymous: false,
-        closes_at: null,
-        options: [
-          { option_text: '' },
-          { option_text: '' }
-        ]
-      }
-      this.$refs.form?.resetValidation()
-    }
-  },
-  watch: {
-    existingPoll: {
-      handler(poll) {
-        if (poll) {
-          this.form = {
-            title: poll.title,
-            description: poll.description || '',
-            type: poll.type,
-            anonymous: poll.anonymous,
-            closes_at: poll.closes_at ? poll.closes_at.substr(0, 10) : null,
-            options: poll.options.map(opt => ({ option_text: opt.option_text }))
-          }
-        }
-      },
-      immediate: true
     }
   }
 }

@@ -25,6 +25,7 @@ export default {
         'confirmAction': 'Confirm Action',
         'confirm': 'Confirm',
         'close': 'Close',
+        'back': 'Back',
         'search': 'Search',
         'copy': 'Copy',
         'upload': 'Upload',
@@ -42,7 +43,8 @@ export default {
         'customize': 'Customize',
         'showLess': 'Show Less',
         'showDetails': 'Show Details',
-        'refresh': 'Refresh'
+        'refresh': 'Refresh',
+        'edit': 'Edit'
     },
     'cookie': {
         'consentTitle': 'Cookie Consent',
@@ -87,6 +89,7 @@ export default {
         'sentSuccess': 'Announcement sent successfully!'
     },
     'profileDialog': {
+        'title': 'Your details',
         'days': 'Days'
     },
     'board': {
@@ -102,6 +105,9 @@ export default {
         }
     },
     'chat': {
+        'title': 'Chat',
+        'subtitle': 'Talk with everyone who is online right now',
+        'noUsersOnline': 'Nobody else is online right now',
         'online': 'Users Online ({count})',
         'addChannel': 'Add Channel',
         'channel': 'Channel | Channels',
@@ -126,7 +132,9 @@ export default {
         'replyTo': 'Reply to',
         'forwarded': 'Forwarded',
         'attachment': 'Attachment',
-        'attachFile': 'Attach file'
+        'attachFile': 'Attach file',
+        'sendFailed': 'The message could not be sent',
+        'loadFailed': 'The messages could not be loaded'
     },
     'conversation': {
         'newConversation': 'New Conversation',
@@ -174,7 +182,15 @@ export default {
         'new': 'new',
         'noConversationsYet': 'No conversations yet',
         'startToSee': 'Start a conversation to see it here',
-        'startNew': 'Start New Conversation'
+        'startNew': 'Start New Conversation',
+        'sendFailed': 'Your message could not be sent.',
+        'createFailed': 'The conversation could not be created.',
+        'loadFailed': 'The conversation could not be loaded.',
+        'subtitle': 'Private messages with other members',
+        'noMessagesYet': 'No messages yet',
+        'noMessagesYetHint': 'Be the first to reply!',
+        'noRecentMessages': 'No recent messages',
+        'seeAllMessages': 'See all messages'
     },
     'formBuilder': {
         'formFields': 'Form Fields',
@@ -187,7 +203,10 @@ export default {
         'value': 'Value',
         'noUpdatableFields': 'No updatable fields configured for this form.',
         'unknownFieldConfiguration': 'Unknown field configuration',
-        'unsavedChangesWarning': 'You have unsaved changes. Use the Save or Cancel buttons — clicking outside won’t close the form.'
+        'unsavedChangesWarning': 'You have unsaved changes. Use the Save or Cancel buttons — clicking outside won’t close the form.',
+        'options': 'Options',
+        'addOption': 'Add {name}',
+        'addField': 'Add field'
     },
     'email': {
         'compose': 'Compose Email',
@@ -244,16 +263,26 @@ export default {
         'widgetSettings': 'Widget Settings',
         'widgetTitle': 'Widget Title',
         'widgetSize': 'Widget Size',
+        'widgetHeight': 'Widget Height',
+        'heightSingle': 'Single row',
+        'heightDouble': 'Double row',
+        'dropHere': 'Drop here',
         'small': 'Small',
         'medium': 'Medium',
         'large': 'Large',
         'extraLarge': 'Extra Large',
+        'sizeStandard': 'Standard (one column)',
+        'sizeWide': 'Wide (two columns)',
+        'sizeExtraWide': 'Extra wide (three columns)',
         'widgetLimit': 'Items to show',
         'onDashboard': '{count} on dashboard',
         'emptyTitle': 'Your dashboard is empty',
         'emptyHint': 'Add widgets to see upcoming events, notifications, wiki changes and more at a glance.',
         'loadFailed': 'Could not load this widget',
         'saveFailed': 'Your dashboard layout could not be saved: {error}',
+        'layoutLoadFailed': 'Your dashboard layout could not be loaded: {error}',
+        'confirmReset': 'This replaces your customised dashboard with the default widgets. Continue?',
+        'confirmRemove': 'Remove the widget "{title}" from your dashboard?',
         'widgets': {
             'events': {
                 'title': 'Upcoming Events',
@@ -285,7 +314,13 @@ export default {
             'conversations': {
                 'title': 'Messages',
                 'description': 'Your recent conversations',
-                'action': 'View All Conversations'
+                'action': 'View All Conversations',
+                'empty': 'No conversations yet',
+                'unread': 'Unread messages',
+                'noMessages': 'Start a conversation',
+                'recently': 'Recently',
+                'groupChat': 'Group chat',
+                'unknownUser': 'User'
             },
             'tickets': {
                 'title': 'Ticket Queue',
@@ -402,6 +437,7 @@ export default {
         'subtitle': 'Enter your account email address and we will send you a link to reset your password.',
         'email': 'Email',
         'button': 'Request Password Reset',
+        'sent': 'We have e-mailed you a link to reset your password.',
         'backtosign': 'Back to Sign In'
     },
     'login': {
@@ -421,6 +457,7 @@ export default {
     },
     'register': {
         'title': 'Create Account',
+        'subtitle': 'Create your account to get started',
         'name': 'Full name',
         'username': 'Username',
         'email': 'Email',
@@ -430,6 +467,8 @@ export default {
         'agree': 'By signing up, you agree to the',
         'account': 'Already have an account?',
         'signin': 'Sign In',
+        'ageRequired': 'You must confirm your age to register',
+        'failed': 'Registration failed. Please try again.',
         'ageConfirmation': 'I confirm that I am at least {age} years old'
     },
     'utility': {
@@ -534,6 +573,12 @@ export default {
         'resettingPassword': 'Resetting password',
         'newPassword': 'New Password',
         'setNewPasswordAndSignIn': 'Set new password and Sign In',
+        'passwordResetDone': 'Your password has been changed. You can now sign in.',
+        'verifyEmailTitle': 'Please verify your e-mail address',
+        'verifyEmailHint': 'Check your inbox for the link to verify your e-mail address.',
+        'alreadyVerified': 'Your e-mail address is already verified.',
+        'verificationSent': 'The verification e-mail has been sent.',
+        'resendEmail': 'Re-send e-mail',
         'required': 'Required'
     },
     'menu': {
@@ -602,6 +647,8 @@ export default {
         'adminEventsProfiles': 'Profiles',
         'adminMedia': 'Media Center',
         'adminTickets': 'Tickets',
+        'adminPolls': 'Polls',
+        'adminRelations': 'Related content',
         'adminTranslations': 'Translations',
         'adminDashboard': 'Dashboard',
         'myTickets': 'My Tickets'
@@ -675,6 +722,72 @@ export default {
                 'disk': 'Disk free',
                 'lastMigration': 'Last data import: {name} — {status}, {time}.'
             }
+        },
+        'polls': {
+            'title': 'Polls',
+            'subtitle': 'Every poll attached to forum threads and timeline posts — numbers, results and moderation',
+            'stats': {
+                'total': 'Polls',
+                'open': 'Open',
+                'closed': 'Closed',
+                'votes': 'Votes',
+                'votes_7d': 'Votes this week',
+                'polls_7d': 'New this week'
+            },
+            'byType': 'Where polls live',
+            'mostVoted': 'Most voted',
+            'mostVotedEmpty': 'No votes have been cast yet',
+            'filters': {
+                'search': 'Search polls…',
+                'status': 'Status',
+                'type': 'Type',
+                'pollable': 'Attached to',
+                'all': 'All',
+                'reset': 'Reset filters'
+            },
+            'status': {
+                'open': 'Open',
+                'closed': 'Closed'
+            },
+            'type': {
+                'single': 'Single choice',
+                'multiple': 'Multiple choice'
+            },
+            'pollable': {
+                'thread': 'Forum thread',
+                'status': 'Timeline post',
+                'page': 'Page',
+                'ticket': 'Ticket',
+                'unknown': 'Not attached'
+            },
+            'headers': {
+                'title': 'Poll',
+                'pollable': 'Attached to',
+                'creator': 'Created by',
+                'type': 'Type',
+                'votes': 'Votes',
+                'status': 'Status',
+                'created': 'Created'
+            },
+            'anonymous': 'Anonymous',
+            'closesAt': 'closes {time}',
+            'closedAt': 'closed {time}',
+            'actions': {
+                'results': 'View results',
+                'close': 'Close poll',
+                'reopen': 'Reopen poll',
+                'delete': 'Delete poll'
+            },
+            'confirm': {
+                'closeTitle': 'Close this poll?',
+                'close': 'Voting on “{title}” ends right away. You can reopen the poll later.',
+                'reopenTitle': 'Reopen this poll?',
+                'reopen': '“{title}” accepts votes again and its closing date is removed.',
+                'delete': 'Delete the poll “{title}” together with all of its votes? This cannot be undone.'
+            },
+            'empty': 'No polls yet',
+            'emptyHint': 'Polls are created from forum threads and timeline posts. They show up here as soon as someone attaches one.',
+            'emptyFiltered': 'No polls match the current filters'
         },
         'forums': {
             'title': 'Forum Management',
@@ -1113,6 +1226,7 @@ export default {
         },
         'announcements': {
             'title': 'Announcement Management',
+            'subtitle': 'Send a notification e-mail to every member of the community.',
             'list': 'Announcements List',
             'create': 'Create Announcement',
             'edit': 'Edit Announcement',
@@ -1291,12 +1405,31 @@ export default {
         'collectionName': 'Collection Name',
         'createCollection': 'Create Collection',
         'backToGallery': 'Back to Gallery',
+        'subtitle': 'Browse the community photo albums',
+        'album': 'Album',
+        'addImages': 'Add images',
+        'uploadedBy': 'Uploaded by {name}',
+        'uploadedOn': 'Uploaded {date}',
+        'manageTitle': 'Manage Gallery',
+        'manageSubtitle': 'Create collections and upload images',
+        'selectTaxonomyHint': 'Select a taxonomy to see its collections.',
         'editCaption': 'Edit Caption',
         'addCaption': 'Add Caption',
         'updateCaption': 'Update Caption',
         'selectFile': 'Select File',
         'uploadToAlbum': 'Upload to Album',
-        'uploadToCollection': 'Upload to Collection'
+        'uploadToCollection': 'Upload to Collection',
+        'uploadSuccess': 'Image uploaded',
+        'uploadFailed': 'The image could not be uploaded',
+        'captionSaved': 'Caption saved',
+        'captionSaveFailed': 'The caption could not be saved',
+        'deleteImageTitle': 'Delete image',
+        'deleteImageConfirm': 'Are you sure you want to delete this image?',
+        'deleteImageFailed': 'The image could not be deleted',
+        'collectionCreated': 'Collection created',
+        'collectionCreateFailed': 'The collection could not be created',
+        'collectionNameRequired': 'Please enter a collection name first',
+        'loadFailed': 'The gallery could not be loaded'
     },
     'imageModal': {
         'addImage': 'Add image',
@@ -1320,7 +1453,19 @@ export default {
         'other': 'no one | {n} other | {n} others'
     },
     'dataTable': {
-        'search': 'Search',
+        'relation': {
+            'empty': 'Nothing here yet',
+            'loadFailed': 'Could not load this list',
+            'noDetails': 'No profile answers',
+            'open': 'Open',
+            'status': {
+                'approved': 'Approved',
+                'pending': 'Waiting for approval'
+            }
+        },
+        'relations': {
+            'event_profiles': 'Event profiles'
+        },
         'searchPlaceholder': 'Search...',
         'noData': 'No data available',
         'noResults': 'No matching records found',
@@ -1339,7 +1484,6 @@ export default {
         'sortDesc': 'Sort descending',
         'filter': 'Filter',
         'filters': 'Filters',
-        'clearFilter': 'Clear filter',
         'export': 'Export',
         'refresh': 'Refresh',
         'columns': 'Columns',
@@ -1347,13 +1491,13 @@ export default {
         'compact': 'Compact',
         'comfortable': 'Comfortable',
         'spacious': 'Spacious',
-        'operators': 'Operators',
         'searchValue': 'Search value',
         'newItem': 'New Item',
         'editItem': 'Edit Item',
-        'quickSearch': 'Quick Search',
         'list': 'List',
+        'viewItem': 'View Item',
         'deleteConfirm': 'Are you sure you want to delete this item?',
+        'deleteSelectedConfirm': 'Are you sure you want to delete the {count} selected items?',
         'ok': 'OK',
         'required': 'Required.',
         'invalidEmail': 'Invalid e-mail.',
@@ -1364,7 +1508,33 @@ export default {
         'operatorGreaterThan': '>',
         'operatorLessThan': '<',
         'operatorGreaterThanOrEqual': '>=',
-        'operatorLessThanOrEqual': '<='
+        'operatorLessThanOrEqual': '<=',
+        'searchAll': 'Search all columns',
+        'advancedFilter': 'Advanced filter',
+        'column': 'Column',
+        'operator': 'Operator',
+        'apply': 'Apply',
+        'activeFilters': 'Active filters',
+        'searchChip': 'Search: {term}',
+        'removeFilter': 'Remove filter',
+        'clearAll': 'Clear all',
+        'clearFilters': 'Clear filters',
+        'clearSelection': 'Clear selection',
+        'deleteSelected': 'Delete selected',
+        'quickEdit': 'Quick edit',
+        'moreActions': 'More actions',
+        'showAllColumns': 'Show all',
+        'entries': 'no entries | {n} entry | {n} entries',
+        'noResultsHint': 'Try a different search term or clear the filters.',
+        'loadError': 'The table could not be loaded.',
+        'taxonomy': {
+            'searchOrCreate': 'Type to search or create a new {label}',
+            'enterToAdd': 'Press Enter to add a new entry',
+            'noMatch': 'No results for "{search}" – press Enter to create it',
+            'startTyping': 'Start typing to search or create',
+            'addNew': 'Add new {label}',
+            'newLabel': 'New {label}'
+        }
     },
     'calendar': {
         'today': 'Today',
@@ -1395,6 +1565,7 @@ export default {
     },
     'events': {
         'title': 'Events',
+        'subtitle': 'Calendar, upcoming dates and everything the community is planning',
         'upcoming': 'Upcoming Events',
         'past': 'Past Events',
         'all': 'All Events',
@@ -1534,6 +1705,9 @@ export default {
             'multi': 'Multi',
         },
         'viewDetailedAttendeeList': 'View detailed attendee list',
+        'saveError': 'Failed to save the event',
+        'deleteError': 'Failed to delete the event',
+        'guestApprovalError': 'Failed to update the guest approval',
     },
     'landing': {
         'hero': {
@@ -2147,6 +2321,7 @@ export default {
             'results': 'Results',
             'saved': 'Settings saved successfully!',
             'saveError': 'Failed to save settings',
+            'loadError': 'Failed to load settings',
             'noResultsMessage': 'No settings found matching "{query}". Try a different search term.',
             'tabGeneral': 'General',
             'tabLocalization': 'Localization',
@@ -2157,7 +2332,17 @@ export default {
             'tabHomepage': 'Homepage',
             'tabFooter': 'Footer',
             'tabModeration': 'Moderation',
-            'tabAdvanced': 'Advanced'
+            'tabSandbox': 'Sandbox',
+            'tabAdvanced': 'Advanced',
+            'subtitle': 'Configure how the application looks and behaves',
+            'settingsCount': '{count} setting | {count} settings',
+            'moreInCategory': 'More in this category'
+        },
+        'page': {
+            'loading': 'Loading settings...',
+            'loadError': 'Error loading settings',
+            'notFound': 'Setting not found',
+            'notFoundMessage': 'The settings page you\'re looking for doesn\'t exist.'
         },
         'category': {
             'notFound': 'Category Not Found',
@@ -2190,7 +2375,9 @@ export default {
             'uploadFailed': 'Failed to upload image. Please try again.',
             'deleteConfirm': 'Are you sure you want to delete the {label}?',
             'deleteFailed': 'Failed to delete {key}',
-            'confirmDelete': 'Are you sure you want to delete this image?'
+            'confirmDelete': 'Are you sure you want to delete this image?',
+            'uploadSuccess': 'Image uploaded successfully',
+            'deleteSuccess': 'Image deleted successfully'
         },
         'footerBuilder': {
             'addSection': 'Add Section',
@@ -2214,6 +2401,7 @@ export default {
             'add': 'Add',
             'confirmDelete': 'Confirm Delete',
             'deleteSectionConfirm': 'Are you sure you want to delete the section "{title}"? All widgets in this section will also be deleted.',
+            'deleteWidgetConfirm': 'Are you sure you want to delete the widget "{title}"?',
             'layout1Col': '1 Column (Full Width)',
             'layout2Col': '2 Columns (Equal)',
             'layout3Col': '3 Columns (Equal)',
@@ -2362,6 +2550,7 @@ export default {
             'add': 'Add',
             'confirmDelete': 'Confirm Delete',
             'deleteSectionConfirm': 'Are you sure you want to delete the section "{title}"? All widgets in this section will also be deleted.',
+            'deleteWidgetConfirm': 'Are you sure you want to delete the widget "{title}"?',
             'layout1Col': '1 Column (Full Width)',
             'layout2Col': '2 Columns (Equal)',
             'layout3Col': '3 Columns (Equal)',
@@ -2467,6 +2656,7 @@ export default {
             'customHtmlPlaceholder': 'Enter your custom HTML here...',
             'loadSimpleTemplate': 'Load Simple Template',
             'loadComplexTemplate': 'Load Complex Template',
+            'templateOverwriteConfirm': 'Loading a template replaces your current footer HTML. Continue?',
             'availableVariables': 'Available Variables',
             'varAppName': 'Application name',
             'varCopyright': 'Copyright text',
@@ -2693,6 +2883,17 @@ export default {
             'saveSettings': 'Save Settings'
         },
         'advanced': {
+            'caching': {
+                'clearAllCaches': 'Clear All Caches',
+                'cacheCleared': 'Cache cleared successfully: {types}',
+                'cacheClearFailed': 'Failed to clear cache',
+                'clearAllConfirm': 'This will clear all application caches. Continue?'
+            },
+            'pwa': {
+                'swActive': 'Service Worker is active and registered. Check the browser console for details.',
+                'swNotRegistered': 'Service Worker is not registered yet. It will be registered on the production build.',
+                'swNotSupported': 'Service Workers are not supported in this browser.'
+            },
             'performanceCaching': 'Performance & Caching',
             'enableCaching': 'Enable Caching',
             'enableCachingHint': 'Enable application-wide caching',
@@ -2759,6 +2960,12 @@ export default {
             'pwaIconInstructions': 'Go to Branding tab → App Icon (PWA) to upload a suitable icon.',
             'viewManifest': 'View Manifest',
             'testServiceWorker': 'Test Service Worker',
+            'cacheCleared': 'Cache cleared successfully: {types}',
+            'cacheClearFailed': 'Failed to clear cache',
+            'clearAllConfirm': 'This will clear all application caches. Continue?',
+            'swActive': 'Service Worker is active and registered. Check the browser console for details.',
+            'swNotRegistered': 'Service Worker is not registered yet. It will be registered on the production build.',
+            'swNotSupported': 'Service Workers are not supported in this browser.',
             'newsletterIntegration': 'Newsletter Integration',
             'newsletterDesc': 'Connect your newsletter service to enable email subscriptions through your website.',
             'enableNewsletter': 'Enable Newsletter',
@@ -2867,6 +3074,23 @@ export default {
         }
     },
     'widgets': {
+        'landing': {
+            'viewAll': 'View all',
+            'noActivity': 'No recent activity',
+            'noPolls': 'No polls available',
+            'loadingPolls': 'Loading polls...',
+            'noHtml': 'No custom HTML content provided',
+            'noHtmlHint': 'Add your HTML content in the widget editor.',
+            'noVideo': 'No video URL provided',
+            'categories': 'Categories',
+            'threads': 'Threads',
+            'posts': 'Posts',
+            'threadsCount': '{count} threads',
+            'popularCategories': 'Popular Categories',
+            'recentActivity': 'Recent Activity',
+            'noCategories': 'No forum categories yet',
+            'noForumActivity': 'No recent activity'
+        },
         'hero': {
             'defaultTitle': 'Welcome to Our Platform',
             'defaultSubtitle': 'Discover amazing features and possibilities',
@@ -2956,6 +3180,8 @@ export default {
         }
     },
     'notifications': {
+        'statusMention': '{name} mentioned you in a post',
+        'statusCommentMention': '{name} mentioned you in a comment',
         'title': 'Notifications',
         'markAllRead': 'Mark All as Read',
         'clearAll': 'Clear All',
@@ -2967,7 +3193,14 @@ export default {
         'minutesAgo': '{count} minutes ago',
         'hoursAgo': '{count} hours ago',
         'daysAgo': '{count} days ago',
-        'settings': 'Notification Settings'
+        'settings': 'Notification Settings',
+        'markRead': 'Mark as read',
+        'dismiss': 'Dismiss',
+        'confirmDelete': 'Delete this notification?',
+        'deleteFailed': 'The notification could not be deleted.',
+        'updateFailed': 'The notification could not be updated.',
+        'subtitle': 'Everything that happened while you were away',
+        'emptyHint': "You're all caught up. New notifications will show up here."
     },
     'relativeTime': {
         'justNow': 'Just now',
@@ -3375,6 +3608,18 @@ export default {
         'invertSelection': 'Invert Selection'
     },
     'timeline': {
+        'addPhotos': 'Add photos',
+        'likesCount': '{count} like | {count} likes',
+        'commentsCount': '{count} comment | {count} comments',
+        'like': 'Like',
+        'comment': 'Comment',
+        'reply': 'Reply',
+        'replyingTo': 'Replying to',
+        'replyToPlaceholder': 'Reply to {name}...',
+        'writeComment': 'Write a comment...',
+        'postComment': 'Post Comment',
+        'noComments': 'No comments yet',
+        'noCommentsText': 'Be the first to comment!',
         'eyebrow': 'Community Feed',
         'title': 'Timeline',
         'subtitle': 'Share your thoughts with the community',
@@ -3393,6 +3638,17 @@ export default {
         'beFirst': 'Be the first to share something!',
         'howAreYouFeeling': 'How are you feeling?',
         'isFeeling': 'is feeling',
+        'fileTooLarge': '"{name}" exceeds the {size} MB size limit.',
+        'postFailed': 'The status could not be posted',
+        'updateFailed': 'The status could not be updated',
+        'deleteStatusTitle': 'Delete status',
+        'deleteStatusConfirm': 'Are you sure you want to delete this status?',
+        'deleteStatusFailed': 'The status could not be deleted',
+        'commentFailed': 'The comment could not be posted',
+        'deleteCommentTitle': 'Delete comment',
+        'deleteCommentConfirm': 'Delete this comment?',
+        'deleteCommentFailed': 'The comment could not be deleted',
+        'likeFailed': 'Your like could not be saved',
         'feelings': {
             'happy': 'happy',
             'excited': 'excited',
@@ -3439,7 +3695,13 @@ export default {
     },
     '$vuetify': {
         'badge': 'Badge',
+        'open': 'Open',
         'close': 'Close',
+        'dismiss': 'Dismiss',
+        'confirmEdit': {
+            'ok': 'OK',
+            'cancel': 'Cancel'
+        },
         'dataIterator': {
             'noResultsText': 'No matching records found',
             'loadingText': 'Loading items...'
@@ -3465,8 +3727,20 @@ export default {
             'lastPage': 'Last page',
             'pageText': '{0}-{1} of {2}'
         },
+        'dateRangeInput': {
+            'divider': 'to'
+        },
         'datePicker': {
             'itemsSelected': '{0} selected',
+            'range': {
+                'title': 'Select dates',
+                'header': 'Enter dates'
+            },
+            'title': 'Select date',
+            'header': 'Enter date',
+            'input': {
+                'placeholder': 'Enter date'
+            },
             'nextMonthAriaLabel': 'Next month',
             'nextYearAriaLabel': 'Next year',
             'prevMonthAriaLabel': 'Previous month',
@@ -3481,27 +3755,95 @@ export default {
             }
         },
         'calendar': {
-            'moreEvents': '{0} more'
+            'moreEvents': '{0} more',
+            'today': 'Today'
+        },
+        'input': {
+            'clear': 'Clear {0}',
+            'prependAction': '{0} prepended action',
+            'appendAction': '{0} appended action',
+            'otp': 'Please enter OTP character {0}'
         },
         'fileInput': {
             'counter': '{0} files',
             'counterSize': '{0} files ({1} in total)'
         },
+        'fileUpload': {
+            'title': 'Drag and drop files here',
+            'divider': 'or',
+            'browse': 'Browse Files'
+        },
         'timePicker': {
             'am': 'AM',
-            'pm': 'PM'
+            'pm': 'PM',
+            'title': 'Select Time'
         },
         'pagination': {
             'ariaLabel': {
-                'wrapper': 'Pagination Navigation',
+                'root': 'Pagination Navigation',
                 'next': 'Next page',
                 'previous': 'Previous page',
                 'page': 'Goto Page {0}',
-                'currentPage': 'Current Page, Page {0}'
+                'currentPage': 'Current Page, Page {0}',
+                'first': 'First page',
+                'last': 'Last page',
+                'wrapper': 'Pagination Navigation'
             }
+        },
+        'stepper': {
+            'next': 'Next',
+            'prev': 'Previous'
+        },
+        'rating': {
+            'ariaLabel': {
+                'item': 'Rating {0} of {1}'
+            }
+        },
+        'loading': 'Loading...',
+        'infiniteScroll': {
+            'loadMore': 'Load more',
+            'empty': 'No more'
+        },
+        'rules': {
+            'required': 'This field is required',
+            'email': 'Please enter a valid email',
+            'number': 'This field can only contain numbers',
+            'integer': 'This field can only contain integer values',
+            'capital': 'This field can only contain uppercase letters',
+            'maxLength': 'You must enter a maximum of {0} characters',
+            'minLength': 'You must enter a minimum of {0} characters',
+            'strictLength': 'The length of the entered field is invalid',
+            'exclude': 'The {0} character is not allowed',
+            'notEmpty': 'Please choose at least one value',
+            'pattern': 'Invalid format'
         }
     },
+    'blog': {
+        'title': 'Blog',
+        'subtitle': 'News and stories from the community',
+        'noPosts': 'No blog posts yet',
+        'noPostsText': 'Check back soon, new posts will show up here.',
+        'backToBlog': 'Back to blog'
+    },
     'pages': {
+        'show': {
+            'history': 'History',
+            'showPage': 'Show page',
+            'field': 'Field',
+            'oldValue': 'Old value',
+            'newValue': 'New value',
+            'noHistory': 'No history yet',
+            'noHistoryText': 'Changes to this page will be listed here.'
+        },
+        'tagged': {
+            'title': 'Tagged content',
+            'subtitle': 'Everything tagged with "{term}"',
+            'noResults': 'Nothing tagged yet',
+            'noResultsText': 'No content has been tagged with "{term}".',
+            'pagesIn': 'Pages in "{category}"',
+            'noPages': 'No pages yet',
+            'noPagesText': 'No pages have been filed under "{category}".'
+        },
         'soon': {
             'title': 'We are coming soon',
             'description': 'We are almost there! If you want to get notified when the website goes live, subscribe to our mailing list!',
@@ -3572,6 +3914,7 @@ export default {
             'preview': 'Preview:',
             'savePreferences': 'Save Preferences',
             'preferencesSaved': 'Preferences saved successfully',
+            'preferencesFailed': 'Failed to save preferences',
             'dataPrivacy': 'Data & Privacy',
             'dataPrivacyDescription': 'Manage your data and account deletion options',
             'actions': 'Actions',
@@ -3611,6 +3954,11 @@ export default {
             'deleteUserWarning': 'To delete the user please transfer ownership or delete user\'s subscriptions.',
             'leaveEmptyForDefault': 'Leave empty to use system default ({value})',
             'previewUnavailable': 'Preview unavailable',
+            'userSaved': 'The user has been saved.',
+            'saveFailed': 'The user could not be saved.',
+            'preferencesSaveFailed': 'The preferences could not be saved.',
+            'avatarUploadFailed': 'The avatar could not be uploaded.',
+            'rolesLoadFailed': 'The roles could not be loaded.',
             'userInformation': 'User Information',
             'addressLine1': 'Address Line 1',
             'addressLine2': 'Address Line 2',
@@ -3637,11 +3985,42 @@ export default {
             'hideAdmin': 'Hide Admin',
             'refresh': 'Refresh',
             'selectRoleToAssign': 'Select role to assign',
-            'assignRole': 'Assign Role'
+            'assignRole': 'Assign Role',
+            'administrator': 'Administrator',
+            'id': 'ID',
+            'adminAccessDescription': 'Grant or revoke full administrator access for this user.',
+            'tabs': {
+                'account': 'Account',
+                'information': 'Information',
+                'socialAccounts': 'Social Accounts',
+                'apiKeys': 'API Keys'
+            }
+        },
+        'activity': {
+            'totalLogins': 'Total Logins',
+            'sessionsToday': 'Sessions Today',
+            'avgSession': 'Avg Session',
+            'pageViews': 'Page Views',
+            'recentActivity': 'Recent Activity',
+            'today': 'Today',
+            'week': 'Week',
+            'month': 'Month',
+            'loadMore': 'Load More Activities',
+            'loginHistory': 'Login History',
+            'success': 'Success',
+            'failed': 'Failed',
+            'activeDevices': 'Active Devices',
+            'lastActive': 'Last active',
+            'signOutDevice': 'Sign out this device',
+            'chartTitle': 'Activity Chart (Last 30 Days)',
+            'chartPlaceholderTitle': 'Activity Chart',
+            'chartPlaceholderText': 'Chart component would be integrated here'
         }
     },
     'mediaCenter': {
         'title': 'Media Library',
+        'subtitle': 'Browse, upload and manage the files attached to your content',
+        'folders': 'Folders',
         'allMedia': 'All Media',
         'storageUsed': 'Storage Used',
         'upload': 'Upload',
@@ -3710,6 +4089,8 @@ export default {
         'byCollection': 'By Collection'
     },
     'editor': {
+        'mentionNoResults': 'No members found',
+        'mentionHint': "Type {'@'} to mention a member",
         'bold': 'Bold',
         'italic': 'Italic',
         'strikeThrough': 'Strike Through',
@@ -3760,7 +4141,8 @@ export default {
         'startChatFromUsersTab': 'Start a chat from the Users tab',
         'noUsersFound': 'No users found',
         'participants': '{count} participants',
-        'groupChat': 'Group Chat'
+        'groupChat': 'Group Chat',
+        'loadUsersFailed': 'The user list could not be loaded.'
     },
     'userProfile': {
         'unknownUser': 'Unknown User',
@@ -3826,7 +4208,8 @@ export default {
         'overview': 'Overview',
         'profileSummary': 'Profile summary',
         'securitySettings': 'Security & settings',
-        'personalDetails': 'Personal details'
+        'personalDetails': 'Personal details',
+        'logoutDeviceConfirm': 'Sign out this device?'
     },
     'socialAccounts': {
         'title': 'Connected Social Accounts',
@@ -3862,7 +4245,8 @@ export default {
         'role': 'Role',
         'created': 'Created',
         'lastSignIn': 'Last SignIn',
-        'disabled': 'Disabled'
+        'disabled': 'Disabled',
+        'subtitle': 'Manage the members of this community'
     },
     'errorPages': {
         'notFound': {
@@ -3906,6 +4290,7 @@ export default {
         'nonAdminAccess': 'Non-admin users cannot access the site.',
         'maintenanceAdminMessage': 'Non-admin users cannot access the site.',
         'manageSettings': 'Manage Settings',
+        'noFooterWidgets': 'No footer widgets configured. Go to Settings → Footer to add widgets.',
         'toggleSidebar': 'Toggle Sidebar',
         'toggleDarkMode': 'Toggle Dark Mode',
         'notifications': 'Notifications',
@@ -4043,7 +4428,7 @@ export default {
         'failedToSaveTranslations': 'Failed to save translations'
     },
     'migrationTool': {
-        'tabRuns': 'Runs',
+        'tabRuns': 'Post-import steps',
         'tabSources': 'Data Sources',
         'tabMappings': 'Mappings',
         'sources': 'Data Sources',
@@ -4084,7 +4469,8 @@ export default {
         'confirmDeleteMapping': 'Delete mapping "{name}"?',
         'runImport': 'Run import',
         'confirmRun': 'Run the import "{name}" now?',
-        'importStarted': 'Import queued — follow it on the Runs tab',
+        'confirmRunBlocked': "Run {name} now? No completed import is recorded for {targets}, so rows that link to it may end up orphaned. Run it anyway if that data was imported earlier or on the command line.",
+        'importStarted': 'Import queued — follow it on the post-import steps tab',
         'loadFailed': 'Failed to load migration tool data',
         'joins': 'Joined tables (relations)',
         'addJoin': 'Add join',
@@ -4099,10 +4485,10 @@ export default {
         'filterColumn': 'Column',
         'filterValue': 'Value',
         'template': 'Template',
-        'templatePlaceholder': '{column|fold}/{id}.jpg',
+        'templatePlaceholder': "{'{column|fold}/{id}.jpg'}",
         'importJson': 'Import JSON',
         'exportJson': 'Export JSON',
-        'importHint': 'Paste a mappings JSON export: { "mappings": [ { "source": "<source name>", "name", "target", "source_table", "field_map", "options" } ] }. Existing mappings with the same name are updated.',
+        'importHint': "Paste a mappings JSON export: {'{ \"mappings\": [ { \"source\": \"<source name>\", \"name\", \"target\", \"source_table\", \"field_map\", \"options\" } ] }'}. Existing mappings with the same name are updated.",
         'importResult': 'Import finished: {created} created, {updated} updated',
         'invalidJson': 'Invalid JSON — please check the pasted text',
         'contentLocale': 'Content language',
@@ -4110,6 +4496,17 @@ export default {
         'tabLegacyUsers': 'Legacy Users',
         'legacyUsers': 'Legacy Users',
         'legacyUsersHint': 'Imported content remembers its old owner. When that person registers here (or files a claim from their account settings), assign the legacy name to move all their content over.',
+        'importFilter': 'Imports',
+        'importFilterCount': '{type} ({count})',
+        'importFilterNoneCount': 'Nothing to claim ({count})',
+        'deleteLegacyUser': 'Remove from list',
+        'deleteSelected': 'Delete selected ({count})',
+        'confirmDeleteLegacy': 'Remove {name} from the legacy user list? Nothing this account wrote is deleted.',
+        'confirmDeleteLegacyWithContent': '{name} is credited with {count} imported items. The entry goes, the content stays, but it loses the link to its old author and can no longer be assigned to a member.',
+        'confirmDeleteLegacyBulk': 'Remove {count} entries from the legacy user list? Nothing they wrote is deleted.',
+        'confirmDeleteLegacyBulkKept': 'Remove {count} entries from the legacy user list? A further {kept} are credited with imported content and will be kept, so that content can still be assigned later.',
+        'legacyDeleted': '{count} entries removed',
+        'legacyDeletedKept': '{count} entries removed. {kept} were kept because imported content is credited to them.',
         'legacyUsername': 'Legacy username',
         'legacySource': 'Legacy system',
         'claimEmailVerified': 'Claimant e-mail matches the legacy account e-mail',
@@ -4122,6 +4519,7 @@ export default {
         'forumArchiveRun': 'Archive now',
         'forumArchiveMoved': 'categories moved',
         'forumArchiveLocked': 'threads locked',
+        'forumArchiveConfirm': 'Move all imported forum categories under "{category}" now? This changes the forum structure for everyone.',
         'legacyItems': 'Imported items',
         'legacyClaim': 'Claim request',
         'assignedTo': 'Assigned to',
@@ -4130,6 +4528,29 @@ export default {
         'assignHint': 'All imported content attributed to this legacy account will be moved to the given registered user. An open claim ticket is resolved automatically.',
         'assignUserLabel': 'Registered username or e-mail',
         'noLegacyUsers': 'No legacy owners recorded yet — imports record them when a mapping fills the "Legacy owner" field.',
+        'mappingsIntro': 'The imports run in steps: everything in step 1 first, then step 2, and so on — later rows link themselves to what the earlier steps imported.',
+        'stepMappingCount': '{count} mappings',
+        'mappingStep1': 'People and accounts',
+        'mappingStep2': 'Categories, terms and containers',
+        'mappingStep3': 'Main content',
+        'mappingStep4': 'Content that hangs off step 3',
+        'mappingStepFallback': 'Step {step}',
+        'lastRun': 'Last run',
+        'lastRunNever': 'Never run',
+        'lastRunPending': 'Queued',
+        'lastRunRunning': 'Running — {count} of {total}',
+        'lastRunStopped': 'Stopped after {count} of {total}',
+        'lastRunCompleted': 'Imported {count} rows',
+        'lastRunCompletedErrors': 'Imported {count} rows, {errors} errors',
+        'lastRunFailed': 'Run failed',
+        'lastRunOn': '{text} on {date}',
+        'prereqBlocked': 'Run the {targets} import first',
+        'heavyHint': 'Big table — run this one from the command line, the button can time out.',
+        'copyCli': 'Copy the command line for this import',
+        'cliCopied': 'Command copied — paste it into your terminal',
+        'copyStepCli': 'Copy commands for this step',
+        'cliStepCopied': '{count} commands copied. Run them one after another in a terminal.',
+        'cliCopyFailed': 'Could not copy. Run: {command}',
     },
     'migrationDashboard': {
         'title': 'Migration Dashboard',
@@ -4162,7 +4583,60 @@ export default {
         'failedToCancelBatch': 'Failed to cancel batch',
         'allMigrationsCompletedSuccessfully': 'All migrations completed successfully',
         'migrationsCompleted': 'Migrations completed',
-        'migrationsCompletedWithErrors': 'Migrations completed with errors'
+        'migrationsCompletedWithErrors': 'Migrations completed with errors',
+        'cancelBatchTitle': 'Cancel batch',
+        'cancelBatchConfirm': 'Stop the running migration batch? Migrations that already finished are kept.',
+        'runningTitle': 'An import is running',
+        'runningQueued': 'Queued — waiting to start',
+        'runningRows': '{name}: {processed} of {total} rows',
+        'runningRowsUnknown': '{name}: {processed} rows so far',
+        'runningItem': 'Working on {item}',
+        'runningSteps': 'Step {done} of {total} in this run',
+        'runningOpen': 'Show details',
+        'runningKeepOpen': 'Come back to this page at any time to see where the import got to.',
+        'stalledTitle': 'This import may have stopped',
+        'stalledText': 'Nothing has been written for {count} minutes. A run started from a browser tab stops when the request times out. Start it again, or run it from the command line for large tables.',
+        'markStopped': 'Mark as stopped',
+        'markStoppedConfirm': 'Nothing has been written for {count} minutes, so the process behind this run is gone. Marking it stopped clears it from the dashboard and frees the next step. Rows that were already imported stay, and running the import again continues where it left off.',
+        'guideTitle': 'How a migration runs',
+        'guideIntro': 'Work through the five steps in order — each one needs the one before it.',
+        'guideHide': 'Hide',
+        'guideShow': 'Show',
+        'guideOpen': 'Go there',
+        'stepSourceTitle': 'Connect the old database',
+        'stepSourceTodo': 'No data source yet',
+        'stepSourceDone': '{count} connected — test the connection',
+        'stepSourceTested': '{count} connected, connection tested',
+        'stepMappingsTitle': 'Describe what to import',
+        'stepMappingsTodo': 'No mapping yet — add one or import the JSON',
+        'stepMappingsDone': '{count} mappings ready',
+        'stepImportsTitle': 'Run the imports step by step',
+        'stepImportsTodo': 'Nothing to run yet',
+        'stepImportsProgress': '{done} of {total} mappings imported',
+        'stepPostTitle': 'Run the post-import steps',
+        'stepPostBlocked': 'Import something first',
+        'stepPostTodo': '{count} steps still to run',
+        'stepPostDone': 'All steps finished',
+        'stepLegacyTitle': 'Assign the legacy users',
+        'stepLegacyEmpty': 'No legacy owners recorded yet',
+        'stepLegacyTodo': '{count} still waiting for a member',
+        'stepLegacyDone': 'All {count} assigned',
+        'postStepsTitle': 'Post-import steps (run these last)',
+        'postStepsIntro': 'These jobs work over data that is already imported: they attach galleries to events and rewrite the internal wiki links. Run them once the imports on the Mappings tab are through.',
+        'postStepsNoImports': 'Nothing has been imported yet, so there is nothing to post-process. Run your mappings on the Mappings tab first.'
+    },
+    'publish': {
+        'label': 'Publication',
+        'draft': 'Draft',
+        'published': 'Published',
+        'scheduled': 'Scheduled',
+        'scheduleForLater': 'Schedule for later',
+        'publishAt': 'Publication date',
+        'publishAtHint': 'Pick a date in the future to schedule this.',
+        'goesLiveAt': 'Goes live on {date}.',
+        'publishedOn': 'Published on {date}',
+        'scheduledFor': 'Scheduled for {date}',
+        'draftHint': 'Not published yet'
     },
     'pageForm': {
         'taxonomy': 'Taxonomy',
@@ -4196,6 +4670,7 @@ export default {
     },
     'menuAdmin': {
         'title': 'Menu Management',
+        'subtitle': 'Build the navigation menus shown in the header, footer and sidebar.',
         'menus': 'Menus',
         'newMenu': 'New Menu',
         'itemsCount': '{count} items | {count} item | {count} items',
@@ -4283,7 +4758,401 @@ export default {
         'name': 'Name',
         'size': 'Size'
     },
+    'sandbox': {
+        'title': 'Sandboxes',
+        'subtitle': 'Collaborate on documents in real time',
+        'newSandbox': 'New Sandbox',
+        'createSandbox': 'Create Sandbox',
+        'loading': 'Loading sandboxes...',
+        'noSandboxes': 'No sandboxes found',
+        'noSandboxesText': 'Create your first sandbox to start collaborating.',
+        'selectSandbox': 'Select a sandbox',
+        'selectSandboxText': 'Choose a sandbox from the list or create a new one to start collaborating.',
+        'mine': 'Mine',
+        'sharedWithMe': 'Shared with me',
+        'byYou': 'by you',
+        'noDescription': 'No description',
+        'pageOf': 'Page {current} of {total}',
+        'filters': {
+            'all': 'All',
+            'owned': 'My Sandboxes',
+            'shared': 'Shared with me'
+        },
+        'visibility': {
+            'label': 'Visibility',
+            'private': 'Private - Only you and collaborators',
+            'members': 'Members - All site members can view',
+            'public': 'Public - Anyone can view'
+        },
+        'create': {
+            'title': 'Create New Sandbox',
+            'descriptionPlaceholder': "What's this sandbox about?",
+            'failed': 'The sandbox could not be created'
+        },
+        'collaborators': {
+            'title': 'Share Sandbox',
+            'shareLink': 'Share link',
+            'linkPublicHint': 'Anyone with this link can view',
+            'linkPrivateHint': 'Only collaborators can access',
+            'copied': 'Link copied',
+            'addPeople': 'Add people',
+            'searchPlaceholder': 'Search by username...',
+            'peopleWithAccess': 'People with access',
+            'owner': 'Owner',
+            'pending': 'Pending',
+            'roles': {
+                'viewer': 'Can view',
+                'editor': 'Can edit',
+                'admin': 'Admin'
+            },
+            'noCollaborators': 'No collaborators yet',
+            'noCollaboratorsText': 'Invite people to collaborate on this sandbox.',
+            'addFailed': 'The collaborator could not be added',
+            'roleUpdateFailed': 'The role could not be changed',
+            'removeTitle': 'Remove collaborator',
+            'removeConfirm': 'Remove {name} from this sandbox?',
+            'removeFailed': 'The collaborator could not be removed'
+        },
+        'comments': {
+            'title': 'Comments',
+            'showResolved': 'Show resolved',
+            'hideResolved': 'Hide resolved',
+            'placeholder': 'Add a comment...',
+            'replyPlaceholder': 'Reply...',
+            'comment': 'Comment',
+            'noComments': 'No comments yet',
+            'noCommentsText': 'Select text and click the comment button to start a discussion.',
+            'resolved': 'Resolved',
+            'resolve': 'Resolve',
+            'reopen': 'Reopen',
+            'unknownUser': 'Unknown',
+            'createFailed': 'The comment could not be posted',
+            'replyFailed': 'The reply could not be posted',
+            'resolveFailed': 'The thread could not be updated',
+            'deleteThreadTitle': 'Delete thread',
+            'deleteThreadConfirm': 'Delete this comment thread?',
+            'deleteThreadFailed': 'The thread could not be deleted',
+            'deleteCommentTitle': 'Delete comment',
+            'deleteCommentConfirm': 'Delete this comment?',
+            'deleteLastCommentConfirm': 'Deleting the last comment will also delete this thread. Continue?',
+            'deleteCommentFailed': 'The comment could not be deleted'
+        },
+        'settings': {
+            'title': 'Sandbox Settings',
+            'editorSettings': 'Editor settings',
+            'showCursors': 'Show collaborator cursors',
+            'autoSave': 'Auto-save changes',
+            'allowComments': 'Allow comments',
+            'dangerZone': 'Danger zone',
+            'deleteSandbox': 'Delete Sandbox',
+            'saved': 'Sandbox settings saved',
+            'saveFailed': 'The settings could not be saved',
+            'saving': 'Saving...',
+            'deleteTitle': 'Delete sandbox',
+            'deleteConfirm': 'Are you sure you want to delete this sandbox? This action cannot be undone.',
+            'deleteFailed': 'The sandbox could not be deleted',
+            'deleting': 'Deleting...'
+        },
+        'editor': {
+            'untitled': 'Untitled',
+            'exitFullscreen': 'Exit',
+            'exitFullscreenHint': 'Exit fullscreen (Esc)',
+            'focusMode': 'Focus mode',
+            'comments': 'Comments',
+            'saveVersion': 'Save Version',
+            'history': 'History',
+            'settings': 'Settings',
+            'share': 'Share',
+            'connecting': 'Connecting to collaboration server...',
+            'versionSaved': 'Version saved',
+            'saveFailed': 'The sandbox could not be saved',
+            'autoSaveFailed': 'Auto-save failed. Your latest changes may not be stored yet - please save a version manually.',
+            'titleSaveFailed': 'The title could not be saved'
+        },
+        'versions': {
+            'history': 'History',
+            'versions': 'Versions',
+            'activity': 'Activity',
+            'noVersions': 'No saved versions',
+            'noVersionsText': 'Click "Save Version" in the editor to create a restore point.',
+            'noActivity': 'No activity yet',
+            'noActivityText': 'Changes to the sandbox will appear here.',
+            'view': 'View',
+            'diff': 'Diff',
+            'loadMore': 'Load more',
+            'preview': 'Preview',
+            'changes': 'Changes',
+            'removed': 'Removed',
+            'added': 'Added',
+            'unknownUser': 'Unknown',
+            'by': 'by',
+            'untitled': 'Untitled version',
+            'restoreTitle': 'Restore version',
+            'restoreConfirm': 'Restore "{title}"? The current state will be saved as a version first.',
+            'restore': 'Restore'
+        },
+        'notifications': {
+            'title': 'Sandbox',
+            'markAllRead': 'Mark all read',
+            'empty': 'No sandbox notifications',
+            'dismiss': 'Dismiss',
+            'goToSandboxes': 'Go to Sandboxes',
+            'markReadFailed': 'The notification could not be marked as read',
+            'dismissFailed': 'The notification could not be dismissed',
+            'markAllFailed': 'Some notifications could not be marked as read'
+        },
+        'admin': {
+            'featuresTitle': 'Feature Settings',
+            'featuresDescription': 'Enable or disable sandbox and collaboration features',
+            'featuresCard': 'Sandbox Features',
+            'limitsTitle': 'Limits & Quotas',
+            'limitsDescription': 'Configure sandbox limits per role',
+            'limitsCard': 'Role-based Limits',
+            'typicallyUnlimited': 'Typically unlimited',
+            'serverTitle': 'WebSocket Server',
+            'serverDescription': 'Yjs WebSocket server status and connection details',
+            'serverStatusCard': 'Server Status',
+            'serverConfigCard': 'Server Configuration',
+            'connectionStatus': 'Connection Status',
+            'connected': 'Connected',
+            'disconnected': 'Disconnected',
+            'running': 'Running',
+            'notRunning': 'Not Running',
+            'host': 'Host',
+            'port': 'Port',
+            'latency': 'Latency',
+            'status': 'Status',
+            'statisticsTitle': 'Statistics',
+            'statisticsDescription': 'Sandbox usage and activity statistics',
+            'statisticsCard': 'Sandbox Statistics',
+            'usageOverview': 'Usage Overview',
+            'totalSandboxes': 'Total Sandboxes',
+            'active24h': 'Active (24h)',
+            'totalVersions': 'Total Versions',
+            'totalCollaborators': 'Total Collaborators',
+            'websocketServer': 'WebSocket Server',
+            'saveSettings': 'Save Settings',
+            'statsLoadFailed': 'The sandbox statistics could not be loaded'
+        }
+    },
+    'irc': {
+        'client': {
+            'title': 'IRC Client',
+            'subtitle': 'Chat on IRC networks right from your browser',
+            'connections': 'Connections',
+            'addConnection': 'Add connection',
+            'connect': 'Connect',
+            'disconnect': 'Disconnect',
+            'joinChannel': 'Join Channel',
+            'chooseCharacter': 'Choose Character',
+            'channels': 'Channels ({count})',
+            'privateMessages': 'Messages ({count})',
+            'rejoin': 'Rejoin',
+            'noConnections': 'No connections yet',
+            'noConnectionsText': 'Add a connection to get started.',
+            'classicView': 'Classic IRC view',
+            'comicView': 'Comic chat view',
+            'showUsers': 'Show users',
+            'hideUsers': 'Hide users',
+            'noMessages': 'No messages yet',
+            'noServerMessages': 'No server messages yet',
+            'messagePlaceholder': 'Type a message or /help for commands...',
+            'consolePlaceholder': 'Server console - use /join #channel, /nick <name>, /help ...',
+            'selectChannel': 'Select a channel to start chatting',
+            'selectChannelText': 'Or click a server to open its connection log.',
+            'users': 'Users ({count})',
+            'noUsers': 'No users',
+            'emotions': {
+                'normal': 'Normal',
+                'happy': 'Happy',
+                'sad': 'Sad',
+                'angry': 'Angry',
+                'surprised': 'Surprised',
+                'confused': 'Confused'
+            },
+            'gestures': {
+                'none': 'None',
+                'wave': 'Wave',
+                'laugh': 'Laugh',
+                'think': 'Think',
+                'shout': 'Shout',
+                'whisper': 'Whisper'
+            },
+            'deleteConnectionTitle': 'Delete connection',
+            'deleteConnectionConfirm': 'Delete the connection to {server}?',
+            'deleteConnectionFailed': 'The connection could not be deleted',
+            'leaveChannelTitle': 'Leave channel',
+            'leaveChannelConfirm': 'Leave {channel}?',
+            'leaveChannel': 'Leave',
+            'leaveChannelFailed': 'The channel could not be left',
+            'sendFailed': 'The message could not be sent',
+            'favoriteFailed': 'The favorite could not be updated',
+            'characterSaveFailed': 'The character could not be saved'
+        },
+        'connectionDialog': {
+            'newTitle': 'New IRC Connection',
+            'editTitle': 'Edit Connection',
+            'server': 'IRC Server',
+            'nickname': 'Nickname',
+            'nicknameHint': 'Your IRC nickname',
+            'username': 'Username (optional)',
+            'usernameHint': 'Defaults to nickname',
+            'realname': 'Real name (optional)',
+            'realnameHint': 'Defaults to nickname',
+            'autoJoin': 'Auto-join channels',
+            'autoJoinHint': 'One per line, e.g. #channel',
+            'autoConnect': 'Auto-connect on login',
+            'required': 'Required',
+            'saveFailed': 'The connection could not be saved'
+        },
+        'joinDialog': {
+            'title': 'Join IRC Channel',
+            'server': 'Server: {name}',
+            'channel': 'Channel name',
+            'channelHint': 'The # prefix is optional',
+            'join': 'Join',
+            'required': 'Required',
+            'joinFailed': 'The channel could not be joined'
+        },
+        'admin': {
+            'clientTitle': 'Client Settings',
+            'clientDescription': 'Options for the IRC client',
+            'comicChat': 'Comic Chat',
+            'connectionsTitle': 'IRC Connections',
+            'connectionsDescription': 'View and manage active IRC connections',
+            'activeConnections': 'Active Connections',
+            'noConnections': 'No connections found',
+            'dashboardTitle': 'IRC Dashboard',
+            'dashboardDescription': 'Monitor IRC daemon, servers, and activity',
+            'daemonStatus': 'Daemon Status',
+            'daemon': 'Daemon',
+            'running': 'Running',
+            'stopped': 'Stopped',
+            'joinedChannels': 'Joined Channels',
+            'pendingCommands': 'Pending Commands',
+            'lastHeartbeat': 'Last heartbeat: {time}',
+            'never': 'Never',
+            'activeServers': 'Active servers: {count}',
+            'daemonNotRunning': 'The IRC daemon is not running. Start it with:',
+            'activity': 'Activity',
+            'totalMessages': 'Total Messages',
+            'messagesToday': 'Messages Today',
+            'uniqueUsers': 'Unique Users',
+            'totalConnections': 'Total Connections',
+            'serverStatus': 'Server Status',
+            'noServers': 'No servers configured',
+            'noServersText': 'Click "Add Server" to get started.',
+            'serversTitle': 'IRC Servers',
+            'serversDescription': 'Add, edit, and monitor IRC servers',
+            'servers': 'Servers',
+            'addServer': 'Add Server',
+            'editServer': 'Edit Server',
+            'checkServer': 'Check reachability',
+            'unknown': 'Unknown',
+            'online': 'Online',
+            'offline': 'Offline',
+            'saveSettings': 'Save Settings',
+            'table': {
+                'user': 'User',
+                'server': 'Server',
+                'nickname': 'Nickname',
+                'status': 'Status',
+                'channels': 'Channels',
+                'connectedSince': 'Connected Since',
+                'actions': 'Actions',
+                'name': 'Name',
+                'host': 'Host',
+                'port': 'Port',
+                'ssl': 'SSL',
+                'active': 'Active',
+                'connections': 'Connections'
+            },
+            'form': {
+                'name': 'Server name',
+                'host': 'Host',
+                'hostHint': 'e.g. irc.libera.chat',
+                'port': 'Port',
+                'invalidPort': 'Invalid port',
+                'useSsl': 'Use SSL/TLS',
+                'password': 'Server password',
+                'passwordHint': 'Leave empty if not required',
+                'description': 'Description',
+                'sortOrder': 'Sort order',
+                'active': 'Active',
+                'required': 'Required'
+            },
+            'loadFailed': 'The IRC data could not be loaded',
+            'disconnectTitle': 'Disconnect',
+            'disconnectConfirm': 'Disconnect {nickname} from {server}?',
+            'disconnect': 'Disconnect',
+            'disconnectFailed': 'The connection could not be disconnected',
+            'deleteConnectionTitle': 'Delete connection',
+            'deleteConnectionConfirm': 'Delete the connection for {nickname}? This will remove all channels and messages.',
+            'deleteConnectionFailed': 'The connection could not be deleted',
+            'serverSaved': 'Server saved',
+            'serverSaveFailed': 'The server could not be saved',
+            'deleteServerTitle': 'Delete server',
+            'deleteServerConfirm': 'Delete server "{name}"? This cannot be undone.',
+            'deleteServerFailed': 'The server could not be deleted',
+            'toggleFailed': 'The server could not be updated',
+            'checkFailed': 'The server could not be checked'
+        }
+    },
+    'poll': {
+        'open': 'Open',
+        'closed': 'Closed',
+        'submitVote': 'Submit Vote',
+        'changeVote': 'Change Vote',
+        'votesCount': '{count} vote | {count} votes',
+        'closesAt': 'Closes {time}',
+        'closedAt': 'Closed {time}',
+        'noVotes': 'No votes yet',
+        'createPoll': 'Create Poll',
+        'editPoll': 'Edit Poll',
+        'updatePoll': 'Update Poll',
+        'pollTitle': 'Poll title',
+        'description': 'Description (optional)',
+        'type': 'Poll type',
+        'singleChoice': 'Single choice',
+        'multipleChoice': 'Multiple choice',
+        'anonymous': 'Anonymous voting (hide vote counts until the poll closes)',
+        'closingDate': 'Closing date (optional)',
+        'options': 'Poll options',
+        'addOption': 'Add option',
+        'option': 'Option {n}',
+        'minOptions': 'A poll must have at least 2 options',
+        'required': 'Required',
+        'voteSubmitted': 'Your vote has been submitted',
+        'voteFailed': 'Your vote could not be submitted',
+        'saved': 'Poll saved',
+        'saveFailed': 'The poll could not be saved',
+        'poll': 'Poll',
+        'addPoll': 'Add a poll',
+        'removePoll': 'Remove poll',
+        'attachPoll': 'Attach a poll',
+        'closingDateHint': 'Leave empty to keep the poll open indefinitely',
+        'closingDateFuture': 'The closing date must be in the future',
+        'invalidDate': 'Please enter a valid date and time',
+        'titleRequired': 'Please give the poll a title',
+        'optionRequired': 'Please fill in this option or remove it',
+        'maxOptions': 'A poll can have at most {max} options',
+        'tooLong': 'Must be at most {max} characters',
+        'removeOption': 'Remove option',
+        'removeVote': 'Remove vote',
+        'removeVoteFailed': 'Your vote could not be removed',
+        'anonymousNotice': 'Vote counts are hidden until the poll closes',
+        'deletePoll': 'Delete poll',
+        'confirmDelete': 'Delete the poll "{title}"? All votes will be lost.',
+        'deleted': 'The poll has been deleted',
+        'deleteFailed': 'The poll could not be deleted'
+    },
     'dialogs': {
+        'message': {
+            'error': 'Something went wrong',
+            'warning': 'Please note',
+            'success': 'Done',
+            'info': 'Information'
+        },
         'confirm': {
             'title': 'Are you sure?',
             'typeToConfirm': 'Type to confirm',
@@ -4340,14 +5209,74 @@ export default {
         'deletionError': 'Error deleting account. Please try again.'
     },
     'relatedContent': {
-        'title': 'Relate Content',
-        'selectRelationType': 'Select the type of relation for',
-        'relationType': 'Relation Type',
-        'selectSourceType': 'Select source type',
-        'selectItem': 'Select Item',
-        'selectAnItem': 'Select an item',
-        'modelType': 'Model Type',
-        'selectModelType': 'Select model type'
+        'kinds': {
+            'wiki': 'Wiki page',
+            'page': 'Page',
+            'post': 'Post',
+            'event': 'Event',
+            'collection': 'Album'
+        },
+        'kindsPlural': {
+            'wiki': 'Wiki pages',
+            'page': 'Pages',
+            'post': 'Posts',
+            'event': 'Events',
+            'collection': 'Albums'
+        },
+        'dialog': {
+            'title': 'Link content',
+            'linking': 'Linking:',
+            'pickSource': 'First choose the content you want to link from.',
+            'changeSource': 'Change',
+            'search': 'Search by title…',
+            'selected': 'Selected ({n})',
+            'alreadyLinked': 'Already linked',
+            'noResults': 'Nothing found',
+            'noResultsHint': 'Try another search term or content type.',
+            'link': 'Link | Link {count} item | Link {count} items',
+            'linked': '{count} item linked. | {count} items linked.'
+        },
+        'list': {
+            'title': 'Related content',
+            'link': 'Link content',
+            'unlink': 'Unlink',
+            'unlinkTitle': 'Remove link?',
+            'confirmUnlink': 'Unlink "{title}"? The content itself stays untouched.',
+            'empty': 'Nothing linked yet',
+            'emptyHint': 'Link wiki pages, pages, posts, events or albums that belong with this.',
+            'loadError': 'Related content could not be loaded',
+            'retry': 'Try again',
+            'linksHere': 'Links to this'
+        },
+        'admin': {
+            'title': 'Related content',
+            'subtitle': 'Links between wiki pages, pages, posts, events and albums',
+            'linkContent': 'Link content',
+            'stats': {
+                'total': 'Links',
+                'recent_7d': 'New in the last 7 days'
+            },
+            'mostLinked': 'Most linked',
+            'mostLinkedEmpty': 'Nothing linked yet',
+            'linksCount': '{count} link | {count} links',
+            'pairs': 'Kind pairs',
+            'pairsEmpty': 'No links yet',
+            'filters': {
+                'search': 'Search titles…',
+                'kind': 'Content type',
+                'all': 'All types',
+                'reset': 'Reset filters'
+            },
+            'headers': {
+                'source': 'Source',
+                'related': 'Linked to',
+                'created': 'Created'
+            },
+            'empty': 'No links yet',
+            'emptyHint': 'Use "Link content" to connect two pieces of content.',
+            'emptyFiltered': 'No links match these filters',
+            'confirmUnlink': 'Remove the link between "{source}" and "{related}"? The content itself stays untouched.'
+        }
     },
     'wiki': {
         'title': 'Knowledge Base',
@@ -4491,6 +5420,19 @@ export default {
         'unapprove': 'Revoke Approval',
         'approveSuccess': 'Wiki page approved successfully',
         'unapproveSuccess': 'Wiki page approval revoked',
+        'approveError': 'Failed to approve the wiki page',
+        'categoryCreated': 'Category created successfully',
+        'categoryUpdated': 'Category updated successfully',
+        'errorSavingCategory': 'An error occurred while saving the category. Please try again.',
+        'editCategory': 'Edit Category',
+        'creatingCategory': 'Creating category: "{slug}"',
+        'categoriesSubtitle': 'Browse all wiki pages by category',
+        'noCategories': 'No categories found',
+        'noCategoriesHint': 'Try a different search term',
+        'noPagesHint': 'Pages assigned to this category will show up here',
+        'moreCount': '+{count} more',
+        'unsaved': 'Unsaved',
+        'saved': 'Saved',
     },
     'map': {
         'title': 'Map Title',
@@ -4718,6 +5660,7 @@ export default {
         'details': 'Details',
         'listView': 'List view',
         'kanbanView': 'Kanban board',
+        'openTicket': 'Open ticket: {title}',
         'noComments': 'No comments yet',
         'unassigned': 'Unassigned',
         'unknown': 'Unknown',
@@ -4783,6 +5726,20 @@ export default {
             'deleteMessage': 'Are you sure you want to delete this ticket? This action cannot be undone.',
             'deleteConfirm': 'Delete',
             'deleteCancel': 'Cancel',
+            'deleteCommentMessage': 'Delete this comment?',
+        },
+        'messages': {
+            'created': 'The ticket has been created.',
+            'updated': 'The ticket has been updated.',
+            'deleted': 'The ticket has been deleted.',
+            'commentDeleted': 'The comment has been deleted.',
+            'createFailed': 'The ticket could not be created.',
+            'updateFailed': 'The ticket could not be updated.',
+            'deleteFailed': 'The ticket could not be deleted.',
+            'commentFailed': 'The comment could not be saved.',
+            'commentDeleteFailed': 'The comment could not be deleted.',
+            'loadFailed': 'The tickets could not be loaded.',
+            'approvalFailed': 'The approval could not be changed.',
         },
         'validation': {
             'titleRequired': 'Title is required',
@@ -4934,6 +5891,7 @@ export default {
         'sortOldest': 'Oldest',
         'sortMostViews': 'Most Views',
         'recentActivity': 'Recent Activity',
+        'noActivity': 'No recent activity yet',
         'activityThreadCreated': 'created a new thread "{title}"',
         'activityPostCreated': 'replied in "{title}"',
         'activityPostLiked': 'liked a post in "{title}"',
@@ -4947,11 +5905,13 @@ export default {
         'noThreadResults': 'No threads match your search.',
         'noPostResults': 'No posts match your search.',
         'noSearchResults': 'No results found',
+        'noSearchResultsHint': 'Try different keywords or check the spelling.',
         'searchDegradedWarning': 'Full-text search is temporarily unavailable. Showing basic search results instead.',
         'replyIn': 'replied in',
         'viewChronological': 'Chronological',
         'viewThreaded': 'Threaded',
-        'new': 'NEW'
+        'new': 'NEW',
+        'forumNotFound': 'Forum not found'
     },
     'session': {
         'timeout': {

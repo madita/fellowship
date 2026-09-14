@@ -2,9 +2,10 @@
 
 namespace App\Models\Forum;
 
-use App\Models\Concerns\SafeSearchable;
 use App\Models\Tag\Taxonomy;
 use App\Models\User;
+use App\Traits\HasPolls;
+use App\Traits\SafeSearchable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,7 +23,7 @@ use Illuminate\Support\Str;
  */
 class ForumThread extends Model
 {
-    use HasFactory, SafeSearchable, SoftDeletes;
+    use HasFactory, HasPolls, SafeSearchable, SoftDeletes;
 
     protected $fillable = [
         'taxonomy_id',

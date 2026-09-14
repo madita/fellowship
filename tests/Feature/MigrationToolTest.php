@@ -7,9 +7,11 @@ use App\Jobs\Migrations\MigrateLinkGalleryJob;
 use App\Models\Collection;
 use App\Models\Event\Event;
 use App\Models\Event\EventType;
-use App\Models\MigrationLog;
-use App\Models\MigrationMapping;
-use App\Models\MigrationSource;
+use App\Models\Migration\MigrationAttribution;
+use App\Models\Migration\MigrationLegacyUser;
+use App\Models\Migration\MigrationLog;
+use App\Models\Migration\MigrationMapping;
+use App\Models\Migration\MigrationSource;
 use App\Models\Page;
 use App\Models\User;
 use App\Models\Wiki;
@@ -619,7 +621,7 @@ class MigrationToolTest extends TestCase
             ->postJson("/api/admin/migrations/mappings/{$mapping->id}/run")
             ->assertStatus(200);
 
-        $this->assertSame(2, \App\Models\MigrationAttribution::where('legacy_username', 'OldVimes')->where('legacy_source', 'treffen')->count());
+        $this->assertSame(2, \App\Models\Migration\MigrationAttribution::where('legacy_username', 'OldVimes')->where('legacy_source', 'treffen')->count());
 
         // The same username in a DIFFERENT legacy system is a separate identity.
         $otherSystemEvent = new Event();
@@ -629,7 +631,7 @@ class MigrationToolTest extends TestCase
         $otherSystemEvent->startDate = '2020-01-01';
         $otherSystemEvent->endDate = '2020-01-01';
         $otherSystemEvent->save();
-        \App\Models\MigrationAttribution::record($otherSystemEvent, 'OldVimes', 'forum');
+        \App\Models\Migration\MigrationAttribution::record($otherSystemEvent, 'OldVimes', 'forum');
 
         // The returning user checks and claims their legacy account.
         $vimes = User::factory()->create(['username' => 'vimes']);
@@ -662,7 +664,7 @@ class MigrationToolTest extends TestCase
         // carries the old e-mail, which matches vimes' registered e-mail —
         // so the listing marks the claim as e-mail-verified and suggests
         // the match even without a claim.
-        \App\Models\MigrationLegacyUser::create([
+        \App\Models\Migration\MigrationLegacyUser::create([
             'legacy_source' => 'treffen',
             'username' => 'OldVimes',
             'email' => $vimes->email,
@@ -700,7 +702,7 @@ class MigrationToolTest extends TestCase
             ->assertStatus(409);
         // An e-mail-only claim for another directory account names the
         // resolved username on the ticket, e-mail kept as proof.
-        \App\Models\MigrationLegacyUser::create([
+        \App\Models\Migration\MigrationLegacyUser::create([
             'legacy_source' => 'forum',
             'username' => 'OldCarrot',
             'email' => 'carrot-old@example.org',
@@ -928,7 +930,7 @@ class MigrationToolTest extends TestCase
             $this->assertSame('2008-01-10 21:28:20', $thread->fresh()->last_post_at->format('Y-m-d H:i:s'));
 
             // Poster attribution recorded per identity.
-            $this->assertSame(1, \App\Models\MigrationAttribution::where('legacy_username', 'Vimes')->where('legacy_source', 'forum')->count());
+            $this->assertSame(1, \App\Models\Migration\MigrationAttribution::where('legacy_username', 'Vimes')->where('legacy_source', 'forum')->count());
 
             // Re-runs skip everything (legacy id dedup).
             foreach ([$threads, $posts] as $mapping) {
@@ -976,6 +978,324 @@ class MigrationToolTest extends TestCase
         } finally {
             @unlink($dbPath);
         }
+    }
+
+    /**
+     * Order matters for imports (posts need their threads, images their
+     * collections), so every target declares which step it belongs to and
+     * what has to exist first.
+     */
+    public function test_targets_declare_their_step_and_dependencies(): void
+    {
+        $targets = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/targets')
+            ->assertStatus(200)
+            ->json('targets');
+
+        $byKey = collect($targets)->keyBy('key');
+
+        // The existing payload is untouched.
+        $this->assertSame('Users', $byKey['users']['label']);
+        $this->assertNotEmpty($byKey['users']['description']);
+        $this->assertContains('username', array_column($byKey['users']['fields'], 'key'));
+
+        // Accounts and the legacy roster come first, content after it.
+        $this->assertSame(1, $byKey['users']['step']);
+        $this->assertSame([], $byKey['users']['requires']);
+        $this->assertSame(1, $byKey['legacy_users']['step']);
+        $this->assertSame(2, $byKey['events']['step']);
+        $this->assertSame(2, $byKey['forum_categories']['step']);
+        $this->assertSame(2, $byKey['gallery_collections']['step']);
+        $this->assertSame(2, $byKey['wiki_terms']['step']);
+
+        // The real dependency chain.
+        $this->assertSame(3, $byKey['gallery_images']['step']);
+        $this->assertSame(['gallery_collections'], $byKey['gallery_images']['requires']);
+        $this->assertSame(3, $byKey['wiki_pages']['step']);
+        $this->assertSame(['wiki_terms'], $byKey['wiki_pages']['requires']);
+        $this->assertSame(3, $byKey['forum_threads']['step']);
+        $this->assertSame(['forum_categories'], $byKey['forum_threads']['requires']);
+        $this->assertSame(4, $byKey['forum_posts']['step']);
+        $this->assertSame(['forum_threads'], $byKey['forum_posts']['requires']);
+
+        // Nothing may depend on something that runs later (or not at all).
+        foreach ($targets as $target) {
+            $this->assertIsInt($target['step'], "{$target['key']} has no step");
+            foreach ($target['requires'] as $required) {
+                $this->assertTrue($byKey->has($required), "{$target['key']} requires unknown target {$required}");
+                $this->assertLessThan(
+                    $target['step'],
+                    $byKey[$required]['step'],
+                    "{$target['key']} requires {$required}, which does not run earlier"
+                );
+            }
+        }
+
+        // The gotchas that cost a re-import are spelled out.
+        $this->assertNotEmpty($byKey['wiki_pages']['hint']);
+        $this->assertNotEmpty($byKey['gallery_images']['hint']);
+        $this->assertStringContainsString('migration:run-mapping', $byKey['forum_posts']['hint']);
+    }
+
+    /**
+     * The mapping listing carries the newest run of each mapping, so the
+     * dashboard can show what already imported.
+     */
+    public function test_mappings_expose_their_last_run(): void
+    {
+        $source = $this->createSource();
+        $mapping = $this->createEventsMapping($source);
+        MigrationMapping::create([
+            'migration_source_id' => $source->id,
+            'name' => 'Untouched mapping',
+            'target' => 'events',
+            'source_table' => 'treffen',
+            'field_map' => ['title' => ['source' => 'location']],
+        ]);
+
+        $listing = fn () => collect($this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/mappings')
+            ->assertStatus(200)
+            ->json())->keyBy('name');
+
+        $rows = $listing();
+        // Existing fields stay intact; nothing ran yet.
+        $this->assertSame('events', $rows['Legacy events']['target']);
+        $this->assertSame('Legacy DB', $rows['Legacy events']['source']['name']);
+        $this->assertNull($rows['Legacy events']['last_run']);
+
+        // An earlier run shows up…
+        MigrationLog::create([
+            'batch_id' => 'old-batch',
+            'migration_key' => GenericImportJob::migrationKeyFor($mapping->id),
+            'migration_name' => $mapping->name,
+            'status' => 'failed',
+        ]);
+        $this->assertSame('failed', $listing()['Legacy events']['last_run']['status']);
+
+        // …and the newest one wins.
+        $batchId = $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/admin/migrations/mappings/{$mapping->id}/run")
+            ->assertStatus(200)
+            ->json('batchId');
+
+        $rows = $listing();
+        $lastRun = $rows['Legacy events']['last_run'];
+        $this->assertSame('completed', $lastRun['status']);
+        $this->assertSame($batchId, $lastRun['batch_id']);
+        $this->assertSame(3, $lastRun['total_items']);
+        $this->assertSame(2, $lastRun['processed_items']); // the broken row only counts as an error
+        $this->assertSame(1, $lastRun['error_count']);
+        $this->assertNotNull($lastRun['started_at']);
+        $this->assertNotNull($lastRun['completed_at']);
+        // The row chip needs a heartbeat to tell a slow run from a dead one.
+        $this->assertNotNull($lastRun['updated_at']);
+
+        // Runs belong to one mapping only.
+        $this->assertNull($rows['Untouched mapping']['last_run']);
+    }
+
+    public function test_dashboard_index_orders_post_steps_and_reports_imports(): void
+    {
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations')
+            ->assertStatus(200)
+            ->json();
+
+        // The post-import steps are numbered in the order they should run.
+        $this->assertSame(['linkGallery', 'wikiLinking', 'wikiTermsLinking'], array_column($response['migrations'], 'key'));
+        $this->assertSame([1, 2, 3], array_column($response['migrations'], 'order'));
+        $this->assertSame('Link Gallery to Events', $response['migrations'][0]['name']);
+        $this->assertSame('post', $response['migrations'][0]['group']);
+        $this->assertNotEmpty($response['migrations'][0]['description']);
+        $this->assertSame('post', $response['groups'][0]['key']);
+        $this->assertSame([], $response['activeBatches']);
+
+        // Nothing imported yet — running the post steps now would be a no-op.
+        $this->assertFalse($response['imports_run']);
+
+        $mapping = $this->createEventsMapping($this->createSource());
+        $log = MigrationLog::create([
+            'batch_id' => (string) Str::uuid(),
+            'migration_key' => GenericImportJob::migrationKeyFor($mapping->id),
+            'migration_name' => $mapping->name,
+            'status' => 'running',
+        ]);
+
+        // An import still in flight does not count…
+        $this->assertFalse(
+            $this->actingAs($this->admin, 'sanctum')->getJson('/api/admin/migrations')->json('imports_run')
+        );
+
+        // …a finished one does.
+        $log->markCompleted();
+        $this->assertTrue(
+            $this->actingAs($this->admin, 'sanctum')->getJson('/api/admin/migrations')->json('imports_run')
+        );
+    }
+
+    /**
+     * An import runs in the background, so the screen has to be able to find
+     * it again after a reload: the dashboard restores the newest active batch
+     * and then watches the log's heartbeat to tell a slow run from a dead one.
+     */
+    public function test_a_running_import_is_reported_so_the_page_can_pick_it_up_again(): void
+    {
+        $mapping = $this->createEventsMapping($this->createSource());
+
+        $log = fn (string $status) => MigrationLog::create([
+            'batch_id'       => (string) Str::uuid(),
+            'migration_key'  => GenericImportJob::migrationKeyFor($mapping->id),
+            'migration_name' => $mapping->name,
+            'status'         => $status,
+        ]);
+
+        $done   = $log('completed');
+        $older  = $log('running');
+        $newer  = $log('pending');
+
+        $index = $this->actingAs($this->admin, 'sanctum')->getJson('/api/admin/migrations')->json();
+
+        // Newest first: the page follows activeBatches[0] after a reload, and
+        // a batch that already finished is not something to follow at all.
+        $this->assertSame([$newer->batch_id, $older->batch_id], $index['activeBatches']);
+        $this->assertNotContains($done->batch_id, $index['activeBatches']);
+
+        $older->markRunning(10);
+        $older->incrementProgress('Town Hall');
+
+        $status = fn () => $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/status/' . $older->batch_id)
+            ->assertOk()
+            ->json();
+
+        $first = $status();
+        $this->assertSame('running', $first['status']);
+        $this->assertSame(1, $first['migrations'][0]['processed']);
+        $this->assertNotNull($first['migrations'][0]['updatedAt']);
+        $this->assertNotNull($first['lastUpdateAt']);
+
+        // The heartbeat has to move while rows come in — a frozen one is how
+        // the UI spots a run whose process is gone.
+        $this->travel(2)->minutes();
+        $older->incrementProgress('Old Docks');
+
+        $this->assertNotSame($first['lastUpdateAt'], $status()['lastUpdateAt']);
+    }
+
+    /**
+     * The history list feeds "Recent Batches". It reported every finished batch
+     * as still running, because MySQL returns COUNT() as an int and SUM() as a
+     * string and the status check compared the two strictly. Sqlite returns both
+     * as ints, which is why the tests never saw it — so this test pins the cast
+     * and the types, not just the label.
+     */
+    public function test_history_names_each_batch_and_reports_finished_ones_as_completed(): void
+    {
+        $mapping = $this->createEventsMapping($this->createSource());
+
+        $log = fn (string $batchId) => MigrationLog::create([
+            'batch_id'       => $batchId,
+            'migration_key'  => GenericImportJob::migrationKeyFor($mapping->id),
+            'migration_name' => $mapping->name,
+            'status'         => 'running',
+        ]);
+
+        $log((string) Str::uuid())->markCompleted();
+
+        $batch = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/history')
+            ->assertOk()
+            ->json('batches.0');
+
+        $this->assertSame('completed', $batch['status']);
+        $this->assertSame(1, $batch['completed'], 'counts come back as integers, whatever the driver returns');
+        $this->assertSame(1, $batch['totalMigrations']);
+
+        // The list says what ran, rather than only how many things ran.
+        $this->assertSame([$mapping->name], $batch['names']);
+
+        // A batch still in flight keeps saying so. Both batches are created
+        // within the same second, so their order in the list is not decided:
+        // find this one by its id rather than by position.
+        $runningBatchId = (string) Str::uuid();
+        $log($runningBatchId);
+
+        $running = collect($this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/migrations/history')
+            ->assertOk()
+            ->json('batches'))
+            ->firstWhere('batchId', $runningBatchId);
+
+        $this->assertSame('running', $running['status']);
+        $this->assertSame(0, $running['completed']);
+    }
+
+    /**
+     * Old sites arrive with their whole user table, spam registrations and
+     * bots included. Those can be cleared out, but an identity that imported
+     * content is credited to is kept unless it is deleted deliberately: losing
+     * its attributions would leave that content unassignable.
+     */
+    public function test_legacy_users_can_be_deleted_without_touching_their_content(): void
+    {
+        MigrationLegacyUser::create(['legacy_source' => 'forum', 'username' => 'SpamBot', 'email' => 'bot@example.com']);
+        MigrationLegacyUser::create(['legacy_source' => 'wiki', 'username' => 'Vimes']);
+
+        MigrationAttribution::create([
+            'attributable_type' => Wiki::class,
+            'attributable_id'   => 4242,
+            'legacy_source'     => 'wiki',
+            'legacy_username'   => 'Vimes',
+        ]);
+
+        $delete = fn (array $payload) => $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/migrations/legacy-users/delete', $payload)
+            ->assertOk()
+            ->json();
+
+        // Both at once: the bot goes, the author is kept and reported back.
+        $result = $delete(['users' => [
+            ['legacy_source' => 'forum', 'legacy_username' => 'SpamBot'],
+            ['legacy_source' => 'wiki', 'legacy_username' => 'Vimes'],
+        ]]);
+
+        $this->assertSame(1, $result['removed']);
+        $this->assertSame(['Vimes'], $result['skipped']);
+        $this->assertSame(0, $result['attributions_deleted']);
+
+        $this->assertFalse(MigrationLegacyUser::where('username', 'SpamBot')->exists());
+        $this->assertTrue(MigrationLegacyUser::where('username', 'Vimes')->exists());
+        $this->assertSame(1, MigrationAttribution::where('legacy_username', 'Vimes')->count());
+
+        // Asked for explicitly, the credited one goes too, attributions and all.
+        $result = $delete([
+            'users'        => [['legacy_source' => 'wiki', 'legacy_username' => 'Vimes']],
+            'with_content' => true,
+        ]);
+
+        $this->assertSame(1, $result['removed']);
+        $this->assertSame(1, $result['attributions_deleted']);
+        $this->assertSame([], $result['skipped']);
+        $this->assertFalse(MigrationLegacyUser::where('username', 'Vimes')->exists());
+        $this->assertSame(0, MigrationAttribution::where('legacy_username', 'Vimes')->count());
+    }
+
+    public function test_deleting_legacy_users_is_scoped_to_one_legacy_system(): void
+    {
+        MigrationLegacyUser::create(['legacy_source' => 'wiki', 'username' => 'Vimes']);
+        MigrationLegacyUser::create(['legacy_source' => 'forum', 'username' => 'Vimes']);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/migrations/legacy-users/delete', [
+                'users' => [['legacy_source' => 'wiki', 'legacy_username' => 'Vimes']],
+            ])
+            ->assertOk()
+            ->assertJsonPath('removed', 1);
+
+        // The same name in another system is a different person.
+        $this->assertFalse(MigrationLegacyUser::where('legacy_source', 'wiki')->where('username', 'Vimes')->exists());
+        $this->assertTrue(MigrationLegacyUser::where('legacy_source', 'forum')->where('username', 'Vimes')->exists());
     }
 
     public function test_non_admins_cannot_use_the_tool(): void

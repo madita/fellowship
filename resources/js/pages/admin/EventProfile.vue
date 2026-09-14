@@ -1,7 +1,6 @@
 <template>
   <div class="flex-grow-1">
-
-      <data-table endpoint="/datatable/event-profiles"></data-table>
+      <data-table endpoint="/datatable/event-profiles" :title="$t('admin.eventProfiles.title')" icon="mdi-card-account-details-outline" />
   </div>
 </template>
 

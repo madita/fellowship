@@ -11,8 +11,8 @@
           @click="$emit('toggle-fullscreen')"
         >
           <v-icon start>mdi-fullscreen-exit</v-icon>
-          Exit
-          <v-tooltip activator="parent" location="bottom">Exit fullscreen (Esc)</v-tooltip>
+          {{ $t('sandbox.editor.exitFullscreen') }}
+          <v-tooltip activator="parent" location="bottom">{{ $t('sandbox.editor.exitFullscreenHint') }}</v-tooltip>
         </v-btn>
         <v-btn
           v-else
@@ -22,7 +22,7 @@
           @click="$emit('toggle-fullscreen')"
         >
           <v-icon>mdi-fullscreen</v-icon>
-          <v-tooltip activator="parent" location="bottom">Focus mode</v-tooltip>
+          <v-tooltip activator="parent" location="bottom">{{ $t('sandbox.editor.focusMode') }}</v-tooltip>
         </v-btn>
 
         <v-text-field
@@ -33,11 +33,13 @@
           hide-details
           autofocus
           class="title-input"
+          :loading="savingTitle"
+          :disabled="savingTitle"
           @blur="saveTitle"
           @keyup.enter="saveTitle"
         />
-        <h2 v-else @click="startEditTitle" :class="['sandbox-title', { editable: canEdit }]">
-          {{ sandbox?.title || 'Untitled' }}
+        <h2 v-else @click="startEditTitle" :class="['sandbox-title text-h6', { editable: canEdit }]">
+          {{ sandbox?.title || $t('sandbox.editor.untitled') }}
         </h2>
 
         <v-chip
@@ -78,7 +80,7 @@
             @click="toggleComments"
           >
             <v-icon>mdi-comment-text-multiple-outline</v-icon>
-            <v-tooltip activator="parent" location="bottom">Comments</v-tooltip>
+            <v-tooltip activator="parent" location="bottom">{{ $t('sandbox.editor.comments') }}</v-tooltip>
           </v-btn>
         </v-badge>
 
@@ -91,7 +93,7 @@
           @click="saveVersion"
         >
           <v-icon start>mdi-content-save-outline</v-icon>
-          Save Version
+          {{ $t('sandbox.editor.saveVersion') }}
         </v-btn>
 
         <v-btn
@@ -101,7 +103,7 @@
           @click="showVersions = true"
         >
           <v-icon>mdi-history</v-icon>
-          <v-tooltip activator="parent" location="bottom">History</v-tooltip>
+          <v-tooltip activator="parent" location="bottom">{{ $t('sandbox.editor.history') }}</v-tooltip>
         </v-btn>
 
         <v-btn
@@ -112,7 +114,7 @@
           @click="showSettings = true"
         >
           <v-icon>mdi-cog-outline</v-icon>
-          <v-tooltip activator="parent" location="bottom">Settings</v-tooltip>
+          <v-tooltip activator="parent" location="bottom">{{ $t('sandbox.editor.settings') }}</v-tooltip>
         </v-btn>
 
         <v-btn
@@ -123,7 +125,7 @@
           @click="showCollaborators = true"
         >
           <v-icon start>mdi-share-variant-outline</v-icon>
-          Share
+          {{ $t('sandbox.editor.share') }}
         </v-btn>
       </div>
     </div>
@@ -136,7 +138,7 @@
       icon="mdi-loading mdi-spin"
       class="connection-banner"
     >
-      Connecting to collaboration server...
+      {{ $t('sandbox.editor.connecting') }}
     </v-banner>
 
     <!-- Editor area with comments panel -->
@@ -168,11 +170,11 @@
       :tippy-options="{ duration: 150, maxWidth: 'none' }"
       class="sandbox-bubble-menu"
     >
-      <v-btn-group density="compact" variant="flat" color="grey-darken-4" rounded="lg">
+      <v-btn-group density="compact" variant="flat" color="surface-variant" rounded="lg">
         <v-btn
           size="small"
           :variant="editor.isActive('bold') ? 'elevated' : 'flat'"
-          :color="editor.isActive('bold') ? 'white' : 'grey-darken-4'"
+          :color="editor.isActive('bold') ? 'primary' : 'surface-variant'"
           @click="editor.chain().focus().toggleBold().run()"
         >
           <v-icon size="18">mdi-format-bold</v-icon>
@@ -181,7 +183,7 @@
         <v-btn
           size="small"
           :variant="editor.isActive('italic') ? 'elevated' : 'flat'"
-          :color="editor.isActive('italic') ? 'white' : 'grey-darken-4'"
+          :color="editor.isActive('italic') ? 'primary' : 'surface-variant'"
           @click="editor.chain().focus().toggleItalic().run()"
         >
           <v-icon size="18">mdi-format-italic</v-icon>
@@ -190,7 +192,7 @@
         <v-btn
           size="small"
           :variant="editor.isActive('strike') ? 'elevated' : 'flat'"
-          :color="editor.isActive('strike') ? 'white' : 'grey-darken-4'"
+          :color="editor.isActive('strike') ? 'primary' : 'surface-variant'"
           @click="editor.chain().focus().toggleStrike().run()"
         >
           <v-icon size="18">mdi-format-strikethrough</v-icon>
@@ -199,7 +201,7 @@
         <v-btn
           size="small"
           :variant="editor.isActive('heading', { level: 2 }) ? 'elevated' : 'flat'"
-          :color="editor.isActive('heading', { level: 2 }) ? 'white' : 'grey-darken-4'"
+          :color="editor.isActive('heading', { level: 2 }) ? 'primary' : 'surface-variant'"
           @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
         >
           <v-icon size="18">mdi-format-header-2</v-icon>
@@ -208,7 +210,7 @@
         <v-btn
           size="small"
           :variant="editor.isActive('bulletList') ? 'elevated' : 'flat'"
-          :color="editor.isActive('bulletList') ? 'white' : 'grey-darken-4'"
+          :color="editor.isActive('bulletList') ? 'primary' : 'surface-variant'"
           @click="editor.chain().focus().toggleBulletList().run()"
         >
           <v-icon size="18">mdi-format-list-bulleted</v-icon>
@@ -217,7 +219,7 @@
         <v-btn
           size="small"
           :variant="editor.isActive('orderedList') ? 'elevated' : 'flat'"
-          :color="editor.isActive('orderedList') ? 'white' : 'grey-darken-4'"
+          :color="editor.isActive('orderedList') ? 'primary' : 'surface-variant'"
           @click="editor.chain().focus().toggleOrderedList().run()"
         >
           <v-icon size="18">mdi-format-list-numbered</v-icon>
@@ -226,7 +228,7 @@
         <v-btn
           size="small"
           :variant="editor.isActive('blockquote') ? 'elevated' : 'flat'"
-          :color="editor.isActive('blockquote') ? 'white' : 'grey-darken-4'"
+          :color="editor.isActive('blockquote') ? 'primary' : 'surface-variant'"
           @click="editor.chain().focus().toggleBlockquote().run()"
         >
           <v-icon size="18">mdi-format-quote-close</v-icon>
@@ -235,7 +237,7 @@
         <v-btn
           size="small"
           :variant="editor.isActive('codeBlock') ? 'elevated' : 'flat'"
-          :color="editor.isActive('codeBlock') ? 'white' : 'grey-darken-4'"
+          :color="editor.isActive('codeBlock') ? 'primary' : 'surface-variant'"
           @click="editor.chain().focus().toggleCodeBlock().run()"
         >
           <v-icon size="18">mdi-code-tags</v-icon>
@@ -246,7 +248,7 @@
 
         <v-btn
           size="small"
-          color="grey-darken-4"
+          color="surface-variant"
           @click="addComment"
         >
           <v-icon size="18">mdi-comment-plus-outline</v-icon>
@@ -284,6 +286,7 @@
 
 <script>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Editor, EditorContent, BubbleMenu } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Collaboration from '@tiptap/extension-collaboration'
@@ -297,8 +300,9 @@ import SandboxCollaborators from './SandboxCollaborators.vue'
 import SandboxVersions from './SandboxVersions.vue'
 import SandboxComments from './SandboxComments.vue'
 import UserAvatar from '../common/UserAvatar.vue'
-import colourHelper from '@/helpers/colour.js'
+import colourHelper from '@/utils/colour.js'
 import { useSettingsStore } from '@/store/settingStore.js'
+import { useDialog } from '@/composables/useDialog.js'
 
 function getUserColor(user) {
   if (user?.colour) return user.colour
@@ -333,11 +337,14 @@ export default {
   emits: ['toggle-fullscreen'],
 
   setup(props) {
+    const { t } = useI18n()
+    const dialog = useDialog()
     const settingsStore = useSettingsStore()
     const sandbox = ref(null)
     const editor = ref(null)
     const connected = ref(false)
     const saving = ref(false)
+    const savingTitle = ref(false)
     const canEdit = ref(false)
     const canManage = ref(false)
     const activeUsers = ref([])
@@ -357,6 +364,8 @@ export default {
     let echoChannel = null
     let autoSaveInterval = null
     let pendingRestoreContent = null
+    // Auto-save reports a failure once, not on every tick
+    let autoSaveErrorShown = false
 
     const visibilityColor = computed(() => {
       const map = { private: 'error', members: 'warning', public: 'success' }
@@ -557,6 +566,7 @@ export default {
 
     const saveContent = async (createVersion = false) => {
       if (!canEdit.value || !editor.value) return
+      if (createVersion && saving.value) return
 
       saving.value = true
       try {
@@ -564,8 +574,18 @@ export default {
           content: editor.value.getHTML(),
           createVersion,
         })
+        autoSaveErrorShown = false
+        if (createVersion) {
+          await dialog.success(t('sandbox.editor.versionSaved'))
+        }
       } catch (error) {
         console.error('Failed to save content:', error)
+        if (createVersion) {
+          await dialog.requestError(error, t('sandbox.editor.saveFailed'))
+        } else if (!autoSaveErrorShown) {
+          autoSaveErrorShown = true
+          await dialog.error(t('sandbox.editor.autoSaveFailed'))
+        }
       } finally {
         saving.value = false
       }
@@ -580,17 +600,32 @@ export default {
     }
 
     const saveTitle = async () => {
-      if (editableTitle.value !== sandbox.value.title) {
-        try {
-          await axios.put(`/api/sandbox/${sandbox.value.uuid}`, {
-            title: editableTitle.value,
-          })
-          sandbox.value.title = editableTitle.value
-        } catch (error) {
-          console.error('Failed to save title:', error)
-        }
+      // Enter and blur both land here; only the first call runs the request
+      if (!isEditingTitle.value || savingTitle.value) return
+
+      if (editableTitle.value === sandbox.value.title) {
+        isEditingTitle.value = false
+        return
       }
-      isEditingTitle.value = false
+
+      let failure = null
+      savingTitle.value = true
+      try {
+        await axios.put(`/api/sandbox/${sandbox.value.uuid}`, {
+          title: editableTitle.value,
+        })
+        sandbox.value.title = editableTitle.value
+      } catch (error) {
+        console.error('Failed to save title:', error)
+        failure = error
+      } finally {
+        savingTitle.value = false
+        isEditingTitle.value = false
+      }
+
+      if (failure) {
+        await dialog.requestError(failure, t('sandbox.editor.titleSaveFailed'))
+      }
     }
 
     const toggleComments = () => {
@@ -662,6 +697,7 @@ export default {
       editor,
       connected,
       saving,
+      savingTitle,
       canEdit,
       canManage,
       activeUsers,
@@ -705,7 +741,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid rgb(var(--v-border-color));
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   background: rgb(var(--v-theme-surface));
   gap: 1rem;
   flex-wrap: wrap;
@@ -721,8 +757,6 @@ export default {
 
 .sandbox-title {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

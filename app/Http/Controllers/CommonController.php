@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\TaxonomyHelper;
+use App\Support\TaxonomyHelper;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;

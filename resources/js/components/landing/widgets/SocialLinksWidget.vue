@@ -10,11 +10,9 @@
         :key="index"
         :href="social.url"
         target="_blank"
-        :icon="config.style === 'icon'"
-        :fab="config.style === 'fab'"
-        :text="config.style === 'text'"
-        :outlined="config.style === 'outlined'"
-        :color="social.color || config.defaultColor || 'grey darken-1'"
+        :icon="config.style === 'icon' || config.style === 'fab'"
+        :variant="buttonVariant"
+        :color="social.color || config.defaultColor || 'grey-darken-1'"
         :size="config.size || 'default'"
         :class="buttonClass"
         :aria-label="social.name"
@@ -26,7 +24,7 @@
       </v-btn>
     </div>
 
-    <div v-if="content.subtitle" class="text-caption text--secondary mt-3 text-center">
+    <div v-if="content.subtitle" class="text-caption text-medium-emphasis mt-3 text-center">
       {{ content.subtitle }}
     </div>
   </v-container>
@@ -89,7 +87,7 @@ const props = defineProps({
       iconSize: 24,            // Icon size in pixels
       alignment: 'center',     // 'start', 'center', 'end'
       showLabels: false,       // Show social network names
-      defaultColor: 'grey darken-1',
+      defaultColor: 'grey-darken-1',
       containerClass: 'py-4',
       titleClass: 'text-center',
       spacing: 2               // Spacing between buttons (1-5)
@@ -117,6 +115,12 @@ const linksClass = computed(() => {
   }
   
   return classes.join(' ')
+})
+
+const buttonVariant = computed(() => {
+  if (props.config.style === 'text' || props.config.style === 'icon') return 'text'
+  if (props.config.style === 'outlined') return 'outlined'
+  return 'elevated'
 })
 
 const buttonClass = computed(() => {

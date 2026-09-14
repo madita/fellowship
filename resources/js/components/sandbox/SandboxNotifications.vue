@@ -1,53 +1,57 @@
 <template>
-    <v-menu offset-y left transition="slide-y-transition" :close-on-content-click="false">
+    <v-menu location="bottom end" transition="slide-y-transition" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
-            <v-badge
-                :content="unreadCount"
-                :model-value="unreadCount > 0"
-                color="error"
-                offset-x="2"
-                offset-y="2"
-            >
-                <v-btn icon variant="text" v-bind="props">
+            <v-btn icon variant="text" v-bind="props">
+                <!-- The badge sits on the icon, not the 48px button, so it stays close and inside the bar -->
+                <v-badge
+                    :content="unreadCount"
+                    :model-value="unreadCount > 0"
+                    color="error"
+                    max="99"
+                >
                     <v-icon>mdi-file-document-edit-outline</v-icon>
-                </v-btn>
-            </v-badge>
+                </v-badge>
+            </v-btn>
         </template>
 
         <v-card min-width="380" max-width="440">
-            <v-card-title class="d-flex align-center justify-space-between py-2 px-4 sandbox-header">
-                <div class="d-flex align-center ga-2">
-                    <v-icon size="20">mdi-file-document-edit-outline</v-icon>
-                    <span class="text-subtitle-1 font-weight-bold">Sandbox</span>
+            <v-card-title class="d-flex align-center justify-space-between py-2 px-4">
+                <div class="d-flex align-center ga-2 text-subtitle-1 font-weight-medium">
+                    <v-icon size="20" color="primary">mdi-file-document-edit-outline</v-icon>
+                    {{ $t('sandbox.notifications.title') }}
                 </div>
                 <v-btn
                     v-if="notifications.length > 0"
                     variant="text"
                     size="x-small"
+                    color="primary"
+                    :loading="markingAll"
+                    :disabled="busyIds.length > 0"
                     @click="markAllAsRead"
                 >
-                    Mark all read
+                    {{ $t('sandbox.notifications.markAllRead') }}
                 </v-btn>
             </v-card-title>
 
             <v-divider />
 
             <!-- Loading -->
-            <div v-if="loading" class="text-center py-6">
-                <v-progress-circular indeterminate color="primary" size="28" />
-            </div>
+            <loading-state v-if="loading" compact />
 
             <!-- Empty State -->
-            <div v-else-if="notifications.length === 0" class="text-center py-6 px-4">
-                <v-icon size="44" color="medium-emphasis" class="mb-2">mdi-bell-check-outline</v-icon>
-                <p class="text-body-2 text-medium-emphasis mb-0">No sandbox notifications</p>
-            </div>
+            <empty-state
+                v-else-if="notifications.length === 0"
+                compact
+                icon="mdi-bell-check-outline"
+                :title="$t('sandbox.notifications.empty')"
+            />
 
             <!-- Notification List -->
             <v-list v-else density="compact" class="py-0" max-height="420" style="overflow-y: auto;">
                 <template v-for="(item, index) in notifications" :key="item.id || index">
                     <v-list-item
                         class="notification-item"
+                        :disabled="busyIds.includes(item.id) || markingAll"
                         @click="goToNotification(item)"
                     >
                         <template v-slot:prepend>
@@ -71,11 +75,12 @@
                                 icon
                                 variant="text"
                                 size="x-small"
-                                color="medium-emphasis"
+                                :loading="busyIds.includes(item.id)"
+                                :disabled="markingAll"
                                 @click.stop="dismiss(item.id)"
                             >
                                 <v-icon size="16">mdi-close</v-icon>
-                                <v-tooltip activator="parent" location="left">Dismiss</v-tooltip>
+                                <v-tooltip activator="parent" location="left">{{ $t('sandbox.notifications.dismiss') }}</v-tooltip>
                             </v-btn>
                         </template>
                     </v-list-item>
@@ -93,7 +98,7 @@
                     color="primary"
                     @click="$router.push('/sandbox')"
                 >
-                    Go to Sandboxes
+                    {{ $t('sandbox.notifications.goToSandboxes') }}
                 </v-btn>
             </div>
         </v-card>
@@ -103,18 +108,38 @@
 <script>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/store/userStore.js'
 import { useRelativeTime } from '@/composables/useRelativeTime.js'
+import { useDialog } from '@/composables/useDialog.js'
 import axios from 'axios'
+import EmptyState from '../common/EmptyState.vue'
+import LoadingState from '../common/LoadingState.vue'
 
 export default {
     name: 'SandboxNotifications',
 
+    components: {
+        EmptyState,
+        LoadingState,
+    },
+
     setup() {
         const router = useRouter()
+        const { t } = useI18n()
+        const dialog = useDialog()
         const userStore = useUserStore()
         const allNotifications = ref([])
         const loading = ref(true)
+        // Notification ids with a mark-as-read / dismiss request in flight
+        const busyIds = ref([])
+        const markingAll = ref(false)
+
+        const setBusy = (id, busy) => {
+            busyIds.value = busy
+                ? [...busyIds.value, id]
+                : busyIds.value.filter(i => i !== id)
+        }
 
         // Filter to only sandbox notifications
         const notifications = computed(() =>
@@ -135,14 +160,20 @@ export default {
         }
 
         const goToNotification = async (item) => {
+            if (busyIds.value.includes(item.id) || markingAll.value) return
+
+            setBusy(item.id, true)
             try {
                 await axios.get('/api/account/notification/markasread/' + item.id)
             } catch (error) {
                 // Keep the notification in local state and don't navigate it as
                 // read when the mark-as-read request fails.
                 console.warn(error)
+                setBusy(item.id, false)
+                await dialog.requestError(error, t('sandbox.notifications.markReadFailed'))
                 return
             }
+            setBusy(item.id, false)
 
             // Remove from local list only after successful mark-as-read
             allNotifications.value = allNotifications.value.filter(n => n.id !== item.id)
@@ -155,26 +186,42 @@ export default {
         }
 
         const dismiss = async (id) => {
+            if (busyIds.value.includes(id) || markingAll.value) return
+
+            setBusy(id, true)
             try {
                 await axios.delete('/api/account/notification/delete/' + id)
                 allNotifications.value = allNotifications.value.filter(n => n.id !== id)
             } catch (error) {
                 console.warn(error)
+                await dialog.requestError(error, t('sandbox.notifications.dismissFailed'))
+            } finally {
+                setBusy(id, false)
             }
         }
 
         const markAllAsRead = async () => {
-            // Mark only sandbox notifications as read (one by one)
-            const sandboxIds = notifications.value.map(n => n.id)
-            const results = await Promise.allSettled(
-                sandboxIds.map(id => axios.get('/api/account/notification/markasread/' + id))
-            )
-            const succeededIds = new Set(
-                sandboxIds.filter((_, i) => results[i].status === 'fulfilled')
-            )
-            allNotifications.value = allNotifications.value.filter(
-                n => !(n.data?.type?.startsWith('sandbox_') && succeededIds.has(n.id))
-            )
+            if (markingAll.value || busyIds.value.length > 0) return
+
+            markingAll.value = true
+            try {
+                // Mark only sandbox notifications as read (one by one)
+                const sandboxIds = notifications.value.map(n => n.id)
+                const results = await Promise.allSettled(
+                    sandboxIds.map(id => axios.get('/api/account/notification/markasread/' + id))
+                )
+                const succeededIds = new Set(
+                    sandboxIds.filter((_, i) => results[i].status === 'fulfilled')
+                )
+                allNotifications.value = allNotifications.value.filter(
+                    n => !(n.data?.type?.startsWith('sandbox_') && succeededIds.has(n.id))
+                )
+                if (succeededIds.size < sandboxIds.length) {
+                    await dialog.error(t('sandbox.notifications.markAllFailed'))
+                }
+            } finally {
+                markingAll.value = false
+            }
         }
 
         const getIcon = (item) => {
@@ -230,6 +277,8 @@ export default {
         return {
             notifications,
             loading,
+            busyIds,
+            markingAll,
             unreadCount,
             goToNotification,
             dismiss,
@@ -243,15 +292,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.sandbox-header {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
-    color: white;
-
-    .v-btn {
-        color: white;
-    }
-}
-
 .notification-item {
     cursor: pointer;
     transition: background-color 0.15s;

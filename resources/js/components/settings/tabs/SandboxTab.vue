@@ -323,7 +323,7 @@ const props = defineProps({
     isSaving: Boolean,
 });
 
-defineEmits(['save', 'message']);
+defineEmits(['save']);
 
 const loadingStatus = ref(false);
 const loadingRoles = ref(true);

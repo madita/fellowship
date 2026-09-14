@@ -1,66 +1,71 @@
 <template>
     <div>
-        <v-sheet>
-            <v-container class="py-6 pt-lg-5">
-                <h1 class="text-h4 mb-6">{{ $t('blog.title') || 'Blog' }}</h1>
+        <page-header :title="$t('blog.title')" :subtitle="$t('blog.subtitle')" icon="mdi-post-outline" />
 
-                <v-row v-if="loading">
-                    <v-col v-for="i in 6" :key="i" cols="12" sm="6" md="4">
-                        <v-skeleton-loader type="article" />
-                    </v-col>
-                </v-row>
+        <v-container>
+            <v-row v-if="loading">
+                <v-col v-for="i in 6" :key="i" cols="12" sm="6" md="4">
+                    <v-skeleton-loader type="article" />
+                </v-col>
+            </v-row>
 
-                <v-row v-else-if="posts.length">
-                    <v-col
-                        v-for="post in posts"
-                        :key="post.id"
-                        cols="12"
-                        sm="6"
-                        md="4"
+            <v-row v-else-if="posts.length">
+                <v-col
+                    v-for="post in posts"
+                    :key="post.id"
+                    cols="12"
+                    sm="6"
+                    md="4"
+                >
+                    <v-card
+                        hover
+                        rounded="lg"
+                        class="h-100 d-flex flex-column"
+                        @click="$router.push(`/blog/${post.slug}`)"
                     >
-                        <v-card
-                            hover
-                            class="h-100 d-flex flex-column"
-                            @click="$router.push(`/blog/${post.slug}`)"
-                        >
-                            <v-card-title class="text-subtitle-1 font-weight-bold">
-                                {{ post.title }}
-                            </v-card-title>
-                            <v-card-text class="flex-grow-1">
-                                <div class="text-body-2 text-medium-emphasis post-excerpt">
-                                    {{ stripHtml(post.body).substring(0, 150) }}{{ stripHtml(post.body).length > 150 ? '...' : '' }}
-                                </div>
-                            </v-card-text>
-                            <v-card-actions>
-                                <v-spacer />
-                                <span class="text-caption text-medium-emphasis">
-                                    {{ formatDate(post.created_at) }}
-                                </span>
-                            </v-card-actions>
-                        </v-card>
-                    </v-col>
-                </v-row>
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
+                            {{ post.title }}
+                        </v-card-title>
+                        <v-card-text class="flex-grow-1">
+                            <div class="text-body-2 text-medium-emphasis post-excerpt">
+                                {{ stripHtml(post.body).substring(0, 150) }}{{ stripHtml(post.body).length > 150 ? '...' : '' }}
+                            </div>
+                        </v-card-text>
+                        <v-card-actions>
+                            <v-spacer />
+                            <span class="text-caption text-medium-emphasis">
+                                {{ formatDate(post.created_at) }}
+                            </span>
+                        </v-card-actions>
+                    </v-card>
+                </v-col>
+            </v-row>
 
-                <div v-else class="text-center py-12">
-                    <v-icon size="64" color="grey-lighten-1">mdi-post-outline</v-icon>
-                    <p class="text-h6 mt-4 text-medium-emphasis">No blog posts yet</p>
-                </div>
+            <empty-state
+                v-else
+                icon="mdi-post-outline"
+                :title="$t('blog.noPosts')"
+                :text="$t('blog.noPostsText')"
+            />
 
-                <!-- Pagination -->
-                <div v-if="totalPages > 1" class="d-flex justify-center mt-6">
-                    <v-pagination
-                        v-model="currentPage"
-                        :length="totalPages"
-                        @update:model-value="fetchPosts"
-                    />
-                </div>
-            </v-container>
-        </v-sheet>
+            <!-- Pagination -->
+            <div v-if="totalPages > 1" class="d-flex justify-center mt-6">
+                <v-pagination
+                    v-model="currentPage"
+                    :length="totalPages"
+                    @update:model-value="fetchPosts"
+                />
+            </div>
+        </v-container>
     </div>
 </template>
 
 <script>
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+
 export default {
+    components: { PageHeader, EmptyState },
     data() {
         return {
             loading: true,

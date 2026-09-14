@@ -1,8 +1,4 @@
-/* Shared conversation component styles */
-
-.bg-gradient {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
-}
+/* Shared conversation component styles (.bg-gradient / .text-gradient are global in resources/sass/app.scss) */
 
 .conversation-container {
     min-height: 400px;
@@ -31,7 +27,7 @@
 
 /* Message Styles */
 .message-item:hover {
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: rgba(var(--v-theme-on-surface), 0.02);
 }
 
 .message-bubble {
@@ -41,13 +37,7 @@
 }
 
 /* Utility Classes */
-.gap-2 {
-    gap: 8px;
-}
 
-.gap-3 {
-    gap: 12px;
-}
 
 /* Transitions */
 .transition-all {

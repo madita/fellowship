@@ -2,7 +2,7 @@
 
 namespace App\Jobs\Migrations;
 
-use App\Models\MigrationMapping;
+use App\Models\Migration\MigrationMapping;
 use App\Services\Migration\MigrationTargets;
 use App\Services\Migration\RowMapper;
 use App\Services\Migration\SourceQuery;

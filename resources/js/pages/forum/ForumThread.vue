@@ -1,77 +1,64 @@
 <template>
-    <div class="forum-thread-container">
-        <!-- Header Section -->
-        <div class="forum-header">
-            <v-container>
-                <!-- Breadcrumbs -->
-                <v-breadcrumbs class="px-0 mb-4">
-                    <v-breadcrumbs-item :to="{ name: 'forum-index' }">
-                        {{ $t('forum.forums') }}
-                    </v-breadcrumbs-item>
-                    <template v-if="forumStore.currentThread?.forum">
-                        <v-breadcrumbs-divider/>
-                        <v-breadcrumbs-item
-                            :to="{ name: 'forum-category', params: { slug: forumStore.currentThread.forum.slug } }"
-                        >
-                            {{ forumStore.currentThread.forum.name }}
-                        </v-breadcrumbs-item>
+    <div>
+        <page-header
+            :title="forumStore.currentThread?.title || $t('forum.title')"
+            :subtitle="forumStore.currentThread?.forum?.name || ''"
+            :back-to="backTo"
+        >
+            <template v-if="forumStore.currentThread && !forumStore.loading" #actions>
+                <v-btn
+                    v-if="authStore.isAuthenticated"
+                    :variant="forumStore.isSubscribed ? 'elevated' : 'tonal'"
+                    color="primary"
+                    :prepend-icon="forumStore.isSubscribed ? 'mdi-bell-ring' : 'mdi-bell-outline'"
+                    :loading="forumStore.submitting"
+                    @click="onToggleSubscription"
+                >
+                    {{ forumStore.isSubscribed ? $t('forum.subscribed') : $t('forum.subscribe') }}
+                </v-btn>
+                <v-menu v-if="forumStore.threadPermissions.can_edit || forumStore.threadPermissions.can_delete">
+                    <template v-slot:activator="{ props }">
+                        <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props" :loading="deletingThread"/>
                     </template>
-                    <v-breadcrumbs-divider/>
-                    <v-breadcrumbs-item disabled>
-                        {{ forumStore.currentThread?.title }}
-                    </v-breadcrumbs-item>
-                </v-breadcrumbs>
-            </v-container>
-        </div>
-
-        <v-container>
-            <!-- Loading State -->
-            <div v-if="forumStore.loading" class="text-center py-12">
-                <v-progress-circular size="64" width="4" color="primary" indeterminate class="mb-4"/>
-                <p class="text-body-1 text-medium-emphasis">{{ $t('forum.loadingThread') }}</p>
+                    <v-list density="compact">
+                        <v-list-item
+                            v-if="forumStore.threadPermissions.can_edit"
+                            prepend-icon="mdi-pencil"
+                            :title="$t('forum.edit')"
+                            :disabled="deletingThread"
+                            @click="startEditThread"
+                        />
+                        <v-list-item
+                            v-if="forumStore.threadPermissions.can_delete"
+                            prepend-icon="mdi-delete"
+                            :title="$t('forum.delete')"
+                            class="text-error"
+                            :disabled="deletingThread"
+                            @click="deleteThread"
+                        />
+                    </v-list>
+                </v-menu>
+            </template>
+            <div
+                v-if="forumStore.currentThread?.is_pinned || forumStore.currentThread?.is_locked"
+                class="d-flex align-center flex-wrap ga-2"
+            >
+                <v-chip v-if="forumStore.currentThread.is_pinned" size="small" color="primary" variant="tonal" prepend-icon="mdi-pin">
+                    {{ $t('forum.pinned') }}
+                </v-chip>
+                <v-chip v-if="forumStore.currentThread.is_locked" size="small" color="warning" variant="tonal" prepend-icon="mdi-lock">
+                    {{ $t('forum.locked') }}
+                </v-chip>
             </div>
+        </page-header>
+
+        <v-container fluid>
+            <loading-state v-if="forumStore.loading" :text="$t('forum.loadingThread')"/>
 
             <template v-else-if="forumStore.currentThread">
                 <!-- Thread Header Card -->
-                <v-card class="thread-header-card mb-6" variant="elevated">
+                <v-card class="mb-6" variant="elevated" rounded="lg">
                     <v-card-text>
-                        <div class="d-flex align-center justify-space-between mb-4">
-                            <div class="d-flex align-center gap-2">
-                                <h1 class="text-h4 font-weight-bold">{{ forumStore.currentThread.title }}</h1>
-                                <v-chip v-if="forumStore.currentThread.is_pinned" size="small" color="primary"
-                                        prepend-icon="mdi-pin">
-                                    {{ $t('forum.pinned') }}
-                                </v-chip>
-                                <v-chip v-if="forumStore.currentThread.is_locked" size="small" color="warning"
-                                        prepend-icon="mdi-lock">
-                                    {{ $t('forum.locked') }}
-                                </v-chip>
-                            </div>
-                            <div
-                                v-if="forumStore.threadPermissions.can_edit || forumStore.threadPermissions.can_delete">
-                                <v-menu>
-                                    <template v-slot:activator="{ props }">
-                                        <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props"/>
-                                    </template>
-                                    <v-list density="compact">
-                                        <v-list-item
-                                            v-if="forumStore.threadPermissions.can_edit"
-                                            prepend-icon="mdi-pencil"
-                                            :title="$t('forum.edit')"
-                                            @click="startEditThread"
-                                        />
-                                        <v-list-item
-                                            v-if="forumStore.threadPermissions.can_delete"
-                                            prepend-icon="mdi-delete"
-                                            :title="$t('forum.delete')"
-                                            class="text-error"
-                                            @click="showDeleteThreadDialog = true"
-                                        />
-                                    </v-list>
-                                </v-menu>
-                            </div>
-                        </div>
-
                         <!-- Thread Author + Stats -->
                         <div class="d-flex align-center mb-4">
                             <UserAvatar v-if="forumStore.currentThread.author || forumStore.currentThread.meta?.legacy_author" :user="forumStore.currentThread.author" :legacy-name="forumStore.currentThread.meta?.legacy_author"/>
@@ -82,18 +69,7 @@
                                 </div>
                             </div>
                             <v-spacer/>
-                            <div class="d-flex align-center gap-4">
-                                <v-btn
-                                    v-if="authStore.isAuthenticated"
-                                    :variant="forumStore.isSubscribed ? 'elevated' : 'outlined'"
-                                    :color="forumStore.isSubscribed ? 'primary' : undefined"
-                                    size="small"
-                                    :prepend-icon="forumStore.isSubscribed ? 'mdi-bell-ring' : 'mdi-bell-outline'"
-                                    :loading="forumStore.submitting"
-                                    @click="onToggleSubscription"
-                                >
-                                    {{ forumStore.isSubscribed ? $t('forum.subscribed') : $t('forum.subscribe') }}
-                                </v-btn>
+                            <div class="d-flex align-center ga-4 text-medium-emphasis">
                                 <div class="text-center">
                                     <v-icon size="16" class="mr-1">mdi-message-reply-text</v-icon>
                                     <span class="text-body-2">{{ forumStore.currentThread.reply_count || 0 }}</span>
@@ -113,18 +89,29 @@
                             <v-text-field
                                 v-model="editThreadTitle"
                                 :label="$t('forum.threadTitle')"
-                                variant="outlined"
                                 density="comfortable"
                                 class="mb-3"
                             />
                             <Tiptap v-model="editThreadBody" type="full"/>
-                            <div class="d-flex gap-2 mt-3">
-                                <v-btn color="primary" :loading="forumStore.submitting" @click="saveEditThread">
+                            <div class="d-flex ga-2 mt-3">
+                                <v-btn color="primary" variant="flat" :loading="forumStore.submitting" @click="saveEditThread">
                                     {{ $t('forum.save') }}
                                 </v-btn>
-                                <v-btn variant="text" @click="cancelEditThread">{{ $t('forum.cancel') }}</v-btn>
+                                <v-btn variant="text" :disabled="forumStore.submitting" @click="cancelEditThread">{{ $t('forum.cancel') }}</v-btn>
                             </div>
                         </div>
+
+                        <!-- Poll attached to the thread -->
+                        <poll-card
+                            v-if="forumStore.currentThread.poll"
+                            :key="forumStore.currentThread.poll.id"
+                            :poll="forumStore.currentThread.poll"
+                            :current-user="currentUser"
+                            class="mt-4 mb-0"
+                            @voted="onPollChanged"
+                            @updated="onPollChanged"
+                            @deleted="onPollDeleted"
+                        />
                     </v-card-text>
                 </v-card>
 
@@ -152,6 +139,7 @@
                         :thread-locked="forumStore.currentThread.is_locked"
                         :can-moderate="forumStore.threadPermissions.can_moderate"
                         :can-delete-others="forumStore.threadPermissions.can_delete_others"
+                        :busy-post-id="busyPostId"
                         @mark-solution="onMarkSolution"
                         @delete-post="onDeletePost"
                         @quote-reply="onQuoteReply"
@@ -160,11 +148,14 @@
                     />
                 </div>
 
-                <!-- No Posts -->
-                <div v-else class="text-center py-8 text-medium-emphasis">
-                    <v-icon size="48" class="mb-2">mdi-message-text-outline</v-icon>
-                    <p>{{ $t('forum.noPosts') }}</p>
-                </div>
+                <empty-state
+                    v-else
+                    compact
+                    icon="mdi-message-text-outline"
+                    :title="$t('forum.noPosts')"
+                    :text="$t('forum.noPostsDescription')"
+                    class="mb-6"
+                />
 
                 <!-- Pagination -->
                 <div v-if="forumStore.postsPagination.last_page > 1" class="d-flex justify-center mb-6">
@@ -180,8 +171,8 @@
                 <v-card
                     v-if="forumStore.threadPermissions.can_reply && !forumStore.currentThread.is_locked"
                     ref="replyCard"
-                    class="reply-card"
                     variant="elevated"
+                    rounded="lg"
                 >
                     <v-card-title class="text-h6">{{ $t('forum.reply') }}</v-card-title>
                     <v-card-text>
@@ -221,26 +212,7 @@
                     {{ $t('forum.loginToReply') }}
                 </v-alert>
             </template>
-
-            <!-- Error State -->
-            <v-alert
-                v-if="forumStore.error"
-                type="error"
-                variant="tonal"
-                class="mt-4"
-                closable
-                @click:close="forumStore.error = null"
-            >
-                {{ forumStore.error }}
-            </v-alert>
         </v-container>
-
-        <!-- Delete Thread Dialog -->
-        <ConfirmDialog
-            v-model="showDeleteThreadDialog"
-            :content="$t('forum.confirmDeleteThread')"
-            :resolve="onDeleteThreadConfirm"
-        />
     </div>
 </template>
 
@@ -251,12 +223,15 @@ import {useAuthStore} from '@/store/authStore.js'
 import {formatDateDistanceToNow} from '@/plugins/formatDate.js'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import ForumPostItem from '@/components/forum/ForumPostItem.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
+import LoadingState from '@/components/common/LoadingState.vue'
+import PollCard from '@/components/poll/PollCard.vue'
 
 export default {
     name: 'ForumThread',
-    components: {UserAvatar, Tiptap, ConfirmDialog, ForumPostItem},
+    components: {UserAvatar, Tiptap, ForumPostItem, PageHeader, EmptyState, LoadingState, PollCard},
     setup() {
         const forumStore = useForumStore()
         const userStore = useUserStore()
@@ -272,12 +247,18 @@ export default {
             editingThread: false,
             editThreadTitle: '',
             editThreadBody: '',
-            showDeleteThreadDialog: false
+            deletingThread: false,
+            busyPostId: null
         }
     },
     computed: {
         currentUser() {
             return this.userStore.user
+        },
+        // Back button target: the forum this thread belongs to
+        backTo() {
+            const slug = this.forumStore.currentThread?.forum?.slug || this.$route.params.forumSlug
+            return slug ? {name: 'forum-category', params: {slug}} : {name: 'forum-index'}
         },
         isReplyBodyEmpty() {
             if (!this.replyBody) return true
@@ -330,15 +311,17 @@ export default {
         loadThread() {
             const {forumSlug, threadSlug} = this.$route.params
             this.forumStore.fetchThread(forumSlug, threadSlug, this.currentPage)
+                .catch(error => this.$dialog.requestError(error, this.$t('forum.errorLoading')))
         },
         onPageChange(page) {
             this.currentPage = page
             const {forumSlug, threadSlug} = this.$route.params
             this.forumStore.fetchThread(forumSlug, threadSlug, page)
+                .catch(error => this.$dialog.requestError(error, this.$t('forum.errorLoading')))
             window.scrollTo({top: 0, behavior: 'smooth'})
         },
         async submitReply() {
-            if (this.isReplyBodyEmpty) return
+            if (this.isReplyBodyEmpty || this.forumStore.submitting) return
             try {
                 await this.forumStore.createPost(this.forumStore.currentThread.id, {
                     body: this.replyBody,
@@ -347,7 +330,7 @@ export default {
                 this.replyBody = ''
                 this.replyParentId = null
             } catch (error) {
-                console.error('Failed to submit reply:', error)
+                this.$dialog.requestError(error, this.$t('forum.errorSubmitting'))
             }
         },
         escapeHtml(str) {
@@ -373,39 +356,54 @@ export default {
                 }
             })
         },
-        async onUpdatePost({postId, body}) {
+        // Runs one store action for a single post; the post's own buttons
+        // show a loader via busyPostId and stay blocked until it settles.
+        async runPostAction(postId, action, fallbackKey) {
+            if (this.busyPostId) return false
+            this.busyPostId = postId
             try {
-                await this.forumStore.updatePost(postId, {body})
+                await action()
+                return true
             } catch (error) {
-                console.error('Failed to update post:', error)
+                this.$dialog.requestError(error, this.$t(fallbackKey))
+                return false
+            } finally {
+                this.busyPostId = null
             }
+        },
+        async onUpdatePost({postId, body, done}) {
+            const ok = await this.runPostAction(postId, () => this.forumStore.updatePost(postId, {body}), 'forum.errorSubmitting')
+            if (typeof done === 'function') done(ok)
         },
         async onDeletePost(postId) {
-            try {
-                await this.forumStore.deletePost(postId)
-            } catch (error) {
-                console.error('Failed to delete post:', error)
-            }
+            if (this.busyPostId) return
+            const ok = await this.$dialog.confirmDelete(this.$t('forum.confirmDeletePost'))
+            if (!ok) return
+            await this.runPostAction(postId, () => this.forumStore.deletePost(postId), 'forum.errorSubmitting')
         },
         async onToggleSubscription() {
+            if (this.forumStore.submitting) return
             try {
                 await this.forumStore.toggleSubscription(this.forumStore.currentThread.id)
             } catch (error) {
-                console.error('Failed to toggle subscription:', error)
+                this.$dialog.requestError(error, this.$t('forum.errorSubmitting'))
             }
         },
-        async onToggleLike(postId) {
-            try {
-                await this.forumStore.toggleLike(postId)
-            } catch (error) {
-                console.error('Failed to toggle like:', error)
+        onToggleLike(postId) {
+            return this.runPostAction(postId, () => this.forumStore.toggleLike(postId), 'forum.errorSubmitting')
+        },
+        onMarkSolution(postId) {
+            return this.runPostAction(postId, () => this.forumStore.markAsSolution(postId), 'forum.errorSubmitting')
+        },
+        // Keep the store's thread in step with the poll card
+        onPollChanged(poll) {
+            if (this.forumStore.currentThread) {
+                this.forumStore.currentThread.poll = poll
             }
         },
-        async onMarkSolution(postId) {
-            try {
-                await this.forumStore.markAsSolution(postId)
-            } catch (error) {
-                console.error('Failed to mark as solution:', error)
+        onPollDeleted() {
+            if (this.forumStore.currentThread) {
+                this.forumStore.currentThread.poll = null
             }
         },
         startEditThread() {
@@ -419,6 +417,7 @@ export default {
             this.editThreadBody = ''
         },
         async saveEditThread() {
+            if (this.forumStore.submitting) return
             try {
                 await this.forumStore.updateThread(this.forumStore.currentThread.id, {
                     title: this.editThreadTitle,
@@ -426,17 +425,23 @@ export default {
                 })
                 this.editingThread = false
             } catch (error) {
-                console.error('Failed to update thread:', error)
+                this.$dialog.requestError(error, this.$t('forum.errorSubmitting'))
             }
         },
-        async onDeleteThreadConfirm(confirmed) {
-            if (!confirmed) return
+        async deleteThread() {
+            if (this.deletingThread) return
+            const ok = await this.$dialog.confirmDelete(this.$t('forum.confirmDeleteThread'))
+            if (!ok) return
+
+            this.deletingThread = true
             try {
                 const forumSlug = this.forumStore.currentThread.forum?.slug || this.$route.params.forumSlug
                 await this.forumStore.deleteThread(this.forumStore.currentThread.id)
                 this.$router.push({name: 'forum-category', params: {slug: forumSlug}})
             } catch (error) {
-                console.error('Failed to delete thread:', error)
+                this.$dialog.requestError(error, this.$t('forum.errorSubmitting'))
+            } finally {
+                this.deletingThread = false
             }
         },
         formatDateDistance(date) {
@@ -448,20 +453,6 @@ export default {
 </script>
 
 <style scoped>
-.forum-thread-container {
-    min-height: 100vh;
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
-}
-
-.forum-header {
-    background: rgba(var(--v-theme-primary), 0.05);
-    padding: 16px 0;
-}
-
-.thread-header-card {
-    border-radius: 16px !important;
-}
-
 .thread-body {
     line-height: 1.7;
 }
@@ -469,23 +460,5 @@ export default {
 .thread-body :deep(img) {
     max-width: 100%;
     height: auto;
-}
-
-.reply-card {
-    border-radius: 16px !important;
-}
-
-.gap-2 {
-    gap: 8px;
-}
-
-.gap-4 {
-    gap: 16px;
-}
-
-@media (max-width: 960px) {
-    .forum-header {
-        padding: 12px 0;
-    }
 }
 </style>

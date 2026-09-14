@@ -1,7 +1,9 @@
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
 
+const dialog = useDialog();
 const emit = defineEmits(['update:modelValue', 'error']);
 const props = defineProps({
     config: {
@@ -32,6 +34,8 @@ const chipIcon = computed(() => isTagLike.value ? 'mdi-pound' : 'mdi-folder');
 const toTitle = (v) => (typeof v === 'string' ? v : (v?.title ?? String(v ?? '')));
 
 const multiple = computed(() => props.config.multiple !== false);
+const fieldLabel = computed(() => props.config.label?.toLowerCase() || 'item');
+const fieldLabelSingular = computed(() => fieldLabel.value.replace(/s$/, ''));
 
 const normalizeIn = (val) => {
     if (multiple.value) {
@@ -60,7 +64,7 @@ const fetchTerms = async () => {
 
 const saveCategory = async () => {
     const title = newCategory.value.trim();
-    if (!title) return;
+    if (!title || saving.value) return;
     saving.value = true;
     try {
         await axios.post('/api/tag/terms', {
@@ -80,6 +84,7 @@ const saveCategory = async () => {
     } catch (e) {
         console.error('Failed to create category:', e);
         emit('error', { source: 'saveCategory', error: e });
+        dialog.requestError(e);
     } finally {
         saving.value = false;
     }
@@ -124,15 +129,14 @@ onMounted(() => {
             variant="outlined"
             density="compact"
             :prepend-inner-icon="isTagLike ? 'mdi-tag-plus' : 'mdi-folder-plus'"
-            :placeholder="`Type to search or create new ${config.label?.toLowerCase() || 'item'}`"
-            hint="Press Enter to add a new entry"
+            :placeholder="$t('dataTable.taxonomy.searchOrCreate', { label: fieldLabel })"
+            :hint="$t('dataTable.taxonomy.enterToAdd')"
             persistent-hint
         >
             <template #no-data>
                 <v-list-item>
-                    <v-list-item-title>
-                        <span v-if="search">No results matching "<strong>{{ search }}</strong>". Press Enter to create.</span>
-                        <span v-else>Start typing to search or create.</span>
+                    <v-list-item-title class="text-medium-emphasis">
+                        {{ search ? $t('dataTable.taxonomy.noMatch', { search }) : $t('dataTable.taxonomy.startTyping') }}
                     </v-list-item-title>
                 </v-list-item>
             </template>
@@ -158,14 +162,14 @@ onMounted(() => {
                 :prepend-icon="showAddInline ? 'mdi-chevron-up' : 'mdi-plus'"
                 @click="showAddInline = !showAddInline"
             >
-                Add new {{ config.label?.toLowerCase().replace(/s$/, '') || 'item' }}
+                {{ $t('dataTable.taxonomy.addNew', { label: fieldLabelSingular }) }}
             </v-btn>
 
             <v-expand-transition>
-                <div v-if="showAddInline" class="mt-2 d-flex gap-2 align-start">
+                <div v-if="showAddInline" class="mt-2 d-flex ga-2 align-start">
                     <v-text-field
                         v-model="newCategory"
-                        :label="`New ${config.label?.toLowerCase() || 'item'}`"
+                        :label="$t('dataTable.taxonomy.newLabel', { label: fieldLabel })"
                         variant="outlined"
                         density="compact"
                         hide-details
@@ -176,11 +180,11 @@ onMounted(() => {
                         variant="elevated"
                         size="small"
                         :loading="saving"
-                        :disabled="!newCategory.trim()"
+                        :disabled="!newCategory.trim() || saving"
                         prepend-icon="mdi-plus"
                         @click="saveCategory"
                     >
-                        Add
+                        {{ $t('common.add') }}
                     </v-btn>
                 </div>
             </v-expand-transition>

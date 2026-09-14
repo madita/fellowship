@@ -22,6 +22,7 @@ return [
         'validation'        => 'Validation failed',
         'too_many_requests' => 'Too many requests. Please try again later.',
         'admin_required'    => 'Unauthorized. Admin access required.',
+        'permission_required' => 'You do not have permission to do this.',
     ],
 
     // Media
@@ -196,6 +197,7 @@ return [
     // User
     'user' => [
         'preferences_updated' => 'Preferences updated successfully',
+        'profile_updated' => 'Profile updated successfully',
     ],
 
     // Conversations

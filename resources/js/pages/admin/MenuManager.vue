@@ -1,7 +1,13 @@
 <template>
-    <v-container fluid>
-        <h1 class="text-h4 mb-4">{{ t('menuAdmin.title') }}</h1>
+    <div class="flex-grow-1">
+    <page-header
+        :title="t('menuAdmin.title')"
+        :subtitle="t('menuAdmin.subtitle')"
+        icon="mdi-menu"
+        fluid
+    />
 
+    <v-container fluid>
         <v-row>
             <!-- Menu list -->
             <v-col cols="12" md="4">
@@ -29,10 +35,12 @@
                             v-for="menu in menus"
                             :key="menu.id"
                             :active="selectedMenu?.id === menu.id"
+                            :disabled="deletingMenuId === menu.id"
                             @click="selectMenu(menu)"
                         >
                             <template v-slot:prepend>
-                                <v-icon v-if="selectedMenu?.id === menu.id">mdi-check</v-icon>
+                                <v-progress-circular v-if="loadingItems && selectedMenu?.id === menu.id" size="20" width="2" indeterminate />
+                                <v-icon v-else-if="selectedMenu?.id === menu.id">mdi-check</v-icon>
                                 <div v-else style="width: 24px;"></div>
                             </template>
 
@@ -56,6 +64,7 @@
                                     icon="mdi-pencil"
                                     size="x-small"
                                     variant="text"
+                                    :disabled="deletingMenuId !== null"
                                     @click.stop="openMenuDialog(menu)"
                                 />
                                 <v-btn
@@ -63,15 +72,20 @@
                                     size="x-small"
                                     variant="text"
                                     color="error"
+                                    :loading="deletingMenuId === menu.id"
+                                    :disabled="deletingMenuId !== null"
                                     @click.stop="confirmDeleteMenu(menu)"
                                 />
                             </template>
                         </v-list-item>
                     </v-list>
 
-                    <v-card-text v-else class="text-center text-medium-emphasis">
-                        {{ t('menuAdmin.emptyMenus') }}
-                    </v-card-text>
+                    <empty-state
+                        v-else
+                        compact
+                        icon="mdi-menu"
+                        :title="t('menuAdmin.emptyMenus')"
+                    />
                 </v-card>
             </v-col>
 
@@ -96,6 +110,8 @@
 
                     <v-divider />
 
+                    <v-progress-linear v-if="loadingItems || reordering" indeterminate color="primary" />
+
                     <v-card-text>
                         <draggable
                             v-if="menuItems.length"
@@ -103,6 +119,7 @@
                             :animation="200"
                             handle=".drag-handle"
                             item-key="id"
+                            :disabled="reordering || deletingItemId !== null"
                             @end="reorderItems"
                         >
                             <template #item="{ element: item }">
@@ -171,7 +188,6 @@
                                         <v-chip
                                             v-if="!item.is_active"
                                             size="x-small"
-                                            color="grey"
                                             variant="tonal"
                                             class="me-2"
                                         >
@@ -182,6 +198,7 @@
                                             icon="mdi-pencil"
                                             size="x-small"
                                             variant="text"
+                                            :disabled="deletingItemId !== null"
                                             @click="openItemDialog(item)"
                                         />
                                         <v-btn
@@ -189,6 +206,8 @@
                                             size="x-small"
                                             variant="text"
                                             color="error"
+                                            :loading="deletingItemId === item.id"
+                                            :disabled="deletingItemId !== null"
                                             @click="confirmDeleteItem(item)"
                                         />
                                     </div>
@@ -215,6 +234,7 @@
                                                 icon="mdi-pencil"
                                                 size="x-small"
                                                 variant="text"
+                                                :disabled="deletingItemId !== null"
                                                 @click="openItemDialog(child)"
                                             />
                                             <v-btn
@@ -222,6 +242,8 @@
                                                 size="x-small"
                                                 variant="text"
                                                 color="error"
+                                                :loading="deletingItemId === child.id"
+                                                :disabled="deletingItemId !== null"
                                                 @click="confirmDeleteItem(child)"
                                             />
                                         </v-sheet>
@@ -230,25 +252,20 @@
                             </template>
                         </draggable>
 
-                        <div
+                        <empty-state
                             v-else
-                            class="text-center text-medium-emphasis py-8"
-                        >
-                            {{ t('menuAdmin.emptyItems') }}
-                        </div>
+                            compact
+                            icon="mdi-format-list-bulleted"
+                            :title="t('menuAdmin.emptyItems')"
+                        />
                     </v-card-text>
                 </v-card>
 
-                <v-card
-                    v-else
-                    flat
-                    border
-                    class="text-center pa-12"
-                >
-                    <v-icon size="64" color="grey-lighten-1">mdi-menu</v-icon>
-                    <p class="text-body-1 mt-3 text-medium-emphasis">
-                        {{ t('menuAdmin.selectPrompt') }}
-                    </p>
+                <v-card v-else flat border>
+                    <empty-state
+                        icon="mdi-menu"
+                        :title="t('menuAdmin.selectPrompt')"
+                    />
                 </v-card>
             </v-col>
         </v-row>
@@ -270,15 +287,6 @@
             @error="onError"
         />
 
-        <confirm-dialog
-            v-model="confirm.open"
-            :title="confirm.title"
-            :content="confirm.content"
-            :confirmation-text="t('common.delete')"
-            :cancellation-text="t('common.cancel')"
-            :resolve="confirm.resolve"
-        />
-
         <v-snackbar
             v-model="snack.open"
             :color="snack.color"
@@ -288,6 +296,7 @@
             {{ snack.text }}
         </v-snackbar>
     </v-container>
+    </div>
 </template>
 
 <script setup>
@@ -297,25 +306,25 @@ import axios from 'axios';
 import draggable from 'vuedraggable';
 import MenuDialog from '@/components/admin/MenuDialog.vue';
 import MenuItemDialog from '@/components/admin/MenuItemDialog.vue';
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
+import PageHeader from '../../components/common/PageHeader.vue';
+import EmptyState from '../../components/common/EmptyState.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const menus = ref([]);
 const selectedMenu = ref(null);
 const menuItems = ref([]);
+const loadingItems = ref(false);
+const reordering = ref(false);
+const deletingMenuId = ref(null);
+const deletingItemId = ref(null);
 
 const showMenuDialog = ref(false);
 const showItemDialog = ref(false);
 const editingMenu = ref(null);
 const editingItem = ref(null);
-
-const confirm = reactive({
-    open: false,
-    title: '',
-    content: '',
-    resolve: () => {},
-});
 
 const snack = reactive({
     open: false,
@@ -345,12 +354,16 @@ async function fetchMenus() {
 
 async function selectMenu(menu) {
     selectedMenu.value = menu;
+    loadingItems.value = true;
     try {
         const { data } = await axios.get(`/api/admin/menus/${menu.id}/items`);
         menuItems.value = data;
     } catch (error) {
         console.error('Error fetching menu items:', error);
         menuItems.value = [];
+        notify(error?.response?.data?.message || t('menuAdmin.saveError'), 'error');
+    } finally {
+        loadingItems.value = false;
     }
 }
 
@@ -364,44 +377,48 @@ function openItemDialog(item = null) {
     showItemDialog.value = true;
 }
 
-function confirmDeleteMenu(menu) {
-    confirm.title = t('menuAdmin.editMenu');
-    confirm.content = t('menuAdmin.confirmDeleteMenu', { name: menu.name });
-    confirm.resolve = async (ok) => {
-        confirm.open = false;
-        if (!ok) return;
-        try {
-            await axios.delete(`/api/admin/menus/${menu.id}`);
-            if (selectedMenu.value?.id === menu.id) {
-                selectedMenu.value = null;
-                menuItems.value = [];
-            }
-            await fetchMenus();
-            notify(t('menuAdmin.deletedMenu'));
-        } catch (error) {
-            console.error('Error deleting menu:', error);
-            notify(error?.response?.data?.message || t('menuAdmin.deleteError'), 'error');
+async function confirmDeleteMenu(menu) {
+    if (deletingMenuId.value !== null) return;
+    const ok = await dialog.confirmDelete(t('menuAdmin.confirmDeleteMenu', { name: menu.name }), {
+        title: t('menuAdmin.editMenu'),
+    });
+    if (!ok) return;
+
+    deletingMenuId.value = menu.id;
+    try {
+        await axios.delete(`/api/admin/menus/${menu.id}`);
+        if (selectedMenu.value?.id === menu.id) {
+            selectedMenu.value = null;
+            menuItems.value = [];
         }
-    };
-    confirm.open = true;
+        await fetchMenus();
+        notify(t('menuAdmin.deletedMenu'));
+    } catch (error) {
+        console.error('Error deleting menu:', error);
+        notify(error?.response?.data?.message || t('menuAdmin.deleteError'), 'error');
+    } finally {
+        deletingMenuId.value = null;
+    }
 }
 
-function confirmDeleteItem(item) {
-    confirm.title = t('menuAdmin.editItem');
-    confirm.content = t('menuAdmin.confirmDeleteItem', { label: item.label });
-    confirm.resolve = async (ok) => {
-        confirm.open = false;
-        if (!ok) return;
-        try {
-            await axios.delete(`/api/admin/menu-items/${item.id}`);
-            await selectMenu(selectedMenu.value);
-            notify(t('menuAdmin.deletedItem'));
-        } catch (error) {
-            console.error('Error deleting item:', error);
-            notify(error?.response?.data?.message || t('menuAdmin.deleteError'), 'error');
-        }
-    };
-    confirm.open = true;
+async function confirmDeleteItem(item) {
+    if (deletingItemId.value !== null) return;
+    const ok = await dialog.confirmDelete(t('menuAdmin.confirmDeleteItem', { label: item.label }), {
+        title: t('menuAdmin.editItem'),
+    });
+    if (!ok) return;
+
+    deletingItemId.value = item.id;
+    try {
+        await axios.delete(`/api/admin/menu-items/${item.id}`);
+        await selectMenu(selectedMenu.value);
+        notify(t('menuAdmin.deletedItem'));
+    } catch (error) {
+        console.error('Error deleting item:', error);
+        notify(error?.response?.data?.message || t('menuAdmin.deleteError'), 'error');
+    } finally {
+        deletingItemId.value = null;
+    }
 }
 
 async function onMenuSaved() {
@@ -419,12 +436,13 @@ async function onItemSaved() {
 }
 
 async function reorderItems() {
-    if (!selectedMenu.value) return;
+    if (!selectedMenu.value || reordering.value) return;
     const items = menuItems.value.map((item, index) => ({
         id: item.id,
         order: index,
         parent_id: item.parent_id,
     }));
+    reordering.value = true;
     try {
         await axios.post(`/api/admin/menus/${selectedMenu.value.id}/reorder`, { items });
         notify(t('menuAdmin.reordered'));
@@ -432,6 +450,8 @@ async function reorderItems() {
         console.error('Error reordering items:', error);
         notify(error?.response?.data?.message || t('menuAdmin.saveError'), 'error');
         await selectMenu(selectedMenu.value); // revert on error
+    } finally {
+        reordering.value = false;
     }
 }
 

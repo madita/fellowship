@@ -3,19 +3,24 @@ import { ref, watch, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import UserAvatar from "../common/UserAvatar.vue";
+import EmptyState from '@/components/common/EmptyState.vue';
 import axios from "axios";
-import ConfirmDialog from '../common/ConfirmDialog.vue';
 import { useUserStore } from "@/store/userStore.js";
 import { useDateFormat } from '@/plugins/formatDate.js';
 import { useRouter } from 'vue-router';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
+import { useDialog } from '@/composables/useDialog.js';
 
 const router = useRouter();
+// Confirmations and failures of the actions are modal
+const dialog = useDialog();
 
 const props = defineProps({
     isDrawerOpen: Boolean,
     editMode: Boolean,
     ticket: Object,
+    // The parent's create / update / delete request is in flight
+    saving: { type: Boolean, default: false },
 });
 
 const emit = defineEmits([
@@ -41,7 +46,6 @@ const {
     priorityFilterOptions,
 } = useTicketHelpers();
 
-const showConfirmationDialog = ref(false);
 const localEditMode = ref(props.editMode);
 const refForm = ref();
 const loadingTicketDetails = ref(false);
@@ -54,7 +58,11 @@ const isInternalComment = ref(false);
 const assignableUsers = ref([]);
 const isApprovable = ref(false);
 const isApproved = ref(false);
-const approving = ref(false);
+const approving = ref(null);
+// Which property (status / priority / assignee) is being saved
+const updatingField = ref(null);
+const addingComment = ref(false);
+const deletingCommentId = ref(null);
 
 const latestTicketRequestId = ref(0);
 
@@ -102,7 +110,9 @@ const getTicketDetails = async (ticketId) => {
         isApprovable.value = response.data.is_approvable || false;
         isApproved.value = response.data.is_approved || false;
     } catch (err) {
+        if (requestId !== latestTicketRequestId.value) return;
         console.error('Failed to load ticket details:', err);
+        await dialog.requestError(err, t('tickets.messages.loadFailed'));
     } finally {
         loadingTicketDetails.value = false;
     }
@@ -121,6 +131,12 @@ watch(
 
 watch(() => props.editMode, () => {
     localEditMode.value = props.editMode;
+});
+
+// The drawer is closed by the parent once a save succeeded; leave the
+// edit mode the pencil button switched on locally.
+watch(() => props.isDrawerOpen, (open) => {
+    if (!open) localEditMode.value = props.editMode;
 });
 
 const loadTicketTypes = async () => {
@@ -166,29 +182,34 @@ const assignToMe = async () => {
     await handleAssigneeChange(user.value.id);
 };
 
-const removeTicket = () => {
+// The parent performs the request and closes the drawer on success.
+const removeTicket = async () => {
+    if (props.saving) return;
+    const confirmed = await dialog.confirmDelete(t('tickets.confirm.deleteMessage'), {
+        title: t('tickets.confirm.deleteTitle'),
+        confirmationText: t('tickets.confirm.deleteConfirm'),
+        cancellationText: t('tickets.confirm.deleteCancel'),
+    });
+    if (!confirmed) return;
     emit('removeTicket', String(localTicket.value.id));
-    emit('update:isDrawerOpen', false);
 };
 
 const handleSubmit = async () => {
+    if (props.saving) return;
     const valid = await refForm.value?.validate();
     if (valid.valid) {
-        localEditMode.value = false;
-
         if (localTicket.value.id) {
             emit('updateTicket', localTicket.value);
         } else {
             emit('addTicket', localTicket.value);
         }
-
-        emit('update:isDrawerOpen', false);
     }
 };
 
 const handleStatusChange = async (newStatus) => {
-    if (!localTicket.value?.id) return;
+    if (!localTicket.value?.id || updatingField.value) return;
 
+    updatingField.value = 'status';
     try {
         const response = await axios.patch(`/api/tickets/${localTicket.value.id}`, {
             status: newStatus
@@ -197,12 +218,16 @@ const handleStatusChange = async (newStatus) => {
         emit('ticketUpdated', response.data);
     } catch (err) {
         console.error('Failed to update status:', err);
+        await dialog.requestError(err, t('tickets.messages.updateFailed'));
+    } finally {
+        updatingField.value = null;
     }
 };
 
 const handlePriorityChange = async (newPriority) => {
-    if (!localTicket.value?.id) return;
+    if (!localTicket.value?.id || updatingField.value) return;
 
+    updatingField.value = 'priority';
     try {
         const response = await axios.patch(`/api/tickets/${localTicket.value.id}`, {
             priority: newPriority
@@ -211,12 +236,16 @@ const handlePriorityChange = async (newPriority) => {
         emit('ticketUpdated', response.data);
     } catch (err) {
         console.error('Failed to update priority:', err);
+        await dialog.requestError(err, t('tickets.messages.updateFailed'));
+    } finally {
+        updatingField.value = null;
     }
 };
 
 const handleAssigneeChange = async (userId) => {
-    if (!localTicket.value?.id || !isAdmin.value) return;
+    if (!localTicket.value?.id || !isAdmin.value || updatingField.value) return;
 
+    updatingField.value = 'assignee';
     try {
         if (userId) {
             await axios.post(`/api/tickets/${localTicket.value.id}/assign`, {
@@ -229,13 +258,17 @@ const handleAssigneeChange = async (userId) => {
         emit('ticketUpdated');
     } catch (err) {
         console.error('Failed to update assignee:', err);
+        await dialog.requestError(err, t('tickets.messages.updateFailed'));
+    } finally {
+        updatingField.value = null;
     }
 };
 
+// `approving` holds which of the two actions is in flight
 const approveTicket = async () => {
-    if (!localTicket.value?.id) return;
+    if (!localTicket.value?.id || approving.value) return;
     try {
-        approving.value = true;
+        approving.value = 'approve';
         const response = await axios.post(`/api/tickets/${localTicket.value.id}/approve`);
         localTicket.value = { ...localTicket.value, ...response.data };
         isApproved.value = true;
@@ -243,15 +276,16 @@ const approveTicket = async () => {
         emit('ticketUpdated', response.data);
     } catch (err) {
         console.error('Failed to approve:', err);
+        await dialog.requestError(err, t('tickets.messages.approvalFailed'));
     } finally {
-        approving.value = false;
+        approving.value = null;
     }
 };
 
 const rejectTicket = async () => {
-    if (!localTicket.value?.id) return;
+    if (!localTicket.value?.id || approving.value) return;
     try {
-        approving.value = true;
+        approving.value = 'reject';
         const response = await axios.post(`/api/tickets/${localTicket.value.id}/reject`);
         localTicket.value = { ...localTicket.value, ...response.data };
         isApproved.value = false;
@@ -259,14 +293,16 @@ const rejectTicket = async () => {
         emit('ticketUpdated', response.data);
     } catch (err) {
         console.error('Failed to reject:', err);
+        await dialog.requestError(err, t('tickets.messages.approvalFailed'));
     } finally {
-        approving.value = false;
+        approving.value = null;
     }
 };
 
 const addComment = async () => {
-    if (!newComment.value.trim() || !localTicket.value?.id) return;
+    if (!newComment.value.trim() || !localTicket.value?.id || addingComment.value) return;
 
+    addingComment.value = true;
     try {
         const response = await axios.post(`/api/tickets/${localTicket.value.id}/comments`, {
             comment: newComment.value,
@@ -278,15 +314,25 @@ const addComment = async () => {
         isInternalComment.value = false;
     } catch (err) {
         console.error('Failed to add comment:', err);
+        await dialog.requestError(err, t('tickets.messages.commentFailed'));
+    } finally {
+        addingComment.value = false;
     }
 };
 
 const deleteComment = async (commentId) => {
+    if (deletingCommentId.value) return;
+    if (!(await dialog.confirmDelete(t('tickets.confirm.deleteCommentMessage')))) return;
+
+    deletingCommentId.value = commentId;
     try {
         await axios.delete(`/api/ticket-comments/${commentId}`);
         ticketComments.value = ticketComments.value.filter(c => c.id !== commentId);
     } catch (err) {
         console.error('Failed to delete comment:', err);
+        await dialog.requestError(err, t('tickets.messages.commentDeleteFailed'));
+    } finally {
+        deletingCommentId.value = null;
     }
 };
 
@@ -304,13 +350,7 @@ const openLegacyUsers = () => {
     const meta = localTicket.value?.metadata || {};
     const search = meta.legacy_username || meta.legacy_user_id || meta.legacy_email || '';
     dialogModelValueUpdate(false);
-    router.push({ path: '/admin/migrations', query: { tab: 'legacyUsers', search } });
-};
-
-const handleConfirmation = (isConfirmed) => {
-    if (isConfirmed) {
-        removeTicket();
-    }
+    router.push({ path: '/admin/settings/tools/migrations', query: { tab: 'legacyUsers', search } });
 };
 
 const rules = {
@@ -336,15 +376,16 @@ onMounted(() => {
         <!-- Header Section -->
         <div class="ticket-drawer-header" :class="{ 'edit-mode': localEditMode }">
             <div v-if="localEditMode" class="d-flex align-center py-3 px-4">
-                <h5 class="text-h5 font-weight-medium">
+                <h2 class="text-h6 font-weight-medium">
                     {{ localTicket?.id ? t('tickets.editTicket') : t('tickets.createTicket') }}
-                </h5>
+                </h2>
                 <VSpacer/>
                 <VBtn
                     v-if="localTicket?.id"
                     color="primary"
                     variant="text"
                     class="me-2"
+                    :disabled="saving"
                     @click="localEditMode = !localEditMode"
                 >
                     {{ localEditMode ? t('tickets.view') : t('tickets.edit') }}
@@ -353,36 +394,36 @@ onMounted(() => {
 
             <div v-else class="d-flex align-center py-3 px-4">
                 <div class="flex-grow-1">
-                    <div class="d-flex align-center mb-1">
+                    <div class="d-flex align-center flex-wrap ga-2 mb-1">
                         <v-chip
                             v-if="localTicket?.ticket_type"
                             size="small"
+                            variant="tonal"
                             :color="localTicket.ticket_type.color"
-                            class="mr-2"
                         >
                             <v-icon start size="small">{{ localTicket.ticket_type.icon }}</v-icon>
                             {{ localTicket.ticket_type.name }}
                         </v-chip>
                         <v-chip
                             size="small"
+                            variant="tonal"
                             :color="getStatusColor(localTicket?.status)"
                         >
                             {{ localTicket?.status_label }}
                         </v-chip>
                     </div>
-                    <h5 class="text-h6 font-weight-medium">{{ localTicket?.title }}</h5>
+                    <h2 class="text-h6 font-weight-medium">{{ localTicket?.title }}</h2>
                 </div>
 
                 <VSpacer/>
 
-                <div class="action-buttons">
+                <div class="d-flex align-center ga-1">
                     <v-btn
                         v-if="canEdit"
                         icon="mdi-pencil"
                         variant="text"
                         color="primary"
                         density="comfortable"
-                        class="action-btn"
                         @click="localEditMode = true"
                         :title="t('tickets.edit')"
                     />
@@ -393,8 +434,8 @@ onMounted(() => {
                         variant="text"
                         color="error"
                         density="comfortable"
-                        class="action-btn"
-                        @click="showConfirmationDialog = true"
+                        :loading="saving"
+                        @click="removeTicket"
                         :title="t('tickets.delete')"
                     />
 
@@ -402,7 +443,6 @@ onMounted(() => {
                         icon="mdi-close"
                         variant="text"
                         density="comfortable"
-                        class="action-btn"
                         @click="dialogModelValueUpdate(false)"
                         :title="t('tickets.close')"
                     />
@@ -499,20 +539,21 @@ onMounted(() => {
                                 </VSelect>
                             </VCol>
 
-                            <VCol cols="12" class="d-flex justify-end">
+                            <VCol cols="12" class="d-flex justify-end ga-2">
                                 <VBtn
-                                    type="submit"
-                                    color="primary"
-                                    class="me-3"
-                                >
-                                    {{ localTicket?.id ? t('tickets.update') : t('tickets.create') }}
-                                </VBtn>
-                                <VBtn
-                                    variant="outlined"
-                                    color="secondary"
+                                    variant="text"
+                                    :disabled="saving"
                                     @click="onCancel"
                                 >
                                     {{ t('tickets.cancel') }}
+                                </VBtn>
+                                <VBtn
+                                    type="submit"
+                                    color="primary"
+                                    variant="flat"
+                                    :loading="saving"
+                                >
+                                    {{ localTicket?.id ? t('tickets.update') : t('tickets.create') }}
                                 </VBtn>
                             </VCol>
                         </VRow>
@@ -521,13 +562,13 @@ onMounted(() => {
             </VCard>
 
             <!-- View Mode Content -->
-            <div v-else class="ticket-view-content">
+            <div v-else class="pa-4">
                 <!-- Ticket Properties -->
-                <v-card flat class="ticket-info-card mb-4">
+                <v-card flat rounded="lg" class="mb-4">
                     <v-card-text>
                         <!-- Priority -->
-                        <div class="property-item mb-3">
-                            <div class="property-label">{{ t('tickets.fields.priority') }}</div>
+                        <div class="py-2 mb-3">
+                            <div class="text-caption text-uppercase font-weight-medium text-medium-emphasis mb-1">{{ t('tickets.fields.priority') }}</div>
                             <v-select
                                 v-if="isAdmin"
                                 :model-value="localTicket?.priority"
@@ -538,6 +579,8 @@ onMounted(() => {
                                 density="compact"
                                 variant="outlined"
                                 hide-details
+                                :loading="updatingField === 'priority'"
+                                :disabled="!!updatingField"
                             >
                                 <template #selection="{ item }">
                                     <v-chip :color="item.raw.color" size="small">
@@ -553,8 +596,8 @@ onMounted(() => {
                         </div>
 
                         <!-- Status -->
-                        <div class="property-item mb-3">
-                            <div class="property-label">{{ t('tickets.fields.status') }}</div>
+                        <div class="py-2 mb-3">
+                            <div class="text-caption text-uppercase font-weight-medium text-medium-emphasis mb-1">{{ t('tickets.fields.status') }}</div>
                             <v-select
                                 v-if="isAdmin"
                                 :model-value="localTicket?.status"
@@ -565,6 +608,8 @@ onMounted(() => {
                                 density="compact"
                                 variant="outlined"
                                 hide-details
+                                :loading="updatingField === 'status'"
+                                :disabled="!!updatingField"
                             >
                                 <template #selection="{ item }">
                                     <v-chip :color="item.raw.color" size="small">
@@ -578,9 +623,9 @@ onMounted(() => {
                         </div>
 
                         <!-- Assignee -->
-                        <div class="property-item mb-3" v-if="isAdmin">
+                        <div class="py-2 mb-3" v-if="isAdmin">
                             <div class="d-flex align-center justify-space-between">
-                                <div class="property-label">{{ t('tickets.fields.assignee') }}</div>
+                                <div class="text-caption text-uppercase font-weight-medium text-medium-emphasis mb-1">{{ t('tickets.fields.assignee') }}</div>
                                 <v-btn
                                     v-if="localTicket?.assigned_to_user_id !== user.id"
                                     variant="text"
@@ -589,6 +634,8 @@ onMounted(() => {
                                     color="primary"
                                     class="text-caption pa-0"
                                     style="min-width: auto; text-transform: none;"
+                                    :loading="updatingField === 'assignee'"
+                                    :disabled="!!updatingField"
                                     @click="assignToMe"
                                 >
                                     {{ t('tickets.assignToMe') }}
@@ -605,6 +652,8 @@ onMounted(() => {
                                 hide-details
                                 clearable
                                 :placeholder="t('tickets.assign')"
+                                :loading="updatingField === 'assignee'"
+                                :disabled="!!updatingField"
                             >
                                 <template #selection="{ item }">
                                     <div class="d-flex align-center">
@@ -632,8 +681,8 @@ onMounted(() => {
                         </div>
 
                         <!-- Creator -->
-                        <div class="property-item mb-3">
-                            <div class="property-label">{{ t('tickets.fields.reporter') }}</div>
+                        <div class="py-2 mb-3">
+                            <div class="text-caption text-uppercase font-weight-medium text-medium-emphasis mb-1">{{ t('tickets.fields.reporter') }}</div>
                             <div class="d-flex align-center">
                                 <UserAvatar
                                     v-if="localTicket?.creator"
@@ -646,9 +695,9 @@ onMounted(() => {
                         </div>
 
                         <!-- Created Date -->
-                        <div class="property-item">
-                            <div class="property-label">{{ t('tickets.fields.created') }}</div>
-                            <div class="property-value">
+                        <div class="py-2">
+                            <div class="text-caption text-uppercase font-weight-medium text-medium-emphasis mb-1">{{ t('tickets.fields.created') }}</div>
+                            <div class="text-body-2">
                                 {{ formatDateUtil(localTicket?.created_at) }}
                             </div>
                         </div>
@@ -658,12 +707,13 @@ onMounted(() => {
                 <!-- Legacy account claim details -->
                 <v-card
                     flat
-                    class="description-card mb-4"
+                    rounded="lg"
+                    class="mb-4"
                     v-if="isAdmin && localTicket?.metadata?.legacy_username"
                 >
                     <v-card-text>
                         <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.legacyClaim.title') }}</h3>
-                        <div class="d-flex flex-wrap align-center mb-3" style="gap: 6px;">
+                        <div class="d-flex flex-wrap align-center ga-2 mb-3">
                             <v-chip size="small" variant="tonal" prepend-icon="mdi-account-clock">
                                 {{ localTicket.metadata.legacy_username }}
                             </v-chip>
@@ -693,7 +743,7 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Description -->
-                <v-card flat class="description-card mb-4" v-if="localTicket?.description">
+                <v-card flat rounded="lg" class="mb-4" v-if="localTicket?.description">
                     <v-card-text>
                         <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.fields.description') }}</h3>
                         <div class="description-content">{{ localTicket.description }}</div>
@@ -701,7 +751,7 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Related Content (Ticketable) -->
-                <v-card flat class="related-card mb-4" v-if="localTicket?.ticketable && ticketableLink">
+                <v-card flat rounded="lg" class="mb-4" v-if="localTicket?.ticketable && ticketableLink">
                     <v-card-text>
                         <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.sidebar.relatedTo') }}</h3>
                         <router-link
@@ -721,7 +771,7 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Approval Section -->
-                <v-card flat class="approval-card mb-4" v-if="isApprovable && isAdmin">
+                <v-card flat rounded="lg" class="mb-4" v-if="isApprovable && isAdmin">
                     <v-card-text>
                         <v-alert
                             v-if="!isApproved"
@@ -748,7 +798,8 @@ onMounted(() => {
                                     color="success"
                                     variant="flat"
                                     size="small"
-                                    :loading="approving"
+                                    :loading="approving === 'approve'"
+                                    :disabled="!!approving"
                                     @click="approveTicket"
                                 >
                                     <v-icon start>mdi-check</v-icon>
@@ -756,9 +807,10 @@ onMounted(() => {
                                 </v-btn>
                                 <v-btn
                                     color="error"
-                                    variant="outlined"
+                                    variant="tonal"
                                     size="small"
-                                    :loading="approving"
+                                    :loading="approving === 'reject'"
+                                    :disabled="!!approving"
                                     @click="rejectTicket"
                                 >
                                     <v-icon start>mdi-close</v-icon>
@@ -768,9 +820,9 @@ onMounted(() => {
                             <v-btn
                                 v-else
                                 color="warning"
-                                variant="outlined"
+                                variant="tonal"
                                 size="small"
-                                :loading="approving"
+                                :loading="approving === 'reject'"
                                 @click="rejectTicket"
                             >
                                 <v-icon start>mdi-undo</v-icon>
@@ -781,7 +833,7 @@ onMounted(() => {
                 </v-card>
 
                 <!-- Comments Section -->
-                <v-card flat class="comments-card">
+                <v-card flat rounded="lg">
                     <v-card-text>
                         <h3 class="text-subtitle-1 font-weight-medium mb-3">
                             {{ t('tickets.sidebar.activity', { count: ticketComments.length }) }}
@@ -810,7 +862,8 @@ onMounted(() => {
                                                 </span>
                                                 <v-chip
                                                     v-if="comment.is_internal"
-                                                    size="x-small"
+                                                    size="small"
+                                                    variant="tonal"
                                                     color="warning"
                                                     class="ml-2"
                                                 >
@@ -822,17 +875,22 @@ onMounted(() => {
                                                 icon="mdi-delete"
                                                 size="x-small"
                                                 variant="text"
+                                                :loading="deletingCommentId === comment.id"
+                                                :disabled="deletingCommentId !== null && deletingCommentId !== comment.id"
                                                 @click="deleteComment(comment.id)"
                                             />
                                         </div>
-                                        <div class="comment-text">{{ comment.comment }}</div>
+                                        <div class="text-body-2 comment-text">{{ comment.comment }}</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div v-if="ticketComments.length === 0" class="text-center text-medium-emphasis py-4">
-                                {{ t('tickets.noComments') }}
-                            </div>
+                            <empty-state
+                                v-if="ticketComments.length === 0"
+                                compact
+                                icon="mdi-comment-outline"
+                                :title="t('tickets.noComments')"
+                            />
                         </div>
 
                         <!-- Add Comment -->
@@ -845,6 +903,7 @@ onMounted(() => {
                                 rows="3"
                                 hide-details
                                 class="mb-2"
+                                :disabled="addingComment"
                             />
                             <div class="d-flex align-center justify-space-between">
                                 <v-checkbox
@@ -853,12 +912,15 @@ onMounted(() => {
                                     :label="t('tickets.sidebar.internalNote')"
                                     density="compact"
                                     hide-details
+                                    :disabled="addingComment"
                                 />
                                 <VSpacer/>
                                 <VBtn
                                     color="primary"
+                                    variant="flat"
                                     size="small"
                                     @click="addComment"
+                                    :loading="addingComment"
                                     :disabled="!newComment.trim()"
                                 >
                                     {{ t('tickets.comment') }}
@@ -870,22 +932,12 @@ onMounted(() => {
             </div>
         </PerfectScrollbar>
     </VNavigationDrawer>
-
-    <!-- Confirm Delete Dialog -->
-    <ConfirmDialog
-        v-model="showConfirmationDialog"
-        :title="t('tickets.confirm.deleteTitle')"
-        :content="t('tickets.confirm.deleteMessage')"
-        :confirmationText="t('tickets.confirm.deleteConfirm')"
-        :cancellationText="t('tickets.confirm.deleteCancel')"
-        :resolve="handleConfirmation"
-    />
 </template>
 
 <style scoped>
 .ticket-drawer {
     max-height: 100%;
-    border-left: 1px solid rgba(0, 0, 0, 0.12);
+    border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .ticket-drawer-header {
@@ -896,45 +948,6 @@ onMounted(() => {
 
 .ticket-drawer-content {
     height: calc(100vh - 65px);
-}
-
-.action-buttons {
-    display: flex;
-    align-items: center;
-}
-
-.action-btn {
-    margin-left: 4px;
-}
-
-.ticket-view-content {
-    padding: 16px;
-}
-
-.ticket-info-card,
-.description-card,
-.related-card,
-.approval-card,
-.comments-card {
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.property-item {
-    padding: 8px 0;
-}
-
-.property-label {
-    font-size: 0.75rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
-    opacity: 0.7;
-}
-
-.property-value {
-    font-size: 0.875rem;
 }
 
 .description-content {
@@ -954,22 +967,21 @@ onMounted(() => {
 }
 
 .comment-item:hover {
-    background-color: rgba(0, 0, 0, 0.02);
+    background-color: rgba(var(--v-theme-on-surface), 0.04);
 }
 
 .comment-item.internal-comment {
-    background-color: rgba(255, 193, 7, 0.05);
+    background-color: rgba(var(--v-theme-warning), 0.08);
     border-left: 3px solid rgb(var(--v-theme-warning));
 }
 
 .comment-text {
-    font-size: 0.875rem;
     line-height: 1.5;
     white-space: pre-line;
 }
 
 .add-comment {
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
     padding-top: 16px;
 }
 

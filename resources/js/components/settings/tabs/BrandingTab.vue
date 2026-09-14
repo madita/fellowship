@@ -29,7 +29,6 @@
                         :hint="$t('settings.branding.lightLogoHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
-                        @error="handleImageError"
                     />
                 </v-col>
 
@@ -49,7 +48,6 @@
                         :hint="$t('settings.branding.darkLogoHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
-                        @error="handleImageError"
                     />
                 </v-col>
             </v-row>
@@ -74,7 +72,6 @@
                         :hint="$t('settings.branding.faviconHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
-                        @error="handleImageError"
                     />
                 </v-col>
 
@@ -95,7 +92,6 @@
                         :hint="$t('settings.branding.appIconHint')"
                         @uploaded="handleImageUploaded"
                         @deleted="handleImageDeleted"
-                        @error="handleImageError"
                     />
                 </v-col>
             </v-row>
@@ -135,19 +131,13 @@ const props = defineProps({
     isSaving: Boolean,
 });
 
-const emit = defineEmits(['save', 'message']);
+defineEmits(['save']);
 
 function handleImageUploaded({ key, path }) {
     props.settings[key] = path;
-    emit('message', { text: `${key.replace(/_/g, ' ')} uploaded successfully`, type: 'success' });
 }
 
 function handleImageDeleted(key) {
     props.settings[key] = null;
-    emit('message', { text: `${key.replace(/_/g, ' ')} deleted successfully`, type: 'success' });
-}
-
-function handleImageError(message) {
-    emit('message', { text: message, type: 'error' });
 }
 </script>

@@ -241,7 +241,8 @@ class Taxonomy extends Model implements TranslatableContract
     public function scopeSearch(Builder $query, string $term, string $taxonomy): Builder
     {
         return $query->whereHas('term', function (Builder $q) use ($term) {
-            $q->where('title', 'like', '%' . $term . '%');
+            // Term titles are translated (term_translations)
+            $q->whereTranslationLike('title', '%' . $term . '%');
         });
     }
 

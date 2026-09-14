@@ -8,7 +8,7 @@ use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-// use App\Helpers\TaxonomyHelper;
+// use App\Support\TaxonomyHelper;
 // use App\Models\Tag\Taxable;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Collection;
@@ -249,7 +249,8 @@ trait HasTaxonomies
     public function scopeCategorized(Builder $query, string $category, string $taxonomy): Builder
     {
         $term_ids = Taxonomy::where('taxonomy', $taxonomy)->pluck('term_id');
-        $term     = Term::whereIn('id', $term_ids)->where('title', $category)->first();
+        // Term titles are translated (term_translations)
+        $term     = Term::whereIn('id', $term_ids)->whereTranslation('title', $category)->first();
 
         if ( ! $term) {
             return $query->whereRaw('0 = 1'); // Return empty result set

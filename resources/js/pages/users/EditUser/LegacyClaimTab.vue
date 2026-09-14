@@ -15,6 +15,7 @@
                         :hint="$t('account.legacyClaim.identityHint')"
                         persistent-hint
                         :prepend-inner-icon="isEmail ? 'mdi-email-outline' : 'mdi-account-outline'"
+                        :disabled="previewing || submitting"
                         variant="outlined"
                         density="compact"
                         @keyup.enter="preview"
@@ -24,7 +25,7 @@
                     <v-btn
                         variant="tonal"
                         :loading="previewing"
-                        :disabled="!legacyIdentity.trim()"
+                        :disabled="!legacyIdentity.trim() || submitting"
                         @click="preview"
                     >
                         {{ $t('account.legacyClaim.check') }}
@@ -32,6 +33,7 @@
                 </v-col>
             </v-row>
 
+            <!-- Result of the check: part of the form flow, so shown inline -->
             <template v-if="previewResult">
                 <v-alert
                     v-if="previewResult.found"
@@ -79,6 +81,7 @@
                             :label="$t('account.legacyClaim.idLabel')"
                             :hint="$t('account.legacyClaim.idHint')"
                             persistent-hint
+                            :disabled="submitting"
                             variant="outlined"
                             density="compact"
                             class="mb-3"
@@ -90,6 +93,7 @@
                     :label="$t('account.legacyClaim.messageLabel')"
                     :hint="$t('account.legacyClaim.messageHint')"
                     persistent-hint
+                    :disabled="submitting"
                     rows="3"
                     variant="outlined"
                     density="compact"
@@ -98,15 +102,12 @@
                 <v-btn
                     color="primary"
                     :loading="submitting"
+                    :disabled="previewing"
                     @click="submit"
                 >
                     {{ $t('account.legacyClaim.submit') }}
                 </v-btn>
             </template>
-
-            <v-alert v-if="result" :type="resultType" variant="tonal" density="compact" class="mt-4">
-                {{ result }}
-            </v-alert>
         </v-card-text>
     </v-card>
 </template>
@@ -114,6 +115,10 @@
 <script setup>
 import { ref, computed } from 'vue';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
+
+// Outcome of the requests (and errors) is shown as a modal
+const dialog = useDialog();
 
 const legacyIdentity = ref('');
 const legacyUserId = ref('');
@@ -121,8 +126,6 @@ const message = ref('');
 const previewing = ref(false);
 const submitting = ref(false);
 const previewResult = ref(null);
-const result = ref('');
-const resultType = ref('success');
 
 // The account was looked up by e-mail (no username typed).
 const resolvedFromEmail = computed(() => !!previewResult.value && previewResult.value.email_known !== null);
@@ -141,37 +144,35 @@ const identity = () => ({
 });
 
 const preview = async () => {
-    if (!legacyIdentity.value.trim()) return;
+    // Enter and the button can both trigger this; ignore while a request runs.
+    if (previewing.value || submitting.value || !legacyIdentity.value.trim()) return;
     previewing.value = true;
-    result.value = '';
     previewResult.value = null;
     try {
         const { data } = await axios.post('/api/account/legacy-claim/preview', identity());
         previewResult.value = data;
     } catch (e) {
-        result.value = e.response?.data?.message || e.message;
-        resultType.value = 'error';
+        dialog.requestError(e);
     } finally {
         previewing.value = false;
     }
 };
 
 const submit = async () => {
+    if (submitting.value || previewing.value) return;
     submitting.value = true;
-    result.value = '';
     try {
         const { data } = await axios.post('/api/account/legacy-claim', {
             ...identity(),
             legacy_user_id: legacyUserId.value || null,
             message: message.value || null,
         });
-        result.value = data.message;
-        resultType.value = 'success';
+        dialog.success(data.message);
         previewResult.value = null;
         message.value = '';
     } catch (e) {
-        result.value = e.response?.data?.message || e.message;
-        resultType.value = e.response?.status === 409 ? 'warning' : 'error';
+        const text = e.response?.data?.message || e.message;
+        e.response?.status === 409 ? dialog.warning(text) : dialog.error(text);
     } finally {
         submitting.value = false;
     }

@@ -25,7 +25,7 @@
                     :style="{ width: `${(counts.by_status[status.value] / counts.open) * 100}%` }"
                 />
             </div>
-            <div class="d-flex flex-wrap text-caption mb-3" style="gap: 4px 12px;">
+            <div class="d-flex flex-wrap text-caption mb-3 ga-1">
                 <router-link
                     v-for="status in statuses"
                     :key="status.value"
@@ -39,7 +39,7 @@
         </template>
 
         <!-- Urgent / high priority and recently resolved -->
-        <div class="d-flex flex-wrap align-center" style="gap: 6px;">
+        <div class="d-flex flex-wrap align-center ga-2">
             <v-chip
                 v-for="priority in urgentPriorities"
                 :key="priority.value"

@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'features' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-puzzle-outline" title="Site Features">
             <p class="text-body-2 text-medium-emphasis mb-4">
@@ -46,7 +43,6 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
 import { FEATURES, featureSettingKey } from '@/configs/features.js';
@@ -59,10 +55,8 @@ defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
+defineEmits(['save']);
 
 const features = FEATURES;
 const settingKey = featureSettingKey;
-const message = ref('');
-const alertType = ref('success');
 </script>

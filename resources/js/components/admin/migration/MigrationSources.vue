@@ -1,8 +1,8 @@
 <template>
     <v-card>
-        <v-card-title class="d-flex align-center justify-space-between">
+        <v-card-title class="d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
             <span>{{ $t('migrationTool.sources') }}</span>
-            <v-btn color="primary" size="small" prepend-icon="mdi-plus" @click="openDialog()">
+            <v-btn color="primary" variant="tonal" size="small" prepend-icon="mdi-plus" @click="openDialog()">
                 {{ $t('migrationTool.addSource') }}
             </v-btn>
         </v-card-title>
@@ -31,59 +31,62 @@
                                 size="small"
                                 variant="text"
                                 :loading="testingId === source.id"
+                                :disabled="rowBusy"
                                 :title="$t('migrationTool.testConnection')"
                                 @click="testSource(source)"
                             >
                                 <v-icon size="small">mdi-connection</v-icon>
                             </v-btn>
-                            <v-btn icon size="small" variant="text" @click="openDialog(source)">
+                            <v-btn icon size="small" variant="text" :disabled="rowBusy" @click="openDialog(source)">
                                 <v-icon size="small">mdi-pencil</v-icon>
                             </v-btn>
-                            <v-btn icon size="small" variant="text" color="error" @click="deleteSource(source)">
+                            <v-btn
+                                icon size="small" variant="text" color="error"
+                                :loading="deletingId === source.id"
+                                :disabled="rowBusy"
+                                @click="deleteSource(source)"
+                            >
                                 <v-icon size="small">mdi-delete</v-icon>
                             </v-btn>
                         </td>
                     </tr>
                 </tbody>
             </v-table>
-            <div v-else class="text-center text-medium-emphasis py-8">
-                {{ $t('migrationTool.noSources') }}
-            </div>
+            <empty-state v-else compact icon="mdi-database-off-outline" :title="$t('migrationTool.noSources')" />
         </v-card-text>
 
         <!-- Source form dialog -->
-        <v-dialog v-model="dialog" max-width="560">
+        <v-dialog v-model="dialog" max-width="600">
             <v-card>
-                <v-card-title>
+                <v-card-title class="text-h6">
                     {{ editing ? $t('migrationTool.editSource') : $t('migrationTool.addSource') }}
                 </v-card-title>
+                <v-divider />
                 <v-card-text>
-                    <v-text-field v-model="form.name" :label="$t('common.name')" variant="outlined" density="compact" class="mb-2" />
+                    <v-text-field v-model="form.name" :label="$t('common.name')" density="compact" class="mb-2" />
                     <v-select
                         v-model="form.driver"
                         :items="drivers"
                         :label="$t('migrationTool.driver')"
-                        variant="outlined"
                         density="compact"
                         class="mb-2"
                     />
                     <template v-if="form.driver !== 'sqlite'">
                         <v-row dense>
                             <v-col cols="8">
-                                <v-text-field v-model="form.host" label="Host" variant="outlined" density="compact" />
+                                <v-text-field v-model="form.host" label="Host" density="compact" />
                             </v-col>
                             <v-col cols="4">
-                                <v-text-field v-model.number="form.port" label="Port" type="number" variant="outlined" density="compact" />
+                                <v-text-field v-model.number="form.port" label="Port" type="number" density="compact" />
                             </v-col>
                         </v-row>
-                        <v-text-field v-model="form.username" :label="$t('migrationTool.username')" variant="outlined" density="compact" class="mb-2" />
+                        <v-text-field v-model="form.username" :label="$t('migrationTool.username')" density="compact" class="mb-2" />
                         <v-text-field
                             v-model="form.password"
                             :label="$t('migrationTool.password')"
                             :hint="editing ? $t('migrationTool.passwordKeepHint') : ''"
                             persistent-hint
                             type="password"
-                            variant="outlined"
                             density="compact"
                             class="mb-2"
                         />
@@ -91,15 +94,13 @@
                     <v-text-field
                         v-model="form.database"
                         :label="form.driver === 'sqlite' ? $t('migrationTool.sqlitePath') : $t('migrationTool.database')"
-                        variant="outlined"
                         density="compact"
                     />
-                    <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mt-2">{{ error }}</v-alert>
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer />
-                    <v-btn @click="dialog = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" :loading="saving" @click="save">{{ $t('common.save') }}</v-btn>
+                    <v-btn variant="text" :disabled="saving" @click="dialog = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" variant="flat" :loading="saving" :disabled="saving" @click="save">{{ $t('common.save') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -107,12 +108,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
+import EmptyState from '../../common/EmptyState.vue';
 
 const { t } = useI18n();
-const emit = defineEmits(['notify', 'changed']);
+const feedback = useDialog();
+const emit = defineEmits(['notify', 'changed', 'tested']);
 
 const drivers = ['mysql', 'mariadb', 'pgsql', 'sqlite', 'sqlsrv'];
 const sources = ref([]);
@@ -120,7 +124,9 @@ const dialog = ref(false);
 const editing = ref(null);
 const saving = ref(false);
 const testingId = ref(null);
-const error = ref('');
+const deletingId = ref(null);
+
+const rowBusy = computed(() => testingId.value !== null || deletingId.value !== null);
 
 const blankForm = () => ({
     name: '',
@@ -147,13 +153,12 @@ const openDialog = (source = null) => {
     form.value = source
         ? { name: source.name, driver: source.driver, host: source.host, port: source.port, database: source.database, username: source.username, password: '' }
         : blankForm();
-    error.value = '';
     dialog.value = true;
 };
 
 const save = async () => {
+    if (saving.value) return;
     saving.value = true;
-    error.value = '';
     try {
         if (editing.value) {
             await axios.patch(`/api/admin/migrations/sources/${editing.value.id}`, form.value);
@@ -165,17 +170,20 @@ const save = async () => {
         emit('changed');
         emit('notify', { text: t('migrationTool.sourceSaved') });
     } catch (e) {
-        error.value = e.response?.data?.message || e.message;
+        feedback.requestError(e);
     } finally {
         saving.value = false;
     }
 };
 
 const testSource = async (source) => {
+    if (rowBusy.value) return;
     testingId.value = source.id;
     try {
         const { data } = await axios.post(`/api/admin/migrations/sources/${source.id}/test`);
         emit('notify', { text: t('migrationTool.connectionOk', { tables: data.tables }) });
+        // Lets the guide on the dashboard tick off "connection tested".
+        emit('tested', source.id);
     } catch (e) {
         emit('notify', { text: t('migrationTool.connectionFailed', { error: e.response?.data?.error || e.message }), color: 'error' });
     } finally {
@@ -184,13 +192,18 @@ const testSource = async (source) => {
 };
 
 const deleteSource = async (source) => {
-    if (!confirm(t('migrationTool.confirmDeleteSource', { name: source.name }))) return;
+    if (rowBusy.value) return;
+    const ok = await feedback.confirmDelete(t('migrationTool.confirmDeleteSource', { name: source.name }));
+    if (!ok) return;
+    deletingId.value = source.id;
     try {
         await axios.delete(`/api/admin/migrations/sources/${source.id}`);
         await fetchSources();
         emit('changed');
     } catch (e) {
         emit('notify', { text: e.response?.data?.message || e.message, color: 'error' });
+    } finally {
+        deletingId.value = null;
     }
 };
 

@@ -19,8 +19,14 @@ vi.mock('@/store/settingStore.js', () => ({
     })),
 }));
 
+// Translations are looked up through the i18n instance; return the key
+vi.mock('@/plugins/vue-i18n.js', () => ({
+    i18n: { global: { t: (key) => key } },
+}));
+
 describe('useSettings Composable', () => {
     let useSettings;
+    let dialogStore;
 
     beforeEach(async () => {
         vi.clearAllMocks();
@@ -41,11 +47,20 @@ describe('useSettings Composable', () => {
             })),
         }));
 
+        vi.doMock('@/plugins/vue-i18n.js', () => ({
+            i18n: { global: { t: (key) => key } },
+        }));
+
+        // Feedback is reported through the app-wide dialog store
+        const { setActivePinia, createPinia } = await import('pinia');
+        setActivePinia(createPinia());
+        const { useDialogStore } = await import('@/store/dialogStore.js');
+        dialogStore = useDialogStore();
+        vi.spyOn(dialogStore, 'error').mockResolvedValue(undefined);
+        vi.spyOn(dialogStore, 'success').mockResolvedValue(undefined);
+
         const mod = await import('@/composables/useSettings.js');
         useSettings = mod.useSettings;
-
-        // Mock window.scrollTo
-        window.scrollTo = vi.fn();
     });
 
     describe('Initial State', () => {
@@ -57,11 +72,6 @@ describe('useSettings Composable', () => {
         it('has isSaving as false initially', () => {
             const { isSaving } = useSettings();
             expect(isSaving.value).toBe(false);
-        });
-
-        it('has empty message initially', () => {
-            const { message } = useSettings();
-            expect(message.value).toBe('');
         });
     });
 
@@ -84,14 +94,59 @@ describe('useSettings Composable', () => {
             expect(settings.auto_approve_roles_wiki).toEqual(['admin', 'editor']);
         });
 
-        it('handles fetch error gracefully', async () => {
+        it('reports a fetch error through the dialog service', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
             mockGet.mockRejectedValueOnce(new Error('Network error'));
 
-            const { fetchSettings, message, alertType } = useSettings();
+            const { fetchSettings } = useSettings();
             await fetchSettings();
 
-            expect(message.value).toBe('Failed to load settings');
-            expect(alertType.value).toBe('error');
+            expect(dialogStore.error).toHaveBeenCalledWith('settings.overview.loadError');
+            expect(dialogStore.success).not.toHaveBeenCalled();
+            consoleSpy.mockRestore();
+        });
+    });
+
+    describe('saveSettings - feedback', () => {
+        it('shows a success dialog after saving', async () => {
+            mockPost.mockResolvedValueOnce({ data: {} });
+
+            const { saveSettings, isSaving } = useSettings();
+            await saveSettings();
+
+            expect(dialogStore.success).toHaveBeenCalledWith('settings.overview.saved');
+            expect(isSaving.value).toBe(false);
+        });
+
+        it('shows the server validation errors in an error dialog', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            mockPost.mockRejectedValueOnce({
+                response: { data: { errors: { app_name: ['The app name is required.'] } } },
+            });
+
+            const { saveSettings, errors } = useSettings();
+            await saveSettings();
+
+            expect(dialogStore.error).toHaveBeenCalledWith(
+                'settings.overview.saveError:\n• The app name is required.'
+            );
+            expect(errors.app_name).toEqual(['The app name is required.']);
+            consoleSpy.mockRestore();
+        });
+
+        it('ignores a second save while one is in flight', async () => {
+            let resolvePost;
+            mockPost.mockReturnValueOnce(new Promise(resolve => { resolvePost = resolve; }));
+
+            const { saveSettings, isSaving } = useSettings();
+            const first = saveSettings();
+            expect(isSaving.value).toBe(true);
+            await saveSettings();
+            expect(mockPost).toHaveBeenCalledTimes(1);
+
+            resolvePost({ data: {} });
+            await first;
+            expect(isSaving.value).toBe(false);
         });
     });
 

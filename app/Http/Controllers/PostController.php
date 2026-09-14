@@ -24,7 +24,7 @@ class PostController extends Controller
     public function index(Request $request): JsonResponse
     {
         $posts = Post::with('translations')
-            ->where('status', 'published')
+            ->published()
             ->latest()
             ->paginate($request->get('per_page', 12));
 
@@ -40,7 +40,7 @@ class PostController extends Controller
             ->where('slug', '=', $slug)
             ->first();
 
-        if ( ! $post || $post->status !== 'published') {
+        if ( ! $post || ! $post->isPublished()) {
             return abort(404);
         }
 

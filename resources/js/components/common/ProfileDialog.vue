@@ -1,14 +1,15 @@
 <template>
     <!-- Bind modelValue to the dialog's v-model -->
-    <VDialog v-model="internalModelValue" max-width="400">
+    <VDialog v-model="internalModelValue" max-width="600">
         <VCard>
+            <VCardTitle class="text-h6">{{ $t('profileDialog.title') }}</VCardTitle>
+            <VDivider />
             <VCardText>
                 <!-- Fix 1: Add v-if to ensure formData.days exists before rendering -->
                 <v-select v-if="eventDays.length > 1 && formData.days"
                           v-model="formData.days"
                           :items="eventDays"
                           :label="$t('profileDialog.days')"
-                          outlined
                           multiple
                 />
 
@@ -53,8 +54,8 @@
             </VCardText>
             <VCardActions>
                 <VSpacer/>
-                <VBtn color="grey" @click="cancel">{{ $t('common.cancel') }}</VBtn>
-                <VBtn color="red" @click="confirm">
+                <VBtn variant="text" :disabled="submitting" @click="cancel">{{ $t('common.cancel') }}</VBtn>
+                <VBtn color="primary" variant="flat" :loading="submitting" :disabled="submitting" @click="confirm">
                     {{ $t('common.submit') }}
                 </VBtn>
             </VCardActions>
@@ -65,7 +66,10 @@
 <script setup>
 import {ref, computed, watch} from 'vue';
 import axios from "axios";
+import { useDialog } from '@/composables/useDialog.js';
 
+const dialog = useDialog();
+const submitting = ref(false);
 const selectedDays = ref();
 const profile = ref();
 const fields = ref({form: []}); // Fix 2: Initialize with default structure
@@ -95,29 +99,35 @@ const internalModelValue = computed({
     set: (value) => emit('update:modelValue', value),
 });
 
-function confirm() {
+async function confirm() {
+    if (submitting.value) return;
+    const ok = await profileSubmit(localAnswer.value);
+    if (!ok) return;
     props.resolve(true);
     internalModelValue.value = false;
-    profileSubmit(localAnswer.value);
 }
 
 function cancel() {
+    if (submitting.value) return;
     props.resolve(false);
     internalModelValue.value = false;
 }
 
+// Sends the answer; resolves to true on success, false after showing the error.
 const profileSubmit = async (answer) => {
     const data = formData.value;
     const params = {'answer': answer, 'data': data}
 
+    submitting.value = true;
     try {
         await axios.post(`/api/events/${localEvent.value.id}/answer`, params);
-        // Handle success if needed
+        return true;
     } catch (error) {
         console.log(error);
-        if (error.response && error.response.status === 422) {
-            this.editing.errors = error.response.data;
-        }
+        dialog.requestError(error);
+        return false;
+    } finally {
+        submitting.value = false;
     }
 }
 
@@ -166,9 +176,6 @@ const profileForm = async () => {
         }
     } catch (error) {
         console.log(error);
-        if (error.response && error.response.status === 422) {
-            this.editing.errors = error.response.data;
-        }
     }
 }
 

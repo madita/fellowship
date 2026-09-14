@@ -26,7 +26,7 @@ export const WIDGET_TYPES = {
         feature: 'wiki',
         icon: 'mdi-book-edit',
         color: 'warning',
-        size: 'small',
+        size: 'medium',
         action: { icon: 'mdi-book-open-variant', to: '/wiki' },
     },
     conversations: {
@@ -103,7 +103,7 @@ export const WIDGET_TYPES = {
         feature: null,
         icon: 'mdi-chart-box',
         color: 'success',
-        size: 'small',
+        size: 'medium',
         action: null,
     },
 };

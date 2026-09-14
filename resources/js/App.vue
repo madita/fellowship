@@ -34,6 +34,9 @@
 
     <!-- Session Timeout Modal -->
     <SessionTimeoutModal />
+
+    <!-- App-wide message / confirm dialogs ($dialog, useDialog) -->
+    <DialogHost />
   </v-app>
 </template>
 
@@ -53,6 +56,7 @@ import errorLayout from './layouts/ErrorLayout.vue'
 // Components
 import CookieConsent from './components/common/CookieConsent.vue'
 import SessionTimeoutModal from './components/common/SessionTimeoutModal.vue'
+import DialogHost from './components/common/DialogHost.vue'
 // import { mapGetters } from 'vuex'
 
 
@@ -77,7 +81,8 @@ export default {
     authLayout,
     errorLayout,
     CookieConsent,
-    SessionTimeoutModal
+    SessionTimeoutModal,
+    DialogHost
   },
   computed: {
       authenticated() {

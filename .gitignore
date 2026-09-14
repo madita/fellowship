@@ -53,3 +53,7 @@ tmpclaude-*
 
 # Local documentation & migration mapping sets (machine-specific paths)
 /docs/
+
+# Markdown docs stay local only; the readme is the one tracked Markdown file
+*.md
+!/README.md

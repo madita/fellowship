@@ -4,7 +4,7 @@ namespace App\Traits;
 
 use App\Listeners\RevisionListener;
 use App\Models\Revision;
-use App\Presenters\RevisionPresenter;
+use App\Support\RevisionPresenter;
 use Carbon\Carbon;
 use DateTime;
 use Illuminate\Database\Eloquent\Relations\HasMany;

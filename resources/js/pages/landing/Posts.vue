@@ -1,55 +1,63 @@
 <template>
     <div>
-        <v-sheet>
-            <v-container class="py-6 pt-lg-15">
-                <h1>{{post.title}}</h1>
-                <div v-html="post.body"></div>
+        <page-header :title="post.title || ''" back-to="/blog" />
 
-                <div v-if="tags.length || Object.keys(taxonomies).length" class="mt-6">
-                    <div v-for="(terms, key) in taxonomies" :key="`tax-${key}`" class="mb-3">
-                        <div class="text-caption text-medium-emphasis text-uppercase mb-2">{{ key }}</div>
-                        <v-chip
-                            v-for="term in terms"
-                            :key="`tax-${key}-${term.id}`"
-                            :color="term.color || 'primary'"
-                            class="me-2 mb-2"
-                            variant="tonal"
-                            size="small"
-                            @click="goToCategory(term.slug, key)"
-                        >
-                            <v-icon start size="14">mdi-folder-outline</v-icon>
-                            {{ term.name }}
-                        </v-chip>
-                    </div>
+        <v-container>
+            <div v-html="post.body"></div>
 
-                    <div v-if="tags.length" class="mb-3">
-                        <div class="text-caption text-medium-emphasis text-uppercase mb-2">{{ $t('pageForm.terms') }}</div>
-                        <v-chip
-                            v-for="tag in tags"
-                            :key="`tag-${tag.id}`"
-                            :color="tag.color || 'secondary'"
-                            class="me-2 mb-2"
-                            variant="tonal"
-                            size="small"
-                            @click="goToTerm(tag.slug)"
-                        >
-                            <v-icon start size="14">mdi-pound</v-icon>
-                            {{ tag.name }}
-                        </v-chip>
-                    </div>
+            <div v-if="tags.length || Object.keys(taxonomies).length" class="mt-6">
+                <div v-for="(terms, key) in taxonomies" :key="`tax-${key}`" class="mb-3">
+                    <div class="text-caption text-medium-emphasis text-uppercase mb-2">{{ key }}</div>
+                    <v-chip
+                        v-for="term in terms"
+                        :key="`tax-${key}-${term.id}`"
+                        :color="term.color || 'primary'"
+                        class="me-2 mb-2"
+                        variant="tonal"
+                        size="small"
+                        @click="goToCategory(term.slug, key)"
+                    >
+                        <v-icon start size="14">mdi-folder-outline</v-icon>
+                        {{ term.name }}
+                    </v-chip>
                 </div>
-            </v-container>
-        </v-sheet>
 
+                <div v-if="tags.length" class="mb-3">
+                    <div class="text-caption text-medium-emphasis text-uppercase mb-2">{{ $t('pageForm.terms') }}</div>
+                    <v-chip
+                        v-for="tag in tags"
+                        :key="`tag-${tag.id}`"
+                        :color="tag.color || 'secondary'"
+                        class="me-2 mb-2"
+                        variant="tonal"
+                        size="small"
+                        @click="goToTerm(tag.slug)"
+                    >
+                        <v-icon start size="14">mdi-pound</v-icon>
+                        {{ tag.name }}
+                    </v-chip>
+                </div>
+            </div>
+
+            <related-content-list
+                v-if="post.id"
+                class="mt-8"
+                type="App\Models\Post"
+                :id="post.id"
+                :title="post.title || ''"
+                :can-edit="canLinkContent"
+            />
+        </v-container>
     </div>
 </template>
 
 <script>
+import PageHeader from '@/components/common/PageHeader.vue';
+import RelatedContentList from '@/components/common/RelatedContentList.vue';
+import { useUserStore } from '@/store/userStore.js';
 
 export default {
-    components: {
-
-    },
+    components: { PageHeader, RelatedContentList },
     data() {
         return {
             loading: true,
@@ -58,6 +66,14 @@ export default {
             taxonomies: {},
             slug:""
         }
+    },
+
+    computed: {
+        // No per-item edit right on the frontend, so linking is for admins
+        canLinkContent() {
+            const userStore = useUserStore();
+            return !!userStore.user?.isAdmin || userStore.hasRole('admin');
+        },
     },
 
     methods: {

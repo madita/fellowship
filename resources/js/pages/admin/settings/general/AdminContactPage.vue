@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'general' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-email-outline" :title="$t('settings.adminContact.cardTitle')">
             <v-text-field
@@ -51,7 +48,6 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
 
@@ -63,8 +59,5 @@ const props = defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
-
-const message = ref('');
-const alertType = ref('success');
+defineEmits(['save']);
 </script>

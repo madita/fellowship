@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'seo' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-twitter" :title="$t('settings.seo.twitterCard.cardTitle')">
             <v-select
@@ -51,10 +48,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
-import { twitterCardTypes } from '@/composables/settingsConstants';
+import { twitterCardTypes } from '@/configs/settingsConstants';
 
 const props = defineProps({
     settings: Object,
@@ -64,8 +60,5 @@ const props = defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
-
-const message = ref('');
-const alertType = ref('success');
+defineEmits(['save']);
 </script>

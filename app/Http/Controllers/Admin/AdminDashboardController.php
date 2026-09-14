@@ -9,7 +9,7 @@ use App\Models\Event\Event;
 use App\Models\Event\EventGuest;
 use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
-use App\Models\MigrationLog;
+use App\Models\Migration\MigrationLog;
 use App\Models\Page;
 use App\Models\Sandbox\Sandbox;
 use App\Models\Setting;

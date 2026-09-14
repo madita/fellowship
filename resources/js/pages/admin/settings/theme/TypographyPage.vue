@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'theme' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-format-font" :title="$t('settings.typography.cardTitle')">
             <!-- Font Preview -->
@@ -81,11 +78,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
-import { fontFamilies } from '@/composables/settingsConstants';
+import { fontFamilies } from '@/configs/settingsConstants';
 
 const { t } = useI18n();
 
@@ -97,10 +94,8 @@ const props = defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
+defineEmits(['save']);
 
-const message = ref('');
-const alertType = ref('success');
 
 const previewStyle = computed(() => {
     return {
@@ -112,7 +107,7 @@ const previewStyle = computed(() => {
 
 <style scoped>
 .font-preview-card {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.08) 0%, rgba(var(--v-theme-secondary), 0.16) 100%);
 }
 
 /* Preview text uses the selected font */

@@ -124,7 +124,7 @@ class SpaController extends Controller
             return null;
         }
 
-        $page = Page::where('slug', $slug)->where('published', true)->first();
+        $page = Page::where('slug', $slug)->published()->first();
         if ( ! $page) {
             return null;
         }
@@ -153,7 +153,7 @@ class SpaController extends Controller
             return null;
         }
 
-        $post = Post::where('slug', $slug)->where('status', 'published')->first();
+        $post = Post::where('slug', $slug)->published()->first();
         if ( ! $post) {
             return null;
         }

@@ -150,7 +150,7 @@ describe('ModerationTab', () => {
 
             // Wait for the async onMounted fetchRoles to complete
             await vi.waitFor(() => {
-                expect(mockGet).toHaveBeenCalledWith('/datatable/roles');
+                expect(mockGet).toHaveBeenCalledWith('/datatable/roles?per_page=100');
             });
         });
 

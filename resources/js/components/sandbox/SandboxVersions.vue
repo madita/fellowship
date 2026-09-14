@@ -12,7 +12,7 @@
       <div class="drawer-header">
         <div class="d-flex align-center ga-2">
           <v-icon>mdi-history</v-icon>
-          <span class="text-subtitle-1 font-weight-bold">History</span>
+          <span class="text-subtitle-1 font-weight-medium">{{ $t('sandbox.versions.history') }}</span>
         </div>
         <v-btn icon variant="text" size="small" @click="$emit('close')">
           <v-icon>mdi-close</v-icon>
@@ -22,11 +22,11 @@
       <v-tabs v-model="activeTab" density="compact" color="primary" grow>
         <v-tab value="versions">
           <v-icon start size="18">mdi-content-save-outline</v-icon>
-          Versions
+          {{ $t('sandbox.versions.versions') }}
         </v-tab>
         <v-tab value="activity">
           <v-icon start size="18">mdi-timeline-text-outline</v-icon>
-          Activity
+          {{ $t('sandbox.versions.activity') }}
         </v-tab>
       </v-tabs>
     </template>
@@ -36,15 +36,15 @@
       <!-- Versions Tab -->
       <v-tabs-window-item value="versions" class="fill-height">
         <div class="tab-content">
-          <div v-if="versionsLoading" class="d-flex justify-center pa-8">
-            <v-progress-circular indeterminate color="primary" size="32" />
-          </div>
+          <loading-state v-if="versionsLoading" compact />
 
-          <div v-else-if="versions.length === 0" class="empty-state">
-            <v-icon size="48" color="medium-emphasis" class="mb-3">mdi-content-save-off-outline</v-icon>
-            <p class="text-body-2 text-medium-emphasis mb-1">No saved versions</p>
-            <p class="text-caption text-disabled">Click "Save Version" in the editor to create a restore point</p>
-          </div>
+          <empty-state
+            v-else-if="versions.length === 0"
+            compact
+            icon="mdi-content-save-off-outline"
+            :title="$t('sandbox.versions.noVersions')"
+            :text="$t('sandbox.versions.noVersionsText')"
+          />
 
           <div v-else class="version-list">
             <v-card
@@ -56,7 +56,7 @@
               <v-card-text class="pa-3">
                 <div class="d-flex align-center justify-space-between mb-1">
                   <span class="text-body-2 font-weight-medium">
-                    {{ version.title || 'Untitled version' }}
+                    {{ version.title || $t('sandbox.versions.untitled') }}
                   </span>
                   <v-chip size="x-small" variant="tonal" color="primary">
                     v{{ version.id }}
@@ -64,7 +64,7 @@
                 </div>
                 <div class="d-flex align-center ga-2 text-caption text-disabled mb-2">
                   <UserAvatar v-if="version.user" :user="version.user" class="mini-avatar" />
-                  <span>{{ version.user?.username || 'Unknown' }}</span>
+                  <span>{{ version.user?.username || $t('sandbox.versions.unknownUser') }}</span>
                   <span>&middot;</span>
                   <span>{{ formatDate(version.created_at) }}</span>
                 </div>
@@ -76,7 +76,7 @@
                     prepend-icon="mdi-eye-outline"
                     @click="previewVersion(version)"
                   >
-                    View
+                    {{ $t('sandbox.versions.view') }}
                   </v-btn>
                   <v-btn
                     size="x-small"
@@ -85,16 +85,17 @@
                     prepend-icon="mdi-file-compare"
                     @click="diffVersion(version)"
                   >
-                    Diff
+                    {{ $t('sandbox.versions.diff') }}
                   </v-btn>
                   <v-btn
                     size="x-small"
                     variant="tonal"
                     prepend-icon="mdi-restore"
                     :loading="restoring === version.id"
+                    :disabled="restoring !== null && restoring !== version.id"
                     @click="restoreVersion(version)"
                   >
-                    Restore
+                    {{ $t('sandbox.versions.restore') }}
                   </v-btn>
                 </div>
               </v-card-text>
@@ -102,7 +103,7 @@
 
             <div v-if="versionsHasMore" class="text-center py-3">
               <v-btn variant="text" size="small" :loading="versionsLoadingMore" @click="loadMoreVersions">
-                Load more
+                {{ $t('sandbox.versions.loadMore') }}
               </v-btn>
             </div>
           </div>
@@ -112,15 +113,15 @@
       <!-- Activity Tab -->
       <v-tabs-window-item value="activity" class="fill-height">
         <div class="tab-content">
-          <div v-if="activityLoading" class="d-flex justify-center pa-8">
-            <v-progress-circular indeterminate color="primary" size="32" />
-          </div>
+          <loading-state v-if="activityLoading" compact />
 
-          <div v-else-if="revisions.length === 0" class="empty-state">
-            <v-icon size="48" color="medium-emphasis" class="mb-3">mdi-timeline-text-outline</v-icon>
-            <p class="text-body-2 text-medium-emphasis mb-1">No activity yet</p>
-            <p class="text-caption text-disabled">Changes to the sandbox will appear here</p>
-          </div>
+          <empty-state
+            v-else-if="revisions.length === 0"
+            compact
+            icon="mdi-timeline-text-outline"
+            :title="$t('sandbox.versions.noActivity')"
+            :text="$t('sandbox.versions.noActivityText')"
+          />
 
           <v-timeline v-else density="compact" side="end" class="revision-timeline">
             <v-timeline-item
@@ -165,7 +166,7 @@
 
           <div v-if="activityHasMore" class="text-center py-3">
             <v-btn variant="text" size="small" :loading="activityLoadingMore" @click="loadMoreActivity">
-              Load more
+              {{ $t('sandbox.versions.loadMore') }}
             </v-btn>
           </div>
         </div>
@@ -175,11 +176,11 @@
     <!-- Version Preview / Diff Dialog -->
     <v-dialog v-model="showPreview" max-width="900" scrollable>
       <v-card v-if="previewData">
-        <v-card-title class="d-flex align-center justify-space-between pa-4">
+        <v-card-title class="text-h6 d-flex align-center justify-space-between">
           <div>
-            <span>{{ previewData.title || 'Untitled version' }}</span>
+            <span>{{ previewData.title || $t('sandbox.versions.untitled') }}</span>
             <div class="text-caption text-disabled">
-              {{ formatDate(previewData.created_at) }} by {{ previewData.user?.username }}
+              {{ formatDate(previewData.created_at) }} {{ $t('sandbox.versions.by') }} {{ previewData.user?.username }}
             </div>
           </div>
           <div class="d-flex ga-2 align-center">
@@ -188,9 +189,10 @@
               size="small"
               prepend-icon="mdi-restore"
               :loading="restoring === previewData.id"
+              :disabled="restoring !== null && restoring !== previewData.id"
               @click="restoreVersion(previewData)"
             >
-              Restore
+              {{ $t('sandbox.versions.restore') }}
             </v-btn>
             <v-btn icon variant="text" size="small" @click="showPreview = false">
               <v-icon>mdi-close</v-icon>
@@ -201,20 +203,18 @@
         <v-tabs v-model="previewTab" density="compact" color="primary">
           <v-tab value="preview">
             <v-icon start size="18">mdi-eye-outline</v-icon>
-            Preview
+            {{ $t('sandbox.versions.preview') }}
           </v-tab>
           <v-tab value="diff">
             <v-icon start size="18">mdi-file-compare</v-icon>
-            Changes
+            {{ $t('sandbox.versions.changes') }}
           </v-tab>
         </v-tabs>
 
         <v-divider />
 
         <v-card-text class="preview-body pa-0">
-          <div v-if="previewLoading" class="d-flex justify-center pa-8">
-            <v-progress-circular indeterminate color="primary" />
-          </div>
+          <loading-state v-if="previewLoading" />
 
           <template v-else>
             <!-- Preview tab -->
@@ -224,10 +224,10 @@
             <div v-show="previewTab === 'diff'" class="diff-view pa-4">
               <div class="diff-legend d-flex ga-4 mb-4">
                 <span class="d-flex align-center ga-1 text-caption">
-                  <span class="legend-swatch legend-removed"></span> Removed
+                  <span class="legend-swatch legend-removed"></span> {{ $t('sandbox.versions.removed') }}
                 </span>
                 <span class="d-flex align-center ga-1 text-caption">
-                  <span class="legend-swatch legend-added"></span> Added
+                  <span class="legend-swatch legend-added"></span> {{ $t('sandbox.versions.added') }}
                 </span>
               </div>
               <div class="diff-content" v-html="diffHtml"></div>
@@ -236,14 +236,6 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <!-- Confirm Restore Dialog -->
-    <ConfirmDialog
-      v-model="confirmDialog"
-      title="Restore Version"
-      :content="confirmMessage"
-      confirmation-text="Restore"
-      :resolve="onConfirmResolve"
-    />
 
     <!-- Error Snackbar -->
     <v-snackbar v-model="errorSnackbar" color="error" :timeout="4000">
@@ -254,9 +246,12 @@
 
 <script>
 import { ref, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
 import UserAvatar from '../common/UserAvatar.vue'
-import ConfirmDialog from '../common/ConfirmDialog.vue'
+import EmptyState from '../common/EmptyState.vue'
+import LoadingState from '../common/LoadingState.vue'
+import { useDialog } from '@/composables/useDialog.js'
 
 /**
  * Convert HTML to plain text, preserving line breaks from block elements.
@@ -425,7 +420,8 @@ export default {
 
   components: {
     UserAvatar,
-    ConfirmDialog,
+    EmptyState,
+    LoadingState,
   },
 
   props: {
@@ -442,6 +438,8 @@ export default {
   emits: ['close', 'restore'],
 
   setup(props, { emit }) {
+    const { t } = useI18n()
+    const dialog = useDialog()
     const activeTab = ref('versions')
     const previewTab = ref('preview')
 
@@ -466,11 +464,6 @@ export default {
     const previewLoading = ref(false)
     const diffHtml = ref('')
 
-    // Confirm dialog state
-    const confirmDialog = ref(false)
-    const confirmMessage = ref('')
-    const pendingRestoreVersion = ref(null)
-
     // Error snackbar
     const errorSnackbar = ref(false)
     const errorMessage = ref('')
@@ -492,6 +485,7 @@ export default {
     }
 
     const loadMoreVersions = async () => {
+      if (versionsLoadingMore.value) return
       versionsLoadingMore.value = true
       versionsPage.value++
       try {
@@ -507,17 +501,19 @@ export default {
       }
     }
 
-    const restoreVersion = (version) => {
-      pendingRestoreVersion.value = version
-      confirmMessage.value = `Restore "${version.title || 'Untitled version'}"? The current state will be saved as a version first.`
-      confirmDialog.value = true
-    }
+    const restoreVersion = async (version) => {
+      if (restoring.value !== null) return
 
-    const onConfirmResolve = async (confirmed) => {
-      confirmDialog.value = false
-      if (!confirmed || !pendingRestoreVersion.value) return
+      const confirmed = await dialog.confirm({
+        title: t('sandbox.versions.restoreTitle'),
+        content: t('sandbox.versions.restoreConfirm', {
+          title: version.title || t('sandbox.versions.untitled'),
+        }),
+        confirmationText: t('sandbox.versions.restore'),
+        color: 'warning',
+      })
+      if (!confirmed) return
 
-      const version = pendingRestoreVersion.value
       restoring.value = version.id
       try {
         const response = await axios.post(
@@ -531,7 +527,6 @@ export default {
         errorSnackbar.value = true
       } finally {
         restoring.value = null
-        pendingRestoreVersion.value = null
       }
     }
 
@@ -580,6 +575,7 @@ export default {
     }
 
     const loadMoreActivity = async () => {
+      if (activityLoadingMore.value) return
       activityLoadingMore.value = true
       activityPage.value++
       try {
@@ -652,9 +648,6 @@ export default {
       previewData,
       previewLoading,
       diffHtml,
-      confirmDialog,
-      confirmMessage,
-      onConfirmResolve,
       errorSnackbar,
       errorMessage,
       loadMoreVersions,
@@ -678,18 +671,13 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgb(var(--v-border-color));
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .tab-content {
   padding: 0.75rem;
   overflow-y: auto;
   height: 100%;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem 1rem;
 }
 
 .version-card {
@@ -804,7 +792,7 @@ export default {
 // Diff view
 .diff-legend {
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgb(var(--v-border-color));
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .legend-swatch {

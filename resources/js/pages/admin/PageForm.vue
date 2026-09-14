@@ -4,20 +4,25 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import Tiptap from '../../components/common/tiptap/Tiptap.vue';
+import PageHeader from '../../components/common/PageHeader.vue';
+import PublishControl from '@/components/common/PublishControl.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
 const route = useRoute();
 const { t } = useI18n();
+const dialog = useDialog();
 
 // Reactive state
 const loading = ref(true);
 const dataReady = ref(false);
+const saving = ref(false);
+const savingCategory = ref(false);
 const addCategory = ref(false);
-const page = ref({ title: '', content: '', parent: null, taxonomy: [], terms: [], categories: [] });
+const page = ref({ title: '', content: '', parent: null, taxonomy: [], terms: [], categories: [], published_at: null });
 const pages = ref([]);
 const endpoint = '/api/datatable/pages';
 const form = ref('create');
 const id = ref(null);
-const message = ref('');
 const searchTax = ref(null);
 const searchTerm = ref(null);
 const terms = ref([]);
@@ -64,6 +69,8 @@ const getPage = () => {
     return axios.get(`/api/pages/${id.value}/edit`).then((response) => {
         page.value = response.data.page;
         page.value.parent = response.data.parent;
+        // null = draft, past = live, future = scheduled
+        page.value.published_at = response.data.page?.published_at ?? null;
 
         const taxonomies = { ...(response.data.taxonomies || {}) };
 
@@ -84,11 +91,20 @@ const getPage = () => {
     });
 };
 
-const getPages = () => {
-    return axios.get(`/api/datatable/pages?page=1&itemsPerPage=100000&pageStart=-1&pageStop=100000000&pageCount=-1&itemsLength=-1`).then((response) => {
-        pages.value = response.data.data.records.data;
+// Every page for the parent picker; the table API returns at most 100 per request
+const getPages = async () => {
+    const all = [];
+    try {
+        for (let page = 1, last = 1; page <= last && page <= 50; page++) {
+            const { data } = await axios.get('/api/datatable/pages', { params: { page, per_page: 100, sort_by: 'id', sort_dir: 'asc' } });
+            const records = data.data.records;
+            all.push(...(records.data || []));
+            last = records.last_page || 1;
+        }
+        pages.value = all;
+    } finally {
         loading.value = false;
-    });
+    }
 };
 
 const getTaxonomy = () => {
@@ -126,56 +142,52 @@ const getCategories = (tax) => {
     });
 };
 
-const saveCategory = () => {
+const saveCategory = async () => {
     const term = newCategory.value.trim();
-    if (!term) return;
+    if (!term || savingCategory.value) return;
     const taxName = getTaxonomyName();
     const data = { term, taxonomy: taxName, parent: parentValue.value };
-    axios.post(`/api/tag/terms`, data).then(() => {
-        getCategories(taxName);
+    savingCategory.value = true;
+    try {
+        await axios.post(`/api/tag/terms`, data);
+        await getCategories(taxName);
         categoryValue.value.push(term);
         newCategory.value = '';
         addCategory.value = false;
-    }).catch((error) => {
-        console.error('Failed to create category:', error);
-    });
-};
-
-const save = () => {
-    if (form.value === 'edit') {
-        update();
-    } else {
-        store();
+    } catch (error) {
+        savingCategory.value = false;
+        dialog.requestError(error);
+    } finally {
+        savingCategory.value = false;
     }
 };
 
-const update = () => {
+const save = async () => {
+    if (saving.value) return;
     page.value.terms = termValue.value;
     page.value.taxonomy = getTaxonomyName();
     page.value.categories = categoryValue.value.map(x => x.title ?? x);
 
-    axios.patch(`${endpoint}/${id.value}`, page.value).then(() => {
-        message.value = t('pageForm.pageUpdated');
-    }).catch((error) => {
-        if (error.response?.status === 422) {
-            console.error('Validation errors:', error.response.data);
-        }
-    });
-};
+    // `published_at` is the single source of truth; never send the legacy flag back
+    const payload = { ...page.value, published_at: page.value.published_at ?? null };
+    delete payload.published;
 
-const store = () => {
-    page.value.terms = termValue.value;
-    page.value.taxonomy = getTaxonomyName();
-    page.value.categories = categoryValue.value.map(x => x.title ?? x);
-
-    axios.post(`${endpoint}`, page.value).then(() => {
-        page.value = { title: '', content: '' };
-        message.value = t('pageForm.pageSaved');
-    }).catch((error) => {
-        if (error.response?.status === 422) {
-            console.error('Validation errors:', error.response.data);
+    saving.value = true;
+    try {
+        if (form.value === 'edit') {
+            await axios.patch(`${endpoint}/${id.value}`, payload);
+            saving.value = false;
+            dialog.success(t('pageForm.pageUpdated'));
+        } else {
+            await axios.post(`${endpoint}`, payload);
+            page.value = { title: '', content: '', published_at: null };
+            saving.value = false;
+            dialog.success(t('pageForm.pageSaved'));
         }
-    });
+    } catch (error) {
+        saving.value = false;
+        dialog.requestError(error);
+    }
 };
 
 // Init (equivalent to created())
@@ -200,13 +212,16 @@ Promise.all([
 
 <template>
     <div class="flex-grow-1">
+        <page-header
+            :title="form === 'edit' ? $t('admin.pages.edit') : $t('admin.pages.create')"
+            :subtitle="page.title"
+            icon="mdi-file-document-edit-outline"
+            :back-to="{ name: 'admin-pages' }"
+        />
+
         <v-container>
             <v-row>
-                <v-col cols="8">
-                    <v-alert v-if="message" type="success">
-                        {{ message }}
-                    </v-alert>
-
+                <v-col cols="12" md="8">
                     <v-text-field
                         :label="$t('common.title')"
                         v-model="page.title"
@@ -214,10 +229,10 @@ Promise.all([
 
                     <tiptap v-model="page.content" :value="page.content" id="text-content" name="content" />
                 </v-col>
-                <v-col cols="4" v-if="dataReady">
+                <v-col cols="12" md="4" v-if="dataReady">
                     <!-- Parent Page -->
                     <v-card class="mb-4" elevation="1" rounded="lg">
-                        <v-card-title class="text-subtitle-1">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
                             <v-icon class="mr-2" color="info">mdi-file-tree</v-icon>
                             {{ $t('common.pages') }}
                         </v-card-title>
@@ -257,7 +272,7 @@ Promise.all([
 
                     <!-- Taxonomy -->
                     <v-card class="mb-4" elevation="1" rounded="lg">
-                        <v-card-title class="text-subtitle-1">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
                             <v-icon class="mr-2" color="secondary">mdi-shape-outline</v-icon>
                             {{ $t('pageForm.taxonomy') }}
                         </v-card-title>
@@ -282,7 +297,7 @@ Promise.all([
 
                     <!-- Categories -->
                     <v-card class="mb-4" elevation="1" rounded="lg">
-                        <v-card-title class="text-subtitle-1">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
                             <v-icon class="mr-2" color="primary">mdi-folder-outline</v-icon>
                             {{ $t('pageForm.category') }}
                             <v-spacer />
@@ -360,6 +375,8 @@ Promise.all([
                                             variant="elevated"
                                             size="small"
                                             prepend-icon="mdi-plus"
+                                            :loading="savingCategory"
+                                            :disabled="savingCategory"
                                             @click="saveCategory"
                                         >
                                             {{ $t('pageForm.addNewCategoryBtn') }}
@@ -372,7 +389,7 @@ Promise.all([
 
                     <!-- Tags -->
                     <v-card class="mb-4" elevation="1" rounded="lg">
-                        <v-card-title class="text-subtitle-1">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
                             <v-icon class="mr-2" color="secondary">mdi-tag-outline</v-icon>
                             {{ $t('pageForm.terms') }}
                             <v-spacer />
@@ -424,16 +441,15 @@ Promise.all([
 
                     <!-- Settings & Actions -->
                     <v-card class="mb-4" elevation="1" rounded="lg">
-                        <v-card-title class="text-subtitle-1">
+                        <v-card-title class="text-subtitle-1 font-weight-medium">
                             <v-icon class="mr-2" color="success">mdi-cog-outline</v-icon>
                             {{ $t('pageForm.settings') }}
                         </v-card-title>
                         <v-card-text>
-                            <v-checkbox
-                                v-model="page.published"
-                                :label="$t('pageForm.published')"
-                                density="compact"
-                                hide-details
+                            <publish-control
+                                v-model="page.published_at"
+                                :label="$t('publish.label')"
+                                class="mb-3"
                             />
                             <v-checkbox
                                 v-model="page.sign_in_only"
@@ -448,6 +464,8 @@ Promise.all([
                                 variant="elevated"
                                 block
                                 :prepend-icon="form === 'edit' ? 'mdi-content-save' : 'mdi-plus'"
+                                :loading="saving"
+                                :disabled="saving"
                                 @click="save"
                             >
                                 {{ form === 'edit' ? $t('common.update') : $t('common.create') }}

@@ -9,6 +9,7 @@ use App\Http\Middleware\ConditionalStartSession;
 use App\Http\Middleware\DynamicRateLimit;
 use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\EnsureSandboxEnabled;
+use App\Http\Middleware\EnsureUserHasPermission;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\LazyLoadingMiddleware;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
@@ -104,6 +105,7 @@ class Kernel extends HttpKernel
         'permission'         => PermissionMiddleware::class,
         'role_or_permission' => RoleOrPermissionMiddleware::class,
         'admin'              => EnsureUserIsAdmin::class,
+        'permission.any'     => EnsureUserHasPermission::class,
         'cache.control'      => CacheControl::class,
         'api.key'            => AuthenticateApiKey::class,
         'api.rate'           => DynamicRateLimit::class,
