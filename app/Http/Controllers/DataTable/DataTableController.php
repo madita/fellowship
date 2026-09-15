@@ -16,6 +16,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Models\Revision;
 
 /**
  * Base class of the admin data tables (server-side paging, sorting, search).
@@ -31,6 +32,9 @@ abstract class DataTableController extends Controller
 {
     /** Escape character used in LIKE patterns (portable across MySQL/SQLite). */
     protected const LIKE_ESCAPE = '!';
+
+    /** How much of one side of a change a revision may carry, in characters. */
+    protected const HISTORY_VALUE_LIMIT = 100000;
 
     /**
      * If an entity is allowed to be created.
@@ -304,6 +308,137 @@ abstract class DataTableController extends Controller
         return response()->json(
             $data
         );
+    }
+
+    /**
+     * What has been changed on one row, newest first, shaped for the drawer.
+     *
+     * Rows carry the summary the table shows; the expanded detail lists each
+     * changed field with the value before and after it.
+     */
+    public function history($id, Request $request): JsonResponse
+    {
+        $record = $this->newQuery()->findOrFail($id);
+
+        $columns = [
+            ['key' => 'change', 'title' => 'Change', 'type' => 'text'],
+            ['key' => 'author', 'title' => 'By', 'type' => 'text'],
+            ['key' => 'date', 'title' => 'When', 'type' => 'datetime'],
+        ];
+
+        if ( ! method_exists($record, 'revisions')) {
+            return response()->json(['data' => ['columns' => $columns, 'rows' => []]]);
+        }
+
+        // Where one revision of this row can be read in full. The list stays
+        // a summary on purpose: an article body per revision would be a large
+        // answer for a drawer most of which is never expanded.
+        $detailBase = '/' . ltrim(Str::after($request->path(), 'api'), '/');
+
+        $rows = $this->revisionsOf($record)->map(function (Revision $revision) use ($detailBase) {
+            $diff = $revision->getDiff();
+
+            return [
+                'id'     => $revision->id,
+                'values' => [
+                    // The same field names the expanded row puts above each
+                    // diff, so the summary and the detail read alike.
+                    'change' => $revision->action === 'created'
+                        ? 'Created'
+                        : implode(', ', array_map(fn ($field) => Str::headline($field), array_keys($diff))),
+                    'author' => $revision->executor?->username,
+                    'date'   => $revision->created_at,
+                ],
+                'details_url' => $detailBase . '/' . $revision->id,
+            ];
+        })->values();
+
+        return response()->json(['data' => ['columns' => $columns, 'rows' => $rows]]);
+    }
+
+    /**
+     * One revision in full: every changed field with the text before and
+     * after it, for the diff the drawer draws when a row is expanded.
+     */
+    public function historyRevision($id, $revision): JsonResponse
+    {
+        $record = $this->newQuery()->findOrFail($id);
+
+        if ( ! method_exists($record, 'revisions')) {
+            abort(404);
+        }
+
+        $target = $this->revisionsOf($record)->firstWhere('id', (int) $revision);
+
+        if ( ! $target) {
+            abort(404);
+        }
+
+        $changes = collect($target->getDiff())
+            ->map(function (array $change, string $field) {
+                $old = $change['old_value'] ?? null;
+                $new = $change['new_value'] ?? null;
+
+                return [
+                    'field' => $field,
+                    'label' => Str::headline($field),
+                    'old'   => $this->historyValue($old),
+                    'new'   => $this->historyValue($new),
+                    // Markup has to be flattened before it can be compared;
+                    // a slug or a date must not be, or every < would vanish.
+                    'html'  => $this->looksLikeHtml($old) || $this->looksLikeHtml($new),
+                ];
+            })
+            ->values()
+            ->all();
+
+        return response()->json([
+            'data' => [
+                'id'      => $target->id,
+                'action'  => $target->action,
+                'author'  => $target->executor?->only(['id', 'username']),
+                'date'    => $target->created_at,
+                'changes' => $changes,
+            ],
+        ]);
+    }
+
+    /**
+     * The revisions of one row, newest first.
+     *
+     * @return \Illuminate\Support\Collection<int,Revision>
+     */
+    protected function revisionsOf(Model $record)
+    {
+        // The listener writes the table name; a morph class may appear on rows
+        // written by other code paths. Both mean this record.
+        return Revision::with('executor')
+            ->whereIn('revisionable_type', [$record->getMorphClass(), $record->getTable()])
+            ->where('revisionable_id', $record->getKey())
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * One side of a change as the diff view wants it: a string, and never so
+     * long that a single revision becomes a download.
+     */
+    protected function historyValue($value): string
+    {
+        if ($value === null || is_scalar($value)) {
+            $text = (string) $value;
+        } else {
+            $text = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '';
+        }
+
+        return mb_strlen($text) > self::HISTORY_VALUE_LIMIT
+            ? mb_substr($text, 0, self::HISTORY_VALUE_LIMIT) . '…'
+            : $text;
+    }
+
+    protected function looksLikeHtml($value): bool
+    {
+        return is_string($value) && $value !== strip_tags($value);
     }
 
     /**

@@ -13,6 +13,21 @@ class PostController extends DataTableController
         return Post::query();
     }
 
+    /**
+     * Every recorded change to this row, in the edit drawer.
+     */
+    public function getRelations(): array
+    {
+        return [
+            [
+                'key'      => 'history',
+                'title'    => 'History',
+                'icon'     => 'mdi-history',
+                'endpoint' => '/datatable/posts/{id}/history',
+            ],
+        ];
+    }
+
     public function store(Request $request)
     {
         $post = auth()->user()->posts()->create($request->only($this->getUpdatableColumns()));

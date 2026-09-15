@@ -27,14 +27,31 @@ class WikiController extends Controller
 
     public function getUpdatableColumns($type)
     {
-        switch ($type) {
-            case 'page':
-                return [
-                    'title',
-                    'content',
-                    'published_at',
-                    'sign_in_only', ];
+        return [
+            'title',
+            'content',
+            'published_at',
+            'sign_in_only',
+        ];
+    }
+
+    /**
+     * The page a wiki entry hangs under.
+     *
+     * The editor sends the chosen parent as an object under "parent", while
+     * the page row carries its own scalar parent_id that gets echoed straight
+     * back on save. Either is accepted: demanding an array rejected every
+     * ordinary edit, and reading the wrong key silently dropped the choice.
+     */
+    private function resolveParentId(Request $request): int
+    {
+        $parent = $request->get('parent') ?? $request->get('parent_id');
+
+        if (is_array($parent)) {
+            return (int) ($parent['id'] ?? 0);
         }
+
+        return (int) ($parent ?? 0);
     }
 
     /**
@@ -183,6 +200,138 @@ class WikiController extends Controller
         return response()->json(['data' => $changes]);
     }
 
+    /**
+     * Every recorded change to one wiki page, newest first.
+     *
+     * Metadata only: which fields changed, by whom and when. The text of a
+     * version is fetched one at a time through historyVersion, because a wiki
+     * page can be long and a history list does not need all of it at once.
+     */
+    public function history(string $slug): JsonResponse
+    {
+        $wiki = $this->wikiForHistory($slug);
+        $page = $this->pageBehind($wiki);
+
+        $history = $this->revisionsOf($page)
+            ->map(function (Revision $revision) {
+                $diff = $revision->getDiff();
+
+                return [
+                    'id'      => $revision->id,
+                    'action'  => $revision->action,
+                    'author'  => $revision->executor?->only(['id', 'username']),
+                    'date'    => $revision->created_at,
+                    'fields'  => array_keys($diff),
+                    'title'   => $diff['title']['new_value'] ?? null,
+                    // Enough to recognise the change without shipping the page.
+                    'excerpt' => $this->excerpt($diff['content']['new_value'] ?? null),
+                ];
+            })
+            ->values();
+
+        return response()->json(['data' => $history]);
+    }
+
+    /**
+     * One version of a wiki page, as it stood when that revision was written.
+     */
+    public function historyVersion(string $slug, int $revision): JsonResponse
+    {
+        $wiki = $this->wikiForHistory($slug);
+        $page = $this->pageBehind($wiki);
+
+        $revisions = $this->revisionsOf($page);
+        $target    = $revisions->firstWhere('id', $revision);
+
+        if ( ! $target) {
+            abort(404);
+        }
+
+        // Older to newer, up to and including the one asked for: a revision
+        // only records what changed, so the text at that point is the newest
+        // value written at or before it. Without this a revision that only
+        // renamed the page would come back with no text at all.
+        $upTo = $revisions->filter(fn (Revision $item) => $item->id <= $target->id)->sortBy('id');
+
+        return response()->json([
+            'data' => [
+                'id'      => $target->id,
+                'action'  => $target->action,
+                'author'  => $target->executor?->only(['id', 'username']),
+                'date'    => $target->created_at,
+                'title'   => $this->valueAsOf($upTo, 'title') ?? $page->title,
+                'content' => $this->valueAsOf($upTo, 'content') ?? '',
+                'diff'    => $target->getDiff(),
+                'current' => $target->id === $revisions->max('id'),
+            ],
+        ]);
+    }
+
+    /**
+     * The wiki page a history is asked for, with the same gate as show():
+     * a page still waiting for approval is not public.
+     */
+    private function wikiForHistory(string $slug): Wiki
+    {
+        $wiki = Wiki::where('slug', '=', $slug)->firstOrFail();
+
+        $user = Auth::user();
+        if ($wiki->isPending() && ! ($user && $user->isAdmin())) {
+            abort(403, 'This page is pending approval.');
+        }
+
+        return $wiki;
+    }
+
+    private function pageBehind(Wiki $wiki): Page
+    {
+        $model = $wiki->wikiable_type ?: Page::class;
+
+        return $model::findOrFail($wiki->wikiable_id);
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int,Revision>
+     */
+    private function revisionsOf(Page $page)
+    {
+        // Older rows carry the table name the listener writes; newer ones may
+        // carry the morph class. Both mean the same page.
+        return Revision::with('executor')
+            ->whereIn('revisionable_type', [(new Page)->getMorphClass(), (new Page)->getTable()])
+            ->where('revisionable_id', $page->id)
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * The newest recorded value of a field within the given revisions.
+     */
+    private function valueAsOf($revisions, string $key): ?string
+    {
+        $value = null;
+
+        foreach ($revisions as $revision) {
+            $diff = $revision->getDiff();
+            if (array_key_exists($key, $diff)) {
+                $value = $diff[$key]['new_value'];
+            }
+        }
+
+        return $value;
+    }
+
+    private function excerpt(?string $content): ?string
+    {
+        if ($content === null) {
+            return null;
+        }
+
+        $plain = trim(preg_replace('/\s+/', ' ', strip_tags($content)));
+
+        return mb_strlen($plain) > 140 ? mb_substr($plain, 0, 140) . '…' : $plain;
+    }
+
     public function getPages()
     {
         $user    = Auth::user();
@@ -270,10 +419,6 @@ class WikiController extends Controller
         ]);
     }
 
-    public function history($wikiable, $id)
-    {
-    }
-
     public function store(Request $request)
     {
         // Authorization check
@@ -286,13 +431,13 @@ class WikiController extends Controller
             'title'      => 'required|string|max:255',
             'content'    => 'required|string',
             'slug'       => 'nullable|string|max:255|unique:wikiables,slug',
-            'parent_id'  => 'nullable|array',
+            'parent'     => 'nullable|array',
+            'parent_id'  => 'nullable',
             'categories' => 'nullable|array',
             'terms'      => 'nullable|array',
         ]);
 
-        $parent    = $request->get('parent_id');
-        $parent_id = $parent['id'] ?? 0;
+        $parent_id = $this->resolveParentId($request);
 
         // Sanitize content (strip potentially dangerous tags/attributes)
         $content = strip_tags($validated['content'], '<p><br><strong><em><u><a><ul><ol><li><h1><h2><h3><h4><h5><h6><blockquote><code><pre><img><table><thead><tbody><tr><td><th>');
@@ -358,13 +503,13 @@ class WikiController extends Controller
         $validated = $request->validate([
             'title'      => 'required|string|max:255',
             'content'    => 'string',
-            'parent_id'  => 'nullable|array',
+            'parent'     => 'nullable|array',
+            'parent_id'  => 'nullable',
             'categories' => 'nullable|array',
             'terms'      => 'nullable|array',
         ]);
 
-        $parent    = $request->get('parent_id');
-        $parent_id = $parent['id'] ?? 0;
+        $parent_id = $this->resolveParentId($request);
 
         $wiki->update(['title' => $validated['title'], 'parent_id' => $parent_id]);
 

@@ -11,7 +11,14 @@
                 icon="mdi-book-open-page-variant-outline"
                 :back-to="{ name: 'wiki-index' }"
             >
-                <template v-if="isAdmin || (authStore.isLoggedIn && mode)" #actions>
+                <template #actions>
+                    <v-btn
+                        variant="tonal"
+                        prepend-icon="mdi-history"
+                        @click="showVersions = true"
+                    >
+                        {{ $t('wiki.versions') }}
+                    </v-btn>
                     <v-chip
                         v-if="isAdmin"
                         :color="isApproved ? 'success' : 'warning'"
@@ -218,6 +225,9 @@
             </v-container>
         </div>
     </div>
+
+    <!-- Every recorded change of this page, and the diff between any two -->
+    <version-history-dialog v-model="showVersions" :history-url="`/api/wiki/${slug}/history`" />
 </template>
 
 <script setup>
@@ -232,6 +242,7 @@ import { useDialog } from '@/composables/useDialog.js'
 import PageHeader from '@/components/common/PageHeader.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 import RelatedContentList from '@/components/common/RelatedContentList.vue'
+import VersionHistoryDialog from '@/components/common/VersionHistoryDialog.vue'
 
 const { t } = useI18n()
 const dialog = useDialog()
@@ -281,6 +292,9 @@ const pageSubtitle = computed(() => {
     }
     return parts.join(' · ')
 })
+
+// Version history. Read-only: what the page looked like, not an editor.
+const showVersions = ref(false)
 
 // Methods
 const getWikiPage = async () => {

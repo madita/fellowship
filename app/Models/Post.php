@@ -7,6 +7,7 @@ use App\Traits\HasCache;
 use App\Traits\HasRelateableContent;
 use App\Traits\HasTaxonomies;
 use App\Traits\Publishable;
+use App\Traits\Revisionable;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
@@ -18,6 +19,7 @@ class Post extends Model implements CanHaveTaxonomies, TranslatableContract
     use HasRelateableContent;
     use HasTaxonomies;
     use Publishable;
+    use Revisionable;
     use Sluggable;
     use Translatable;
 
@@ -42,11 +44,11 @@ class Post extends Model implements CanHaveTaxonomies, TranslatableContract
             ],
         ];
     }
-    //    protected $revisionable = [
-    //        'title',
-    //        'slug',
-    //        'body',
-    //    ];
+    protected $revisionable = [
+        'title',
+        'slug',
+        'body',
+    ];
 
     public function user()
     {

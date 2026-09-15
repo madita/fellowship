@@ -67,6 +67,13 @@ export default {
         'functional': 'Functional',
         'functionalDescription': 'Enable enhanced functionality and personalization.'
     },
+    // Shared by every diff view (page versions, editor drafts)
+    'diff': {
+        'unified': 'One column',
+        'split': 'Side by side',
+        'identical': 'Both versions are identical',
+        'unchangedLines': '{count} unchanged line | {count} unchanged lines'
+    },
     'offline': {
         'youreOffline': "You're offline",
         'someFeatures': 'Some features may not be available until you reconnect.'
@@ -1457,6 +1464,9 @@ export default {
             'empty': 'Nothing here yet',
             'loadFailed': 'Could not load this list',
             'noDetails': 'No profile answers',
+            'noChanges': 'Nothing was changed',
+            'before': 'Before',
+            'after': 'After',
             'open': 'Open',
             'status': {
                 'approved': 'Approved',
@@ -1464,7 +1474,8 @@ export default {
             }
         },
         'relations': {
-            'event_profiles': 'Event profiles'
+            'event_profiles': 'Event profiles',
+            'history': 'History',
         },
         'searchPlaceholder': 'Search...',
         'noData': 'No data available',
@@ -5398,8 +5409,6 @@ export default {
         'titleChangedFrom': 'Title changed from: "{title}"',
         'modified': 'Modified',
         'contentChanges': 'Content Changes',
-        'showingChanges': 'Showing changes from original content',
-        'wordsChanged': '{count} words changed',
         'duplicate': 'Duplicate',
         'pageSettings': 'Page Settings',
         'categoriesModified': 'Categories modified',
@@ -5407,7 +5416,28 @@ export default {
         'lastSaved': 'Last saved',
         'never': 'Never',
         'changes': 'Changes',
-        'pageHistoryPlaceholder': 'Page history feature would be implemented here',
+        'historyEmpty': 'No changes recorded yet',
+        'historyEmptyText': 'Once this page is edited, every change is listed here.',
+        'historyCreated': 'Page created',
+        'historyChanged': 'Changed {fields}',
+        'historyUnknownAuthor': 'Unknown',
+        'historyLoadFailed': 'The history could not be loaded',
+        'fieldTitle': 'Title',
+        'fieldContent': 'Text',
+        'fieldSlug': 'Page address',
+        'versions': 'Versions',
+        'currentVersion': 'Current version',
+        'compareTitle': 'Compare versions',
+        'compareFrom': 'Older version',
+        'compareTo': 'Newer version',
+        'viewChanges': 'Show changes',
+        'tabChanges': 'Changes',
+        'tabFullText': 'Full text',
+        'emptyPage': 'Empty page',
+        'noTextChanges': 'The text is unchanged',
+        'savedVersion': 'Saved version',
+        'yourDraft': 'Your draft',
+        'viewingOldVersion': 'You are reading an older version of this page.',
         'confirmDiscardChanges': 'Are you sure you want to discard all changes? This action cannot be undone.',
         'pageNotFound': 'Page not found',
         'pageUpdatedSuccessfully': 'Wiki page updated successfully!',

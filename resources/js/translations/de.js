@@ -67,6 +67,13 @@ export default {
         'functional': 'Funktional',
         'functionalDescription': 'Aktivieren Sie erweiterte Funktionen und Personalisierung.'
     },
+    // Von allen Diff-Ansichten genutzt (Seitenversionen, Editor-Entwürfe)
+    'diff': {
+        'unified': 'Eine Spalte',
+        'split': 'Nebeneinander',
+        'identical': 'Beide Versionen sind identisch',
+        'unchangedLines': '{count} unveränderte Zeile | {count} unveränderte Zeilen'
+    },
     'offline': {
         'youreOffline': 'Sie sind offline',
         'someFeatures': 'Einige Funktionen sind möglicherweise nicht verfügbar, bis Sie wieder verbunden sind.'
@@ -1404,6 +1411,9 @@ export default {
             'empty': 'Noch nichts vorhanden',
             'loadFailed': 'Die Liste konnte nicht geladen werden',
             'noDetails': 'Keine Profilangaben',
+            'noChanges': 'Es wurde nichts geändert',
+            'before': 'Vorher',
+            'after': 'Nachher',
             'open': 'Öffnen',
             'status': {
                 'approved': 'Bestätigt',
@@ -1411,7 +1421,8 @@ export default {
             }
         },
         'relations': {
-            'event_profiles': 'Termin-Profile'
+            'event_profiles': 'Termin-Profile',
+            'history': 'Verlauf',
         },
         'searchPlaceholder': 'Suchen...',
         'noData': 'Keine Daten verfügbar',
@@ -5557,8 +5568,6 @@ export default {
         'titleChangedFrom': 'Titel geändert von: "{title}"',
         'modified': 'Geändert',
         'contentChanges': 'Inhaltsänderungen',
-        'showingChanges': 'Änderungen vom Original werden angezeigt',
-        'wordsChanged': '{count} Wörter geändert',
         'duplicate': 'Duplizieren',
         'pageSettings': 'Seiteneinstellungen',
         'categoriesModified': 'Kategorien geändert',
@@ -5566,7 +5575,28 @@ export default {
         'lastSaved': 'Zuletzt gespeichert',
         'never': 'Nie',
         'changes': 'Änderungen',
-        'pageHistoryPlaceholder': 'Die Seitenverlauf-Funktion wird hier implementiert',
+        'historyEmpty': 'Noch keine Änderungen aufgezeichnet',
+        'historyEmptyText': 'Sobald diese Seite bearbeitet wird, steht hier jede Änderung.',
+        'historyCreated': 'Seite angelegt',
+        'historyChanged': '{fields} geändert',
+        'historyUnknownAuthor': 'Unbekannt',
+        'historyLoadFailed': 'Die Versionen konnten nicht geladen werden',
+        'fieldTitle': 'Titel',
+        'fieldContent': 'Text',
+        'fieldSlug': 'Seitenadresse',
+        'versions': 'Versionen',
+        'currentVersion': 'Aktuelle Version',
+        'compareTitle': 'Versionen vergleichen',
+        'compareFrom': 'Ältere Version',
+        'compareTo': 'Neuere Version',
+        'viewChanges': 'Änderungen anzeigen',
+        'tabChanges': 'Änderungen',
+        'tabFullText': 'Volltext',
+        'emptyPage': 'Leere Seite',
+        'noTextChanges': 'Der Text ist unverändert',
+        'savedVersion': 'Gespeicherte Version',
+        'yourDraft': 'Dein Entwurf',
+        'viewingOldVersion': 'Du liest eine ältere Version dieser Seite.',
         'confirmDiscardChanges': 'Möchten Sie wirklich alle Änderungen verwerfen? Diese Aktion kann nicht rückgängig gemacht werden.',
         'pageNotFound': 'Seite nicht gefunden',
         'pageUpdatedSuccessfully': 'Wiki-Seite erfolgreich aktualisiert!',

@@ -31,6 +31,9 @@ Route::middleware(['cache.control'])->group(function () {
     Route::get('wiki/recent-changes', "\App\Http\Controllers\WikiController@recentChanges");
     Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['index', 'show']);
     Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
+    Route::get('wiki/{slug}/history', "\App\Http\Controllers\WikiController@history");
+    Route::get('wiki/{slug}/history/{revision}', "\App\Http\Controllers\WikiController@historyVersion")
+        ->whereNumber('revision');
 
     // Public menu access
     Route::get('menus/location/{location}', 'App\Http\Controllers\Menu\MenuController@getByLocation');
@@ -239,6 +242,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     });
 
     Route::middleware('permission.any:manage-page')->group(function () {
+        Route::get('datatable/pages/{id}/history', 'App\Http\Controllers\DataTable\\PageController@history');
+        Route::get('datatable/pages/{id}/history/{revision}', 'App\Http\Controllers\DataTable\\PageController@historyRevision')
+            ->whereNumber('revision');
         Route::resource('datatable/pages', 'App\Http\Controllers\DataTable\\PageController');
         Route::resource('datatable/taxonomies', 'App\Http\Controllers\DataTable\\TaxonomyController');
         Route::resource('datatable/terms', 'App\Http\Controllers\DataTable\\TermController');
@@ -256,6 +262,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     });
 
     Route::middleware('permission.any:manage-post')->group(function () {
+        Route::get('datatable/posts/{id}/history', 'App\Http\Controllers\DataTable\\PostController@history');
+        Route::get('datatable/posts/{id}/history/{revision}', 'App\Http\Controllers\DataTable\\PostController@historyRevision')
+            ->whereNumber('revision');
         Route::resource('datatable/posts', 'App\Http\Controllers\DataTable\\PostController');
         Route::resource('datatable/events', 'App\Http\Controllers\DataTable\\EventController');
         Route::resource('datatable/event-types', 'App\Http\Controllers\DataTable\\EventTypeController');
