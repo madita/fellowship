@@ -34,7 +34,12 @@ class Post extends Model implements CanHaveTaxonomies, TranslatableContract
 
     protected $primaryKey = 'id';
 
-    protected $table = 'posts';
+    protected $table        = 'posts';
+    protected $revisionable = [
+        'title',
+        'slug',
+        'body',
+    ];
 
     public function sluggable(): array
     {
@@ -44,11 +49,6 @@ class Post extends Model implements CanHaveTaxonomies, TranslatableContract
             ],
         ];
     }
-    protected $revisionable = [
-        'title',
-        'slug',
-        'body',
-    ];
 
     public function user()
     {

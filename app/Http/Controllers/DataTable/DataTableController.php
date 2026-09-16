@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Http\Controllers\Controller;
+use App\Models\Revision;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,9 +15,9 @@ use Illuminate\Http\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use App\Models\Revision;
 
 /**
  * Base class of the admin data tables (server-side paging, sorting, search).
@@ -404,44 +405,6 @@ abstract class DataTableController extends Controller
     }
 
     /**
-     * The revisions of one row, newest first.
-     *
-     * @return \Illuminate\Support\Collection<int,Revision>
-     */
-    protected function revisionsOf(Model $record)
-    {
-        // The listener writes the table name; a morph class may appear on rows
-        // written by other code paths. Both mean this record.
-        return Revision::with('executor')
-            ->whereIn('revisionable_type', [$record->getMorphClass(), $record->getTable()])
-            ->where('revisionable_id', $record->getKey())
-            ->orderByDesc('id')
-            ->get();
-    }
-
-    /**
-     * One side of a change as the diff view wants it: a string, and never so
-     * long that a single revision becomes a download.
-     */
-    protected function historyValue($value): string
-    {
-        if ($value === null || is_scalar($value)) {
-            $text = (string) $value;
-        } else {
-            $text = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '';
-        }
-
-        return mb_strlen($text) > self::HISTORY_VALUE_LIMIT
-            ? mb_substr($text, 0, self::HISTORY_VALUE_LIMIT) . '…'
-            : $text;
-    }
-
-    protected function looksLikeHtml($value): bool
-    {
-        return is_string($value) && $value !== strip_tags($value);
-    }
-
-    /**
      * Create an entity.
      *
      *
@@ -545,6 +508,44 @@ abstract class DataTableController extends Controller
     public function getCategories($taxonomy)
     {
         $this->builder->getModel()->getCategories($taxonomy);
+    }
+
+    /**
+     * The revisions of one row, newest first.
+     *
+     * @return Collection<int,Revision>
+     */
+    protected function revisionsOf(Model $record)
+    {
+        // The listener writes the table name; a morph class may appear on rows
+        // written by other code paths. Both mean this record.
+        return Revision::with('executor')
+            ->whereIn('revisionable_type', [$record->getMorphClass(), $record->getTable()])
+            ->where('revisionable_id', $record->getKey())
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * One side of a change as the diff view wants it: a string, and never so
+     * long that a single revision becomes a download.
+     */
+    protected function historyValue($value): string
+    {
+        if ($value === null || is_scalar($value)) {
+            $text = (string) $value;
+        } else {
+            $text = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '';
+        }
+
+        return mb_strlen($text) > self::HISTORY_VALUE_LIMIT
+            ? mb_substr($text, 0, self::HISTORY_VALUE_LIMIT) . '…'
+            : $text;
+    }
+
+    protected function looksLikeHtml($value): bool
+    {
+        return is_string($value) && $value !== strip_tags($value);
     }
 
     /**

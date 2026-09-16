@@ -11,6 +11,7 @@ use App\Models\Wiki;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
@@ -33,25 +34,6 @@ class WikiController extends Controller
             'published_at',
             'sign_in_only',
         ];
-    }
-
-    /**
-     * The page a wiki entry hangs under.
-     *
-     * The editor sends the chosen parent as an object under "parent", while
-     * the page row carries its own scalar parent_id that gets echoed straight
-     * back on save. Either is accepted: demanding an array rejected every
-     * ordinary edit, and reading the wrong key silently dropped the choice.
-     */
-    private function resolveParentId(Request $request): int
-    {
-        $parent = $request->get('parent') ?? $request->get('parent_id');
-
-        if (is_array($parent)) {
-            return (int) ($parent['id'] ?? 0);
-        }
-
-        return (int) ($parent ?? 0);
     }
 
     /**
@@ -265,71 +247,6 @@ class WikiController extends Controller
                 'current' => $target->id === $revisions->max('id'),
             ],
         ]);
-    }
-
-    /**
-     * The wiki page a history is asked for, with the same gate as show():
-     * a page still waiting for approval is not public.
-     */
-    private function wikiForHistory(string $slug): Wiki
-    {
-        $wiki = Wiki::where('slug', '=', $slug)->firstOrFail();
-
-        $user = Auth::user();
-        if ($wiki->isPending() && ! ($user && $user->isAdmin())) {
-            abort(403, 'This page is pending approval.');
-        }
-
-        return $wiki;
-    }
-
-    private function pageBehind(Wiki $wiki): Page
-    {
-        $model = $wiki->wikiable_type ?: Page::class;
-
-        return $model::findOrFail($wiki->wikiable_id);
-    }
-
-    /**
-     * @return \Illuminate\Support\Collection<int,Revision>
-     */
-    private function revisionsOf(Page $page)
-    {
-        // Older rows carry the table name the listener writes; newer ones may
-        // carry the morph class. Both mean the same page.
-        return Revision::with('executor')
-            ->whereIn('revisionable_type', [(new Page)->getMorphClass(), (new Page)->getTable()])
-            ->where('revisionable_id', $page->id)
-            ->orderByDesc('id')
-            ->get();
-    }
-
-    /**
-     * The newest recorded value of a field within the given revisions.
-     */
-    private function valueAsOf($revisions, string $key): ?string
-    {
-        $value = null;
-
-        foreach ($revisions as $revision) {
-            $diff = $revision->getDiff();
-            if (array_key_exists($key, $diff)) {
-                $value = $diff[$key]['new_value'];
-            }
-        }
-
-        return $value;
-    }
-
-    private function excerpt(?string $content): ?string
-    {
-        if ($content === null) {
-            return null;
-        }
-
-        $plain = trim(preg_replace('/\s+/', ' ', strip_tags($content)));
-
-        return mb_strlen($plain) > 140 ? mb_substr($plain, 0, 140) . '…' : $plain;
     }
 
     public function getPages()
@@ -708,5 +625,89 @@ class WikiController extends Controller
         $wiki->delete();
 
         return response()->json(['message' => __('messages.wiki.deleted')]);
+    }
+
+    /**
+     * The page a wiki entry hangs under.
+     *
+     * The editor sends the chosen parent as an object under "parent", while
+     * the page row carries its own scalar parent_id that gets echoed straight
+     * back on save. Either is accepted: demanding an array rejected every
+     * ordinary edit, and reading the wrong key silently dropped the choice.
+     */
+    private function resolveParentId(Request $request): int
+    {
+        $parent = $request->get('parent') ?? $request->get('parent_id');
+
+        if (is_array($parent)) {
+            return (int) ($parent['id'] ?? 0);
+        }
+
+        return (int) ($parent ?? 0);
+    }
+
+    /**
+     * The wiki page a history is asked for, with the same gate as show():
+     * a page still waiting for approval is not public.
+     */
+    private function wikiForHistory(string $slug): Wiki
+    {
+        $wiki = Wiki::where('slug', '=', $slug)->firstOrFail();
+
+        $user = Auth::user();
+        if ($wiki->isPending() && ! ($user && $user->isAdmin())) {
+            abort(403, 'This page is pending approval.');
+        }
+
+        return $wiki;
+    }
+
+    private function pageBehind(Wiki $wiki): Page
+    {
+        $model = $wiki->wikiable_type ?: Page::class;
+
+        return $model::findOrFail($wiki->wikiable_id);
+    }
+
+    /**
+     * @return Collection<int,Revision>
+     */
+    private function revisionsOf(Page $page)
+    {
+        // Older rows carry the table name the listener writes; newer ones may
+        // carry the morph class. Both mean the same page.
+        return Revision::with('executor')
+            ->whereIn('revisionable_type', [(new Page)->getMorphClass(), (new Page)->getTable()])
+            ->where('revisionable_id', $page->id)
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * The newest recorded value of a field within the given revisions.
+     */
+    private function valueAsOf($revisions, string $key): ?string
+    {
+        $value = null;
+
+        foreach ($revisions as $revision) {
+            $diff = $revision->getDiff();
+            if (array_key_exists($key, $diff)) {
+                $value = $diff[$key]['new_value'];
+            }
+        }
+
+        return $value;
+    }
+
+    private function excerpt(?string $content): ?string
+    {
+        if ($content === null) {
+            return null;
+        }
+
+        $plain = trim(preg_replace('/\s+/', ' ', strip_tags($content)));
+
+        return mb_strlen($plain) > 140 ? mb_substr($plain, 0, 140) . '…' : $plain;
     }
 }

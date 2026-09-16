@@ -14,13 +14,6 @@ use Psy\VarDumper\Presenter;
 trait Revisionable
 {
     /**
-     * Translated values as they were stored before the current save.
-     *
-     * @var array<string,mixed>
-     */
-    protected array $revisionedTranslationOriginals = [];
-
-    /**
      * Whether this save already recorded a creation.
      *
      * Declared here on purpose: assigning an undeclared property on a model
@@ -29,6 +22,12 @@ trait Revisionable
      * object, so every later edit of the same instance would be skipped.
      */
     public bool $revisionJustCreated = false;
+    /**
+     * Translated values as they were stored before the current save.
+     *
+     * @var array<string,mixed>
+     */
+    protected array $revisionedTranslationOriginals = [];
 
     /**
      * Get record version at given timestamp.
@@ -177,18 +176,6 @@ trait Revisionable
     }
 
     /**
-     * The locale a revision is recorded against: the one being written.
-     */
-    protected function currentRevisionLocale(): string
-    {
-        $translation = $this->translations->first(fn ($row) => $row->isDirty());
-
-        return $translation
-            ? $translation->getAttribute($this->getLocaleKey())
-            : app()->getLocale();
-    }
-
-    /**
      * Attributes being revisioned.
      *
      * @var array
@@ -311,6 +298,18 @@ trait Revisionable
                 'new_value'  => $revision->new_value($field),
             ];
         })->filter()->values();
+    }
+
+    /**
+     * The locale a revision is recorded against: the one being written.
+     */
+    protected function currentRevisionLocale(): string
+    {
+        $translation = $this->translations->first(fn ($row) => $row->isDirty());
+
+        return $translation
+            ? $translation->getAttribute($this->getLocaleKey())
+            : app()->getLocale();
     }
 
     /**
