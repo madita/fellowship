@@ -157,6 +157,21 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/ticket-comments/{comment}', 'App\Http\Controllers\Ticket\TicketCommentController@destroy');
 });
 
+// Feedback: public bug reports and feature requests (tickets of type bug / feature)
+Route::group(['prefix' => '/feedback'], function () {
+    Route::get('/tags', 'App\Http\Controllers\Ticket\FeedbackController@tags');
+    Route::get('/tickets', 'App\Http\Controllers\Ticket\FeedbackController@index');
+    Route::get('/tickets/{ticket}', 'App\Http\Controllers\Ticket\FeedbackController@show');
+
+    Route::group(['middleware' => ['auth:sanctum']], function () {
+        Route::post('/tickets', 'App\Http\Controllers\Ticket\FeedbackController@store')->middleware('throttle:10,1');
+        Route::patch('/tickets/{ticket}', 'App\Http\Controllers\Ticket\FeedbackController@update');
+        Route::post('/tickets/{ticket}/vote', 'App\Http\Controllers\Ticket\FeedbackController@vote');
+        Route::post('/tickets/{ticket}/watch', 'App\Http\Controllers\Ticket\FeedbackController@watch');
+        Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\Ticket\FeedbackController@comment')->middleware('throttle:20,1');
+    });
+});
+
 // Status Timeline Routes
 Route::get('/statuses', 'App\Http\Controllers\Status\StatusController@index');
 Route::get('/statuses/{status}', 'App\Http\Controllers\Status\StatusController@show');
@@ -221,25 +236,6 @@ Route::post('/collections/{collection}', [CollectionController::class, 'uploadMe
 Route::patch('/media/{media}/caption', [CollectionController::class, 'updateMediaCaption']); // Update caption for a media item
 Route::delete('/collections/{collection}', [CollectionController::class, 'destroy']); // Delete collection (fixed method name)
 Route::delete('/media/{media}', [CollectionController::class, 'deleteMedia']); // Delete a media item
-
-// Public Feedback System (BGA-style)
-Route::prefix('feedback')->group(function () {
-    // Public endpoints (no auth required to view)
-    Route::get('/bugs', 'App\Http\Controllers\FeedbackController@bugs');
-    Route::get('/features', 'App\Http\Controllers\FeedbackController@features');
-    Route::get('/tickets/{ticket}', 'App\Http\Controllers\FeedbackController@show');
-    Route::get('/tags', 'App\Http\Controllers\FeedbackController@tags');
-    Route::get('/stats', 'App\Http\Controllers\FeedbackController@stats');
-
-    // Authenticated endpoints
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/bugs', 'App\Http\Controllers\FeedbackController@createBug');
-        Route::post('/features', 'App\Http\Controllers\FeedbackController@createFeature');
-        Route::post('/tickets/{ticket}/vote', 'App\Http\Controllers\FeedbackController@toggleVote');
-        Route::post('/tickets/{ticket}/watch', 'App\Http\Controllers\FeedbackController@toggleWatch');
-        Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\FeedbackController@addComment');
-    });
-});
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
     // Each table needs the permission its admin screen already requires;

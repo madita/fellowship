@@ -3,6 +3,7 @@
 namespace App\Models\Ticket;
 
 use App\Models\User;
+use App\Notifications\TicketActivityNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +11,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class Ticket extends Model
 {
@@ -24,31 +28,58 @@ class Ticket extends Model
         'title',
         'description',
         'status',
-        'bga_status',
         'priority',
         'due_date',
         'resolved_at',
         'closed_at',
         'metadata',
-        'duplicate_of_ticket_id',
         'is_public',
-        'votes_count',
-        'watchers_count',
-        'fixed_in_version',
+        'duplicate_of_ticket_id',
     ];
 
     protected $casts = [
         'metadata'    => 'array',
         'due_date'    => 'datetime',
         'resolved_at' => 'datetime',
-        'closed_at' => 'datetime',
-        'is_public' => 'boolean',
-        'votes_count' => 'integer',
-        'watchers_count' => 'integer',
         'closed_at'   => 'datetime',
+        'is_public'   => 'boolean',
     ];
 
-    protected $appends = ['status_label', 'priority_label', 'bga_status_label'];
+    protected $appends = ['status_label', 'priority_label'];
+
+    public const STATUSES = ['open', 'in_progress', 'pending', 'resolved', 'closed'];
+
+    public const OPEN_STATUSES = ['open', 'in_progress', 'pending'];
+
+    /**
+     * Ticket types listed on the public feedback pages.
+     */
+    public const FEEDBACK_TYPES = ['bug', 'feature'];
+
+    protected static function booted(): void
+    {
+        // resolved_at / closed_at follow the status, whichever way it is changed
+        static::saving(function (Ticket $ticket): void {
+            if ( ! $ticket->isDirty('status')) {
+                return;
+            }
+
+            if ($ticket->status === 'resolved') {
+                $ticket->resolved_at ??= now();
+            } elseif ($ticket->status === 'closed') {
+                $ticket->closed_at ??= now();
+            } elseif (in_array($ticket->status, self::OPEN_STATUSES, true)) {
+                $ticket->resolved_at = null;
+                $ticket->closed_at   = null;
+            }
+        });
+
+        static::updated(function (Ticket $ticket): void {
+            if ($ticket->wasChanged('status')) {
+                $ticket->notifyWatchers(new TicketActivityNotification($ticket, 'status'), Auth::id());
+            }
+        });
+    }
 
     /**
      * Get the ticket type.
@@ -144,7 +175,7 @@ class Ticket extends Model
      */
     public function isOpen(): bool
     {
-        return ! in_array($this->status, ['resolved', 'closed']);
+        return in_array($this->status, self::OPEN_STATUSES, true);
     }
 
     /**
@@ -216,7 +247,7 @@ class Ticket extends Model
      */
     public function scopeOpen($query)
     {
-        return $query->whereIn('status', ['open', 'in_progress', 'pending']);
+        return $query->whereIn('status', self::OPEN_STATUSES);
     }
 
     /**
@@ -245,7 +276,7 @@ class Ticket extends Model
         });
     }
 
-    // ==================== BGA-style Features ====================
+    // ── Public feedback (bug reports and feature requests) ──────────
 
     /**
      * Get all votes for this ticket.
@@ -256,7 +287,7 @@ class Ticket extends Model
     }
 
     /**
-     * Get all watchers for this ticket.
+     * Get the users watching this ticket.
      */
     public function watchers(): HasMany
     {
@@ -264,16 +295,15 @@ class Ticket extends Model
     }
 
     /**
-     * Get tags for this ticket.
+     * Get the tags of this ticket.
      */
     public function tags(): BelongsToMany
     {
-        return $this->belongsToMany(TicketTag::class, 'ticket_tag_pivot')
-            ->withTimestamps();
+        return $this->belongsToMany(TicketTag::class);
     }
 
     /**
-     * Get the original ticket if this is a duplicate.
+     * Get the original ticket if this one is a duplicate.
      */
     public function duplicateOf(): BelongsTo
     {
@@ -281,7 +311,7 @@ class Ticket extends Model
     }
 
     /**
-     * Get tickets that are duplicates of this one.
+     * Get the tickets marked as duplicates of this one.
      */
     public function duplicates(): HasMany
     {
@@ -289,156 +319,96 @@ class Ticket extends Model
     }
 
     /**
-     * Check if user has voted on this ticket.
+     * Whether this is a bug report or feature request.
      */
-    public function hasVotedBy(User $user): bool
+    public function isFeedback(): bool
     {
-        return $this->votes()->where('user_id', $user->id)->exists();
+        return in_array($this->ticketType?->slug, self::FEEDBACK_TYPES, true);
     }
 
     /**
-     * Get user's vote on this ticket.
+     * Public tickets are visible to everyone, private ones to their creator and admins.
      */
-    public function userVote(User $user): ?TicketVote
+    public function isVisibleTo(?User $user): bool
     {
-        return $this->votes()->where('user_id', $user->id)->first();
+        return $this->is_public
+            || ($user && ((int) $this->created_by_user_id === (int) $user->id || $user->isAdmin()));
     }
 
     /**
-     * Toggle user's upvote.
+     * Add or remove the user's vote; returns whether the user has voted now.
      */
     public function toggleVote(User $user): bool
     {
-        $existingVote = $this->userVote($user);
-
-        if ($existingVote) {
-            $existingVote->delete();
-            $this->decrement('votes_count');
-            return false; // Removed vote
+        if ($this->votes()->where('user_id', $user->id)->delete()) {
+            return false;
         }
 
-        $this->votes()->create([
-            'user_id' => $user->id,
-            'vote' => 1,
-        ]);
-        $this->increment('votes_count');
-        return true; // Added vote
+        $this->votes()->createOrFirst(['user_id' => $user->id]);
+
+        return true;
     }
 
     /**
-     * Check if user is watching this ticket.
+     * Start or stop watching; returns whether the user is watching now.
      */
-    public function isWatchedBy(User $user): bool
+    public function toggleWatch(User $user): bool
     {
-        return $this->watchers()->where('user_id', $user->id)->exists();
-    }
-
-    /**
-     * Toggle user watching this ticket.
-     */
-    public function toggleWatch(User $user, bool $notifyComments = true, bool $notifyStatusChange = true): bool
-    {
-        $existingWatch = $this->watchers()->where('user_id', $user->id)->first();
-
-        if ($existingWatch) {
-            $existingWatch->delete();
-            $this->decrement('watchers_count');
-            return false; // Unwatched
+        if ($this->watchers()->where('user_id', $user->id)->delete()) {
+            return false;
         }
 
-        $this->watchers()->create([
-            'user_id' => $user->id,
-            'notify_comments' => $notifyComments,
-            'notify_status_change' => $notifyStatusChange,
-        ]);
-        $this->increment('watchers_count');
-        return true; // Watching
+        $this->watch($user);
+
+        return true;
     }
 
     /**
-     * Mark as duplicate of another ticket.
+     * Watch the ticket (no-op when already watching).
      */
-    public function markAsDuplicateOf(Ticket $original): void
+    public function watch(User $user): void
     {
-        $this->update([
-            'duplicate_of_ticket_id' => $original->id,
-            'bga_status' => 'duplicate',
-            'status' => 'closed',
-            'closed_at' => now(),
-        ]);
+        $this->watchers()->createOrFirst(['user_id' => $user->id]);
     }
 
     /**
-     * Get BGA status label.
+     * Notify everyone watching the ticket, except the member who caused it
+     * and watchers who can no longer see the ticket.
      */
-    public function getBgaStatusLabelAttribute(): string
+    public function notifyWatchers(Notification $notification, ?int $exceptUserId = null): void
     {
-        return match($this->bga_status) {
-            'reported' => 'Reported',
-            'confirmed' => 'Confirmed',
-            'investigating' => 'Investigating',
-            'planned' => 'Planned',
-            'in_progress' => 'In Progress',
-            'completed' => 'Completed',
-            'wontfix' => "Won't Fix",
-            'duplicate' => 'Duplicate',
-            default => ucfirst(str_replace('_', ' ', $this->bga_status)),
-        };
+        $recipients = User::query()
+            ->whereIn('id', $this->watchers()
+                ->when($exceptUserId, fn ($q) => $q->where('user_id', '!=', $exceptUserId))
+                ->select('user_id'))
+            ->get()
+            ->filter(fn (User $user) => $this->isVisibleTo($user));
+
+        NotificationFacade::send($recipients, $notification);
     }
 
     /**
-     * Check if ticket is a duplicate.
+     * Scope: Bug reports and feature requests.
      */
-    public function isDuplicate(): bool
+    public function scopeFeedback($query)
     {
-        return $this->duplicate_of_ticket_id !== null;
+        return $query->whereHas('ticketType', function ($q) {
+            $q->whereIn('slug', self::FEEDBACK_TYPES);
+        });
     }
 
     /**
-     * Check if ticket is public.
+     * Scope: Tickets the user may see (see isVisibleTo()).
      */
-    public function isPublic(): bool
+    public function scopeVisibleTo($query, ?User $user)
     {
-        return $this->is_public;
-    }
+        if ($user?->isAdmin()) {
+            return $query;
+        }
 
-    /**
-     * Scope: Public tickets only.
-     */
-    public function scopePublic($query)
-    {
-        return $query->where('is_public', true);
-    }
-
-    /**
-     * Scope: By BGA status.
-     */
-    public function scopeBgaStatus($query, string $status)
-    {
-        return $query->where('bga_status', $status);
-    }
-
-    /**
-     * Scope: Order by popularity (votes).
-     */
-    public function scopePopular($query)
-    {
-        return $query->orderBy('votes_count', 'desc');
-    }
-
-    /**
-     * Scope: Bugs only.
-     */
-    public function scopeBugs($query)
-    {
-        return $query->ofType('bug');
-    }
-
-    /**
-     * Scope: Feature requests only.
-     */
-    public function scopeFeatures($query)
-    {
-        return $query->ofType('feature');
+        return $query->where(function ($q) use ($user) {
+            $q->where('is_public', true)
+                ->when($user, fn ($q) => $q->orWhere('created_by_user_id', $user->id));
+        });
     }
 }

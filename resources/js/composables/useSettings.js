@@ -202,6 +202,7 @@ export function useSettings() {
         feature_irc_enabled: true,
         feature_gallery_enabled: true,
         feature_tickets_enabled: true,
+        feature_feedback_enabled: true,
 
         // Sandbox Settings
         sandbox_enabled: false,

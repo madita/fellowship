@@ -3356,6 +3356,8 @@ export default {
     'notifications': {
         'statusMention': '{name} hat dich in einem Beitrag erwähnt',
         'statusCommentMention': '{name} hat dich in einem Kommentar erwähnt',
+        'ticketComment': '{name} hat „{title}“ kommentiert',
+        'ticketStatus': '„{title}“ ist jetzt {status}',
         'title': 'Benachrichtigungen',
         'markAllRead': 'Alle als gelesen markieren',
         'clearAll': 'Alle löschen',
@@ -5841,6 +5843,90 @@ export default {
             'testConnection': 'Verbindung testen',
             'connectionSuccess': 'Verbindung erfolgreich',
             'connectionError': 'Verbindung fehlgeschlagen'
+        }
+    },
+    'feedback': {
+        'title': 'Feedback',
+        'subtitle': 'Melde Fehler, schlage Funktionen vor und stimme ab, was dir am wichtigsten ist',
+        'create': 'Feedback schreiben',
+        'empty': 'Kein Feedback gefunden',
+        'tabs': {
+            'all': 'Alle',
+            'bug': 'Fehlermeldungen',
+            'feature': 'Funktionswünsche'
+        },
+        'bug': {
+            'create': 'Fehler melden',
+            'empty': 'Keine Fehlermeldungen gefunden',
+            'descriptionHint': 'Was ist passiert, wie lässt es sich nachstellen und was hättest du erwartet',
+            'created': 'Danke! Deine Fehlermeldung wurde eingereicht.'
+        },
+        'feature': {
+            'create': 'Funktion wünschen',
+            'empty': 'Keine Funktionswünsche gefunden',
+            'descriptionHint': 'Was du dir wünschst und wem es helfen würde',
+            'created': 'Danke! Dein Funktionswunsch wurde eingereicht.'
+        },
+        'filters': {
+            'allStatuses': 'Alle Status',
+            'allTags': 'Alle Tags',
+            'search': 'Suchen',
+            'emptyHint': 'Probiere andere Filter oder schreibe den ersten Eintrag'
+        },
+        'sort': {
+            'popular': 'Meiste Stimmen',
+            'newest': 'Neueste',
+            'oldest': 'Älteste'
+        },
+        'fields': {
+            'title': 'Titel',
+            'description': 'Beschreibung',
+            'status': 'Status',
+            'type': 'Art',
+            'tag': 'Tag',
+            'tags': 'Tags',
+            'sort': 'Sortieren nach'
+        },
+        'vote': 'Abstimmen',
+        'voted': 'Abgestimmt',
+        'watch': 'Beobachten',
+        'watching': 'Beobachtet',
+        'watchHint': 'Beobachter werden über neue Kommentare und Statusänderungen benachrichtigt',
+        'votes': 'Stimmen',
+        'comments': 'Kommentare',
+        'watchers': 'Beobachter',
+        'postedBy': 'von {name}',
+        'official': 'Team',
+        'hidden': 'Verborgen',
+        'loginHint': 'Melde dich an, um Einträge zu schreiben, abzustimmen, zu beobachten und zu kommentieren',
+        'noComments': 'Noch keine Kommentare',
+        'addComment': 'Kommentar schreiben',
+        'postComment': 'Kommentar senden',
+        'duplicateOf': 'Duplikat von',
+        'duplicates': 'Duplikate',
+        'submit': 'Absenden',
+        'cancel': 'Abbrechen',
+        'moderation': {
+            'title': 'Moderation',
+            'public': 'Für alle sichtbar',
+            'duplicateOf': 'Duplikat von Ticket #',
+            'duplicateHint': 'Als Duplikat markieren schließt das Ticket',
+            'manage': 'In der Ticketverwaltung öffnen',
+            'save': 'Speichern',
+            'saved': 'Das Ticket wurde aktualisiert.'
+        },
+        'messages': {
+            'loadFailed': 'Das Feedback konnte nicht geladen werden.',
+            'notFound': 'Dieses Ticket existiert nicht oder ist nicht öffentlich.',
+            'createFailed': 'Dein Feedback konnte nicht eingereicht werden.',
+            'voteFailed': 'Deine Stimme konnte nicht gespeichert werden.',
+            'watchFailed': 'Das Beobachten konnte nicht geändert werden.',
+            'commentFailed': 'Der Kommentar konnte nicht gesendet werden.',
+            'updateFailed': 'Das Ticket konnte nicht aktualisiert werden.'
+        },
+        'validation': {
+            'titleRequired': 'Ein Titel ist erforderlich',
+            'descriptionRequired': 'Eine Beschreibung ist erforderlich'
         }
     },
     'tickets': {

@@ -3193,6 +3193,8 @@ export default {
     'notifications': {
         'statusMention': '{name} mentioned you in a post',
         'statusCommentMention': '{name} mentioned you in a comment',
+        'ticketComment': '{name} commented on "{title}"',
+        'ticketStatus': '"{title}" is now {status}',
         'title': 'Notifications',
         'markAllRead': 'Mark All as Read',
         'clearAll': 'Clear All',
@@ -5666,6 +5668,90 @@ export default {
             'ogImageUploaded': 'OG image uploaded successfully',
             'ogImageDeleted': 'OG image deleted successfully',
             'ogImageHint': 'Image displayed when your site is shared on social media'
+        }
+    },
+    'feedback': {
+        'title': 'Feedback',
+        'subtitle': 'Report bugs, suggest features and vote on what matters most to you',
+        'create': 'Post feedback',
+        'empty': 'No feedback found',
+        'tabs': {
+            'all': 'All',
+            'bug': 'Bug Reports',
+            'feature': 'Feature Requests'
+        },
+        'bug': {
+            'create': 'Report a bug',
+            'empty': 'No bug reports found',
+            'descriptionHint': 'What happened, the steps to reproduce it and what you expected instead',
+            'created': 'Thanks! Your bug report has been filed.'
+        },
+        'feature': {
+            'create': 'Request a feature',
+            'empty': 'No feature requests found',
+            'descriptionHint': 'What you would like to see and how it would help',
+            'created': 'Thanks! Your feature request has been filed.'
+        },
+        'filters': {
+            'allStatuses': 'All statuses',
+            'allTags': 'All tags',
+            'search': 'Search',
+            'emptyHint': 'Try other filters or be the first to post'
+        },
+        'sort': {
+            'popular': 'Most votes',
+            'newest': 'Newest',
+            'oldest': 'Oldest'
+        },
+        'fields': {
+            'title': 'Title',
+            'description': 'Description',
+            'status': 'Status',
+            'type': 'Type',
+            'tag': 'Tag',
+            'tags': 'Tags',
+            'sort': 'Sort by'
+        },
+        'vote': 'Vote',
+        'voted': 'Voted',
+        'watch': 'Watch',
+        'watching': 'Watching',
+        'watchHint': 'Watchers are notified about new comments and status changes',
+        'votes': 'Votes',
+        'comments': 'Comments',
+        'watchers': 'Watchers',
+        'postedBy': 'by {name}',
+        'official': 'Team',
+        'hidden': 'Hidden',
+        'loginHint': 'Log in to post, vote, watch and comment',
+        'noComments': 'No comments yet',
+        'addComment': 'Add a comment',
+        'postComment': 'Post comment',
+        'duplicateOf': 'Duplicate of',
+        'duplicates': 'Duplicates',
+        'submit': 'Submit',
+        'cancel': 'Cancel',
+        'moderation': {
+            'title': 'Moderation',
+            'public': 'Visible to everyone',
+            'duplicateOf': 'Duplicate of ticket #',
+            'duplicateHint': 'Marking a duplicate closes the ticket',
+            'manage': 'Open in ticket admin',
+            'save': 'Save',
+            'saved': 'The ticket has been updated.'
+        },
+        'messages': {
+            'loadFailed': 'The feedback could not be loaded.',
+            'notFound': 'This ticket does not exist or is not public.',
+            'createFailed': 'Your feedback could not be submitted.',
+            'voteFailed': 'Your vote could not be saved.',
+            'watchFailed': 'Watching could not be changed.',
+            'commentFailed': 'The comment could not be posted.',
+            'updateFailed': 'The ticket could not be updated.'
+        },
+        'validation': {
+            'titleRequired': 'A title is required',
+            'descriptionRequired': 'A description is required'
         }
     },
     'tickets': {

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
@@ -195,20 +196,7 @@ class TicketController extends Controller
             'due_date'            => 'nullable|date',
         ]);
 
-        // Auto-set resolved_at/closed_at based on status
-        if (isset($validated['status'])) {
-            if ($validated['status'] === 'resolved' && ! $ticket->resolved_at) {
-                $validated['resolved_at'] = now();
-            }
-            if ($validated['status'] === 'closed' && ! $ticket->closed_at) {
-                $validated['closed_at'] = now();
-            }
-            if (in_array($validated['status'], ['open', 'in_progress', 'pending'])) {
-                $validated['resolved_at'] = null;
-                $validated['closed_at']   = null;
-            }
-        }
-
+        // resolved_at / closed_at follow the status in the Ticket model
         DB::transaction(function () use ($ticket, $validated, $user): void {
             $ticket->update($validated);
 

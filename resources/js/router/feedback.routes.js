@@ -1,35 +1,22 @@
-/**
- * Feedback System Routes (BGA-style)
- */
+// Feedback: public bug reports and feature requests
+export const feedback = [
+    {
+        // One list for both; ?type=bug|feature selects a tab
+        path: '/feedback',
+        name: 'feedback',
+        component: () => import(/* webpackChunkName: "feedback-list" */ '@/pages/feedback/FeedbackList.vue'),
+        meta: {
+            layout: 'default'
+        }
+    },
+    {
+        path: '/feedback/:id(\d+)',
+        name: 'feedback-ticket',
+        component: () => import(/* webpackChunkName: "feedback-ticket" */ '@/pages/feedback/FeedbackTicket.vue'),
+        meta: {
+            layout: 'default'
+        }
+    },
+]
 
-export default [
-    {
-        path: '/feedback/bugs',
-        name: 'feedback.bugs',
-        component: () => import('@/components/feedback/FeedbackList.vue'),
-        meta: {
-            title: 'Bug Reports',
-            public: true,
-        },
-        props: { type: 'bug' },
-    },
-    {
-        path: '/feedback/features',
-        name: 'feedback.features',
-        component: () => import('@/components/feedback/FeedbackList.vue'),
-        meta: {
-            title: 'Feature Requests',
-            public: true,
-        },
-        props: { type: 'feature' },
-    },
-    {
-        path: '/feedback/ticket/:id',
-        name: 'feedback.ticket',
-        component: () => import('@/components/feedback/FeedbackTicket.vue'),
-        meta: {
-            title: 'Ticket Details',
-            public: true,
-        },
-    },
-];
+export default feedback

@@ -1,120 +1,132 @@
 <template>
-  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" max-width="700">
-    <v-card>
-      <v-card-title class="text-h5">
-        {{ type === 'bug' ? 'Report a Bug' : 'Request a Feature' }}
-      </v-card-title>
+    <v-dialog
+        :model-value="modelValue"
+        max-width="700"
+        :persistent="submitting"
+        @update:model-value="close"
+    >
+        <v-card>
+            <v-card-title class="d-flex align-center ga-2 pt-4 px-6">
+                <v-icon :icon="form.type === 'bug' ? 'mdi-bug-outline' : 'mdi-lightbulb-on-outline'" color="primary" />
+                {{ $t(`feedback.${form.type}.create`) }}
+            </v-card-title>
 
-      <v-card-text>
-        <v-form ref="form" v-model="valid">
-          <v-text-field
-            v-model="form.title"
-            label="Title"
-            :rules="[rules.required]"
-            outlined
-            dense
-            class="mb-3"
-          />
+            <v-card-text class="px-6">
+                <v-form ref="form" @submit.prevent="submit">
+                    <v-btn-toggle
+                        v-model="form.type"
+                        mandatory
+                        divided
+                        variant="outlined"
+                        color="primary"
+                        density="comfortable"
+                        class="mb-4"
+                        :aria-label="$t('feedback.fields.type')"
+                    >
+                        <v-btn value="bug" prepend-icon="mdi-bug-outline">{{ $t('feedback.tabs.bug') }}</v-btn>
+                        <v-btn value="feature" prepend-icon="mdi-lightbulb-on-outline">{{ $t('feedback.tabs.feature') }}</v-btn>
+                    </v-btn-toggle>
+                    <v-text-field
+                        v-model="form.title"
+                        :label="$t('feedback.fields.title')"
+                        :rules="[v => !!v?.trim() || $t('feedback.validation.titleRequired')]"
+                        counter="255"
+                        maxlength="255"
+                        class="mb-2"
+                    />
+                    <v-textarea
+                        v-model="form.description"
+                        :label="$t('feedback.fields.description')"
+                        :rules="[v => !!v?.trim() || $t('feedback.validation.descriptionRequired')]"
+                        :hint="$t(`feedback.${form.type}.descriptionHint`)"
+                        persistent-hint
+                        rows="8"
+                        auto-grow
+                        class="mb-4"
+                    />
+                    <v-autocomplete
+                        v-if="tags.length"
+                        v-model="form.tag_ids"
+                        :items="tags"
+                        item-title="name"
+                        item-value="id"
+                        :label="$t('feedback.fields.tags')"
+                        multiple
+                        chips
+                        closable-chips
+                        hide-details
+                    />
+                </v-form>
+            </v-card-text>
 
-          <v-textarea
-            v-model="form.description"
-            label="Description"
-            :rules="[rules.required]"
-            outlined
-            rows="8"
-            :hint="hint"
-            persistent-hint
-          />
-        </v-form>
-      </v-card-text>
-
-      <v-card-actions>
-        <v-spacer />
-        <v-btn @click="$emit('update:modelValue', false)">
-          Cancel
-        </v-btn>
-        <v-btn
-          color="primary"
-          :loading="submitting"
-          :disabled="!valid"
-          @click="submit"
-        >
-          Submit
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+            <v-card-actions class="px-6 pb-4">
+                <v-spacer />
+                <v-btn variant="text" :disabled="submitting" @click="close(false)">
+                    {{ $t('feedback.cancel') }}
+                </v-btn>
+                <v-btn color="primary" variant="flat" :loading="submitting" @click="submit">
+                    {{ $t('feedback.submit') }}
+                </v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
 </template>
 
 <script>
-import axios from 'axios';
+import axios from 'axios'
+
+const emptyForm = (type) => ({ type: type || 'bug', title: '', description: '', tag_ids: [] })
 
 export default {
-  name: 'FeedbackComposer',
-  props: {
-    modelValue: {
-      type: Boolean,
-      default: false,
+    name: 'FeedbackComposer',
+    props: {
+        modelValue: { type: Boolean, default: false },
+        // Preselected type (the open tab); the member can still switch
+        type: {
+            type: String,
+            default: null,
+            validator: (value) => value === null || ['bug', 'feature'].includes(value),
+        },
+        // Active tags, loaded once by the list page
+        tags: { type: Array, default: () => [] },
     },
-    type: {
-      type: String,
-      required: true,
-      validator: (value) => ['bug', 'feature'].includes(value),
+    emits: ['update:modelValue', 'submitted'],
+    data() {
+        return {
+            submitting: false,
+            form: emptyForm(this.type),
+        }
     },
-  },
-  emits: ['update:modelValue', 'submitted'],
-  data() {
-    return {
-      valid: false,
-      submitting: false,
-      form: {
-        title: '',
-        description: '',
-      },
-      rules: {
-        required: (v) => !!v || 'This field is required',
-      },
-    };
-  },
-  computed: {
-    hint() {
-      return this.type === 'bug'
-        ? 'Please describe the bug, steps to reproduce, and expected vs actual behavior.'
-        : 'Please describe the feature you\'d like to see and how it would benefit users.';
+    watch: {
+        modelValue(open) {
+            if (open && this.type) this.form.type = this.type
+        },
     },
-  },
-  watch: {
-    modelValue(val) {
-      if (!val) {
-        this.reset();
-      }
-    },
-  },
-  methods: {
-    async submit() {
-      if (!this.$refs.form.validate()) return;
+    methods: {
+        close(open = false) {
+            if (open || this.submitting) return
+            this.$emit('update:modelValue', false)
+        },
+        async submit() {
+            if (this.submitting) return
+            const { valid } = await this.$refs.form.validate()
+            if (!valid) return
 
-      this.submitting = true;
-      try {
-        const endpoint = this.type === 'bug' ? 'bugs' : 'features';
-        const { data } = await axios.post(`/api/feedback/${endpoint}`, this.form);
-
-        this.$emit('submitted', data.ticket);
-        this.$emit('update:modelValue', false);
-      } catch (error) {
-        console.error('Error submitting:', error);
-        alert('Failed to submit. Please try again.');
-      } finally {
-        this.submitting = false;
-      }
+            this.submitting = true
+            try {
+                const { data } = await axios.post('/api/feedback/tickets', this.form)
+                const type = this.form.type
+                this.form = emptyForm(this.type)
+                this.$refs.form.resetValidation()
+                this.$emit('update:modelValue', false)
+                await this.$dialog.success(this.$t(`feedback.${type}.created`))
+                this.$emit('submitted', data)
+            } catch (error) {
+                await this.$dialog.requestError(error, this.$t('feedback.messages.createFailed'))
+            } finally {
+                this.submitting = false
+            }
+        },
     },
-    reset() {
-      this.form.title = '';
-      this.form.description = '';
-      if (this.$refs.form) {
-        this.$refs.form.resetValidation();
-      }
-    },
-  },
-};
+}
 </script>

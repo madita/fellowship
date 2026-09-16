@@ -68,6 +68,13 @@ export const FEATURES = [
         icon: 'mdi-ticket-outline',
         routePrefixes: ['/account/tickets'],
     },
+    {
+        key: 'feedback',
+        label: 'Feedback',
+        description: 'Public bug reports and feature requests with voting',
+        icon: 'mdi-bug-outline',
+        routePrefixes: ['/feedback'],
+    },
 ];
 
 export const featureSettingKey = (key) => `feature_${key}_enabled`;

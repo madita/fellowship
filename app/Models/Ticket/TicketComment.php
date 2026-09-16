@@ -3,6 +3,7 @@
 namespace App\Models\Ticket;
 
 use App\Models\User;
+use App\Notifications\TicketActivityNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,6 +27,23 @@ class TicketComment extends Model
     ];
 
     protected $with = ['user'];
+
+    protected static function booted(): void
+    {
+        // An admin's comment is the team's official answer, wherever it was written
+        static::creating(function (TicketComment $comment): void {
+            $comment->is_official = (bool) $comment->user?->isAdmin();
+        });
+
+        static::created(function (TicketComment $comment): void {
+            if ( ! $comment->is_internal) {
+                $comment->ticket->notifyWatchers(
+                    new TicketActivityNotification($comment->ticket, 'comment', $comment),
+                    $comment->user_id
+                );
+            }
+        });
+    }
 
     /**
      * Get the ticket this comment belongs to.
@@ -70,27 +88,4 @@ class TicketComment extends Model
         return $user->id === $this->user_id || $user->isAdmin();
     }
 
-    /**
-     * Check if this is an official developer response.
-     */
-    public function isOfficial(): bool
-    {
-        return $this->is_official === true;
-    }
-
-    /**
-     * Mark comment as official developer response.
-     */
-    public function markAsOfficial(): void
-    {
-        $this->update(['is_official' => true]);
-    }
-
-    /**
-     * Scope: Official comments only.
-     */
-    public function scopeOfficial($query)
-    {
-        return $query->where('is_official', true);
-    }
 }
