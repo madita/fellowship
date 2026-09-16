@@ -22,6 +22,21 @@ class PageController extends DataTableController
         return $query;
     }
 
+    /**
+     * Every recorded change to this row, in the edit drawer.
+     */
+    public function getRelations(): array
+    {
+        return [
+            [
+                'key'      => 'history',
+                'title'    => 'History',
+                'icon'     => 'mdi-history',
+                'endpoint' => '/datatable/pages/{id}/history',
+            ],
+        ];
+    }
+
     public function store(Request $request)
     {
         //        dd($request);

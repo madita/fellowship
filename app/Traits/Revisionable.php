@@ -14,6 +14,22 @@ use Psy\VarDumper\Presenter;
 trait Revisionable
 {
     /**
+     * Whether this save already recorded a creation.
+     *
+     * Declared here on purpose: assigning an undeclared property on a model
+     * goes through __set and would be stored as a database attribute. It also
+     * cannot be wasRecentlyCreated, which stays true for the whole life of the
+     * object, so every later edit of the same instance would be skipped.
+     */
+    public bool $revisionJustCreated = false;
+    /**
+     * Translated values as they were stored before the current save.
+     *
+     * @var array<string,mixed>
+     */
+    protected array $revisionedTranslationOriginals = [];
+
+    /**
      * Get record version at given timestamp.
      *
      * @param  DateTime|string  $timestamp  DateTime|Carbon object or parsable date string @see strtotime()
@@ -75,7 +91,7 @@ trait Revisionable
      */
     public function getOldAttributes()
     {
-        $attributes = $this->getRevisionableItems($this->original);
+        $attributes = $this->getRevisionableItems($this->original + $this->revisionedTranslationOriginals);
 
         return $this->prepareAttributes($attributes);
     }
@@ -87,9 +103,76 @@ trait Revisionable
      */
     public function getNewAttributes()
     {
-        $attributes = $this->getRevisionableItems($this->attributes);
+        $attributes = $this->getRevisionableItems($this->attributes + $this->currentTranslatedValues());
 
         return $this->prepareAttributes($attributes);
+    }
+
+    /**
+     * Which revisioned attributes live in a translations table.
+     *
+     * A translated model keeps title and content in its own table, so those
+     * never appear in $this->attributes. Without the two merges above, the
+     * diff could only ever see the columns of the parent row, and editing a
+     * wiki page recorded nothing at all.
+     *
+     * @return string[]
+     */
+    public function revisionedTranslatedAttributes(): array
+    {
+        if ( ! property_exists($this, 'translatedAttributes')) {
+            return [];
+        }
+
+        $translated   = (array) $this->translatedAttributes;
+        $revisionable = $this->getRevisionable();
+
+        return $revisionable
+            ? array_values(array_intersect($translated, $revisionable))
+            : $translated;
+    }
+
+    /**
+     * The translated values as they stand now, read through the model so an
+     * unsaved change is visible. On create the translation row does not exist
+     * yet, which is why this goes through the accessor rather than the table.
+     *
+     * @return array<string,mixed>
+     */
+    public function currentTranslatedValues(): array
+    {
+        $values = [];
+
+        foreach ($this->revisionedTranslatedAttributes() as $key) {
+            $values[$key] = $this->getAttribute($key);
+        }
+
+        return $values;
+    }
+
+    /**
+     * Snapshot the stored translated values before this save overwrites them.
+     *
+     * Translations are written during the parent save, so by the time the
+     * updated event fires the old text may already be gone. Taking the copy on
+     * saving keeps this independent of that ordering.
+     */
+    public function snapshotTranslatedOriginals(): void
+    {
+        $this->revisionedTranslationOriginals = [];
+
+        $keys = $this->revisionedTranslatedAttributes();
+        if ( ! $keys || ! $this->exists) {
+            return;
+        }
+
+        $stored = $this->translations()
+            ->where($this->getLocaleKey(), $this->currentRevisionLocale())
+            ->first();
+
+        foreach ($keys as $key) {
+            $this->revisionedTranslationOriginals[$key] = $stored?->getAttribute($key);
+        }
     }
 
     /**
@@ -215,6 +298,18 @@ trait Revisionable
                 'new_value'  => $revision->new_value($field),
             ];
         })->filter()->values();
+    }
+
+    /**
+     * The locale a revision is recorded against: the one being written.
+     */
+    protected function currentRevisionLocale(): string
+    {
+        $translation = $this->translations->first(fn ($row) => $row->isDirty());
+
+        return $translation
+            ? $translation->getAttribute($this->getLocaleKey())
+            : app()->getLocale();
     }
 
     /**

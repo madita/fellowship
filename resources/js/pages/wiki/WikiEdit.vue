@@ -204,20 +204,18 @@
                                     </div>
                                 </div>
 
-                                <!-- Diff View -->
+                                <!-- Unsaved changes against the stored page -->
                                 <v-expand-transition>
                                     <div v-if="showDiff" class="diff-section mb-4">
                                         <v-card variant="outlined" class="pa-3">
                                             <div class="text-subtitle-2 mb-2">{{ $t('wiki.contentChanges') }}</div>
-                                            <div class="diff-content">
-                                                <div class="text-caption text-medium-emphasis">
-                                                    {{ $t('wiki.showingChanges') }}
-                                                </div>
-                                                <!-- Simplified diff display -->
-                                                <div class="mt-2 pa-2 rounded" style="background: rgba(var(--v-theme-warning), 0.1);">
-                                                    {{ $t('wiki.wordsChanged', { count: contentStats.words - originalContentStats.words }) }}
-                                                </div>
-                                            </div>
+                                            <diff-view
+                                                :old-value="originalContent || ''"
+                                                :new-value="wikipage.content || ''"
+                                                :old-label="$t('wiki.savedVersion')"
+                                                :new-label="$t('wiki.yourDraft')"
+                                                :empty-text="$t('wiki.noTextChanges')"
+                                            />
                                         </v-card>
                                     </div>
                                 </v-expand-transition>
@@ -579,25 +577,8 @@
             />
         </v-container>
 
-        <!-- History Dialog -->
-        <v-dialog v-model="showHistory" max-width="900">
-            <v-card>
-                <v-card-title class="text-h6 d-flex align-center">
-                    <v-icon class="mr-2">mdi-history</v-icon>
-                    {{ $t('wiki.pageHistory') }}
-                </v-card-title>
-                <v-divider />
-                <v-card-text>
-                    <div class="text-body-2 text-medium-emphasis">
-                        {{ $t('wiki.pageHistoryPlaceholder') }}
-                    </div>
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" @click="showHistory = false">{{ $t('common.close') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
+        <!-- Every recorded change of this page, and the diff between any two -->
+        <version-history-dialog v-model="showHistory" :history-url="`/api/wiki/${slug}/history`" />
     </div>
 </template>
 
@@ -607,6 +588,8 @@ import { useDisplay } from 'vuetify'
 import { useI18n } from 'vue-i18n'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import DiffView from '@/components/common/DiffView.vue'
+import VersionHistoryDialog from '@/components/common/VersionHistoryDialog.vue'
 import { useAuthStore } from '@/store/authStore.js'
 import { useRouter } from 'vue-router'
 import { formatDate } from '@/plugins/formatDate.js'
@@ -616,7 +599,9 @@ export default {
     name: 'WikiEditPage',
     components: {
         Tiptap,
-        PageHeader
+        PageHeader,
+        DiffView,
+        VersionHistoryDialog
     },
     setup() {
         const { t } = useI18n()
