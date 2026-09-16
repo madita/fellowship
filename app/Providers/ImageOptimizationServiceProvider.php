@@ -13,7 +13,7 @@ class ImageOptimizationServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ImageOptimizationService::class, function ($app) {
-            return new ImageOptimizationService();
+            return new ImageOptimizationService;
         });
     }
 
@@ -29,7 +29,7 @@ class ImageOptimizationServiceProvider extends ServiceProvider
                 ImageOptimizationService::configureOptimizers();
             } catch (\Exception $e) {
                 // Database might not be available during migrations/install
-                \Log::debug('Could not configure image optimizers: '.$e->getMessage());
+                \Log::debug('Could not configure image optimizers: ' . $e->getMessage());
             }
         });
     }

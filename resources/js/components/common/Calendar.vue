@@ -13,22 +13,22 @@
                     Today
                 </v-btn>
                 <v-btn
-                    fab
-                    small
-                    color="grey darken-2"
+                    icon
+                    size="small"
+                    variant="text"
                     @click="prev"
                 >
-                    <v-icon small>
+                    <v-icon size="small">
                         mdi-chevron-left
                     </v-icon>
                 </v-btn>
                 <v-btn
-                    fab
-                    small
-                    color="grey darken-2"
+                    icon
+                    size="small"
+                    variant="text"
                     @click="next"
                 >
-                    <v-icon small>
+                    <v-icon size="small">
                         mdi-chevron-right
                     </v-icon>
                 </v-btn>
@@ -47,7 +47,7 @@
                             v-bind="attrs"
                         >
                             <span>{{ typeToLabel[type] }}</span>
-                            <v-icon right>
+                            <v-icon end>
                                 mdi-chevron-down
                             </v-icon>
                         </v-btn>

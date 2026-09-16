@@ -1,6 +1,6 @@
 <template>
     <v-card variant="outlined" class="translation-editor">
-        <v-card-title class="d-flex align-center justify-space-between">
+        <v-card-title class="d-flex align-center justify-space-between ga-2 text-h6">
             <span>{{ $t('modelTranslations.editTranslations') }}</span>
             <v-chip v-if="itemIdentifier" size="small" color="primary" variant="tonal">
                 {{ itemIdentifier }}
@@ -81,9 +81,7 @@
             </v-card-text>
         </template>
 
-        <v-card-text v-else class="text-center py-8">
-            <v-progress-circular indeterminate color="primary" />
-        </v-card-text>
+        <loading-state v-else compact />
 
         <v-divider />
 
@@ -91,14 +89,16 @@
             <v-spacer />
             <v-btn
                 variant="text"
+                :disabled="saving"
                 @click="$emit('cancel')"
             >
                 {{ $t('common.cancel') }}
             </v-btn>
             <v-btn
                 color="primary"
+                variant="flat"
                 :loading="saving"
-                :disabled="!hasChanges || !isInitialized"
+                :disabled="!hasChanges || !isInitialized || saving"
                 @click="saveTranslations"
             >
                 <v-icon icon="mdi-content-save" start />
@@ -111,6 +111,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import LoadingState from '../common/LoadingState.vue';
 
 const { t } = useI18n();
 
@@ -241,6 +242,7 @@ const onFieldChange = (locale, field) => {
 };
 
 const saveTranslations = () => {
+    if (props.saving) return;
     emit('save', { ...localTranslations });
 };
 </script>

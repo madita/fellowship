@@ -53,14 +53,14 @@ class DynamicRateLimit
     {
         // Use API key if present, otherwise use user ID or IP
         if ($apiKey = $request->attributes->get('api_key')) {
-            return $prefix.':'.$apiKey->id;
+            return $prefix . ':' . $apiKey->id;
         }
 
         if ($user = $request->user()) {
-            return $prefix.':user:'.$user->id;
+            return $prefix . ':user:' . $user->id;
         }
 
-        return $prefix.':ip:'.$request->ip();
+        return $prefix . ':ip:' . $request->ip();
     }
 
     /**

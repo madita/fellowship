@@ -39,6 +39,9 @@ export const useSettingsStore = defineStore({
             custom_footer_html: '',
             maintenance_mode: false,
             maintenance_message: '',
+            sandbox_enabled: true,
+            sandbox_public_enabled: true,
+            sandbox_collaboration_enabled: false,
             primary_color: '#115571',
             secondary_color: '#a0b9c8',
             background_light: null,
@@ -137,6 +140,46 @@ export const useSettingsStore = defineStore({
             return value === true;
         },
         maintenanceMessage: (state) => state.appSettings.maintenance_message || 'We are currently performing scheduled maintenance. Please check back soon.',
+        // Comic chat inside the IRC client (Admin → Settings → IRC → Client).
+        // Disabled unless explicitly turned on.
+        ircComicChatEnabled: (state) => {
+            const value = state.appSettings.irc_comic_chat_enabled;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value === true;
+        },
+        // Feature toggles (Admin → Settings → Features). Unset means enabled,
+        // so existing installs keep their features until turned off.
+        isFeatureEnabled: (state) => (featureKey) => {
+            const value = state.appSettings[`feature_${featureKey}_enabled`];
+            if (value === undefined || value === null) return true;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value !== false;
+        },
+        sandboxEnabled: (state) => {
+            const value = state.appSettings.sandbox_enabled;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value !== false;
+        },
+        sandboxPublicEnabled: (state) => {
+            const value = state.appSettings.sandbox_public_enabled;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value !== false;
+        },
+        sandboxCollaborationEnabled: (state) => {
+            const value = state.appSettings.sandbox_collaboration_enabled;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value === true;
+        },
         primaryColor: (state) => state.appSettings.primary_color || '#115571',
         secondaryColor: (state) => state.appSettings.secondary_color || '#a0b9c8',
         favicon: (state) => state.appSettings.favicon || null,

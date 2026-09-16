@@ -1,27 +1,28 @@
 <template>
   <div>
     <!-- Action Buttons -->
-    <div class="d-flex justify-space-between align-center mb-4">
-      <v-btn color="primary" prepend-icon="mdi-plus" @click="showAddSectionDialog = true">
+    <div class="d-flex justify-space-between align-center flex-wrap ga-2 mb-4">
+      <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showAddSectionDialog = true">
         {{ $t('settings.homepageBuilder.addSection') }}
       </v-btn>
-      <v-btn prepend-icon="mdi-refresh" @click="loadSections" :loading="isLoading">
+      <v-btn variant="tonal" prepend-icon="mdi-refresh" @click="loadSections" :loading="isLoading">
         {{ $t('settings.homepageBuilder.refresh') }}
       </v-btn>
     </div>
 
     <!-- Sections List with Drag-and-Drop -->
-    <v-card v-if="isLoading" class="pa-8 text-center">
-      <v-progress-circular indeterminate color="primary"></v-progress-circular>
-      <div class="mt-2">{{ $t('settings.homepageBuilder.loadingSections') }}</div>
-    </v-card>
+    <loading-state v-if="isLoading" :text="$t('settings.homepageBuilder.loadingSections')" />
 
-    <div v-else-if="sections.length === 0" class="text-center py-8">
-      <v-icon size="64" color="grey">mdi-view-grid-outline</v-icon>
-      <div class="text-h6 mt-4">{{ $t('settings.homepageBuilder.noSectionsYet') }}</div>
-      <div class="text-caption text-grey mb-4">{{ $t('settings.homepageBuilder.createSectionsHint') }}</div>
-      <v-btn color="primary" @click="showAddSectionDialog = true">{{ $t('settings.homepageBuilder.addFirstSection') }}</v-btn>
-    </div>
+    <empty-state
+      v-else-if="sections.length === 0"
+      icon="mdi-view-grid-outline"
+      :title="$t('settings.homepageBuilder.noSectionsYet')"
+      :text="$t('settings.homepageBuilder.createSectionsHint')"
+    >
+      <template #actions>
+        <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showAddSectionDialog = true">{{ $t('settings.homepageBuilder.addFirstSection') }}</v-btn>
+      </template>
+    </empty-state>
 
     <draggable
       v-else
@@ -33,11 +34,11 @@
       <template #item="{ element: section }">
         <v-card class="mb-4" :class="{ 'section-disabled': !section.enabled }">
           <!-- Section Header -->
-          <v-card-title class="d-flex align-center bg-grey-lighten-4">
+          <v-card-title class="d-flex align-center section-header">
             <v-icon class="section-drag-handle mr-2" style="cursor: grab;">mdi-drag-vertical</v-icon>
             <div class="flex-grow-1">
               <div class="text-h6">{{ section.title || `Section ${section.order}` }}</div>
-              <div class="text-caption text-grey">
+              <div class="text-caption text-medium-emphasis">
                 {{ $t('settings.homepageBuilder.layout') }}: {{ getLayoutLabel(section.layout) }} | {{ $t('settings.homepageBuilder.order') }}: {{ section.order }}
               </div>
             </div>
@@ -47,12 +48,15 @@
               density="compact"
               color="success"
               class="mr-2"
+              :loading="sectionAction(section) === 'toggle'"
+              :disabled="sectionAction(section) !== null"
               @change="toggleSection(section)"
             ></v-switch>
             <v-btn
               icon="mdi-pencil"
               size="small"
               variant="text"
+              :disabled="sectionAction(section) !== null"
               @click="editSection(section)"
               :title="$t('settings.homepageBuilder.editSection')"
             ></v-btn>
@@ -61,6 +65,8 @@
               size="small"
               variant="text"
               color="error"
+              :loading="sectionAction(section) === 'delete'"
+              :disabled="sectionAction(section) !== null"
               @click="confirmDeleteSection(section)"
               :title="$t('settings.homepageBuilder.deleteSection')"
             ></v-btn>
@@ -76,7 +82,7 @@
                 :md="colWidth"
               >
                 <div class="column-container pa-3">
-                  <div class="text-caption text-grey mb-2">
+                  <div class="text-caption text-medium-emphasis mb-2">
                     {{ $t('settings.homepageBuilder.column') }} {{ colIndex + 1 }}
                     <v-btn
                       size="x-small"
@@ -116,6 +122,7 @@
                             icon="mdi-pencil"
                             size="x-small"
                             variant="text"
+                            :disabled="widgetAction(widget) !== null"
                             @click="editWidget(widget)"
                           ></v-btn>
                           <v-btn
@@ -123,6 +130,7 @@
                             size="x-small"
                             variant="text"
                             color="error"
+                            :loading="widgetAction(widget) === 'delete'"
                             @click="deleteWidget(widget)"
                           ></v-btn>
                         </v-card-text>
@@ -138,9 +146,10 @@
     </draggable>
 
     <!-- Add/Edit Section Dialog -->
-    <v-dialog v-model="showAddSectionDialog" max-width="600px">
+    <v-dialog v-model="showAddSectionDialog" max-width="600">
       <v-card>
-        <v-card-title>{{ editingSection ? $t('settings.homepageBuilder.editSection') : $t('settings.homepageBuilder.addSection') }}</v-card-title>
+        <v-card-title class="text-h6">{{ editingSection ? $t('settings.homepageBuilder.editSection') : $t('settings.homepageBuilder.addSection') }}</v-card-title>
+        <v-divider></v-divider>
         <v-card-text>
           <v-text-field
             v-model="sectionFormData.title"
@@ -317,23 +326,8 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn @click="cancelSectionEdit">{{ $t('common.cancel') }}</v-btn>
-          <v-btn color="primary" @click="saveSection">{{ editingSection ? $t('settings.homepageBuilder.update') : $t('settings.homepageBuilder.add') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Delete Section Confirmation -->
-    <v-dialog v-model="showDeleteSectionDialog" max-width="500">
-      <v-card>
-        <v-card-title>{{ $t('settings.homepageBuilder.confirmDelete') }}</v-card-title>
-        <v-card-text>
-          {{ $t('settings.homepageBuilder.deleteSectionConfirm', { title: sectionToDelete?.title }) }}
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn @click="showDeleteSectionDialog = false">{{ $t('common.cancel') }}</v-btn>
-          <v-btn color="error" @click="deleteSection">{{ $t('common.delete') }}</v-btn>
+          <v-btn variant="text" :disabled="savingSection" @click="cancelSectionEdit">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" variant="flat" :loading="savingSection" @click="saveSection">{{ editingSection ? $t('settings.homepageBuilder.update') : $t('settings.homepageBuilder.add') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -351,8 +345,12 @@ import { useI18n } from 'vue-i18n';
 import { useHomepageStore } from '@/store/homepageStore';
 import { getWidgetDefinition } from '@/configs/widgetTypes';
 import draggable from 'vuedraggable';
+import LoadingState from '@/components/common/LoadingState.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 const emit = defineEmits(['edit-widget', 'add-widget']);
 
 const homepageStore = useHomepageStore();
@@ -395,9 +393,25 @@ const themeBackgrounds = computed(() => [
 ]);
 
 const showAddSectionDialog = ref(false);
-const showDeleteSectionDialog = ref(false);
 const editingSection = ref(null);
-const sectionToDelete = ref(null);
+
+// One in-flight request per section / widget row, keyed by id
+const sectionActions = ref({});
+const widgetActions = ref({});
+const sectionAction = (section) => sectionActions.value[section.id] || null;
+const widgetAction = (widget) => widgetActions.value[widget.id] || null;
+const savingSection = ref(false);
+
+async function runAction(registry, id, action, work) {
+  if (registry.value[id]) return;
+  registry.value = { ...registry.value, [id]: action };
+  try {
+    await work();
+  } finally {
+    const { [id]: _done, ...rest } = registry.value;
+    registry.value = rest;
+  }
+}
 
 const sectionFormData = ref({
   title: '',
@@ -501,6 +515,8 @@ async function saveSection() {
     return;
   }
 
+  if (savingSection.value) return;
+  savingSection.value = true;
   try {
     const sectionData = {
       title: sectionFormData.value.title,
@@ -533,6 +549,8 @@ async function saveSection() {
     await loadSections();
   } catch (error) {
     showSnackbar(t('settings.homepageBuilder.failedToSaveSection'), 'error');
+  } finally {
+    savingSection.value = false;
   }
 }
 
@@ -555,31 +573,35 @@ function cancelSectionEdit() {
   };
 }
 
-async function toggleSection(section) {
-  try {
-    await homepageStore.toggleSection(section.id);
-    showSnackbar(section.enabled ? t('settings.homepageBuilder.sectionEnabled') : t('settings.homepageBuilder.sectionDisabled'), 'success');
-  } catch (error) {
-    showSnackbar(t('settings.homepageBuilder.failedToToggleSection'), 'error');
-    section.enabled = !section.enabled;
-  }
+function toggleSection(section) {
+  return runAction(sectionActions, section.id, 'toggle', async () => {
+    try {
+      await homepageStore.toggleSection(section.id);
+      showSnackbar(section.enabled ? t('settings.homepageBuilder.sectionEnabled') : t('settings.homepageBuilder.sectionDisabled'), 'success');
+    } catch (error) {
+      showSnackbar(t('settings.homepageBuilder.failedToToggleSection'), 'error');
+      section.enabled = !section.enabled;
+    }
+  });
 }
 
-function confirmDeleteSection(section) {
-  sectionToDelete.value = section;
-  showDeleteSectionDialog.value = true;
-}
+async function confirmDeleteSection(section) {
+  if (sectionAction(section) !== null) return;
+  const ok = await dialog.confirmDelete(
+    t('settings.homepageBuilder.deleteSectionConfirm', { title: section.title }),
+    { title: t('settings.homepageBuilder.confirmDelete') }
+  );
+  if (!ok) return;
 
-async function deleteSection() {
-  try {
-    await homepageStore.deleteSection(sectionToDelete.value.id);
-    showSnackbar(t('settings.homepageBuilder.sectionDeleted'), 'success');
-    showDeleteSectionDialog.value = false;
-    sectionToDelete.value = null;
-    await loadSections();
-  } catch (error) {
-    showSnackbar(t('settings.homepageBuilder.failedToDeleteSection'), 'error');
-  }
+  await runAction(sectionActions, section.id, 'delete', async () => {
+    try {
+      await homepageStore.deleteSection(section.id);
+      showSnackbar(t('settings.homepageBuilder.sectionDeleted'), 'success');
+      await loadSections();
+    } catch (error) {
+      showSnackbar(t('settings.homepageBuilder.failedToDeleteSection'), 'error');
+    }
+  });
 }
 
 function addWidgetToColumn(section, column) {
@@ -591,13 +613,22 @@ function editWidget(widget) {
 }
 
 async function deleteWidget(widget) {
-  try {
-    await homepageStore.deleteWidget(widget.id);
-    showSnackbar(t('settings.homepageBuilder.widgetDeleted'), 'success');
-    await loadSections();
-  } catch (error) {
-    showSnackbar(t('settings.homepageBuilder.failedToDeleteWidget'), 'error');
-  }
+  if (widgetAction(widget) !== null) return;
+  const ok = await dialog.confirmDelete(
+    t('settings.homepageBuilder.deleteWidgetConfirm', { title: widget.title || widget.type }),
+    { title: t('settings.homepageBuilder.confirmDelete') }
+  );
+  if (!ok) return;
+
+  await runAction(widgetActions, widget.id, 'delete', async () => {
+    try {
+      await homepageStore.deleteWidget(widget.id);
+      showSnackbar(t('settings.homepageBuilder.widgetDeleted'), 'success');
+      await loadSections();
+    } catch (error) {
+      showSnackbar(t('settings.homepageBuilder.failedToDeleteWidget'), 'error');
+    }
+  });
 }
 
 function updateColumnWidgets(section, columnNumber, newWidgets) {
@@ -649,6 +680,10 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.section-header {
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+
 .section-disabled {
   opacity: 0.6;
 }
@@ -686,7 +721,7 @@ onMounted(async () => {
 }
 
 .widget-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(var(--v-theme-on-surface), 0.1);
 }
 
 .widget-disabled {

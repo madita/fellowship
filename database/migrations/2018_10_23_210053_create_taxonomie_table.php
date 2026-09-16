@@ -17,7 +17,9 @@ class CreateTaxonomieTable extends Migration
      * @var string The pivot table name.
      */
     protected $terms;
+
     protected $taxonomies;
+
     protected $pivot;
 
     /**
@@ -40,10 +42,10 @@ class CreateTaxonomieTable extends Migration
         Schema::create($this->terms, function (Blueprint $table) {
             $table->increments('id');
 
-            $table->string('title')->nullable()->unique();
+            // $table->string('title')->nullable()->unique(); // Moved to term_translations
             $table->string('slug')->nullable()->unique();
-            $table->longText('content')->nullable();
-            $table->text('lead')->nullable();
+            // $table->longText('content')->nullable(); // Moved to term_translations
+            // $table->text('lead')->nullable(); // Moved to term_translations
 
             $table->timestamps();
             $table->softDeletes();
@@ -62,10 +64,10 @@ class CreateTaxonomieTable extends Migration
                 ->onDelete('cascade');
 
             $table->string('taxonomy')->default('default');
-            $table->text('description')->nullable();
-            $table->longText('content')->nullable();
-            $table->text('lead')->nullable();
-            $table->text('meta_desc')->nullable();
+            // $table->text('description')->nullable(); // Moved to taxonomy_translations
+            // $table->longText('content')->nullable(); // Moved to taxonomy_translations
+            // $table->text('lead')->nullable(); // Moved to taxonomy_translations
+            // $table->text('meta_desc')->nullable(); // Moved to taxonomy_translations
             $table->text('color')->nullable();
 
             $table->integer('parent')->unsigned()->default(0);
@@ -74,7 +76,7 @@ class CreateTaxonomieTable extends Migration
 
             $table->boolean('visible')->default(1);
             $table->boolean('searchable')->default(1);
-//            $table->json('properties')->nullable();
+            //            $table->json('properties')->nullable();
             $table->longText('properties')->nullable();
 
             $table->timestamps();
@@ -112,6 +114,8 @@ class CreateTaxonomieTable extends Migration
      */
     public function down()
     {
+        Schema::dropIfExists('taxonomy_translations');
+        Schema::dropIfExists('term_translations');
         Schema::dropIfExists($this->pivot);
         Schema::dropIfExists($this->taxonomies);
         Schema::dropIfExists($this->terms);

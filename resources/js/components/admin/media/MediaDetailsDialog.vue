@@ -5,12 +5,10 @@
         scrollable
     >
         <v-card v-if="media">
-            <v-card-title class="d-flex align-center">
+            <v-card-title class="text-h6 d-flex align-center">
                 <span class="text-truncate" style="max-width: 80%;">{{ media.file_name }}</span>
                 <v-spacer />
-                <v-btn icon variant="text" @click="close">
-                    <v-icon icon="mdi-close" />
-                </v-btn>
+                <v-btn icon="mdi-close" variant="text" :aria-label="$t('common.close')" @click="close" />
             </v-card-title>
 
             <v-divider />
@@ -29,13 +27,13 @@
                             >
                                 <template #placeholder>
                                     <v-row class="fill-height ma-0" align="center" justify="center">
-                                        <v-progress-circular indeterminate color="grey-lighten-1" />
+                                        <v-progress-circular indeterminate color="primary" />
                                     </v-row>
                                 </template>
                             </v-img>
                             <div v-else class="d-flex flex-column align-center">
-                                <v-icon :icon="fileIcon" size="128" color="grey" />
-                                <div class="text-h6 text-grey mt-4">{{ fileType }}</div>
+                                <v-icon :icon="fileIcon" size="128" class="text-medium-emphasis" />
+                                <div class="text-h6 text-medium-emphasis mt-4">{{ fileType }}</div>
                             </div>
                         </div>
                     </v-col>
@@ -143,22 +141,20 @@
 
             <v-card-actions>
                 <v-btn
-                    color="primary"
                     variant="tonal"
+                    prepend-icon="mdi-download"
                     :href="media.url"
                     target="_blank"
                     download
                 >
-                    <v-icon icon="mdi-download" start />
                     {{ $t('mediaCenter.download') }}
                 </v-btn>
 
                 <v-btn
-                    color="primary"
                     variant="tonal"
+                    prepend-icon="mdi-content-copy"
                     @click="copyUrl"
                 >
-                    <v-icon icon="mdi-content-copy" start />
                     {{ $t('mediaCenter.copyUrl') }}
                 </v-btn>
 
@@ -166,37 +162,24 @@
 
                 <v-btn
                     color="error"
-                    variant="tonal"
+                    variant="flat"
+                    prepend-icon="mdi-delete"
                     @click="confirmDelete"
                 >
-                    <v-icon icon="mdi-delete" start />
                     {{ $t('common.delete') }}
                 </v-btn>
-            </v-card-actions>
-        </v-card>
-    </v-dialog>
-
-    <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="deleteConfirmDialog" max-width="400">
-        <v-card>
-            <v-card-title>{{ $t('mediaCenter.deleteMedia') }}</v-card-title>
-            <v-card-text>
-                {{ $t('mediaCenter.deleteConfirm') }}
-            </v-card-text>
-            <v-card-actions>
-                <v-spacer />
-                <v-btn variant="text" @click="deleteConfirmDialog = false">{{ $t('common.cancel') }}</v-btn>
-                <v-btn color="error" @click="deleteMedia">{{ $t('common.delete') }}</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
     modelValue: {
@@ -210,8 +193,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:modelValue', 'delete']);
-
-const deleteConfirmDialog = ref(false);
 
 const internalModelValue = computed({
     get: () => props.modelValue,
@@ -274,13 +255,10 @@ const copyUrl = async () => {
     }
 };
 
-const confirmDelete = () => {
-    deleteConfirmDialog.value = true;
-};
-
-const deleteMedia = () => {
+const confirmDelete = async () => {
+    const ok = await dialog.confirmDelete(t('mediaCenter.deleteConfirm'), { title: t('mediaCenter.deleteMedia') });
+    if (!ok) return;
     emit('delete', props.media);
-    deleteConfirmDialog.value = false;
     internalModelValue.value = false;
 };
 </script>

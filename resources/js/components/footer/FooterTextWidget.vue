@@ -1,9 +1,6 @@
 <template>
     <div>
-        <div v-if="config.title" class="text-subtitle-1 text-sm-h6 text-lg-h5 font-weight-bold mb-2">
-            {{ config.title }}
-        </div>
-        <div v-if="config.title" style="width: 80px; height: 2px" class="mb-3 mb-sm-5 mt-1 bg-primary"/>
+        <footer-widget-heading :title="config.title" />
 
         <div v-if="config.content" class="text-body-2" v-html="processedContent"></div>
     </div>
@@ -11,6 +8,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import FooterWidgetHeading from './FooterWidgetHeading.vue';
 
 const props = defineProps({
     config: {

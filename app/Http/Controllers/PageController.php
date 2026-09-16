@@ -21,28 +21,33 @@ class PageController extends Controller
     /**
      * view landing pages.
      *
-     * @param $slug
      *
      * @return JsonResponse|never
      */
     public function view($slug)
     {
-        $page = Page::where('slug', '=', $slug)->with('children')->first();
-        $parent = null;
-        //$pages = Page::all();
+        $page = Page::where('slug', '=', $slug)->with(['children', 'translations'])->first();
 
-        if (!$page || !$page->published) {
+        $parent = null;
+        // $pages = Page::all();
+
+        if ( ! $page || ! $page->isPublished()) {
             return abort(404);
         }
 
-        if ($page->sign_in_only && !auth()->check()) {
+        if ($page->sign_in_only && ! auth()->check()) {
             return abort(403);
         }
 
-        $taxonomies = $page->getCategories('taxonomy')->unique();
-
-        $tax = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use ($page) {
-            return  [$taxonomy => $page->getCategories($taxonomy)];
+        $tax = $page->taxonomies()->get()->groupBy('taxonomy')->map(function ($items) {
+            return $items->filter(fn ($t) => $t->term)->map(function ($t) {
+                return [
+                    'id'    => $t->term->id,
+                    'name'  => $t->term->title,
+                    'slug'  => $t->term->slug,
+                    'color' => $t->color,
+                ];
+            })->values();
         });
 
         return response()
@@ -51,47 +56,43 @@ class PageController extends Controller
 
     public function show(Page $page)
     {
-        //$page = Page::where('slug', '=', $slug)->first();
-//        $pages = Page::all();
-
-        if (!$page) {
+        if ( ! $page) {
             return abort(404);
         }
-        $terms = $page->getCategories();
 
-        $taxonomies = $page->taxonomies()
-            ->whereIn('term_id', $terms->pluck(['id']))
-            ->pluck('taxonomy')->unique();
-
-        $taxterms = collect($taxonomies)->mapWithKeys(function ($taxonomy, $key) use ($page) {
-            return  [$taxonomy => $page->getCategories($taxonomy)->pluck(['title'])];
+        $tax = $page->taxonomies()->get()->groupBy('taxonomy')->map(function ($items) {
+            return $items->filter(fn ($t) => $t->term)->map(function ($t) {
+                return [
+                    'id'    => $t->term->id,
+                    'title' => $t->term->title,
+                    'slug'  => $t->term->slug,
+                    'color' => $t->color,
+                ];
+            })->values();
         });
 
-//        if ($page->sign_in_only && !Auth::check())
-//            return redirect('/')->withErrors(config('constants.NA'));
-
         return response()
-            ->json(['page' => $page, 'parent'=> $page->parent, 'taxonomies' => $taxonomies, 'terms' => $taxterms]);
+            ->json(['page' => $page, 'parent' => $page->parent, 'taxonomies' => $tax]);
     }
 
-//    public function showWithCategory($taxonomy, $category)
-//    {
-//
-//        $pages = Page::withTerm($category, 'tags')->where('published', true)->get();
-//
-//        return response()
-//            ->json(['pages' => $pages]);
-//    }
+    //    public function showWithCategory($taxonomy, $category)
+    //    {
+    //
+    //        $pages = Page::withTerm($category, 'tags')->published()->get();
+    //
+    //        return response()
+    //            ->json(['pages' => $pages]);
+    //    }
 
     public function history(Page $page)
     {
-//        $page = Page::where('slug', '=', $slug)->first();
+        //        $page = Page::where('slug', '=', $slug)->first();
 
-        if (!$page || !$page->published) {
+        if ( ! $page || ! $page->isPublished()) {
             return abort(404);
         }
 
-        if ($page->sign_in_only && !auth()->check()) {
+        if ($page->sign_in_only && ! auth()->check()) {
             return abort(403);
         }
 

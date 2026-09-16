@@ -21,8 +21,6 @@ class TaxonomyController extends DataTableController
 
     public function update($id, Request $request)
     {
-        //dd($id, $request);
-
         $taxonomy = Taxonomy::find($id);
 
         $taxonomy->update($request->only($this->getUpdatableColumns()));
@@ -48,10 +46,22 @@ class TaxonomyController extends DataTableController
     public function getCustomInputFields()
     {
         return [
-            'content'        => 'wysiwyg',
-            'description'    => 'textarea',
-            'color'          => 'color',
-            'parent_id'      => 'parent', ];
+            'content'     => 'wysiwyg',
+            'description' => 'textarea',
+            'color'       => 'color',
+            'parent_id'   => 'parent', ];
+    }
+
+    /**
+     * color is a TEXT column holding a short colour value, not long text.
+     */
+    public function getColumnTypes(): array
+    {
+        return [
+            'color'      => 'text',
+            'created_at' => 'date',
+            'updated_at' => 'date',
+        ];
     }
 
     public function getDisplayableColumns()
@@ -70,8 +80,8 @@ class TaxonomyController extends DataTableController
         ];
     }
 
-//    public function update($id, TaxonomyRequest $request)
-//    {
-//        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
-//    }
+    //    public function update($id, TaxonomyRequest $request)
+    //    {
+    //        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
+    //    }
 }

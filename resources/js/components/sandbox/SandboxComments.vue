@@ -1,0 +1,663 @@
+<template>
+  <div class="comments-panel" :class="{ open: visible }">
+    <!-- Header -->
+    <div class="comments-panel-header">
+      <h3 class="text-subtitle-1 font-weight-medium">{{ $t('sandbox.comments.title') }}</h3>
+      <div class="d-flex ga-1">
+        <v-btn
+          icon
+          variant="text"
+          size="x-small"
+          :color="showResolved ? 'primary' : undefined"
+          @click="showResolved = !showResolved"
+        >
+          <v-icon>mdi-check-circle-outline</v-icon>
+          <v-tooltip activator="parent" location="bottom">
+            {{ showResolved ? $t('sandbox.comments.hideResolved') : $t('sandbox.comments.showResolved') }}
+          </v-tooltip>
+        </v-btn>
+        <v-btn
+          icon
+          variant="text"
+          size="x-small"
+          @click="$emit('close')"
+        >
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="comments-panel-body">
+      <!-- New Comment Form -->
+      <v-card v-if="pendingThread" variant="outlined" color="primary" class="mb-3">
+        <v-card-text class="pa-3">
+          <div class="thread-quote mb-2">
+            <v-icon size="12" class="mr-1" color="primary">mdi-format-quote-open</v-icon>
+            {{ pendingThread.quote }}
+          </div>
+          <v-textarea
+            ref="newCommentInput"
+            v-model="pendingThread.content"
+            :placeholder="$t('sandbox.comments.placeholder')"
+            density="compact"
+            rows="3"
+            hide-details
+            auto-grow
+            autofocus
+            @keydown.ctrl.enter="submitNewThread"
+            @keydown.meta.enter="submitNewThread"
+          />
+          <div class="d-flex justify-end ga-2 mt-2">
+            <v-btn variant="text" size="small" @click="cancelNewThread">
+              {{ $t('common.cancel') }}
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="flat"
+              size="small"
+              :disabled="!pendingThread.content.trim()"
+              :loading="submitting"
+              @click="submitNewThread"
+            >
+              {{ $t('sandbox.comments.comment') }}
+            </v-btn>
+          </div>
+        </v-card-text>
+      </v-card>
+
+      <!-- Loading -->
+      <loading-state v-if="loading" compact />
+
+      <!-- Empty State -->
+      <empty-state
+        v-else-if="filteredThreads.length === 0 && !pendingThread"
+        compact
+        icon="mdi-comment-text-outline"
+        :title="$t('sandbox.comments.noComments')"
+        :text="$t('sandbox.comments.noCommentsText')"
+      />
+
+      <!-- Thread List -->
+      <v-card
+        v-for="thread in filteredThreads"
+        :key="thread.id"
+        :variant="selectedThreadId === thread.id ? 'tonal' : 'outlined'"
+        :color="selectedThreadId === thread.id ? 'primary' : undefined"
+        :class="['thread-card', { 'thread-resolved': thread.resolved_at }]"
+        @click="selectThread(thread)"
+        @mouseenter="hoverThread(thread)"
+        @mouseleave="unhoverThread(thread)"
+      >
+        <v-card-text class="pa-3">
+          <!-- Quote -->
+          <div v-if="thread.quote" class="thread-quote mb-2">
+            <v-icon size="12" class="mr-1" color="primary">mdi-format-quote-open</v-icon>
+            {{ thread.quote }}
+          </div>
+
+          <!-- Resolved badge -->
+          <v-chip
+            v-if="thread.resolved_at"
+            color="success"
+            variant="tonal"
+            size="x-small"
+            prepend-icon="mdi-check-circle"
+            class="mb-2"
+          >
+            {{ $t('sandbox.comments.resolved') }}
+          </v-chip>
+
+          <!-- Comments -->
+          <div
+            v-for="comment in thread.comments"
+            :key="comment.id"
+            class="comment-item"
+          >
+            <div class="comment-header">
+              <UserAvatar v-if="comment.user" :user="comment.user" class="comment-avatar" />
+              <span class="comment-author text-body-2 font-weight-medium">
+                {{ comment.user?.username || $t('sandbox.comments.unknownUser') }}
+              </span>
+              <span class="comment-time text-caption text-disabled">
+                {{ formatDate(comment.created_at) }}
+              </span>
+              <v-btn
+                v-if="comment.user_id === currentUserId"
+                icon
+                variant="text"
+                size="x-small"
+                color="error"
+                class="delete-btn"
+                :loading="busyCommentIds.includes(comment.id)"
+                :disabled="!!threadAction[thread.id]"
+                @click.stop="deleteComment(thread, comment)"
+              >
+                <v-icon size="14">mdi-delete-outline</v-icon>
+                <v-tooltip activator="parent" location="bottom">{{ $t('common.delete') }}</v-tooltip>
+              </v-btn>
+            </div>
+            <p class="comment-content text-body-2 mb-0">{{ comment.content }}</p>
+          </div>
+
+          <!-- Reply input -->
+          <div v-if="!thread.resolved_at" class="reply-box mt-2 pt-2">
+            <v-text-field
+              v-model="replyTexts[thread.id]"
+              :placeholder="thread.comments.length ? $t('sandbox.comments.replyPlaceholder') : $t('sandbox.comments.placeholder')"
+              density="compact"
+              hide-details
+              :loading="replyingIds.includes(thread.id)"
+              :disabled="replyingIds.includes(thread.id) || !!threadAction[thread.id]"
+              @keyup.enter="submitReply(thread)"
+              @click.stop
+            >
+              <template #append-inner>
+                <v-btn
+                  v-if="replyTexts[thread.id]?.trim()"
+                  icon
+                  variant="text"
+                  size="x-small"
+                  color="primary"
+                  @click.stop="submitReply(thread)"
+                >
+                  <v-icon size="18">mdi-send</v-icon>
+                </v-btn>
+              </template>
+            </v-text-field>
+          </div>
+
+          <!-- Thread actions -->
+          <div class="thread-actions mt-2 pt-2 d-flex ga-2">
+            <v-btn
+              v-if="!thread.resolved_at"
+              variant="text"
+              size="x-small"
+              color="success"
+              prepend-icon="mdi-check"
+              :loading="threadAction[thread.id] === 'resolve'"
+              :disabled="!!threadAction[thread.id]"
+              @click.stop="resolveThread(thread)"
+            >
+              {{ $t('sandbox.comments.resolve') }}
+            </v-btn>
+            <v-btn
+              v-else
+              variant="text"
+              size="x-small"
+              prepend-icon="mdi-refresh"
+              :loading="threadAction[thread.id] === 'resolve'"
+              :disabled="!!threadAction[thread.id]"
+              @click.stop="unresolveThread(thread)"
+            >
+              {{ $t('sandbox.comments.reopen') }}
+            </v-btn>
+            <v-spacer />
+            <v-btn
+              v-if="thread.user_id === currentUserId || canEdit"
+              variant="text"
+              size="x-small"
+              color="error"
+              prepend-icon="mdi-delete-outline"
+              :loading="threadAction[thread.id] === 'delete'"
+              :disabled="!!threadAction[thread.id]"
+              @click.stop="deleteThread(thread)"
+            >
+              {{ $t('common.delete') }}
+            </v-btn>
+          </div>
+        </v-card-text>
+      </v-card>
+    </div>
+  </div>
+</template>
+
+<script>
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import axios from 'axios'
+import UserAvatar from '../common/UserAvatar.vue'
+import EmptyState from '../common/EmptyState.vue'
+import LoadingState from '../common/LoadingState.vue'
+import { useRelativeTime } from '@/composables/useRelativeTime.js'
+import { useDialog } from '@/composables/useDialog.js'
+
+export default {
+  name: 'SandboxComments',
+
+  components: {
+    UserAvatar,
+    EmptyState,
+    LoadingState,
+  },
+
+  props: {
+    visible: {
+      type: Boolean,
+      default: false,
+    },
+    sandbox: {
+      type: Object,
+      required: true,
+    },
+    editor: {
+      type: Object,
+      default: null,
+    },
+    canEdit: {
+      type: Boolean,
+      default: false,
+    },
+    currentUserId: {
+      type: Number,
+      default: null,
+    },
+  },
+
+  emits: ['close', 'thread-created', 'thread-deleted'],
+
+  setup(props, { emit }) {
+    const { t } = useI18n()
+    const dialog = useDialog()
+    const threads = ref([])
+    const loading = ref(true)
+    const submitting = ref(false)
+    // In-flight thread action per thread id: 'resolve' | 'delete'
+    const threadAction = ref({})
+    // Thread ids with a reply being posted
+    const replyingIds = ref([])
+    // Comment ids being deleted
+    const busyCommentIds = ref([])
+    const showResolved = ref(false)
+
+    const setThreadAction = (threadId, action) => {
+      const next = { ...threadAction.value }
+      if (action) next[threadId] = action
+      else delete next[threadId]
+      threadAction.value = next
+    }
+    const toggleId = (list, id, on) => {
+      list.value = on ? [...list.value, id] : list.value.filter((i) => i !== id)
+    }
+    const selectedThreadId = ref(null)
+    const pendingThread = ref(null)
+    const replyTexts = ref({})
+    const newCommentInput = ref(null)
+
+    const filteredThreads = computed(() => {
+      if (showResolved.value) return threads.value
+      return threads.value.filter((t) => !t.resolved_at)
+    })
+
+    const loadThreads = async () => {
+      if (!props.sandbox?.uuid) return
+      loading.value = true
+      try {
+        const response = await axios.get(`/api/sandbox/${props.sandbox.uuid}/threads`)
+        threads.value = response.data.threads
+      } catch (error) {
+        console.error('Failed to load threads:', error)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const startNewThread = (quote) => {
+      pendingThread.value = {
+        quote: quote || '',
+        content: '',
+      }
+      nextTick(() => {
+        newCommentInput.value?.focus()
+      })
+    }
+
+    const cancelNewThread = () => {
+      if (pendingThread.value && props.editor) {
+        props.editor.commands.unsetComment('pending')
+      }
+      pendingThread.value = null
+    }
+
+    const submitNewThread = async () => {
+      if (!pendingThread.value?.content.trim() || submitting.value) return
+
+      submitting.value = true
+      try {
+        const response = await axios.post(`/api/sandbox/${props.sandbox.uuid}/threads`, {
+          quote: pendingThread.value.quote,
+          content: pendingThread.value.content,
+        })
+
+        const thread = response.data.thread
+
+        if (props.editor) {
+          props.editor.commands.unsetComment('pending')
+
+          const { from, to } = props.editor.state.selection
+          if (from !== to) {
+            props.editor.commands.setComment(thread.uuid)
+          }
+        }
+
+        threads.value.unshift(thread)
+        pendingThread.value = null
+
+        emit('thread-created', thread)
+      } catch (error) {
+        console.error('Failed to create thread:', error)
+        await dialog.requestError(error, t('sandbox.comments.createFailed'))
+      } finally {
+        submitting.value = false
+      }
+    }
+
+    const submitReply = async (thread) => {
+      const content = replyTexts.value[thread.id]
+      if (!content?.trim() || replyingIds.value.includes(thread.id)) return
+
+      toggleId(replyingIds, thread.id, true)
+      replyTexts.value[thread.id] = ''
+
+      try {
+        const response = await axios.post(
+          `/api/sandbox/${props.sandbox.uuid}/threads/${thread.id}/comments`,
+          { content: content.trim() }
+        )
+
+        thread.comments.push(response.data.comment)
+      } catch (error) {
+        console.error('Failed to add reply:', error)
+        replyTexts.value[thread.id] = content
+        await dialog.requestError(error, t('sandbox.comments.replyFailed'))
+      } finally {
+        toggleId(replyingIds, thread.id, false)
+      }
+    }
+
+    const setResolved = async (thread, resolved) => {
+      if (threadAction.value[thread.id]) return
+
+      setThreadAction(thread.id, 'resolve')
+      try {
+        await axios.put(`/api/sandbox/${props.sandbox.uuid}/threads/${thread.id}`, {
+          resolved,
+        })
+        thread.resolved_at = resolved ? new Date().toISOString() : null
+      } catch (error) {
+        console.error('Failed to update thread:', error)
+        await dialog.requestError(error, t('sandbox.comments.resolveFailed'))
+      } finally {
+        setThreadAction(thread.id, null)
+      }
+    }
+
+    const resolveThread = (thread) => setResolved(thread, true)
+
+    const unresolveThread = (thread) => setResolved(thread, false)
+
+    const deleteThread = async (thread) => {
+      if (threadAction.value[thread.id]) return
+
+      const confirmed = await dialog.confirmDelete(t('sandbox.comments.deleteThreadConfirm'), {
+        title: t('sandbox.comments.deleteThreadTitle'),
+      })
+      if (!confirmed) return
+
+      setThreadAction(thread.id, 'delete')
+      try {
+        await axios.delete(`/api/sandbox/${props.sandbox.uuid}/threads/${thread.id}`)
+
+        if (props.editor) {
+          props.editor.commands.unsetComment(thread.uuid)
+        }
+
+        threads.value = threads.value.filter((t) => t.id !== thread.id)
+        emit('thread-deleted', thread)
+      } catch (error) {
+        console.error('Failed to delete thread:', error)
+        await dialog.requestError(error, t('sandbox.comments.deleteThreadFailed'))
+      } finally {
+        setThreadAction(thread.id, null)
+      }
+    }
+
+    const deleteComment = async (thread, comment) => {
+      if (busyCommentIds.value.includes(comment.id) || threadAction.value[thread.id]) return
+
+      const isLastComment = thread.comments.length === 1
+      const confirmed = await dialog.confirmDelete(
+        t(isLastComment ? 'sandbox.comments.deleteLastCommentConfirm' : 'sandbox.comments.deleteCommentConfirm'),
+        { title: t('sandbox.comments.deleteCommentTitle') }
+      )
+      if (!confirmed) return
+
+      toggleId(busyCommentIds, comment.id, true)
+      try {
+        await axios.delete(
+          `/api/sandbox/${props.sandbox.uuid}/threads/${thread.id}/comments/${comment.id}`
+        )
+        thread.comments = thread.comments.filter((c) => c.id !== comment.id)
+
+        if (thread.comments.length === 0) {
+          await axios.delete(`/api/sandbox/${props.sandbox.uuid}/threads/${thread.id}`)
+          threads.value = threads.value.filter((t) => t.id !== thread.id)
+          if (props.editor) {
+            props.editor.commands.unsetComment(thread.uuid)
+          }
+          emit('thread-deleted', thread)
+        }
+      } catch (error) {
+        console.error('Failed to delete comment:', error)
+        await dialog.requestError(error, t('sandbox.comments.deleteCommentFailed'))
+      } finally {
+        toggleId(busyCommentIds, comment.id, false)
+      }
+    }
+
+    const selectThread = (thread) => {
+      selectedThreadId.value = thread.id
+
+      if (props.editor) {
+        const { doc } = props.editor.state
+        let targetPos = null
+
+        doc.descendants((node, pos) => {
+          if (targetPos !== null) return false
+          if (!node.isText) return
+          const mark = node.marks.find(
+            (m) => m.type.name === 'comment' && m.attrs.threadId === thread.uuid
+          )
+          if (mark) {
+            targetPos = pos
+            return false
+          }
+        })
+
+        if (targetPos !== null) {
+          props.editor.commands.setTextSelection(targetPos)
+          props.editor.commands.scrollIntoView()
+        }
+      }
+    }
+
+    const hoverThread = (thread) => {
+      if (!props.editor) return
+      const { tr } = props.editor.state
+      tr.setMeta('commentHover', thread.uuid)
+      props.editor.view.dispatch(tr)
+    }
+
+    const unhoverThread = (thread) => {
+      if (!props.editor) return
+      const { tr } = props.editor.state
+      tr.setMeta('commentUnhover', thread.uuid)
+      props.editor.view.dispatch(tr)
+    }
+
+    const { formatRelativeTime: formatDate } = useRelativeTime()
+
+    watch(
+      () => props.visible,
+      (visible) => {
+        if (visible) loadThreads()
+      }
+    )
+
+    onMounted(() => {
+      if (props.visible) loadThreads()
+    })
+
+    return {
+      threads,
+      loading,
+      submitting,
+      threadAction,
+      replyingIds,
+      busyCommentIds,
+      showResolved,
+      selectedThreadId,
+      pendingThread,
+      replyTexts,
+      newCommentInput,
+      filteredThreads,
+      startNewThread,
+      cancelNewThread,
+      submitNewThread,
+      submitReply,
+      resolveThread,
+      unresolveThread,
+      deleteThread,
+      deleteComment,
+      selectThread,
+      hoverThread,
+      unhoverThread,
+      formatDate,
+      loadThreads,
+    }
+  },
+}
+</script>
+
+<style lang="scss" scoped>
+.comments-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 360px;
+  height: 100%;
+  background: rgb(var(--v-theme-surface));
+  border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  z-index: 20;
+
+  &.open {
+    transform: translateX(0);
+  }
+}
+
+.comments-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+
+  h3 {
+    margin: 0;
+  }
+}
+
+.comments-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+
+.thread-quote {
+  font-size: 0.8rem;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  padding: 0.4rem 0.6rem;
+  background: rgba(var(--v-theme-primary), 0.06);
+  border-left: 3px solid rgb(var(--v-theme-primary));
+  border-radius: 0 4px 4px 0;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.thread-card {
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &.thread-resolved {
+    opacity: 0.6;
+  }
+
+  .delete-btn {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  &:hover .delete-btn {
+    opacity: 1;
+  }
+}
+
+.comment-item {
+  margin-bottom: 0.5rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 2px;
+
+  .comment-avatar {
+    flex-shrink: 0;
+
+    :deep(.v-avatar) {
+      width: 22px !important;
+      height: 22px !important;
+      font-size: 0.55rem;
+
+      .text-h4, .text-h5 {
+        font-size: 0.55rem !important;
+      }
+    }
+  }
+
+  .comment-time {
+    flex: 1;
+    text-align: right;
+  }
+}
+
+.comment-content {
+  padding-left: 30px;
+  line-height: 1.4;
+  color: rgba(var(--v-theme-on-surface), 0.85);
+}
+
+.reply-box {
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.thread-actions {
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+@media (max-width: 768px) {
+  .comments-panel {
+    width: 100%;
+  }
+}
+</style>

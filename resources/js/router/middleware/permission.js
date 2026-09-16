@@ -3,6 +3,7 @@ import { useUserStore } from "@/store/userStore.js";
 export default function permission({ to, next }) {
     const userStore = useUserStore();
     const permissionsMap = {
+        "admin-dashboard": "manage-user",
         "admin-users": "manage-user",
         "admin-roles": "manage-role",
         "admin-permissions": "manage-role",
@@ -26,6 +27,13 @@ export default function permission({ to, next }) {
         "admin-media": "manage-page",
         "admin-migrations": "manage-page",
         "admin-translations": "manage-page",
+        "admin-taxonomie": "manage-page",
+        "admin-terms": "manage-page",
+        "admin-settings-menus": "manage-page",
+        "admin-tickets": "manage-page",
+        "admin-forums": "manage-page",
+        "admin-polls": "manage-post",
+        "admin-relations": "manage-page",
     };
 
     const requiredPermission = permissionsMap[to.name];

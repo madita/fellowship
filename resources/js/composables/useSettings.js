@@ -1,12 +1,12 @@
 import { ref, reactive } from 'vue';
 import { useApi } from '@/api/useAPI.js';
+import { useDialogStore } from '@/store/dialogStore.js';
+import { i18n } from '@/plugins/vue-i18n.js';
 
 const api = useApi('api');
 
 export function useSettings() {
     const isSaving = ref(false);
-    const message = ref('');
-    const alertType = ref('success');
     const errors = reactive({});
 
     const settings = reactive({
@@ -190,6 +190,26 @@ export function useSettings() {
         age_confirmation_required: false,
         age_minimum: 13,
 
+        // IRC
+        irc_comic_chat_enabled: false,
+
+        // Feature Toggles
+        feature_timeline_enabled: true,
+        feature_chat_enabled: true,
+        feature_events_enabled: true,
+        feature_wiki_enabled: true,
+        feature_forum_enabled: true,
+        feature_irc_enabled: true,
+        feature_gallery_enabled: true,
+        feature_tickets_enabled: true,
+
+        // Sandbox Settings
+        sandbox_enabled: false,
+        sandbox_public_enabled: false,
+        sandbox_collaboration_enabled: false,
+        sandbox_autosave_interval: 30,
+        sandbox_role_limits: null,
+
         // Advanced / Developer Settings
         environment: 'production',
         api_rate_limit_per_minute: 60,
@@ -200,6 +220,9 @@ export function useSettings() {
         custom_footer_enabled: false,
         custom_footer_html: '',
         footer_quicklinks: '[]',
+
+        // Moderation / Auto-Approval
+        auto_approve_roles_wiki: [],
     });
 
     async function fetchSettings() {
@@ -209,11 +232,12 @@ export function useSettings() {
             Object.assign(settings, fetchedSettings);
         } catch (error) {
             console.error('Failed to fetch settings:', error);
-            showMessage('Failed to load settings', 'error');
+            showMessage(i18n.global.t('settings.overview.loadError'), 'error');
         }
     }
 
     async function saveSettings() {
+        if (isSaving.value) return;
         isSaving.value = true;
         resetErrors();
 
@@ -227,6 +251,9 @@ export function useSettings() {
                         type = 'boolean';
                     } else if (typeof value === 'number') {
                         type = Number.isInteger(value) ? 'integer' : 'float';
+                    } else if (Array.isArray(value) || (typeof value === 'object' && value !== null)) {
+                        type = 'json';
+                        value = JSON.stringify(value);
                     }
                     return { key, value, type };
                 });
@@ -240,13 +267,13 @@ export function useSettings() {
             const settingsStore = useSettingsStore();
             await settingsStore.fetchAppSettings();
 
-            showMessage('Settings saved successfully', 'success');
+            showMessage(i18n.global.t('settings.overview.saved'), 'success');
         } catch (error) {
             console.error('Failed to save settings:', error);
             handleErrors(error);
 
             // Build detailed error message
-            let errorMessage = 'Failed to save settings';
+            let errorMessage = i18n.global.t('settings.overview.saveError');
             if (error.response?.data?.errors) {
                 const errorDetails = Object.values(error.response.data.errors)
                     .flat()
@@ -259,16 +286,15 @@ export function useSettings() {
         }
     }
 
+    /**
+     * Report the outcome of an action through the app-wide dialog service.
+     * `type` is one of success | error | warning | info. Resolves once the
+     * dialog is closed.
+     */
     function showMessage(msg, type = 'success') {
-        message.value = msg;
-        alertType.value = type;
-
-        // Scroll to top to show the message
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        setTimeout(() => {
-            message.value = '';
-        }, 10000); // Increased to 10 seconds for error messages
+        const dialog = useDialogStore();
+        const show = typeof dialog[type] === 'function' ? dialog[type] : dialog.info;
+        return show.call(dialog, msg);
     }
 
     function resetErrors() {
@@ -284,8 +310,6 @@ export function useSettings() {
     return {
         settings,
         isSaving,
-        message,
-        alertType,
         errors,
         fetchSettings,
         saveSettings,

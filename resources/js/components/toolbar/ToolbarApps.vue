@@ -1,9 +1,7 @@
 <template>
-  <v-menu offset-y left transition="slide-y-transition">
-    <template v-slot:activator="{ on }">
-      <v-btn icon v-on="on">
-        <v-icon>mdi-view-grid-outline</v-icon>
-      </v-btn>
+  <v-menu transition="slide-y-transition">
+    <template v-slot:activator="{ props }">
+      <v-btn icon="mdi-view-grid-outline" variant="text" v-bind="props" />
     </template>
 
     <v-card class="d-flex flex-row flex-wrap" style="max-width: 280px">
@@ -16,7 +14,7 @@
       >
         <v-icon color="primary">{{ app.icon }}</v-icon>
         <div class="font-weight-bold mt-1">{{ app.key ? $t(app.key) : app.text }}</div>
-        <div class="caption">{{ app.subtitleKey ? $t(app.subtitleKey) : app.subtitle }}</div>
+        <div class="text-caption text-medium-emphasis">{{ app.subtitleKey ? $t(app.subtitleKey) : app.subtitle }}</div>
       </div>
     </v-card>
   </v-menu>
@@ -54,7 +52,7 @@ export default {
   flex-direction: column;
   cursor: pointer;
   border-radius: 6px;
-  background-color: var(--v-background-base);
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
   transition: transform 0.2s;
 
   &:hover {

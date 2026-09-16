@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\HasTickets;
+use App\Models\Translations\WikiTranslation;
+use App\Traits\Approvable;
 use App\Traits\HasCache;
+use App\Traits\HasRelateableContent;
+use App\Traits\HasTickets;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
@@ -11,17 +14,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class Wiki extends Model implements TranslatableContract
 {
-    use Sluggable;
+    use Approvable;
     use HasCache;
-    use Translatable;
+    use HasRelateableContent;
     use HasTickets;
-
-    protected $table = 'wikiables';
-    protected $cacheTag = 'wikiables';
-//    protected $guard_name = 'api';
+    use Sluggable;
+    use Translatable;
+    //    protected $guard_name = 'api';
 
     public $translatedAttributes = ['title'];
+
     public $translationForeignKey = 'wiki_id';
+
+    public $translationModel = WikiTranslation::class;
+
+    protected $table = 'wikiables';
+
+    protected $cacheTag = 'wikiables';
 
     /**
      * The attributes that are mass assignable.
@@ -29,25 +38,8 @@ class Wiki extends Model implements TranslatableContract
      * @var array
      */
     protected $fillable = [
-        'slug', 'status', 'parent_id',
+        'slug', 'status', 'parent_id', 'wikiable_type', 'wikiable_id',
     ];
-
-    /**
-     * Boot the model.
-     */
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::created(function ($wiki) {
-            // Auto-create ticket for wiki approval
-            $wiki->autoCreateTicket('wiki_approval', [
-                'title' => "New Wiki Page: {$wiki->title}",
-                'description' => "A new wiki page has been created and needs review.",
-                'priority' => 'normal',
-            ]);
-        });
-    }
 
     public function sluggable(): array
     {
@@ -79,15 +71,39 @@ class Wiki extends Model implements TranslatableContract
 
         $parent = $this->parent;
 
-        while (!is_null($parent)) {
+        while ( ! is_null($parent)) {
             $parents->push($parent);
             $parent = $parent->parent;
         }
 
         return $parents;
     }
-//
-//    public function wikiable() {
-//        return $this->morphTo();
-//    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($wiki) {
+            // If creator has an auto-approve role, approve immediately (skip ticket)
+            if ($wiki->shouldAutoApprove()) {
+                $wiki->approve(auth()->user());
+
+                return;
+            }
+
+            // Otherwise create approval ticket as before
+            $wiki->autoCreateTicket('wiki_approval', [
+                'title'       => "New Wiki Page: {$wiki->title}",
+                'description' => 'A new wiki page has been created and needs review.',
+                'priority'    => 'normal',
+            ]);
+        });
+    }
+    //
+    //    public function wikiable() {
+    //        return $this->morphTo();
+    //    }
 }

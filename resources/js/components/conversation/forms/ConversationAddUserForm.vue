@@ -1,6 +1,6 @@
 <template>
     <v-form ref="formRef" @submit.prevent="addUser">
-        <div class="d-flex align-center gap-3">
+        <div class="d-flex align-center ga-3">
             <v-autocomplete
                 v-model="selectedUser"
                 :items="userList"
@@ -9,7 +9,6 @@
                 @update:search="handleUserSearch"
                 :label="$t('conversation.selectRecipients')"
                 :placeholder="$t('conversation.searchUsersPlaceholder')"
-                variant="outlined"
                 item-title="username"
                 item-value="id"
                 multiple
@@ -59,33 +58,6 @@
                 </v-tooltip>
             </v-btn>
         </div>
-
-        <!-- Success/Error Messages -->
-        <v-alert
-            v-if="successMessage"
-            type="success"
-            variant="tonal"
-            class="mt-3"
-            density="compact"
-            closable
-            @click:close="successMessage = ''"
-        >
-            <v-icon>mdi-check-circle</v-icon>
-            {{ successMessage }}
-        </v-alert>
-
-        <v-alert
-            v-if="errorMessage"
-            type="error"
-            variant="tonal"
-            class="mt-3"
-            density="compact"
-            closable
-            @click:close="errorMessage = ''"
-        >
-            <v-icon>mdi-alert-circle</v-icon>
-            {{ errorMessage }}
-        </v-alert>
     </v-form>
 </template>
 
@@ -95,6 +67,7 @@ import { useI18n } from 'vue-i18n';
 import { useConversationStore } from '@/store/conversationStore';
 import { useUsersStore } from '@/store/usersStore';
 import { useUserSearch } from '@/composables/conversation/useUserSearch';
+import { useDialog } from '@/composables/useDialog.js';
 
 export default {
     name: "ConversationAddUserForm",
@@ -102,11 +75,11 @@ export default {
         const { t } = useI18n();
         const conversationStore = useConversationStore();
         const usersStore = useUsersStore();
+        // The outcome of adding a user is shown as a modal
+        const dialog = useDialog();
 
         const selectedUser = ref(null);
         const isSubmitting = ref(false);
-        const successMessage = ref('');
-        const errorMessage = ref('');
         const formRef = ref(null);
 
         const { userList, userSearch, loadingUsers, handleUserSearch } = useUserSearch();
@@ -137,28 +110,30 @@ export default {
             if (!valid) return;
 
             if (!currentConversation.value?.uuid) {
-                errorMessage.value = t('conversation.noConversationSelected');
+                await dialog.warning(t('conversation.noConversationSelected'));
                 return;
             }
 
             isSubmitting.value = true;
-            errorMessage.value = '';
-            successMessage.value = '';
 
             try {
+                const ids = Array.isArray(selectedUser.value) ? selectedUser.value : [selectedUser.value];
+                const names = ids
+                    .map(id => userList.value.find(u => u.id === id)?.username)
+                    .filter(Boolean)
+                    .join(', ');
+
                 await conversationStore.addUserToConversation(
                     currentConversation.value.uuid,
                     selectedUser.value
                 );
 
-                const addedUser = "testuser"
-                successMessage.value = t('conversation.userAddedSuccess', { name: addedUser?.name || 'User' });
-
                 selectedUser.value = null;
                 formRef.value.reset();
+                await dialog.success(t('conversation.userAddedSuccess', { name: names || t('messaging.users') }));
             } catch (error) {
                 console.error('Error adding user to conversation:', error);
-                errorMessage.value = error.message || t('conversation.failedToAddUser');
+                await dialog.requestError(error, t('conversation.failedToAddUser'));
             } finally {
                 isSubmitting.value = false;
             }
@@ -172,8 +147,6 @@ export default {
             filteredUserList,
             loadingUsers,
             isSubmitting,
-            successMessage,
-            errorMessage,
             formRef,
             rules,
             addUser,
@@ -184,18 +157,10 @@ export default {
 </script>
 
 <style scoped>
-.gap-3 {
-    gap: 12px;
-}
-
 @media (max-width: 600px) {
     .d-flex.align-center {
         flex-direction: column;
         align-items: stretch;
-    }
-
-    .gap-3 {
-        gap: 16px;
     }
 }
 </style>

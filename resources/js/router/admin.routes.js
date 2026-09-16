@@ -4,7 +4,16 @@ import permission from "./middleware/permission";
 
 export const admin = [{
     path: '/admin',
-    redirect: 'users-list',
+    redirect: { name: 'admin-dashboard' },
+}, {
+    path: '/admin/dashboard',
+    name: 'admin-dashboard',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-dashboard" */ '@/pages/admin/AdminDashboard.vue')
 }, {
     path: '/admin/pages',
     name: 'admin-pages',
@@ -23,6 +32,24 @@ export const admin = [{
         ]
     },
     component: () => import(/* webpackChunkName: "admin-pages-form" */ '@/pages/admin/PageForm.vue')
+}, {
+    path: '/admin/settings/tools/migrations',
+    name: 'admin-migrations',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-migrations" */ '@/pages/admin/MigrationDashboard.vue')
+}, {
+    path: '/admin/related-content',
+    name: 'admin-relations',
+    meta: {
+        middleware: [
+            auth, permission, verified
+        ]
+    },
+    component: () => import(/* webpackChunkName: "admin-relations" */ '@/pages/admin/RelationsDashboard.vue')
 }, {
     path: '/admin/posts',
     name: 'admin-posts',
@@ -87,7 +114,7 @@ export const admin = [{
     },
     component: () => import(/* webpackChunkName: "admin-media" */ '@/pages/admin/MediaCenter.vue')
 }, {
-    path: '/admin/translations',
+    path: '/admin/settings/localization/translations',
     name: 'admin-translations',
     meta: {
         middleware: [
@@ -96,7 +123,7 @@ export const admin = [{
     },
     component: () => import(/* webpackChunkName: "admin-translations" */ '@/pages/admin/TranslationManager.vue')
 }, {
-    path: '/admin/roles',
+    path: '/admin/settings/access/roles',
     name: 'admin-roles',
     meta: {
         middleware: [
@@ -105,7 +132,7 @@ export const admin = [{
     },
     component: () => import(/* webpackChunkName: "admin-roles" */ '@/pages/admin/Role.vue')
 }, {
-    path: '/admin/permissions',
+    path: '/admin/settings/access/permissions',
     name: 'admin-permissions',
     meta: {
         middleware: [
@@ -115,24 +142,33 @@ export const admin = [{
     component: () => import(/* webpackChunkName: "admin-permissions" */ '@/pages/admin/Permission.vue')
 },
     {
-        path: '/admin/tags/taxonomie',
+        path: '/admin/settings/taxonomy/taxonomies',
         name: 'admin-taxonomie',
         meta: {
             middleware: [
-                auth, verified
+                auth, permission, verified
             ]
         },
         component: () => import(/* webpackChunkName: "admin-taxonomie" */ '@/pages/admin/Taxonomie.vue')
     },
     {
-        path: '/admin/tags/terms',
+        path: '/admin/settings/taxonomy/terms',
         name: 'admin-terms',
         meta: {
             middleware: [
-                auth, verified
+                auth, permission, verified
             ]
         },
         component: () => import(/* webpackChunkName: "admin-permissions" */ '@/pages/admin/Terms.vue')
+    }, {
+        path: '/admin/settings/forum/categories',
+        name: 'admin-forums',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-forums" */ '@/pages/admin/ForumManager.vue')
     }, {
         path: '/admin/announcements',
         name: 'admin-announcements',
@@ -143,6 +179,14 @@ export const admin = [{
         },
         component: () => import(/* webpackChunkName: "admin-announcements" */ '@/pages/admin/Announcement.vue')
     },
+    // Old locations of the tools that now live in the settings overview
+    { path: '/admin/roles', redirect: '/admin/settings/access/roles' },
+    { path: '/admin/permissions', redirect: '/admin/settings/access/permissions' },
+    { path: '/admin/tags/taxonomie', redirect: '/admin/settings/taxonomy/taxonomies' },
+    { path: '/admin/tags/terms', redirect: '/admin/settings/taxonomy/terms' },
+    { path: '/admin/forums', redirect: '/admin/settings/forum/categories' },
+    { path: '/admin/translations', redirect: '/admin/settings/localization/translations' },
+    { path: '/admin/migrations', redirect: to => ({ path: '/admin/settings/tools/migrations', query: to.query }) },
     // Settings routes - hierarchical structure
     {
         path: '/admin/settings',
@@ -153,6 +197,17 @@ export const admin = [{
             ]
         },
         component: () => import(/* webpackChunkName: "admin-settings-overview" */ '@/pages/admin/settings/SettingsOverview.vue')
+    },
+    {
+        // Explicit route declared before the :category wildcard so it wins.
+        path: '/admin/settings/menus',
+        name: 'admin-settings-menus',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-menus" */ '@/pages/admin/MenuManager.vue')
     },
     {
         path: '/admin/settings/:category',
@@ -173,7 +228,8 @@ export const admin = [{
             ]
         },
         component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/pages/admin/settings/SettingsPage.vue')
-    },{
+    },
+    {
         path: '/admin/tickets',
         name: 'admin-tickets',
         meta: {
@@ -181,8 +237,17 @@ export const admin = [{
                 auth, permission, verified
             ]
         },
-        component: () => import(/* webpackChunkName: "admin-tickets" */ '@/components/ticket/TicketList.vue')
+        component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/pages/tickets/TicketList.vue')
+    },
+    {
+        path: '/admin/polls',
+        name: 'admin-polls',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-polls" */ '@/pages/admin/PollsDashboard.vue')
     }]
 
 export default admin
-

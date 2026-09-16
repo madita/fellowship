@@ -1,43 +1,59 @@
 <template>
   <div class="flex-grow-1">
+      <page-header
+          :title="$t('admin.announcements.title')"
+          :subtitle="$t('admin.announcements.subtitle')"
+          icon="mdi-bullhorn-outline"
+      />
+
       <v-container>
-          <v-alert v-if="message" :type="type">
-              {{ message }}
-          </v-alert>
-          <v-text-field
-              :label="$t('announcement.subject')"
-              v-model="form.subject"
-              :rules="[rules.required]"
-              :error-messages="errors.subject"
-          ></v-text-field>
-          <v-textarea
-              :label="$t('announcement.message')"
-              v-model="form.body"
-              :rules="[rules.required]"
-              :error-messages="errors.body"
-          ></v-textarea>
-          <v-text-field
-              :label="$t('announcement.actionButton')"
-              v-model="form.action"
-          ></v-text-field>
-          <v-text-field
-              :label="$t('announcement.url')"
-              v-model="form.url"
-          ></v-text-field>
-          <v-text-field
-              :label="$t('announcement.footer')"
-              v-model="form.thanks"
-              :rules="[rules.required]"
-              :error-messages="errors.thanks"
-          ></v-text-field>
-          <v-btn
-              :loading="isLoading"
-              block
-              size="large"
-              color="primary"
-              @click="save"
-          >{{ $t('common.save') }}
-          </v-btn>
+          <v-card rounded="lg">
+              <v-card-text>
+                  <v-text-field
+                      :label="$t('announcement.subject')"
+                      v-model="form.subject"
+                      :rules="[rules.required]"
+                      :error-messages="errors.subject"
+                      :disabled="isLoading"
+                  ></v-text-field>
+                  <v-textarea
+                      :label="$t('announcement.message')"
+                      v-model="form.body"
+                      :rules="[rules.required]"
+                      :error-messages="errors.body"
+                      :disabled="isLoading"
+                  ></v-textarea>
+                  <v-text-field
+                      :label="$t('announcement.actionButton')"
+                      v-model="form.action"
+                      :disabled="isLoading"
+                  ></v-text-field>
+                  <v-text-field
+                      :label="$t('announcement.url')"
+                      v-model="form.url"
+                      :disabled="isLoading"
+                  ></v-text-field>
+                  <v-text-field
+                      :label="$t('announcement.footer')"
+                      v-model="form.thanks"
+                      :rules="[rules.required]"
+                      :error-messages="errors.thanks"
+                      :disabled="isLoading"
+                  ></v-text-field>
+              </v-card-text>
+              <v-card-actions>
+                  <v-spacer />
+                  <v-btn
+                      :loading="isLoading"
+                      :disabled="isLoading"
+                      color="primary"
+                      variant="elevated"
+                      prepend-icon="mdi-send"
+                      @click="save"
+                  >{{ $t('common.save') }}
+                  </v-btn>
+              </v-card-actions>
+          </v-card>
       </v-container>
 
   </div>
@@ -45,8 +61,12 @@
 
 <script>
 import { useI18n } from 'vue-i18n';
+import PageHeader from '../../components/common/PageHeader.vue';
 
 export default {
+    components: {
+        PageHeader,
+    },
     setup() {
         const { t } = useI18n();
         return { t };
@@ -54,8 +74,6 @@ export default {
     data () {
         return {
             isLoading: false,
-            message:'',
-            type:'error',
             form: {
                 subject: '',
                 body: '',
@@ -78,7 +96,6 @@ export default {
     methods: {
 
         resetError() {
-            this.message = '';
             this.errors = {
                 subject: '',
                 body: '',
@@ -88,12 +105,11 @@ export default {
             }
         },
 
-        save () {
+        async save () {
+            if (this.isLoading) return;
             this.isLoading = true
-            axios.post('/api/admin/announcement', this.form).then(() => {
-
-                this.message = this.t('announcement.sentSuccess')
-                this.type = 'success'
+            try {
+                await axios.post('/api/admin/announcement', this.form)
 
                 this.form = {
                     subject: '',
@@ -104,16 +120,14 @@ export default {
                 }
                 this.resetError();
                 this.isLoading = false
-
-            }).catch((error) => {
-                this.isLoading = false
-                this.type = 'error'
-                this.message = error
-                if (error.response.status === 422) {
-                    this.message = error.response.data.message
-                    this.errors = error.response.data.errors
+                this.$dialog.success(this.t('announcement.sentSuccess'))
+            } catch (error) {
+                if (error.response?.status === 422) {
+                    this.errors = { ...this.errors, ...(error.response.data.errors || {}) }
                 }
-            })
+                this.isLoading = false
+                this.$dialog.requestError(error)
+            }
         }
     },
     mounted () {

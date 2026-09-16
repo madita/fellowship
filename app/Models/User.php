@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Models\Chat\Message;
 use App\Models\Conversation\Conversation;
 use App\Models\Event\Event;
+use App\Models\Forum\ForumPostLike;
+use App\Models\Forum\ThreadSubscription;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -19,9 +21,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
     use HasApiTokens;
     use HasFactory;
-    use Notifiable;
     use HasRoles;
     use InteractsWithMedia;
+    use Notifiable;
 
     protected $guard_name = 'api';
 
@@ -35,6 +37,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'username',
         'email',
         'password',
+        'previous_login_at',
         'last_login_at',
         'last_login_ip',
         'timezone',
@@ -69,6 +72,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        // Only the owner reads it, through the dashboard layout endpoint.
+        'dashboard_layout',
     ];
 
     /**
@@ -78,6 +83,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'dashboard_layout'  => 'array',
     ];
 
     /**
@@ -104,7 +110,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         if ($this->name) {
             $initials = explode(' ', strtoupper($this->name));
-            $initial = substr($initials[0], 0, 1);
+            $initial  = substr($initials[0], 0, 1);
             if (count($initials) > 1) {
                 $initial .= substr($initials[count($initials) - 1], 0, 1);
             }
@@ -122,7 +128,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function getAvatar()
     {
-        if (!count($this->getMedia('avatars'))) {
+        if ( ! count($this->getMedia('avatars'))) {
             return '';
         }
 
@@ -258,7 +264,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function receivesBroadcastNotificationsOn()
     {
-        return 'users.'.$this->id;
+        return 'users.' . $this->id;
     }
 
     public function pages()
@@ -290,7 +296,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
     public function conversations()
     {
-//        return $this->belongsToMany(Conversation::class)->whereNull('parent_id')->orderBy('last_reply', 'desc');
+        //        return $this->belongsToMany(Conversation::class)->whereNull('parent_id')->orderBy('last_reply', 'desc');
         return $this->belongsToMany(Conversation::class)->withPivot('read_at');
     }
 
@@ -315,8 +321,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     /**
      * Check if user has a specific social provider linked.
      *
-     * @param string $provider
-     *
+     * @param  string  $provider
      * @return bool
      */
     public function hasSocialProvider($provider)
@@ -330,5 +335,15 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function apiKeys()
     {
         return $this->hasMany(ApiKey::class);
+    }
+
+    public function forumSubscriptions()
+    {
+        return $this->hasMany(ThreadSubscription::class);
+    }
+
+    public function forumPostLikes()
+    {
+        return $this->hasMany(ForumPostLike::class);
     }
 }

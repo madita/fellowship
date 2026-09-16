@@ -5,25 +5,25 @@
                 <v-col cols="12" sm="6" md="3">
                     <div class="text-center">
                         <div class="text-h4 font-weight-bold">{{ stats.total_count || 0 }}</div>
-                        <div class="text-caption text-grey">{{ $t('mediaCenter.totalFiles') }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('mediaCenter.totalFiles') }}</div>
                     </div>
                 </v-col>
                 <v-col cols="12" sm="6" md="3">
                     <div class="text-center">
                         <div class="text-h4 font-weight-bold">{{ stats.size_formatted || '0 B' }}</div>
-                        <div class="text-caption text-grey">{{ $t('mediaCenter.totalStorage') }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('mediaCenter.totalStorage') }}</div>
                     </div>
                 </v-col>
                 <v-col cols="12" sm="6" md="3">
                     <div class="text-center">
                         <div class="text-h4 font-weight-bold">{{ imageCount }}</div>
-                        <div class="text-caption text-grey">{{ $t('mediaCenter.images') }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('mediaCenter.images') }}</div>
                     </div>
                 </v-col>
                 <v-col cols="12" sm="6" md="3">
                     <div class="text-center">
                         <div class="text-h4 font-weight-bold">{{ contextCount }}</div>
-                        <div class="text-caption text-grey">{{ $t('mediaCenter.contexts') }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('mediaCenter.contexts') }}</div>
                     </div>
                 </v-col>
             </v-row>
@@ -44,7 +44,7 @@
                                         {{ context.label }}
                                     </v-list-item-title>
                                     <template #append>
-                                        <span class="text-caption text-grey">
+                                        <span class="text-caption text-medium-emphasis">
                                             {{ context.count }} ({{ context.size_formatted }})
                                         </span>
                                     </template>
@@ -63,7 +63,7 @@
                                         {{ type.type }}
                                     </v-list-item-title>
                                     <template #append>
-                                        <span class="text-caption text-grey">
+                                        <span class="text-caption text-medium-emphasis">
                                             {{ type.count }} ({{ type.size_formatted }})
                                         </span>
                                     </template>
@@ -82,7 +82,7 @@
                                         {{ col.collection }}
                                     </v-list-item-title>
                                     <template #append>
-                                        <span class="text-caption text-grey">
+                                        <span class="text-caption text-medium-emphasis">
                                             {{ col.count }} ({{ col.size_formatted }})
                                         </span>
                                     </template>

@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'advanced' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-speedometer" :title="$t('settings.advanced.caching.cardTitle')">
             <v-switch
@@ -127,6 +124,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'settings'"
                         @click="clearCache('settings')"
                     >
@@ -139,6 +137,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'views'"
                         @click="clearCache('views')"
                     >
@@ -151,6 +150,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'routes'"
                         @click="clearCache('routes')"
                     >
@@ -163,6 +163,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'config'"
                         @click="clearCache('config')"
                     >
@@ -175,6 +176,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'application'"
                         @click="clearCache('application')"
                     >
@@ -187,6 +189,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'http'"
                         @click="clearCache('http')"
                     >
@@ -204,6 +207,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'pages'"
                         @click="clearCache('pages')"
                     >
@@ -216,6 +220,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'wiki'"
                         @click="clearCache('wiki')"
                     >
@@ -228,6 +233,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'posts'"
                         @click="clearCache('posts')"
                     >
@@ -240,6 +246,7 @@
                         block
                         size="small"
                         variant="outlined"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'widgets'"
                         @click="clearCache('widgets')"
                     >
@@ -253,6 +260,7 @@
                         size="small"
                         color="error"
                         variant="tonal"
+                        :disabled="clearingCache !== null"
                         :loading="clearingCache === 'all'"
                         @click="clearCache('all')"
                     >
@@ -281,11 +289,13 @@
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useApi } from '@/api/useAPI.js';
+import { useDialog } from '@/composables/useDialog.js';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
 
 const { t } = useI18n();
 const api = useApi('api');
+const dialog = useDialog();
 
 const props = defineProps({
     settings: Object,
@@ -295,10 +305,8 @@ const props = defineProps({
     setting: Object,
 });
 
-const emit = defineEmits(['save', 'message']);
+defineEmits(['save']);
 
-const message = ref('');
-const alertType = ref('success');
 const cacheStatus = ref(null);
 const clearingCache = ref(null);
 
@@ -312,20 +320,26 @@ async function fetchCacheStatus() {
 }
 
 async function clearCache(type) {
+    if (clearingCache.value) return;
+
+    if (type === 'all') {
+        const ok = await dialog.confirm({
+            title: t('settings.advanced.caching.clearAllCaches'),
+            content: t('settings.advanced.caching.clearAllConfirm'),
+            confirmationText: t('settings.advanced.caching.clearAllCaches'),
+            color: 'warning',
+        });
+        if (!ok) return;
+    }
+
     clearingCache.value = type;
     try {
         const response = await api.post('/admin/settings/clear-cache', { type });
-        emit('message', {
-            text: t('settings.advanced.caching.cacheCleared', { types: response.data.cleared.join(', ') }),
-            type: 'success'
-        });
+        dialog.success(t('settings.advanced.caching.cacheCleared', { types: response.data.cleared.join(', ') }));
         await fetchCacheStatus();
     } catch (error) {
         console.error('Failed to clear cache:', error);
-        emit('message', {
-            text: t('settings.advanced.caching.cacheClearFailed') + ': ' + (error.response?.data?.message || error.message),
-            type: 'error'
-        });
+        dialog.requestError(error, t('settings.advanced.caching.cacheClearFailed'));
     } finally {
         clearingCache.value = null;
     }

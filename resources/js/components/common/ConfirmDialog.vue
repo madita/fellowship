@@ -1,8 +1,8 @@
 <template>
     <!-- Bind modelValue to the dialog's v-model -->
-    <VDialog v-model="internalModelValue" max-width="400">
+    <VDialog v-model="internalModelValue" max-width="480">
         <VCard>
-            <VCardTitle class="text-h5">{{ title || $t('dialogs.confirm.title') }}</VCardTitle>
+            <VCardTitle class="text-h6">{{ title || $t('dialogs.confirm.title') }}</VCardTitle>
             <VCardText>
                 <p v-if="content">{{ content }}</p>
                 <VTextField
@@ -14,8 +14,8 @@
             </VCardText>
             <VCardActions>
                 <VSpacer />
-                <VBtn color="grey" @click="cancel">{{ cancellationText || $t('common.cancel') }}</VBtn>
-                <VBtn color="red" :disabled="confirmationButtonDisabled" @click="confirm">
+                <VBtn variant="text" @click="cancel">{{ cancellationText || $t('common.cancel') }}</VBtn>
+                <VBtn :color="color" variant="flat" :disabled="confirmationButtonDisabled" @click="confirm">
                     {{ confirmationText || $t('dialogs.confirm.yes') }}
                 </VBtn>
             </VCardActions>
@@ -32,8 +32,11 @@ const props = defineProps({
     title: String,
     content: String,
     confirmationKeyword: String,
-    confirmationText: {type: String, default: 'Yes'},
-    cancellationText: {type: String, default: 'Cancel'},
+    // Empty defaults so the translated labels apply
+    confirmationText: {type: String, default: ''},
+    cancellationText: {type: String, default: ''},
+    // Colour of the confirm button: 'error' for destructive actions
+    color: {type: String, default: 'error'},
     resolve: {type: Function, required: true},
 });
 
@@ -57,7 +60,10 @@ function cancel() {
 }
 
 // Disable the confirmation button if keyword is required but not matched
+// Must be a real boolean: Vue casts an empty string on a Boolean prop to true,
+// so returning '' here disabled the confirm button on every dialog that asks
+// for no keyword.
 const confirmationButtonDisabled = computed(() => {
-    return props.confirmationKeyword && props.confirmationKeyword !== textField.value;
+    return !!props.confirmationKeyword && props.confirmationKeyword !== textField.value;
 });
 </script>

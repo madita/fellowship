@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'advanced' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <!-- Server Environment (Read-only from .env) -->
         <settings-card icon="mdi-server" :title="$t('settings.advanced.api.serverEnvironment')" class="mb-4">
@@ -123,10 +120,8 @@ const props = defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
+defineEmits(['save']);
 
-const message = ref('');
-const alertType = ref('success');
 
 // Server environment info (fetched from backend)
 const serverEnvironment = ref('unknown');

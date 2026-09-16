@@ -35,16 +35,16 @@
       <!-- Widgets Tab (Legacy - all widgets list) -->
       <v-window-item value="widgets">
         <!-- Action Buttons -->
-        <div class="d-flex justify-space-between align-center mb-4">
-          <div>
-            <v-btn color="primary" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">
+        <div class="d-flex justify-space-between align-center flex-wrap ga-2 mb-4">
+          <div class="d-flex flex-wrap ga-2">
+            <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">
               {{ $t('settings.footer.addWidget') }}
             </v-btn>
-            <v-btn class="ml-2" prepend-icon="mdi-refresh" @click="loadWidgets" :loading="isLoading">
+            <v-btn variant="tonal" prepend-icon="mdi-refresh" @click="loadWidgets" :loading="isLoading">
               {{ $t('settings.footer.refresh') }}
             </v-btn>
           </div>
-          <v-chip v-if="hasChanges" color="warning">
+          <v-chip v-if="hasChanges" color="warning" variant="tonal" size="small">
             {{ $t('settings.footer.unsavedChanges') }}
           </v-chip>
         </div>
@@ -55,7 +55,7 @@
             <v-card>
               <v-card-text class="text-center">
                 <div class="text-h4 text-primary">{{ sections.length }}</div>
-                <div class="text-caption text-grey">{{ $t('settings.footer.sections') }}</div>
+                <div class="text-caption text-medium-emphasis">{{ $t('settings.footer.sections') }}</div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -63,7 +63,7 @@
             <v-card>
               <v-card-text class="text-center">
                 <div class="text-h4">{{ widgets.length }}</div>
-                <div class="text-caption text-grey">{{ $t('settings.footer.totalWidgets') }}</div>
+                <div class="text-caption text-medium-emphasis">{{ $t('settings.footer.totalWidgets') }}</div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -71,7 +71,7 @@
             <v-card>
               <v-card-text class="text-center">
                 <div class="text-h4 text-success">{{ enabledCount }}</div>
-                <div class="text-caption text-grey">{{ $t('settings.footer.enabled') }}</div>
+                <div class="text-caption text-medium-emphasis">{{ $t('settings.footer.enabled') }}</div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -79,23 +79,24 @@
 
         <!-- Widgets List with Drag and Drop -->
         <v-card>
-          <v-card-title>
+          <v-card-title class="text-subtitle-1 font-weight-medium">
             <v-icon class="mr-2">mdi-drag</v-icon>
             {{ $t('settings.footer.dragToReorder') }}
           </v-card-title>
           <v-divider></v-divider>
 
-          <v-card-text v-if="isLoading" class="text-center py-8">
-            <v-progress-circular indeterminate color="primary"></v-progress-circular>
-            <div class="mt-2">{{ $t('settings.footer.loadingWidgets') }}</div>
-          </v-card-text>
-
-          <v-card-text v-else-if="widgets.length === 0" class="text-center py-8">
-            <v-icon size="64" color="grey">mdi-widgets-outline</v-icon>
-            <div class="text-h6 mt-4">{{ $t('settings.footer.noWidgetsYet') }}</div>
-            <div class="text-caption text-grey mb-4">{{ $t('settings.footer.clickAddWidget') }}</div>
-            <v-btn color="primary" @click="showWidgetLibrary = true">{{ $t('settings.footer.addFirstWidget') }}</v-btn>
-          </v-card-text>
+          <loading-state v-if="isLoading" compact :text="$t('settings.footer.loadingWidgets')" />
+          <empty-state
+            v-else-if="widgets.length === 0"
+            compact
+            icon="mdi-widgets-outline"
+            :title="$t('settings.footer.noWidgetsYet')"
+            :text="$t('settings.footer.clickAddWidget')"
+          >
+            <template #actions>
+                <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">{{ $t('settings.footer.addFirstWidget') }}</v-btn>
+            </template>
+          </empty-state>
 
           <draggable
             v-else
@@ -138,6 +139,8 @@
                       density="compact"
                       color="success"
                       class="mr-2"
+                      :loading="rowAction(widget) === 'toggle'"
+                      :disabled="isRowBusy(widget)"
                       @change="toggleWidget(widget)"
                     ></v-switch>
 
@@ -145,6 +148,7 @@
                       icon="mdi-pencil"
                       size="small"
                       variant="text"
+                      :disabled="isRowBusy(widget)"
                       @click="editWidget(widget)"
                       :title="$t('settings.footer.editWidget')"
                     ></v-btn>
@@ -153,6 +157,8 @@
                       icon="mdi-content-copy"
                       size="small"
                       variant="text"
+                      :loading="rowAction(widget) === 'duplicate'"
+                      :disabled="isRowBusy(widget)"
                       @click="duplicateWidget(widget)"
                       :title="$t('settings.footer.duplicateWidget')"
                     ></v-btn>
@@ -162,6 +168,8 @@
                       size="small"
                       variant="text"
                       color="error"
+                      :loading="rowAction(widget) === 'delete'"
+                      :disabled="isRowBusy(widget)"
                       @click="confirmDelete(widget)"
                       :title="$t('settings.footer.deleteWidget')"
                     ></v-btn>
@@ -205,7 +213,7 @@
               class="mb-4"
             ></v-textarea>
 
-            <div class="d-flex gap-2 mb-4">
+            <div class="d-flex ga-2 mb-4">
               <v-btn
                 color="primary"
                 variant="outlined"
@@ -259,29 +267,16 @@
     <footer-widget-editor
       v-model="showEditor"
       :widget="selectedWidget"
+      :saving="savingWidget"
       @save="saveWidget"
     />
 
     <!-- Widget Library Dialog -->
     <footer-widget-library
       v-model="showWidgetLibrary"
+      :adding="addingWidget"
       @select="addWidget"
     />
-
-    <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="showDeleteDialog" max-width="500">
-      <v-card>
-        <v-card-title>{{ $t('settings.footer.confirmDelete') }}</v-card-title>
-        <v-card-text>
-          {{ $t('settings.footer.deleteConfirmMessage', { name: widgetToDelete?.title || widgetToDelete?.type }) }}
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn @click="showDeleteDialog = false">{{ $t('common.cancel') }}</v-btn>
-          <v-btn color="error" @click="deleteWidget">{{ $t('common.delete') }}</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
     <!-- Success Snackbar -->
     <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000">
@@ -295,13 +290,17 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useFooterStore } from '@/store/footerStore';
 import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
+import { useDialog } from '@/composables/useDialog.js';
 import draggable from 'vuedraggable';
+import LoadingState from '@/components/common/LoadingState.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import FooterWidgetEditor from '../footer/FooterWidgetEditor.vue';
 import FooterWidgetLibrary from '../footer/FooterWidgetLibrary.vue';
 import FooterSectionBuilder from '../footer/FooterSectionBuilder.vue';
 import SettingsCard from '../SettingsCard.vue';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
   settings: Object,
@@ -309,7 +308,7 @@ const props = defineProps({
   isSaving: Boolean,
 });
 
-const emit = defineEmits(['save', 'message']);
+const emit = defineEmits(['save']);
 
 const footerStore = useFooterStore();
 const tab = ref('sections'); // Default to sections tab
@@ -334,9 +333,26 @@ const enabledCount = computed(() => widgets.value.filter(w => w.enabled).length)
 // Dialog states
 const showEditor = ref(false);
 const showWidgetLibrary = ref(false);
-const showDeleteDialog = ref(false);
 const selectedWidget = ref(null);
-const widgetToDelete = ref(null);
+
+// Request state
+const savingWidget = ref(false);
+const addingWidget = ref(false);
+// One in-flight request per widget row: { [id]: 'toggle' | 'duplicate' | 'delete' }
+const rowActions = ref({});
+const rowAction = (widget) => rowActions.value[widget.id] || null;
+const isRowBusy = (widget) => rowAction(widget) !== null;
+
+async function runRowAction(widget, action, work) {
+  if (isRowBusy(widget)) return;
+  rowActions.value = { ...rowActions.value, [widget.id]: action };
+  try {
+    await work();
+  } finally {
+    const { [widget.id]: _done, ...rest } = rowActions.value;
+    rowActions.value = rest;
+  }
+}
 
 // Section widget adding
 const widgetSectionContext = ref(null); // { sectionId, column }
@@ -385,6 +401,8 @@ function editWidget(widget) {
 }
 
 async function saveWidget(updatedWidget) {
+  if (savingWidget.value) return;
+  savingWidget.value = true;
   try {
     console.log('Saving widget with data:', JSON.stringify(updatedWidget, null, 2));
     await footerStore.updateWidget(updatedWidget.id, updatedWidget);
@@ -395,10 +413,14 @@ async function saveWidget(updatedWidget) {
   } catch (error) {
     console.error('Failed to save widget:', error);
     showSnackbar(t('settings.footer.failedToUpdateWidget'), 'error');
+  } finally {
+    savingWidget.value = false;
   }
 }
 
 async function addWidget(widgetType) {
+  if (addingWidget.value) return;
+  addingWidget.value = true;
   try {
     const definition = getWidgetDefinition(widgetType);
     if (!definition) {
@@ -445,6 +467,8 @@ async function addWidget(widgetType) {
   } catch (error) {
     console.error('Failed to add widget:', error);
     showSnackbar(t('settings.footer.failedToAddWidget'), 'error');
+  } finally {
+    addingWidget.value = false;
   }
 }
 
@@ -453,47 +477,53 @@ function handleAddWidgetToSection({ sectionId, column }) {
   showWidgetLibrary.value = true;
 }
 
-async function toggleWidget(widget) {
-  try {
-    await footerStore.toggleWidget(widget.id);
-    showSnackbar(widget.enabled ? t('settings.footer.widgetEnabled') : t('settings.footer.widgetDisabled'), 'success');
-  } catch (error) {
-    showSnackbar(t('settings.footer.failedToToggleWidget'), 'error');
-    widget.enabled = !widget.enabled; // Revert on error
-  }
+function toggleWidget(widget) {
+  return runRowAction(widget, 'toggle', async () => {
+    try {
+      await footerStore.toggleWidget(widget.id);
+      showSnackbar(widget.enabled ? t('settings.footer.widgetEnabled') : t('settings.footer.widgetDisabled'), 'success');
+    } catch (error) {
+      showSnackbar(t('settings.footer.failedToToggleWidget'), 'error');
+      widget.enabled = !widget.enabled; // Revert on error
+    }
+  });
 }
 
-async function duplicateWidget(widget) {
-  try {
-    const newWidget = {
-      ...widget,
-      id: undefined,
-      title: `${widget.title} (${t('common.copy')})`,
-      order: widgets.value.length + 1,
-    };
-    await footerStore.createWidget(newWidget);
-    showSnackbar(t('settings.footer.widgetDuplicated'), 'success');
-    await loadWidgets();
-  } catch (error) {
-    showSnackbar(t('settings.footer.failedToDuplicateWidget'), 'error');
-  }
+function duplicateWidget(widget) {
+  return runRowAction(widget, 'duplicate', async () => {
+    try {
+      const newWidget = {
+        ...widget,
+        id: undefined,
+        title: `${widget.title} (${t('common.copy')})`,
+        order: widgets.value.length + 1,
+      };
+      await footerStore.createWidget(newWidget);
+      showSnackbar(t('settings.footer.widgetDuplicated'), 'success');
+      await loadWidgets();
+    } catch (error) {
+      showSnackbar(t('settings.footer.failedToDuplicateWidget'), 'error');
+    }
+  });
 }
 
-function confirmDelete(widget) {
-  widgetToDelete.value = widget;
-  showDeleteDialog.value = true;
-}
+async function confirmDelete(widget) {
+  if (isRowBusy(widget)) return;
+  const ok = await dialog.confirmDelete(
+    t('settings.footer.deleteConfirmMessage', { name: widget.title || widget.type }),
+    { title: t('settings.footer.confirmDelete') }
+  );
+  if (!ok) return;
 
-async function deleteWidget() {
-  try {
-    await footerStore.deleteWidget(widgetToDelete.value.id);
-    showSnackbar(t('settings.footer.widgetDeleted'), 'success');
-    showDeleteDialog.value = false;
-    widgetToDelete.value = null;
-    await loadWidgets();
-  } catch (error) {
-    showSnackbar(t('settings.footer.failedToDeleteWidget'), 'error');
-  }
+  await runRowAction(widget, 'delete', async () => {
+    try {
+      await footerStore.deleteWidget(widget.id);
+      showSnackbar(t('settings.footer.widgetDeleted'), 'success');
+      await loadWidgets();
+    } catch (error) {
+      showSnackbar(t('settings.footer.failedToDeleteWidget'), 'error');
+    }
+  });
 }
 
 function showSnackbar(message, color = 'success') {
@@ -506,8 +536,20 @@ function handleSave() {
   emit('save');
 }
 
-// Template loading functions
-function loadSimpleFooterTemplate() {
+// Template loading functions. Loading a template overwrites whatever is in
+// the editor, so ask first when there is something to lose.
+async function confirmTemplateOverwrite() {
+  if (!props.settings.custom_footer_html?.trim()) return true;
+  return dialog.confirm({
+    title: t('settings.footer.customFooterHtml'),
+    content: t('settings.footer.templateOverwriteConfirm'),
+    confirmationText: t('dialogs.confirm.confirm'),
+    color: 'warning',
+  });
+}
+
+async function loadSimpleFooterTemplate() {
+  if (!(await confirmTemplateOverwrite())) return;
   props.settings.custom_footer_html = `<div class="v-footer v-theme--light bg-transparent" style="padding: 16px;">
   <div class="v-container">
     <div class="text-center">
@@ -525,7 +567,8 @@ function loadSimpleFooterTemplate() {
 </div>`;
 }
 
-function loadComplexFooterTemplate() {
+async function loadComplexFooterTemplate() {
+  if (!(await confirmTemplateOverwrite())) return;
   props.settings.custom_footer_html = `<div class="v-footer v-theme--light bg-transparent" style="padding: 40px 0;">
   <div class="v-container">
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 32px; margin-bottom: 24px;">
@@ -561,7 +604,7 @@ onMounted(async () => {
 
 .widget-item:hover {
   background: rgba(var(--v-theme-surface-variant), 0.6);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(var(--v-theme-on-surface), 0.1);
 }
 
 .widget-disabled {
@@ -576,7 +619,7 @@ onMounted(async () => {
   cursor: grabbing;
 }
 
-.gap-2 {
+.ga-2 {
   gap: 8px;
 }
 </style>

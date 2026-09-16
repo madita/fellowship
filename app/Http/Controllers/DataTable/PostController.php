@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Models\Post;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PostController extends DataTableController
@@ -12,34 +13,104 @@ class PostController extends DataTableController
         return Post::query();
     }
 
+    /**
+     * Every recorded change to this row, in the edit drawer.
+     */
+    public function getRelations(): array
+    {
+        return [
+            [
+                'key'      => 'history',
+                'title'    => 'History',
+                'icon'     => 'mdi-history',
+                'endpoint' => '/datatable/posts/{id}/history',
+            ],
+        ];
+    }
+
     public function store(Request $request)
     {
         $post = auth()->user()->posts()->create($request->only($this->getUpdatableColumns()));
 
-        if ($request->get('termValue')) {
-            $post->addCategories($request->get('termValue'), 'blog');
+        if ($request->get('categories')) {
+            $post->addCategories($request->get('categories'), 'category');
         }
+
+        if ($request->get('terms')) {
+            $post->addCategories($request->get('terms'), 'tags');
+        }
+    }
+
+    public function update($id, Request $request)
+    {
+        $post = Post::find($id);
+        $post->update($request->only($this->getUpdatableColumns()));
+
+        $post->detachCategories();
+
+        if ($request->get('categories')) {
+            $post->addCategories($request->get('categories'), 'category');
+        }
+
+        if ($request->get('terms')) {
+            $post->addCategories($request->get('terms'), 'tags');
+        }
+    }
+
+    public function show($id, Request $request): JsonResponse
+    {
+        $post = Post::find($id);
+        $data = $post->toArray();
+
+        $data['categories'] = $post->getCategories('category')->pluck('title')->toArray();
+        $data['terms']      = $post->getCategories('tags')->pluck('title')->toArray();
+
+        return response()->json($data);
+    }
+
+    public function getTaxonomyFields()
+    {
+        return [
+            'categories' => [
+                'taxonomy' => 'category',
+                'label'    => 'Categories',
+                'multiple' => true,
+                'endpoint' => '/api/tag/terms/category',
+            ],
+            'terms' => [
+                'taxonomy' => 'tags',
+                'label'    => 'Tags',
+                'multiple' => true,
+                'endpoint' => '/api/tag/terms/tags',
+            ],
+        ];
     }
 
     public function getUpdatableColumns()
     {
-        return  [
+        return [
             'title',
             'body',
-            'status',
+            'published_at',
         ];
     }
 
     public function getCustomInputFields()
     {
         return [
-            'body'   => 'wysiwyg',
-            'status' => ['select'=> ['draft', 'published']],
+            'body'         => 'wysiwyg',
+            'published_at' => 'publish',
         ];
     }
 
-//    public function update($id, PostRequest $request)
-//    {
-//        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
-//    }
+    /**
+     * published_at is the publish timestamp (null = draft, a future date =
+     * scheduled).
+     */
+    public function getColumnTypes(): array
+    {
+        return [
+            'published_at' => 'datetime',
+        ];
+    }
 }

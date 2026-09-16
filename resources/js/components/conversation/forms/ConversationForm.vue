@@ -11,11 +11,11 @@
                     v-model="recipients"
                     :items="userList"
                     :loading="loadingUsers"
+                    :disabled="isSubmitting"
                     :search="userSearch"
                     @update:search="handleUserSearch"
                     :label="$t('conversation.selectRecipients')"
                     :placeholder="$t('conversation.searchUsersPlaceholder')"
-                    variant="outlined"
                     item-title="username"
                     item-value="id"
                     multiple
@@ -58,19 +58,19 @@
                     v-model="body"
                     :label="$t('conversation.messageBody')"
                     :placeholder="$t('conversation.messageBodyPlaceholder')"
-                    variant="outlined"
                     rows="4"
                     auto-grow
                     counter
                     maxlength="1000"
                     :rules="bodyRules"
+                    :disabled="isSubmitting"
                     class="mb-4"
                 />
 
                 <!-- Action Buttons -->
-                <div class="d-flex justify-end gap-2">
+                <div class="d-flex justify-end ga-2">
                     <v-btn
-                        variant="outlined"
+                        variant="text"
                         @click="handleCancel"
                         :disabled="isSubmitting"
                     >
@@ -79,6 +79,7 @@
 
                     <v-btn
                         color="primary"
+                        variant="flat"
                         type="submit"
                         :loading="isSubmitting"
                         :disabled="!isFormValid"
@@ -97,10 +98,13 @@ import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConversationStore } from '@/store/conversationStore.js'
 import { useUserSearch } from '@/composables/conversation/useUserSearch'
+import { useDialog } from '@/composables/useDialog.js'
 import { VALIDATION_RULES, MESSAGE_LIMITS } from '../constants'
 import axios from "axios"
 
 const { t } = useI18n()
+// A failed creation is reported as a modal
+const dialog = useDialog()
 
 // Emits
 const emit = defineEmits(['conversation-created', 'cancel'])
@@ -133,7 +137,7 @@ const bodyRules = [
 
 // Methods
 const handleSubmit = async () => {
-    if (!formRef.value) return
+    if (!formRef.value || isSubmitting.value) return
 
     const { valid } = await formRef.value.validate()
     if (!valid) return
@@ -152,6 +156,7 @@ const handleSubmit = async () => {
         emit('conversation-created', newConversation)
     } catch (error) {
         console.error('Error creating conversation:', error)
+        await dialog.requestError(error, t('conversation.createFailed'))
     } finally {
         isSubmitting.value = false
     }
@@ -189,24 +194,6 @@ watch(recipients, (newRecipients) => {
 </script>
 
 <style scoped>
-.gap-2 {
-    gap: 8px;
-}
-
-/* Custom chip styling */
-:deep(.v-chip) {
-    margin: 2px;
-}
-
-/* Form styling */
-:deep(.v-field--variant-outlined) {
-    --v-field-border-width: 1px;
-}
-
-:deep(.v-field--variant-outlined.v-field--focused) {
-    --v-field-border-width: 2px;
-}
-
 /* Loading overlay */
 .v-autocomplete :deep(.v-progress-linear) {
     position: absolute;

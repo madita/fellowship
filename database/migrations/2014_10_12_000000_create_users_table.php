@@ -21,6 +21,7 @@ class CreateUsersTable extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable();
             $table->rememberToken();
+            $table->datetime('previous_login_at')->nullable();
             $table->datetime('last_login_at')->nullable();
             $table->string('last_login_ip')->nullable();
             $table->string('timezone', 64)->nullable();
@@ -28,6 +29,7 @@ class CreateUsersTable extends Migration
             $table->string('time_format', 32)->nullable();
             $table->string('theme_mode', 16)->nullable();
             $table->string('language', 8)->nullable();
+            $table->json('dashboard_layout')->nullable();
             $table->timestamps();
         });
     }

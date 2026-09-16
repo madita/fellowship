@@ -18,12 +18,12 @@ class DatabaseTest extends TestCase
      */
     public function test_using_testing_database()
     {
-//        if (config('database.default') === 'sqlite') {
-//            $this->markTestSkipped('Skipping MySQL test when using SQLite');
-//        }
+        //        if (config('database.default') === 'sqlite') {
+        //            $this->markTestSkipped('Skipping MySQL test when using SQLite');
+        //        }
 
         $this->assertEquals('sqlite', config('database.default'));
-//        $this->assertEquals('fellowship_testing', config('database.connections.mysql.database'));
+        //        $this->assertEquals('fellowship_testing', config('database.connections.mysql.database'));
     }
 
     /**
@@ -35,8 +35,8 @@ class DatabaseTest extends TestCase
     {
         // Create a user
         $user = User::factory()->create([
-            'name'     => 'Test User',
-            'email'    => 'test@example.com',
+            'name' => 'Test User',
+            'email' => 'test@example.com',
             'username' => 'testuser',
         ]);
 

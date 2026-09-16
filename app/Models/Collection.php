@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Tag\Taxonomy;
+use App\Traits\HasRelateableContent;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
@@ -15,11 +16,14 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class Collection extends Model implements HasMedia, TranslatableContract
 {
     use HasFactory;
+    use HasRelateableContent;
     use InteractsWithMedia;
     use Sluggable;
     use Translatable;
 
     public $translatedAttributes = ['name'];
+
+    protected $fillable = ['taxonomy_id', 'user_id'];
 
     public function sluggable(): array
     {
@@ -29,8 +33,6 @@ class Collection extends Model implements HasMedia, TranslatableContract
             ],
         ];
     }
-
-    protected $fillable = ['taxonomy_id', 'user_id'];
 
     public function taxonomy()
     {
@@ -48,7 +50,7 @@ class Collection extends Model implements HasMedia, TranslatableContract
         $media = $this->getMedia('images')->first(fn ($item) => $item->getCustomProperty('is_cover', false));
 
         // Fallback to the first media item if no cover is explicitly set
-        if (!$media) {
+        if ( ! $media) {
             $media = $this->getFirstMedia('images');
         }
 

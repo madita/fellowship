@@ -1,4 +1,19 @@
 import { vi } from 'vitest';
+import { config } from '@vue/test-utils';
+import { createI18n } from 'vue-i18n';
+
+// Provide vue-i18n globally for all component tests
+const i18n = createI18n({
+  legacy: false,
+  locale: 'en',
+  fallbackLocale: 'en',
+  messages: { en: {} },
+  missingWarn: false,
+  fallbackWarn: false,
+});
+
+config.global.plugins = config.global.plugins || [];
+config.global.plugins.push(i18n);
 
 // Mock Vuetify components
 vi.mock('vuetify/components', () => {

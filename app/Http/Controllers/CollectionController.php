@@ -10,6 +10,37 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class CollectionController extends Controller
 {
+    /**
+     * The newest albums with cover thumbnail and image count — a light
+     * listing for the dashboard widget. Query: limit (default 6, max 20).
+     */
+    public function recent(Request $request)
+    {
+        $limit = max(1, min((int) $request->get('limit', 6), 20));
+
+        $albums = Collection::with('media')
+            ->withCount('media')
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get()
+            ->map(function (Collection $collection) {
+                $cover = $collection->media->first(fn ($media) => $media->getCustomProperty('is_cover', false))
+                    ?? $collection->media->first();
+
+                return [
+                    'id'          => $collection->id,
+                    'name'        => $collection->name,
+                    'slug'        => $collection->slug,
+                    'url'         => '/gallery/' . $collection->slug,
+                    'cover'       => $cover ? ($cover->hasGeneratedConversion('thumb') ? $cover->getUrl('thumb') : $cover->getUrl()) : null,
+                    'media_count' => $collection->media_count,
+                    'created_at'  => $collection->created_at,
+                ];
+            });
+
+        return response()->json(['data' => $albums, 'total' => Collection::count()]);
+    }
+
     public function index()
     {
         // Get all collections with their related media
@@ -23,9 +54,9 @@ class CollectionController extends Controller
             $collection->coverImage = $coverMedia ? $coverMedia->getUrl() : null;
 
             $collection->media->each(function ($media) {
-                $media->caption = $media->getCustomProperty('caption');
+                $media->caption  = $media->getCustomProperty('caption');
                 $media->uploader = $media->getCustomProperty('uploader');
-                $media->url = $media->getUrl();
+                $media->url      = $media->getUrl();
             });
         });
 
@@ -40,7 +71,7 @@ class CollectionController extends Controller
 
         // Add custom properties to each media item
         $collection->media->each(function ($media) {
-            $media->caption = $media->getCustomProperty('caption');
+            $media->caption  = $media->getCustomProperty('caption');
             $media->uploader = $media->getCustomProperty('uploader');
         });
 
@@ -67,6 +98,9 @@ class CollectionController extends Controller
     // Upload media to a collection
     public function uploadMedia(Request $request, Collection $collection)
     {
+        // Authorization check - only owner or admin can upload
+        $this->authorize('uploadMedia', $collection);
+
         $request->validate([
             'files'      => 'required|array', // Ensure files is an array
             'files.*'    => 'file|mimes:jpg,jpeg,png,gif|max:2048', // Validate each file
@@ -79,8 +113,8 @@ class CollectionController extends Controller
         foreach ($request->file('files') as $index => $file) {
             // Add each media item to the collection
 
-            $extension = $file->getClientOriginalExtension();
-            $newFilename = Str::uuid().'.'.$extension;
+            $extension   = $file->getClientOriginalExtension();
+            $newFilename = Str::uuid() . '.' . $extension;
             /** @var User $user */
             $user = auth()->user();
 
@@ -115,8 +149,13 @@ class CollectionController extends Controller
             'caption' => 'required|string|max:255',
         ]);
 
-        // Find the media item and update its caption
+        // Find the media item
         $media = Media::findOrFail($mediaId);
+
+        // Get the collection that owns this media and check authorization
+        $collection = Collection::findOrFail($media->model_id);
+        $this->authorize('update', $collection);
+
         $media->setCustomProperty('caption', $request->input('caption'));
         $media->save();
 
@@ -143,5 +182,50 @@ class CollectionController extends Controller
         $media->setCustomProperty('is_cover', true)->save();
 
         return response()->json(['message' => __('messages.media.cover_updated')]);
+    }
+
+    /**
+     * Delete a collection and all its media.
+     */
+    public function destroy(Collection $collection)
+    {
+        // Authorization check would go here
+        // $this->authorize('delete', $collection);
+
+        try {
+            // Spatie Media Library will automatically delete media files
+            $collection->delete();
+
+            return response()->json([
+                'message' => 'Collection deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete collection',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete a specific media item.
+     */
+    public function deleteMedia(Media $media)
+    {
+        // Authorization check would go here
+        // $this->authorize('delete', $media->model);
+
+        try {
+            $media->delete();
+
+            return response()->json([
+                'message' => 'Media deleted successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete media',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 }

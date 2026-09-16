@@ -1,16 +1,13 @@
 <template>
     <div>
-        <div v-if="loading" class="d-flex justify-center pa-8">
-            <v-progress-circular indeterminate color="primary" />
-        </div>
+        <loading-state v-if="loading" />
 
-        <div v-else-if="!media.length" class="text-center pa-8">
-            <v-icon icon="mdi-image-off" size="64" color="grey" />
-            <div class="text-h6 text-grey mt-4">{{ $t('mediaCenter.noMediaFound') }}</div>
-            <div class="text-body-2 text-grey">
-                {{ $t('mediaCenter.adjustFiltersHint') }}
-            </div>
-        </div>
+        <empty-state
+            v-else-if="!media.length"
+            icon="mdi-image-off"
+            :title="$t('mediaCenter.noMediaFound')"
+            :text="$t('mediaCenter.adjustFiltersHint')"
+        />
 
         <v-row v-else>
             <v-col
@@ -35,6 +32,8 @@
 
 <script setup>
 import MediaCard from './MediaCard.vue';
+import EmptyState from '../../common/EmptyState.vue';
+import LoadingState from '../../common/LoadingState.vue';
 
 const props = defineProps({
     media: {

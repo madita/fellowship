@@ -11,8 +11,8 @@ trait Wikiable
         return $this->morphMany(Wiki::class, 'wikiable');
     }
 
-//    public function getWikiTitle()
-//    {
-//        return property_exists($this, 'wikiable') ? $this->wikiable['title'] : null;
-//    }
+    //    public function getWikiTitle()
+    //    {
+    //        return property_exists($this, 'wikiable') ? $this->wikiable['title'] : null;
+    //    }
 }

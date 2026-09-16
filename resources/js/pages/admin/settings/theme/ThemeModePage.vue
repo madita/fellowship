@@ -6,10 +6,7 @@
         :category-title="category?.title"
         :back-route="{ name: 'admin-settings-category', params: { category: 'theme' } }"
         :is-saving="isSaving"
-        :message="message"
-        :alert-type="alertType"
         @save="$emit('save')"
-        @clear-message="message = ''"
     >
         <settings-card icon="mdi-theme-light-dark" :title="$t('settings.themeMode.cardTitle')">
             <v-select
@@ -41,11 +38,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
-import { themeModes } from '@/composables/settingsConstants';
+import { themeModes } from '@/configs/settingsConstants';
 
 const { t } = useI18n();
 
@@ -57,8 +53,5 @@ const props = defineProps({
     setting: Object,
 });
 
-defineEmits(['save', 'message']);
-
-const message = ref('');
-const alertType = ref('success');
+defineEmits(['save']);
 </script>

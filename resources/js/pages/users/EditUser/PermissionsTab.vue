@@ -4,19 +4,19 @@
         <v-row class="mb-6">
             <v-col cols="12">
                 <v-card class="roles-overview-card" elevation="2" rounded="lg">
-                    <v-card-title class="d-flex align-center">
+                    <v-card-title class="d-flex align-center text-subtitle-1 font-weight-medium">
                         <v-icon class="mr-2" color="primary">mdi-shield-account</v-icon>
                         {{ $t('users.edit.currentRoles') }}
                     </v-card-title>
 
                     <v-card-text>
-                        <div v-if="currentRoles.length === 0" class="text-center pa-4">
-                            <v-icon size="48" color="medium-emphasis">mdi-account</v-icon>
-                            <div class="text-h6 mt-2">{{ $t('users.edit.noRolesAssigned') }}</div>
-                            <div class="text-body-2 text-medium-emphasis">
-                                {{ $t('users.edit.noRolesDescription') }}
-                            </div>
-                        </div>
+                        <empty-state
+                            v-if="currentRoles.length === 0"
+                            compact
+                            icon="mdi-account-outline"
+                            :title="$t('users.edit.noRolesAssigned')"
+                            :text="$t('users.edit.noRolesDescription')"
+                        />
 
                         <v-row v-else>
                             <v-col
@@ -75,7 +75,7 @@
                                         </div>
 
                                         <div class="d-flex align-center">
-                                            <v-chip size="x-small" variant="outlined">
+                                            <v-chip size="small" variant="tonal">
                                                 {{ $t('users.edit.permissionsCount', { count: role.permissions?.length || 0 }) }}
                                             </v-chip>
                                             <v-spacer />
@@ -103,7 +103,7 @@
         <v-row class="mb-6">
             <v-col cols="12" lg="8">
                 <v-card class="role-management-card" elevation="2" rounded="lg">
-                    <v-card-title class="d-flex align-center justify-space-between">
+                    <v-card-title class="d-flex align-center justify-space-between text-subtitle-1 font-weight-medium">
                         <div class="d-flex align-center">
                             <v-icon class="mr-2" color="info">mdi-plus-circle</v-icon>
 
@@ -127,11 +127,12 @@
                             </v-btn>
                         </div>
                         <v-btn
-                            variant="outlined"
+                            variant="tonal"
                             size="small"
                             prepend-icon="mdi-refresh"
                             @click="refreshAvailableRoles"
                             :loading="refreshing"
+                            :disabled="assigning"
                         >
                             {{ $t('users.edit.refresh') }}
                         </v-btn>
@@ -174,7 +175,7 @@
                                     variant="elevated"
                                     prepend-icon="mdi-plus"
                                     @click="assignRole"
-                                    :disabled="!selectedRole"
+                                    :disabled="!selectedRole || refreshing"
                                     :loading="assigning"
                                 >
                                     {{ $t('users.edit.assignRole') }}
@@ -192,8 +193,11 @@
 import { ref, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
+import { useDialog } from '@/composables/useDialog.js';
+import EmptyState from '@/components/common/EmptyState.vue';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
     user: {
@@ -224,19 +228,21 @@ const getRoleIcon = (roleName) => {
 };
 
 const refreshAvailableRoles = async () => {
+    if (refreshing.value) return;
     refreshing.value = true;
     try {
         const response = await axios.get('/api/roles');
         availableRoles.value = response.data;
     } catch (error) {
         console.error('Failed to refresh roles:', error);
-        // Add user-friendly error notification
-        // e.g., this.$toast.error('Failed to load roles. Please try again.');
+        await dialog.requestError(error, t('users.edit.rolesLoadFailed'));
+    } finally {
+        refreshing.value = false;
     }
-    refreshing.value = false;
 };
 
 const assignRole = async () => {
+    if (assigning.value) return;
     assigning.value = true;
     try {
         // Implement role assignment API call
@@ -245,8 +251,10 @@ const assignRole = async () => {
         selectedRole.value = null;
     } catch (error) {
         console.error('Failed to assign role:', error);
+        await dialog.requestError(error);
+    } finally {
+        assigning.value = false;
     }
-    assigning.value = false;
 };
 
 const confirmRemoveRole = (role) => {

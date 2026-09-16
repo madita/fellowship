@@ -1,39 +1,25 @@
 <template>
     <div class="conversation-container">
         <!-- Loading State -->
-        <div v-if="loading" class="text-center py-12">
-            <v-progress-circular
-                indeterminate
-                color="primary"
-                size="64"
-            ></v-progress-circular>
-            <p class="mt-4 text-body-1 text-medium-emphasis">{{ $t('conversation.loadingConversation') }}</p>
-        </div>
+        <loading-state v-if="loading" :text="$t('conversation.loadingConversation')" />
 
         <!-- Conversation Content -->
         <v-container v-else-if="conversation" fluid class="pa-0">
+            <h2 class="text-h6 d-flex align-center ga-2 mb-4">
+                <v-icon color="primary">mdi-chat</v-icon>
+                {{ $t('conversation.conversationDetails') }}
+            </h2>
 
-            <!-- Conversation Header -->
-            <v-card class="mb-4" elevation="2">
-                <v-card-title class="bg-gradient text-white">
-                    <v-icon class="mr-3">mdi-chat</v-icon>
-                    {{ $t('conversation.conversationDetails') }}
-                </v-card-title>
-
-
-            </v-card>
-
-            <v-card elevation="2">
-                <v-card-title class="v-col-6 text-h6 font-weight-medium">
-                    <v-icon class="mr-2">mdi-message-text</v-icon>
+            <v-card elevation="2" rounded="lg" class="mb-4">
+                <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center flex-wrap ga-2">
+                    <v-icon>mdi-message-text</v-icon>
                     {{ $t('conversation.messages') }}
                     <v-spacer></v-spacer>
                     <v-chip
                         v-if="messages?.length"
                         size="small"
                         color="info"
-                        variant="outlined"
-                        class="mr-2"
+                        variant="tonal"
                     >
                         {{ $t('conversation.messagesCount', { count: messages.length }) }}
                     </v-chip>
@@ -43,7 +29,7 @@
                         <template v-slot:activator="{ props }">
                             <v-btn
                                 v-bind="props"
-                                variant="outlined"
+                                variant="tonal"
                                 size="small"
                                 prepend-icon="mdi-account-plus"
                             >
@@ -56,19 +42,17 @@
                             </v-card-text>
                         </v-card>
                     </v-menu>
-
                 </v-card-title>
 
                 <v-divider></v-divider>
 
-            <conversation-messages :id="id" :messages="messages" :loading="loading" />
-
-                </v-card>
+                <conversation-messages :id="id" :messages="messages" :loading="loading" />
+            </v-card>
 
             <!-- Reply Form -->
-            <v-card style="padding-bottom: 20px;" class="mb-4" elevation="2">
-                <v-card-title class="text-h6 font-weight-medium">
-                    <v-icon class="mr-2">mdi-reply</v-icon>
+            <v-card elevation="2" rounded="lg" class="mb-4">
+                <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center ga-2">
+                    <v-icon>mdi-reply</v-icon>
                     {{ $t('conversation.sendReply') }}
                 </v-card-title>
                 <v-card-text>
@@ -78,13 +62,12 @@
         </v-container>
 
         <!-- Empty State -->
-        <div v-else class="text-center py-12">
-            <v-icon size="80" color="grey-lighten-2">mdi-chat-question-outline</v-icon>
-            <h3 class="text-h5 font-weight-medium mt-4 mb-2">{{ $t('conversation.noConversationSelected') }}</h3>
-            <p class="text-body-1 text-medium-emphasis">
-                {{ $t('conversation.selectConversationHint') }}
-            </p>
-        </div>
+        <empty-state
+            v-else
+            icon="mdi-chat-question-outline"
+            :title="$t('conversation.noConversationSelected')"
+            :text="$t('conversation.selectConversationHint')"
+        />
     </div>
 </template>
 
@@ -96,6 +79,8 @@ import ConversationAddUserForm from "@/components/conversation/forms/Conversatio
 import ConversationReplyForm from "@/components/conversation/forms/ConversationReplyForm.vue";
 import ConversationMessages from "@/components/conversation/ConversationMessages.vue";
 import UserAvatar from "@/components/common/UserAvatar.vue";
+import EmptyState from "@/components/common/EmptyState.vue";
+import LoadingState from "@/components/common/LoadingState.vue";
 import { useEchoListener } from "@/composables/conversation/useEchoListener";
 import { useScrollToBottom } from "@/composables/conversation/useScrollToBottom";
 
@@ -111,7 +96,9 @@ export default {
         ConversationAddUserForm,
         ConversationReplyForm,
         ConversationMessages,
-        UserAvatar
+        UserAvatar,
+        EmptyState,
+        LoadingState
     },
     setup(props) {
         const { t } = useI18n();
@@ -179,8 +166,4 @@ export default {
 
 <style scoped>
 @import './styles.css';
-
-.messages-wrapper {
-    padding-bottom: 20px;
-}
 </style>

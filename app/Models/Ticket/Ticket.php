@@ -38,13 +38,14 @@ class Ticket extends Model
     ];
 
     protected $casts = [
-        'metadata' => 'array',
-        'due_date' => 'datetime',
+        'metadata'    => 'array',
+        'due_date'    => 'datetime',
         'resolved_at' => 'datetime',
         'closed_at' => 'datetime',
         'is_public' => 'boolean',
         'votes_count' => 'integer',
         'watchers_count' => 'integer',
+        'closed_at'   => 'datetime',
     ];
 
     protected $appends = ['status_label', 'priority_label', 'bga_status_label'];
@@ -114,13 +115,13 @@ class Ticket extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return match($this->status) {
-            'open' => 'Open',
+        return match ($this->status) {
+            'open'        => 'Open',
             'in_progress' => 'In Progress',
-            'pending' => 'Pending',
-            'resolved' => 'Resolved',
-            'closed' => 'Closed',
-            default => ucfirst($this->status),
+            'pending'     => 'Pending',
+            'resolved'    => 'Resolved',
+            'closed'      => 'Closed',
+            default       => ucfirst($this->status),
         };
     }
 
@@ -129,12 +130,12 @@ class Ticket extends Model
      */
     public function getPriorityLabelAttribute(): string
     {
-        return match($this->priority) {
-            'low' => 'Low',
+        return match ($this->priority) {
+            'low'    => 'Low',
             'normal' => 'Normal',
-            'high' => 'High',
+            'high'   => 'High',
             'urgent' => 'Urgent',
-            default => ucfirst($this->priority),
+            default  => ucfirst($this->priority),
         };
     }
 
@@ -143,7 +144,7 @@ class Ticket extends Model
      */
     public function isOpen(): bool
     {
-        return !in_array($this->status, ['resolved', 'closed']);
+        return ! in_array($this->status, ['resolved', 'closed']);
     }
 
     /**
@@ -161,7 +162,7 @@ class Ticket extends Model
     {
         $this->update([
             'assigned_to_user_id' => $user->id,
-            'status' => $this->status === 'open' ? 'in_progress' : $this->status,
+            'status'              => $this->status === 'open' ? 'in_progress' : $this->status,
         ]);
     }
 
@@ -172,7 +173,7 @@ class Ticket extends Model
     {
         $this->update([
             'assigned_to_user_id' => null,
-            'status' => $this->status === 'in_progress' ? 'open' : $this->status,
+            'status'              => $this->status === 'in_progress' ? 'open' : $this->status,
         ]);
     }
 
@@ -182,7 +183,7 @@ class Ticket extends Model
     public function resolve(): void
     {
         $this->update([
-            'status' => 'resolved',
+            'status'      => 'resolved',
             'resolved_at' => now(),
         ]);
     }
@@ -193,7 +194,7 @@ class Ticket extends Model
     public function close(): void
     {
         $this->update([
-            'status' => 'closed',
+            'status'    => 'closed',
             'closed_at' => now(),
         ]);
     }
@@ -204,9 +205,9 @@ class Ticket extends Model
     public function reopen(): void
     {
         $this->update([
-            'status' => 'open',
+            'status'      => 'open',
             'resolved_at' => null,
-            'closed_at' => null,
+            'closed_at'   => null,
         ]);
     }
 

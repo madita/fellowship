@@ -11,14 +11,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Event extends Model implements TranslatableContract
 {
+    use HasRelateableContent;
     use Sluggable;
     use SoftDeletes;
-    use HasRelateableContent;
     use Translatable;
 
-    protected $table = 'events';
-
     public $translatedAttributes = ['title', 'description'];
+
+    protected $table = 'events';
 
     protected $fillable = [
         'user_id',
@@ -54,64 +54,64 @@ class Event extends Model implements TranslatableContract
         return $this->belongsTo("App\\Models\User");
     }
 
-//    public function posts(){
-//        return $this->hasMany("App\\Models\\Post")->orderBy("created_at", "desc")->with("comments")->withTrashed();
-//    }
+    //    public function posts(){
+    //        return $this->hasMany("App\\Models\\Post")->orderBy("created_at", "desc")->with("comments")->withTrashed();
+    //    }
 
     public function getImage()
     {
         if ($this->image) {
-            return '/uploads/'.$this->image;
+            return '/uploads/' . $this->image;
         } else {
             return 'img/cover.jpeg';
         }
     }
 
-//    public function hasImages(){
-//        $posts = Post::where("event_id", "=", $this->id)->whereNotNull("image")->get();
-//
-//        return count($posts);
-//    }
+    //    public function hasImages(){
+    //        $posts = Post::where("event_id", "=", $this->id)->whereNotNull("image")->get();
+    //
+    //        return count($posts);
+    //    }
 
-//    public function getImages(){
-//        $posts = Post::where("event_id", "=", $this->id)->orderBy("created_at", "desc")->take(2)->get();
-//        return $posts;
-//    }
+    //    public function getImages(){
+    //        $posts = Post::where("event_id", "=", $this->id)->orderBy("created_at", "desc")->take(2)->get();
+    //        return $posts;
+    //    }
 
-//    public function countImages(){
-//        $posts = Post::where("event_id", "=", $this->id)->get();
-//        $images = array();
-//
-//        foreach($posts as $post){
-//            array_push($images, $post->getImage());
-//        }
-//
-//        return count(array_filter($images));
-//    }
+    //    public function countImages(){
+    //        $posts = Post::where("event_id", "=", $this->id)->get();
+    //        $images = array();
+    //
+    //        foreach($posts as $post){
+    //            array_push($images, $post->getImage());
+    //        }
+    //
+    //        return count(array_filter($images));
+    //    }
 
-//    public function going()
-//    {
-//        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'going');
-//    }
-//
-//    public function notgoing()
-//    {
-//        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'notgoing');
-//    }
-//
-//    public function maybegoing()
-//    {
-//        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'maybe');
-//    }
+    //    public function going()
+    //    {
+    //        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'going');
+    //    }
+    //
+    //    public function notgoing()
+    //    {
+    //        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'notgoing');
+    //    }
+    //
+    //    public function maybegoing()
+    //    {
+    //        return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', 'maybe');
+    //    }
 
     public function answer($answer)
     {
         return $this->belongsToMany('App\\Models\\User', 'event_guests')->wherePivot('type', '=', $answer)->withPivot('approved_at');
     }
 
-//    public function categories(){
-//        return $this->belongsToMany("App\\Models\\Category");
-//    }
+    //    public function categories(){
+    //        return $this->belongsToMany("App\\Models\\Category");
+    //    }
 
     public function allUsers()
     {

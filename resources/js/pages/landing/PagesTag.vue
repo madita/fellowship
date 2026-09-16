@@ -1,31 +1,36 @@
 <template>
     <div>
-        <v-sheet>
-            <v-container class="py-6 pt-lg-15">
-                <v-list-item-group
-                    v-model="selectedItem"
-                    color="primary"
+        <page-header :title="$t('pages.tagged.pagesIn', { category })" icon="mdi-folder-outline" />
+
+        <v-container>
+            <loading-state v-if="loading" />
+            <v-list v-else-if="pages.length" class="bg-transparent">
+                <v-list-item
+                    v-for="(page, index) in pages"
+                    :key="index"
+                    prepend-icon="mdi-file-document-outline"
+                    @click="goToPage(page.slug)"
                 >
-                    <v-list-item
-                        v-for="(page, index) in pages"
-                        :key="index"
-                        @click="goToPage(page.slug)"
-                    >
-                        <v-list-item-content>
-                            <v-list-item-title v-text="page.title"></v-list-item-title>
-                        </v-list-item-content>
-                    </v-list-item>
-                </v-list-item-group>
-            </v-container>
-        </v-sheet>
+                    <v-list-item-title v-text="page.title"></v-list-item-title>
+                </v-list-item>
+            </v-list>
+            <empty-state
+                v-else
+                icon="mdi-file-document-outline"
+                :title="$t('pages.tagged.noPages')"
+                :text="$t('pages.tagged.noPagesText', { category })"
+            />
+        </v-container>
     </div>
 </template>
 
 <script>
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 export default {
-    components: {
-    },
+    components: { PageHeader, EmptyState, LoadingState },
     data() {
         return {
             loading: true,
@@ -48,10 +53,12 @@ export default {
                 if (error.response.status === 401) {
                     this.$router.push('/auth/signin')
                 }
+            }).finally(() => {
+                this.loading = false
             });
         },
         goToPage(slug) {
-            this.$router.push(`/p/${slug}`)
+            this.$router.push(`/${slug}`)
         }
 
     },

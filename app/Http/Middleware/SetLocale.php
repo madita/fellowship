@@ -21,7 +21,7 @@ class SetLocale
     public function handle(Request $request, Closure $next): Response
     {
         $availableLocales = config('translatable.locales', ['en', 'de']);
-        $defaultLocale = config('app.locale', 'en');
+        $defaultLocale    = config('app.locale', 'en');
 
         $locale = $this->determineLocale($request, $availableLocales) ?? $defaultLocale;
 
@@ -95,12 +95,12 @@ class SetLocale
         $languages = [];
 
         foreach (explode(',', $header) as $part) {
-            $part = trim($part);
+            $part    = trim($part);
             $quality = 1.0;
 
             if (str_contains($part, ';q=')) {
                 [$locale, $q] = explode(';q=', $part);
-                $quality = (float) $q;
+                $quality      = (float) $q;
             } else {
                 $locale = $part;
             }

@@ -90,8 +90,8 @@ class FooterSectionController extends Controller
      */
     public function toggle($id)
     {
-        $section = FooterSection::findOrFail($id);
-        $section->enabled = !$section->enabled;
+        $section          = FooterSection::findOrFail($id);
+        $section->enabled = ! $section->enabled;
         $section->save();
 
         return response()->json($section);

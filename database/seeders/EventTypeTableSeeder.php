@@ -64,7 +64,7 @@ class EventTypeTableSeeder extends Seeder
 
         ]);
 
-        //make profile for character selection?
+        // make profile for character selection?
         $eventType = EventType::create([
             'name'    => 'Live',
             'color'   => '#37B241',

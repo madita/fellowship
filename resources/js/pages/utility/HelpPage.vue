@@ -1,6 +1,6 @@
 <template>
   <div class="py-3 min-w-0 w-full">
-    <div class="display-1">{{ $t('common.faq') }}</div>
+    <div class="text-h4 font-weight-bold">{{ $t('common.faq') }}</div>
     <v-breadcrumbs :items="breadcrumbs" class="pa-0 py-2"></v-breadcrumbs>
 
     <!-- search card -->
@@ -8,9 +8,9 @@
       <div class="pa-4 py-8">
         <v-text-field
           v-model="search"
-          solo
+          variant="solo"
           hide-details
-          append-icon="mdi-magnify"
+          append-inner-icon="mdi-magnify"
           :placeholder="$t('faq.searchPlaceholder')"
         ></v-text-field>
       </div>
@@ -20,16 +20,16 @@
     <v-row>
       <v-col cols="12" md="3" xl="2">
         <div class="sticky" style="top: 90px">
-          <div class="title mb-2">{{ $t('faq.contents') }}</div>
+          <div class="text-h6 mb-2">{{ $t('faq.contents') }}</div>
           <div v-for="faq in faqs" :key="faq.id" class="mb-1">
-            <v-btn text color="bg-primary" @click="$vuetify.goTo(`#${faq.id}`, { offset: 30 })">{{ faq.title }}</v-btn>
+            <v-btn variant="text" color="primary" @click="$vuetify.goTo(`#${faq.id}`, { offset: 30 })">{{ faq.title }}</v-btn>
           </div>
         </div>
       </v-col>
 
       <v-col cols="12" md="9" xl="10">
         <div v-for="faq in faqs" :id="faq.id" :key="faq.id">
-          <div id="#general" class="title pb-2">{{ faq.title }}</div>
+          <div id="#general" class="text-h6 pb-2">{{ faq.title }}</div>
           <v-expansion-panels class="mb-4" multiple>
             <v-expansion-panel
               v-for="(item,i) in faq.items"
@@ -45,7 +45,7 @@
       </v-col>
     </v-row>
 
-    <div class="caption mt-2 text-center">
+    <div class="text-caption text-medium-emphasis mt-2 text-center">
       {{ $t('faq.call') }}
       <router-link to="">{{ $t('common.contact') }}</router-link>
     </div>
@@ -67,11 +67,11 @@ export default {
       search: '',
 
       breadcrumbs: [{
-        text: this.$t('common.pages'),
+        title: this.$t('common.pages'),
         disabled: false,
         href: '#'
       }, {
-        text: this.$t('common.faq')
+        title: this.$t('common.faq')
       }],
 
       faqs: [{

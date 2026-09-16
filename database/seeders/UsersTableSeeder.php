@@ -23,7 +23,7 @@ class UsersTableSeeder extends Seeder
         ]);
 
         $user->assignRole('admin');
-//        $user->roles()->attach(1);
+        //        $user->roles()->attach(1);
 
         /* $profile = new \App\Profile;
          $profile->user()->associate($user);
@@ -40,7 +40,7 @@ class UsersTableSeeder extends Seeder
 
         $user->assignRole('user');
 
-//           $user->roles()->attach(2);
+        //           $user->roles()->attach(2);
 
         $user = User::create([
             'username'          => 'test',

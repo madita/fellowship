@@ -13,11 +13,15 @@ export default {
     //     ].filter(item => item.toLowerCase().startsWith(query.toLowerCase())).slice(0, 5)
     // },
 
-    items: async function(editor) {
-        const response = await axios('/api/datatable/pages?page=1&itemsPerPage=100000&pageStart=-1&pageStop=100000000&pageCount=-1&itemsLength=-1')
-
-        return response.data.data.records.data.filter(item => item.title.toLowerCase().startsWith(editor.query.toLowerCase())).slice(0, 5)
-    }.bind(this),
+    // Pages whose title matches what was typed after "[[" (searched on the server)
+    items: async function({ query }) {
+        try {
+            const response = await axios.get('/api/datatable/pages', { params: { search: query || undefined, per_page: 10 } })
+            return (response.data.data.records.data || []).filter(item => item.title).slice(0, 5)
+        } catch (e) {
+            return []
+        }
+    },
 
 
     render: () => {

@@ -61,14 +61,16 @@ import './plugins/echarts.js'
 import './plugins/animate.js'
 import './plugins/clipboard.js'
 import formatDate from './plugins/formatDate.js'
+import sessionTimeout from './plugins/sessionTimeout.js'
+import dialogs from './plugins/dialogs.js'
 // import './plugins/moment'
 // import './plugins/lodash'
 
 //HELPERS
-import helpers from './helpers'
+import helpers from './utils/helpers.js'
 
 // FILTERS
-import { capitalize } from './helpers/filters.js';
+import { capitalize } from './utils/filters.js';
 
 // STYLES
 
@@ -122,6 +124,8 @@ vueApp.use(PerfectScrollbarPlugin);
 vueApp.use(router)
 
 vueApp.use(formatDate);
+vueApp.use(sessionTimeout);
+vueApp.use(dialogs);
 // Vue.use(require('vue-shortkey'))
 // vueApp.use(VueShortkey)
 // vueApp.mount("#app")

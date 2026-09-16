@@ -1,8 +1,8 @@
 <template>
-    <v-card class="reply-form-card" elevation="0" color="grey-lighten-5">
+    <v-card class="reply-form-card" variant="outlined" rounded="lg">
         <v-card-text class="pa-4">
             <v-form @submit.prevent="reply" ref="formRef">
-                <div class="d-flex align-start gap-3">
+                <div class="d-flex align-start ga-3">
                     <!-- User Avatar -->
                     <v-avatar size="40" class="mt-1">
                         <v-img
@@ -16,7 +16,6 @@
                         <v-textarea
                             v-model="body"
                             :label="$t('conversation.writeReply')"
-                            variant="outlined"
                             rows="3"
                             auto-grow
                             :max-rows="8"
@@ -30,21 +29,20 @@
                             @keydown.meta.enter="reply"
                         >
                             <template #prepend-inner>
-                                <v-icon color="grey-darken-1" size="20">mdi-message-text-outline</v-icon>
+                                <v-icon size="20">mdi-message-text-outline</v-icon>
                             </template>
                         </v-textarea>
 
                         <!-- Action Bar -->
                         <div class="d-flex justify-space-between align-center mt-3">
                             <div class="d-flex align-center">
-                                <v-tooltip bottom>
+                                <v-tooltip location="bottom">
                                     <template #activator="{ props }">
                                         <v-btn
                                             v-bind="props"
                                             icon
                                             size="small"
                                             variant="text"
-                                            color="grey-darken-1"
                                             @click="insertEmoji"
                                         >
                                             <v-icon>mdi-emoticon-happy-outline</v-icon>
@@ -53,14 +51,13 @@
                                     <span>{{ $t('conversation.addEmoji') }}</span>
                                 </v-tooltip>
 
-                                <v-tooltip bottom>
+                                <v-tooltip location="bottom">
                                     <template #activator="{ props }">
                                         <v-btn
                                             v-bind="props"
                                             icon
                                             size="small"
                                             variant="text"
-                                            color="grey-darken-1"
                                             @click="attachFile"
                                         >
                                             <v-icon>mdi-attachment</v-icon>
@@ -72,20 +69,18 @@
                                 <v-chip
                                     v-if="body"
                                     size="x-small"
-                                    color="grey"
-                                    variant="outlined"
+                                    variant="tonal"
                                     class="ml-2"
                                 >
                                     {{ characterCount }} {{ $t('conversation.characters') }}
                                 </v-chip>
                             </div>
 
-                            <div class="d-flex align-center gap-2">
+                            <div class="d-flex align-center ga-2">
                                 <v-btn
                                     v-if="body"
-                                    variant="outlined"
                                     size="small"
-                                    color="grey"
+                                    variant="text"
                                     @click="clearMessage"
                                     :disabled="isSubmitting"
                                 >
@@ -95,6 +90,7 @@
                                 <v-btn
                                     type="submit"
                                     color="primary"
+                                    variant="flat"
                                     :loading="isSubmitting"
                                     :disabled="!body?.trim() || isSubmitting"
                                     class="px-6"
@@ -106,7 +102,7 @@
                         </div>
 
                         <!-- Keyboard Shortcut Hint -->
-                        <div class="text-caption text-grey-darken-1 mt-2">
+                        <div class="text-caption text-medium-emphasis mt-2">
                             <v-icon size="12" class="mr-1">mdi-keyboard</v-icon>
                             {{ $t('conversation.keyboardShortcutHint') }}
                         </div>
@@ -234,30 +230,15 @@ export default defineComponent({
 
 <style scoped>
 .reply-form-card {
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    border-radius: 16px !important;
-    background: linear-gradient(145deg, #fafafa 0%, #f5f5f5 100%);
+    background-color: rgba(var(--v-theme-on-surface), 0.03);
 }
 
 .reply-textarea :deep(.v-field) {
-    border-radius: 12px;
-    background-color: white;
+    background-color: rgb(var(--v-theme-surface));
 }
 
 .reply-textarea :deep(.v-field--focused) {
     box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.2);
-}
-
-.reply-textarea :deep(.v-textarea .v-field__input) {
-    padding-top: 12px;
-}
-
-.gap-2 {
-    gap: 8px;
-}
-
-.gap-3 {
-    gap: 12px;
 }
 
 @media (max-width: 600px) {
@@ -266,7 +247,7 @@ export default defineComponent({
         gap: 12px;
     }
 
-    .d-flex.align-center.gap-2 {
+    .d-flex.align-center.ga-2 {
         justify-content: center;
     }
 }

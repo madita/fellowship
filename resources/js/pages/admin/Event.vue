@@ -1,6 +1,6 @@
 <template>
   <div class="flex-grow-1">
-      <data-table endpoint="/datatable/events"></data-table>
+      <data-table endpoint="/datatable/events" :title="$t('admin.events.title')" icon="mdi-calendar" />
   </div>
 </template>
 

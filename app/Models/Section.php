@@ -13,9 +13,9 @@ class Section extends Model implements TranslatableContract
     use HasFactory;
     use Translatable;
 
-    protected $table = 'sections';
-
     public $translatedAttributes = ['title'];
+
+    protected $table = 'sections';
 
     protected $fillable = [
         'location',
@@ -89,32 +89,6 @@ class Section extends Model implements TranslatableContract
     }
 
     /**
-     * Boot method to clear cache on save/delete.
-     */
-    protected static function boot()
-    {
-        parent::boot();
-
-        // Add global scope for location
-        static::addGlobalScope('location', function ($builder) {
-            $builder->where('location', 'home');
-        });
-
-        static::deleting(function ($section) {
-            // Delete all widgets in this section
-            $section->widgets()->delete();
-        });
-
-        static::saved(function () {
-            self::clearCache();
-        });
-
-        static::deleted(function () {
-            self::clearCache();
-        });
-    }
-
-    /**
      * Get the number of columns for this section's layout.
      */
     public function getColumnCountAttribute()
@@ -142,5 +116,31 @@ class Section extends Model implements TranslatableContract
             '1-2-col' => [4, 8], // 33% / 66%
             default   => [12],
         };
+    }
+
+    /**
+     * Boot method to clear cache on save/delete.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Add global scope for location
+        static::addGlobalScope('location', function ($builder) {
+            $builder->where('location', 'home');
+        });
+
+        static::deleting(function ($section) {
+            // Delete all widgets in this section
+            $section->widgets()->delete();
+        });
+
+        static::saved(function () {
+            self::clearCache();
+        });
+
+        static::deleted(function () {
+            self::clearCache();
+        });
     }
 }

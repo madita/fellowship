@@ -17,6 +17,7 @@ import FooterContactWidget from './FooterContactWidget.vue';
 import FooterNewsletterWidget from './FooterNewsletterWidget.vue';
 import FooterSocialWidget from './FooterSocialWidget.vue';
 import FooterTextWidget from './FooterTextWidget.vue';
+import FooterMenuWidget from './FooterMenuWidget.vue';
 
 const props = defineProps({
     widget: {
@@ -31,6 +32,7 @@ const widgetComponents = {
     'newsletter': FooterNewsletterWidget,
     'social': FooterSocialWidget,
     'text': FooterTextWidget,
+    'menu': FooterMenuWidget,
 };
 
 const widgetComponent = computed(() => {

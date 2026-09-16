@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { useUserStore } from '@/store/userStore.js'
 import { useApi } from '@/api/useAPI.js'
 import { debug } from '@/utils/debug.js'
+import { resetSessionTimeoutState } from '@/plugins/sessionTimeout.js'
 
 const log = debug.module('AuthStore')
 const web = useApi('web')
@@ -99,6 +100,9 @@ export const useAuthStore = defineStore('auth', {
                     isLoggedIn: true,
                     isVerified
                 })
+
+                // Reset session timeout state after successful login
+                resetSessionTimeoutState()
 
                 log.log('User logged in:', user.user)
             } catch (error) {

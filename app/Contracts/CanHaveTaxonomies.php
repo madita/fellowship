@@ -9,6 +9,5 @@ use Illuminate\Database\Eloquent\Relations\MorphToMany;
  */
 interface CanHaveTaxonomies
 {
-    /** @return MorphToMany */
     public function taxonomies(): MorphToMany;
 }

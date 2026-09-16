@@ -1,11 +1,13 @@
 <template>
     <!-- Bind modelValue to the dialog's v-model -->
-    <VDialog v-model="internalModelValue" width="auto">
-        <v-card
-            min-width="400"
-            prepend-icon="mdi-calendar"
-            :title="$t('events.eventDetails')"
-        >
+    <VDialog v-model="internalModelValue" max-width="900">
+        <v-card>
+            <v-card-title class="text-h6 d-flex align-center">
+                <v-icon start>mdi-calendar</v-icon>
+                {{ $t('events.eventDetails') }}
+            </v-card-title>
+            <v-divider />
+
             <!-- Toolbar with filter and column selector icons -->
             <v-card-text class="pb-0">
                 <v-row>
@@ -14,17 +16,15 @@
                             v-model="search"
                             :label="$t('common.search')"
                             prepend-inner-icon="mdi-magnify"
-                            variant="outlined"
                             hide-details
                             single-line
                         ></v-text-field>
                     </v-col>
-                    <v-col cols="4" class="d-flex justify-end">
+                    <v-col cols="4" class="d-flex justify-end ga-2">
                         <v-btn
                             icon
                             variant="text"
                             color="primary"
-                            class="mr-2"
                             @click="openFilterDialog"
                         >
                             <v-icon>mdi-filter</v-icon>
@@ -41,7 +41,6 @@
                             icon
                             variant="text"
                             color="primary"
-                            class="mr-2"
                             @click="exportToCsv"
                             :title="$t('events.exportToCsv')"
                         >
@@ -65,7 +64,7 @@
                             </template>
 
                             <v-card min-width="300">
-                                <v-card-title>{{ $t('events.selectOptions') }}</v-card-title>
+                                <v-card-title class="text-h6">{{ $t('events.selectOptions') }}</v-card-title>
                                 <v-card-text>
                                     <v-list>
                                         <v-list-item v-for="(item, i) in allColumnOptions" :key="i">
@@ -96,9 +95,10 @@
             </v-card-text>
 
             <!-- Filter Dialog -->
-            <v-dialog v-model="showFilterDialog" max-width="700">
+            <v-dialog v-model="showFilterDialog" max-width="600">
                 <v-card>
-                    <v-card-title>{{ $t('events.filterOptions') }}</v-card-title>
+                    <v-card-title class="text-h6">{{ $t('events.filterOptions') }}</v-card-title>
+                    <v-divider />
                     <v-card-text>
                         <v-row>
                             <v-col cols="12" sm="6">
@@ -122,7 +122,6 @@
                                           v-model="filterData['days']"
                                           :items="eventDays"
                                           :label="$t('events.days')"
-                                          outlined
                                           multiple
                                 />
                             </v-col>
@@ -172,15 +171,16 @@
                     <v-card-actions>
                         <v-spacer></v-spacer>
                         <v-btn color="error" variant="text" @click="clearAllFilters">{{ $t('events.clearAll') }}</v-btn>
-                        <v-btn color="primary" @click="showFilterDialog = false">{{ $t('events.applyFilters') }}</v-btn>
+                        <v-btn color="primary" variant="flat" @click="showFilterDialog = false">{{ $t('events.applyFilters') }}</v-btn>
                     </v-card-actions>
                 </v-card>
             </v-dialog>
 
             <!-- Columns Dialog -->
-            <v-dialog v-model="showColumnsDialog" max-width="500">
+            <v-dialog v-model="showColumnsDialog" max-width="480">
                 <v-card>
-                    <v-card-title>{{ $t('events.columnVisibility') }}</v-card-title>
+                    <v-card-title class="text-h6">{{ $t('events.columnVisibility') }}</v-card-title>
+                    <v-divider />
                     <v-card-text>
                         <v-select
                             v-model="visibleColumns"
@@ -189,13 +189,12 @@
                             multiple
                             chips
                             closable-chips
-                            variant="outlined"
                         ></v-select>
                     </v-card-text>
                     <v-card-actions>
                         <v-spacer></v-spacer>
                         <v-btn color="error" variant="text" @click="resetColumns">{{ $t('events.reset') }}</v-btn>
-                        <v-btn color="primary" @click="showColumnsDialog = false">{{ $t('events.apply') }}</v-btn>
+                        <v-btn color="primary" variant="flat" @click="showColumnsDialog = false">{{ $t('events.apply') }}</v-btn>
                     </v-card-actions>
                 </v-card>
             </v-dialog>
@@ -219,13 +218,13 @@
                     <template v-if="header.key !== 'user'">
                         <!-- Arrays with objects (games, breakfast, etc.) -->
                         <template v-if="value && Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && 'title' in value[0]">
-                            <v-chip v-for="itemDetail in value" :key="itemDetail.id">
+                            <v-chip v-for="itemDetail in value" :key="itemDetail.id" variant="tonal" size="small" class="ma-1">
                                 {{ itemDetail.title }}
                             </v-chip>
                         </template>
                         <!-- Array of primitives (days) -->
                         <template v-else-if="value && Array.isArray(value)">
-                            <v-chip v-for="(itemDetail, index) in value" :key="index">
+                            <v-chip v-for="(itemDetail, index) in value" :key="index" variant="tonal" size="small" class="ma-1">
                                 {{ itemDetail }}
                             </v-chip>
                         </template>
@@ -256,15 +255,17 @@
                         </td>
                     </tr>
                 </template>
+
+                <template v-slot:no-data>
+                    <empty-state compact icon="mdi-account-off-outline" :title="$t('dataTable.noData')" />
+                </template>
             </v-data-table>
 
-            <template v-slot:actions>
-                <v-btn
-                    class="ms-auto"
-                    :text="$t('common.close')"
-                    @click="internalModelValue = false"
-                ></v-btn>
-            </template>
+            <v-divider />
+            <v-card-actions>
+                <v-spacer />
+                <v-btn variant="text" @click="internalModelValue = false">{{ $t('common.close') }}</v-btn>
+            </v-card-actions>
         </v-card>
     </VDialog>
 </template>
@@ -274,6 +275,7 @@ import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from "axios";
 import UserAvatar from "@/components/common/UserAvatar.vue";
+import EmptyState from "@/components/common/EmptyState.vue";
 
 const { t } = useI18n();
 

@@ -1,4 +1,3 @@
-// import menuAdmin from './menus/admin.menu.js'
 
 export default {
     // main navigation - side menu
@@ -8,19 +7,13 @@ export default {
             key: 'menu.main',
             items: [
                 { icon: 'mdi-view-dashboard-outline', key: 'menu.dashboard', text: 'Dashboard', link: '/dashboard' },
-                { icon: 'mdi-message-text-outline', key: 'menu.chat', text: 'Chat', link: '/chat' },
-                { icon: 'mdi-calendar', key: 'menu.events', text: 'Events', link: '/events' },
-                { icon: 'mdi-file-outline', key: 'menu.wiki', text: 'Wiki', link: '/wiki' },
-                {
-                    icon: 'mdi-forum-outline',
-                    key: 'menu.feedback',
-                    text: 'Feedback',
-                    items: [
-                        { icon: 'mdi-bug', key: 'menu.feedbackBugs', text: 'Bug Reports', link: '/feedback/bugs' },
-                        { icon: 'mdi-lightbulb', key: 'menu.feedbackFeatures', text: 'Feature Requests', link: '/feedback/features' }
-                    ]
-                },
-                { icon: 'mdi-file-outline', key: 'menu.blank', text: 'Blank Page', link: '/blank' }
+                { feature: 'timeline', icon: 'mdi-timeline-text-outline', key: 'menu.timeline', text: 'Timeline', link: '/timeline' },
+                { feature: 'chat', icon: 'mdi-message-text-outline', key: 'menu.chat', text: 'Chat', link: '/chat' },
+                { feature: 'events', icon: 'mdi-calendar', key: 'menu.events', text: 'Events', link: '/events' },
+                { feature: 'wiki', icon: 'mdi-file-outline', key: 'menu.wiki', text: 'Wiki', link: '/wiki' },
+                { feature: 'forum', icon: 'mdi-forum', key: 'menu.forum', text: 'Forum', link: '/forum' },
+                { feature: 'irc', icon: 'mdi-chat-processing-outline', key: 'menu.irc', text: 'IRC', link: '/irc' },
+                { feature: 'gallery', icon: 'mdi-image-multiple-outline', key: 'menu.gallery', text: 'Gallery', link: '/gallery' }
             ]
         },
         {
@@ -28,8 +21,7 @@ export default {
             key: 'menu.admin',
             role: 'admin',
             items: [
-                {permission: 'manage-role', icon: 'mdi-shield-account-outline', key: 'menu.adminRoles', text: 'Roles', link: '/admin/roles'},
-                {permission: 'manage-role', icon: 'mdi-key-outline', key: 'menu.adminPermission', text: 'Permissions', link: '/admin/permissions'},
+                {icon: 'mdi-view-dashboard-outline', key: 'menu.adminDashboard', text: 'Dashboard', link: '/admin/dashboard'},
                 {icon: 'mdi-account-group-outline', key: 'menu.adminUsers', text: 'Users', link: '/admin/users'},
                 {icon: 'mdi-file-document-outline', key: 'menu.adminPages', text: 'Pages', link: '/admin/pages'},
                 {icon: 'mdi-post-outline', key: 'menu.adminPosts', text: 'Posts', link: '/admin/posts'},
@@ -44,22 +36,14 @@ export default {
                         {icon: 'mdi-calendar-account-outline', key: 'menu.adminEventsProfiles', text: 'Profiles', link: '/admin/events/profiles'}
                     ]
                 },
-                {
-                    icon: 'mdi-tag-multiple-outline',
-                    key: 'menu.adminTags',
-                    text: 'Taxonomie',
-                    link: '/admin/tags',
-                    regex: /^\/admin\/tags/,
-                    items: [
-                        {icon: 'mdi-tag', key: 'menu.adminTaxonomie', text: 'Taxonomie', link: '/admin/tags/taxonomie'},
-                        {icon: 'mdi-tag-outline', key: 'menu.adminTerms', text: 'Terms', link: '/admin/tags/terms'}
-                    ]
-                },
                 {icon: 'mdi-folder-multiple-image', key: 'menu.adminMedia', text: 'Media Center', link: '/admin/media'},
                 {icon: 'mdi-ticket-outline', key: 'menu.adminTickets', text: 'Tickets', link: '/admin/tickets'},
-                {icon: 'mdi-translate', key: 'menu.adminTranslations', text: 'Translations', link: '/admin/translations'},
-                {icon: 'mdi-cog-outline', key: 'menu.adminSettings', text: 'Settings', link: '/admin/settings'},
+
+                {icon: 'mdi-poll', key: 'menu.adminPolls', text: 'Polls', link: '/admin/polls'},
+                {icon: 'mdi-link-variant', key: 'menu.adminRelations', text: 'Related Content', link: '/admin/related-content'},
                 {icon: 'mdi-bullhorn-outline', key: 'menu.adminAnnouncement', text: 'Announcement', link: '/admin/announcements'},
+                // Roles, permissions, taxonomies, forum categories, translations and the migration tool live in the settings overview.
+                {icon: 'mdi-cog-outline', key: 'menu.adminSettings', text: 'Settings', link: '/admin/settings'},
             ]
         }
     ],

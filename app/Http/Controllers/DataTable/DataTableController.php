@@ -3,18 +3,40 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Http\Controllers\Controller;
+use App\Models\Revision;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
+/**
+ * Base class of the admin data tables (server-side paging, sorting, search).
+ *
+ * Query parameters:
+ *  - page, per_page (legacy: itemsPerPage / itemsLength), clamped to $perPageOptions
+ *  - sort_by + sort_dir, only sortable header keys; default $defaultSort
+ *  - search: free text OR-ed across getSearchableColumns() (+ exact id when numeric)
+ *  - column + operator + value: advanced filter, AND-ed with search
+ *  - toggle filters are read by the concrete builder() (e.g. exclude_wiki)
+ */
 abstract class DataTableController extends Controller
 {
+    /** Escape character used in LIKE patterns (portable across MySQL/SQLite). */
+    protected const LIKE_ESCAPE = '!';
+
+    /** How much of one side of a change a revision may carry, in characters. */
+    protected const HISTORY_VALUE_LIMIT = 100000;
+
     /**
      * If an entity is allowed to be created.
      *
@@ -29,27 +51,79 @@ abstract class DataTableController extends Controller
      */
     protected $allowDeletion = true;
 
-    /*Does Edit Form for model exist?*/
+    /* Does Edit Form for model exist? */
     protected $hasForm = false;
 
     /**
-     * The entity builder.
+     * The entity builder (template only — queries are built from a fresh
+     * builder() call so a reused controller instance never accumulates wheres).
      *
      * @var Builder
      */
     protected $builder;
 
     /**
+     * Default sort as [column, direction] when no valid sort_by is requested.
+     */
+    protected array $defaultSort = ['id', 'desc'];
+
+    /**
+     * Page sizes a client may ask for; anything else clamps to the nearest.
+     */
+    protected array $perPageOptions = [10, 25, 50, 100];
+
+    protected int $defaultPerPage = 10;
+
+    /**
+     * Column metadata per table name (Schema::getColumns), cached per instance.
+     *
+     * @var array<string, array<string, array>>
+     */
+    private array $schemaColumns = [];
+
+    /**
+     * Resolved header types keyed by column, cached per instance.
+     */
+    private ?array $resolvedColumnTypes = null;
+
+    /**
+     * Create the controller, check builder method and assign
+     * to the builder property.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        if ( ! method_exists($this, 'builder')) {
+            throw new Exception('No entity builder method defined.');
+        }
+
+        if ( ! ($this->builder = $this->builder()) instanceof Builder) {
+            throw new Exception('Entity builder not instance of Builder.');
+        }
+    }
+
+    /**
      * Get the columns that are allowed to be displayed.
+     *
+     * Defaults to the table's columns minus hidden ones; translatable models
+     * get their translated attributes right after the primary key.
      *
      * @return array
      */
     public function getDisplayableColumns()
     {
-        return array_diff(
-            $this->getDatabaseColumnNames(),
-            $this->builder->getModel()->getHidden()
-        );
+        $model   = $this->model();
+        $columns = array_values(array_diff($this->getDatabaseColumnNames(), $model->getHidden()));
+
+        $translated = array_values(array_diff($this->getTranslatedColumns(), $model->getHidden(), $columns));
+
+        if ($translated) {
+            $keyPosition = array_search($model->getKeyName(), $columns, true);
+            array_splice($columns, $keyPosition === false ? 0 : $keyPosition + 1, 0, $translated);
+        }
+
+        return $columns;
     }
 
     /**
@@ -68,90 +142,147 @@ abstract class DataTableController extends Controller
     }
 
     /**
-     * Create the controller, check builder method and assign
-     * to the builder property.
-     *
-     * @return void
+     * Per-column type overrides: [column => id|text|longtext|boolean|number|date|datetime|json|image].
      */
-    public function __construct()
+    public function getColumnTypes(): array
     {
-        if (!method_exists($this, 'builder')) {
-            throw new Exception('No entity builder method defined.');
-        }
+        return [];
+    }
 
-        if (!($this->builder = $this->builder()) instanceof Builder) {
-            throw new Exception('Entity builder not instance of Builder.');
-        }
+    /**
+     * Columns the free-text `search` looks at: displayable text columns of the
+     * table plus displayable translated attributes. Override to widen/narrow.
+     */
+    public function getSearchableColumns(): array
+    {
+        $types = $this->resolveColumnTypes();
+
+        return array_values(array_filter(
+            $this->getDisplayableColumns(),
+            fn ($column) => $this->isQueryableColumn($column)
+                && in_array($types[$column] ?? null, ['text', 'longtext'], true)
+        ));
+    }
+
+    /**
+     * Columns that can be sorted: real table columns (except json) and
+     * translated attributes that are displayed.
+     */
+    public function getSortableColumns(): array
+    {
+        $types = $this->resolveColumnTypes();
+
+        return array_values(array_filter(
+            $this->getDisplayableColumns(),
+            fn ($column) => $this->isTranslatedColumn($column)
+                || ($this->isDatabaseColumn($column) && ($types[$column] ?? null) !== 'json')
+        ));
     }
 
     public function getHeaders()
     {
         $columnNames = $this->getCustomColumnsNames();
+        $types       = $this->resolveColumnTypes();
+        $sortable    = $this->getSortableColumns();
 
-        return collect($this->getDisplayableColumns())->map(function ($column) use ($columnNames) {
+        return collect($this->getDisplayableColumns())->values()->map(function ($column) use ($columnNames, $types, $sortable) {
+            $title = $columnNames[$column] ?? $this->humanizeColumn($column);
+            $type  = $types[$column] ?? 'text';
+
             return [
-                'text'     => isset($columnNames[$column]) ? $columnNames[$column] : $column,
-                'sortable' => false,
-                'value'    => $column,
+                'key'      => $column,
+                'title'    => $title,
+                'sortable' => in_array($column, $sortable, true),
+                'type'     => $type,
+                'align'    => $this->alignFor($type),
+                // Backward compatibility with the previous header shape.
+                'text'  => $title,
+                'value' => $column,
             ];
-        })->add([
-            'text'     => 'Actions',
+        })->push([
+            'key'      => 'actions',
+            'title'    => 'Actions',
             'sortable' => false,
+            'align'    => 'end',
+            'text'     => 'Actions',
             'value'    => 'actions',
         ]);
     }
 
     /**
-     * Get records to be used for output.
+     * Get the paginated records to be used for output.
      *
-     * @param Request $request
-     *
-     * @return Collection
+     * @return LengthAwarePaginator
      */
     public function getRecords(Request $request)
     {
-        $builder = $this->builder;
+        $builder = $this->newQuery();
+
+        if ($this->isTranslatable()) {
+            // Avoid one translations query per row when serialising.
+            $builder->with('translations');
+        }
+
+        $term = $this->resolveSearchTerm($request);
+        if ($term !== null) {
+            $this->applyFreeTextSearch($builder, $term);
+        }
 
         if ($this->hasSearchQuery($request)) {
             $builder = $this->buildSearch($builder, $request);
         }
 
+        [$sortBy, $sortDir] = $this->resolveSort($request);
+        $this->applySort($builder, $sortBy, $sortDir);
+
+        $perPage = $this->resolvePerPage($request);
+        $page    = $this->resolvePage($request);
+
         try {
-            //if model has appended attributes and append attributes  not in displayable colimns...forget them
-            $forget = array_diff($this->getAppends(), $this->getDisplayableColumns());
-//            dd($request);
-            $pagination = (int) $request->get('itemsPerPage') <= 0 ? (int) $request->get('itemsLength') : (int) $request->get('itemsPerPage');
-//            dd((int)$request->get('itemsLength'));
-
-            if ($pagination === 0) {
-                return $builder->orderBy('id', 'asc')->get()->makeHidden($forget);
-            }
-
-            return $builder->orderBy('id', 'asc')->get()->makeHidden($forget)->paginate($pagination);
+            $records = $builder->paginate($perPage, ['*'], 'page', $page)->withQueryString();
         } catch (QueryException $e) {
-            return collect([]);
+            report($e);
+
+            $records = new LengthAwarePaginator([], 0, $perPage, $page, [
+                'path'     => $request->url(),
+                'pageName' => 'page',
+            ]);
         }
+
+        // if model has appended attributes and append attributes not in displayable columns... forget them
+        $forget = array_values(array_diff($this->getAppends(), $this->getDisplayableColumns()));
+        if ($forget) {
+            $records->getCollection()->each->makeHidden($forget);
+        }
+
+        return $records;
     }
 
     /**
      * Show a list of entities.
-     *
-     * @return JsonResponse
      */
     public function index(Request $request): JsonResponse
     {
+        [$sortBy, $sortDir] = $this->resolveSort($request);
+
         return response()->json([
             'data' => [
-                'table'         => $this->builder->getModel()->getTable(),
-                'headers'       => $this->getHeaders(),
-                'records'       => $this->getRecords($request),
-                'updatable'     => array_values($this->getUpdatableColumns()),
-                'displayable'   => array_values($this->getDisplayableColumns()),
-                'column_map'    => $this->getCustomColumnsNames(),
-                'column_fields' => $this->getCustomInputFields(),
-                'json_fields'   => $this->getCustomJsonFields(),
-                'filter_fields' => $this->getFilterFields(),
-                'allow'         => [
+                'table'            => $this->model()->getTable(),
+                'headers'          => $this->getHeaders(),
+                'records'          => $this->getRecords($request),
+                'updatable'        => array_values($this->getUpdatableColumns()),
+                'displayable'      => array_values($this->getDisplayableColumns()),
+                'searchable'       => $this->resolveSearchableColumns(),
+                'sort'             => ['by' => $sortBy, 'dir' => $sortDir],
+                'per_page_options' => array_values($this->perPageOptions),
+                'column_map'       => $this->getCustomColumnsNames(),
+                'column_fields'    => $this->getCustomInputFields(),
+                'json_fields'      => $this->getCustomJsonFields(),
+                'filter_fields'    => $this->getFilterFields(),
+                'taxonomy_fields'  => $this->getTaxonomyFields(),
+                'toggle_filters'   => $this->getToggleFilters(),
+                'relations'        => $this->getRelations(),
+                'allow'            => [
                     'hasForm'  => $this->hasForm,
                     'creation' => $this->allowCreation,
                     'deletion' => $this->allowDeletion,
@@ -160,9 +291,20 @@ abstract class DataTableController extends Controller
         ]);
     }
 
+    /**
+     * Related records shown in the edit drawer, e.g. a user's event profiles.
+     * Each entry has key, title, icon and an endpoint with an {id} placeholder
+     * that returns { data: { columns: [{ key, title, type }], rows: [{ id, url,
+     * values: { key: value }, details: [{ label, value }] }] } }.
+     */
+    public function getRelations(): array
+    {
+        return [];
+    }
+
     public function show($id, Request $request): JsonResponse
     {
-        $data = $this->builder->find($id);
+        $data = $this->newQuery()->find($id);
 
         return response()->json(
             $data
@@ -170,59 +312,167 @@ abstract class DataTableController extends Controller
     }
 
     /**
+     * What has been changed on one row, newest first, shaped for the drawer.
+     *
+     * Rows carry the summary the table shows; the expanded detail lists each
+     * changed field with the value before and after it.
+     */
+    public function history($id, Request $request): JsonResponse
+    {
+        $record = $this->newQuery()->findOrFail($id);
+
+        $columns = [
+            ['key' => 'change', 'title' => 'Change', 'type' => 'text'],
+            ['key' => 'author', 'title' => 'By', 'type' => 'text'],
+            ['key' => 'date', 'title' => 'When', 'type' => 'datetime'],
+        ];
+
+        if ( ! method_exists($record, 'revisions')) {
+            return response()->json(['data' => ['columns' => $columns, 'rows' => []]]);
+        }
+
+        // Where one revision of this row can be read in full. The list stays
+        // a summary on purpose: an article body per revision would be a large
+        // answer for a drawer most of which is never expanded.
+        $detailBase = '/' . ltrim(Str::after($request->path(), 'api'), '/');
+
+        $rows = $this->revisionsOf($record)->map(function (Revision $revision) use ($detailBase) {
+            $diff = $revision->getDiff();
+
+            return [
+                'id'     => $revision->id,
+                'values' => [
+                    // The same field names the expanded row puts above each
+                    // diff, so the summary and the detail read alike.
+                    'change' => $revision->action === 'created'
+                        ? 'Created'
+                        : implode(', ', array_map(fn ($field) => Str::headline($field), array_keys($diff))),
+                    'author' => $revision->executor?->username,
+                    'date'   => $revision->created_at,
+                ],
+                'details_url' => $detailBase . '/' . $revision->id,
+            ];
+        })->values();
+
+        return response()->json(['data' => ['columns' => $columns, 'rows' => $rows]]);
+    }
+
+    /**
+     * One revision in full: every changed field with the text before and
+     * after it, for the diff the drawer draws when a row is expanded.
+     */
+    public function historyRevision($id, $revision): JsonResponse
+    {
+        $record = $this->newQuery()->findOrFail($id);
+
+        if ( ! method_exists($record, 'revisions')) {
+            abort(404);
+        }
+
+        $target = $this->revisionsOf($record)->firstWhere('id', (int) $revision);
+
+        if ( ! $target) {
+            abort(404);
+        }
+
+        $changes = collect($target->getDiff())
+            ->map(function (array $change, string $field) {
+                $old = $change['old_value'] ?? null;
+                $new = $change['new_value'] ?? null;
+
+                return [
+                    'field' => $field,
+                    'label' => Str::headline($field),
+                    'old'   => $this->historyValue($old),
+                    'new'   => $this->historyValue($new),
+                    // Markup has to be flattened before it can be compared;
+                    // a slug or a date must not be, or every < would vanish.
+                    'html'  => $this->looksLikeHtml($old) || $this->looksLikeHtml($new),
+                ];
+            })
+            ->values()
+            ->all();
+
+        return response()->json([
+            'data' => [
+                'id'      => $target->id,
+                'action'  => $target->action,
+                'author'  => $target->executor?->only(['id', 'username']),
+                'date'    => $target->created_at,
+                'changes' => $changes,
+            ],
+        ]);
+    }
+
+    /**
      * Create an entity.
      *
-     * @param Request $request
      *
      * @return Response|void
      */
     public function store(Request $request)
     {
-        if (!$this->allowCreation) {
+        if ( ! $this->allowCreation) {
             return;
         }
 
-        $this->builder->create($request->only($this->getUpdatableColumns()));
+        $this->newQuery()->create($request->only($this->getUpdatableColumns()));
     }
 
     /**
      * Update an entity.
      *
-     * @param int     $id
-     * @param Request $request
-     *
+     * @param  int  $id
      * @return Response
      */
     public function update($id, Request $request)
     {
-        return $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
+        return $this->newQuery()->findOrFail($id)->update($request->only($this->getUpdatableColumns()));
     }
 
     /**
-     * Delete an entity.
+     * Delete one or more entities: DELETE /api/datatable/{table}/{id,id,...}.
      *
-     * @param int     $id
-     * @param Request $request
+     * Records are deleted one by one so model events run (translations,
+     * soft deletes, cache busting, media, role pivots ...).
      *
-     * @return Response|void
+     * @param  string|int  $ids
+     * @return JsonResponse
      */
     public function destroy($ids, Request $request)
     {
-        if (!$this->allowDeletion) {
-            return;
+        if ( ! $this->allowDeletion) {
+            return response()->json([
+                'message' => 'Deleting records is not allowed for this table.',
+                'deleted' => 0,
+            ], 403);
         }
 
-        $this->builder->whereIn('id', explode(',', $ids))->delete();
-    }
+        $keys = $this->parseIds($ids);
 
-    /**
-     * Get the database column names for the entity.
-     *
-     * @return array
-     */
-    protected function getDatabaseColumnNames(): array
-    {
-        return array_merge(Schema::getColumnListing($this->builder->getModel()->getTable()), $this->getAppends());
+        if ($keys === []) {
+            return response()->json([
+                'message' => 'No valid ids given.',
+                'deleted' => 0,
+            ], 422);
+        }
+
+        $deleted = DB::transaction(function () use ($keys) {
+            $count = 0;
+
+            foreach ($this->newQuery()->whereKey($keys)->get() as $record) {
+                if ($record->delete() !== false) {
+                    $count++;
+                }
+            }
+
+            return $count;
+        });
+
+        return response()->json([
+            'message' => $deleted === 1 ? '1 record deleted.' : "{$deleted} records deleted.",
+            'deleted' => $deleted,
+        ]);
     }
 
     public function getCustomInputFields()
@@ -240,27 +490,473 @@ abstract class DataTableController extends Controller
         return [];
     }
 
+    public function getTaxonomyFields()
+    {
+        return [];
+    }
+
+    public function getToggleFilters()
+    {
+        return [];
+    }
+
+    public function getAppends()
+    {
+        return [];
+    }
+
+    public function getCategories($taxonomy)
+    {
+        $this->builder->getModel()->getCategories($taxonomy);
+    }
+
+    /**
+     * The revisions of one row, newest first.
+     *
+     * @return Collection<int,Revision>
+     */
+    protected function revisionsOf(Model $record)
+    {
+        // The listener writes the table name; a morph class may appear on rows
+        // written by other code paths. Both mean this record.
+        return Revision::with('executor')
+            ->whereIn('revisionable_type', [$record->getMorphClass(), $record->getTable()])
+            ->where('revisionable_id', $record->getKey())
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * One side of a change as the diff view wants it: a string, and never so
+     * long that a single revision becomes a download.
+     */
+    protected function historyValue($value): string
+    {
+        if ($value === null || is_scalar($value)) {
+            $text = (string) $value;
+        } else {
+            $text = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) ?: '';
+        }
+
+        return mb_strlen($text) > self::HISTORY_VALUE_LIMIT
+            ? mb_substr($text, 0, self::HISTORY_VALUE_LIMIT) . '…'
+            : $text;
+    }
+
+    protected function looksLikeHtml($value): bool
+    {
+        return is_string($value) && $value !== strip_tags($value);
+    }
+
+    /**
+     * A fresh query from the concrete builder() for every operation.
+     */
+    protected function newQuery(): Builder
+    {
+        $builder = $this->builder();
+
+        if ( ! $builder instanceof Builder) {
+            throw new Exception('Entity builder not instance of Builder.');
+        }
+
+        return $builder;
+    }
+
+    protected function model(): Model
+    {
+        return $this->builder->getModel();
+    }
+
+    /**
+     * Get the database column names for the entity.
+     */
+    protected function getDatabaseColumnNames(): array
+    {
+        return array_merge(array_keys($this->getTableColumns($this->model()->getTable())), $this->getAppends());
+    }
+
+    /**
+     * Column metadata (name, type_name, type, ...) of a table on the model's connection.
+     */
+    protected function getTableColumns(string $table): array
+    {
+        if ( ! array_key_exists($table, $this->schemaColumns)) {
+            $columns = [];
+
+            foreach ($this->model()->getConnection()->getSchemaBuilder()->getColumns($table) as $column) {
+                $columns[$column['name']] = $column;
+            }
+
+            $this->schemaColumns[$table] = $columns;
+        }
+
+        return $this->schemaColumns[$table];
+    }
+
+    protected function isTranslatable(): bool
+    {
+        $model = $this->model();
+
+        return $model instanceof TranslatableContract
+            && property_exists($model, 'translatedAttributes')
+            && is_array($model->translatedAttributes);
+    }
+
+    /**
+     * The model's Astrotomic translated attributes (empty for plain models).
+     */
+    protected function getTranslatedColumns(): array
+    {
+        return $this->isTranslatable() ? array_values($this->model()->translatedAttributes) : [];
+    }
+
+    protected function getTranslationTable(): ?string
+    {
+        return $this->isTranslatable() ? $this->model()->translations()->getRelated()->getTable() : null;
+    }
+
+    protected function isDatabaseColumn(string $column): bool
+    {
+        return array_key_exists($column, $this->getTableColumns($this->model()->getTable()));
+    }
+
+    protected function isTranslatedColumn(string $column): bool
+    {
+        return ! $this->isDatabaseColumn($column) && in_array($column, $this->getTranslatedColumns(), true);
+    }
+
+    /**
+     * A column that can safely be used in a where/order clause.
+     */
+    protected function isQueryableColumn(string $column): bool
+    {
+        return $this->isDatabaseColumn($column) || $this->isTranslatedColumn($column);
+    }
+
+    /**
+     * Type of every displayable column: getColumnTypes() override, else
+     * detected from casts / DB column type.
+     */
+    protected function resolveColumnTypes(): array
+    {
+        if ($this->resolvedColumnTypes === null) {
+            $overrides = $this->getColumnTypes();
+            $types     = [];
+
+            foreach ($this->getDisplayableColumns() as $column) {
+                $types[$column] = $overrides[$column] ?? $this->detectColumnType($column);
+            }
+
+            $this->resolvedColumnTypes = $types;
+        }
+
+        return $this->resolvedColumnTypes;
+    }
+
+    protected function detectColumnType(string $column): string
+    {
+        $model = $this->model();
+
+        if ($column === $model->getKeyName()) {
+            return 'id';
+        }
+
+        if ($this->isTranslatedColumn($column)) {
+            $meta = $this->getTableColumns($this->getTranslationTable())[$column] ?? null;
+
+            return $meta && $this->mapDatabaseType($meta) === 'longtext' ? 'longtext' : 'text';
+        }
+
+        if ($type = $this->typeFromCast($column)) {
+            return $type;
+        }
+
+        if (preg_match('/(^|_)(image|avatar|thumbnail|photo|cover|logo)(_url|_path)?$/i', $column)) {
+            return 'image';
+        }
+
+        $meta = $this->getTableColumns($model->getTable())[$column] ?? null;
+
+        return $meta ? $this->mapDatabaseType($meta) : 'text';
+    }
+
+    protected function typeFromCast(string $column): ?string
+    {
+        $model = $this->model();
+        $casts = $model->getCasts();
+
+        if ( ! isset($casts[$column])) {
+            return in_array($column, $model->getDates(), true) ? 'datetime' : null;
+        }
+
+        $cast = strtolower((string) $casts[$column]);
+        $base = explode(':', $cast, 2)[0];
+
+        return match (true) {
+            in_array($base, ['bool', 'boolean'], true)                                                                             => 'boolean',
+            in_array($base, ['int', 'integer', 'float', 'double', 'real', 'decimal'], true)                                        => 'number',
+            in_array($base, ['date', 'immutable_date'], true)                                                                      => 'date',
+            in_array($base, ['datetime', 'immutable_datetime', 'custom_datetime', 'immutable_custom_datetime', 'timestamp'], true) => 'datetime',
+            in_array($base, ['array', 'json', 'object', 'collection'], true),
+            str_contains($cast, 'asarrayobject'),
+            str_contains($cast, 'ascollection'),
+            str_contains($cast, 'asencryptedarrayobject')                                                           => 'json',
+            default                                                                                                 => null,
+        };
+    }
+
+    /**
+     * Map Schema::getColumns() metadata to a header type.
+     */
+    protected function mapDatabaseType(array $meta): string
+    {
+        $typeName = strtolower((string) ($meta['type_name'] ?? ''));
+        $fullType = strtolower((string) ($meta['type'] ?? ''));
+
+        return match (true) {
+            $fullType === 'tinyint(1)', in_array($typeName, ['bool', 'boolean'], true)                                                                                                               => 'boolean',
+            in_array($typeName, ['tinyint', 'smallint', 'mediumint', 'int', 'integer', 'bigint', 'decimal', 'numeric', 'float', 'double', 'real', 'int2', 'int4', 'int8', 'float4', 'float8'], true) => 'number',
+            $typeName === 'date'                                                                                                                                                                     => 'date',
+            in_array($typeName, ['datetime', 'datetime2', 'datetimeoffset', 'timestamp', 'timestamptz'], true)                                                                                       => 'datetime',
+            in_array($typeName, ['json', 'jsonb'], true)                                                                                                                                             => 'json',
+            in_array($typeName, ['text', 'tinytext', 'mediumtext', 'longtext', 'clob'], true)                                                                                                        => 'longtext',
+            default                                                                                                                                                                                  => 'text',
+        };
+    }
+
+    protected function alignFor(string $type): string
+    {
+        return match ($type) {
+            'number'  => 'end',
+            'boolean' => 'center',
+            default   => 'start',
+        };
+    }
+
+    /**
+     * created_at → "Created at", startDate → "Start date", user_id → "User ID".
+     */
+    protected function humanizeColumn(string $column): string
+    {
+        $words = trim(str_replace('_', ' ', Str::snake($column)));
+
+        return Str::ucfirst(preg_replace('/\bid\b/', 'ID', $words));
+    }
+
+    /**
+     * Searchable columns that actually exist (as table column or translation).
+     */
+    protected function resolveSearchableColumns(): array
+    {
+        return array_values(array_unique(array_filter(
+            $this->getSearchableColumns(),
+            fn ($column) => is_string($column) && $this->isQueryableColumn($column)
+        )));
+    }
+
+    /**
+     * Columns accepted by the advanced (column/operator/value) filter.
+     */
+    protected function getFilterableColumns(): array
+    {
+        return array_values(array_filter(
+            $this->getDisplayableColumns(),
+            fn ($column) => $this->isQueryableColumn($column)
+        ));
+    }
+
+    protected function resolvePerPage(Request $request): int
+    {
+        $requested = null;
+
+        foreach (['per_page', 'itemsPerPage', 'itemsLength'] as $key) {
+            $value = $request->input($key);
+
+            if (is_numeric($value) && (int) $value !== 0) {
+                $requested = (int) $value;
+                break;
+            }
+        }
+
+        if ($requested === null) {
+            return $this->defaultPerPage;
+        }
+
+        $options = $this->perPageOptions;
+        sort($options);
+
+        // Negative = Vuetify's "All" → the largest allowed page.
+        if ($requested < 0) {
+            return end($options);
+        }
+
+        $nearest = $options[0];
+        foreach ($options as $option) {
+            // Strict "<" keeps the smaller option on ties (e.g. 75 → 50).
+            if (abs($requested - $option) < abs($requested - $nearest)) {
+                $nearest = $option;
+            }
+        }
+
+        return $nearest;
+    }
+
+    protected function resolvePage(Request $request): int
+    {
+        $page = $request->input('page');
+
+        return is_numeric($page) ? max(1, (int) $page) : 1;
+    }
+
+    /**
+     * Effective [column, direction].
+     */
+    protected function resolveSort(Request $request): array
+    {
+        $sortBy = $request->input('sort_by');
+
+        if (is_string($sortBy) && in_array($sortBy, $this->getSortableColumns(), true)) {
+            $sortDir = $request->input('sort_dir');
+
+            return [$sortBy, is_string($sortDir) && strtolower($sortDir) === 'desc' ? 'desc' : 'asc'];
+        }
+
+        $column    = $this->defaultSort[0] ?? $this->model()->getKeyName();
+        $direction = strtolower((string) ($this->defaultSort[1] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        if ( ! is_string($column) || ! $this->isQueryableColumn($column)) {
+            $column = $this->model()->getKeyName();
+        }
+
+        return [$column, $direction];
+    }
+
+    protected function applySort(Builder $builder, string $column, string $direction): Builder
+    {
+        $model = $builder->getModel();
+
+        if ($this->isTranslatedColumn($column)) {
+            $builder->orderByTranslation($column, $direction);
+        } else {
+            $builder->orderBy($model->qualifyColumn($column), $direction);
+        }
+
+        // Stable pages when the sort column has duplicates.
+        if ($column !== $model->getKeyName()) {
+            $builder->orderBy($model->getQualifiedKeyName(), $direction);
+        }
+
+        return $builder;
+    }
+
+    protected function resolveSearchTerm(Request $request): ?string
+    {
+        $term = $request->input('search');
+
+        if ( ! is_scalar($term)) {
+            return null;
+        }
+
+        $term = trim((string) $term);
+
+        return $term === '' ? null : Str::limit($term, 255, '');
+    }
+
+    /**
+     * OR the term across the searchable columns (+ exact primary key when numeric).
+     */
+    protected function applyFreeTextSearch(Builder $builder, string $term): Builder
+    {
+        $model   = $builder->getModel();
+        $columns = $this->resolveSearchableColumns();
+        $isKey   = ctype_digit($term) && strlen($term) <= 18;
+
+        if ($columns === [] && ! $isKey) {
+            return $builder->whereRaw('1 = 0');
+        }
+
+        $pattern = '%' . $this->escapeLike($term) . '%';
+
+        return $builder->where(function (Builder $query) use ($columns, $pattern, $model, $isKey, $term) {
+            foreach ($columns as $column) {
+                if ($this->isTranslatedColumn($column)) {
+                    $query->orWhereHas('translations', function (Builder $translations) use ($column, $pattern) {
+                        $this->whereLike($translations, $translations->getModel()->qualifyColumn($column), $pattern);
+                    });
+                } else {
+                    $this->whereLike($query, $model->qualifyColumn($column), $pattern, 'or');
+                }
+            }
+
+            if ($isKey) {
+                $query->orWhere($model->getQualifiedKeyName(), (int) $term);
+            }
+        });
+    }
+
+    /**
+     * LIKE with an explicit escape character so % and _ in user input are
+     * literal on MySQL and SQLite alike.
+     */
+    protected function whereLike(Builder $query, string $qualifiedColumn, string $pattern, string $boolean = 'and'): Builder
+    {
+        $wrapped = $query->getQuery()->getGrammar()->wrap($qualifiedColumn);
+
+        return $query->whereRaw("{$wrapped} LIKE ? ESCAPE '" . self::LIKE_ESCAPE . "'", [$pattern], $boolean);
+    }
+
+    protected function escapeLike(string $value): string
+    {
+        $e = self::LIKE_ESCAPE;
+
+        return str_replace([$e, '%', '_'], [$e . $e, $e . '%', $e . '_'], $value);
+    }
+
+    /**
+     * Split "1,2, 3" into unique keys; non-numeric ids are dropped for integer keys.
+     */
+    protected function parseIds($ids): array
+    {
+        $integerKeys = in_array($this->model()->getKeyType(), ['int', 'integer'], true);
+
+        return collect(explode(',', (string) $ids))
+            ->map(fn ($id) => trim($id))
+            ->filter(fn ($id) => $id !== '' && ( ! $integerKeys || ctype_digit($id)))
+            ->map(fn ($id) => $integerKeys ? (int) $id : $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     /**
      * If the request has the columns required to search.
      *
-     * @param Request $request
      *
      * @return bool
      */
     protected function hasSearchQuery(Request $request)
     {
-        return count(array_filter($request->only(['column', 'operator', 'value']))) === 3;
+        foreach (['column', 'operator', 'value'] as $key) {
+            $value = $request->input($key);
+
+            if ( ! is_scalar($value) || trim((string) $value) === '') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
      * Resolve the given operator to perform a query.
      *
-     * @param string $operator
-     *
-     * @return string
+     * @param  string  $operator
+     * @return array|null
      */
     protected function resolveQueryParts($operator, $value)
     {
+        $like = is_scalar($value) ? $this->escapeLike((string) $value) : '';
+
         return Arr::get([
             'equals' => [
                 'operator' => '=',
@@ -268,15 +964,15 @@ abstract class DataTableController extends Controller
             ],
             'contains' => [
                 'operator' => 'LIKE',
-                'value'    => "%{$value}%",
+                'value'    => "%{$like}%",
             ],
             'starts_with' => [
                 'operator' => 'LIKE',
-                'value'    => "{$value}%",
+                'value'    => "{$like}%",
             ],
             'ends_with' => [
                 'operator' => 'LIKE',
-                'value'    => "%{$value}",
+                'value'    => "%{$like}",
             ],
             'greater_than' => [
                 'operator' => '>',
@@ -294,36 +990,103 @@ abstract class DataTableController extends Controller
                 'operator' => '<=',
                 'value'    => $value,
             ],
-        ], $operator);
+        ], is_string($operator) ? $operator : '');
     }
 
     /**
-     * Build the search.
+     * Build the advanced (column/operator/value) filter. Unknown columns or
+     * operators are ignored; comparison values are coerced to the column type
+     * and a value that can never match (e.g. "abc" for a date) matches nothing.
      *
-     * @param Builder $builder
-     * @param Request $request
      *
      * @return Builder
      */
     protected function buildSearch(Builder $builder, Request $request)
     {
-        $queryParts = $this->resolveQueryParts($request->operator, $request->value);
+        $column     = $request->input('column');
+        $queryParts = $this->resolveQueryParts($request->input('operator'), $request->input('value'));
 
-        /** @noinspection PhpIllegalStringOffsetInspection */
-        return $builder->where(
-            $request->column,
-            $queryParts['operator'],
-            $queryParts['value']
-        );
+        if ( ! is_array($queryParts) || ! is_string($column) || ! in_array($column, $this->getFilterableColumns(), true)) {
+            return $builder;
+        }
+
+        if ($queryParts['operator'] !== 'LIKE') {
+            $queryParts = $this->normalizeFilterValue($column, $queryParts);
+
+            if ($queryParts === null) {
+                // Match nothing instead of letting the database reject the value
+                // (MySQL strict mode errors on e.g. created_at = 'abc').
+                return $builder->whereRaw('1 = 0');
+            }
+        }
+
+        if ($this->isTranslatedColumn($column)) {
+            return $builder->whereHas('translations', function (Builder $translations) use ($column, $queryParts) {
+                $this->applyCondition($translations, $translations->getModel()->qualifyColumn($column), $queryParts);
+            });
+        }
+
+        return $this->applyCondition($builder, $builder->getModel()->qualifyColumn($column), $queryParts);
     }
 
-    public function getAppends()
+    protected function applyCondition(Builder $builder, string $qualifiedColumn, array $queryParts): Builder
     {
-        return [];
+        if ($queryParts['operator'] === 'LIKE') {
+            return $this->whereLike($builder, $qualifiedColumn, $queryParts['value']);
+        }
+
+        if ( ! empty($queryParts['date_only'])) {
+            return $builder->whereDate($qualifiedColumn, $queryParts['operator'], $queryParts['value']);
+        }
+
+        return $builder->where($qualifiedColumn, $queryParts['operator'], $queryParts['value']);
     }
 
-    public function getCategories($taxonomy)
+    /**
+     * Coerce a comparison (non-LIKE) filter value to the column's header type.
+     * Returns null when the value can never match that type.
+     */
+    protected function normalizeFilterValue(string $column, array $queryParts): ?array
     {
-        $this->builder->getModel()->getCategories($taxonomy);
+        $type  = $this->resolveColumnTypes()[$column] ?? 'text';
+        $value = trim((string) $queryParts['value']);
+
+        switch ($type) {
+            case 'id':
+            case 'number':
+                return is_numeric($value) ? [...$queryParts, 'value' => $value + 0] : null;
+
+            case 'boolean':
+                $bool = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+                return $bool === null ? null : [...$queryParts, 'value' => (int) $bool];
+
+            case 'date':
+            case 'datetime':
+                if ( ! preg_match('/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?$/', $value)) {
+                    return null;
+                }
+
+                try {
+                    $date = Carbon::parse($value);
+                } catch (\Throwable) {
+                    return null;
+                }
+
+                // The header type may be overridden (e.g. a timestamp shown as a
+                // date), so compare according to what the column really stores.
+                $storage  = $this->detectColumnType($column);
+                $wholeDay = $storage === 'datetime' && (strlen($value) === 10 || $type === 'date');
+
+                return [
+                    ...$queryParts,
+                    'value'     => $storage === 'date' || $wholeDay ? $date->format('Y-m-d') : $date->format('Y-m-d H:i:s'),
+                    // "created_at equals 2026-09-11" means that whole day.
+                    'date_only' => $wholeDay,
+                ];
+
+            default:
+                return $queryParts;
+        }
     }
 }

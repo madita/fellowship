@@ -1,6 +1,6 @@
 <template>
   <div class="flex-grow-1">
-      <data-table endpoint="/datatable/users"></data-table>
+      <data-table endpoint="/datatable/users" :title="$t('admin.users.title')" icon="mdi-account-group" />
   </div>
 </template>
 

@@ -7,18 +7,18 @@
             <h2 class="text-h3 text-md-h2 font-weight-bold mb-4">
               {{ content.title }}
             </h2>
-            <p v-if="content.subtitle" class="text-h6 text-grey">
+            <p v-if="content.subtitle" class="text-h6 text-medium-emphasis">
               {{ content.subtitle }}
             </p>
           </div>
 
-          <v-card elevation="4" class="pa-6">
+          <v-card elevation="4" rounded="lg" class="pa-6">
             <v-form ref="contactForm" @submit.prevent="handleSubmit">
               <v-text-field
                 v-model="formData.name"
                 :label="content.nameLabel || $t('contactForm.name')"
                 :required="content.nameRequired"
-                variant="outlined"
+                :disabled="isSubmitting"
                 class="mb-4"
               ></v-text-field>
 
@@ -27,7 +27,7 @@
                 :label="content.emailLabel || $t('contactForm.email')"
                 :required="content.emailRequired"
                 type="email"
-                variant="outlined"
+                :disabled="isSubmitting"
                 class="mb-4"
               ></v-text-field>
 
@@ -36,7 +36,7 @@
                 v-model="formData.phone"
                 :label="content.phoneLabel || $t('contactForm.phone')"
                 :required="content.phoneRequired"
-                variant="outlined"
+                :disabled="isSubmitting"
                 class="mb-4"
               ></v-text-field>
 
@@ -45,7 +45,7 @@
                 v-model="formData.subject"
                 :label="content.subjectLabel || $t('contactForm.subject')"
                 :required="content.subjectRequired"
-                variant="outlined"
+                :disabled="isSubmitting"
                 class="mb-4"
               ></v-text-field>
 
@@ -54,7 +54,7 @@
                 :label="content.messageLabel || $t('contactForm.message')"
                 :required="content.messageRequired"
                 rows="5"
-                variant="outlined"
+                :disabled="isSubmitting"
                 class="mb-4"
               ></v-textarea>
 
@@ -69,15 +69,6 @@
                 </v-btn>
               </div>
             </v-form>
-
-            <v-alert
-              v-if="submitMessage"
-              :type="submitSuccess ? 'success' : 'error'"
-              variant="tonal"
-              class="mt-4"
-            >
-              {{ submitMessage }}
-            </v-alert>
           </v-card>
         </v-col>
       </v-row>
@@ -88,8 +79,10 @@
 <script setup>
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useDialog } from '@/composables/useDialog.js';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
   content: {
@@ -129,12 +122,10 @@ const formData = ref({
 });
 
 const isSubmitting = ref(false);
-const submitMessage = ref('');
-const submitSuccess = ref(false);
 
 async function handleSubmit() {
+  if (isSubmitting.value) return;
   isSubmitting.value = true;
-  submitMessage.value = '';
 
   try {
     // TODO: Replace with actual API endpoint
@@ -142,9 +133,6 @@ async function handleSubmit() {
 
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-
-    submitSuccess.value = true;
-    submitMessage.value = props.content.successMessage || t('contactForm.successMessage');
 
     // Reset form
     formData.value = {
@@ -154,9 +142,11 @@ async function handleSubmit() {
       subject: '',
       message: ''
     };
+
+    isSubmitting.value = false;
+    await dialog.success(props.content.successMessage || t('contactForm.successMessage'));
   } catch (error) {
-    submitSuccess.value = false;
-    submitMessage.value = props.content.errorMessage || t('contactForm.errorMessage');
+    await dialog.requestError(error, props.content.errorMessage || t('contactForm.errorMessage'));
   } finally {
     isSubmitting.value = false;
   }

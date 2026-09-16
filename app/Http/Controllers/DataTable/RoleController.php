@@ -44,17 +44,16 @@ class RoleController extends DataTableController
     /**
      * Create an entity.
      *
-     * @param Request $request
      *
      * @return Response|void
      */
     public function store(Request $request)
     {
-        if (!$this->allowCreation) {
+        if ( ! $this->allowCreation) {
             return;
         }
 
-        $create = $request->only($this->getUpdatableColumns());
+        $create               = $request->only($this->getUpdatableColumns());
         $create['guard_name'] = 'api';
 
         $this->builder->create($create);
@@ -62,12 +61,12 @@ class RoleController extends DataTableController
 
     public function update($id, Request $request)
     {
-//        $this->validate($request, [
-//            'name' => 'required',
-//            'email' => 'required|unique:users,email,' . $id . '|email',
-//            'created_at' => 'date'
-//        ]);
-//
+        //        $this->validate($request, [
+        //            'name' => 'required',
+        //            'email' => 'required|unique:users,email,' . $id . '|email',
+        //            'created_at' => 'date'
+        //        ]);
+        //
         $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
     }
 }

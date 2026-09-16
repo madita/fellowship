@@ -1,11 +1,11 @@
 <template>
-  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" max-width="800px" scrollable persistent>
+  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" max-width="900" scrollable persistent>
     <v-card v-if="widget">
-      <v-card-title class="d-flex align-center bg-primary text-white">
+      <v-card-title class="d-flex align-center text-h6">
         <v-icon class="mr-2">{{ widgetIcon }}</v-icon>
         {{ $t('settings.widgetEditor.edit') }} {{ widgetDefinition?.name || widget.type }}
         <v-spacer></v-spacer>
-        <v-btn icon="mdi-close" variant="text" @click="cancel"></v-btn>
+        <v-btn icon="mdi-close" variant="text" :disabled="saving" @click="cancel"></v-btn>
       </v-card-title>
 
       <v-divider></v-divider>
@@ -32,6 +32,15 @@
             class="mb-4"
           ></v-text-field>
 
+          <v-select
+            v-model="editedWidget.config.style"
+            :items="styleOptions"
+            :label="$t('settings.widgetEditor.styleLabel')"
+            :hint="$t('settings.widgetEditor.styleHint')"
+            persistent-hint
+            class="mb-4"
+          ></v-select>
+
           <div class="text-subtitle-2 mb-3">{{ $t('settings.widgetEditor.links') }}</div>
           <div v-if="editedWidget.config.links && editedWidget.config.links.length > 0" class="mb-3">
             <v-card
@@ -40,10 +49,10 @@
               variant="outlined"
               class="mb-2"
             >
-              <v-card-text class="d-flex align-center gap-2 pa-3">
+              <v-card-text class="d-flex align-center ga-2 pa-3">
                 <div class="flex-grow-1">
                   <div class="font-weight-medium">{{ link.label }}</div>
-                  <div class="text-caption text-grey">{{ link.url }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ link.url }}</div>
                   <v-chip v-if="link.authOnly" size="x-small" color="warning" class="mt-1">{{ $t('settings.widgetEditor.authOnly') }}</v-chip>
                 </div>
                 <v-btn icon size="small" variant="text" @click="editQuicklink(idx)">
@@ -171,6 +180,58 @@
           </v-alert>
         </template>
 
+        <!-- Menu Widget -->
+        <template v-if="editedWidget.type === 'menu'">
+          <v-text-field
+            v-model="editedWidget.config.title"
+            :label="$t('settings.widgetEditor.sectionTitleOptional')"
+            :hint="$t('settings.widgetEditor.leaveEmptyNoTitle')"
+            persistent-hint
+            class="mb-4"
+          ></v-text-field>
+
+          <v-select
+            v-model="editedWidget.config.menu_slug"
+            :items="menuOptions"
+            item-title="title"
+            item-value="value"
+            :loading="menusLoading"
+            :label="$t('settings.widgetEditor.menuLabel')"
+            :hint="$t('settings.widgetEditor.menuHint')"
+            :no-data-text="$t('settings.widgetEditor.menuNoData')"
+            persistent-hint
+            prepend-inner-icon="mdi-menu"
+            class="mb-4"
+          ></v-select>
+
+          <v-alert
+            v-if="!menusLoading && menuOptions.length === 0"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mb-4"
+          >
+            {{ $t('settings.widgetEditor.menuEmptyHint') }}
+          </v-alert>
+
+          <v-select
+            v-model="editedWidget.config.layout"
+            :items="menuLayouts"
+            :label="$t('settings.widgetEditor.layoutLabel')"
+            :hint="$t('settings.widgetEditor.layoutHint')"
+            persistent-hint
+            class="mb-4"
+          ></v-select>
+
+          <v-select
+            v-model="editedWidget.config.style"
+            :items="styleOptions"
+            :label="$t('settings.widgetEditor.styleLabel')"
+            :hint="$t('settings.widgetEditor.styleHint')"
+            persistent-hint
+          ></v-select>
+        </template>
+
         <!-- Text Widget -->
         <template v-if="editedWidget.type === 'text'">
           <v-text-field
@@ -195,21 +256,21 @@
       <v-divider></v-divider>
 
       <v-card-actions class="pa-4">
-        <v-btn @click="cancel">{{ $t('common.cancel') }}</v-btn>
         <v-spacer></v-spacer>
-        <v-btn color="primary" @click="save">
-          <v-icon class="mr-1">mdi-content-save</v-icon>
+        <v-btn variant="text" :disabled="saving" @click="cancel">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="primary" variant="flat" prepend-icon="mdi-content-save" :loading="saving" @click="save">
           {{ $t('settings.widgetEditor.saveChanges') }}
         </v-btn>
       </v-card-actions>
     </v-card>
 
     <!-- Quicklink Dialog -->
-    <v-dialog v-model="showQuicklinkDialog" max-width="500">
+    <v-dialog v-model="showQuicklinkDialog" max-width="600">
       <v-card>
-        <v-card-title class="bg-primary text-white">
+        <v-card-title class="text-h6">
           {{ editingQuicklinkIndex !== null ? $t('settings.widgetEditor.editLink') : $t('settings.widgetEditor.addLink') }}
         </v-card-title>
+        <v-divider></v-divider>
 
         <v-card-text class="pa-4">
           <v-text-field
@@ -247,8 +308,8 @@
 
         <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
-          <v-btn @click="cancelQuicklinkEdit">{{ $t('common.cancel') }}</v-btn>
-          <v-btn color="primary" @click="saveQuicklink">
+          <v-btn variant="text" @click="cancelQuicklinkEdit">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" variant="flat" @click="saveQuicklink">
             {{ editingQuicklinkIndex !== null ? $t('settings.widgetEditor.update') : $t('settings.widgetEditor.add') }}
           </v-btn>
         </v-card-actions>
@@ -258,15 +319,18 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import axios from 'axios';
 import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
 
 const { t } = useI18n();
 
 const props = defineProps({
   modelValue: Boolean,
-  widget: Object
+  widget: Object,
+  // True while the parent is persisting the emitted widget
+  saving: Boolean
 });
 
 const emit = defineEmits(['update:modelValue', 'save']);
@@ -286,6 +350,42 @@ const widgetDefinition = computed(() => {
 });
 
 const widgetIcon = computed(() => widgetDefinition.value?.icon || 'mdi-widgets');
+
+const menus = ref([]);
+const menusLoading = ref(false);
+
+const menuOptions = computed(() =>
+  menus.value.map((menu) => ({
+    title: menu.location ? `${menu.name} (${menu.location})` : menu.name,
+    value: menu.slug,
+  }))
+);
+
+const menuLayouts = computed(() => [
+  { title: t('settings.widgetEditor.layoutList'), value: 'list' },
+  { title: t('settings.widgetEditor.layoutInline'), value: 'inline' },
+]);
+
+const styleOptions = computed(() => [
+  { title: t('settings.widgetEditor.styleSimple'), value: 'simple' },
+  { title: t('settings.widgetEditor.styleBold'), value: 'bold' },
+  { title: t('settings.widgetEditor.styleButton'), value: 'button' },
+]);
+
+async function loadMenus() {
+  menusLoading.value = true;
+  try {
+    const { data } = await axios.get('/api/admin/menus');
+    menus.value = Array.isArray(data) ? data : (data.menus || []);
+  } catch (error) {
+    console.error('Failed to load menus:', error);
+    menus.value = [];
+  } finally {
+    menusLoading.value = false;
+  }
+}
+
+onMounted(loadMenus);
 
 watch(() => props.widget, (newWidget) => {
   if (newWidget) {
@@ -337,6 +437,7 @@ function cancelQuicklinkEdit() {
 }
 
 function save() {
+  if (props.saving) return;
   emit('save', editedWidget.value);
 }
 
@@ -345,8 +446,3 @@ function cancel() {
 }
 </script>
 
-<style scoped>
-.gap-2 {
-  gap: 8px;
-}
-</style>

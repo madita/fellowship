@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\DataTable;
 
-use App\Helpers\TaxonomyHelper;
 use App\Models\Tag\Term;
+use App\Support\TaxonomyHelper;
 use Illuminate\Http\Request;
 
 class TermController extends DataTableController
@@ -15,13 +15,12 @@ class TermController extends DataTableController
 
     public function store(Request $request)
     {
-//        dd($request);
         $parent = $request->get('tag_taxonomy_id') ?? 0;
 
-        $name = $request->get('name');
+        $name     = $request->get('name');
         $taxonomy = $request->get('taxonomy');
 
-        if (!$taxonomy || !$name) {
+        if ( ! $taxonomy || ! $name) {
             return response()->json(['message' => 'error']);
         }
 
@@ -32,7 +31,7 @@ class TermController extends DataTableController
 
     public function getUpdatableColumns()
     {
-        return  [
+        return [
             'name',
             'taxonomy',
             'tag_taxonomy_id',
@@ -63,8 +62,8 @@ class TermController extends DataTableController
         ];
     }
 
-//    public function update($id, TaxonomyRequest $request)
-//    {
-//        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
-//    }
+    //    public function update($id, TaxonomyRequest $request)
+    //    {
+    //        $this->builder->find($id)->update($request->only($this->getUpdatableColumns()));
+    //    }
 }

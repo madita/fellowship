@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\Conversation\Conversation;
+use App\Models\Sandbox\Sandbox;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -38,10 +40,30 @@ Broadcast::channel('chat', function ($user) {
 });
 
 Broadcast::channel('conversations.{conversationId}', function ($user, $conversationId) {
-    //dd($conversationId);
     $conversation = Conversation::where('uuid', $conversationId)->first();
 
-    //return $user->isInConversation(\App\Models\Conversation\Conversation::find($conversationId));
-    //return $user->inConversation($conversation->id);
     return $conversation && $user->inConversation($conversation->id);
+});
+
+// Sandbox collaboration presence channel
+Broadcast::channel('sandbox.{sandboxId}', function ($user, $sandboxId) {
+    if ( ! Setting::get('sandbox_enabled', false)) {
+        return false;
+    }
+
+    $sandbox = Sandbox::find($sandboxId);
+
+    if ( ! $sandbox || ! $sandbox->canView($user)) {
+        return false;
+    }
+
+    return [
+        'id'       => $user->id,
+        'username' => $user->username,
+        'name'     => $user->name,
+        'avatar'   => $user->avatar,
+        'initials' => $user->initials,
+        'role'     => $sandbox->getUserRole($user),
+        'canEdit'  => $sandbox->canEdit($user),
+    ];
 });

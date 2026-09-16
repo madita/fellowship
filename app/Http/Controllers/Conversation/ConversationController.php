@@ -6,6 +6,7 @@ use App\Events\Conversations\ConversationCreated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreConversationRequest;
 use App\Models\Conversation\Conversation;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -32,7 +33,7 @@ class ConversationController extends Controller
     public function show(Conversation $conversation, Request $request): JsonResponse
     {
         // Verify user is a participant in the conversation
-        if (!$conversation->users->contains(auth()->id())) {
+        if ( ! $conversation->users->contains(auth()->id())) {
             abort(403, 'You are not authorized to view this conversation.');
         }
 
@@ -41,7 +42,7 @@ class ConversationController extends Controller
 
         // Add computed properties to messages
         $conversation->messages->each(function ($message) {
-            $message->self_owned = $message->user_id === auth()->id();
+            $message->self_owned       = $message->user_id === auth()->id();
             $message->created_at_human = $message->created_at->diffForHumans();
         });
 
@@ -59,7 +60,7 @@ class ConversationController extends Controller
     public function markAsRead(Conversation $conversation): JsonResponse
     {
         // Verify user is a participant in the conversation
-        if (!$conversation->users->contains(auth()->id())) {
+        if ( ! $conversation->users->contains(auth()->id())) {
             abort(403, 'You are not authorized to access this conversation.');
         }
 
@@ -119,7 +120,7 @@ class ConversationController extends Controller
 
         // Get user's read_at timestamp from pivot table
         $userConversation = auth()->user()->conversations()->where('conversation_id', $conversation->id)->first();
-        $readAt = $userConversation?->pivot?->read_at;
+        $readAt           = $userConversation?->pivot?->read_at;
 
         // Calculate unread count using loaded messages collection
         $unreadCount = 0;
@@ -144,11 +145,11 @@ class ConversationController extends Controller
             'messages_count'   => $conversation->messages->count(),
             'unread_count'     => $unreadCount,
             'is_unread'        => $unreadCount > 0,
-            'read_at'          => $readAt ? ($readAt instanceof \Carbon\Carbon ? $readAt->toISOString() : $readAt) : null,
+            'read_at'          => $readAt ? ($readAt instanceof Carbon ? $readAt->toISOString() : $readAt) : null,
             'created_at'       => $conversation->created_at->toISOString(),
             'created_at_human' => $conversation->created_at->diffForHumans(),
             'last_message_at'  => $conversation->last_message_at
-                ? ($conversation->last_message_at instanceof \Carbon\Carbon
+                ? ($conversation->last_message_at instanceof Carbon
                     ? $conversation->last_message_at->toISOString()
                     : $conversation->last_message_at)
                 : null,
@@ -178,7 +179,7 @@ class ConversationController extends Controller
      */
     private function transformUser($user): array
     {
-        if (!$user) {
+        if ( ! $user) {
             return [];
         }
 

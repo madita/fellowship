@@ -1,52 +1,81 @@
 <template>
-    <v-container fluid class="pa-0">
-    <div class="dashboard-container">
-        <!-- Dashboard Header -->
-        <div class="dashboard-header mb-6">
-            <v-row align="center" class="mb-4">
-                <v-col cols="12" md="6">
-                    <h1 class="dashboard-title text-h3 font-weight-bold mb-2">
-                        {{ $t('dashboard.welcomeBack', { username: user?.username || 'User' }) }} 👋
-                    </h1>
-                    <p class="text-subtitle-1 text-medium-emphasis">
-                        {{ $t('dashboard.customizeDashboard') }}
-                    </p>
-                </v-col>
-                <v-col cols="12" md="6" class="text-right">
-                    <v-btn
-                        color="primary"
-                        variant="elevated"
-                        prepend-icon="mdi-widgets"
-                        @click="showWidgetPanel = true"
-                        class="mr-3"
-                    >
-                        {{ $t('dashboard.addWidgets') }}
-                    </v-btn>
-                    <v-btn
-                        color="secondary"
-                        variant="tonal"
-                        prepend-icon="mdi-restore"
-                        @click="resetLayout"
-                    >
-                        {{ $t('dashboard.resetLayout') }}
-                    </v-btn>
-                </v-col>
-            </v-row>
-        </div>
+    <div>
+    <page-header
+        fluid
+        :title="$t('dashboard.welcomeBack', { username: user?.username || 'User' })"
+        :subtitle="$t('dashboard.customizeDashboard')"
+        icon="mdi-view-dashboard"
+    >
+        <template #actions>
+            <v-btn
+                color="primary"
+                variant="elevated"
+                prepend-icon="mdi-widgets"
+                @click="showWidgetPanel = true"
+            >
+                {{ $t('dashboard.addWidgets') }}
+            </v-btn>
+            <v-btn
+                variant="tonal"
+                prepend-icon="mdi-restore"
+                @click="resetLayout"
+            >
+                {{ $t('dashboard.resetLayout') }}
+            </v-btn>
+        </template>
+    </page-header>
+
+    <v-container fluid class="dashboard-container">
+        <loading-state v-if="loadingLayout" />
+
+        <!-- Empty dashboard -->
+        <empty-state
+            v-else-if="activeWidgets.length === 0"
+            icon="mdi-view-dashboard-outline"
+            :title="$t('dashboard.emptyTitle')"
+            :text="$t('dashboard.emptyHint')"
+        >
+            <template #actions>
+                <v-btn color="primary" variant="flat" prepend-icon="mdi-widgets" @click="showWidgetPanel = true">
+                    {{ $t('dashboard.addWidgets') }}
+                </v-btn>
+            </template>
+        </empty-state>
 
         <!-- Drag & Drop Widget Grid -->
         <div
             ref="widgetGrid"
             class="widget-grid"
-            @dragover.prevent
+            :class="{ 'widget-grid--dragging': draggingWidgetId }"
+            :style="gridStyle"
+            @dragover.prevent="onGridDragOver"
+            @dragleave="onGridDragLeave"
             @drop="onDrop"
         >
+            <!-- The cells that are available while a widget is being dragged -->
+            <div
+                v-if="draggingWidgetId"
+                class="grid-cells"
+                :style="{ width: `${pxOfCells(gridColumns)}px` }"
+            ></div>
+
+            <!-- Where the dragged widget will land -->
+            <div
+                v-if="dropPreview"
+                class="drop-marker"
+                :style="dropPreviewStyle"
+            >
+                <v-icon size="28">mdi-arrow-down-bold-box-outline</v-icon>
+                <span class="text-caption font-weight-medium mt-1">{{ $t('dashboard.dropHere') }}</span>
+            </div>
+
             <div
                 v-for="widget in activeWidgets"
                 :key="widget.id"
                 :class="[
           'widget-container',
           `widget-size-${widget.size}`,
+          `widget-height-${widget.height || 'single'}`,
           { 'widget-dragging': widget.id === draggingWidgetId }
         ]"
                 :style="getWidgetStyle(widget)"
@@ -54,25 +83,19 @@
                 draggable="true"
                 @dragstart="onDragStart(widget, $event)"
                 @dragend="onDragEnd"
-                @dragover="onDragOver($event, widget)"
-                @dragenter="onDragEnter($event, widget)"
-                @dragleave="onDragLeave($event, widget)"
             >
                 <v-card
                     class="widget-card h-100"
                     variant="elevated"
-                    :class="{
-            'dragging': widget.id === draggingWidgetId,
-            'drag-target': widget.id === dragTargetId && widget.id !== draggingWidgetId
-          }"
+                    :class="{ 'dragging': widget.id === draggingWidgetId }"
                 >
                     <!-- Widget Header -->
                     <v-card-title class="widget-header d-flex align-center pa-4 pb-2">
                         <v-avatar :color="widget.color" size="32" class="mr-3">
-                            <v-icon color="white" size="18">{{ widget.icon }}</v-icon>
+                            <v-icon color="white" size="18">{{ definition(widget).icon }}</v-icon>
                         </v-avatar>
                         <div class="flex-grow-1">
-                            <div class="text-subtitle-1 font-weight-bold">{{ widget.title }}</div>
+                            <div class="text-subtitle-1 font-weight-medium">{{ widgetTitle(widget) }}</div>
                             <div class="text-caption text-medium-emphasis">{{ widget.subtitle }}</div>
                         </div>
                         <v-menu>
@@ -105,30 +128,29 @@
                         </v-menu>
                     </v-card-title>
 
-                    <!-- Widget Content -->
+                    <!-- Widget Content: each widget loads its own live data -->
                     <v-card-text class="widget-content pa-4 pt-2">
                         <component
-                            :is="getWidgetComponent(widget.type)"
-                            :widget-data="widget.data"
+                            :is="definition(widget).component"
                             :widget-config="widget.config"
-                            @update-data="updateWidgetData(widget.id, $event)"
+                            :columns="columnsFor(widget)"
+                            :rows="rowsOf(widget.height)"
+                            :refresh-key="widget.refreshKey"
+                            @update-meta="updateWidgetMeta(widget.id, $event)"
                         />
                     </v-card-text>
 
-                    <!-- Widget Actions (if any) -->
-                    <v-card-actions v-if="widget.actions" class="pa-4 pt-0">
+                    <!-- Widget Action -->
+                    <v-card-actions v-if="definition(widget).action" class="pa-4 pt-0">
                         <v-btn
-                            v-for="action in widget.actions"
-                            :key="action.text"
-                            :color="action.color"
+                            :color="widget.color"
                             variant="elevated"
                             size="small"
-                            :prepend-icon="action.icon"
-                            :to="action.to"
-                            :href="action.href"
+                            :prepend-icon="definition(widget).action.icon"
+                            :to="definition(widget).action.to"
                             block
                         >
-                            {{ action.text }}
+                            {{ $t(`dashboard.widgets.${widget.type}.action`) }}
                         </v-btn>
                     </v-card-actions>
                 </v-card>
@@ -136,14 +158,15 @@
         </div>
 
         <!-- Widget Panel Dialog -->
-        <v-dialog v-model="showWidgetPanel" max-width="800">
+        <v-dialog v-model="showWidgetPanel" max-width="900">
             <v-card>
-                <v-card-title class="d-flex align-center pa-6">
-                    <v-icon color="primary" class="mr-3">mdi-widgets</v-icon>
-                    <span class="text-h5">{{ $t('dashboard.availableWidgets') }}</span>
+                <v-card-title class="text-h6 d-flex align-center">
+                    <v-icon color="primary" class="mr-2">mdi-widgets</v-icon>
+                    {{ $t('dashboard.availableWidgets') }}
                 </v-card-title>
+                <v-divider />
 
-                <v-card-text class="pa-6">
+                <v-card-text>
                     <v-row>
                         <v-col
                             v-for="widget in availableWidgets"
@@ -154,19 +177,20 @@
                                 class="widget-preview"
                                 variant="outlined"
                                 hover
-                                @click="addWidget(widget)"
+                                @click="addWidget(widget.type)"
                             >
                                 <v-card-text class="text-center pa-4">
                                     <v-avatar :color="widget.color" size="48" class="mb-3">
                                         <v-icon color="white" size="24">{{ widget.icon }}</v-icon>
                                     </v-avatar>
-                                    <div class="text-subtitle-1 font-weight-bold mb-1">{{ widget.title }}</div>
-                                    <div class="text-caption text-medium-emphasis mb-2">{{ widget.description }}</div>
-                                    <v-chip
-                                        :color="widget.category === 'core' ? 'primary' : 'secondary'"
-                                        size="small"
-                                    >
-                                        {{ widget.category }}
+                                    <div class="text-subtitle-1 font-weight-medium mb-1">
+                                        {{ $t(`dashboard.widgets.${widget.type}.title`) }}
+                                    </div>
+                                    <div class="text-caption text-medium-emphasis mb-2">
+                                        {{ $t(`dashboard.widgets.${widget.type}.description`) }}
+                                    </div>
+                                    <v-chip v-if="widget.count" color="primary" variant="tonal" size="small">
+                                        {{ $t('dashboard.onDashboard', { count: widget.count }) }}
                                     </v-chip>
                                 </v-card-text>
                             </v-card>
@@ -174,9 +198,9 @@
                     </v-row>
                 </v-card-text>
 
-                <v-card-actions class="pa-6 pt-0">
+                <v-card-actions>
                     <v-spacer></v-spacer>
-                    <v-btn @click="showWidgetPanel = false">{{ $t('common.close') }}</v-btn>
+                    <v-btn variant="text" @click="showWidgetPanel = false">{{ $t('common.close') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
@@ -184,16 +208,19 @@
         <!-- Widget Settings Dialog -->
         <v-dialog v-model="showWidgetSettings" max-width="600">
             <v-card v-if="selectedWidget">
-                <v-card-title class="pa-6">
-                    <span class="text-h5">{{ $t('dashboard.widgetSettings') }}: {{ selectedWidget.title }}</span>
+                <v-card-title class="text-h6">
+                    {{ $t('dashboard.widgetSettings') }}: {{ widgetTitle(selectedWidget) }}
                 </v-card-title>
+                <v-divider />
 
-                <v-card-text class="pa-6">
+                <v-card-text>
                     <v-form>
                         <v-text-field
                             v-model="selectedWidget.title"
                             :label="$t('dashboard.widgetTitle')"
+                            :placeholder="$t(`dashboard.widgets.${selectedWidget.type}.title`)"
                             variant="outlined"
+                            clearable
                             class="mb-4"
                         ></v-text-field>
 
@@ -205,6 +232,35 @@
                             class="mb-4"
                         ></v-select>
 
+                        <v-select
+                            v-model="selectedWidget.height"
+                            :items="widgetHeights"
+                            :label="$t('dashboard.widgetHeight')"
+                            variant="outlined"
+                            class="mb-4"
+                        ></v-select>
+
+                        <v-select
+                            v-for="setting in widgetSettings(selectedWidget)"
+                            :key="setting.key"
+                            v-model="selectedWidget.config[setting.key]"
+                            :items="setting.items"
+                            :label="$t(`dashboard.widgets.${selectedWidget.type}.settings.${setting.key}.label`)"
+                            variant="outlined"
+                            class="mb-4"
+                        ></v-select>
+
+                        <v-text-field
+                            v-if="selectedWidget.type !== 'stats'"
+                            v-model.number="selectedWidget.config.limit"
+                            type="number"
+                            min="1"
+                            max="20"
+                            :label="$t('dashboard.widgetLimit')"
+                            variant="outlined"
+                            class="mb-4"
+                        ></v-text-field>
+
                         <v-color-picker
                             v-model="selectedWidget.color"
                             hide-inputs
@@ -213,194 +269,78 @@
                     </v-form>
                 </v-card-text>
 
-                <v-card-actions class="pa-6 pt-0">
+                <v-card-actions>
                     <v-spacer></v-spacer>
-                    <v-btn @click="showWidgetSettings = false">{{ $t('common.cancel') }}</v-btn>
-                    <v-btn color="primary" @click="saveWidgetSettings">{{ $t('common.save') }}</v-btn>
+                    <v-btn variant="text" @click="showWidgetSettings = false">{{ $t('common.cancel') }}</v-btn>
+                    <v-btn color="primary" variant="flat" @click="saveWidgetSettings">{{ $t('common.save') }}</v-btn>
                 </v-card-actions>
             </v-card>
         </v-dialog>
-    </div>
     </v-container>
+    </div>
 </template>
 
 <script>
+import axios from 'axios';
 import { useUserStore } from '@/store/userStore.js';
-
-// Widget Components
-const EventsWidget = {
-    props: ['widgetData', 'widgetConfig'],
-    template: `
-        <div>
-            <div v-if="widgetData.nextEvent" class="mb-4">
-                <v-card color="primary" variant="tonal">
-                    <v-card-text class="pa-3">
-                        <div class="d-flex align-center mb-2">
-                            <v-chip color="primary" size="small" class="mr-2">NEXT</v-chip>
-                            <div class="text-caption">{{ widgetData.nextEvent.timeUntil }}</div>
-                        </div>
-                        <div class="text-subtitle-2 font-weight-bold mb-1">{{ widgetData.nextEvent.title }}</div>
-                        <div class="text-caption">{{ widgetData.nextEvent.date }}</div>
-                    </v-card-text>
-                </v-card>
-            </div>
-            <v-list density="compact" class="pa-0">
-                <v-list-item
-                    v-for="event in widgetData.upcomingEvents?.slice(0, 3)"
-                    :key="event.id"
-                    class="px-0 mb-1"
-                >
-                    <template v-slot:prepend>
-                        <v-avatar color="surface-variant" size="24">
-                            <v-icon size="12">mdi-calendar</v-icon>
-                        </v-avatar>
-                    </template>
-                    <v-list-item-title class="text-body-2">{{ event.title }}</v-list-item-title>
-                    <v-list-item-subtitle class="text-caption">{{ event.date }}</v-list-item-subtitle>
-                </v-list-item>
-            </v-list>
-        </div>
-    `
-};
-
-const WikiWidget = {
-    props: ['widgetData', 'widgetConfig'],
-    template: `
-        <div>
-            <div v-for="change in widgetData.recentChanges?.slice(0, 4)" :key="change.id" class="mb-3">
-                <div class="d-flex align-center mb-1">
-                    <v-chip
-                        :color="change.type === 'edit' ? 'warning' : 'success'"
-                        size="x-small"
-                        class="mr-2"
-                    >
-                        {{ change.type }}
-                    </v-chip>
-                    <div class="text-caption text-medium-emphasis">{{ change.date }}</div>
-                </div>
-                <div class="text-body-2 font-weight-medium">{{ change.page }}</div>
-                <div class="text-caption text-medium-emphasis">by {{ change.author }}</div>
-            </div>
-        </div>
-    `
-};
-
-const NotificationsWidget = {
-    props: ['widgetData', 'widgetConfig'],
-    template: `
-        <div>
-            <div v-for="notification in widgetData.recent?.slice(0, 4)" :key="notification.id" class="d-flex align-center mb-3">
-                <v-avatar :color="notification.type === 'info' ? 'blue' : notification.type === 'warning' ? 'orange' : 'green'" size="24" class="mr-3">
-                    <v-icon color="white" size="12">{{ getNotificationIcon(notification.type) }}</v-icon>
-                </v-avatar>
-                <div class="flex-grow-1">
-                    <div class="text-body-2">{{ notification.message }}</div>
-                    <div class="text-caption text-medium-emphasis">{{ notification.time }}</div>
-                </div>
-                <v-btn v-if="!notification.read" icon="mdi-circle" size="x-small" color="primary"></v-btn>
-            </div>
-        </div>
-    `,
-    methods: {
-        getNotificationIcon(type) {
-            const icons = {
-                info: 'mdi-information',
-                warning: 'mdi-alert',
-                success: 'mdi-check-circle'
-            };
-            return icons[type] || 'mdi-bell';
-        }
-    }
-};
-
-const StatsWidget = {
-    props: ['widgetData', 'widgetConfig'],
-    template: `
-        <div class="text-center">
-            <div class="text-h2 font-weight-bold mb-2" :style="{ color: widgetConfig.color }">
-                {{ widgetData.value }}
-            </div>
-            <div class="text-body-2 text-medium-emphasis mb-3">{{ widgetData.label }}</div>
-            <div class="d-flex align-center justify-center">
-                <v-icon
-                    :color="widgetData.trend > 0 ? 'success' : 'error'"
-                    size="16"
-                    class="mr-1"
-                >
-                    {{ widgetData.trend > 0 ? 'mdi-trending-up' : 'mdi-trending-down' }}
-                </v-icon>
-                <span class="text-caption" :class="widgetData.trend > 0 ? 'text-success' : 'text-error'">
-          {{ Math.abs(widgetData.trend) }}% this week
-        </span>
-            </div>
-        </div>
-    `
-};
-
-// More widget components...
-const TasksWidget = {
-    props: ['widgetData', 'widgetConfig'],
-    template: `
-        <div>
-            <div class="mb-3">
-                <v-progress-linear
-                    :model-value="(widgetData.completed / widgetData.total) * 100"
-                    color="success"
-                    height="8"
-                    rounded
-                ></v-progress-linear>
-                <div class="text-caption mt-1 text-center">
-                    {{ widgetData.completed }}/{{ widgetData.total }} tasks completed
-                </div>
-            </div>
-            <v-list density="compact" class="pa-0">
-                <v-list-item
-                    v-for="task in widgetData.recent?.slice(0, 3)"
-                    :key="task.id"
-                    class="px-0 mb-1"
-                >
-                    <template v-slot:prepend>
-                        <v-checkbox
-                            :model-value="task.completed"
-                            color="success"
-                            density="compact"
-                            hide-details
-                        ></v-checkbox>
-                    </template>
-                    <v-list-item-title class="text-body-2" :class="{ 'text-decoration-line-through': task.completed }">
-                        {{ task.title }}
-                    </v-list-item-title>
-                    <v-list-item-subtitle class="text-caption">{{ task.dueDate }}</v-list-item-subtitle>
-                </v-list-item>
-            </v-list>
-        </div>
-    `
-};
-
-const WeatherWidget = {
-    props: ['widgetData', 'widgetConfig'],
-    template: `
-        <div class="text-center">
-            <v-icon size="48" color="primary" class="mb-2">{{ widgetData.icon }}</v-icon>
-            <div class="text-h4 font-weight-bold mb-1">{{ widgetData.temperature }}°</div>
-            <div class="text-body-2 mb-2">{{ widgetData.condition }}</div>
-            <div class="text-caption text-medium-emphasis">{{ widgetData.location }}</div>
-        </div>
-    `
-};
-
+import { useSettingsStore } from '@/store/settingStore.js';
+import { WIDGET_TYPES, DEFAULT_LAYOUT, LAYOUT_STORAGE_KEY, isWidgetEnabled } from '@/configs/dashboardWidgets.js';
+import EventsWidget from '@/components/dashboard/EventsWidget.vue';
+import WikiWidget from '@/components/dashboard/WikiWidget.vue';
+import NotificationsWidget from '@/components/dashboard/NotificationsWidget.vue';
+import StatsWidget from '@/components/dashboard/StatsWidget.vue';
+import TicketsWidget from '@/components/dashboard/TicketsWidget.vue';
+import ForumWidget from '@/components/dashboard/ForumWidget.vue';
 import ConversationsWidget from '@/components/dashboard/ConversationsWidget.vue';
+import SandboxWidget from '@/components/dashboard/SandboxWidget.vue';
+import GalleryWidget from '@/components/dashboard/GalleryWidget.vue';
+import TicketOverviewWidget from '@/components/dashboard/TicketOverviewWidget.vue';
+import PageHeader from '@/components/common/PageHeader.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
+// Widgets are all one row tall; only the column span differs. Older
+// layouts may still carry the removed "small" size.
+const SIZE_ALIASES = { small: 'medium' };
+const normalizeSize = size => SIZE_ALIASES[size] || size || 'medium';
+// Grid columns a size spans, and rows a height spans.
+const SIZE_COLUMNS = { medium: 1, large: 2, xl: 3 };
+const normalizeHeight = height => (height === 'double' ? 'double' : 'single');
+const rowsOf = height => (normalizeHeight(height) === 'double' ? 2 : 1);
+const columnsOf = size => SIZE_COLUMNS[normalizeSize(size)] || 1;
+const GRID_CELL = 300;
+const GRID_GAP = 20;
+const GRID_STEP = GRID_CELL + GRID_GAP;
+const pxOfCells = n => n * GRID_STEP - GRID_GAP;
+// Do two widgets' cell rectangles intersect?
+const overlaps = (a, b, span) =>
+    a.position.x < b.position.x + span(b) &&
+    b.position.x < a.position.x + span(a) &&
+    a.position.y < b.position.y + rowsOf(b.height) &&
+    b.position.y < a.position.y + rowsOf(a.height);
+
+/**
+ * Personal dashboard: a drag & drop grid of widgets, each showing live
+ * data of one feature (see configs/dashboardWidgets.js). The layout —
+ * which widgets, where, how big, with which settings — is stored on the
+ * user's account. Confirmations and feedback use the app-wide `$dialog`.
+ */
 export default {
     name: 'DynamicDashboard',
     components: {
+        PageHeader,
+        EmptyState,
+        LoadingState,
         EventsWidget,
         WikiWidget,
         NotificationsWidget,
         StatsWidget,
-        TasksWidget,
-        WeatherWidget,
-        ConversationsWidget
+        TicketsWidget,
+        ForumWidget,
+        ConversationsWidget,
+        SandboxWidget,
+        GalleryWidget,
+        TicketOverviewWidget
     },
     data() {
         return {
@@ -408,214 +348,149 @@ export default {
             showWidgetSettings: false,
             selectedWidget: null,
             draggingWidgetId: null,
-            dragTargetId: null,
-
-            widgetSizes: [
-                { title: 'Small', value: 'small' },
-                { title: 'Medium', value: 'medium' },
-                { title: 'Large', value: 'large' },
-                { title: 'Extra Large', value: 'xl' }
-            ],
-
-            // Active widgets on dashboard
-            activeWidgets: [
-                {
-                    id: 'events-1',
-                    type: 'events',
-                    title: 'Upcoming Events',
-                    subtitle: '8 events scheduled',
-                    icon: 'mdi-calendar-clock',
-                    color: 'primary',
-                    size: 'medium',
-                    position: { x: 0, y: 0 },
-                    actions: [{ text: 'View All Events', color: 'primary', icon: 'mdi-calendar-multiple', to: '/events' }],
-                    data: {
-                        nextEvent: {
-                            title: 'Monthly Community Meeting',
-                            date: 'June 15, 2025 at 7:00 PM',
-                            timeUntil: 'in 12 days'
-                        },
-                        upcomingEvents: [
-                            { id: 1, title: 'Developer Workshop', date: 'June 20, 2025' },
-                            { id: 2, title: 'Community Cleanup', date: 'June 25, 2025' },
-                            { id: 3, title: 'Summer BBQ', date: 'July 2, 2025' }
-                        ]
-                    }
-                },
-                {
-                    id: 'wiki-1',
-                    type: 'wiki',
-                    title: 'Wiki Updates',
-                    subtitle: '3 recent changes',
-                    icon: 'mdi-book-edit',
-                    color: 'warning',
-                    size: 'small',
-                    position: { x: 1, y: 0 },
-                    actions: [{ text: 'View Wiki', color: 'warning', icon: 'mdi-book-open-variant', to: '/wiki' }],
-                    data: {
-                        recentChanges: [
-                            { id: 1, type: 'edit', page: 'Community Guidelines', author: 'Admin', date: '1 hour ago' },
-                            { id: 2, type: 'new', page: 'Event Planning Guide', author: 'John Doe', date: '6 hours ago' },
-                            { id: 3, type: 'edit', page: 'FAQ', author: 'Jane Smith', date: '1 day ago' }
-                        ]
-                    }
-                },
-                {
-                    id: 'notifications-1',
-                    type: 'notifications',
-                    title: 'Notifications',
-                    subtitle: '5 unread',
-                    icon: 'mdi-bell',
-                    color: 'info',
-                    size: 'medium',
-                    position: { x: 2, y: 0 },
-                    data: {
-                        recent: [
-                            { id: 1, type: 'info', message: 'New member joined', time: '2m ago', read: false },
-                            { id: 2, type: 'warning', message: 'Server maintenance scheduled', time: '1h ago', read: false },
-                            { id: 3, type: 'success', message: 'Event published successfully', time: '3h ago', read: true }
-                        ]
-                    }
-                },
-                {
-                    id: 'conversations-1',
-                    type: 'conversations',
-                    title: 'Messages',
-                    subtitle: 'Recent conversations',
-                    icon: 'mdi-message-text',
-                    color: 'teal',
-                    size: 'medium',
-                    position: { x: 0, y: 1 },
-                    actions: [{ text: 'View All Conversations', color: 'teal', icon: 'mdi-message-text-outline', to: '/conversations' }],
-                    data: {},
-                    config: { maxItems: 5 }
-                }
-            ],
-
-            // Available widgets to add
-            availableWidgets: [
-                {
-                    type: 'events',
-                    title: 'Events',
-                    description: 'Show upcoming events and meetings',
-                    icon: 'mdi-calendar-clock',
-                    color: 'primary',
-                    category: 'core'
-                },
-                {
-                    type: 'wiki',
-                    title: 'Wiki Changes',
-                    description: 'Recent wiki page updates and edits',
-                    icon: 'mdi-book-edit',
-                    color: 'warning',
-                    category: 'core'
-                },
-                {
-                    type: 'notifications',
-                    title: 'Notifications',
-                    description: 'System and community notifications',
-                    icon: 'mdi-bell',
-                    color: 'info',
-                    category: 'core'
-                },
-                {
-                    type: 'stats',
-                    title: 'Statistics',
-                    description: 'Key metrics and numbers',
-                    icon: 'mdi-chart-line',
-                    color: 'success',
-                    category: 'analytics'
-                },
-                {
-                    type: 'tasks',
-                    title: 'Tasks',
-                    description: 'Personal and team task management',
-                    icon: 'mdi-check-circle',
-                    color: 'purple',
-                    category: 'productivity'
-                },
-                {
-                    type: 'weather',
-                    title: 'Weather',
-                    description: 'Current weather conditions',
-                    icon: 'mdi-weather-partly-cloudy',
-                    color: 'blue',
-                    category: 'utility'
-                },
-                {
-                    type: 'analytics',
-                    title: 'Analytics',
-                    description: 'Traffic and engagement metrics',
-                    icon: 'mdi-google-analytics',
-                    color: 'orange',
-                    category: 'analytics'
-                },
-                {
-                    type: 'social',
-                    title: 'Social Feed',
-                    description: 'Recent posts and social activity',
-                    icon: 'mdi-account-group',
-                    color: 'pink',
-                    category: 'social'
-                },
-                {
-                    type: 'calendar',
-                    title: 'Calendar',
-                    description: 'Monthly calendar view',
-                    icon: 'mdi-calendar-month',
-                    color: 'indigo',
-                    category: 'utility'
-                },
-                {
-                    type: 'conversations',
-                    title: 'Conversations',
-                    description: 'Recent messages and chats',
-                    icon: 'mdi-message-text',
-                    color: 'teal',
-                    category: 'social'
-                }
-            ]
+            // Pointer offset inside the dragged widget, so the marker follows
+            // the widget's top-left corner rather than the cursor.
+            dragOffset: { x: 0, y: 0 },
+            // Cell the dragged widget will land in: { x, y, cols, rows }
+            dropPreview: null,
+            // Width of the grid container, kept current by a ResizeObserver;
+            // decides how many columns fit.
+            gridWidth: 0,
+            gridObserver: null,
+            activeWidgets: [],
+            loadingLayout: true,
+            saveTimer: null,
+            // Saving is automatic, so a failure is reported once and not on
+            // every following auto-save until one succeeds again.
+            saveErrorShown: false,
         }
     },
     computed: {
         user() {
-            const userStore = useUserStore();
-            return userStore.user;
+            return useUserStore().user;
+        },
+        widgetSizes() {
+            return [
+                { title: this.$t('dashboard.sizeStandard'), value: 'medium' },
+                { title: this.$t('dashboard.sizeWide'), value: 'large' },
+                { title: this.$t('dashboard.sizeExtraWide'), value: 'xl' }
+            ];
+        },
+        // As many columns as fit in the grid's width, at least one.
+        gridColumns() {
+            const width = this.gridWidth || (this.$vuetify.display.width - 48);
+            return Math.max(1, Math.floor((width + GRID_GAP) / GRID_STEP));
+        },
+        // The grid grows with its lowest widget (plus one spare row while
+        // dragging, so a widget can be dropped below everything).
+        gridStyle() {
+            const rows = Math.max(1, ...this.activeWidgets.map(w => w.position.y + rowsOf(w.height)));
+            const spare = this.draggingWidgetId ? 1 : 0;
+            return { height: `${pxOfCells(rows + spare)}px` };
+        },
+        dropPreviewStyle() {
+            const p = this.dropPreview;
+            if (!p) return {};
+            return {
+                left: `${p.x * GRID_STEP}px`,
+                top: `${p.y * GRID_STEP}px`,
+                width: `${pxOfCells(p.cols)}px`,
+                height: `${pxOfCells(p.rows)}px`,
+            };
+        },
+        widgetHeights() {
+            return [
+                { title: this.$t('dashboard.heightSingle'), value: 'single' },
+                { title: this.$t('dashboard.heightDouble'), value: 'double' }
+            ];
+        },
+        // Widgets of enabled features, with how many of each are already placed.
+        availableWidgets() {
+            const settings = useSettingsStore();
+            return Object.entries(WIDGET_TYPES)
+                .filter(([, def]) => isWidgetEnabled(def, settings))
+                .map(([type, def]) => ({
+                    type,
+                    icon: def.icon,
+                    color: def.color,
+                    count: this.activeWidgets.filter(w => w.type === type).length,
+                }));
         }
     },
     methods: {
-        getWidgetComponent(type) {
-            const components = {
-                events: 'EventsWidget',
-                wiki: 'WikiWidget',
-                notifications: 'NotificationsWidget',
-                stats: 'StatsWidget',
-                tasks: 'TasksWidget',
-                weather: 'WeatherWidget',
-                conversations: 'ConversationsWidget'
+        definition(widget) {
+            return WIDGET_TYPES[widget.type];
+        },
+
+        widgetTitle(widget) {
+            return widget.title || this.$t(`dashboard.widgets.${widget.type}.title`);
+        },
+
+        createWidget(type, saved = {}) {
+            const def = WIDGET_TYPES[type];
+            // Widget-specific options start at their declared defaults.
+            const defaults = Object.fromEntries((def.settings || []).map(s => [s.key, s.default]));
+            return {
+                id: saved.id || `${type}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                type,
+                title: saved.title || null,
+                subtitle: '',
+                color: saved.color || def.color,
+                size: normalizeSize(saved.size || def.size),
+                height: normalizeHeight(saved.height),
+                position: saved.position || this.findAvailablePosition(
+                    Math.min(columnsOf(saved.size || def.size), this.gridColumns),
+                    rowsOf(saved.height)
+                ),
+                config: { limit: 5, ...defaults, ...(saved.config || {}) },
+                refreshKey: 0,
             };
-            return components[type] || 'div';
+        },
+
+        // Options of a widget type for the settings dialog, without the
+        // choices reserved for admins.
+        widgetSettings(widget) {
+            const isAdmin = useUserStore().hasRole('admin');
+            return (WIDGET_TYPES[widget.type].settings || []).map(setting => ({
+                ...setting,
+                items: setting.items
+                    .filter(item => !item.adminOnly || isAdmin)
+                    .map(item => ({
+                        value: item.value,
+                        title: this.$t(`dashboard.widgets.${widget.type}.settings.${setting.key}.items.${item.value}`),
+                    })),
+            }));
+        },
+
+        pxOfCells,
+        rowsOf,
+
+        // Columns a widget occupies on this screen: its size, capped to
+        // what the grid can show.
+        spanOf(widget) {
+            return Math.min(columnsOf(widget.size), this.gridColumns);
         },
 
         getWidgetStyle(widget) {
-            const gridSize = 300; // Base grid size
-            const gap = 20;
-
             return {
-                left: `${widget.position.x * (gridSize + gap)}px`,
-                top: `${widget.position.y * (gridSize + gap)}px`,
+                left: `${widget.position.x * GRID_STEP}px`,
+                top: `${widget.position.y * GRID_STEP}px`,
+                width: `${pxOfCells(this.spanOf(widget))}px`,
+                height: `${pxOfCells(rowsOf(widget.height))}px`,
                 zIndex: widget.id === this.draggingWidgetId ? 1000 : 1
             };
         },
 
         onDragStart(widget, event) {
             this.draggingWidgetId = widget.id;
+            const rect = event.currentTarget.getBoundingClientRect();
+            this.dragOffset = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+            this.dropPreview = { ...widget.position, cols: this.spanOf(widget), rows: rowsOf(widget.height) };
 
-            // Set drag data
             event.dataTransfer.setData('text/plain', widget.id);
             event.dataTransfer.effectAllowed = 'move';
 
-            // Add visual feedback
+            // Fade the source while its ghost is being dragged
             setTimeout(() => {
                 event.target.style.opacity = '0.5';
             }, 0);
@@ -624,154 +499,107 @@ export default {
         onDragEnd(event) {
             event.target.style.opacity = '';
             this.draggingWidgetId = null;
-            this.dragTargetId = null;
-
-            // Remove any remaining visual feedback
-            document.querySelectorAll('.widget-card').forEach(card => {
-                card.style.transition = '';
-                card.style.transform = '';
-            });
+            this.dropPreview = null;
         },
 
-        onDragOver(event, targetWidget) {
-            if (this.draggingWidgetId && this.draggingWidgetId !== targetWidget.id) {
-                event.preventDefault();
-                event.dataTransfer.dropEffect = 'move';
+        // Cell under the dragged widget's top-left corner, clamped so the
+        // widget stays inside the grid.
+        cellFromPointer(event, cols) {
+            const rect = this.$refs.widgetGrid.getBoundingClientRect();
+            const left = event.clientX - rect.left - this.dragOffset.x;
+            const top = event.clientY - rect.top - this.dragOffset.y;
+            return {
+                x: Math.min(Math.max(0, Math.round(left / GRID_STEP)), Math.max(0, this.gridColumns - cols)),
+                y: Math.max(0, Math.round(top / GRID_STEP)),
+            };
+        },
+
+        onGridDragOver(event) {
+            if (!this.draggingWidgetId || !this.dropPreview) return;
+            event.dataTransfer.dropEffect = 'move';
+            const cell = this.cellFromPointer(event, this.dropPreview.cols);
+            if (cell.x !== this.dropPreview.x || cell.y !== this.dropPreview.y) {
+                this.dropPreview = { ...this.dropPreview, ...cell };
             }
         },
 
-        onDragEnter(event, targetWidget) {
-            if (this.draggingWidgetId && this.draggingWidgetId !== targetWidget.id) {
-                event.preventDefault();
-                this.dragTargetId = targetWidget.id;
-
-                // Add visual feedback for swap target
-                const targetElement = event.currentTarget.querySelector('.widget-card');
-                if (targetElement) {
-                    targetElement.style.transition = 'all 0.3s ease';
-                    targetElement.style.transform = 'scale(0.95)';
-                    targetElement.style.opacity = '0.7';
-                }
-            }
-        },
-
-        onDragLeave(event, targetWidget) {
-            // Only remove highlight if we're actually leaving the widget area
-            const rect = event.currentTarget.getBoundingClientRect();
-            const x = event.clientX;
-            const y = event.clientY;
-
-            if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-                if (this.dragTargetId === targetWidget.id) {
-                    this.dragTargetId = null;
-
-                    // Remove visual feedback
-                    const targetElement = event.currentTarget.querySelector('.widget-card');
-                    if (targetElement) {
-                        targetElement.style.transform = '';
-                        targetElement.style.opacity = '';
-                    }
-                }
+        onGridDragLeave(event) {
+            // Leaving the grid itself (not moving between its children)
+            if (!this.$refs.widgetGrid.contains(event.relatedTarget)) {
+                this.dropPreview = null;
             }
         },
 
         onDrop(event) {
             event.preventDefault();
-            const widgetId = event.dataTransfer.getData('text/plain');
-
-            if (!widgetId) return;
-
+            const widgetId = event.dataTransfer.getData('text/plain') || this.draggingWidgetId;
             const draggedWidget = this.activeWidgets.find(w => w.id === widgetId);
             if (!draggedWidget) return;
 
-            // Calculate new position based on drop location
-            const rect = this.$refs.widgetGrid.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+            const target = this.dropPreview
+                ? { x: this.dropPreview.x, y: this.dropPreview.y }
+                : this.cellFromPointer(event, this.spanOf(draggedWidget));
 
-            const gridSize = 300;
-            const gap = 20;
+            draggedWidget.position = target;
+            // Whatever it now covers moves out of the way; the dropped widget stays put.
+            this.resolveOverlaps(draggedWidget.id);
 
-            const newPosition = {
-                x: Math.max(0, Math.round(x / (gridSize + gap))),
-                y: Math.max(0, Math.round(y / (gridSize + gap)))
-            };
-
-            // Store original position in case we need to revert
-            const originalPosition = { ...draggedWidget.position };
-
-            // Check if the new position is occupied by another widget
-            const occupyingWidget = this.activeWidgets.find(w =>
-                w.id !== widgetId &&
-                w.position.x === newPosition.x &&
-                w.position.y === newPosition.y
-            );
-
-            if (occupyingWidget) {
-                // Swap positions instead of stacking
-                occupyingWidget.position = originalPosition;
-                draggedWidget.position = newPosition;
-
-                // Add visual feedback for the swap
-                this.$nextTick(() => {
-                    const occupyingElement = document.querySelector(`[data-widget-id="${occupyingWidget.id}"]`);
-                    const draggedElement = document.querySelector(`[data-widget-id="${draggedWidget.id}"]`);
-
-                    if (occupyingElement) {
-                        occupyingElement.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-                        occupyingElement.style.transform = 'scale(1.05)';
-                        setTimeout(() => {
-                            occupyingElement.style.transform = '';
-                        }, 200);
-                    }
-
-                    if (draggedElement) {
-                        draggedElement.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-                        draggedElement.style.transform = 'scale(1.05)';
-                        setTimeout(() => {
-                            draggedElement.style.transform = '';
-                        }, 200);
-                    }
-                });
-
-                console.log(`Swapped positions: ${draggedWidget.title} ↔ ${occupyingWidget.title}`);
-            } else {
-                // Position is free, just move there
-                draggedWidget.position = newPosition;
-            }
-
+            this.draggingWidgetId = null;
+            this.dropPreview = null;
             this.saveLayout();
         },
 
-        addWidget(widgetTemplate) {
-            const newWidget = {
-                id: `${widgetTemplate.type}-${Date.now()}`,
-                type: widgetTemplate.type,
-                title: widgetTemplate.title,
-                subtitle: widgetTemplate.description,
-                icon: widgetTemplate.icon,
-                color: widgetTemplate.color,
-                size: 'medium',
-                position: this.findAvailablePosition(),
-                data: this.getDefaultWidgetData(widgetTemplate.type),
-                config: {}
+        // Guarantee that no two widgets share a cell and none sticks out of
+        // the grid. The pinned widget (just dropped or resized) keeps its
+        // place; anything it collides with is moved to the nearest free spot
+        // at or below its current row.
+        resolveOverlaps(pinnedId = null) {
+            const byPosition = () => [...this.activeWidgets].sort((a, b) =>
+                a.position.y - b.position.y || a.position.x - b.position.x
+            );
+            const relocate = widget => {
+                widget.position = this.findAvailablePosition(this.spanOf(widget), rowsOf(widget.height), {
+                    except: widget.id,
+                    fromY: widget.position.y,
+                });
             };
 
-            // Add actions based on widget type
-            if (widgetTemplate.type === 'events') {
-                newWidget.actions = [{ text: 'View All Events', color: 'primary', icon: 'mdi-calendar-multiple', to: '/events' }];
-            } else if (widgetTemplate.type === 'wiki') {
-                newWidget.actions = [{ text: 'View Wiki', color: 'warning', icon: 'mdi-book-open-variant', to: '/wiki' }];
-            } else if (widgetTemplate.type === 'conversations') {
-                newWidget.actions = [{ text: 'View All Conversations', color: 'teal', icon: 'mdi-message-text-outline', to: '/conversations' }];
-            }
+            this.activeWidgets.forEach(w => {
+                if (w.position.x + this.spanOf(w) > this.gridColumns || w.position.x < 0 || w.position.y < 0) {
+                    relocate(w);
+                }
+            });
 
-            this.activeWidgets.push(newWidget);
+            for (let guard = 0; guard < 200; guard++) {
+                const list = byPosition();
+                let mover = null;
+                outer: for (let i = 0; i < list.length; i++) {
+                    for (let j = i + 1; j < list.length; j++) {
+                        if (!overlaps(list[i], list[j], this.spanOf)) continue;
+                        mover = list[i].id === pinnedId ? list[j] : list[j].id === pinnedId ? list[i] : list[j];
+                        break outer;
+                    }
+                }
+                if (!mover) return;
+                relocate(mover);
+            }
+        },
+
+        addWidget(type) {
+            this.activeWidgets.push(this.createWidget(type));
             this.showWidgetPanel = false;
             this.saveLayout();
         },
 
-        removeWidget(widgetId) {
+        async removeWidget(widgetId) {
+            const widget = this.activeWidgets.find(w => w.id === widgetId);
+            if (!widget) return;
+            const confirmed = await this.$dialog.confirmDelete(
+                this.$t('dashboard.confirmRemove', { title: this.widgetTitle(widget) }),
+                { title: this.$t('dashboard.remove'), confirmationText: this.$t('dialogs.confirm.remove') }
+            );
+            if (!confirmed) return;
+
             const index = this.activeWidgets.findIndex(w => w.id === widgetId);
             if (index > -1) {
                 this.activeWidgets.splice(index, 1);
@@ -779,12 +607,11 @@ export default {
             }
         },
 
+        // Widgets reload their data when their refresh counter changes.
         refreshWidget(widgetId) {
             const widget = this.activeWidgets.find(w => w.id === widgetId);
             if (widget) {
-                // Simulate refresh by updating data
-                widget.data = this.getDefaultWidgetData(widget.type);
-                console.log(`Refreshing widget: ${widget.title}`);
+                widget.refreshKey++;
             }
         },
 
@@ -794,156 +621,218 @@ export default {
         },
 
         saveWidgetSettings() {
+            if (this.selectedWidget) {
+                const limit = parseInt(this.selectedWidget.config.limit, 10);
+                this.selectedWidget.config.limit = limit > 0 ? Math.min(limit, 20) : 5;
+                if (!this.selectedWidget.title?.trim()) {
+                    this.selectedWidget.title = null;
+                }
+            }
             this.showWidgetSettings = false;
+            if (this.selectedWidget) this.resolveOverlaps(this.selectedWidget.id);
             this.saveLayout();
         },
 
-        resetLayout() {
-            // Reset to default layout
+        // Back to the default widget set and grid order — after confirming,
+        // since it discards the user's customised layout.
+        async resetLayout() {
+            const confirmed = await this.$dialog.confirm({
+                title: this.$t('dashboard.resetLayout'),
+                content: this.$t('dashboard.confirmReset'),
+                confirmationText: this.$t('dialogs.confirm.confirm'),
+                color: 'warning',
+            });
+            if (confirmed) {
+                this.applyDefaultLayout();
+            }
+        },
+
+        applyDefaultLayout() {
+            this.activeWidgets = [];
+            DEFAULT_LAYOUT
+                .filter(type => this.availableWidgets.some(w => w.type === type))
+                .forEach(type => this.activeWidgets.push(this.createWidget(type)));
             this.activeWidgets.forEach((widget, index) => {
                 widget.position = { x: index % 3, y: Math.floor(index / 3) };
             });
             this.saveLayout();
         },
 
-        findAvailablePosition() {
-            const occupiedPositions = new Set(
-                this.activeWidgets.map(w => `${w.position.x},${w.position.y}`)
-            );
-
-            for (let y = 0; y < 10; y++) {
-                for (let x = 0; x < 4; x++) {
-                    if (!occupiedPositions.has(`${x},${y}`)) {
-                        return { x, y };
+        // First grid cell where a widget spanning cols × rows fits without
+        // overlapping the cells the other widgets already cover.
+        findAvailablePosition(cols = 1, rows = 1, { except = null, fromY = 0 } = {}) {
+            const occupied = new Set();
+            this.activeWidgets.forEach(w => {
+                if (w.id === except) return;
+                for (let dx = 0; dx < this.spanOf(w); dx++) {
+                    for (let dy = 0; dy < rowsOf(w.height); dy++) {
+                        occupied.add(`${w.position.x + dx},${w.position.y + dy}`);
                     }
                 }
-            }
-
-            // If no free position found, place at end of grid
-            const maxY = Math.max(...this.activeWidgets.map(w => w.position.y), -1);
-            return { x: 0, y: maxY + 1 };
-        },
-
-        getDefaultWidgetData(type) {
-            const defaultData = {
-                events: {
-                    nextEvent: {
-                        title: 'Sample Event',
-                        date: 'Coming Soon',
-                        timeUntil: 'TBD'
-                    },
-                    upcomingEvents: []
-                },
-                wiki: {
-                    recentChanges: [
-                        { id: 1, type: 'new', page: 'New Page', author: 'System', date: 'Just now' }
-                    ]
-                },
-                notifications: {
-                    recent: [
-                        { id: 1, type: 'info', message: 'Welcome to your new widget!', time: 'now', read: false }
-                    ]
-                },
-                stats: {
-                    value: '0',
-                    label: 'New Metric',
-                    trend: 0
-                },
-                tasks: {
-                    completed: 0,
-                    total: 1,
-                    recent: [
-                        { id: 1, title: 'Configure this widget', completed: false, dueDate: 'Today' }
-                    ]
-                },
-                weather: {
-                    temperature: '22',
-                    condition: 'Sunny',
-                    location: 'Your Location',
-                    icon: 'mdi-weather-sunny'
-                },
-                conversations: {
-                    // This will be populated by the widget component from the store
+            });
+            const fits = (x, y) => {
+                if (x + cols > this.gridColumns) return false;
+                for (let dx = 0; dx < cols; dx++) {
+                    for (let dy = 0; dy < rows; dy++) {
+                        if (occupied.has(`${x + dx},${y + dy}`)) return false;
+                    }
                 }
+                return true;
             };
 
-            return defaultData[type] || {};
-        },
-
-        updateWidgetData(widgetId, newData) {
-            const widget = this.activeWidgets.find(w => w.id === widgetId);
-            if (widget) {
-                widget.data = { ...widget.data, ...newData };
-            }
-        },
-
-        saveLayout() {
-            // Save layout to localStorage or send to API
-            const layout = this.activeWidgets.map(w => ({
-                id: w.id,
-                type: w.type,
-                position: w.position,
-                size: w.size,
-                config: w.config
-            }));
-
-            localStorage.setItem('dashboardLayout', JSON.stringify(layout));
-            console.log('Layout saved');
-        },
-
-        loadLayout() {
-            // Load layout from localStorage or API
-            const savedLayout = localStorage.getItem('dashboardLayout');
-            if (savedLayout) {
-                try {
-                    const layout = JSON.parse(savedLayout);
-                    // Apply saved positions and configurations
-                    layout.forEach(saved => {
-                        const widget = this.activeWidgets.find(w => w.id === saved.id);
-                        if (widget) {
-                            widget.position = saved.position;
-                            widget.size = saved.size;
-                            widget.config = saved.config || {};
-                        }
-                    });
-                } catch (e) {
-                    console.error('Failed to load layout:', e);
+            for (let y = fromY; y < fromY + 50; y++) {
+                for (let x = 0; x < this.gridColumns; x++) {
+                    if (fits(x, y)) return { x, y };
                 }
             }
+
+            // Below everything else
+            const bottom = Math.max(...this.activeWidgets.filter(w => w.id !== except).map(w => w.position.y + rowsOf(w.height)), 0);
+            return { x: 0, y: bottom };
+        },
+
+        // Columns the widget really spans on this screen, so lists inside
+        // can lay their items out side by side.
+        columnsFor(widget) {
+            if (this.$vuetify.display.width < 960) return 1;
+            return this.spanOf(widget);
+        },
+
+        updateWidgetMeta(widgetId, meta) {
+            const widget = this.activeWidgets.find(w => w.id === widgetId);
+            if (widget && meta?.subtitle !== undefined) {
+                widget.subtitle = meta.subtitle;
+            }
+        },
+
+        serializeLayout() {
+            return this.activeWidgets.map(w => ({
+                id: w.id,
+                type: w.type,
+                title: w.title,
+                color: w.color,
+                position: w.position,
+                size: w.size,
+                height: w.height,
+                config: w.config
+            }));
+        },
+
+        // The layout is stored on the user's account so it follows them
+        // across browsers and logins. Saves are coalesced (drag & drop
+        // fires many) and the last one wins.
+        saveLayout() {
+            clearTimeout(this.saveTimer);
+            this.saveTimer = setTimeout(async () => {
+                try {
+                    await axios.put('/api/account/dashboard/layout', { layout: this.serializeLayout() });
+                    this.saveErrorShown = false;
+                } catch (e) {
+                    if (this.saveErrorShown) return;
+                    this.saveErrorShown = true;
+                    this.$dialog.warning(this.$t('dashboard.saveFailed', { error: e.response?.data?.message || e.message }));
+                }
+            }, 400);
+        },
+
+        applyLayout(layout) {
+            const enabled = new Set(this.availableWidgets.map(w => w.type));
+            layout
+                .filter(saved => saved?.type && enabled.has(saved.type))
+                .forEach(saved => this.activeWidgets.push(this.createWidget(saved.type, saved)));
+            this.resolveOverlaps();
+        },
+
+        // Restore the account's layout; widgets of unknown (retired) or
+        // disabled types are dropped. A layout left in this browser by the
+        // previous localStorage-only version is adopted once, then the
+        // defaults are used.
+        async loadLayout() {
+            this.loadingLayout = true;
+            let layout = null;
+            try {
+                const { data } = await axios.get('/api/account/dashboard/layout');
+                layout = data.data;
+            } catch (e) {
+                this.$dialog.error(this.$t('dashboard.layoutLoadFailed', { error: e.response?.data?.message || e.message }));
+            }
+
+            if (!Array.isArray(layout)) {
+                try {
+                    layout = JSON.parse(localStorage.getItem(LAYOUT_STORAGE_KEY));
+                    localStorage.removeItem(LAYOUT_STORAGE_KEY);
+                } catch (e) {
+                    layout = null;
+                }
+                if (Array.isArray(layout)) {
+                    this.applyLayout(layout);
+                    this.saveLayout();
+                } else {
+                    this.applyDefaultLayout();
+                }
+            } else {
+                this.applyLayout(layout);
+            }
+            this.loadingLayout = false;
         }
     },
 
+    watch: {
+        // Fewer or more columns: keep every widget inside the grid and
+        // apart from the others. Not saved — the layout is only persisted
+        // when the user changes something.
+        gridColumns() {
+            if (!this.loadingLayout) this.resolveOverlaps();
+        },
+    },
     mounted() {
         this.loadLayout();
+        this.gridObserver = new ResizeObserver(entries => {
+            this.gridWidth = entries[0]?.contentRect?.width || 0;
+        });
+        this.gridObserver.observe(this.$el);
+    },
+    beforeUnmount() {
+        this.gridObserver?.disconnect();
     }
 }
 </script>
 
+
 <style scoped>
-.dashboard-container {
-    padding: 24px;
-    min-height: 100vh;
-    background: rgba(var(--v-theme-surface), var(--app-surface-opacity)) !important;
-}
-
-.dashboard-header {
-    background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.08) 0%, rgba(var(--v-theme-surface), 0.1) 100%);
-    border-radius: 16px;
-    padding: 24px;
-    backdrop-filter: blur(10px);
-}
-
-.dashboard-title {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
 .widget-grid {
     position: relative;
-    min-height: 600px;
+    min-height: 320px;
     width: 100%;
+    transition: height 0.2s ease;
+}
+
+/* The available cells, shown while a widget is being dragged */
+.grid-cells {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+    background-image:
+        repeating-linear-gradient(90deg, rgba(var(--v-theme-primary), 0.05) 0 300px, transparent 300px 320px),
+        repeating-linear-gradient(180deg, rgba(var(--v-theme-primary), 0.05) 0 300px, transparent 300px 320px);
+}
+
+/* Landing spot of the dragged widget */
+.drop-marker {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed rgb(var(--v-theme-primary));
+    border-radius: 16px;
+    background: rgba(var(--v-theme-primary), 0.1);
+    color: rgb(var(--v-theme-primary));
+    pointer-events: none;
+    z-index: 500;
+    transition: left 0.15s ease, top 0.15s ease;
 }
 
 .widget-container {
@@ -952,60 +841,35 @@ export default {
     cursor: move;
 }
 
-.widget-size-small {
-    width: 280px;
-    height: 200px;
-}
-
-.widget-size-medium {
-    width: 280px;
-    height: 300px;
-}
-
-.widget-size-large {
-    width: 600px;
-    height: 300px;
-}
-
-.widget-size-xl {
-    width: 600px;
-    height: 400px;
-}
+/* Widget width and height come from getWidgetStyle(): one grid row per
+   height step, one column per size step, capped to the columns that fit. */
 
 .widget-card {
     border-radius: 16px !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(10px);
     background-color: rgb(var(--v-theme-surface));
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-/* Light theme widget cards */
 .v-theme--light .widget-card {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.v-theme--dark .widget-card {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+.widget-card:hover {
+    transform: translateY(-2px);
 }
 
 .v-theme--light .widget-card:hover {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
-    transform: translateY(-2px);
-}
-
-/* Dark theme widget cards */
-.v-theme--dark .widget-card {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .v-theme--dark .widget-card:hover {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6) !important;
-    transform: translateY(-2px);
-}
-
-.widget-card.drag-target {
-    border: 2px dashed rgb(var(--v-theme-primary)) !important;
-    background: rgba(var(--v-theme-primary), 0.1) !important;
-    transform: scale(0.95) !important;
-    opacity: 0.7 !important;
 }
 
 .widget-card.dragging {
@@ -1028,25 +892,30 @@ export default {
 
 .widget-header {
     cursor: grab;
-}
-
-.v-theme--light .widget-header {
-    background: rgba(0, 0, 0, 0.02);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.v-theme--dark .widget-header {
-    background: rgba(255, 255, 255, 0.03);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(var(--v-theme-on-surface), 0.03);
+    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
 .widget-header:active {
     cursor: grabbing;
 }
 
+/* The card is a flex column: header, scrolling content, action pinned
+   to the bottom whatever the widget height. */
+.widget-card {
+    display: flex;
+    flex-direction: column;
+}
+
 .widget-content {
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
-    max-height: calc(100% - 120px);
+}
+
+.widget-card > .v-card-actions {
+    margin-top: auto;
+    flex: 0 0 auto;
 }
 
 .widget-preview {
@@ -1091,32 +960,21 @@ export default {
     animation: slideInUp 0.5s ease-out;
 }
 
-/* Responsive design */
-@media (max-width: 1200px) {
-    .widget-size-large,
-    .widget-size-xl {
-        width: 280px;
-    }
-
-    .widget-size-xl {
-        height: 350px;
-    }
-}
-
+/* Phones and small tablets: a plain stacked list */
 @media (max-width: 960px) {
-    .dashboard-container {
-        padding: 16px;
-    }
-
-    .dashboard-header {
-        padding: 16px;
-    }
-
     .widget-grid {
         position: static;
         display: grid;
         grid-template-columns: 1fr;
         gap: 16px;
+    }
+
+    .widget-grid {
+        height: auto !important;
+    }
+
+    .drop-marker {
+        display: none;
     }
 
     .widget-container {
@@ -1125,14 +983,6 @@ export default {
         height: auto !important;
         min-height: 200px;
     }
-
-    .widget-size-small,
-    .widget-size-medium,
-    .widget-size-large,
-    .widget-size-xl {
-        width: 100% !important;
-        height: auto !important;
-    }
 }
 
 /* Custom scrollbar for widget content */
@@ -1140,66 +990,23 @@ export default {
     width: 4px;
 }
 
-.v-theme--light .widget-content::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.05);
+.widget-content::-webkit-scrollbar-track {
+    background: rgba(var(--v-theme-on-surface), 0.05);
     border-radius: 2px;
 }
 
-.v-theme--light .widget-content::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
+.widget-content::-webkit-scrollbar-thumb {
+    background: rgba(var(--v-theme-on-surface), 0.2);
     border-radius: 2px;
 }
 
-.v-theme--light .widget-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.3);
+.widget-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--v-theme-on-surface), 0.3);
 }
 
-.v-theme--dark .widget-content::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 2px;
-}
-
-.v-theme--dark .widget-content::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
-}
-
-.v-theme--dark .widget-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-/* Button styling */
-.v-btn {
-    border-radius: 12px !important;
-    text-transform: none !important;
-    font-weight: 600 !important;
-}
-
-/* Dialog styling */
-.v-dialog .v-card {
-    border-radius: 20px !important;
-}
-
-.v-theme--light .v-dialog .v-card {
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
-}
-
-.v-theme--dark .v-dialog .v-card {
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
-}
-
-/* Color picker styling */
+/* Color picker in the settings dialog */
 .v-color-picker {
-    border-radius: 12px !important;
     box-shadow: none !important;
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
-
-.v-theme--light .v-color-picker {
-    border: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.v-theme--dark .v-color-picker {
-    border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
 </style>

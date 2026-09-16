@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\DataTable;
 
 use App\Models\Page;
-//use App\Models\Tag\Taxonomy;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class PageController extends DataTableController
@@ -12,13 +12,39 @@ class PageController extends DataTableController
 
     public function builder()
     {
-        return Page::query();
+        $query = Page::query();
+
+        // Filter out pages that have a wiki entry
+        if (request()->boolean('exclude_wiki')) {
+            $query->whereDoesntHave('wikiable');
+        }
+
+        return $query;
+    }
+
+    /**
+     * Every recorded change to this row, in the edit drawer.
+     */
+    public function getRelations(): array
+    {
+        return [
+            [
+                'key'      => 'history',
+                'title'    => 'History',
+                'icon'     => 'mdi-history',
+                'endpoint' => '/datatable/pages/{id}/history',
+            ],
+        ];
     }
 
     public function store(Request $request)
     {
         //        dd($request);
-        $page = auth()->user()->pages()->create($request->only($this->getUpdatableColumns()));
+
+        $data                 = $request->only($this->getUpdatableColumns());
+        $data['sign_in_only'] = ! empty($data['sign_in_only']) ? 1 : 0;
+
+        $page = auth()->user()->pages()->create($data);
 
         if ($request->get('parent')) {
             $parent = $request->get('parent');
@@ -27,11 +53,10 @@ class PageController extends DataTableController
             $page->save();
         }
 
-        if ($request->get('taxonomy') && $request->get('categories')) {
-            $taxonomy = $request->get('taxonomy');
-            $taxonomy = $taxonomy['taxonomy'];
-            //            dd('hm');
-            $page->addCategories($request->get('categories'), $taxonomy);
+        if ($request->get('categories')) {
+            $taxonomy     = $request->get('taxonomy');
+            $taxonomyName = is_array($taxonomy) ? ($taxonomy['taxonomy'] ?? 'category') : ($taxonomy ?? 'category');
+            $page->addCategories($request->get('categories'), $taxonomyName);
         }
 
         if ($request->get('terms')) {
@@ -41,7 +66,6 @@ class PageController extends DataTableController
 
     public function update($id, Request $request)
     {
-        //            dd($id, $request);
         $page = Page::find($id);
         $page->update($request->only($this->getUpdatableColumns()));
 
@@ -55,13 +79,10 @@ class PageController extends DataTableController
 
         $page->detachCategories();
 
-        if ($request->get('taxonomy') && $request->get('categories')) {
-            $taxonomy = $request->get('taxonomy');
-            if (!is_string($taxonomy)) {
-                $taxonomy = $taxonomy['taxonomy'];
-            }
-
-            $page->addCategories($request->get('categories'), $taxonomy);
+        if ($request->get('categories')) {
+            $taxonomy     = $request->get('taxonomy');
+            $taxonomyName = is_array($taxonomy) ? ($taxonomy['taxonomy'] ?? 'category') : ($taxonomy ?? 'category');
+            $page->addCategories($request->get('categories'), $taxonomyName);
         }
 
         if ($request->get('terms')) {
@@ -69,12 +90,41 @@ class PageController extends DataTableController
         }
     }
 
+    public function getTaxonomyFields()
+    {
+        return [
+            'categories' => [
+                'taxonomy' => 'category',
+                'label'    => 'Categories',
+                'multiple' => true,
+                'endpoint' => '/api/tag/terms/category',
+            ],
+            'terms' => [
+                'taxonomy' => 'tags',
+                'label'    => 'Tags',
+                'multiple' => true,
+                'endpoint' => '/api/tag/terms/tags',
+            ],
+        ];
+    }
+
+    public function show($id, Request $request): JsonResponse
+    {
+        $page = Page::find($id);
+        $data = $page->toArray();
+
+        $data['categories'] = $page->getCategories('category')->pluck('title')->toArray();
+        $data['terms']      = $page->getCategories('tags')->pluck('title')->toArray();
+
+        return response()->json($data);
+    }
+
     public function getUpdatableColumns()
     {
         return [
             'title',
             'content',
-            'published',
+            'published_at',
             'sign_in_only', ];
     }
 
@@ -82,15 +132,36 @@ class PageController extends DataTableController
     {
         return [
             'content'      => 'wysiwyg',
-            'published'    => 'checkbox',
+            'published_at' => 'publish',
             'sign_in_only' => 'checkbox', ];
+    }
+
+    /**
+     * published_at is the publish timestamp (null = draft, a future date =
+     * scheduled); sign_in_only stays an integer flag on the pages table.
+     */
+    public function getColumnTypes(): array
+    {
+        return [
+            'published_at' => 'datetime',
+            'sign_in_only' => 'boolean',
+            'created_at'   => 'date',
+            'updated_at'   => 'date',
+        ];
+    }
+
+    public function getToggleFilters()
+    {
+        return [
+            ['key' => 'exclude_wiki', 'label' => 'Exclude Wiki Pages', 'icon' => 'mdi-book-remove-outline'],
+        ];
     }
 
     public function getDisplayableColumns()
     {
         return [
             'id',
-            'published',
+            'published_at',
             'sign_in_only',
             'slug',
             'title',

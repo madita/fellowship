@@ -17,6 +17,7 @@ export const WIDGET_TYPES = {
     TIMELINE: 'timeline',
     CLIENTS: 'clients',
     CUSTOM_HTML: 'custom_html',
+    FORUM: 'forum',
 };
 
 export const WIDGET_DEFINITIONS = {
@@ -588,6 +589,35 @@ export const WIDGET_DEFINITIONS = {
             containerClass: { type: 'text', label: 'Container CSS Class', hint: 'e.g., bg-grey-lighten-4' },
             containerStyle: { type: 'text', label: 'Inline Styles', hint: 'e.g., padding: 20px;' },
             fullWidth: { type: 'boolean', label: 'Full Width Container' },
+        },
+    },
+    [WIDGET_TYPES.FORUM]: {
+        name: 'Forum',
+        description: 'Live forum overview with stats, categories, and recent activity',
+        icon: 'mdi-forum',
+        category: 'content',
+        color: 'deep-orange',
+        defaultContent: {
+            title: 'Community Forum',
+            subtitle: 'Join the discussion',
+            categoriesToShow: 5,
+            activitiesToShow: 5,
+            showStats: true,
+            showCategories: true,
+            showActivity: true,
+            buttonText: 'Visit Forum',
+            buttonLink: '/forum',
+        },
+        schema: {
+            title: { type: 'text', label: 'Title', required: true },
+            subtitle: { type: 'textarea', label: 'Subtitle' },
+            categoriesToShow: { type: 'number', label: 'Categories to Show', min: 1, max: 20 },
+            activitiesToShow: { type: 'number', label: 'Activities to Show', min: 1, max: 20 },
+            showStats: { type: 'boolean', label: 'Show Statistics Row' },
+            showCategories: { type: 'boolean', label: 'Show Categories List' },
+            showActivity: { type: 'boolean', label: 'Show Recent Activity' },
+            buttonText: { type: 'text', label: 'Button Text' },
+            buttonLink: { type: 'text', label: 'Button Link' },
         },
     },
 };

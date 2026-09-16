@@ -10,7 +10,7 @@
       >
         <div class="text-h3 text-primary font-weight-bold">{{ stat.value }}</div>
         <div class="text-h6 mt-2">{{ stat.title }}</div>
-        <div v-if="stat.description" class="text-body-2 text-grey mt-1">
+        <div v-if="stat.description" class="text-body-2 text-medium-emphasis mt-1">
           {{ stat.description }}
         </div>
       </v-col>

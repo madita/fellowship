@@ -135,5 +135,64 @@ See TESTING.md for any additional notes.
 - composer.json         PHP dependencies and composer scripts
 
 
+## Data migration tool
+Imports content from legacy databases (old forums, wikis, galleries, …) into this app, driven by
+stored mappings instead of code. Admin UI at `/admin/migrations` (tabs: Runs, Data Sources,
+Mappings, Legacy Users); backend in `app/Services/Migration/` and
+`app/Http/Controllers/Admin/MigrationController.php`.
+
+### Concepts
+- **Source** — a connection to a legacy database (MySQL/MariaDB, PostgreSQL, SQLite, SQL Server).
+  Credentials are stored encrypted; tables/columns are introspected live.
+- **Mapping** — connects one source table to a **target** (a feature of this app) via a field map.
+  Mappings can be exported/imported as JSON (Mappings tab), so a whole migration is reproducible.
+- **Target** — what a row becomes. Available targets: `users`, `legacy_users` (roster only, no
+  accounts), `events`, `wiki_pages`, `wiki_terms`, `forum_threads`, `forum_posts`,
+  `gallery_collections`, `gallery_images`. Targets skip already-imported rows, so re-running a
+  mapping resumes instead of duplicating.
+
+### Mapping features
+- **Field map** per target field: source column, transform
+  (`trim`, `html_decode`, `underscores_to_spaces`, `int`, `float`, `bool`, `json`,
+  `date`/`time`/`datetime` with input format), default value, or a **template** combining columns
+  (`{column}`, `{column|slug}`, `{column|fold}` — `fold` converts umlauts/specials for file paths).
+- **Joins** — pull columns from related source tables (e.g. content tables split across
+  page/revision/text).
+- **Row filters** — only import matching rows; a filter can compare against a value or another
+  column (`compare: "column"`).
+- **Content conversion** — wiki targets convert MediaWiki wikitext (incl. tables) to HTML;
+  forum targets convert phpBB BBCode (both storage formats) to HTML.
+- **Locale** — `options.locale` writes translated fields (title/content/…) to that language.
+- **Preview** — dry-runs the first rows with validation errors before anything is written.
+
+### Legacy users & content claims
+Imported records remember their original owner's username per legacy system
+(`migration_attributions`). Import the old user tables with the `legacy_users` target to get the
+full roster incl. e-mails (no accounts are created). Registered users can request their old
+content under Account → Legacy Account, which files a `legacy-account-claim` ticket. Admins
+assign identities on the Legacy Users tab — matching e-mails show a verified badge/suggestion —
+which moves ownership of all attributed content and resolves the ticket. Until assigned, imported
+forum content shows the original poster's name and an initials avatar (`meta.legacy_author`).
+
+### Commands
+```bash
+# Run a mapping import from the CLI — REQUIRED for large imports (thousands of rows):
+# on the sync queue driver the dashboard's Run button executes inside the HTTP request
+# and gets killed by the web server timeout. Safe to re-run; it resumes.
+php artisan migration:run-mapping "<mapping name or id>"
+```
+
+### Typical workflow
+1. Add the legacy database on the **Data Sources** tab and test the connection.
+2. Create mappings (or **Import JSON** of an existing mapping set) — pick the table, join related
+   tables, filter rows, map the fields, **Preview**.
+3. Import in dependency order: legacy users → independent content (events, collections, wiki
+   terms/pages, forum threads) → dependent content (gallery images, forum posts — these link to
+   records imported before them).
+4. Run the source-independent **post-import steps** on the Runs tab (link galleries to events,
+   rewrite wiki-internal links).
+5. As users register and claim their legacy accounts, assign them on the **Legacy Users** tab.
+
+
 ## License
 This project is open-sourced software licensed under the MIT license.

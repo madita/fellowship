@@ -19,6 +19,16 @@ export const settingsCategories = [
         ]
     },
     {
+        id: 'features',
+        title: 'Features',
+        description: 'Activate or deactivate site features',
+        icon: 'mdi-puzzle-outline',
+        color: 'amber',
+        settings: [
+            { id: 'toggles', title: 'Feature Toggles', description: 'Enable/disable features and hide them from the menu', icon: 'mdi-toggle-switch-outline', component: 'FeatureTogglesPage' },
+        ]
+    },
+    {
         id: 'localization',
         title: 'Localization',
         description: 'Language, timezone, and regional settings',
@@ -27,6 +37,7 @@ export const settingsCategories = [
         settings: [
             { id: 'regional', title: 'Regional Settings', description: 'Language, timezone, date/time formats', icon: 'mdi-map-clock-outline', component: 'RegionalSettingsPage' },
             { id: 'language-options', title: 'Language Options', description: 'User language preferences', icon: 'mdi-translate', component: 'LanguageOptionsPage' },
+            { id: 'translations', title: 'Translation Manager', description: 'Edit the interface texts of every locale', icon: 'mdi-translate-variant', routeName: 'admin-translations' },
         ]
     },
     {
@@ -94,6 +105,22 @@ export const settingsCategories = [
         ]
     },
     {
+        id: 'menus',
+        title: 'Navigation',
+        description: 'Site menus and menu items',
+        icon: 'mdi-menu-open',
+        color: 'indigo',
+        settings: [
+            {
+                id: 'menus',
+                title: 'Menu Manager',
+                description: 'Create and edit menus, items, and ordering',
+                icon: 'mdi-menu',
+                routeName: 'admin-settings-menus',
+            },
+        ]
+    },
+    {
         id: 'footer',
         title: 'Footer',
         description: 'Footer sections, widgets, and content',
@@ -103,6 +130,42 @@ export const settingsCategories = [
             { id: 'sections', title: 'Sections & Grid', description: 'Manage footer sections', icon: 'mdi-view-grid-outline', component: 'FooterSectionsPage' },
             { id: 'widgets', title: 'Widgets', description: 'Configure footer widgets', icon: 'mdi-widgets-outline', component: 'FooterWidgetsPage' },
             { id: 'custom-html', title: 'Custom HTML', description: 'Custom footer HTML content', icon: 'mdi-code-tags', component: 'CustomHtmlPage' },
+        ]
+    },
+    {
+        id: 'irc',
+        title: 'IRC',
+        description: 'IRC servers, daemon, and connection management',
+        icon: 'mdi-chat-processing-outline',
+        color: 'indigo',
+        settings: [
+            { id: 'client', title: 'Client Settings', description: 'Comic chat and client options', icon: 'mdi-tune', component: 'IrcClientSettingsPage' },
+            { id: 'dashboard', title: 'Dashboard', description: 'Daemon status, stats, and monitoring', icon: 'mdi-monitor-dashboard', component: 'IrcDashboardPage' },
+            { id: 'servers', title: 'Servers', description: 'Manage IRC servers', icon: 'mdi-server-network', component: 'IrcServersPage' },
+            { id: 'connections', title: 'Connections', description: 'Active user connections', icon: 'mdi-connection', component: 'IrcConnectionsPage' },
+        ]
+    },
+    {
+        id: 'moderation',
+        title: 'Moderation',
+        description: 'Content approval and moderation settings',
+        icon: 'mdi-shield-check-outline',
+        color: 'deep-purple',
+        settings: [
+            { id: 'auto-approval', title: 'Content Auto-Approval', description: 'Configure role-based automatic content approval', icon: 'mdi-shield-check', component: 'AutoApprovalPage' },
+        ]
+    },
+    {
+        id: 'sandbox',
+        title: 'Sandbox',
+        description: 'Collaborative sandbox and Yjs WebSocket settings',
+        icon: 'mdi-notebook-edit-outline',
+        color: 'deep-purple',
+        settings: [
+            { id: 'server-status', title: 'WebSocket Server', description: 'Yjs server status and connection info', icon: 'mdi-server-network', component: 'ServerStatusPage' },
+            { id: 'feature-settings', title: 'Feature Settings', description: 'Enable/disable sandbox and collaboration', icon: 'mdi-toggle-switch-outline', component: 'FeatureSettingsPage' },
+            { id: 'limits', title: 'Limits & Quotas', description: 'Max sandboxes, collaborators, versions', icon: 'mdi-numeric', component: 'LimitsPage' },
+            { id: 'statistics', title: 'Statistics', description: 'Sandbox usage and activity stats', icon: 'mdi-chart-bar', component: 'StatisticsPage' },
         ]
     },
     {
@@ -119,6 +182,48 @@ export const settingsCategories = [
             { id: 'cookies', title: 'Cookie Consent', description: 'GDPR cookie banner settings', icon: 'mdi-cookie-outline', component: 'CookieConsentPage' },
             { id: 'scripts', title: 'Custom Scripts', description: 'Head and body scripts', icon: 'mdi-script-text-outline', component: 'CustomScriptsPage' },
             { id: 'legal', title: 'Legal & Compliance', description: 'Privacy, terms, and GDPR', icon: 'mdi-scale-balance', component: 'LegalCompliancePage' },
+        ]
+    },
+    {
+        id: 'access',
+        title: 'Users & Access',
+        description: 'Roles and the permissions they grant',
+        icon: 'mdi-shield-account-outline',
+        color: 'red',
+        settings: [
+            { id: 'roles', title: 'Roles', description: 'Create roles and assign them to users', icon: 'mdi-shield-account', routeName: 'admin-roles' },
+            { id: 'permissions', title: 'Permissions', description: 'Which role may do what', icon: 'mdi-shield-key-outline', routeName: 'admin-permissions' },
+        ]
+    },
+    {
+        id: 'forum',
+        title: 'Forum',
+        description: 'Forum categories, their order and visibility',
+        icon: 'mdi-forum-outline',
+        color: 'blue-grey',
+        settings: [
+            { id: 'categories', title: 'Forum Categories', description: 'Create, order, lock and hide the forum categories', icon: 'mdi-forum', routeName: 'admin-forums' },
+        ]
+    },
+    {
+        id: 'taxonomy',
+        title: 'Taxonomy',
+        description: 'Tag and category vocabularies shared by all content',
+        icon: 'mdi-tag-multiple-outline',
+        color: 'lime-darken-2',
+        settings: [
+            { id: 'taxonomies', title: 'Taxonomies', description: 'Vocabularies such as tags, categories and forum sections', icon: 'mdi-file-tree', routeName: 'admin-taxonomie' },
+            { id: 'terms', title: 'Terms', description: 'The entries of each taxonomy', icon: 'mdi-tag-multiple', routeName: 'admin-terms' },
+        ]
+    },
+    {
+        id: 'tools',
+        title: 'Tools & Data',
+        description: 'Imports and maintenance tools',
+        icon: 'mdi-toolbox-outline',
+        color: 'brown',
+        settings: [
+            { id: 'migrations', title: 'Migration Tool', description: 'Import content and users from legacy databases', icon: 'mdi-database-arrow-right-outline', routeName: 'admin-migrations' },
         ]
     },
 ];

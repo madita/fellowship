@@ -1,9 +1,5 @@
 <template>
-  <v-menu
-    offset-y
-    left
-    transition="slide-y-transition"
-  >
+  <v-menu transition="slide-y-transition">
     <template v-slot:activator="{ props }">
       <v-btn v-bind="props" variant="text">
         <v-icon class="mr-1">mdi-translate</v-icon>

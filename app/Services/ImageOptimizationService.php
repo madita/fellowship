@@ -29,7 +29,7 @@ class ImageOptimizationService
      */
     public static function configureOptimizers(): void
     {
-        if (!static::isEnabled()) {
+        if ( ! static::isEnabled()) {
             // Disable all optimizers by setting an empty array
             Config::set('media-library.image_optimizers', []);
         }
@@ -38,18 +38,16 @@ class ImageOptimizationService
     /**
      * Optimize an image file manually.
      *
-     * @param string $path    Path to the image file
-     * @param array  $options Optimization options
-     *
-     * @return bool
+     * @param  string  $path  Path to the image file
+     * @param  array  $options  Optimization options
      */
     public static function optimize(string $path, array $options = []): bool
     {
-        if (!static::isEnabled()) {
+        if ( ! static::isEnabled()) {
             return false;
         }
 
-        if (!file_exists($path)) {
+        if ( ! file_exists($path)) {
             return false;
         }
 
@@ -62,7 +60,7 @@ class ImageOptimizationService
 
             // Apply max dimensions if specified
             if (isset($options['max_width']) || isset($options['max_height'])) {
-                $maxWidth = $options['max_width'] ?? null;
+                $maxWidth  = $options['max_width'] ?? null;
                 $maxHeight = $options['max_height'] ?? null;
 
                 if ($maxWidth && $maxHeight) {
@@ -79,7 +77,7 @@ class ImageOptimizationService
 
             return true;
         } catch (\Exception $e) {
-            \Log::warning('Image optimization failed: '.$e->getMessage(), [
+            \Log::warning('Image optimization failed: ' . $e->getMessage(), [
                 'path'    => $path,
                 'options' => $options,
             ]);

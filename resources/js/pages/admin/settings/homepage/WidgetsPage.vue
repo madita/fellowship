@@ -8,16 +8,16 @@
         :show-save-button="false"
     >
         <!-- Action Buttons -->
-        <div class="d-flex justify-space-between align-center mb-4">
-            <div>
-                <v-btn color="primary" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">
+        <div class="d-flex justify-space-between align-center flex-wrap ga-2 mb-4">
+            <div class="d-flex flex-wrap ga-2">
+                <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">
                     {{ $t('settings.homepage.widgets.addWidget') }}
                 </v-btn>
-                <v-btn class="ml-2" prepend-icon="mdi-refresh" @click="loadWidgets" :loading="isLoading">
+                <v-btn variant="tonal" prepend-icon="mdi-refresh" @click="loadWidgets" :loading="isLoading">
                     {{ $t('settings.homepage.widgets.refresh') }}
                 </v-btn>
             </div>
-            <v-chip v-if="hasChanges" color="warning">
+            <v-chip v-if="hasChanges" color="warning" variant="tonal" size="small">
                 {{ $t('settings.homepage.widgets.unsavedChanges') }}
             </v-chip>
         </div>
@@ -28,7 +28,7 @@
                 <v-card>
                     <v-card-text class="text-center">
                         <div class="text-h4">{{ widgets.length }}</div>
-                        <div class="text-caption text-grey">{{ $t('settings.homepage.widgets.totalWidgets') }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('settings.homepage.widgets.totalWidgets') }}</div>
                     </v-card-text>
                 </v-card>
             </v-col>
@@ -36,7 +36,7 @@
                 <v-card>
                     <v-card-text class="text-center">
                         <div class="text-h4 text-success">{{ enabledCount }}</div>
-                        <div class="text-caption text-grey">{{ $t('settings.homepage.widgets.enabled') }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('settings.homepage.widgets.enabled') }}</div>
                     </v-card-text>
                 </v-card>
             </v-col>
@@ -44,23 +44,24 @@
 
         <!-- Widgets List with Drag and Drop -->
         <v-card>
-            <v-card-title>
+            <v-card-title class="text-subtitle-1 font-weight-medium">
                 <v-icon class="mr-2">mdi-drag</v-icon>
                 {{ $t('settings.homepage.widgets.dragToReorder') }}
             </v-card-title>
             <v-divider></v-divider>
 
-            <v-card-text v-if="isLoading" class="text-center py-8">
-                <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                <div class="mt-2">{{ $t('settings.homepage.widgets.loadingWidgets') }}</div>
-            </v-card-text>
-
-            <v-card-text v-else-if="widgets.length === 0" class="text-center py-8">
-                <v-icon size="64" color="grey">mdi-widgets-outline</v-icon>
-                <div class="text-h6 mt-4">{{ $t('settings.homepage.widgets.noWidgetsYet') }}</div>
-                <div class="text-caption text-grey mb-4">{{ $t('settings.homepage.widgets.clickAddWidget') }}</div>
-                <v-btn color="primary" @click="showWidgetLibrary = true">{{ $t('settings.homepage.widgets.addFirstWidget') }}</v-btn>
-            </v-card-text>
+            <loading-state v-if="isLoading" compact :text="$t('settings.homepage.widgets.loadingWidgets')" />
+            <empty-state
+                v-else-if="widgets.length === 0"
+                compact
+                icon="mdi-widgets-outline"
+                :title="$t('settings.homepage.widgets.noWidgetsYet')"
+                :text="$t('settings.homepage.widgets.clickAddWidget')"
+            >
+                <template #actions>
+                    <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">{{ $t('settings.homepage.widgets.addFirstWidget') }}</v-btn>
+                </template>
+            </empty-state>
 
             <draggable
                 v-else
@@ -102,6 +103,8 @@
                                     density="compact"
                                     color="success"
                                     class="mr-2"
+                                    :loading="togglingIds.includes(widget.id)"
+                                    :disabled="isRowBusy(widget)"
                                     @change="toggleWidget(widget)"
                                 ></v-switch>
 
@@ -109,6 +112,7 @@
                                     icon="mdi-pencil"
                                     size="small"
                                     variant="text"
+                                    :disabled="isRowBusy(widget)"
                                     @click="editWidget(widget)"
                                     :title="$t('settings.homepage.widgets.editWidget')"
                                 ></v-btn>
@@ -118,6 +122,8 @@
                                     size="small"
                                     variant="text"
                                     color="error"
+                                    :loading="deletingId === widget.id"
+                                    :disabled="togglingIds.includes(widget.id)"
                                     @click="confirmDelete(widget)"
                                     :title="$t('settings.homepage.widgets.deleteWidget')"
                                 ></v-btn>
@@ -132,29 +138,16 @@
         <widget-editor
             v-model="showEditor"
             :widget="selectedWidget"
+            :saving="savingWidget"
             @save="saveWidget"
         />
 
         <!-- Widget Library Dialog -->
         <widget-library
             v-model="showWidgetLibrary"
+            :adding="addingWidget"
             @select="addWidget"
         />
-
-        <!-- Delete Confirmation Dialog -->
-        <v-dialog v-model="showDeleteDialog" max-width="500">
-            <v-card>
-                <v-card-title>{{ $t('settings.homepage.widgets.confirmDelete') }}</v-card-title>
-                <v-card-text>
-                    {{ $t('settings.homepage.widgets.deleteConfirmText', { name: widgetToDelete?.title || widgetToDelete?.type }) }}
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn @click="showDeleteDialog = false">{{ $t('settings.homepage.widgets.cancel') }}</v-btn>
-                    <v-btn color="error" @click="deleteWidget">{{ $t('settings.homepage.widgets.delete') }}</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
 
         <!-- Success Snackbar -->
         <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000">
@@ -168,12 +161,16 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useHomepageStore } from '@/store/homepageStore';
 import { getWidgetDefinition } from '@/configs/widgetTypes';
+import { useDialog } from '@/composables/useDialog.js';
 import draggable from 'vuedraggable';
+import LoadingState from '@/components/common/LoadingState.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import WidgetEditor from '@/components/settings/homepage/WidgetEditor.vue';
 import WidgetLibrary from '@/components/settings/homepage/WidgetLibrary.vue';
 
 const { t } = useI18n();
+const dialog = useDialog();
 
 const props = defineProps({
     settings: Object,
@@ -193,9 +190,17 @@ const enabledCount = computed(() => localWidgets.value.filter(w => w.enabled).le
 
 const showEditor = ref(false);
 const showWidgetLibrary = ref(false);
-const showDeleteDialog = ref(false);
 const selectedWidget = ref(null);
-const widgetToDelete = ref(null);
+
+// Request state per control
+const savingWidget = ref(false);
+const addingWidget = ref(false);
+const togglingIds = ref([]);
+const deletingId = ref(null);
+
+function isRowBusy(widget) {
+    return togglingIds.value.includes(widget.id) || deletingId.value === widget.id;
+}
 
 const snackbar = ref(false);
 const snackbarMessage = ref('');
@@ -240,6 +245,8 @@ function editWidget(widget) {
 }
 
 async function saveWidget(updatedWidget) {
+    if (savingWidget.value) return;
+    savingWidget.value = true;
     try {
         await homepageStore.updateWidget(updatedWidget.id, updatedWidget);
         showSnackbar(t('settings.homepage.widgets.widgetUpdated'), 'success');
@@ -247,10 +254,14 @@ async function saveWidget(updatedWidget) {
         await loadWidgets();
     } catch (error) {
         showSnackbar(t('settings.homepage.widgets.failedToUpdateWidget'), 'error');
+    } finally {
+        savingWidget.value = false;
     }
 }
 
 async function addWidget(widgetType) {
+    if (addingWidget.value) return;
+    addingWidget.value = true;
     try {
         const definition = getWidgetDefinition(widgetType);
         const newWidget = {
@@ -269,33 +280,42 @@ async function addWidget(widgetType) {
         await loadWidgets();
     } catch (error) {
         showSnackbar(t('settings.homepage.widgets.failedToAddWidget'), 'error');
+    } finally {
+        addingWidget.value = false;
     }
 }
 
 async function toggleWidget(widget) {
+    if (togglingIds.value.includes(widget.id)) return;
+    togglingIds.value.push(widget.id);
     try {
         await homepageStore.toggleWidget(widget.id);
         showSnackbar(widget.enabled ? t('settings.homepage.widgets.widgetEnabled') : t('settings.homepage.widgets.widgetDisabled'), 'success');
     } catch (error) {
         showSnackbar(t('settings.homepage.widgets.failedToToggleWidget'), 'error');
         widget.enabled = !widget.enabled;
+    } finally {
+        togglingIds.value = togglingIds.value.filter(id => id !== widget.id);
     }
 }
 
-function confirmDelete(widget) {
-    widgetToDelete.value = widget;
-    showDeleteDialog.value = true;
-}
+async function confirmDelete(widget) {
+    if (deletingId.value !== null) return;
+    const ok = await dialog.confirmDelete(
+        t('settings.homepage.widgets.deleteConfirmText', { name: widget.title || widget.type }),
+        { title: t('settings.homepage.widgets.confirmDelete') }
+    );
+    if (!ok) return;
 
-async function deleteWidget() {
+    deletingId.value = widget.id;
     try {
-        await homepageStore.deleteWidget(widgetToDelete.value.id);
+        await homepageStore.deleteWidget(widget.id);
         showSnackbar(t('settings.homepage.widgets.widgetDeleted'), 'success');
-        showDeleteDialog.value = false;
-        widgetToDelete.value = null;
         await loadWidgets();
     } catch (error) {
         showSnackbar(t('settings.homepage.widgets.failedToDeleteWidget'), 'error');
+    } finally {
+        deletingId.value = null;
     }
 }
 
@@ -324,7 +344,7 @@ onMounted(async () => {
 
 .widget-item:hover {
     background: rgba(var(--v-theme-surface-variant), 0.6);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(var(--v-theme-on-surface), 0.1);
 }
 
 .widget-disabled {
