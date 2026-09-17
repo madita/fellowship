@@ -27,7 +27,7 @@ class TicketController extends Controller
             abort(401);
         }
 
-        $query = Ticket::with(['ticketType', 'creator', 'assignee', 'ticketable']);
+        $query = Ticket::with(['ticketType', 'creator', 'assignee', 'ticketable'])->withCount('comments');
 
         // Non-admins can only see their own tickets: created by or assigned
         // to them. Admins can narrow to the same set with ?mine=1.
@@ -188,8 +188,9 @@ class TicketController extends Controller
         }
 
         $validated = $request->validate([
+            'ticket_type_id'      => 'exists:ticket_types,id',
             'title'               => 'string|max:255',
-            'description'         => 'string',
+            'description'         => 'nullable|string',
             'status'              => 'in:open,in_progress,pending,resolved,closed',
             'priority'            => 'in:low,normal,high,urgent',
             'assigned_to_user_id' => 'nullable|exists:users,id',

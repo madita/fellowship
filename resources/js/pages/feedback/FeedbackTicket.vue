@@ -178,63 +178,13 @@
                         </v-card>
 
                         <!-- Moderation (admins) -->
-                        <v-card v-if="isAdmin" rounded="lg">
-                            <v-card-title class="text-subtitle-1 d-flex align-center ga-2">
-                                <v-icon icon="mdi-shield-account-outline" size="small" />
-                                {{ $t('feedback.moderation.title') }}
-                            </v-card-title>
-                            <v-card-text>
-                                <v-select
-                                    v-model="moderation.status"
-                                    :items="statusItems"
-                                    item-title="label"
-                                    item-value="value"
-                                    :label="$t('feedback.fields.status')"
-                                    density="compact"
-                                    class="mb-2"
-                                    hide-details
-                                />
-                                <v-autocomplete
-                                    v-model="moderation.tag_ids"
-                                    :items="tags"
-                                    item-title="name"
-                                    item-value="id"
-                                    :label="$t('feedback.fields.tags')"
-                                    density="compact"
-                                    multiple
-                                    chips
-                                    closable-chips
-                                    class="mb-2"
-                                    hide-details
-                                />
-                                <v-text-field
-                                    v-model.number="moderation.duplicate_of_ticket_id"
-                                    type="number"
-                                    :label="$t('feedback.moderation.duplicateOf')"
-                                    :hint="$t('feedback.moderation.duplicateHint')"
-                                    persistent-hint
-                                    density="compact"
-                                    clearable
-                                    class="mb-2"
-                                />
-                                <v-switch
-                                    v-model="moderation.is_public"
-                                    :label="$t('feedback.moderation.public')"
-                                    color="primary"
-                                    density="compact"
-                                    hide-details
-                                />
-                            </v-card-text>
-                            <v-card-actions class="px-4 pb-4">
-                                <v-btn variant="text" size="small" :to="{ name: 'admin-tickets' }">
+                        <feedback-moderation-card v-if="isAdmin" :ticket="ticket" @saved="ticket = $event">
+                            <template #actions>
+                                <v-btn variant="text" size="small" :to="{ name: 'admin-ticket', params: { id: ticket.id } }">
                                     {{ $t('feedback.moderation.manage') }}
                                 </v-btn>
-                                <v-spacer />
-                                <v-btn color="primary" variant="flat" :loading="saving" @click="saveModeration">
-                                    {{ $t('feedback.moderation.save') }}
-                                </v-btn>
-                            </v-card-actions>
-                        </v-card>
+                            </template>
+                        </feedback-moderation-card>
                     </v-col>
                 </v-row>
             </v-container>
@@ -252,28 +202,26 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import FeedbackModerationCard from '@/components/feedback/FeedbackModerationCard.vue'
 
 export default {
     name: 'FeedbackTicket',
-    components: { PageHeader, EmptyState, LoadingState, UserAvatar },
+    components: { PageHeader, EmptyState, LoadingState, UserAvatar, FeedbackModerationCard },
     setup() {
         const authStore = useAuthStore()
         const userStore = useUserStore()
-        const { getStatusColor, getStatusLabel, statusFilterOptions } = useTicketHelpers()
-        return { authStore, userStore, getStatusColor, getStatusLabel, statusFilterOptions }
+        const { getStatusColor, getStatusLabel } = useTicketHelpers()
+        return { authStore, userStore, getStatusColor, getStatusLabel }
     },
     data() {
         return {
             loading: false,
             notFound: false,
             ticket: null,
-            tags: [],
             newComment: '',
             commenting: false,
             voting: false,
             watching: false,
-            saving: false,
-            moderation: {},
         }
     },
     computed: {
@@ -287,21 +235,11 @@ export default {
             const author = this.ticket.author ? this.$t('feedback.postedBy', { name: this.ticket.author.username }) : ''
             return [`#${this.ticket.id}`, author, formatDateDistanceToNow(this.ticket.created_at)].filter(Boolean).join(' · ')
         },
-        statusItems() {
-            return this.statusFilterOptions(false)
-        },
     },
     watch: {
         // Links between duplicates reuse this page
         '$route.params.id'(id) {
             if (id) this.loadTicket()
-        },
-        // The user may still be loading when the page mounts
-        isAdmin: {
-            immediate: true,
-            handler(isAdmin) {
-                if (isAdmin && !this.tags.length) this.loadTags()
-            },
         },
     },
     mounted() {
@@ -314,7 +252,7 @@ export default {
             this.notFound = false
             try {
                 const { data } = await axios.get(`/api/feedback/tickets/${this.$route.params.id}`)
-                this.setTicket(data)
+                this.ticket = data
             } catch (error) {
                 if (error.response?.status === 404) {
                     this.ticket = null
@@ -324,23 +262,6 @@ export default {
                 }
             } finally {
                 this.loading = false
-            }
-        },
-        async loadTags() {
-            try {
-                const { data } = await axios.get('/api/feedback/tags')
-                this.tags = data
-            } catch (error) {
-                console.warn('Failed to load feedback tags:', error)
-            }
-        },
-        setTicket(ticket) {
-            this.ticket = ticket
-            this.moderation = {
-                status: ticket.status,
-                is_public: ticket.is_public,
-                duplicate_of_ticket_id: ticket.duplicate_of?.id ?? null,
-                tag_ids: ticket.tags.map(tag => tag.id),
             }
         },
         async toggleVote() {
@@ -387,20 +308,6 @@ export default {
                 await this.$dialog.requestError(error, this.$t('feedback.messages.commentFailed'))
             } finally {
                 this.commenting = false
-            }
-        },
-        async saveModeration() {
-            if (this.saving) return
-            this.saving = true
-            try {
-                const payload = { ...this.moderation, duplicate_of_ticket_id: this.moderation.duplicate_of_ticket_id || null }
-                const { data } = await axios.patch(`/api/feedback/tickets/${this.ticket.id}`, payload)
-                this.setTicket(data)
-                await this.$dialog.success(this.$t('feedback.moderation.saved'))
-            } catch (error) {
-                await this.$dialog.requestError(error, this.$t('feedback.messages.updateFailed'))
-            } finally {
-                this.saving = false
             }
         },
     },

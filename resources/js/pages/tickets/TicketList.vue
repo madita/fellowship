@@ -1,109 +1,143 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useDebounceFn } from '@vueuse/core';
 import axios from 'axios';
-import TicketSidebar from '@/components/ticket/TicketSidebar.vue';
 import TicketKanban from '@/components/ticket/TicketKanban.vue';
+import TicketOverview from '@/components/ticket/TicketOverview.vue';
+import TicketForm from '@/components/ticket/TicketForm.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
 import { useUserStore } from '@/store/userStore.js';
-import { useDateFormat } from '@/plugins/formatDate.js';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
 import { useDialog } from '@/composables/useDialog.js';
-import { sanitizeHtml } from '@/utils/sanitize.js';
+import { formatDate, formatDateDistanceToNow } from '@/plugins/formatDate.js';
+import {
+    TICKET_FILTER_KEYS,
+    defaultTicketFilters,
+    ticketFiltersFromQuery,
+    ticketFilterParams,
+    rememberTicketListQuery,
+} from '@/composables/useTicketListQuery.js';
 
+/**
+ * Tickets for the admin (/admin/tickets: overview, list, kanban) and for
+ * members (/account/tickets: their own). A ticket opens on its own page.
+ * View, filters and page live in the address, so links and "back" keep them:
+ *   /admin/tickets?view=list&status=in_progress&assigned_to=me&priority=urgent
+ */
 const { t } = useI18n();
 const route = useRoute();
+const router = useRouter();
 const userStore = useUserStore();
-// Outcome of create/update/delete is shown as a modal
 const dialog = useDialog();
-const { formatDate: formatDateUtil } = useDateFormat();
 const {
     getStatusColor,
+    getStatusLabel,
     getPriorityColor,
     getPriorityIcon,
+    getPriorityLabel,
     statusFilterOptions,
     priorityFilterOptions,
 } = useTicketHelpers();
 
+const FILTER_KEYS = TICKET_FILTER_KEYS;
+// Set by dashboard links only; shown as removable chips
+const LINK_FILTERS = ['mine', 'created_by', 'due'];
+const RELATED_KINDS = {
+    'App\\Models\\Wiki': { key: 'wiki', icon: 'mdi-book-open-variant' },
+    'App\\Models\\Page': { key: 'page', icon: 'mdi-file-document-outline' },
+};
+
+const isUserView = computed(() => route.name === 'my-tickets');
+const user = computed(() => userStore.user || { id: null });
+const isAdmin = computed(() => !!user.value?.isAdmin);
+const detailRouteName = computed(() => (isUserView.value ? 'my-ticket' : 'admin-ticket'));
+const viewModes = computed(() => (isUserView.value ? ['list', 'kanban'] : ['overview', 'list', 'kanban']));
+const defaultView = computed(() => (isUserView.value ? 'list' : 'overview'));
+
+const defaultFilters = defaultTicketFilters;
+const filtersFromQuery = () => ticketFiltersFromQuery(route.query);
+
+const viewFromQuery = () => (viewModes.value.includes(route.query.view) ? route.query.view
+    : FILTER_KEYS.some(key => route.query[key] !== undefined) ? 'list' : defaultView.value);
+
+const filters = ref(filtersFromQuery());
+const viewMode = ref(viewFromQuery());
+
 const tickets = ref([]);
 const ticketTypes = ref([]);
 const loading = ref(false);
-// A create / update / delete request of the sidebar is in flight
-const saving = ref(false);
-const showFilters = ref(false);
-const selectedTicket = ref(null);
-const isDrawerOpen = ref(false);
-const editMode = ref(false);
-const viewMode = ref('list'); // 'list' | 'kanban'
-const kanbanRef = ref(null);
+const pagination = ref({ page: Number(route.query.page) || 1, per_page: 20, total: 0, last_page: 1 });
 
-// Related content
-const relatedContent = ref(null);
-const relatedContentLoading = ref(false);
-const relatedContentType = ref(null); // 'wiki' | 'page' | null
+const showComposer = ref(false);
+const creating = ref(false);
 
-// Filters — deep-linkable: /account/tickets?status=in_progress&assigned_to=me&priority=urgent
-const queryFilter = (key) => (typeof route.query[key] === 'string' && route.query[key] !== '' ? route.query[key] : null);
-const filters = ref({
-    status: queryFilter('status') || (route.query.status === undefined ? 'open' : null),
-    type: queryFilter('type'),
-    assigned_to: queryFilter('assigned_to'),
-    priority: queryFilter('priority'),
-    search: queryFilter('search') || '',
-    // Dashboard deep links only (no UI control): mine=1, created_by=me, due=overdue|week
-    mine: queryFilter('mine'),
-    created_by: queryFilter('created_by'),
-    due: queryFilter('due'),
-});
+const pageTitle = computed(() => (isUserView.value ? t('tickets.myTickets') : t('tickets.title')));
+const pageSubtitle = computed(() => (isUserView.value ? t('tickets.myTicketsSubtitle') : t('tickets.subtitle')));
 
-const pagination = ref({
-    page: 1,
-    per_page: 20,
-    total: 0,
-    last_page: 1,
-});
-
-const user = computed(() => userStore.user || { id: null });
-const isAdmin = computed(() => user.value?.isAdmin || false);
-const isUserView = computed(() => route.path === '/account/tickets');
-
-const pageTitle = computed(() => isUserView.value ? t('tickets.myTickets') : t('tickets.title'));
-const pageSubtitle = computed(() => isUserView.value ? t('tickets.myTicketsSubtitle') : t('tickets.subtitle'));
-
-const assigneeFilterOptions = computed(() => [
+const statusItems = computed(() => statusFilterOptions());
+const priorityItems = computed(() => priorityFilterOptions());
+const typeItems = computed(() => [{ slug: null, name: t('tickets.filters.allTypes') }, ...ticketTypes.value]);
+const assigneeItems = computed(() => [
     { value: null, label: t('tickets.filters.allAssignees') },
     { value: 'me', label: t('tickets.filters.assignedToMe') },
     { value: 'unassigned', label: t('tickets.filters.unassigned') },
 ]);
 
-const activeFilterCount = computed(() => {
-    let count = 0;
-    if (filters.value.priority) count++;
-    if (filters.value.type) count++;
-    if (filters.value.assigned_to) count++;
-    return count;
+const linkFilterChips = computed(() => LINK_FILTERS
+    .filter(key => filters.value[key])
+    .map(key => ({ key, label: t(`tickets.filters.link.${key}_${filters.value[key]}`) })));
+
+const hasActiveFilters = computed(() => {
+    const f = filters.value;
+    return f.status !== 'open' || FILTER_KEYS.some(key => key !== 'status' && f[key]);
+});
+
+const buildQuery = () => {
+    const query = {};
+    if (viewMode.value !== defaultView.value) query.view = viewMode.value;
+    if (viewMode.value === 'list') {
+        for (const key of FILTER_KEYS) {
+            const value = filters.value[key];
+            if (key === 'status') {
+                if (value !== 'open') query.status = value ?? '';
+            } else if (value) {
+                query[key] = value;
+            }
+        }
+        if (pagination.value.page > 1) query.page = String(pagination.value.page);
+    }
+    return query;
+};
+
+const sameQuery = (a, b) => JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
+
+const listRouteName = route.name;
+
+const syncQuery = () => {
+    const query = buildQuery();
+    rememberTicketListQuery(listRouteName, query);
+    if (!sameQuery(query, route.query)) router.replace({ query });
+};
+
+// The address changed from outside (menu link, dashboard link on this page): follow it
+watch(() => route.query, (query) => {
+    // Opening a ticket changes the route before this page unmounts
+    if (route.name !== listRouteName || sameQuery(query, buildQuery())) return;
+    rememberTicketListQuery(listRouteName, query);
+    filters.value = filtersFromQuery();
+    viewMode.value = viewFromQuery();
+    pagination.value.page = Number(query.page) || 1;
+    if (viewMode.value === 'list') loadTickets();
 });
 
 const loadTickets = async () => {
     loading.value = true;
     try {
-        const params = {
-            page: pagination.value.page,
-            per_page: pagination.value.per_page,
-            ...filters.value,
-        };
-
-        // Remove null/empty filters
-        Object.keys(params).forEach(key => {
-            if (params[key] === null || params[key] === '') {
-                delete params[key];
-            }
-        });
-
+        const params = { page: pagination.value.page, per_page: pagination.value.per_page, ...ticketFilterParams(filters.value) };
         const response = await axios.get('/api/tickets', { params });
         tickets.value = response.data.data;
         pagination.value = {
@@ -120,583 +154,315 @@ const loadTickets = async () => {
     }
 };
 
-let relatedContentRequestId = 0;
-
-const loadRelatedContent = async (ticket) => {
-    const requestId = ++relatedContentRequestId;
-    relatedContent.value = null;
-    relatedContentType.value = null;
-
-    if (!ticket?.ticketable || !ticket?.ticketable_type) return;
-
-    const ticketable = ticket.ticketable;
-    const type = ticket.ticketable_type;
-
-    relatedContentLoading.value = true;
-    try {
-        if (type === 'App\\Models\\Wiki') {
-            const response = await axios.get(`/api/wiki/${ticketable.slug}`);
-            if (requestId !== relatedContentRequestId) return;
-            relatedContent.value = response.data.page || response.data;
-            relatedContentType.value = 'wiki';
-        } else if (type === 'App\\Models\\Page') {
-            const response = await axios.get(`/api/pages/${ticketable.slug}`);
-            if (requestId !== relatedContentRequestId) return;
-            relatedContent.value = response.data.page || response.data;
-            relatedContentType.value = 'page';
-        }
-    } catch (err) {
-        if (requestId !== relatedContentRequestId) return;
-        console.error('Failed to load related content:', err);
-    } finally {
-        if (requestId === relatedContentRequestId) {
-            relatedContentLoading.value = false;
-        }
-    }
-};
-
-const relatedContentHtml = computed(() => {
-    if (!relatedContent.value) return null;
-    let content = null;
-    if (relatedContentType.value === 'wiki') {
-        content = relatedContent.value.content || null;
-    } else if (relatedContentType.value === 'page') {
-        content = relatedContent.value.body || relatedContent.value.content || null;
-    }
-    // Sanitize HTML to prevent XSS attacks
-    return content ? sanitizeHtml(content) : null;
-});
-
-const relatedContentTitle = computed(() => {
-    if (!relatedContent.value) return null;
-    return relatedContent.value.title || null;
-});
-
-const selectTicket = (ticket) => {
-    selectedTicket.value = ticket;
-    editMode.value = false;
-    loadRelatedContent(ticket);
-};
-
-const openDrawer = () => {
-    isDrawerOpen.value = true;
-    editMode.value = false;
-};
-
-const createNewTicket = () => {
-    selectedTicket.value = {
-        title: '',
-        description: '',
-        priority: 'normal',
-        status: 'open',
-    };
-    editMode.value = true;
-    isDrawerOpen.value = true;
-};
-
-// The sidebar stays open (with a loader) until the request is done, so a
-// failure leaves the form as it was.
-const handleAddTicket = async (ticketData) => {
-    if (saving.value) return;
-    saving.value = true;
-    try {
-        const response = await axios.post('/api/tickets', ticketData);
-        tickets.value.unshift(response.data);
-        pagination.value.total++;
-        selectedTicket.value = response.data;
-        loadRelatedContent(response.data);
-        editMode.value = false;
-        isDrawerOpen.value = false;
-        await dialog.success(t('tickets.messages.created'));
-    } catch (err) {
-        console.error('Failed to create ticket:', err);
-        await dialog.requestError(err, t('tickets.messages.createFailed'));
-    } finally {
-        saving.value = false;
-    }
-};
-
-const handleUpdateTicket = async (ticketData) => {
-    if (saving.value) return;
-    saving.value = true;
-    try {
-        const response = await axios.patch(`/api/tickets/${ticketData.id}`, ticketData);
-        const index = tickets.value.findIndex(t => t.id === ticketData.id);
-        if (index !== -1) {
-            tickets.value[index] = response.data;
-        }
-        selectedTicket.value = response.data;
-        editMode.value = false;
-        isDrawerOpen.value = false;
-        await dialog.success(t('tickets.messages.updated'));
-    } catch (err) {
-        console.error('Failed to update ticket:', err);
-        await dialog.requestError(err, t('tickets.messages.updateFailed'));
-    } finally {
-        saving.value = false;
-    }
-};
-
-const handleRemoveTicket = async (ticketId) => {
-    if (saving.value) return;
-    saving.value = true;
-    try {
-        await axios.delete(`/api/tickets/${ticketId}`);
-        tickets.value = tickets.value.filter(t => t.id !== parseInt(ticketId));
-        pagination.value.total--;
-        selectedTicket.value = null;
-        relatedContent.value = null;
-        relatedContentType.value = null;
-        isDrawerOpen.value = false;
-        await dialog.success(t('tickets.messages.deleted'));
-    } catch (err) {
-        console.error('Failed to delete ticket:', err);
-        await dialog.requestError(err, t('tickets.messages.deleteFailed'));
-    } finally {
-        saving.value = false;
-    }
-};
-
-const handleTicketUpdated = () => {
-    loadTickets();
-    if (kanbanRef.value) {
-        kanbanRef.value.loadTickets();
-    }
-};
-
-const handleKanbanOpenTicket = (ticket) => {
-    selectedTicket.value = ticket;
-    editMode.value = false;
-    loadRelatedContent(ticket);
-    isDrawerOpen.value = true;
-};
-
-const handleKanbanTicketUpdated = () => {
-    loadTickets();
-};
-
 const loadTicketTypes = async () => {
     try {
         const response = await axios.get('/api/ticket-types');
-        ticketTypes.value = [
-            { id: null, name: t('tickets.filters.allTypes'), slug: null },
-            ...response.data
-        ];
+        ticketTypes.value = response.data;
     } catch (err) {
         console.error('Failed to load ticket types:', err);
     }
 };
 
 const applyFilters = () => {
-    if (pagination.value.page === 1) {
-        loadTickets();
-    } else {
-        pagination.value.page = 1;
-    }
+    pagination.value.page = 1;
+    syncQuery();
+    loadTickets();
 };
 
 const debouncedApplyFilters = useDebounceFn(applyFilters, 300);
 
 const resetFilters = () => {
-    filters.value = {
-        status: 'open',
-        type: null,
-        assigned_to: null,
-        priority: null,
-        search: '',
-    };
+    filters.value = defaultFilters();
     applyFilters();
 };
 
-watch(() => pagination.value.page, () => {
+const removeLinkFilter = (key) => {
+    filters.value[key] = null;
+    applyFilters();
+};
+
+const changePage = (page) => {
+    pagination.value.page = page;
+    syncQuery();
     loadTickets();
-});
+};
+
+const changeView = (mode) => {
+    viewMode.value = mode;
+    syncQuery();
+    if (mode === 'list') loadTickets();
+};
+
+// A count on the overview was clicked: the list with exactly that filter
+const showFilteredList = (filter) => {
+    filters.value = { ...defaultFilters(), status: null, ...filter };
+    viewMode.value = 'list';
+    applyFilters();
+};
+
+const openTicket = (ticket) => {
+    router.push({ name: detailRouteName.value, params: { id: ticket.id ?? ticket } });
+};
+
+const createTicket = async (values) => {
+    if (creating.value) return;
+    creating.value = true;
+    try {
+        const response = await axios.post('/api/tickets', values);
+        showComposer.value = false;
+        openTicket(response.data);
+    } catch (err) {
+        console.error('Failed to create ticket:', err);
+        await dialog.requestError(err, t('tickets.messages.createFailed'));
+    } finally {
+        creating.value = false;
+    }
+};
+
+const isOverdue = (ticket) => ticket.due_date && !['resolved', 'closed'].includes(ticket.status) && new Date(ticket.due_date) < new Date();
 
 onMounted(() => {
-    loadTickets();
+    rememberTicketListQuery(listRouteName, route.query);
+    if (viewMode.value === 'list') loadTickets();
     loadTicketTypes();
 });
 </script>
 
 <template>
-    <div class="ticket-page d-flex flex-column">
-        <page-header
-            fluid
-            :title="pageTitle"
-            :subtitle="pageSubtitle"
-            icon="mdi-ticket-outline"
-            class="flex-shrink-0"
-        >
+    <div>
+        <page-header :title="pageTitle" :subtitle="pageSubtitle" icon="mdi-ticket-outline">
             <template #actions>
-                <v-btn-toggle v-model="viewMode" mandatory density="compact" variant="outlined" divided>
+                <v-btn-toggle
+                    :model-value="viewMode"
+                    mandatory
+                    density="compact"
+                    variant="outlined"
+                    divided
+                    @update:model-value="changeView"
+                >
+                    <v-btn v-if="!isUserView" value="overview" size="small" icon="mdi-view-dashboard-outline" :title="t('tickets.overviewView')" :aria-label="t('tickets.overviewView')" />
                     <v-btn value="list" size="small" icon="mdi-view-list" :title="t('tickets.listView')" :aria-label="t('tickets.listView')" />
                     <v-btn value="kanban" size="small" icon="mdi-view-column" :title="t('tickets.kanbanView')" :aria-label="t('tickets.kanbanView')" />
                 </v-btn-toggle>
-                <v-btn
-                    v-if="isAdmin"
-                    color="primary"
-                    variant="elevated"
-                    prepend-icon="mdi-plus"
-                    @click="createNewTicket"
-                >
+                <v-btn v-if="isAdmin" color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showComposer = true">
                     {{ t('tickets.createTicket') }}
                 </v-btn>
             </template>
         </page-header>
 
-        <v-container fluid class="ticket-layout pa-0 flex-grow-1">
-            <!-- Kanban View -->
-            <TicketKanban
-                v-if="viewMode === 'kanban'"
-                ref="kanbanRef"
-                class="fill-height"
-                @open-ticket="handleKanbanOpenTicket"
-                @ticket-updated="handleKanbanTicketUpdated"
-            />
-
-            <!-- List View -->
-            <v-row v-else no-gutters class="fill-height">
-                <!-- Left Panel - Ticket List -->
-                <v-col cols="12" md="4" lg="3" class="left-panel d-flex flex-column border-e">
-                    <!-- Search + filters -->
-                    <div class="flex-shrink-0 pa-4">
-                        <v-text-field
-                            v-model="filters.search"
-                            :placeholder="t('tickets.filters.searchPlaceholder')"
-                            prepend-inner-icon="mdi-magnify"
-                            density="compact"
-                            hide-details
-                            clearable
-                            class="mb-2"
-                            @update:model-value="debouncedApplyFilters"
-                        />
-
-                        <!-- Status + Filter toggle row -->
-                        <div class="d-flex align-center ga-2">
-                            <v-select
-                                v-model="filters.status"
-                                :items="statusFilterOptions()"
-                                item-title="label"
-                                item-value="value"
-                                density="compact"
-                                hide-details
-                                class="flex-grow-1"
-                                @update:model-value="applyFilters"
-                            />
-                            <v-btn
-                                :icon="showFilters ? 'mdi-filter-off' : 'mdi-filter-variant'"
-                                variant="text"
-                                density="compact"
-                                size="small"
-                                @click="showFilters = !showFilters"
-                            >
-                                <v-icon>{{ showFilters ? 'mdi-filter-off' : 'mdi-filter-variant' }}</v-icon>
-                                <v-badge
-                                    v-if="activeFilterCount > 0 && !showFilters"
-                                    :content="activeFilterCount"
-                                    color="primary"
-                                    floating
-                                />
-                            </v-btn>
-                        </div>
-
-                        <!-- Expandable Filters -->
-                        <v-expand-transition>
-                            <div v-if="showFilters" class="mt-2">
-                                <v-select
-                                    v-model="filters.priority"
-                                    :items="priorityFilterOptions()"
-                                    item-title="label"
-                                    item-value="value"
-                                    :label="t('tickets.fields.priority')"
-                                    density="compact"
-                                    hide-details
-                                    class="mb-2"
-                                    @update:model-value="applyFilters"
-                                />
-                                <v-select
-                                    v-model="filters.type"
-                                    :items="ticketTypes"
-                                    item-title="name"
-                                    item-value="slug"
-                                    :label="t('tickets.fields.type')"
-                                    density="compact"
-                                    hide-details
-                                    class="mb-2"
-                                    @update:model-value="applyFilters"
-                                />
-                                <v-select
-                                    v-if="isAdmin"
-                                    v-model="filters.assigned_to"
-                                    :items="assigneeFilterOptions"
-                                    item-title="label"
-                                    item-value="value"
-                                    :label="t('tickets.fields.assignee')"
-                                    density="compact"
-                                    hide-details
-                                    class="mb-2"
-                                    @update:model-value="applyFilters"
-                                />
-                                <v-btn
-                                    variant="text"
-                                    density="compact"
-                                    size="small"
-                                    block
-                                    @click="resetFilters"
-                                >
-                                    {{ t('tickets.reset') }}
-                                </v-btn>
-                            </div>
-                        </v-expand-transition>
-                    </div>
-
-                    <v-divider />
-
-                    <!-- Ticket List -->
-                    <div class="ticket-list-items flex-grow-1 overflow-y-auto">
-                        <v-progress-linear v-if="loading || saving" indeterminate color="primary" />
-
-                        <v-list v-if="tickets.length > 0" class="pa-0" density="compact">
-                            <v-list-item
-                                v-for="ticket in tickets"
-                                :key="ticket.id"
-                                :active="selectedTicket?.id === ticket.id"
-                                class="ticket-list-item"
-                                @click="selectTicket(ticket)"
-                            >
-                                <template #prepend>
-                                    <v-icon
-                                        :color="getPriorityColor(ticket.priority)"
-                                        size="small"
-                                        class="mr-1"
-                                    >
-                                        {{ getPriorityIcon(ticket.priority) }}
-                                    </v-icon>
-                                </template>
-
-                                <v-list-item-title class="text-body-2 font-weight-medium">
-                                    {{ ticket.title }}
-                                </v-list-item-title>
-
-                                <v-list-item-subtitle class="d-flex align-center ga-2 mt-1">
-                                    <v-chip
-                                        size="small"
-                                        variant="tonal"
-                                        :color="getStatusColor(ticket.status)"
-                                    >
-                                        {{ ticket.status_label }}
-                                    </v-chip>
-                                    <v-chip
-                                        v-if="ticket.ticket_type"
-                                        size="small"
-                                        variant="tonal"
-                                        :color="ticket.ticket_type.color"
-                                    >
-                                        {{ ticket.ticket_type.name }}
-                                    </v-chip>
-                                    <span class="text-caption text-medium-emphasis">#{{ ticket.id }}</span>
-                                </v-list-item-subtitle>
-                            </v-list-item>
-                        </v-list>
-
-                        <!-- Empty State -->
-                        <empty-state
-                            v-else-if="!loading"
-                            compact
-                            icon="mdi-ticket-outline"
-                            :title="t('tickets.noTickets')"
-                            :text="filters.status ? t('tickets.noTicketsFilterHint') : t('tickets.noTicketsCreateHint')"
-                        >
-                            <template v-if="isAdmin" #actions>
-                                <v-btn
-                                    color="primary"
-                                    variant="flat"
-                                    size="small"
-                                    prepend-icon="mdi-plus"
-                                    @click="createNewTicket"
-                                >
-                                    {{ t('tickets.createTicket') }}
-                                </v-btn>
-                            </template>
-                        </empty-state>
-                    </div>
-
-                    <!-- Pagination -->
-                    <div v-if="pagination.total > pagination.per_page" class="pa-2 border-t">
-                        <v-pagination
-                            v-model="pagination.page"
-                            :length="pagination.last_page"
-                            :total-visible="5"
-                            density="compact"
-                            rounded="circle"
-                        />
-                    </div>
-                </v-col>
-
-                <!-- Right Panel - Related Content -->
-                <v-col cols="12" md="8" lg="9" class="right-panel d-flex flex-column">
-                    <template v-if="selectedTicket?.id">
-                        <!-- Content Header Bar -->
-                        <div class="flex-shrink-0 pa-4 d-flex align-center ga-4">
-                            <div class="flex-grow-1">
-                                <div class="d-flex align-center flex-wrap ga-2 mb-1">
-                                    <v-chip
-                                        v-if="selectedTicket.ticket_type"
-                                        size="small"
-                                        variant="tonal"
-                                        :color="selectedTicket.ticket_type.color"
-                                    >
-                                        <v-icon start size="small">{{ selectedTicket.ticket_type.icon }}</v-icon>
-                                        {{ selectedTicket.ticket_type.name }}
-                                    </v-chip>
-                                    <v-chip size="small" variant="tonal" :color="getStatusColor(selectedTicket.status)">
-                                        {{ selectedTicket.status_label }}
-                                    </v-chip>
-                                    <v-chip size="small" variant="tonal" :color="getPriorityColor(selectedTicket.priority)">
-                                        <v-icon start size="x-small">{{ getPriorityIcon(selectedTicket.priority) }}</v-icon>
-                                        {{ selectedTicket.priority_label }}
-                                    </v-chip>
-                                    <span class="text-caption text-medium-emphasis">#{{ selectedTicket.id }}</span>
-                                </div>
-                                <h2 class="text-h6 font-weight-medium">{{ selectedTicket.title }}</h2>
-                            </div>
-                            <v-btn
-                                color="primary"
-                                variant="tonal"
-                                prepend-icon="mdi-information-outline"
-                                @click="openDrawer"
-                            >
-                                {{ t('tickets.details') }}
-                            </v-btn>
-                        </div>
-
-                        <v-divider />
-
-                        <!-- Related Content Area -->
-                        <div class="content-area flex-grow-1 overflow-y-auto pa-6">
-                            <!-- Ticket Description -->
-                            <div v-if="selectedTicket.description" class="mb-6">
-                                <h3 class="text-subtitle-1 font-weight-medium mb-2">{{ t('tickets.fields.description') }}</h3>
-                                <div class="description-content">{{ selectedTicket.description }}</div>
-                            </div>
-
-                            <!-- Related Model Content -->
-                            <template v-if="selectedTicket.ticketable">
-                                <v-divider v-if="selectedTicket.description" class="mb-6" />
-
-                                <div class="d-flex align-center ga-2 mb-4">
-                                    <v-icon color="primary">
-                                        {{ selectedTicket.ticketable_type === 'App\\Models\\Wiki' ? 'mdi-book-open-variant' : 'mdi-file-document-outline' }}
-                                    </v-icon>
-                                    <h3 class="text-subtitle-1 font-weight-medium">
-                                        {{ t('tickets.sidebar.relatedTo') }}: {{ relatedContentTitle || selectedTicket.ticketable.title || selectedTicket.ticketable.slug }}
-                                    </h3>
-                                    <v-spacer />
-                                    <v-btn
-                                        v-if="selectedTicket.ticketable_type === 'App\\Models\\Wiki'"
-                                        :to="`/wiki/${selectedTicket.ticketable.slug}`"
-                                        variant="text"
-                                        size="small"
-                                        color="primary"
-                                        prepend-icon="mdi-open-in-new"
-                                    >
-                                        {{ t('tickets.viewRelated') }}
-                                    </v-btn>
-                                    <v-btn
-                                        v-else-if="selectedTicket.ticketable_type === 'App\\Models\\Page'"
-                                        :to="`/pages/${selectedTicket.ticketable.slug}`"
-                                        variant="text"
-                                        size="small"
-                                        color="primary"
-                                        prepend-icon="mdi-open-in-new"
-                                    >
-                                        {{ t('tickets.viewRelated') }}
-                                    </v-btn>
-                                </div>
-
-                                <!-- Loading State -->
-                                <loading-state v-if="relatedContentLoading" compact />
-
-                                <!-- Content -->
-                                <v-card v-else-if="relatedContentHtml" flat rounded="lg">
-                                    <v-card-text>
-                                        <div class="wiki-content-body" v-html="relatedContentHtml" />
-                                    </v-card-text>
-                                </v-card>
-
-                                <!-- No Content -->
-                                <empty-state
-                                    v-else
-                                    compact
-                                    icon="mdi-file-document-outline"
-                                    :title="t('tickets.noRelatedContent')"
-                                />
-                            </template>
-                        </div>
-                    </template>
-
-                    <!-- Empty State (no ticket selected) -->
-                    <div v-else class="d-flex align-center justify-center fill-height">
-                        <empty-state
-                            icon="mdi-ticket-outline"
-                            :title="t('tickets.selectTicket')"
-                            :text="t('tickets.selectTicketHint')"
-                        />
-                    </div>
-                </v-col>
-            </v-row>
+        <v-container v-if="viewMode === 'overview'" class="pt-0">
+            <ticket-overview @filter="showFilteredList" @open-ticket="openTicket" />
         </v-container>
 
-        <!-- Ticket Detail Drawer -->
-        <TicketSidebar
-            v-model:is-drawer-open="isDrawerOpen"
-            :edit-mode="editMode"
-            :ticket="selectedTicket"
-            :saving="saving"
-            @add-ticket="handleAddTicket"
-            @update-ticket="handleUpdateTicket"
-            @remove-ticket="handleRemoveTicket"
-            @ticket-updated="handleTicketUpdated"
-        />
+        <v-container v-else-if="viewMode === 'kanban'" fluid class="kanban-container pt-0">
+            <ticket-kanban class="fill-height" @open-ticket="openTicket" />
+        </v-container>
+
+        <v-container v-else>
+            <!-- Filters -->
+            <v-row dense class="mb-2">
+                <v-col cols="12" md="4">
+                    <v-text-field
+                        v-model="filters.search"
+                        :label="t('tickets.filters.searchPlaceholder')"
+                        prepend-inner-icon="mdi-magnify"
+                        density="compact"
+                        hide-details
+                        clearable
+                        @update:model-value="debouncedApplyFilters"
+                    />
+                </v-col>
+                <v-col cols="6" sm="3" md="2">
+                    <v-select
+                        v-model="filters.status"
+                        :items="statusItems"
+                        item-title="label"
+                        item-value="value"
+                        :label="t('tickets.fields.status')"
+                        density="compact"
+                        hide-details
+                        @update:model-value="applyFilters"
+                    />
+                </v-col>
+                <v-col cols="6" sm="3" md="2">
+                    <v-select
+                        v-model="filters.type"
+                        :items="typeItems"
+                        item-title="name"
+                        item-value="slug"
+                        :label="t('tickets.fields.type')"
+                        density="compact"
+                        hide-details
+                        @update:model-value="applyFilters"
+                    />
+                </v-col>
+                <v-col cols="6" sm="3" md="2">
+                    <v-select
+                        v-model="filters.priority"
+                        :items="priorityItems"
+                        item-title="label"
+                        item-value="value"
+                        :label="t('tickets.fields.priority')"
+                        density="compact"
+                        hide-details
+                        @update:model-value="applyFilters"
+                    />
+                </v-col>
+                <v-col v-if="isAdmin && !isUserView" cols="6" sm="3" md="2">
+                    <v-select
+                        v-model="filters.assigned_to"
+                        :items="assigneeItems"
+                        item-title="label"
+                        item-value="value"
+                        :label="t('tickets.fields.assignee')"
+                        density="compact"
+                        hide-details
+                        @update:model-value="applyFilters"
+                    />
+                </v-col>
+            </v-row>
+
+            <div v-if="linkFilterChips.length || hasActiveFilters" class="d-flex align-center flex-wrap ga-2 mb-3">
+                <v-chip
+                    v-for="chip in linkFilterChips"
+                    :key="chip.key"
+                    size="small"
+                    closable
+                    @click:close="removeLinkFilter(chip.key)"
+                >
+                    {{ chip.label }}
+                </v-chip>
+                <v-spacer />
+                <v-btn variant="text" size="small" prepend-icon="mdi-filter-off-outline" @click="resetFilters">
+                    {{ t('tickets.reset') }}
+                </v-btn>
+            </div>
+
+            <loading-state v-if="loading && !tickets.length" />
+
+            <template v-else-if="tickets.length">
+                <v-progress-linear v-if="loading" indeterminate color="primary" class="mb-2" />
+
+                <v-card
+                    v-for="ticket in tickets"
+                    :key="ticket.id"
+                    class="mb-2"
+                    rounded="lg"
+                    :to="{ name: detailRouteName, params: { id: ticket.id } }"
+                >
+                    <div class="d-flex align-center pa-4 ga-4">
+                        <v-avatar size="40" variant="tonal" :color="ticket.ticket_type?.color" class="flex-shrink-0 d-none d-sm-flex">
+                            <v-icon :icon="ticket.ticket_type?.icon || 'mdi-ticket-outline'" :title="ticket.ticket_type?.name" />
+                        </v-avatar>
+
+                        <div class="flex-grow-1 min-width-0">
+                            <div class="d-flex align-center flex-wrap ga-2 mb-1">
+                                <span class="text-subtitle-1 font-weight-medium">{{ ticket.title }}</span>
+                                <v-chip size="x-small" variant="tonal" :color="getStatusColor(ticket.status)">
+                                    {{ getStatusLabel(ticket.status) }}
+                                </v-chip>
+                                <v-chip
+                                    v-if="ticket.priority !== 'normal'"
+                                    size="x-small"
+                                    variant="tonal"
+                                    :color="getPriorityColor(ticket.priority)"
+                                    :prepend-icon="getPriorityIcon(ticket.priority)"
+                                >
+                                    {{ getPriorityLabel(ticket.priority) }}
+                                </v-chip>
+                                <v-chip v-if="isOverdue(ticket)" size="x-small" variant="tonal" color="error" prepend-icon="mdi-clock-alert-outline">
+                                    {{ t('tickets.detail.overdue') }}
+                                </v-chip>
+                                <v-chip
+                                    v-if="RELATED_KINDS[ticket.ticketable_type]"
+                                    size="x-small"
+                                    variant="outlined"
+                                    :prepend-icon="RELATED_KINDS[ticket.ticketable_type].icon"
+                                >
+                                    {{ t(`tickets.related.kinds.${RELATED_KINDS[ticket.ticketable_type].key}`) }}
+                                </v-chip>
+                            </div>
+                            <div class="d-flex align-center flex-wrap ga-3 text-caption text-medium-emphasis">
+                                <span>#{{ ticket.id }}</span>
+                                <span v-if="ticket.ticket_type">{{ ticket.ticket_type.name }}</span>
+                                <span v-if="ticket.creator">{{ t('tickets.detail.reportedBy', { name: ticket.creator.username || ticket.creator.name }) }}</span>
+                                <span :title="formatDate(ticket.created_at)">{{ formatDateDistanceToNow(ticket.created_at) }}</span>
+                                <span v-if="ticket.due_date" class="d-inline-flex align-center ga-1" :title="t('tickets.fields.dueDate')">
+                                    <v-icon size="small" icon="mdi-calendar-clock-outline" />{{ formatDate(ticket.due_date) }}
+                                </span>
+                                <span class="d-inline-flex align-center ga-1" :title="t('tickets.comment')">
+                                    <v-icon size="small" icon="mdi-comment-outline" />{{ ticket.comments_count ?? 0 }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="assignee text-caption text-medium-emphasis text-end flex-shrink-0 d-none d-md-block">
+                            <template v-if="ticket.assignee">
+                                <v-icon size="small" icon="mdi-account-check-outline" class="mr-1" />{{ ticket.assignee.username }}
+                            </template>
+                            <template v-else>{{ t('tickets.unassigned') }}</template>
+                        </div>
+                    </div>
+                </v-card>
+
+                <div v-if="pagination.last_page > 1" class="d-flex justify-center mt-4">
+                    <v-pagination
+                        :model-value="pagination.page"
+                        :length="pagination.last_page"
+                        :total-visible="7"
+                        rounded="circle"
+                        @update:model-value="changePage"
+                    />
+                </div>
+            </template>
+
+            <empty-state
+                v-else
+                icon="mdi-ticket-outline"
+                :title="t('tickets.noTickets')"
+                :text="hasActiveFilters ? t('tickets.noTicketsFilterHint') : ''"
+            >
+                <template v-if="hasActiveFilters" #actions>
+                    <v-btn variant="tonal" size="small" @click="resetFilters">{{ t('tickets.reset') }}</v-btn>
+                </template>
+            </empty-state>
+        </v-container>
+
+        <!-- Create -->
+        <v-dialog v-model="showComposer" max-width="700" :persistent="creating">
+            <v-card>
+                <v-card-title class="d-flex align-center ga-2 pt-4 px-6">
+                    <v-icon icon="mdi-ticket-outline" color="primary" />
+                    {{ t('tickets.createTicket') }}
+                </v-card-title>
+                <v-card-text class="px-6 pb-6">
+                    <ticket-form
+                        v-if="showComposer"
+                        :saving="creating"
+                        :submit-label="t('tickets.create')"
+                        @submit="createTicket"
+                        @cancel="showComposer = false"
+                    />
+                </v-card-text>
+            </v-card>
+        </v-dialog>
     </div>
 </template>
 
 <style scoped>
-.ticket-page {
-    height: 100%;
+.kanban-container {
+    height: calc(100vh - 220px);
+    min-height: 480px;
 }
 
-.ticket-layout {
-    min-height: 0;
+.min-width-0 {
+    min-width: 0;
 }
 
-.ticket-layout :deep(.v-row) {
-    height: 100%;
-}
-
-.left-panel,
-.right-panel {
-    height: 100%;
+.assignee {
+    max-width: 160px;
     overflow: hidden;
-}
-
-.ticket-list-items,
-.content-area {
-    min-height: 0;
-}
-
-.ticket-list-item {
-    border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.ticket-list-item:hover {
-    background-color: rgba(var(--v-theme-primary), 0.04);
-}
-
-.description-content {
-    white-space: pre-line;
-    line-height: 1.6;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>

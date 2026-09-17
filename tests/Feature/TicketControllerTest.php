@@ -147,6 +147,37 @@ class TicketControllerTest extends TestCase
         $response->assertStatus(403);
     }
 
+    // ── Update ──────────────────────────────────────────
+
+    public function test_admin_can_change_type_and_clear_description(): void
+    {
+        $ticket = Ticket::factory()->createdBy($this->user)->create([
+            'ticket_type_id' => $this->ticketType->id,
+        ]);
+        $otherType = TicketType::factory()->create();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->patchJson("/api/tickets/{$ticket->id}", ['ticket_type_id' => $otherType->id, 'description' => ''])
+            ->assertOk();
+
+        $ticket->refresh();
+        $this->assertSame($otherType->id, (int) $ticket->ticket_type_id);
+        $this->assertNull($ticket->description);
+    }
+
+    public function test_list_includes_comment_counts(): void
+    {
+        $ticket = Ticket::factory()->createdBy($this->user)->create([
+            'ticket_type_id' => $this->ticketType->id,
+        ]);
+        $ticket->comments()->create(['user_id' => $this->admin->id, 'comment' => 'On it']);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/tickets')
+            ->assertOk()
+            ->assertJsonPath('data.0.comments_count', 1);
+    }
+
     // ── Delete ──────────────────────────────────────────
 
     public function test_admin_can_delete_ticket(): void

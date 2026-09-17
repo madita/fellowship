@@ -50,6 +50,15 @@ export const users = [{
             auth
         ]
     },
-    component: () => import(/* webpackChunkName: "my-tickets" */ '@/pages/tickets/TicketList.vue')
+    component: () => import(/* webpackChunkName: "tickets" */ '@/pages/tickets/TicketList.vue')
+}, {
+    path: '/account/tickets/:id(\\d+)',
+    name: 'my-ticket',
+    meta: {
+        middleware: [
+            auth
+        ]
+    },
+    component: () => import(/* webpackChunkName: "ticket-detail" */ '@/pages/tickets/TicketDetail.vue')
 }]
 export default users

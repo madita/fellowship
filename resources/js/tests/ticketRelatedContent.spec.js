@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-describe('TicketList loadRelatedContent race condition guard', () => {
+describe('TicketRelatedContent loadContent race condition guard', () => {
     let relatedContentRequestId;
     let relatedContent;
     let relatedContentType;
     let relatedContentLoading;
 
-    // Simulate the race condition guard logic from TicketList.vue
+    // Simulate the race condition guard logic from components/ticket/TicketRelatedContent.vue
     function createLoadRelatedContent() {
         relatedContentRequestId = 0;
 

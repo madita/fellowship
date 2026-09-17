@@ -31,6 +31,7 @@ export default function permission({ to, next }) {
         "admin-terms": "manage-page",
         "admin-settings-menus": "manage-page",
         "admin-tickets": "manage-page",
+        "admin-ticket": "manage-page",
         "admin-forums": "manage-page",
         "admin-polls": "manage-post",
         "admin-relations": "manage-page",

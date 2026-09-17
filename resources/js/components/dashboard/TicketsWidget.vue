@@ -106,7 +106,7 @@ export default {
             }[this.scope];
         },
         ticketLink(ticket) {
-            return { path: this.listPath, query: { ...this.scopeParams(), status: 'open', search: ticket.title } };
+            return `${this.listPath}/${ticket.id}`;
         },
         isOverdue(ticket) {
             return ticket.due_date && new Date(ticket.due_date) < new Date();

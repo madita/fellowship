@@ -431,6 +431,9 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     // Admin overview
     Route::get('/dashboard', 'App\Http\Controllers\Admin\AdminDashboardController@index');
 
+    // Tickets
+    Route::get('/tickets/stats', 'App\Http\Controllers\Admin\TicketAdminController@stats');
+
     // Polls
     Route::get('/polls', 'App\Http\Controllers\Admin\PollAdminController@index');
     Route::get('/polls/stats', 'App\Http\Controllers\Admin\PollAdminController@stats');
