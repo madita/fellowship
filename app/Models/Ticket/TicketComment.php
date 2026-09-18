@@ -28,32 +28,6 @@ class TicketComment extends Model
 
     protected $with = ['user'];
 
-    protected static function booted(): void
-    {
-        // An admin's comment is the team's official answer, wherever it was written
-        static::creating(function (TicketComment $comment): void {
-            $comment->is_official = (bool) $comment->user?->isAdmin();
-        });
-
-        static::created(function (TicketComment $comment): void {
-            // Mentioned members get the mention, not also the watcher notice
-            $mentioned = $comment->ticket->notifyMentions($comment->comment, null, $comment->user, $comment);
-
-            if ( ! $comment->is_internal) {
-                $comment->ticket->notifyWatchers(
-                    new TicketActivityNotification($comment->ticket, 'comment', $comment),
-                    [$comment->user_id, ...$mentioned]
-                );
-            }
-        });
-
-        static::updated(function (TicketComment $comment): void {
-            if ($comment->wasChanged('comment')) {
-                $comment->ticket->notifyMentions($comment->comment, $comment->getOriginal('comment'), $comment->user, $comment);
-            }
-        });
-    }
-
     /**
      * Get the ticket this comment belongs to.
      */
@@ -97,4 +71,29 @@ class TicketComment extends Model
         return $user->id === $this->user_id || $user->isAdmin();
     }
 
+    protected static function booted(): void
+    {
+        // An admin's comment is the team's official answer, wherever it was written
+        static::creating(function (TicketComment $comment): void {
+            $comment->is_official = (bool) $comment->user?->isAdmin();
+        });
+
+        static::created(function (TicketComment $comment): void {
+            // Mentioned members get the mention, not also the watcher notice
+            $mentioned = $comment->ticket->notifyMentions($comment->comment, null, $comment->user, $comment);
+
+            if ( ! $comment->is_internal) {
+                $comment->ticket->notifyWatchers(
+                    new TicketActivityNotification($comment->ticket, 'comment', $comment),
+                    [$comment->user_id, ...$mentioned]
+                );
+            }
+        });
+
+        static::updated(function (TicketComment $comment): void {
+            if ($comment->wasChanged('comment')) {
+                $comment->ticket->notifyMentions($comment->comment, $comment->getOriginal('comment'), $comment->user, $comment);
+            }
+        });
+    }
 }

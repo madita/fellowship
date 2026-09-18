@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Ticket;
 
 use App\Http\Controllers\Controller;
-use App\Models\Ticket\Ticket;
 use App\Models\Revision;
+use App\Models\Ticket\Ticket;
 use App\Models\Ticket\TicketComment;
 use App\Models\Ticket\TicketType;
 use App\Models\User;
@@ -242,20 +242,6 @@ class TicketController extends Controller
     }
 
     /**
-     * Admins see every ticket; members the ones they created or are assigned to.
-     */
-    private function ensureCanView(Ticket $ticket): void
-    {
-        $user = Auth::user();
-
-        if ( ! $user || ( ! $user->isAdmin()
-            && (int) $ticket->created_by_user_id !== (int) $user->id
-            && (int) $ticket->assigned_to_user_id !== (int) $user->id)) {
-            abort(403, 'You do not have permission to view this ticket.');
-        }
-    }
-
-    /**
      * Create a new ticket.
      */
     public function store(Request $request): JsonResponse
@@ -457,5 +443,19 @@ class TicketController extends Controller
         $ticket->unassign();
 
         return response()->json($ticket->fresh());
+    }
+
+    /**
+     * Admins see every ticket; members the ones they created or are assigned to.
+     */
+    private function ensureCanView(Ticket $ticket): void
+    {
+        $user = Auth::user();
+
+        if ( ! $user || ( ! $user->isAdmin()
+            && (int) $ticket->created_by_user_id !== (int) $user->id
+            && (int) $ticket->assigned_to_user_id !== (int) $user->id)) {
+            abort(403, 'You do not have permission to view this ticket.');
+        }
     }
 }

@@ -19,13 +19,6 @@ class TicketTag extends Model
         'is_active' => 'boolean',
     ];
 
-    protected static function booted(): void
-    {
-        static::creating(function (TicketTag $tag): void {
-            $tag->slug = $tag->slug ?: Str::slug($tag->name);
-        });
-    }
-
     /**
      * Get tickets with this tag.
      */
@@ -40,5 +33,12 @@ class TicketTag extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (TicketTag $tag): void {
+            $tag->slug = $tag->slug ?: Str::slug($tag->name);
+        });
     }
 }
