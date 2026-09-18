@@ -3,14 +3,20 @@
 namespace App\Http\Controllers\Ticket;
 
 use App\Http\Controllers\Controller;
+use App\Models\Revision;
 use App\Models\Ticket\Ticket;
+use App\Models\Ticket\TicketComment;
 use App\Models\Ticket\TicketType;
 use App\Models\User;
+use App\Support\RichText;
 use App\Traits\Approvable;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
@@ -26,7 +32,7 @@ class TicketController extends Controller
             abort(401);
         }
 
-        $query = Ticket::with(['ticketType', 'creator', 'assignee', 'ticketable']);
+        $query = Ticket::with(['ticketType', 'creator', 'assignee', 'ticketable'])->withCount('comments');
 
         // Non-admins can only see their own tickets: created by or assigned
         // to them. Admins can narrow to the same set with ?mine=1.
@@ -117,14 +123,7 @@ class TicketController extends Controller
      */
     public function show(Ticket $ticket): JsonResponse
     {
-        $user = Auth::user();
-
-        if ( ! $user || ! $user->isAdmin()) {
-            // Users can only view their own tickets (created by or assigned to them)
-            if ( ! $user || ($ticket->created_by_user_id !== $user->id && $ticket->assigned_to_user_id !== $user->id)) {
-                abort(403, 'You do not have permission to view this ticket.');
-            }
-        }
+        $this->ensureCanView($ticket);
 
         $ticket->load([
             'ticketType',
@@ -148,6 +147,101 @@ class TicketController extends Controller
     }
 
     /**
+     * What happened to a ticket, newest first: who created it and who changed
+     * which field (status, assignee, description …) from what to what.
+     */
+    public function history(Ticket $ticket): JsonResponse
+    {
+        $this->ensureCanView($ticket);
+
+        $revisions = $ticket->revisions()->with('executor:id,username')->limit(100)->get();
+
+        // Ids in the changes are shown as names
+        $userIds = collect();
+        $typeIds = collect();
+        foreach ($revisions as $revision) {
+            foreach ([$revision->old_value, $revision->new_value] as $values) {
+                $userIds->push($values['assigned_to_user_id'] ?? null);
+                $typeIds->push($values['ticket_type_id'] ?? null);
+            }
+        }
+        $users = User::whereIn('id', $userIds->filter()->unique())->pluck('username', 'id');
+        $types = TicketType::whereIn('id', $typeIds->filter()->unique())->pluck('name', 'id');
+
+        $display = function (string $field, $value) use ($users, $types) {
+            if ($value === null || $value === '') {
+                return null;
+            }
+
+            return match ($field) {
+                'assigned_to_user_id'    => $users[$value] ?? "#{$value}",
+                'ticket_type_id'         => $types[$value] ?? "#{$value}",
+                'duplicate_of_ticket_id' => "#{$value}",
+                default                  => null,
+            };
+        };
+
+        $entries = $revisions->map(fn (Revision $revision) => [
+            // Same second: comments above changes, both newest first
+            '_sort'      => [$revision->created_at->getTimestamp(), 0, $revision->id],
+            'id'         => $revision->id,
+            'action'     => $revision->action,
+            'created_at' => $revision->created_at,
+            'user'       => $revision->executor ? ['id' => $revision->executor->id, 'username' => $revision->executor->username] : null,
+            // The creation is one event, not a list of every initial value
+            'changes' => $revision->action === 'updated'
+                ? collect($revision->getDiff())->map(fn (array $change, string $field) => [
+                    'field'       => $field,
+                    'old'         => $change['old_value'] ?? null,
+                    'new'         => $change['new_value'] ?? null,
+                    'old_display' => $display($field, $change['old_value'] ?? null),
+                    'new_display' => $display($field, $change['new_value'] ?? null),
+                ])->values()
+                : [],
+        ]);
+
+        // Comments belong in the activity too; internal notes only for admins
+        $comments = $ticket->comments()
+            ->when( ! Auth::user()->isAdmin(), fn ($q) => $q->where('is_internal', false))
+            ->with('user:id,username')
+            ->latest()
+            ->limit(100)
+            ->get()
+            ->map(fn (TicketComment $comment) => [
+                '_sort'       => [$comment->created_at->getTimestamp(), 1, $comment->id],
+                'id'          => "comment-{$comment->id}",
+                'action'      => 'commented',
+                'created_at'  => $comment->created_at,
+                'user'        => $comment->user ? ['id' => $comment->user->id, 'username' => $comment->user->username] : null,
+                'is_internal' => (bool) $comment->is_internal,
+                'excerpt'     => Str::limit(trim(html_entity_decode(strip_tags($comment->comment))), 140),
+                'changes'     => [],
+            ]);
+
+        $entries = $entries->concat($comments);
+
+        // Tickets from before the history was recorded still show their creation
+        if ($revisions->count() < 100 && ! $revisions->contains('action', 'created')) {
+            $ticket->loadMissing('creator');
+            $entries->push([
+                // Nothing can have happened before the ticket existed
+                '_sort'      => [$ticket->created_at->getTimestamp(), -1, 0],
+                'id'         => 'created',
+                'action'     => 'created',
+                'created_at' => $ticket->created_at,
+                'user'       => $ticket->creator ? ['id' => $ticket->creator->id, 'username' => $ticket->creator->username] : null,
+                'changes'    => [],
+            ]);
+        }
+
+        $entries = $entries->sortByDesc('_sort')->take(100)
+            ->map(fn (array $entry) => Arr::except($entry, '_sort'))
+            ->values();
+
+        return response()->json(['data' => $entries]);
+    }
+
+    /**
      * Create a new ticket.
      */
     public function store(Request $request): JsonResponse
@@ -167,6 +261,15 @@ class TicketController extends Controller
             'ticketable_id'   => 'nullable|integer',
         ]);
 
+        // Admins file tickets for the team: assignee and due date right away
+        if ($user->isAdmin()) {
+            $validated += $request->validate([
+                'assigned_to_user_id' => 'nullable|exists:users,id',
+                'due_date'            => 'nullable|date',
+            ]);
+        }
+
+        $validated['description']        = RichText::clean($validated['description'] ?? null);
         $validated['created_by_user_id'] = $user->id;
         $validated['status']             = 'open';
 
@@ -187,28 +290,20 @@ class TicketController extends Controller
         }
 
         $validated = $request->validate([
+            'ticket_type_id'      => 'exists:ticket_types,id',
             'title'               => 'string|max:255',
-            'description'         => 'string',
+            'description'         => 'nullable|string',
             'status'              => 'in:open,in_progress,pending,resolved,closed',
             'priority'            => 'in:low,normal,high,urgent',
             'assigned_to_user_id' => 'nullable|exists:users,id',
             'due_date'            => 'nullable|date',
         ]);
 
-        // Auto-set resolved_at/closed_at based on status
-        if (isset($validated['status'])) {
-            if ($validated['status'] === 'resolved' && ! $ticket->resolved_at) {
-                $validated['resolved_at'] = now();
-            }
-            if ($validated['status'] === 'closed' && ! $ticket->closed_at) {
-                $validated['closed_at'] = now();
-            }
-            if (in_array($validated['status'], ['open', 'in_progress', 'pending'])) {
-                $validated['resolved_at'] = null;
-                $validated['closed_at']   = null;
-            }
+        if (array_key_exists('description', $validated)) {
+            $validated['description'] = RichText::clean($validated['description']);
         }
 
+        // resolved_at / closed_at follow the status in the Ticket model
         DB::transaction(function () use ($ticket, $validated, $user): void {
             $ticket->update($validated);
 
@@ -348,5 +443,19 @@ class TicketController extends Controller
         $ticket->unassign();
 
         return response()->json($ticket->fresh());
+    }
+
+    /**
+     * Admins see every ticket; members the ones they created or are assigned to.
+     */
+    private function ensureCanView(Ticket $ticket): void
+    {
+        $user = Auth::user();
+
+        if ( ! $user || ( ! $user->isAdmin()
+            && (int) $ticket->created_by_user_id !== (int) $user->id
+            && (int) $ticket->assigned_to_user_id !== (int) $user->id)) {
+            abort(403, 'You do not have permission to view this ticket.');
+        }
     }
 }

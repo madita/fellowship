@@ -120,7 +120,7 @@
                                         v-for="ticket in data.recent.tickets"
                                         :key="ticket.id"
                                         class="px-0"
-                                        :to="{ path: '/admin/tickets', query: { assigned_to: 'unassigned', search: ticket.title } }"
+                                        :to="`/admin/tickets/${ticket.id}`"
                                     >
                                         <template v-slot:prepend>
                                             <v-avatar size="24" :color="getPriorityColor(ticket.priority)">

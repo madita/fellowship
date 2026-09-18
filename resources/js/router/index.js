@@ -18,6 +18,7 @@ import WikiRoutes from './wiki.routes'
 import ForumRoutes from './forum.routes'
 import SandboxRoutes from './sandbox.routes'
 import AdminRoutes from './admin.routes'
+import FeedbackRoutes from './feedback.routes'
 //import permission from "@/router/middleware/permission.js";
 
 //Vue.use(Router)
@@ -40,6 +41,7 @@ export const routes = [{
     ...ForumRoutes,
     ...SandboxRoutes,
     ...AdminRoutes,
+    ...FeedbackRoutes,
     {
         path: '/error',
         name: 'access-denied',

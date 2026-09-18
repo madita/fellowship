@@ -237,7 +237,37 @@ export const admin = [{
                 auth, permission, verified
             ]
         },
-        component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/pages/tickets/TicketList.vue')
+        component: () => import(/* webpackChunkName: "tickets" */ '@/pages/tickets/TicketList.vue')
+    },
+    {
+        path: '/admin/tickets/create',
+        name: 'admin-ticket-create',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "ticket-editor" */ '@/pages/tickets/TicketEditor.vue')
+    },
+    {
+        path: '/admin/tickets/:id(\\d+)/edit',
+        name: 'admin-ticket-edit',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "ticket-editor" */ '@/pages/tickets/TicketEditor.vue')
+    },
+    {
+        path: '/admin/tickets/:id(\\d+)',
+        name: 'admin-ticket',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "ticket-detail" */ '@/pages/tickets/TicketDetail.vue')
     },
     {
         path: '/admin/polls',

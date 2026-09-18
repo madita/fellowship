@@ -143,6 +143,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // Tickets
     Route::get('/tickets', 'App\Http\Controllers\Ticket\TicketController@index');
     Route::get('/tickets/{ticket}', 'App\Http\Controllers\Ticket\TicketController@show');
+    Route::get('/tickets/{ticket}/history', 'App\Http\Controllers\Ticket\TicketController@history');
     Route::post('/tickets', 'App\Http\Controllers\Ticket\TicketController@store');
     Route::patch('/tickets/{ticket}', 'App\Http\Controllers\Ticket\TicketController@update');
     Route::delete('/tickets/{ticket}', 'App\Http\Controllers\Ticket\TicketController@destroy');
@@ -155,6 +156,21 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\Ticket\TicketCommentController@store');
     Route::patch('/ticket-comments/{comment}', 'App\Http\Controllers\Ticket\TicketCommentController@update');
     Route::delete('/ticket-comments/{comment}', 'App\Http\Controllers\Ticket\TicketCommentController@destroy');
+});
+
+// Feedback: public bug reports and feature requests (tickets of type bug / feature)
+Route::group(['prefix' => '/feedback'], function () {
+    Route::get('/tags', 'App\Http\Controllers\Ticket\FeedbackController@tags');
+    Route::get('/tickets', 'App\Http\Controllers\Ticket\FeedbackController@index');
+    Route::get('/tickets/{ticket}', 'App\Http\Controllers\Ticket\FeedbackController@show');
+
+    Route::group(['middleware' => ['auth:sanctum']], function () {
+        Route::post('/tickets', 'App\Http\Controllers\Ticket\FeedbackController@store')->middleware('throttle:10,1');
+        Route::patch('/tickets/{ticket}', 'App\Http\Controllers\Ticket\FeedbackController@update');
+        Route::post('/tickets/{ticket}/vote', 'App\Http\Controllers\Ticket\FeedbackController@vote');
+        Route::post('/tickets/{ticket}/watch', 'App\Http\Controllers\Ticket\FeedbackController@watch');
+        Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\Ticket\FeedbackController@comment')->middleware('throttle:20,1');
+    });
 });
 
 // Status Timeline Routes
@@ -415,6 +431,9 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api.key', 'api.rate']], functi
 Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
     // Admin overview
     Route::get('/dashboard', 'App\Http\Controllers\Admin\AdminDashboardController@index');
+
+    // Tickets
+    Route::get('/tickets/stats', 'App\Http\Controllers\Admin\TicketAdminController@stats');
 
     // Polls
     Route::get('/polls', 'App\Http\Controllers\Admin\PollAdminController@index');

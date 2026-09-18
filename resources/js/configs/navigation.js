@@ -13,7 +13,8 @@ export default {
                 { feature: 'wiki', icon: 'mdi-file-outline', key: 'menu.wiki', text: 'Wiki', link: '/wiki' },
                 { feature: 'forum', icon: 'mdi-forum', key: 'menu.forum', text: 'Forum', link: '/forum' },
                 { feature: 'irc', icon: 'mdi-chat-processing-outline', key: 'menu.irc', text: 'IRC', link: '/irc' },
-                { feature: 'gallery', icon: 'mdi-image-multiple-outline', key: 'menu.gallery', text: 'Gallery', link: '/gallery' }
+                { feature: 'gallery', icon: 'mdi-image-multiple-outline', key: 'menu.gallery', text: 'Gallery', link: '/gallery' },
+                { feature: 'feedback', icon: 'mdi-message-alert-outline', key: 'menu.feedback', text: 'Feedback', link: '/feedback' }
             ]
         },
         {
@@ -37,7 +38,7 @@ export default {
                     ]
                 },
                 {icon: 'mdi-folder-multiple-image', key: 'menu.adminMedia', text: 'Media Center', link: '/admin/media'},
-                {icon: 'mdi-ticket-outline', key: 'menu.adminTickets', text: 'Tickets', link: '/admin/tickets'},
+                {icon: 'mdi-ticket-outline', key: 'menu.adminTickets', text: 'Tickets', link: '/admin/tickets'},
                 {icon: 'mdi-poll', key: 'menu.adminPolls', text: 'Polls', link: '/admin/polls'},
                 {icon: 'mdi-link-variant', key: 'menu.adminRelations', text: 'Related Content', link: '/admin/related-content'},
                 {icon: 'mdi-bullhorn-outline', key: 'menu.adminAnnouncement', text: 'Announcement', link: '/admin/announcements'},

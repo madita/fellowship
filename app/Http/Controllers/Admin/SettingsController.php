@@ -196,6 +196,7 @@ class SettingsController extends Controller
             'feature_irc_enabled',
             'feature_gallery_enabled',
             'feature_tickets_enabled',
+            'feature_feedback_enabled',
         ];
 
         $settings = [];
@@ -847,7 +848,7 @@ class SettingsController extends Controller
             'irc_comic_chat_enabled',
             'feature_timeline_enabled', 'feature_chat_enabled', 'feature_events_enabled',
             'feature_wiki_enabled', 'feature_forum_enabled', 'feature_irc_enabled',
-            'feature_gallery_enabled', 'feature_tickets_enabled',
+            'feature_gallery_enabled', 'feature_tickets_enabled', 'feature_feedback_enabled',
         ];
 
         foreach ($booleanKeys as $key) {
