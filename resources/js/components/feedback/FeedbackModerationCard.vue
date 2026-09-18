@@ -1,5 +1,5 @@
 <template>
-    <v-card rounded="lg" variant="outlined">
+    <v-card rounded="lg" elevation="1" border>
         <v-card-title class="text-subtitle-1 d-flex align-center ga-2">
             <v-icon icon="mdi-shield-account-outline" size="small" />
             {{ $t('feedback.moderation.title') }}

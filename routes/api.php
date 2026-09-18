@@ -143,6 +143,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // Tickets
     Route::get('/tickets', 'App\Http\Controllers\Ticket\TicketController@index');
     Route::get('/tickets/{ticket}', 'App\Http\Controllers\Ticket\TicketController@show');
+    Route::get('/tickets/{ticket}/history', 'App\Http\Controllers\Ticket\TicketController@history');
     Route::post('/tickets', 'App\Http\Controllers\Ticket\TicketController@store');
     Route::patch('/tickets/{ticket}', 'App\Http\Controllers\Ticket\TicketController@update');
     Route::delete('/tickets/{ticket}', 'App\Http\Controllers\Ticket\TicketController@destroy');

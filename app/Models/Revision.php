@@ -28,7 +28,12 @@ class Revision extends Model
         'new_value', 'ip', 'ip_forwarded', 'created_at',
     ];
 
-    protected $dates = ['created_at'];
+    /**
+     * Without the cast the date leaves the API as "2026-09-18 06:05:50" with
+     * no zone, and the browser reads UTC as local time — a change just made
+     * then shows hours ago. ($dates was dropped in Laravel 10.)
+     */
+    protected $casts = ['created_at' => 'datetime'];
 
     /**
      * Handle dynamic method calls.

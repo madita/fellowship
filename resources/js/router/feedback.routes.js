@@ -1,3 +1,5 @@
+import auth from './middleware/auth'
+
 // Feedback: public bug reports and feature requests
 export const feedback = [
     {
@@ -10,7 +12,16 @@ export const feedback = [
         }
     },
     {
-        path: '/feedback/:id(\d+)',
+        path: '/feedback/new',
+        name: 'feedback-new',
+        component: () => import(/* webpackChunkName: "feedback-editor" */ '@/pages/feedback/FeedbackEditor.vue'),
+        meta: {
+            layout: 'default',
+            middleware: [auth]
+        }
+    },
+    {
+        path: '/feedback/:id(\\d+)',
         name: 'feedback-ticket',
         component: () => import(/* webpackChunkName: "feedback-ticket" */ '@/pages/feedback/FeedbackTicket.vue'),
         meta: {

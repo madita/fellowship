@@ -8,6 +8,7 @@ use App\Models\Ticket\TicketComment;
 use App\Models\Ticket\TicketTag;
 use App\Models\Ticket\TicketType;
 use App\Models\User;
+use App\Support\RichText;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -101,10 +102,12 @@ class FeedbackController extends Controller
         $validated = $request->validate([
             'type'        => ['required', Rule::in(Ticket::FEEDBACK_TYPES)],
             'title'       => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string', 'max:10000'],
+            'description' => ['required', 'string', 'max:30000'],
             'tag_ids'     => ['array'],
             'tag_ids.*'   => ['integer', Rule::exists('ticket_tags', 'id')->where('is_active', true)],
         ]);
+
+        $validated['description'] = RichText::cleanRequired($validated['description'], 'description');
 
         $user = $request->user();
         $type = TicketType::where('slug', $validated['type'])->where('is_active', true)->firstOrFail();
@@ -212,8 +215,10 @@ class FeedbackController extends Controller
         $this->ensureVisible($ticket, $user);
 
         $validated = $request->validate([
-            'comment' => ['required', 'string', 'max:5000'],
+            'comment' => ['required', 'string', 'max:15000'],
         ]);
+
+        $validated['comment'] = RichText::cleanRequired($validated['comment'], 'comment');
 
         $comment = DB::transaction(function () use ($ticket, $user, $validated) {
             $ticket->watch($user);

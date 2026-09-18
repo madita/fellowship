@@ -218,6 +218,9 @@ export default {
             if (d.type === 'status_mention' || d.type === 'status_comment_mention') {
                 return t(d.type === 'status_mention' ? 'notifications.statusMention' : 'notifications.statusCommentMention', { name: d.mentioned_by })
             }
+            if (d.type === 'ticket_mention') {
+                return t('notifications.ticketMention', { name: d.mentioned_by, title: d.ticket_title })
+            }
             if (d.type === 'ticket_comment') {
                 return t('notifications.ticketComment', { name: d.comment_author, title: d.ticket_title })
             }
@@ -244,6 +247,7 @@ export default {
 
             if (type.startsWith('status_')) return 'mdi-at'
 
+            if (type === 'ticket_mention') return 'mdi-at'
             if (type === 'ticket_comment') return 'mdi-comment-text-outline'
             if (type === 'ticket_status') return 'mdi-progress-check'
 

@@ -11,7 +11,7 @@
                     color="primary"
                     variant="elevated"
                     prepend-icon="mdi-plus"
-                    @click="showComposer = true"
+                    :to="{ name: 'feedback-new', query: type ? { type } : {} }"
                 >
                     {{ type ? $t(`feedback.${type}.create`) : $t('feedback.create') }}
                 </v-btn>
@@ -172,13 +172,6 @@
                 :text="$t('feedback.filters.emptyHint')"
             />
         </v-container>
-
-        <feedback-composer
-            v-model="showComposer"
-            :type="type"
-            :tags="tags"
-            @submitted="onSubmitted"
-        />
     </div>
 </template>
 
@@ -191,7 +184,6 @@ import { formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
-import FeedbackComposer from '@/components/feedback/FeedbackComposer.vue'
 
 const TYPES = ['bug', 'feature']
 
@@ -199,7 +191,7 @@ const defaultFilters = () => ({ search: '', status: 'open', tag: null, sort: 'po
 
 export default {
     name: 'FeedbackList',
-    components: { PageHeader, EmptyState, LoadingState, FeedbackComposer },
+    components: { PageHeader, EmptyState, LoadingState },
     setup() {
         const authStore = useAuthStore()
         const { getStatusColor, getStatusLabel, statusFilterOptions } = useTicketHelpers()
@@ -213,7 +205,6 @@ export default {
             filters: defaultFilters(),
             pagination: { page: 1, last_page: 1 },
             votingId: null,
-            showComposer: false,
             tabs: [
                 { value: 'all', icon: 'mdi-view-list-outline' },
                 { value: 'bug', icon: 'mdi-bug-outline' },
@@ -313,9 +304,6 @@ export default {
             } finally {
                 this.votingId = null
             }
-        },
-        onSubmitted(ticket) {
-            this.$router.push({ name: 'feedback-ticket', params: { id: ticket.id } })
         },
     },
 }

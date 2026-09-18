@@ -8,12 +8,14 @@ import axios from 'axios';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
-import TicketForm from '@/components/ticket/TicketForm.vue';
 import TicketRelatedContent from '@/components/ticket/TicketRelatedContent.vue';
 import TicketActivity from '@/components/ticket/TicketActivity.vue';
+import TicketHistory from '@/components/ticket/TicketHistory.vue';
 import FeedbackModerationCard from '@/components/feedback/FeedbackModerationCard.vue';
 import TicketNavList from '@/components/ticket/TicketNavList.vue';
 import { rememberedTicketListQuery } from '@/composables/useTicketListQuery.js';
+import { useAssignableUsers } from '@/composables/useAssignableUsers.js';
+import { renderRichText } from '@/utils/richText.js';
 import { useUserStore } from '@/store/userStore.js';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
 import { useDialog } from '@/composables/useDialog.js';
@@ -40,17 +42,18 @@ const {
     statusFilterOptions,
     priorityFilterOptions,
 } = useTicketHelpers();
+const { assignableUsers, loadAssignableUsers } = useAssignableUsers();
 
 const ticket = ref(null);
 const feedback = ref(null);
 const loading = ref(false);
 const notFound = ref(false);
-const editing = ref(false);
-const saving = ref(false);
 const deleting = ref(false);
 // 'status' | 'priority' | 'assignee' | 'due_date' while that property is saved
 const updatingField = ref(null);
-const assignableUsers = ref([]);
+// Comments or history below the description; ?tab=history links straight to the history
+const activityTab = ref(route.query.tab === 'history' ? 'history' : 'comments');
+const commentCount = ref(0);
 
 const user = computed(() => userStore.user || { id: null });
 const isAdmin = computed(() => !!user.value?.isAdmin);
@@ -134,19 +137,7 @@ const loadFeedback = async () => {
     }
 };
 
-const loadAssignableUsers = async () => {
-    try {
-        const response = await axios.post('/api/users/search', { query: '' });
-        const records = Array.isArray(response.data) ? response.data : [];
-        // The search leaves out the current user
-        assignableUsers.value = [
-            ...(user.value?.id ? [{ id: user.value.id, username: user.value.username, avatar: user.value.avatar }] : []),
-            ...records.map(u => ({ id: u.id, username: u.username, avatar: u.avatar })),
-        ];
-    } catch (err) {
-        console.error('Failed to load assignable users:', err);
-    }
-};
+const descriptionHtml = computed(() => renderRichText(ticket.value?.description));
 
 // Approvable content follows the status on the server, so re-read the ticket then
 const applyUpdate = async (data) => {
@@ -188,6 +179,7 @@ const updateAssignee = async (userId) => {
             status_label: response.data.status_label,
             assigned_to_user_id: response.data.assigned_to_user_id,
             assignee: response.data.assignee ?? null,
+            updated_at: response.data.updated_at,
         };
     } catch (err) {
         console.error('Failed to update assignee:', err);
@@ -197,21 +189,6 @@ const updateAssignee = async (userId) => {
     }
 };
 
-const saveDetails = async (values) => {
-    if (saving.value) return;
-    saving.value = true;
-    try {
-        const response = await axios.patch(`/api/tickets/${ticket.value.id}`, values);
-        ticket.value = { ...ticket.value, ...response.data };
-        editing.value = false;
-        loadFeedback();
-    } catch (err) {
-        console.error('Failed to update ticket:', err);
-        await dialog.requestError(err, t('tickets.messages.updateFailed'));
-    } finally {
-        saving.value = false;
-    }
-};
 
 const removeTicket = async () => {
     if (deleting.value) return;
@@ -249,7 +226,6 @@ const openLegacyUsers = () => {
 
 watch(() => route.params.id, (id) => {
     if (id) {
-        editing.value = false;
         loadTicket();
     }
 });
@@ -320,10 +296,9 @@ onMounted(loadTicket);
                             {{ t('tickets.nav.title') }}
                         </v-btn>
                         <v-btn
-                            v-if="!editing"
                             variant="tonal"
                             prepend-icon="mdi-pencil-outline"
-                            @click="editing = true"
+                            :to="{ name: 'admin-ticket-edit', params: { id: ticket.id } }"
                         >
                             {{ t('tickets.edit') }}
                         </v-btn>
@@ -343,23 +318,16 @@ onMounted(loadTicket);
                     <v-row>
                         <!-- Main column -->
                         <v-col cols="12" md="8">
-                            <div class="d-flex align-center flex-wrap ga-2 mb-4">
-                                <v-chip v-if="ticket.ticket_type" size="small" variant="tonal" :color="ticket.ticket_type.color" :prepend-icon="ticket.ticket_type.icon">
-                                    {{ ticket.ticket_type.name }}
-                                </v-chip>
-                                <v-chip size="small" variant="tonal" :color="getStatusColor(ticket.status)">
-                                    {{ getStatusLabel(ticket.status) }}
-                                </v-chip>
-                                <v-chip size="small" variant="tonal" :color="getPriorityColor(ticket.priority)" :prepend-icon="getPriorityIcon(ticket.priority)">
-                                    {{ getPriorityLabel(ticket.priority) }}
-                                </v-chip>
-                                <v-chip v-if="isOverdue" size="small" variant="tonal" color="error" prepend-icon="mdi-clock-alert-outline">
-                                    {{ t('tickets.detail.overdue') }}
-                                </v-chip>
-                                <v-chip v-if="feedback && !feedback.is_public" size="small" variant="tonal" prepend-icon="mdi-eye-off-outline">
-                                    {{ t('feedback.hidden') }}
-                                </v-chip>
-                            </div>
+                            <!-- Description -->
+                            <v-card class="content-card mb-4" elevation="2" rounded="lg">
+                                <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
+                                    <v-icon class="mr-2" color="primary">mdi-text</v-icon>
+                                    {{ t('tickets.fields.description') }}
+                                </v-card-title>
+                                <!-- Sanitized by renderRichText -->
+                                <v-card-text v-if="descriptionHtml" class="rich-content text-body-1 pa-6 pt-2" v-html="descriptionHtml" />
+                                <v-card-text v-else class="text-medium-emphasis pa-6 pt-2">{{ t('tickets.detail.noDescription') }}</v-card-text>
+                            </v-card>
 
                             <!-- Legacy account claim -->
                             <v-card v-if="canManage && ticket.metadata?.legacy_username" rounded="lg" variant="tonal" color="info" class="mb-4">
@@ -376,21 +344,6 @@ onMounted(loadTicket);
                                 </v-card-text>
                             </v-card>
 
-                            <!-- Description / edit -->
-                            <v-card rounded="lg" variant="outlined" class="mb-4">
-                                <v-card-text v-if="editing">
-                                    <ticket-form
-                                        :ticket="ticket"
-                                        :saving="saving"
-                                        :submit-label="t('tickets.update')"
-                                        @submit="saveDetails"
-                                        @cancel="editing = false"
-                                    />
-                                </v-card-text>
-                                <v-card-text v-else-if="ticket.description" class="plain-text text-body-1">{{ ticket.description }}</v-card-text>
-                                <v-card-text v-else class="text-medium-emphasis">{{ t('tickets.detail.noDescription') }}</v-card-text>
-                            </v-card>
-
                             <!-- What the ticket is about -->
                             <ticket-related-content
                                 v-if="ticket.ticketable_type && ticket.ticketable_id"
@@ -400,20 +353,61 @@ onMounted(loadTicket);
                                 @updated="ticket = { ...ticket, ...$event }"
                             />
 
-                            <ticket-activity
-                                :ticket-id="ticket.id"
-                                :comments="ticket.comments || []"
-                                :can-comment="canComment"
-                                :is-admin="canManage"
-                                :current-user-id="user.id"
-                            />
+                            <!-- Comments and history -->
+                            <v-card class="content-card" elevation="2" rounded="lg">
+                                <v-tabs v-model="activityTab" color="primary" density="comfortable">
+                                    <v-tab value="comments" prepend-icon="mdi-comment-text-multiple-outline">
+                                        {{ t('tickets.detail.commentsTab', { count: commentCount }) }}
+                                    </v-tab>
+                                    <v-tab value="history" prepend-icon="mdi-history">
+                                        {{ t('tickets.detail.historyTab') }}
+                                    </v-tab>
+                                </v-tabs>
+                                <v-divider />
+                                <v-window v-model="activityTab">
+                                    <v-window-item value="comments">
+                                        <ticket-activity
+                                            :ticket-id="ticket.id"
+                                            :comments="ticket.comments || []"
+                                            :can-comment="canComment"
+                                            :is-admin="canManage"
+                                            :current-user-id="user.id"
+                                            @count="commentCount = $event"
+                                        />
+                                    </v-window-item>
+                                    <v-window-item value="history" class="py-4">
+                                        <ticket-history
+                                            :ticket-id="ticket.id"
+                                            :refresh-key="`${ticket.updated_at}-${commentCount}`"
+                                            @open-comments="activityTab = 'comments'"
+                                        />
+                                    </v-window-item>
+                                </v-window>
+                            </v-card>
                         </v-col>
 
                         <!-- Side column -->
                         <v-col cols="12" md="4">
-                            <v-card rounded="lg" variant="outlined" class="mb-4">
-                                <v-card-title class="text-subtitle-1">{{ t('tickets.detail.properties') }}</v-card-title>
+                            <v-card class="settings-card mb-4" elevation="1" rounded="lg">
+                                <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
+                                    <v-icon class="mr-2" color="primary">mdi-tune-variant</v-icon>
+                                    {{ t('tickets.detail.properties') }}
+                                </v-card-title>
                                 <v-card-text>
+
+                                    <!-- What kind of ticket, and what needs attention -->
+                                    <div class="d-flex align-center flex-wrap ga-2 mb-4">
+                                        <v-chip v-if="ticket.ticket_type" size="small" variant="tonal" :color="ticket.ticket_type.color" :prepend-icon="ticket.ticket_type.icon">
+                                            {{ ticket.ticket_type.name }}
+                                        </v-chip>
+                                        <v-chip v-if="isOverdue" size="small" variant="tonal" color="error" prepend-icon="mdi-clock-alert-outline">
+                                            {{ t('tickets.detail.overdue') }}
+                                        </v-chip>
+                                        <v-chip v-if="feedback && !feedback.is_public" size="small" variant="tonal" prepend-icon="mdi-eye-off-outline">
+                                            {{ t('feedback.hidden') }}
+                                        </v-chip>
+                                    </div>
+
                                     <template v-if="canManage">
                                         <v-select
                                             :model-value="ticket.status"
@@ -528,8 +522,11 @@ onMounted(loadTicket);
                                 </template>
                             </feedback-moderation-card>
 
-                            <v-card rounded="lg" variant="outlined">
-                                <v-card-title class="text-subtitle-1">{{ t('tickets.details') }}</v-card-title>
+                            <v-card class="settings-card" elevation="1" rounded="lg">
+                                <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
+                                    <v-icon class="mr-2" color="primary">mdi-information-outline</v-icon>
+                                    {{ t('tickets.details') }}
+                                </v-card-title>
                                 <v-card-text>
                                     <dl class="property-list text-body-2">
                                         <dt>{{ t('tickets.fields.reporter') }}</dt>
@@ -570,8 +567,12 @@ onMounted(loadTicket);
     z-index: 2;
     margin-bottom: -2px;
 }
-.plain-text {
-    white-space: pre-line;
+.content-card,
+.settings-card {
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.content-card :deep(.rich-content) {
     overflow-wrap: anywhere;
     line-height: 1.6;
 }

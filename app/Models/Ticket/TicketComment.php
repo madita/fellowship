@@ -36,11 +36,20 @@ class TicketComment extends Model
         });
 
         static::created(function (TicketComment $comment): void {
+            // Mentioned members get the mention, not also the watcher notice
+            $mentioned = $comment->ticket->notifyMentions($comment->comment, null, $comment->user, $comment);
+
             if ( ! $comment->is_internal) {
                 $comment->ticket->notifyWatchers(
                     new TicketActivityNotification($comment->ticket, 'comment', $comment),
-                    $comment->user_id
+                    [$comment->user_id, ...$mentioned]
                 );
+            }
+        });
+
+        static::updated(function (TicketComment $comment): void {
+            if ($comment->wasChanged('comment')) {
+                $comment->ticket->notifyMentions($comment->comment, $comment->getOriginal('comment'), $comment->user, $comment);
             }
         });
     }

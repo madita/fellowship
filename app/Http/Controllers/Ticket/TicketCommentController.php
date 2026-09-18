@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Ticket;
 use App\Http\Controllers\Controller;
 use App\Models\Ticket\Ticket;
 use App\Models\Ticket\TicketComment;
+use App\Support\RichText;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -42,7 +43,7 @@ class TicketCommentController extends Controller
 
         $comment = $ticket->comments()->create([
             'user_id'     => $user->id,
-            'comment'     => $validated['comment'],
+            'comment'     => RichText::cleanRequired($validated['comment'], 'comment'),
             'is_internal' => $validated['is_internal'] ?? false,
         ]);
 
@@ -64,7 +65,7 @@ class TicketCommentController extends Controller
             'comment' => 'required|string',
         ]);
 
-        $comment->update($validated);
+        $comment->update(['comment' => RichText::cleanRequired($validated['comment'], 'comment')]);
 
         return response()->json($comment->load('user'));
     }

@@ -99,7 +99,7 @@ const decide = async (action) => {
 </script>
 
 <template>
-    <v-card rounded="lg" variant="outlined">
+    <v-card rounded="lg" elevation="2" border>
         <v-card-title class="d-flex align-center ga-2 text-subtitle-1">
             <v-icon :icon="kind?.icon || 'mdi-link-variant'" color="primary" size="small" />
             <span class="text-medium-emphasis">{{ t('tickets.related.title') }}</span>

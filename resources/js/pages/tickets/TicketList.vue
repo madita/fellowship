@@ -6,7 +6,6 @@ import { useDebounceFn } from '@vueuse/core';
 import axios from 'axios';
 import TicketKanban from '@/components/ticket/TicketKanban.vue';
 import TicketOverview from '@/components/ticket/TicketOverview.vue';
-import TicketForm from '@/components/ticket/TicketForm.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
@@ -71,9 +70,6 @@ const tickets = ref([]);
 const ticketTypes = ref([]);
 const loading = ref(false);
 const pagination = ref({ page: Number(route.query.page) || 1, per_page: 20, total: 0, last_page: 1 });
-
-const showComposer = ref(false);
-const creating = ref(false);
 
 const pageTitle = computed(() => (isUserView.value ? t('tickets.myTickets') : t('tickets.title')));
 const pageSubtitle = computed(() => (isUserView.value ? t('tickets.myTicketsSubtitle') : t('tickets.subtitle')));
@@ -204,21 +200,6 @@ const openTicket = (ticket) => {
     router.push({ name: detailRouteName.value, params: { id: ticket.id ?? ticket } });
 };
 
-const createTicket = async (values) => {
-    if (creating.value) return;
-    creating.value = true;
-    try {
-        const response = await axios.post('/api/tickets', values);
-        showComposer.value = false;
-        openTicket(response.data);
-    } catch (err) {
-        console.error('Failed to create ticket:', err);
-        await dialog.requestError(err, t('tickets.messages.createFailed'));
-    } finally {
-        creating.value = false;
-    }
-};
-
 const isOverdue = (ticket) => ticket.due_date && !['resolved', 'closed'].includes(ticket.status) && new Date(ticket.due_date) < new Date();
 
 onMounted(() => {
@@ -244,7 +225,7 @@ onMounted(() => {
                     <v-btn value="list" size="small" icon="mdi-view-list" :title="t('tickets.listView')" :aria-label="t('tickets.listView')" />
                     <v-btn value="kanban" size="small" icon="mdi-view-column" :title="t('tickets.kanbanView')" :aria-label="t('tickets.kanbanView')" />
                 </v-btn-toggle>
-                <v-btn v-if="isAdmin" color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showComposer = true">
+                <v-btn v-if="isAdmin" color="primary" variant="elevated" prepend-icon="mdi-plus" :to="{ name: 'admin-ticket-create' }">
                     {{ t('tickets.createTicket') }}
                 </v-btn>
             </template>
@@ -427,25 +408,6 @@ onMounted(() => {
                 </template>
             </empty-state>
         </v-container>
-
-        <!-- Create -->
-        <v-dialog v-model="showComposer" max-width="700" :persistent="creating">
-            <v-card>
-                <v-card-title class="d-flex align-center ga-2 pt-4 px-6">
-                    <v-icon icon="mdi-ticket-outline" color="primary" />
-                    {{ t('tickets.createTicket') }}
-                </v-card-title>
-                <v-card-text class="px-6 pb-6">
-                    <ticket-form
-                        v-if="showComposer"
-                        :saving="creating"
-                        :submit-label="t('tickets.create')"
-                        @submit="createTicket"
-                        @cancel="showComposer = false"
-                    />
-                </v-card-text>
-            </v-card>
-        </v-dialog>
     </div>
 </template>
 

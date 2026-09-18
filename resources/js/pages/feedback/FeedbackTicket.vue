@@ -23,42 +23,13 @@
             <v-container>
                 <v-row>
                     <v-col cols="12" md="8">
-                        <div class="d-flex align-center flex-wrap ga-2 mb-4">
-                            <v-chip size="small" variant="tonal" :color="ticket.type?.color">
-                                {{ ticket.type?.name }}
-                            </v-chip>
-                            <v-chip size="small" variant="tonal" :color="getStatusColor(ticket.status)">
-                                {{ getStatusLabel(ticket.status) }}
-                            </v-chip>
-                            <v-chip v-if="!ticket.is_public" size="small" variant="tonal" prepend-icon="mdi-eye-off-outline">
-                                {{ $t('feedback.hidden') }}
-                            </v-chip>
-                            <v-chip
-                                v-for="tag in ticket.tags"
-                                :key="tag.id"
-                                size="small"
-                                variant="tonal"
-                                :color="tag.color"
-                            >
-                                {{ tag.name }}
-                            </v-chip>
-                        </div>
-
-                        <v-alert
-                            v-if="ticket.duplicate_of"
-                            type="warning"
-                            variant="tonal"
-                            prepend-icon="mdi-content-duplicate"
-                            class="mb-4"
-                        >
-                            {{ $t('feedback.duplicateOf') }}
-                            <router-link :to="{ name: 'feedback-ticket', params: { id: ticket.duplicate_of.id } }">
-                                #{{ ticket.duplicate_of.id }} {{ ticket.duplicate_of.title }}
-                            </router-link>
-                        </v-alert>
-
-                        <v-card rounded="lg" class="mb-6">
-                            <v-card-text class="plain-text text-body-1">{{ ticket.description }}</v-card-text>
+                        <v-card class="content-card mb-6" elevation="2" rounded="lg">
+                            <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
+                                <v-icon class="mr-2" color="primary">mdi-text</v-icon>
+                                {{ $t('feedback.fields.description') }}
+                            </v-card-title>
+                            <!-- Sanitized by renderRichText -->
+                            <v-card-text class="rich-content rich-text text-body-1 pa-6 pt-2" v-html="renderRichText(ticket.description)" />
                         </v-card>
 
                         <!-- Comments -->
@@ -66,7 +37,7 @@
                             {{ $t('feedback.comments') }} ({{ ticket.comments.length }})
                         </h2>
 
-                        <v-card rounded="lg">
+                        <v-card class="content-card" elevation="2" rounded="lg">
                             <v-list v-if="ticket.comments.length" lines="three" class="py-0">
                                 <template v-for="(comment, index) in ticket.comments" :key="comment.id">
                                     <v-divider v-if="index > 0" />
@@ -88,7 +59,8 @@
                                                 {{ formatDateDistanceToNow(comment.created_at) }}
                                             </span>
                                         </div>
-                                        <div class="plain-text text-body-2">{{ comment.comment }}</div>
+                                        <!-- Sanitized by renderRichText -->
+                                        <div class="rich-content rich-text text-body-2" v-html="renderRichText(comment.comment)" />
                                     </v-list-item>
                                 </template>
                             </v-list>
@@ -97,13 +69,13 @@
                             <template v-if="authStore.isAuthenticated">
                                 <v-divider />
                                 <v-card-text>
-                                    <v-textarea
+                                    <simple-editor
                                         v-model="newComment"
-                                        :label="$t('feedback.addComment')"
-                                        rows="3"
-                                        auto-grow
-                                        hide-details
+                                        :placeholder="$t('feedback.addComment')"
+                                        :limit="5000"
                                         :disabled="commenting"
+                                        min-height="88px"
+                                        @submit="submitComment"
                                     />
                                     <div class="d-flex justify-end mt-2">
                                         <v-btn
@@ -111,7 +83,7 @@
                                             variant="flat"
                                             prepend-icon="mdi-send"
                                             :loading="commenting"
-                                            :disabled="!newComment.trim()"
+                                            :disabled="!hasRichText(newComment)"
                                             @click="submitComment"
                                         >
                                             {{ $t('feedback.postComment') }}
@@ -134,8 +106,47 @@
 
                     <!-- Sidebar -->
                     <v-col cols="12" md="4">
-                        <v-card rounded="lg" class="mb-4">
+                        <v-card class="content-card mb-4" elevation="1" rounded="lg">
+                            <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center">
+                                <v-icon class="mr-2" color="primary">mdi-tune-variant</v-icon>
+                                {{ $t('feedback.details') }}
+                            </v-card-title>
                             <v-card-text>
+                                <div class="d-flex align-center flex-wrap ga-2 mb-4">
+                                    <v-chip size="small" variant="tonal" :color="ticket.type?.color" :prepend-icon="ticket.type?.icon">
+                                        {{ ticket.type?.name }}
+                                    </v-chip>
+                                    <v-chip size="small" variant="tonal" :color="getStatusColor(ticket.status)">
+                                        {{ getStatusLabel(ticket.status) }}
+                                    </v-chip>
+                                    <v-chip v-if="!ticket.is_public" size="small" variant="tonal" prepend-icon="mdi-eye-off-outline">
+                                        {{ $t('feedback.hidden') }}
+                                    </v-chip>
+                                    <v-chip
+                                        v-for="tag in ticket.tags"
+                                        :key="tag.id"
+                                        size="small"
+                                        variant="tonal"
+                                        :color="tag.color"
+                                    >
+                                        {{ tag.name }}
+                                    </v-chip>
+                                </div>
+
+                                <v-alert
+                                    v-if="ticket.duplicate_of"
+                                    type="warning"
+                                    variant="tonal"
+                                    density="compact"
+                                    prepend-icon="mdi-content-duplicate"
+                                    class="mb-4 text-body-2"
+                                >
+                                    {{ $t('feedback.duplicateOf') }}
+                                    <router-link :to="{ name: 'feedback-ticket', params: { id: ticket.duplicate_of.id } }">
+                                        #{{ ticket.duplicate_of.id }} {{ ticket.duplicate_of.title }}
+                                    </router-link>
+                                </v-alert>
+
                                 <v-btn
                                     block
                                     class="mb-2"
@@ -202,11 +213,13 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import SimpleEditor from '@/components/common/tiptap/SimpleEditor.vue'
+import { renderRichText, hasRichText } from '@/utils/richText.js'
 import FeedbackModerationCard from '@/components/feedback/FeedbackModerationCard.vue'
 
 export default {
     name: 'FeedbackTicket',
-    components: { PageHeader, EmptyState, LoadingState, UserAvatar, FeedbackModerationCard },
+    components: { PageHeader, EmptyState, LoadingState, UserAvatar, SimpleEditor, FeedbackModerationCard },
     setup() {
         const authStore = useAuthStore()
         const userStore = useUserStore()
@@ -247,6 +260,8 @@ export default {
     },
     methods: {
         formatDateDistanceToNow,
+        renderRichText,
+        hasRichText,
         async loadTicket() {
             this.loading = true
             this.notFound = false
@@ -291,7 +306,7 @@ export default {
             }
         },
         async submitComment() {
-            if (this.commenting || !this.newComment.trim()) return
+            if (this.commenting || !hasRichText(this.newComment)) return
             this.commenting = true
             try {
                 const { data } = await axios.post(`/api/feedback/tickets/${this.ticket.id}/comments`, {
@@ -315,9 +330,13 @@ export default {
 </script>
 
 <style scoped>
-.plain-text {
-    white-space: pre-line;
+.content-card {
+    border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.rich-text {
     overflow-wrap: anywhere;
+    line-height: 1.6;
 }
 
 .official-comment {

@@ -87,12 +87,23 @@ export default {
             if (d.type === 'status_mention' || d.type === 'status_comment_mention') {
                 return this.$t(`notifications.${d.type === 'status_mention' ? 'statusMention' : 'statusCommentMention'}`, { name: d.mentioned_by });
             }
+            if (d.type === 'ticket_mention') {
+                return this.$t('notifications.ticketMention', { name: d.mentioned_by, title: d.ticket_title });
+            }
+            if (d.type === 'ticket_comment') {
+                return this.$t('notifications.ticketComment', { name: d.comment_author, title: d.ticket_title });
+            }
+            if (d.type === 'ticket_status') {
+                return this.$t('notifications.ticketStatus', { title: d.ticket_title, status: this.$t(`tickets.status.${d.status}`) });
+            }
             return d.subject || d.thread_title || d.sandbox_title || this.$t('dashboard.widgets.notifications.title');
         },
         icon(notification) {
             const type = notification.data?.type || '';
             if (type.startsWith('forum_')) return type === 'forum_mention' ? 'mdi-at' : 'mdi-forum-outline';
-            if (type.startsWith('status_')) return 'mdi-at';
+            if (type.startsWith('status_') || type === 'ticket_mention') return 'mdi-at';
+            if (type === 'ticket_comment') return 'mdi-comment-text-outline';
+            if (type === 'ticket_status') return 'mdi-progress-check';
             if (type.startsWith('sandbox_')) return 'mdi-file-document-edit-outline';
             return 'mdi-bell-outline';
         },
