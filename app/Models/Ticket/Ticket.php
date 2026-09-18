@@ -22,6 +22,15 @@ class Ticket extends Model
 {
     use HasFactory, Revisionable, SoftDeletes;
 
+    public const STATUSES = ['open', 'in_progress', 'pending', 'resolved', 'closed'];
+
+    public const OPEN_STATUSES = ['open', 'in_progress', 'pending'];
+
+    /**
+     * Ticket types listed on the public feedback pages.
+     */
+    public const FEEDBACK_TYPES = ['bug', 'feature'];
+
     /**
      * Fields whose changes make up the ticket history (who changed what, when).
      */
@@ -64,48 +73,6 @@ class Ticket extends Model
     ];
 
     protected $appends = ['status_label', 'priority_label'];
-
-    public const STATUSES = ['open', 'in_progress', 'pending', 'resolved', 'closed'];
-
-    public const OPEN_STATUSES = ['open', 'in_progress', 'pending'];
-
-    /**
-     * Ticket types listed on the public feedback pages.
-     */
-    public const FEEDBACK_TYPES = ['bug', 'feature'];
-
-    protected static function booted(): void
-    {
-        // resolved_at / closed_at follow the status, whichever way it is changed
-        static::saving(function (Ticket $ticket): void {
-            if ( ! $ticket->isDirty('status')) {
-                return;
-            }
-
-            if ($ticket->status === 'resolved') {
-                $ticket->resolved_at ??= now();
-            } elseif ($ticket->status === 'closed') {
-                $ticket->closed_at ??= now();
-            } elseif (in_array($ticket->status, self::OPEN_STATUSES, true)) {
-                $ticket->resolved_at = null;
-                $ticket->closed_at   = null;
-            }
-        });
-
-        static::created(function (Ticket $ticket): void {
-            $ticket->notifyMentions($ticket->description, null, $ticket->creator);
-        });
-
-        static::updated(function (Ticket $ticket): void {
-            if ($ticket->wasChanged('status')) {
-                $ticket->notifyWatchers(new TicketActivityNotification($ticket, 'status'), Auth::id());
-            }
-
-            if ($ticket->wasChanged('description')) {
-                $ticket->notifyMentions($ticket->description, $ticket->getOriginal('description'), Auth::user());
-            }
-        });
-    }
 
     /**
      * Get the ticket type.
@@ -489,6 +456,39 @@ class Ticket extends Model
         return $query->where(function ($q) use ($user) {
             $q->where('is_public', true)
                 ->when($user, fn ($q) => $q->orWhere('created_by_user_id', $user->id));
+        });
+    }
+
+    protected static function booted(): void
+    {
+        // resolved_at / closed_at follow the status, whichever way it is changed
+        static::saving(function (Ticket $ticket): void {
+            if ( ! $ticket->isDirty('status')) {
+                return;
+            }
+
+            if ($ticket->status === 'resolved') {
+                $ticket->resolved_at ??= now();
+            } elseif ($ticket->status === 'closed') {
+                $ticket->closed_at ??= now();
+            } elseif (in_array($ticket->status, self::OPEN_STATUSES, true)) {
+                $ticket->resolved_at = null;
+                $ticket->closed_at   = null;
+            }
+        });
+
+        static::created(function (Ticket $ticket): void {
+            $ticket->notifyMentions($ticket->description, null, $ticket->creator);
+        });
+
+        static::updated(function (Ticket $ticket): void {
+            if ($ticket->wasChanged('status')) {
+                $ticket->notifyWatchers(new TicketActivityNotification($ticket, 'status'), Auth::id());
+            }
+
+            if ($ticket->wasChanged('description')) {
+                $ticket->notifyMentions($ticket->description, $ticket->getOriginal('description'), Auth::user());
+            }
         });
     }
 }
