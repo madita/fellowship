@@ -18,6 +18,7 @@ class DiscordWebhook extends Model
         'name',
         'url',
         'events',
+        'locale',
         'is_active',
         'created_by_user_id',
     ];
@@ -47,6 +48,14 @@ class DiscordWebhook extends Model
         $id = explode('/', rtrim((string) $this->url, '/'));
 
         return count($id) > 1 ? '…/' . $id[count($id) - 2] : '';
+    }
+
+    /**
+     * The language this channel is written in; the site default when unset.
+     */
+    public function messageLocale(): string
+    {
+        return $this->locale ?: config('app.locale');
     }
 
     /**

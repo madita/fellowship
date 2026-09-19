@@ -131,7 +131,7 @@ class ForumThread extends Model
                 'description' => $thread->body,
                 'url'         => $thread->url,
                 'author'      => $thread->author?->username,
-                'fields'      => ['Forum' => $thread->category?->term?->title],
+                'fields'      => ['messages.discord.fields.forum' => $thread->category?->term?->title],
             ]);
         });
     }

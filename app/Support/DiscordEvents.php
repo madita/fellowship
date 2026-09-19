@@ -22,6 +22,10 @@ class DiscordEvents
 
     public const EVENT_CREATED = 'event_created';
 
+    public const EVENT_GUEST_JOINED = 'event_guest_joined';
+
+    public const ANNOUNCEMENT_POSTED = 'announcement_posted';
+
     /**
      * Colour per event, as Discord wants it: a decimal RGB value.
      */
@@ -33,6 +37,8 @@ class DiscordEvents
         self::FORUM_THREAD_CREATED => 0xE67E22,
         self::POST_PUBLISHED       => 0x1ABC9C,
         self::EVENT_CREATED        => 0xE91E63,
+        self::EVENT_GUEST_JOINED   => 0x00BCD4,
+        self::ANNOUNCEMENT_POSTED  => 0xFF5722,
     ];
 
     /**
@@ -41,6 +47,17 @@ class DiscordEvents
     public static function keys(): array
     {
         return array_keys(self::COLORS);
+    }
+
+    /**
+     * The languages messages can be written in: the ones the site is translated to.
+     */
+    public static function locales(): array
+    {
+        return collect(glob(lang_path('*'), GLOB_ONLYDIR))
+            ->map(fn (string $path) => basename($path))
+            ->values()
+            ->all();
     }
 
     public static function color(string $event): int

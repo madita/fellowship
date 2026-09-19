@@ -448,9 +448,9 @@ class Ticket extends Model
                 'description' => $this->description,
                 'url'         => $feedback ? "/feedback/{$this->id}" : "/admin/tickets/{$this->id}",
                 'author'      => $this->creator?->username,
-                'fields'      => [
-                    'Type'     => $this->ticketType?->name,
-                    'Priority' => $this->priority_label,
+                'fields' => [
+                    'messages.discord.fields.type'     => $this->ticketType?->name,
+                    'messages.discord.fields.priority' => ["messages.discord.priority.{$this->priority}"],
                 ],
             ]
         );

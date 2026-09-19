@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\Announcement;
+use App\Services\DiscordWebhookService;
+use App\Support\DiscordEvents;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -50,6 +52,14 @@ class AnnouncementController extends Controller
 
         $announcement = new Announcement($message);
         Notification::send($users, $announcement);
+
+        // The same announcement in the Discord channels that asked for it
+        app(DiscordWebhookService::class)->announce(DiscordEvents::ANNOUNCEMENT_POSTED, [
+            'title'       => $message['subject'],
+            'description' => $message['body'],
+            'url'         => $message['url'] ?? null,
+            'author'      => $request->user()?->username,
+        ]);
 
         return response()->json([
             'success'      => true,

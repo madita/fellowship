@@ -5814,6 +5814,9 @@ export default {
             'urlHint': 'Paste the address you copied from Discord',
             'urlKeep': 'Leave empty to keep the stored address',
             'events': 'What should be announced',
+            'locale': 'Language',
+            'localeHint': 'The messages in this channel are written in this language',
+            'localeDefault': 'Site default ({locale})',
             'eventsHint': 'Pick at least one. Each webhook can have its own selection.',
             'active': 'Active',
         },
@@ -5845,6 +5848,14 @@ export default {
             'event_created': {
                 'label': 'New event',
                 'hint': 'An event was added to the calendar',
+            },
+            'event_guest_joined': {
+                'label': 'Someone joins an event',
+                'hint': 'A member answered that they are going',
+            },
+            'announcement_posted': {
+                'label': 'Announcement',
+                'hint': 'An admin sent an announcement to all members',
             },
         },
         'delivery': {

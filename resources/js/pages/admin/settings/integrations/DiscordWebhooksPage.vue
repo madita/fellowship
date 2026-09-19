@@ -87,6 +87,9 @@
                             </div>
 
                             <div class="d-flex align-center flex-wrap ga-1 mb-3">
+                                <v-chip size="x-small" variant="tonal" prepend-icon="mdi-translate">
+                                    {{ localeLabel(webhook.locale) }}
+                                </v-chip>
                                 <v-chip
                                     v-for="event in webhook.events"
                                     :key="event"
@@ -166,6 +169,19 @@
                             class="mb-4"
                         />
 
+                        <v-select
+                            v-model="form.locale"
+                            :items="localeItems"
+                            item-title="label"
+                            item-value="value"
+                            :label="$t('discord.fields.locale')"
+                            :hint="$t('discord.fields.localeHint')"
+                            persistent-hint
+                            variant="outlined"
+                            density="comfortable"
+                            class="mb-4"
+                        />
+
                         <div class="text-subtitle-2 font-weight-medium mb-1">{{ $t('discord.fields.events') }}</div>
                         <div class="text-caption text-medium-emphasis mb-2">{{ $t('discord.fields.eventsHint') }}</div>
                         <v-checkbox
@@ -209,7 +225,7 @@ import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js';
 
-const emptyForm = () => ({ name: '', url: '', events: [], is_active: true });
+const emptyForm = () => ({ name: '', url: '', events: [], locale: null, is_active: true });
 
 /**
  * Discord channels that announce what happens on the site: how to make a
@@ -222,6 +238,8 @@ export default {
         return {
             webhooks: [],
             events: [],
+            locales: [],
+            defaultLocale: 'en',
             loading: false,
             dialog: false,
             editing: null,
@@ -234,6 +252,12 @@ export default {
         };
     },
     computed: {
+        localeItems() {
+            return [
+                { value: null, label: this.$t('discord.fields.localeDefault', { locale: this.languageName(this.defaultLocale) }) },
+                ...this.locales.map(locale => ({ value: locale, label: this.languageName(locale) })),
+            ];
+        },
         urlRules() {
             const pattern = /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\/\d+\/[\w-]+$/;
             return [
@@ -246,6 +270,16 @@ export default {
         this.load();
     },
     methods: {
+        // "Deutsch", "English" … named in their own language
+        languageName(locale) {
+            const names = new Intl.DisplayNames([locale], { type: 'language' });
+            return names.of(locale) || locale;
+        },
+        localeLabel(locale) {
+            return locale
+                ? this.languageName(locale)
+                : this.$t('discord.fields.localeDefault', { locale: this.languageName(this.defaultLocale) });
+        },
         eventLabel(event) {
             return this.$t(`discord.events.${event}.label`);
         },
@@ -273,6 +307,8 @@ export default {
                 const { data } = await axios.get('/api/admin/discord-webhooks');
                 this.webhooks = data.data;
                 this.events = data.events;
+                this.locales = data.locales;
+                this.defaultLocale = data.default_locale;
             } catch (error) {
                 await this.$dialog.requestError(error, this.$t('discord.messages.loadFailed'));
             } finally {
@@ -288,7 +324,13 @@ export default {
         startEdit(webhook) {
             this.editing = webhook;
             // The address is never handed back; leaving it empty keeps it
-            this.form = { name: webhook.name, url: '', events: [...webhook.events], is_active: webhook.is_active };
+            this.form = {
+                name: webhook.name,
+                url: '',
+                events: [...webhook.events],
+                locale: webhook.locale,
+                is_active: webhook.is_active,
+            };
             this.eventsError = '';
             this.dialog = true;
         },

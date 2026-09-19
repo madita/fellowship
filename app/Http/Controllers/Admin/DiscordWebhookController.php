@@ -31,8 +31,10 @@ class DiscordWebhookController extends Controller
     public function index(): JsonResponse
     {
         return response()->json([
-            'data'   => DiscordWebhook::with('creator:id,username')->latest()->get(),
-            'events' => DiscordEvents::keys(),
+            'data'           => DiscordWebhook::with('creator:id,username')->latest()->get(),
+            'events'         => DiscordEvents::keys(),
+            'locales'        => DiscordEvents::locales(),
+            'default_locale' => config('app.locale'),
         ]);
     }
 
@@ -75,10 +77,10 @@ class DiscordWebhookController extends Controller
     public function test(DiscordWebhook $discordWebhook, DiscordWebhookService $service): JsonResponse
     {
         SendDiscordWebhook::dispatchSync($discordWebhook, $service->payload('test', [
-            'title'       => __('messages.discord.test_title'),
-            'description' => __('messages.discord.test_body', ['app' => config('app.name')]),
+            'title'       => ['messages.discord.test_title'],
+            'description' => ['messages.discord.test_body', ['app' => config('app.name')]],
             'url'         => config('app.url'),
-        ]));
+        ], $discordWebhook->messageLocale()));
 
         $discordWebhook->refresh();
 
@@ -95,6 +97,8 @@ class DiscordWebhookController extends Controller
             'url'       => [$urlRequired ? 'required' : 'nullable', 'string', 'regex:' . self::URL_PATTERN],
             'events'    => ['required', 'array', 'min:1'],
             'events.*'  => [Rule::in(DiscordEvents::keys())],
+            // The language this channel is written in; empty means the site default
+            'locale'    => ['nullable', Rule::in(DiscordEvents::locales())],
             'is_active' => ['boolean'],
         ], [
             'url.regex' => __('messages.discord.invalid_url'),

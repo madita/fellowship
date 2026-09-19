@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\SendDiscordWebhook;
 use App\Models\DiscordWebhook;
+use App\Models\Event\Event;
 use App\Models\Forum\ForumThread;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
@@ -212,6 +213,146 @@ class DiscordWebhookTest extends TestCase
             $embed = $job->payload['embeds'][0];
 
             return $embed['title'] === 'The Fellowship' && str_ends_with($embed['url'], '/wiki/the-fellowship');
+        });
+    }
+
+    public function test_joining_an_event_is_announced_once(): void
+    {
+        Bus::fake();
+        $this->webhook([DiscordEvents::EVENT_GUEST_JOINED]);
+
+        $event = Event::create([
+            'user_id'   => $this->admin->id,
+            'title'     => 'Game night',
+            'startDate' => now()->addWeek(),
+        ]);
+
+        $answer = fn (string $answer) => $this->actingAs($this->member, 'sanctum')
+            ->postJson("/api/events/{$event->id}/answer", ['answer' => $answer])
+            ->assertOk();
+
+        $answer('going');
+
+        Bus::assertDispatchedTimes(SendDiscordWebhook::class, 1);
+        Bus::assertDispatched(SendDiscordWebhook::class, function (SendDiscordWebhook $job) use ($event) {
+            $embed = $job->payload['embeds'][0];
+
+            return $embed['title'] === 'Game night'
+                && $embed['description'] === 'alice is going to Game night.'
+                && str_ends_with($embed['url'], "/events/{$event->id}");
+        });
+
+        // Answering again, or changing to maybe, says nothing more
+        $answer('going');
+        $answer('maybe');
+
+        Bus::assertDispatchedTimes(SendDiscordWebhook::class, 1);
+    }
+
+    public function test_declining_an_event_is_not_announced(): void
+    {
+        Bus::fake();
+        $this->webhook([DiscordEvents::EVENT_GUEST_JOINED]);
+
+        $event = Event::create(['user_id' => $this->admin->id, 'title' => 'Game night', 'startDate' => now()->addWeek()]);
+
+        $this->actingAs($this->member, 'sanctum')
+            ->postJson("/api/events/{$event->id}/answer", ['answer' => 'notgoing'])
+            ->assertOk();
+
+        Bus::assertNotDispatched(SendDiscordWebhook::class);
+    }
+
+    public function test_each_channel_is_written_in_its_own_language(): void
+    {
+        Bus::fake();
+        app()->setLocale('en');
+
+        DiscordWebhook::create([
+            'name'   => 'Deutscher Kanal',
+            'url'    => self::URL,
+            'events' => [DiscordEvents::TICKET_CREATED],
+            'locale' => 'de',
+        ]);
+        DiscordWebhook::create([
+            'name'   => 'English channel',
+            'url'    => self::URL,
+            'events' => [DiscordEvents::TICKET_CREATED],
+            'locale' => 'en',
+        ]);
+
+        Ticket::factory()->createdBy($this->member)->create([
+            'ticket_type_id' => TicketType::where('slug', 'support')->value('id'),
+            'title'          => 'Login broken',
+            'priority'       => 'urgent',
+        ]);
+
+        $fieldsOf = function (string $name) {
+            $job = collect(Bus::dispatched(SendDiscordWebhook::class))
+                ->first(fn (SendDiscordWebhook $job) => $job->webhook->name === $name);
+
+            return collect($job->payload['embeds'][0]['fields'])->pluck('value', 'name')->all();
+        };
+
+        $this->assertSame(['Art' => 'Support Request', 'Priorität' => 'Dringend'], $fieldsOf('Deutscher Kanal'));
+        $this->assertSame(['Type' => 'Support Request', 'Priority' => 'Urgent'], $fieldsOf('English channel'));
+    }
+
+    public function test_a_german_channel_gets_german_sentences(): void
+    {
+        Bus::fake();
+        app()->setLocale('en');
+
+        DiscordWebhook::create([
+            'name'   => 'Termine',
+            'url'    => self::URL,
+            'events' => [DiscordEvents::EVENT_GUEST_JOINED],
+            'locale' => 'de',
+        ]);
+
+        $event = Event::create(['user_id' => $this->admin->id, 'title' => 'Spieleabend', 'startDate' => now()->addWeek()]);
+
+        $this->actingAs($this->member, 'sanctum')
+            ->postJson("/api/events/{$event->id}/answer", ['answer' => 'going'])
+            ->assertOk();
+
+        Bus::assertDispatched(SendDiscordWebhook::class, function (SendDiscordWebhook $job) {
+            $embed = $job->payload['embeds'][0];
+
+            return $embed['description'] === 'alice nimmt an Spieleabend teil.'
+                && str_contains($embed['footer']['text'], 'Jemand nimmt an einem Termin teil');
+        });
+    }
+
+    public function test_the_language_has_to_be_one_the_site_is_translated_to(): void
+    {
+        $this->actingAs($this->admin, 'sanctum')->postJson('/api/admin/discord-webhooks', [
+            'name'   => 'Klingon',
+            'url'    => self::URL,
+            'events' => [DiscordEvents::TICKET_CREATED],
+            'locale' => 'tlh',
+        ])->assertUnprocessable()->assertJsonValidationErrors('locale');
+    }
+
+    public function test_an_announcement_is_posted_to_the_channels(): void
+    {
+        Bus::fake();
+        $this->webhook([DiscordEvents::ANNOUNCEMENT_POSTED]);
+
+        $this->actingAs($this->admin, 'sanctum')->postJson('/api/admin/announcement', [
+            'subject' => 'Server maintenance',
+            'body'    => 'The site is down tonight from 22:00.',
+            'thanks'  => 'Thanks for your patience',
+            'url'     => 'https://fellowship.test/blog/maintenance',
+        ])->assertOk();
+
+        Bus::assertDispatched(SendDiscordWebhook::class, function (SendDiscordWebhook $job) {
+            $embed = $job->payload['embeds'][0];
+
+            return $embed['title'] === 'Server maintenance'
+                && $embed['description'] === 'The site is down tonight from 22:00.'
+                && $embed['url'] === 'https://fellowship.test/blog/maintenance'
+                && $embed['author']['name'] === 'boss';
         });
     }
 

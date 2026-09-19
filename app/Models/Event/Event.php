@@ -31,7 +31,7 @@ class Event extends Model implements TranslatableContract
                 'title'       => $event->title,
                 'description' => $event->description,
                 'url'         => "/events/{$event->id}",
-                'fields'      => ['Starts' => $event->startDate ? (string) $event->startDate : null],
+                'fields'      => ['messages.discord.fields.starts' => $event->startDate ? (string) $event->startDate : null],
             ]);
         });
     }

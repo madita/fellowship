@@ -5989,6 +5989,9 @@ export default {
             'urlHint': 'Füge die aus Discord kopierte Adresse ein',
             'urlKeep': 'Leer lassen, um die gespeicherte Adresse zu behalten',
             'events': 'Was angekündigt werden soll',
+            'locale': 'Sprache',
+            'localeHint': 'Die Nachrichten in diesem Kanal werden in dieser Sprache geschrieben',
+            'localeDefault': 'Standard der Seite ({locale})',
             'eventsHint': 'Wähle mindestens eins. Jeder Webhook hat seine eigene Auswahl.',
             'active': 'Aktiv',
         },
@@ -6020,6 +6023,14 @@ export default {
             'event_created': {
                 'label': 'Neuer Termin',
                 'hint': 'Ein Termin wurde im Kalender angelegt',
+            },
+            'event_guest_joined': {
+                'label': 'Jemand nimmt an einem Termin teil',
+                'hint': 'Ein Mitglied hat mit Zusage geantwortet',
+            },
+            'announcement_posted': {
+                'label': 'Ankündigung',
+                'hint': 'Ein Admin hat eine Ankündigung an alle Mitglieder gesendet',
             },
         },
         'delivery': {

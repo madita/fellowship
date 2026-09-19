@@ -18,6 +18,7 @@ return new class extends Migration
             // Encrypted: the address is the credential, anyone holding it can post
             $table->text('url');
             $table->json('events');
+            $table->string('locale', 10)->nullable();
             $table->boolean('is_active')->default(true);
 
             // What happened the last time this webhook was used

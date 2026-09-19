@@ -222,10 +222,36 @@ return [
 
     // Discord-Webhooks
     'discord' => [
+        'fields' => [
+            'type'     => 'Art',
+            'priority' => 'Priorität',
+            'forum'    => 'Forum',
+            'going'    => 'Zusagen',
+            'starts'   => 'Beginnt',
+        ],
+        'priority' => [
+            'low'    => 'Niedrig',
+            'normal' => 'Normal',
+            'high'   => 'Hoch',
+            'urgent' => 'Dringend',
+        ],
+        'events' => [
+            'wiki_page_approved'   => 'Wiki-Seite genehmigt',
+            'wiki_page_submitted'  => 'Wiki-Seite eingereicht',
+            'ticket_created'       => 'Neues Ticket',
+            'feedback_created'     => 'Neues Feedback',
+            'forum_thread_created' => 'Neues Forenthema',
+            'post_published'       => 'Beitrag veröffentlicht',
+            'event_created'        => 'Neuer Termin',
+            'event_guest_joined'   => 'Jemand nimmt an einem Termin teil',
+            'announcement_posted'  => 'Ankündigung',
+            'test'                 => 'Test',
+        ],
         'deleted'     => 'Der Discord-Webhook wurde gelöscht.',
         'invalid_url' => 'Das ist keine Discord-Webhook-Adresse. Sie sieht aus wie https://discord.com/api/webhooks/…',
         'test_title'  => 'Webhook verbunden',
         'test_body'   => 'Das ist eine Testnachricht von :app. Ankündigungen erscheinen in diesem Kanal.',
+        'event_joined' => ':name nimmt an :event teil.',
     ],
 
     // SPA
