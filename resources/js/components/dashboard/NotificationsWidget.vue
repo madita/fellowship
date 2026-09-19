@@ -52,6 +52,7 @@ import axios from 'axios';
 import widgetMixin from './widgetMixin.js';
 import WidgetState from './WidgetState.vue';
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js';
+import { notificationSubject, notificationIcon, notificationColor, notificationUrl } from '@/utils/notifications.js';
 
 /**
  * The user's unread notifications, from /api/account/notification.
@@ -82,43 +83,22 @@ export default {
         isBusy(notification) {
             return this.busy.includes(notification.id);
         },
+        // How a notification reads is shared with the toolbar and the page
         subject(notification) {
-            const d = notification.data || {};
-            if (d.type === 'status_mention' || d.type === 'status_comment_mention') {
-                return this.$t(`notifications.${d.type === 'status_mention' ? 'statusMention' : 'statusCommentMention'}`, { name: d.mentioned_by });
-            }
-            if (d.type === 'ticket_mention') {
-                return this.$t('notifications.ticketMention', { name: d.mentioned_by, title: d.ticket_title });
-            }
-            if (d.type === 'ticket_comment') {
-                return this.$t('notifications.ticketComment', { name: d.comment_author, title: d.ticket_title });
-            }
-            if (d.type === 'ticket_status') {
-                return this.$t('notifications.ticketStatus', { title: d.ticket_title, status: this.$t(`tickets.status.${d.status}`) });
-            }
-            return d.subject || d.thread_title || d.sandbox_title || this.$t('dashboard.widgets.notifications.title');
+            return notificationSubject(notification.data, this.$t);
         },
         icon(notification) {
-            const type = notification.data?.type || '';
-            if (type.startsWith('forum_')) return type === 'forum_mention' ? 'mdi-at' : 'mdi-forum-outline';
-            if (type.startsWith('status_') || type === 'ticket_mention') return 'mdi-at';
-            if (type === 'ticket_comment') return 'mdi-comment-text-outline';
-            if (type === 'ticket_status') return 'mdi-progress-check';
-            if (type.startsWith('sandbox_')) return 'mdi-file-document-edit-outline';
-            return 'mdi-bell-outline';
+            return notificationIcon(notification.data);
         },
         color(notification) {
-            const type = notification.data?.type || '';
-            if (type.startsWith('forum_')) return 'warning';
-            if (type.startsWith('sandbox_')) return 'info';
-            return 'primary';
+            return notificationColor(notification.data);
         },
         relative(date) {
             return formatDateDistanceToNow(date);
         },
         async open(notification) {
             if (this.isBusy(notification) || this.busyAll) return;
-            const url = notification.data?.url || notification.data?.thread_url;
+            const url = notificationUrl(notification.data);
             const marked = await this.markRead(notification);
             if (url && marked) this.$router.push(url);
         },

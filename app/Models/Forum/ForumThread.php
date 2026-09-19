@@ -5,6 +5,7 @@ namespace App\Models\Forum;
 use App\Models\Tag\Taxonomy;
 use App\Models\User;
 use App\Traits\HasPolls;
+use App\Traits\NotifiesMentions;
 use App\Traits\SafeSearchable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,7 +24,13 @@ use Illuminate\Support\Str;
  */
 class ForumThread extends Model
 {
-    use HasFactory, HasPolls, SafeSearchable, SoftDeletes;
+    use HasFactory, HasPolls, NotifiesMentions, SafeSearchable, SoftDeletes;
+
+    /**
+     * The first post of a thread is its body; replies carry their own
+     * notification (see ForumPostController).
+     */
+    protected array $mentionFields = ['body'];
 
     protected $fillable = [
         'taxonomy_id',
@@ -112,6 +119,21 @@ class ForumThread extends Model
         $categorySlug = $this->category?->term?->slug ?? 'unknown';
 
         return "/forum/{$categorySlug}/{$this->slug}";
+    }
+
+    public function mentionContext(): string
+    {
+        return 'forum_thread';
+    }
+
+    public function mentionTitle(): string
+    {
+        return $this->title;
+    }
+
+    public function mentionUrl(): string
+    {
+        return $this->url;
     }
 
     /**

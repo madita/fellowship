@@ -422,11 +422,8 @@ class Ticket extends Model
             return [];
         }
 
-        $service = app(MentionService::class);
-        $already = $previous ? $service->parseMentions($previous)->pluck('id') : collect();
-
-        $recipients = $service->parseMentions($html)
-            ->reject(fn (User $user) => $user->id === $author->id || $already->contains($user->id))
+        $recipients = app(MentionService::class)
+            ->newMentions($html, $previous, $author)
             ->filter(fn (User $user) => $comment?->is_internal ? $user->isAdmin() : $this->canBeOpenedBy($user));
 
         NotificationFacade::send($recipients, new TicketMentionNotification($this, $author, $comment));

@@ -120,6 +120,7 @@ import { useUserStore } from '@/store/userStore.js'
 import { useDialog } from '@/composables/useDialog.js'
 import axios from 'axios'
 import EmptyState from '@/components/common/EmptyState.vue'
+import { notificationSubject, notificationIcon, notificationColor, notificationUrl } from '@/utils/notifications.js'
 
 export default {
     components: { EmptyState },
@@ -176,7 +177,7 @@ export default {
             const marked = await markAsRead(item.id)
 
             // Navigate based on notification type
-            const url = item.data?.url
+            const url = notificationUrl(item.data)
             if (url && marked) {
                 router.push(url)
             }
@@ -212,77 +213,10 @@ export default {
             }
         }
 
-        // Mentions carry no subject; build one from the mentioning member
-        const subjectOf = (item) => {
-            const d = item.data || {}
-            if (d.type === 'status_mention' || d.type === 'status_comment_mention') {
-                return t(d.type === 'status_mention' ? 'notifications.statusMention' : 'notifications.statusCommentMention', { name: d.mentioned_by })
-            }
-            if (d.type === 'ticket_mention') {
-                return t('notifications.ticketMention', { name: d.mentioned_by, title: d.ticket_title })
-            }
-            if (d.type === 'ticket_comment') {
-                return t('notifications.ticketComment', { name: d.comment_author, title: d.ticket_title })
-            }
-            if (d.type === 'ticket_status') {
-                return t('notifications.ticketStatus', { title: d.ticket_title, status: t(`tickets.status.${d.status}`) })
-            }
-            return d.subject || d.thread_title || t('notifications.title')
-        }
-
-        const getNotificationIcon = (item) => {
-            const type = item.data?.type || ''
-
-            if (type.startsWith('sandbox_')) {
-                const iconMap = {
-                    sandbox_shared: 'mdi-share-variant',
-                    sandbox_removed: 'mdi-account-remove',
-                    sandbox_comment: 'mdi-comment-text-outline',
-                    sandbox_reply: 'mdi-reply',
-                    sandbox_resolved: 'mdi-check-circle-outline',
-                    sandbox_invite_accepted: 'mdi-account-check',
-                }
-                return iconMap[type] || 'mdi-file-document-edit-outline'
-            }
-
-            if (type.startsWith('status_')) return 'mdi-at'
-
-            if (type === 'ticket_mention') return 'mdi-at'
-            if (type === 'ticket_comment') return 'mdi-comment-text-outline'
-            if (type === 'ticket_status') return 'mdi-progress-check'
-
-            if (type.startsWith('forum_')) {
-                const iconMap = {
-                    forum_reply: 'mdi-forum-outline',
-                    forum_mention: 'mdi-at',
-                }
-                return iconMap[type] || 'mdi-forum'
-            }
-
-            return 'mdi-bell-outline'
-        }
-
-        const getNotificationColor = (item) => {
-            const type = item.data?.type || ''
-
-            if (type.startsWith('sandbox_')) {
-                const colorMap = {
-                    sandbox_shared: 'primary',
-                    sandbox_removed: 'error',
-                    sandbox_comment: 'info',
-                    sandbox_reply: 'info',
-                    sandbox_resolved: 'success',
-                    sandbox_invite_accepted: 'success',
-                }
-                return colorMap[type] || 'primary'
-            }
-
-            if (type.startsWith('forum_')) {
-                return 'warning'
-            }
-
-            return 'primary'
-        }
+        // How a notification reads is shared with the page and the dashboard widget
+        const subjectOf = (item) => notificationSubject(item.data, t)
+        const getNotificationIcon = (item) => notificationIcon(item.data)
+        const getNotificationColor = (item) => notificationColor(item.data)
 
         const formatTime = (dateStr) => {
             if (!dateStr) return ''

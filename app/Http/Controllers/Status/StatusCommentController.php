@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Status;
 
 use App\Http\Controllers\Controller;
 use App\Models\Status\StatusComment;
+use App\Notifications\StatusMentionNotification;
+use App\Services\MentionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Stevebauman\Purify\Facades\Purify;
 
 class StatusCommentController extends Controller
 {
@@ -25,7 +28,15 @@ class StatusCommentController extends Controller
             'content' => 'required|string|max:2000',
         ]);
 
+        $previous             = $comment->content;
+        $validated['content'] = Purify::config('sandbox')->clean($validated['content']);
         $comment->update($validated);
+
+        // Someone added to the comment is notified; the ones already in it are not
+        $mentioned = app(MentionService::class)->newMentions($comment->content, $previous, $user);
+        foreach ($mentioned as $mentionedUser) {
+            $mentionedUser->notify(new StatusMentionNotification($comment->status, $comment));
+        }
 
         return response()->json($comment->load('user'));
     }

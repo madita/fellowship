@@ -3359,6 +3359,7 @@ export default {
         'ticketComment': '{name} hat „{title}“ kommentiert',
         'ticketStatus': '„{title}“ ist jetzt {status}',
         'ticketMention': '{name} hat dich in „{title}“ erwähnt',
+        'mention': '{name} hat dich in „{title}“ erwähnt',
         'title': 'Benachrichtigungen',
         'markAllRead': 'Alle als gelesen markieren',
         'clearAll': 'Alle löschen',

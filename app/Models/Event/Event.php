@@ -3,6 +3,7 @@
 namespace App\Models\Event;
 
 use App\Traits\HasRelateableContent;
+use App\Traits\NotifiesMentions;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
@@ -12,11 +13,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Event extends Model implements TranslatableContract
 {
     use HasRelateableContent;
+    use NotifiesMentions;
     use Sluggable;
     use SoftDeletes;
     use Translatable;
 
     public $translatedAttributes = ['title', 'description'];
+
+    protected array $mentionFields = ['description'];
 
     protected $table = 'events';
 
@@ -118,5 +122,22 @@ class Event extends Model implements TranslatableContract
         return $this->belongsToMany('App\\Models\\User', 'event_guests')
             ->withPivot('type')
             ->withTimestamps();
+    }
+
+    // ── @mentions in the event description ──────────────────────────
+
+    public function mentionContext(): string
+    {
+        return 'event';
+    }
+
+    public function mentionTitle(): string
+    {
+        return (string) $this->title;
+    }
+
+    public function mentionUrl(): string
+    {
+        return "/events/{$this->id}";
     }
 }

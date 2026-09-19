@@ -24,4 +24,23 @@ class MentionService
 
         return User::whereIn('username', $usernames)->get();
     }
+
+    /**
+     * Members newly @mentioned in $html: without the author, and without
+     * anyone already mentioned in the previous version of the text.
+     *
+     * @return Collection<int,User>
+     */
+    public function newMentions(?string $html, ?string $previous = null, ?User $author = null): Collection
+    {
+        if (blank($html)) {
+            return collect();
+        }
+
+        $already = $previous ? $this->parseMentions($previous)->pluck('id') : collect();
+
+        return $this->parseMentions($html)
+            ->reject(fn (User $user) => ($author && $user->id === $author->id) || $already->contains($user->id))
+            ->values();
+    }
 }

@@ -3196,6 +3196,7 @@ export default {
         'ticketComment': '{name} commented on "{title}"',
         'ticketStatus': '"{title}" is now {status}',
         'ticketMention': '{name} mentioned you in "{title}"',
+        'mention': '{name} mentioned you in "{title}"',
         'title': 'Notifications',
         'markAllRead': 'Mark All as Read',
         'clearAll': 'Clear All',
