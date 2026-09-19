@@ -3,6 +3,13 @@
         <page-header :title="$t('wiki.title')" :subtitle="$t('wiki.subtitle')" icon="mdi-book-open-page-variant">
             <template #actions>
                 <v-btn
+                    variant="tonal"
+                    prepend-icon="mdi-star-four-points-outline"
+                    :to="{ name: 'wiki-special' }"
+                >
+                    {{ $t('wiki.special.title') }}
+                </v-btn>
+                <v-btn
                     color="primary"
                     variant="elevated"
                     prepend-icon="mdi-plus"
@@ -58,6 +65,35 @@
                 >
                     {{ $t('wiki.resultsFor', { query: searchText }) }}
                 </v-chip>
+            </div>
+
+            <!-- Categories -->
+            <div v-if="categories.length && !searchText" class="mb-6">
+                <div class="d-flex align-center ga-2 mb-2">
+                    <v-icon icon="mdi-folder-multiple-outline" color="primary" size="small" />
+                    <span class="text-subtitle-2 font-weight-medium">{{ $t('wiki.categories') }}</span>
+                    <v-btn
+                        variant="text"
+                        size="x-small"
+                        :to="{ name: 'wiki-special-page', params: { page: 'categories' } }"
+                    >
+                        {{ $t('wiki.special.allCategories') }}
+                    </v-btn>
+                </div>
+                <div class="d-flex flex-wrap ga-2">
+                    <v-chip
+                        v-for="category in categories"
+                        :key="category.slug"
+                        size="small"
+                        variant="tonal"
+                        color="primary"
+                        prepend-icon="mdi-folder-outline"
+                        :to="`/wiki/category/${category.slug}`"
+                    >
+                        {{ category.title }}
+                        <span class="ml-1 text-medium-emphasis">{{ category.pages_count }}</span>
+                    </v-chip>
+                </div>
             </div>
 
             <!-- Wiki Grid -->
@@ -288,6 +324,7 @@ export default {
             loading: false,
             searching: false,
             wikiable: [],
+            categories: [],
             response: {},
             searchText: "",
             searchTimeout: null,
@@ -308,6 +345,15 @@ export default {
         }
     },
     methods: {
+        // The categories of the wiki, most pages first
+        async getCategories() {
+            try {
+                const { data } = await axios.get('/api/wiki/special/categories');
+                this.categories = [...data.data].sort((a, b) => b.pages_count - a.pages_count).slice(0, 12);
+            } catch (error) {
+                console.warn('Failed to load wiki categories:', error);
+            }
+        },
         async getWikiPages() {
             try {
                 this.loading = true;
@@ -456,6 +502,7 @@ export default {
 
     mounted() {
         this.getWikiPages();
+        this.getCategories();
         window.addEventListener("scroll", this.handleScroll);
 
         // Listen for locale changes to refetch content in new language
@@ -463,6 +510,7 @@ export default {
             this.wikiable = [];
             this.page = 1;
             this.getWikiPages();
+            this.getCategories();
         };
         window.addEventListener('locale-changed', this.onLocaleChange);
     },

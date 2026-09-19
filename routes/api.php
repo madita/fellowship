@@ -29,6 +29,17 @@ use Illuminate\Support\Facades\Route;
 // Public cacheable routes
 Route::middleware(['cache.control'])->group(function () {
     Route::get('wiki/recent-changes', "\App\Http\Controllers\WikiController@recentChanges");
+
+    // Special pages of the wiki
+    Route::get('wiki/special/all-pages', "\App\Http\Controllers\WikiSpecialController@allPages");
+    Route::get('wiki/special/categories', "\App\Http\Controllers\WikiSpecialController@categories");
+    Route::get('wiki/special/wanted', "\App\Http\Controllers\WikiSpecialController@wantedPages");
+    Route::get('wiki/special/orphaned', "\App\Http\Controllers\WikiSpecialController@orphanedPages");
+    Route::get('wiki/special/dead-end', "\App\Http\Controllers\WikiSpecialController@deadEndPages");
+    Route::get('wiki/special/uncategorised', "\App\Http\Controllers\WikiSpecialController@uncategorisedPages");
+    Route::get('wiki/special/by-length', "\App\Http\Controllers\WikiSpecialController@pagesByLength");
+    Route::get('wiki/special/statistics', "\App\Http\Controllers\WikiSpecialController@statistics");
+    Route::get('wiki/special/random', "\App\Http\Controllers\WikiSpecialController@randomPage");
     Route::resource('wiki', "\App\Http\Controllers\WikiController")->only(['index', 'show']);
     Route::get('wiki-pages', "\App\Http\Controllers\WikiController@getPages");
     Route::get('wiki/{slug}/history', "\App\Http\Controllers\WikiController@history");

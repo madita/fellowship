@@ -5294,6 +5294,71 @@ export default {
         }
     },
     'wiki': {
+        'special': {
+            'title': 'Special pages',
+            'subtitle': 'Everything at a glance, and the lists that keep the wiki tidy',
+            'allCategories': 'All categories',
+            'allLetters': 'All',
+            'empty': 'Nothing here',
+            'loadFailed': 'The list could not be loaded.',
+            'pending': 'Awaiting approval',
+            'pagesCount': '{count} pages',
+            'wantedCount': 'wanted {count}×',
+            'words': '{count} words',
+            'longest': 'Longest',
+            'shortest': 'Shortest',
+            'statistics': {
+                'pages': 'Pages',
+                'categories': 'Categories',
+                'edits': 'Edits',
+                'contributors': 'Contributors',
+                'pending': 'Awaiting approval',
+                'words': 'Words',
+                'uncategorised': 'Uncategorised',
+            },
+            'pages': {
+                'all-pages': {
+                    'title': 'All pages',
+                    'description': 'Every page of the wiki, A to Z',
+                },
+                'categories': {
+                    'title': 'Categories',
+                    'description': 'Every category and how many pages it holds',
+                },
+                'recent-changes': {
+                    'title': 'Recent changes',
+                    'description': 'What was written and edited lately',
+                },
+                'wanted': {
+                    'title': 'Wanted pages',
+                    'description': 'Linked from somewhere, but nobody has written them yet',
+                },
+                'orphaned': {
+                    'title': 'Orphaned pages',
+                    'description': 'No other page links to these',
+                },
+                'dead-end': {
+                    'title': 'Dead-end pages',
+                    'description': 'These pages link nowhere themselves',
+                },
+                'uncategorised': {
+                    'title': 'Uncategorised pages',
+                    'description': 'Not in any category yet',
+                },
+                'by-length': {
+                    'title': 'Longest and shortest',
+                    'description': 'Pages by how much they hold',
+                },
+                'statistics': {
+                    'title': 'Statistics',
+                    'description': 'What the wiki adds up to',
+                },
+                'random': {
+                    'title': 'Random page',
+                    'description': 'Read something else for a change',
+                },
+            },
+        },
         'title': 'Knowledge Base',
         'subtitle': 'Discover and share knowledge with your community',
         'createPage': 'Create Page',
