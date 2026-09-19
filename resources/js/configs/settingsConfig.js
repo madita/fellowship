@@ -169,6 +169,22 @@ export const settingsCategories = [
         ]
     },
     {
+        id: 'integrations',
+        title: 'Integrations',
+        description: 'Announce what happens on the site in other services',
+        icon: 'mdi-transit-connection-variant',
+        color: 'blue-grey',
+        settings: [
+            {
+                id: 'discord-webhooks',
+                title: 'Discord Webhooks',
+                description: 'Post new wiki pages, tickets and more into Discord channels',
+                icon: 'mdi-discord',
+                routeName: 'admin-settings-discord',
+            },
+        ]
+    },
+    {
         id: 'advanced',
         title: 'Advanced',
         description: 'Caching, PWA, API, and developer settings',

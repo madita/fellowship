@@ -4,6 +4,8 @@ namespace App\Models\Forum;
 
 use App\Models\Tag\Taxonomy;
 use App\Models\User;
+use App\Services\DiscordWebhookService;
+use App\Support\DiscordEvents;
 use App\Traits\HasPolls;
 use App\Traits\NotifiesMentions;
 use App\Traits\SafeSearchable;
@@ -119,6 +121,19 @@ class ForumThread extends Model
         $categorySlug = $this->category?->term?->slug ?? 'unknown';
 
         return "/forum/{$categorySlug}/{$this->slug}";
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (ForumThread $thread): void {
+            app(DiscordWebhookService::class)->announce(DiscordEvents::FORUM_THREAD_CREATED, [
+                'title'       => $thread->title,
+                'description' => $thread->body,
+                'url'         => $thread->url,
+                'author'      => $thread->author?->username,
+                'fields'      => ['Forum' => $thread->category?->term?->title],
+            ]);
+        });
     }
 
     public function mentionContext(): string

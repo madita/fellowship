@@ -6,6 +6,8 @@ use App\Contracts\CanHaveTaxonomies;
 use App\Traits\HasCache;
 use App\Traits\HasRelateableContent;
 use App\Traits\HasTaxonomies;
+use App\Services\DiscordWebhookService;
+use App\Support\DiscordEvents;
 use App\Traits\NotifiesMentions;
 use App\Traits\Publishable;
 use App\Traits\Revisionable;
@@ -28,6 +30,21 @@ class Post extends Model implements CanHaveTaxonomies, TranslatableContract
     public $translatedAttributes = ['title', 'body'];
 
     protected array $mentionFields = ['body'];
+
+    protected static function booted(): void
+    {
+        // Announced when it goes live, whether that is at once or later
+        static::saved(function (Post $post): void {
+            if ($post->wasChanged('published_at') && $post->isPublished()) {
+                app(DiscordWebhookService::class)->announce(DiscordEvents::POST_PUBLISHED, [
+                    'title'       => $post->title,
+                    'description' => $post->body,
+                    'url'         => "/blog/{$post->slug}",
+                    'author'      => $post->user?->username,
+                ]);
+            }
+        });
+    }
 
     protected $fillable = [
         'slug',
@@ -56,7 +73,8 @@ class Post extends Model implements CanHaveTaxonomies, TranslatableContract
 
     public function user()
     {
-        return $this->belongsTo('App\User');
+        // 'App\User' does not exist in this app; the relation errored when used
+        return $this->belongsTo(User::class);
     }
 
     // ── @mentions in the post text ──────────────────────────────────

@@ -220,6 +220,14 @@ return [
         'forum_archived'        => 'Importiertes Forum nach „:category" verschoben',
     ],
 
+    // Discord-Webhooks
+    'discord' => [
+        'deleted'     => 'Der Discord-Webhook wurde gelöscht.',
+        'invalid_url' => 'Das ist keine Discord-Webhook-Adresse. Sie sieht aus wie https://discord.com/api/webhooks/…',
+        'test_title'  => 'Webhook verbunden',
+        'test_body'   => 'Das ist eine Testnachricht von :app. Ankündigungen erscheinen in diesem Kanal.',
+    ],
+
     // SPA
     'spa' => [
         'no_javascript' => 'Es tut uns leid, aber diese Website funktioniert ohne aktiviertes JavaScript nicht richtig. Bitte aktivieren Sie es, um fortzufahren.',

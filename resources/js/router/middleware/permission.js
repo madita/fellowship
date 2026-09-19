@@ -30,6 +30,7 @@ export default function permission({ to, next }) {
         "admin-taxonomie": "manage-page",
         "admin-terms": "manage-page",
         "admin-settings-menus": "manage-page",
+        "admin-settings-discord": "manage-page",
         "admin-tickets": "manage-page",
         "admin-ticket": "manage-page",
         "admin-ticket-create": "manage-page",

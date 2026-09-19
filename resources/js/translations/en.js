@@ -5781,6 +5781,92 @@ export default {
             'descriptionRequired': 'A description is required'
         }
     },
+    'discord': {
+        'title': 'Discord Webhooks',
+        'subtitle': 'Announce what happens on the site in your Discord channels',
+        'add': 'Add webhook',
+        'addTitle': 'Add a Discord webhook',
+        'editTitle': 'Edit the webhook',
+        'edit': 'Edit',
+        'delete': 'Delete',
+        'test': 'Send test message',
+        'cancel': 'Cancel',
+        'save': 'Save',
+        'inactive': 'Off',
+        'empty': 'No Discord channel connected yet',
+        'emptyHint': 'Follow the steps on the left, then paste the webhook address here.',
+        'confirmDelete': 'Delete the webhook "{name}"? The channel will stop getting announcements.',
+        'setup': {
+            'title': 'What to do in Discord',
+            'intro': 'A webhook lets this site post messages into one channel of your server. You need "Manage webhooks" permission there.',
+            'step1': 'Open your Discord server and click Server Settings.',
+            'step2': 'Go to Integrations, then Webhooks, and click New Webhook.',
+            'step3': 'Give it a name and pick the channel the announcements should go to.',
+            'step4': 'Click Copy Webhook URL.',
+            'step5': 'Add a webhook here, paste the address and choose what should be announced.',
+            'secret': 'Treat the address like a password: anyone who has it can post in that channel. It is stored encrypted and never shown again.',
+            'help': 'Discord: intro to webhooks',
+        },
+        'fields': {
+            'name': 'Name',
+            'nameHint': 'Only shown here, e.g. "Team channel"',
+            'url': 'Webhook address',
+            'urlHint': 'Paste the address you copied from Discord',
+            'urlKeep': 'Leave empty to keep the stored address',
+            'events': 'What should be announced',
+            'eventsHint': 'Pick at least one. Each webhook can have its own selection.',
+            'active': 'Active',
+        },
+        'events': {
+            'wiki_page_approved': {
+                'label': 'Wiki page approved',
+                'hint': 'A new wiki page went live',
+            },
+            'wiki_page_submitted': {
+                'label': 'Wiki page submitted',
+                'hint': 'A member wrote a page that waits for approval',
+            },
+            'ticket_created': {
+                'label': 'New ticket',
+                'hint': 'Support requests, approvals and account claims',
+            },
+            'feedback_created': {
+                'label': 'New feedback',
+                'hint': 'A public bug report or feature request',
+            },
+            'forum_thread_created': {
+                'label': 'New forum thread',
+                'hint': 'Someone opened a thread',
+            },
+            'post_published': {
+                'label': 'Post published',
+                'hint': 'A blog post went live',
+            },
+            'event_created': {
+                'label': 'New event',
+                'hint': 'An event was added to the calendar',
+            },
+        },
+        'delivery': {
+            'never': 'Nothing sent yet',
+            'ok': 'Last message delivered {when}',
+            'failed': 'Last attempt {when} failed: {error}',
+        },
+        'validation': {
+            'nameRequired': 'A name is required',
+            'urlRequired': 'The webhook address is required',
+            'urlInvalid': 'That is not a Discord webhook address',
+            'eventsRequired': 'Choose at least one event',
+        },
+        'messages': {
+            'saved': 'The webhook has been saved.',
+            'saveFailed': 'The webhook could not be saved.',
+            'deleteFailed': 'The webhook could not be deleted.',
+            'loadFailed': 'The webhooks could not be loaded.',
+            'testSent': 'A test message was sent to "{name}". Check the channel.',
+            'testFailed': 'Discord did not accept the message. {error}',
+        },
+    },
     'tickets': {
         'nav': {
             'title': 'Tickets',
