@@ -5453,6 +5453,71 @@ export default {
         }
     },
     'wiki': {
+        'special': {
+            'title': 'Spezialseiten',
+            'subtitle': 'Alles auf einen Blick und die Listen, die das Wiki in Ordnung halten',
+            'allCategories': 'Alle Kategorien',
+            'allLetters': 'Alle',
+            'empty': 'Nichts vorhanden',
+            'loadFailed': 'Die Liste konnte nicht geladen werden.',
+            'pending': 'Wartet auf Genehmigung',
+            'pagesCount': '{count} Seiten',
+            'wantedCount': '{count}× verlinkt',
+            'words': '{count} Wörter',
+            'longest': 'Längste',
+            'shortest': 'Kürzeste',
+            'statistics': {
+                'pages': 'Seiten',
+                'categories': 'Kategorien',
+                'edits': 'Bearbeitungen',
+                'contributors': 'Mitwirkende',
+                'pending': 'Wartet auf Genehmigung',
+                'words': 'Wörter',
+                'uncategorised': 'Ohne Kategorie',
+            },
+            'pages': {
+                'all-pages': {
+                    'title': 'Alle Seiten',
+                    'description': 'Jede Seite des Wikis, von A bis Z',
+                },
+                'categories': {
+                    'title': 'Kategorien',
+                    'description': 'Jede Kategorie und wie viele Seiten sie enthält',
+                },
+                'recent-changes': {
+                    'title': 'Letzte Änderungen',
+                    'description': 'Was zuletzt geschrieben und bearbeitet wurde',
+                },
+                'wanted': {
+                    'title': 'Gewünschte Seiten',
+                    'description': 'Irgendwo verlinkt, aber noch nicht geschrieben',
+                },
+                'orphaned': {
+                    'title': 'Verwaiste Seiten',
+                    'description': 'Keine andere Seite verlinkt darauf',
+                },
+                'dead-end': {
+                    'title': 'Sackgassenseiten',
+                    'description': 'Diese Seiten verlinken selbst nirgendwohin',
+                },
+                'uncategorised': {
+                    'title': 'Seiten ohne Kategorie',
+                    'description': 'Noch in keiner Kategorie',
+                },
+                'by-length': {
+                    'title': 'Längste und kürzeste',
+                    'description': 'Seiten nach ihrem Umfang',
+                },
+                'statistics': {
+                    'title': 'Statistik',
+                    'description': 'Was das Wiki ausmacht',
+                },
+                'random': {
+                    'title': 'Zufällige Seite',
+                    'description': 'Zur Abwechslung etwas anderes lesen',
+                },
+            },
+        },
         'title': 'Wissensdatenbank',
         'subtitle': 'Entdecken und teilen Sie Wissen mit Ihrer Community',
         'createPage': 'Seite erstellen',

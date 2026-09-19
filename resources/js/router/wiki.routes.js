@@ -12,6 +12,23 @@ export const wiki = [
         }
     },
     {
+        // Declared before /wiki/:slug so the special pages win
+        path: '/wiki/special',
+        name: 'wiki-special',
+        component: () => import(/* webpackChunkName: "wiki-special" */ '@/pages/wiki/WikiSpecial.vue'),
+        meta: {
+            layout: 'landing'
+        }
+    },
+    {
+        path: '/wiki/special/:page',
+        name: 'wiki-special-page',
+        component: () => import(/* webpackChunkName: "wiki-special" */ '@/pages/wiki/WikiSpecial.vue'),
+        meta: {
+            layout: 'landing'
+        }
+    },
+    {
         path: '/wiki/create',
         name: 'wiki-create',
         component: () => import(/* webpackChunkName: "wiki-create" */ '@/pages/wiki/WikiCreate.vue'),
