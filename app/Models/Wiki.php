@@ -24,22 +24,6 @@ class Wiki extends Model implements TranslatableContract
 
     public $translatedAttributes = ['title'];
 
-    /**
-     * A pending wiki page cannot be opened, so mentions in its text wait
-     * for the approval. The text lives on the wikiable (a Page).
-     */
-    public function afterApproved(): void
-    {
-        // The morph relation is not declared here; the controllers resolve it the same way
-        $model    = $this->wikiable_type;
-        $wikiable = $model ? $model::find($this->wikiable_id) : null;
-
-        if ($wikiable && method_exists($wikiable, 'notifyMentionedMembers')) {
-            // Credited to whoever wrote the page, not to the admin approving it
-            $wikiable->notifyMentionedMembers($wikiable->user ?? null);
-        }
-    }
-
     public $translationForeignKey = 'wiki_id';
 
     public $translationModel = WikiTranslation::class;
@@ -56,6 +40,22 @@ class Wiki extends Model implements TranslatableContract
     protected $fillable = [
         'slug', 'status', 'parent_id', 'wikiable_type', 'wikiable_id',
     ];
+
+    /**
+     * A pending wiki page cannot be opened, so mentions in its text wait
+     * for the approval. The text lives on the wikiable (a Page).
+     */
+    public function afterApproved(): void
+    {
+        // The morph relation is not declared here; the controllers resolve it the same way
+        $model    = $this->wikiable_type;
+        $wikiable = $model ? $model::find($this->wikiable_id) : null;
+
+        if ($wikiable && method_exists($wikiable, 'notifyMentionedMembers')) {
+            // Credited to whoever wrote the page, not to the admin approving it
+            $wikiable->notifyMentionedMembers($wikiable->user ?? null);
+        }
+    }
 
     public function sluggable(): array
     {
