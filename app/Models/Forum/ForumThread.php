@@ -123,19 +123,6 @@ class ForumThread extends Model
         return "/forum/{$categorySlug}/{$this->slug}";
     }
 
-    protected static function booted(): void
-    {
-        static::created(function (ForumThread $thread): void {
-            app(DiscordWebhookService::class)->announce(DiscordEvents::FORUM_THREAD_CREATED, [
-                'title'       => $thread->title,
-                'description' => $thread->body,
-                'url'         => $thread->url,
-                'author'      => $thread->author?->username,
-                'fields'      => ['messages.discord.fields.forum' => $thread->category?->term?->title],
-            ]);
-        });
-    }
-
     public function mentionContext(): string
     {
         return 'forum_thread';
@@ -289,6 +276,19 @@ class ForumThread extends Model
     public function shouldBeSearchable(): bool
     {
         return ! $this->trashed();
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (ForumThread $thread): void {
+            app(DiscordWebhookService::class)->announce(DiscordEvents::FORUM_THREAD_CREATED, [
+                'title'       => $thread->title,
+                'description' => $thread->body,
+                'url'         => $thread->url,
+                'author'      => $thread->author?->username,
+                'fields'      => ['messages.discord.fields.forum' => $thread->category?->term?->title],
+            ]);
+        });
     }
 
     /**
