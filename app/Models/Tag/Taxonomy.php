@@ -27,11 +27,6 @@ class Taxonomy extends Model implements TranslatableContract
     use HasCache;
     use NotifiesMentions;
 
-    /**
-     * The description of a wiki category is written with the editor.
-     */
-    protected array $mentionFields = ['description'];
-
     //    protected $table = 'taxonomies';
     /**
      * {@inheritdoc}
@@ -40,6 +35,11 @@ class Taxonomy extends Model implements TranslatableContract
     use Translatable;
 
     public $translatedAttributes = ['description', 'content', 'lead', 'meta_desc'];
+
+    /**
+     * The description of a wiki category is written with the editor.
+     */
+    protected array $mentionFields = ['description'];
 
     /** {@inheritdoc} */
     protected $fillable = [

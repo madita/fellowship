@@ -35,21 +35,6 @@ trait NotifiesMentions
      */
     protected array $mentionOriginals = [];
 
-    protected static function bootNotifiesMentions(): void
-    {
-        // Translated text is written during the save, so the previous
-        // version has to be taken before the model is written.
-        static::saving(function (Model $model): void {
-            $model->rememberMentionOriginals();
-        });
-
-        static::saved(function (Model $model): void {
-            if ($model->shouldNotifyMentions()) {
-                $model->notifyMentionedMembers();
-            }
-        });
-    }
-
     public function rememberMentionOriginals(): void
     {
         $this->mentionOriginals = [];
@@ -126,6 +111,21 @@ trait NotifiesMentions
     public function shouldNotifyMentions(): bool
     {
         return true;
+    }
+
+    protected static function bootNotifiesMentions(): void
+    {
+        // Translated text is written during the save, so the previous
+        // version has to be taken before the model is written.
+        static::saving(function (Model $model): void {
+            $model->rememberMentionOriginals();
+        });
+
+        static::saved(function (Model $model): void {
+            if ($model->shouldNotifyMentions()) {
+                $model->notifyMentionedMembers();
+            }
+        });
     }
 
     /**
