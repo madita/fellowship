@@ -13,6 +13,8 @@ use App\Models\Irc\IrcConnection;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use App\Models\User;
+use App\Services\DiscordWebhookService;
+use App\Support\DiscordEvents;
 use App\Support\TaxonomyHelper;
 // use Lecturize\Taxonomies\Models\Taxonomy;
 // use Lecturize\Taxonomies\Models\Term;
@@ -502,10 +504,26 @@ class EventController extends Controller
             $data['profile'] = json_encode($json);
         }
 
+        $wasGoing = $eventGuest?->pivot?->type;
+
         if ($eventGuest) {
             $event->allUsers()->updateExistingPivot($user->id, $data);
         } else {
             $event->allUsers()->attach($user->id, $data);
+        }
+
+        // Announced once, when the answer becomes "going" — not on every edit
+        if ($answer === 'going' && $wasGoing !== 'going') {
+            app(DiscordWebhookService::class)->announce(DiscordEvents::EVENT_GUEST_JOINED, [
+                'title'       => $event->title,
+                'description' => ['messages.discord.event_joined', ['name' => $user->username, 'event' => $event->title]],
+                'url'         => "/events/{$event->id}",
+                'author'      => $user->username,
+                'fields'      => [
+                    'messages.discord.fields.going'  => $event->answer('going')->count(),
+                    'messages.discord.fields.starts' => $event->startDate ? (string) $event->startDate : null,
+                ],
+            ]);
         }
 
         return response()->json([

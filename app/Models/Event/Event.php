@@ -2,6 +2,8 @@
 
 namespace App\Models\Event;
 
+use App\Services\DiscordWebhookService;
+use App\Support\DiscordEvents;
 use App\Traits\HasRelateableContent;
 use App\Traits\NotifiesMentions;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
@@ -139,5 +141,17 @@ class Event extends Model implements TranslatableContract
     public function mentionUrl(): string
     {
         return "/events/{$this->id}";
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (Event $event): void {
+            app(DiscordWebhookService::class)->announce(DiscordEvents::EVENT_CREATED, [
+                'title'       => $event->title,
+                'description' => $event->description,
+                'url'         => "/events/{$event->id}",
+                'fields'      => ['messages.discord.fields.starts' => $event->startDate ? (string) $event->startDate : null],
+            ]);
+        });
     }
 }

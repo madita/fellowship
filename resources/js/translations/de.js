@@ -5956,6 +5956,103 @@ export default {
             'descriptionRequired': 'Eine Beschreibung ist erforderlich'
         }
     },
+    'discord': {
+        'title': 'Discord-Webhooks',
+        'subtitle': 'Ankündige, was auf der Seite passiert, in deinen Discord-Kanälen',
+        'add': 'Webhook hinzufügen',
+        'addTitle': 'Discord-Webhook hinzufügen',
+        'editTitle': 'Webhook bearbeiten',
+        'edit': 'Bearbeiten',
+        'delete': 'Löschen',
+        'test': 'Testnachricht senden',
+        'cancel': 'Abbrechen',
+        'save': 'Speichern',
+        'inactive': 'Aus',
+        'empty': 'Noch kein Discord-Kanal verbunden',
+        'emptyHint': 'Folge den Schritten links und füge die Webhook-Adresse hier ein.',
+        'confirmDelete': 'Den Webhook „{name}“ löschen? Der Kanal bekommt dann keine Ankündigungen mehr.',
+        'setup': {
+            'title': 'Was in Discord zu tun ist',
+            'intro': 'Ein Webhook erlaubt dieser Seite, Nachrichten in einen Kanal deines Servers zu schreiben. Du brauchst dort das Recht „Webhooks verwalten“.',
+            'step1': 'Öffne deinen Discord-Server und klicke auf Servereinstellungen.',
+            'step2': 'Gehe zu Integrationen, dann Webhooks, und klicke auf Neuer Webhook.',
+            'step3': 'Gib ihm einen Namen und wähle den Kanal für die Ankündigungen.',
+            'step4': 'Klicke auf Webhook-URL kopieren.',
+            'step5': 'Füge hier einen Webhook hinzu, setze die Adresse ein und wähle, was angekündigt wird.',
+            'secret': 'Behandle die Adresse wie ein Passwort: wer sie hat, kann in den Kanal schreiben. Sie wird verschlüsselt gespeichert und nie wieder angezeigt.',
+            'help': 'Discord: Einführung zu Webhooks',
+        },
+        'fields': {
+            'name': 'Name',
+            'nameHint': 'Nur hier sichtbar, z. B. „Team-Kanal“',
+            'url': 'Webhook-Adresse',
+            'urlHint': 'Füge die aus Discord kopierte Adresse ein',
+            'urlKeep': 'Leer lassen, um die gespeicherte Adresse zu behalten',
+            'events': 'Was angekündigt werden soll',
+            'locale': 'Sprache',
+            'localeHint': 'Die Nachrichten in diesem Kanal werden in dieser Sprache geschrieben',
+            'localeDefault': 'Standard der Seite ({locale})',
+            'eventsHint': 'Wähle mindestens eins. Jeder Webhook hat seine eigene Auswahl.',
+            'active': 'Aktiv',
+        },
+        'events': {
+            'wiki_page_approved': {
+                'label': 'Wiki-Seite genehmigt',
+                'hint': 'Eine neue Wiki-Seite ist online',
+            },
+            'wiki_page_submitted': {
+                'label': 'Wiki-Seite eingereicht',
+                'hint': 'Ein Mitglied hat eine Seite geschrieben, die auf Genehmigung wartet',
+            },
+            'ticket_created': {
+                'label': 'Neues Ticket',
+                'hint': 'Supportanfragen, Genehmigungen und Kontoanfragen',
+            },
+            'feedback_created': {
+                'label': 'Neues Feedback',
+                'hint': 'Eine öffentliche Fehlermeldung oder ein Funktionswunsch',
+            },
+            'forum_thread_created': {
+                'label': 'Neues Forenthema',
+                'hint': 'Jemand hat ein Thema eröffnet',
+            },
+            'post_published': {
+                'label': 'Beitrag veröffentlicht',
+                'hint': 'Ein Blogbeitrag ist online',
+            },
+            'event_created': {
+                'label': 'Neuer Termin',
+                'hint': 'Ein Termin wurde im Kalender angelegt',
+            },
+            'event_guest_joined': {
+                'label': 'Jemand nimmt an einem Termin teil',
+                'hint': 'Ein Mitglied hat mit Zusage geantwortet',
+            },
+            'announcement_posted': {
+                'label': 'Ankündigung',
+                'hint': 'Ein Admin hat eine Ankündigung an alle Mitglieder gesendet',
+            },
+        },
+        'delivery': {
+            'never': 'Noch nichts gesendet',
+            'ok': 'Letzte Nachricht {when} zugestellt',
+            'failed': 'Letzter Versuch {when} fehlgeschlagen: {error}',
+        },
+        'validation': {
+            'nameRequired': 'Ein Name ist erforderlich',
+            'urlRequired': 'Die Webhook-Adresse ist erforderlich',
+            'urlInvalid': 'Das ist keine Discord-Webhook-Adresse',
+            'eventsRequired': 'Wähle mindestens ein Ereignis',
+        },
+        'messages': {
+            'saved': 'Der Webhook wurde gespeichert.',
+            'saveFailed': 'Der Webhook konnte nicht gespeichert werden.',
+            'deleteFailed': 'Der Webhook konnte nicht gelöscht werden.',
+            'loadFailed': 'Die Webhooks konnten nicht geladen werden.',
+            'testSent': 'Eine Testnachricht wurde an „{name}“ gesendet. Schau in den Kanal.',
+            'testFailed': 'Discord hat die Nachricht nicht angenommen. {error}',
+        },
+    },
     'tickets': {
         'nav': {
             'title': 'Tickets',

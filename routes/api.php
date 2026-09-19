@@ -435,6 +435,13 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
     // Tickets
     Route::get('/tickets/stats', 'App\Http\Controllers\Admin\TicketAdminController@stats');
 
+    // Discord webhooks
+    Route::get('/discord-webhooks', 'App\Http\Controllers\Admin\DiscordWebhookController@index');
+    Route::post('/discord-webhooks', 'App\Http\Controllers\Admin\DiscordWebhookController@store');
+    Route::patch('/discord-webhooks/{discordWebhook}', 'App\Http\Controllers\Admin\DiscordWebhookController@update');
+    Route::delete('/discord-webhooks/{discordWebhook}', 'App\Http\Controllers\Admin\DiscordWebhookController@destroy');
+    Route::post('/discord-webhooks/{discordWebhook}/test', 'App\Http\Controllers\Admin\DiscordWebhookController@test');
+
     // Polls
     Route::get('/polls', 'App\Http\Controllers\Admin\PollAdminController@index');
     Route::get('/polls/stats', 'App\Http\Controllers\Admin\PollAdminController@stats');

@@ -399,6 +399,7 @@ class WikiController extends Controller
         // The page only has its wiki address now; an approved page can tell
         // whoever it mentions (a pending one does so once it is approved).
         $page->notifyMentionedMembers();
+        $wiki->isApproved() ? $wiki->afterApproved() : $wiki->announceSubmission();
 
         return response()->json(['message' => __('messages.wiki.created'), 'page' => $page]);
     }

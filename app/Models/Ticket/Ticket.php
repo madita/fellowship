@@ -5,7 +5,9 @@ namespace App\Models\Ticket;
 use App\Models\User;
 use App\Notifications\TicketActivityNotification;
 use App\Notifications\TicketMentionNotification;
+use App\Services\DiscordWebhookService;
 use App\Services\MentionService;
+use App\Support\DiscordEvents;
 use App\Traits\Revisionable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -432,6 +434,29 @@ class Ticket extends Model
     }
 
     /**
+     * Tell the Discord channels about a new ticket. Public feedback links to
+     * its own page; everything else to the ticket admin.
+     */
+    public function announceOnDiscord(): void
+    {
+        $feedback = $this->isFeedback() && $this->is_public;
+
+        app(DiscordWebhookService::class)->announce(
+            $feedback ? DiscordEvents::FEEDBACK_CREATED : DiscordEvents::TICKET_CREATED,
+            [
+                'title'       => $this->title,
+                'description' => $this->description,
+                'url'         => $feedback ? "/feedback/{$this->id}" : "/admin/tickets/{$this->id}",
+                'author'      => $this->creator?->username,
+                'fields'      => [
+                    'messages.discord.fields.type'     => $this->ticketType?->name,
+                    'messages.discord.fields.priority' => ["messages.discord.priority.{$this->priority}"],
+                ],
+            ]
+        );
+    }
+
+    /**
      * Scope: Bug reports and feature requests.
      */
     public function scopeFeedback($query)
@@ -476,6 +501,7 @@ class Ticket extends Model
 
         static::created(function (Ticket $ticket): void {
             $ticket->notifyMentions($ticket->description, null, $ticket->creator);
+            $ticket->announceOnDiscord();
         });
 
         static::updated(function (Ticket $ticket): void {

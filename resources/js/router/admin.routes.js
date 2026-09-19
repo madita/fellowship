@@ -200,6 +200,17 @@ export const admin = [{
     },
     {
         // Explicit route declared before the :category wildcard so it wins.
+        path: '/admin/settings/discord',
+        name: 'admin-settings-discord',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-discord" */ '@/pages/admin/settings/integrations/DiscordWebhooksPage.vue')
+    },
+    {
+        // Explicit route declared before the :category wildcard so it wins.
         path: '/admin/settings/menus',
         name: 'admin-settings-menus',
         meta: {
