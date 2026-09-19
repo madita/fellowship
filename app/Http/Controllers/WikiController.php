@@ -396,6 +396,10 @@ class WikiController extends Controller
 
         $page->wikiable()->save($wiki);
 
+        // The page only has its wiki address now; an approved page can tell
+        // whoever it mentions (a pending one does so once it is approved).
+        $page->notifyMentionedMembers();
+
         return response()->json(['message' => __('messages.wiki.created'), 'page' => $page]);
     }
 

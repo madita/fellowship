@@ -7,6 +7,7 @@ use App\Traits\HasCache;
 use App\Traits\HasPolls;
 use App\Traits\HasRelateableContent;
 use App\Traits\HasTaxonomies;
+use App\Traits\NotifiesMentions;
 use App\Traits\Publishable;
 use App\Traits\Revisionable;
 // use Lecturize\Taxonomies\Traits\HasCategories;
@@ -25,6 +26,7 @@ class Page extends Model implements CanHaveTaxonomies, HasMedia, TranslatableCon
     use HasPolls;
     use HasTaxonomies;
     use InteractsWithMedia;
+    use NotifiesMentions;
     use Publishable;
     use Revisionable;
     use Sluggable;
@@ -32,6 +34,11 @@ class Page extends Model implements CanHaveTaxonomies, HasMedia, TranslatableCon
     use Wikiable;
 
     public $translatedAttributes = ['title', 'content'];
+
+    /**
+     * A page carries the text of a wiki page or of a standalone page.
+     */
+    protected array $mentionFields = ['content'];
 
     protected $fillable = [
         'title',
@@ -101,5 +108,59 @@ class Page extends Model implements CanHaveTaxonomies, HasMedia, TranslatableCon
         }
 
         return $parents;
+    }
+
+    // ── @mentions in the page text ──────────────────────────────────
+
+    public function mentionContext(): string
+    {
+        return $this->asWiki() ? 'wiki' : 'page';
+    }
+
+    public function mentionTitle(): string
+    {
+        return (string) $this->title;
+    }
+
+    public function mentionUrl(): string
+    {
+        $wiki = $this->asWiki();
+
+        return $wiki ? "/wiki/{$wiki->slug}" : "/{$this->slug}";
+    }
+
+    /**
+     * A wiki page waiting for approval, and an unpublished page, cannot be
+     * opened yet — those mentions are sent once the page is approved
+     * (see Wiki::afterApproved()).
+     */
+    public function mentionableBy(User $user): bool
+    {
+        $wiki = $this->asWiki();
+
+        if ($wiki) {
+            return $wiki->isApproved();
+        }
+
+        return $this->isPublished() || $user->isAdmin();
+    }
+
+    /**
+     * A new wiki page has no address until its wiki row is attached, right
+     * after this save; WikiController::store notifies once it has one.
+     */
+    public function shouldNotifyMentions(): bool
+    {
+        return ! $this->wasRecentlyCreated;
+    }
+
+    /**
+     * The wiki page this text belongs to, if it is one.
+     */
+    private function asWiki(): ?Wiki
+    {
+        return $this->relationLoaded('wikiable')
+            ? $this->getRelation('wikiable')->first()
+            : $this->wikiable()->first();
     }
 }

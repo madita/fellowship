@@ -27,10 +27,19 @@ trait Approvable
 
     public function approve(User $approver): Approval
     {
-        return $this->approval()->updateOrCreate(
+        $wasPending = $this->isPending();
+
+        $approval = $this->approval()->updateOrCreate(
             ['approvable_type' => get_class($this), 'approvable_id' => $this->id],
             ['approved_at' => now(), 'approved_by' => $approver->id]
         );
+
+        // Content readable at last: whoever it mentions can be told now
+        if ($wasPending && method_exists($this, 'afterApproved')) {
+            $this->afterApproved();
+        }
+
+        return $approval;
     }
 
     public function unapprove(): void

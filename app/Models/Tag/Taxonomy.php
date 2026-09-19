@@ -6,6 +6,7 @@ use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
 use App\Models\Page;
 use App\Traits\HasCache;
+use App\Traits\NotifiesMentions;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,6 +25,7 @@ use Illuminate\Support\Str;
 class Taxonomy extends Model implements TranslatableContract
 {
     use HasCache;
+    use NotifiesMentions;
 
     //    protected $table = 'taxonomies';
     /**
@@ -33,6 +35,11 @@ class Taxonomy extends Model implements TranslatableContract
     use Translatable;
 
     public $translatedAttributes = ['description', 'content', 'lead', 'meta_desc'];
+
+    /**
+     * The description of a wiki category is written with the editor.
+     */
+    protected array $mentionFields = ['description'];
 
     /** {@inheritdoc} */
     protected $fillable = [
@@ -83,6 +90,37 @@ class Taxonomy extends Model implements TranslatableContract
     public function term(): BelongsTo
     {
         return $this->belongsTo(Term::class);
+    }
+
+    // ── @mentions in the category description ───────────────────────
+
+    public function mentionContext(): string
+    {
+        return $this->taxonomy === 'forum_cat' ? 'forum_category' : 'wiki_category';
+    }
+
+    public function mentionTitle(): string
+    {
+        return (string) ($this->term?->title ?? '');
+    }
+
+    /**
+     * Only wiki and forum categories have a page of their own; for any other
+     * taxonomy there is nowhere to send the reader.
+     */
+    public function mentionUrl(): string
+    {
+        $slug = $this->term?->slug;
+
+        if ( ! $slug) {
+            return '';
+        }
+
+        return match ($this->taxonomy) {
+            'wiki'      => "/wiki/category/{$slug}",
+            'forum_cat' => "/forum/{$slug}",
+            default     => '',
+        };
     }
 
     /**

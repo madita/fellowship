@@ -116,8 +116,15 @@ class ForumPostController extends Controller
             'body' => 'required|string',
         ]);
 
+        $previous          = $post->body;
         $validated['body'] = Purify::config('sandbox')->clean($validated['body']);
         $post->update($validated);
+
+        // Someone added to the post is notified; the ones already in it are not
+        $mentioned = app(MentionService::class)->newMentions($post->body, $previous, $user);
+        foreach ($mentioned as $mentionedUser) {
+            $mentionedUser->notify(new ForumMentionNotification($post->thread, $post));
+        }
 
         return response()->json($post->load('author'));
     }
