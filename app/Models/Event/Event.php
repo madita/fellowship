@@ -24,18 +24,6 @@ class Event extends Model implements TranslatableContract
 
     protected array $mentionFields = ['description'];
 
-    protected static function booted(): void
-    {
-        static::created(function (Event $event): void {
-            app(DiscordWebhookService::class)->announce(DiscordEvents::EVENT_CREATED, [
-                'title'       => $event->title,
-                'description' => $event->description,
-                'url'         => "/events/{$event->id}",
-                'fields'      => ['messages.discord.fields.starts' => $event->startDate ? (string) $event->startDate : null],
-            ]);
-        });
-    }
-
     protected $table = 'events';
 
     protected $fillable = [
@@ -153,5 +141,17 @@ class Event extends Model implements TranslatableContract
     public function mentionUrl(): string
     {
         return "/events/{$this->id}";
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (Event $event): void {
+            app(DiscordWebhookService::class)->announce(DiscordEvents::EVENT_CREATED, [
+                'title'       => $event->title,
+                'description' => $event->description,
+                'url'         => "/events/{$event->id}",
+                'fields'      => ['messages.discord.fields.starts' => $event->startDate ? (string) $event->startDate : null],
+            ]);
+        });
     }
 }
