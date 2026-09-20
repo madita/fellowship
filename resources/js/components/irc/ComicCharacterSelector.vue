@@ -1,70 +1,58 @@
 <template>
-  <v-dialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" max-width="700">
+  <v-dialog :model-value="modelValue" max-width="760" @update:model-value="$emit('update:modelValue', $event)">
     <v-card>
-      <v-card-title>
-        Choose Your Comic Character
-      </v-card-title>
+      <v-card-title>{{ $t('irc.client.characterDialog.title') }}</v-card-title>
 
       <v-card-text>
-        <p class="text-subtitle-2 mb-4">
-          Select a character avatar for Comic Chat mode. Your character will appear in comic panels with different emotions!
-        </p>
+        <p class="text-subtitle-2 mb-4">{{ $t('irc.client.characterDialog.intro') }}</p>
 
         <v-row>
           <v-col
             v-for="character in characters"
-            :key="character.id"
+            :key="character.key"
             cols="6"
             sm="4"
             md="3"
           >
             <v-card
-              :class="{ 'selected-character': selectedCharacter === character.id }"
+              :class="{ 'selected-character': selectedCharacter === character.key }"
               class="character-card pa-2"
-              @click="selectedCharacter = character.id"
               hover
+              @click="selectedCharacter = character.key"
             >
               <div class="d-flex justify-center">
+                <!-- The preview cycles through the faces so the member sees
+                     what the character does, not just a still portrait -->
                 <svg viewBox="0 0 100 140" class="character-preview">
                   <comic-character
-                    :character="character.id"
-                    emotion="happy"
-                    :color="character.hue"
+                    :character="character.key"
+                    :emotion="previewEmotion"
+                    :gesture="selectedCharacter === character.key ? 'wave' : null"
                   />
                 </svg>
               </div>
               <v-card-subtitle class="text-center pt-1">
-                {{ character.name }}
+                {{ characterName(character) }}
               </v-card-subtitle>
             </v-card>
           </v-col>
         </v-row>
 
-        <!-- Background Selection -->
         <v-divider class="my-4" />
 
-        <p class="text-subtitle-2 mb-3">
-          Choose Comic Background Scene
-        </p>
+        <p class="text-subtitle-2 mb-3">{{ $t('irc.client.characterDialog.backgroundTitle') }}</p>
 
         <v-chip-group v-model="selectedBackground" mandatory>
-          <v-chip value="room">Room</v-chip>
-          <v-chip value="office">Office</v-chip>
-          <v-chip value="outdoor">Outdoor</v-chip>
-          <v-chip value="space">Space</v-chip>
-          <v-chip value="cafe">Cafe</v-chip>
-          <v-chip value="beach">Beach</v-chip>
+          <v-chip v-for="scene in backgrounds" :key="scene" :value="scene">
+            {{ $t(`irc.client.backgrounds.${scene}`) }}
+          </v-chip>
         </v-chip-group>
       </v-card-text>
 
       <v-card-actions>
         <v-spacer />
-        <v-btn @click="$emit('update:modelValue', false)">
-          Cancel
-        </v-btn>
-        <v-btn color="primary" @click="save">
-          Save
-        </v-btn>
+        <v-btn @click="$emit('update:modelValue', false)">{{ $t('common.cancel') }}</v-btn>
+        <v-btn color="primary" @click="save">{{ $t('common.save') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -72,6 +60,9 @@
 
 <script>
 import ComicCharacter from './ComicCharacterParts.vue';
+import { useComicCharacterStore } from '@/store/comicCharacterStore.js';
+
+const PREVIEW_EMOTIONS = ['happy', 'surprised', 'excited', 'confused'];
 
 export default {
   name: 'ComicCharacterSelector',
@@ -86,17 +77,16 @@ export default {
     return {
       selectedCharacter: this.currentCharacter || 'cat',
       selectedBackground: this.currentBackground || 'room',
-      characters: [
-        { id: 'cat', name: 'Cat', hue: 30 },
-        { id: 'dog', name: 'Dog', hue: 25 },
-        { id: 'robot', name: 'Robot', hue: 200 },
-        { id: 'alien', name: 'Alien', hue: 120 },
-        { id: 'wizard', name: 'Wizard', hue: 270 },
-        { id: 'ninja', name: 'Ninja', hue: 0 },
-        { id: 'pirate', name: 'Pirate', hue: 45 },
-        { id: 'knight', name: 'Knight', hue: 210 },
-      ],
+      previewEmotion: 'happy',
+      previewTimer: null,
+      backgrounds: ['room', 'office', 'outdoor', 'space', 'cafe', 'beach'],
     };
+  },
+  computed: {
+    // The ones that ship with the site plus whatever an admin has built
+    characters() {
+      return useComicCharacterStore().available;
+    },
   },
   watch: {
     // The dialog component is created once at page mount; re-sync the
@@ -106,10 +96,41 @@ export default {
       if (open) {
         this.selectedCharacter = this.currentCharacter || 'cat';
         this.selectedBackground = this.currentBackground || 'room';
+        useComicCharacterStore().load();
+        this.startPreview();
+      } else {
+        this.stopPreview();
       }
     },
   },
+  beforeUnmount() {
+    this.stopPreview();
+  },
   methods: {
+    /**
+     * A character that ships with the site is named in the member's
+     * language; one an admin built carries the name they gave it.
+     */
+    characterName(character) {
+      const key = `irc.client.characters.${character.key}`;
+
+      return this.$te(key) ? this.$t(key) : character.name;
+    },
+    startPreview() {
+      this.stopPreview();
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+
+      let index = 0;
+      this.previewTimer = setInterval(() => {
+        index = (index + 1) % PREVIEW_EMOTIONS.length;
+        this.previewEmotion = PREVIEW_EMOTIONS[index];
+      }, 1800);
+    },
+    stopPreview() {
+      if (this.previewTimer) clearInterval(this.previewTimer);
+      this.previewTimer = null;
+      this.previewEmotion = 'happy';
+    },
     save() {
       this.$emit('saved', {
         character: this.selectedCharacter,
@@ -138,7 +159,7 @@ export default {
 }
 
 .character-preview {
-  width: 80px;
-  height: 112px;
+  width: 84px;
+  height: 118px;
 }
 </style>

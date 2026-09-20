@@ -8,13 +8,32 @@
       class="irc-header mb-0 flex-shrink-0"
     >
       <template #actions>
-        <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showConnectionDialog = true">
+        <v-btn
+          v-if="chatAvailable"
+          color="primary"
+          variant="elevated"
+          prepend-icon="mdi-plus"
+          @click="showConnectionDialog = true"
+        >
           {{ $t('irc.client.addConnection') }}
         </v-btn>
       </template>
     </page-header>
 
-    <v-row no-gutters class="irc-row">
+    <!-- Without the daemon nothing can connect, so the client is not opened
+         at all — it says why, and comes back on its own once the daemon is
+         running again. -->
+    <loading-state v-if="daemonStatus === null" class="flex-grow-1" />
+
+    <empty-state
+      v-else-if="!chatAvailable"
+      icon="mdi-lan-disconnect"
+      :title="$t('irc.client.unavailableTitle')"
+      :text="$t('irc.client.unavailableText')"
+      class="flex-grow-1"
+    />
+
+    <v-row v-else no-gutters class="irc-row">
       <!-- Server/Channel Sidebar -->
       <v-col cols="12" md="3" class="sidebar">
         <v-card flat height="100%">
@@ -299,12 +318,10 @@
             ref="comicView"
             :messages="messages"
             :character="currentConnection?.comic_character || 'cat'"
+            :characters="nickCharacters"
             :my-nick="currentConnection?.nickname || ''"
             :background="comicBackground"
             :show-timestamps="true"
-            :show-emotion-bar="true"
-            @emotion-selected="onEmotionSelected"
-            @gesture-selected="onGestureSelected"
             class="flex-grow-1"
             style="min-height: 0; overflow-y: auto;"
           />
@@ -313,34 +330,123 @@
           <v-divider />
           <v-card-actions class="pa-2 flex-shrink-0">
             <v-row dense>
-              <!-- Emotion/Gesture Bar (Comic Mode Only) -->
+              <!-- Emotion/Gesture Bar (Comic Mode Only). The character
+                   alongside shows exactly what the next panel will look
+                   like, so the current mood is never a guess. -->
               <v-col v-if="isComicMode" cols="12">
-                <div class="d-flex ga-2 flex-wrap">
-                  <v-chip-group v-model="selectedEmotion" mandatory>
-                    <v-chip size="small" variant="tonal" value="normal">{{ $t('irc.client.emotions.normal') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="happy">{{ $t('irc.client.emotions.happy') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="sad">{{ $t('irc.client.emotions.sad') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="angry">{{ $t('irc.client.emotions.angry') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="surprised">{{ $t('irc.client.emotions.surprised') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="confused">{{ $t('irc.client.emotions.confused') }}</v-chip>
-                  </v-chip-group>
-                  <v-divider vertical />
-                  <v-chip-group v-model="selectedGesture">
-                    <v-chip size="small" variant="tonal" value="none">{{ $t('irc.client.gestures.none') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="wave">{{ $t('irc.client.gestures.wave') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="laugh">{{ $t('irc.client.gestures.laugh') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="think">{{ $t('irc.client.gestures.think') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="shout">{{ $t('irc.client.gestures.shout') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="whisper">{{ $t('irc.client.gestures.whisper') }}</v-chip>
-                  </v-chip-group>
+                <div class="expression-bar d-flex ga-3 align-center flex-wrap">
+                  <expression-wheel
+                    v-if="showExpressionWheel"
+                    v-model="selectedEmotion"
+                    :gesture="selectedGesture === 'none' ? null : selectedGesture"
+                    :character="currentConnection?.comic_character || 'cat'"
+                    :color="myHue"
+                    :size="164"
+                  />
+
+                  <!-- Folded away, the character still shows what is picked -->
+                  <div v-else class="expression-preview d-flex align-center ga-2 flex-shrink-0">
+                    <svg viewBox="0 0 100 140" class="expression-avatar">
+                      <comic-character
+                        :character="currentConnection?.comic_character || 'cat'"
+                        :emotion="selectedEmotion"
+                        :gesture="selectedGesture === 'none' ? null : selectedGesture"
+                        :color="myHue"
+                      />
+                    </svg>
+                  </div>
+
+                  <div class="d-flex flex-column ga-2 flex-grow-1">
+                    <div class="d-flex align-center ga-2">
+                      <span class="text-caption font-weight-bold">
+                        {{ $t(`irc.client.emotions.${selectedEmotion}`) }}
+                      </span>
+                      <span
+                        v-if="selectedGesture && selectedGesture !== 'none'"
+                        class="text-caption text-medium-emphasis"
+                      >
+                        · {{ $t(`irc.client.gestures.${selectedGesture}`) }}
+                      </span>
+                      <v-spacer />
+                      <v-btn
+                        size="x-small"
+                        variant="text"
+                        :prepend-icon="showExpressionWheel ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                        @click="toggleExpressionWheel()"
+                      >
+                        {{ showExpressionWheel ? $t('irc.client.hideWheel') : $t('irc.client.showWheel') }}
+                      </v-btn>
+                    </div>
+
+                    <!-- The wheel covers the mood; these cover what the
+                         character does with its hands -->
+                    <v-chip-group
+                      v-model="selectedGesture"
+                      mandatory
+                      selected-class="expression-chip--active"
+                    >
+                      <v-chip
+                        v-for="gesture in gestureChoices"
+                        :key="gesture"
+                        size="small"
+                        variant="outlined"
+                        :value="gesture"
+                      >
+                        <span v-if="getGestureEmoji(gesture)" class="mr-1">{{ getGestureEmoji(gesture) }}</span>
+                        {{ $t(`irc.client.gestures.${gesture}`) }}
+                      </v-chip>
+                    </v-chip-group>
+
+                    <!-- Without the wheel the moods still need a way in -->
+                    <v-chip-group
+                      v-if="!showExpressionWheel"
+                      v-model="selectedEmotion"
+                      mandatory
+                      selected-class="expression-chip--active"
+                    >
+                      <v-chip
+                        v-for="emotion in emotionChoices"
+                        :key="emotion"
+                        size="small"
+                        variant="outlined"
+                        :value="emotion"
+                      >
+                        <span class="mr-1">{{ getEmotionEmoji(emotion) || '😐' }}</span>
+                        {{ $t(`irc.client.emotions.${emotion}`) }}
+                      </v-chip>
+                    </v-chip-group>
+                  </div>
                 </div>
               </v-col>
 
-              <!-- Message Input -->
+              <!-- Message Input. Typing into a connection that is not up
+                   would go nowhere, so the bar is closed until it is. -->
               <v-col cols="12">
+                <v-alert
+                  v-if="!canSend"
+                  type="warning"
+                  variant="tonal"
+                  density="compact"
+                  class="mb-2"
+                  :text="notConnectedHint"
+                >
+                  <template v-if="currentConnection?.status === 'disconnected'" #append>
+                    <v-btn
+                      size="small"
+                      variant="tonal"
+                      prepend-icon="mdi-power"
+                      :loading="busyConnectionIds.includes(currentConnection.id)"
+                      @click="connect(currentConnection)"
+                    >
+                      {{ $t('irc.client.connect') }}
+                    </v-btn>
+                  </template>
+                </v-alert>
+
                 <v-text-field
                   v-model="newMessage"
-                  :placeholder="$t('irc.client.messagePlaceholder')"
+                  :placeholder="canSend ? $t('irc.client.messagePlaceholder') : notConnectedHint"
+                  :disabled="!canSend"
                   variant="outlined"
                   density="compact"
                   hide-details
@@ -353,7 +459,7 @@
                       variant="text"
                       size="small"
                       color="primary"
-                      :disabled="!newMessage.trim()"
+                      :disabled="!canSend || !newMessage.trim()"
                       :loading="sending"
                       @click="sendMessage"
                     >
@@ -425,9 +531,12 @@
 
           <v-divider />
           <v-card-actions class="pa-2 flex-shrink-0">
+            <!-- The console takes commands, which also need a live
+                 connection — /join and the rest go through the daemon too. -->
             <v-text-field
               v-model="newMessage"
-              :placeholder="$t('irc.client.consolePlaceholder')"
+              :placeholder="canSend ? $t('irc.client.consolePlaceholder') : notConnectedHint"
+              :disabled="!canSend"
               variant="outlined"
               density="compact"
               hide-details
@@ -439,7 +548,7 @@
                   variant="text"
                   size="small"
                   color="primary"
-                  :disabled="!newMessage.trim()"
+                  :disabled="!canSend || !newMessage.trim()"
                   :loading="sending"
                   @click="sendMessage"
                 >
@@ -527,12 +636,17 @@
 <script>
 import axios from 'axios';
 import { useSettingsStore } from '@/store/settingStore.js';
+import { useIrcStore } from '@/store/ircStore.js';
+import { useComicCharacterStore } from '@/store/comicCharacterStore.js';
 import IrcConnectionDialog from '@/components/irc/IrcConnectionDialog.vue';
 import IrcJoinDialog from '@/components/irc/IrcJoinDialog.vue';
 import ComicChatView from '@/components/irc/ComicChatView.vue';
+import ComicCharacter from '@/components/irc/ComicCharacterParts.vue';
 import ComicCharacterSelector from '@/components/irc/ComicCharacterSelector.vue';
+import ExpressionWheel from '@/components/irc/ExpressionWheel.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 export default {
   name: 'IrcClient',
@@ -540,9 +654,12 @@ export default {
     IrcConnectionDialog,
     IrcJoinDialog,
     ComicChatView,
+    ComicCharacter,
     ComicCharacterSelector,
+    ExpressionWheel,
     PageHeader,
     EmptyState,
+    LoadingState,
   },
   data() {
     return {
@@ -575,9 +692,51 @@ export default {
       serverLogs: {},
       serverLogId: 0,
       layoutObserver: null,
+      daemonPolling: null,
+      // nickname (lower case) → the comic character that member picked
+      nickCharacters: {},
+      emotionChoices: ['normal', 'happy', 'sad', 'angry', 'surprised', 'confused', 'excited'],
+      gestureChoices: ['none', 'wave', 'laugh', 'think', 'shout', 'whisper'],
+      // The wheel is the point of comic mode, so it starts open; folding it
+      // away for more chat room is remembered.
+      showExpressionWheel: localStorage.getItem('irc:expressionWheel') !== '0',
     };
   },
   computed: {
+    // The IRC daemon holds the sockets to the IRC servers; with it down no
+    // connection can be made, so the client is not opened at all.
+    daemonStatus() {
+      return useIrcStore().daemonRunning;
+    },
+    chatAvailable() {
+      return useIrcStore().chatAvailable;
+    },
+    /**
+     * Anything typed only reaches IRC over a live connection. Without one
+     * the message would be stored and shown in the log as if it had gone
+     * out, so the input bar stays closed instead.
+     */
+    canSend() {
+      return this.chatAvailable && this.currentConnection?.status === 'connected';
+    },
+    // The preview has to be coloured like the panels, which hue the
+    // characters from the nickname.
+    myHue() {
+      const nick = this.currentConnection?.nickname || '';
+      let hash = 0;
+      for (let i = 0; i < nick.length; i++) {
+        hash = nick.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return Math.abs(hash) % 360;
+    },
+    notConnectedHint() {
+      const status = this.currentConnection?.status;
+
+      if (status === 'connecting') return this.$t('irc.client.connecting');
+      if (status === 'error') return this.$t('irc.client.connectionError');
+
+      return this.$t('irc.client.notConnected');
+    },
     // Comic chat can be turned off in Admin → Settings → IRC → Client.
     comicChatEnabled() {
       return useSettingsStore().ircComicChatEnabled;
@@ -613,13 +772,14 @@ export default {
     } else {
       setTimeout(() => this.calculateHeight(), 300);
     }
-    this.fetchServers();
-    this.fetchConnections().then(() => this.openChannelFromRoute());
-    this.startEventPolling();
+    this.openClient();
   },
   beforeUnmount() {
     if (this.eventPolling) {
       clearInterval(this.eventPolling);
+    }
+    if (this.daemonPolling) {
+      clearInterval(this.daemonPolling);
     }
     window.removeEventListener('resize', this.calculateHeight);
     if (this.layoutObserver) {
@@ -627,6 +787,60 @@ export default {
     }
   },
   methods: {
+    /**
+     * Open the client, but only once the daemon has answered for itself.
+     * While it is down nothing is loaded and nothing is polled — the page
+     * just watches for the daemon to come back.
+     */
+    async openClient() {
+      const running = await useIrcStore().fetchStatus({ force: true });
+
+      if (!running) {
+        this.watchForDaemon();
+        return;
+      }
+
+      // Comic chat needs to know what the characters are made of before it
+      // can draw anyone
+      useComicCharacterStore().load();
+
+      this.fetchServers();
+      this.fetchConnections().then(() => this.openChannelFromRoute());
+      this.startEventPolling();
+    },
+    /**
+     * A 503 from an IRC action means the daemon stopped while we were using
+     * it. Shut the client down and wait for it to come back.
+     */
+    daemonWentDown(error) {
+      if (error?.response?.status !== 503) return false;
+
+      useIrcStore().setDaemonRunning(false);
+
+      if (this.eventPolling) {
+        clearInterval(this.eventPolling);
+        this.eventPolling = null;
+      }
+
+      this.watchForDaemon();
+
+      return true;
+    },
+    /**
+     * Keep asking while the chat is unavailable, so a daemon started in the
+     * meantime opens the client without a page reload.
+     */
+    watchForDaemon() {
+      if (this.daemonPolling) return;
+
+      this.daemonPolling = setInterval(async () => {
+        if (await useIrcStore().fetchStatus({ force: true })) {
+          clearInterval(this.daemonPolling);
+          this.daemonPolling = null;
+          this.openClient();
+        }
+      }, 15000);
+    },
     calculateHeight() {
       this.$nextTick(() => {
         const el = this.$el;
@@ -767,6 +981,12 @@ export default {
       this.showUserList = !this.showUserList;
       localStorage.setItem('irc:showUserList', this.showUserList ? '1' : '0');
     },
+    toggleExpressionWheel() {
+      this.showExpressionWheel = !this.showExpressionWheel;
+      localStorage.setItem('irc:expressionWheel', this.showExpressionWheel ? '1' : '0');
+      // The bar changes height, so the chat area has to be re-measured
+      this.calculateHeight();
+    },
     setConnectionBusy(id, busy) {
       this.busyConnectionIds = busy
         ? [...this.busyConnectionIds, id]
@@ -874,14 +1094,17 @@ export default {
     async fetchMessages(channel) {
       try {
         const { data } = await axios.get(`/api/irc/channels/${channel.id}/messages`);
-        this.messages = data;
+        this.messages = data.data || [];
+        // Who is drawn as what in comic chat — kept so a message arriving
+        // live is drawn as its sender, not as a stand-in.
+        this.nickCharacters = data.characters || {};
         this.$nextTick(() => this.scrollToBottom());
       } catch (error) {
         console.error('Error fetching messages:', error);
       }
     },
     async sendMessage() {
-      if (!this.newMessage.trim() || this.sending) return;
+      if (!this.newMessage.trim() || this.sending || !this.canSend) return;
 
       this.sending = true;
       try {
@@ -907,15 +1130,24 @@ export default {
 
           // Add comic chat metadata if in comic mode
           if (this.isComicMode) {
-            payload.emotion = this.selectedEmotion;
-            payload.gesture = this.selectedGesture;
-            payload.bubble_type = this.getBubbleType();
+            Object.assign(payload, this.comicPayload());
           }
 
           await axios.post(`/api/irc/channels/${this.activeChannel.id}/messages`, payload);
           this.newMessage = '';
           await this.fetchMessages(this.activeChannel);
         } catch (error) {
+          // The daemon died under us — close the client rather than let the
+          // member keep typing into a chat that goes nowhere.
+          if (this.daemonWentDown(error)) return;
+
+          // The connection dropped since the page last heard about it;
+          // refreshing closes the input bar with the right reason.
+          if (error?.response?.status === 409) {
+            await this.fetchConnections();
+            return;
+          }
+
           console.error('Error sending message:', error);
           await this.$dialog.requestError(error, this.$t('irc.client.sendFailed'));
         }
@@ -1040,6 +1272,9 @@ export default {
               await axios.post(`/api/irc/connections/${conn.id}/pm`, {
                 nick: targetNick,
                 message: privMsg,
+                // A private line is drawn in comic chat too, so it carries
+                // the same expression as anything else typed right now
+                ...(this.isComicMode ? this.comicPayload() : {}),
               });
               await this.fetchConnections();
               this.addSystemMessage(`-> ${targetNick}: ${privMsg}`);
@@ -1089,11 +1324,16 @@ export default {
       if (this.selectedGesture === 'think') return 'thought';
       return 'speech';
     },
-    onEmotionSelected(emotion) {
-      this.selectedEmotion = emotion;
-    },
-    onGestureSelected(gesture) {
-      this.selectedGesture = gesture;
+    /**
+     * How the line being typed should be drawn, sent along so the other
+     * members see the expression that was picked and not a default.
+     */
+    comicPayload() {
+      return {
+        emotion: this.selectedEmotion,
+        gesture: this.selectedGesture,
+        bubble_type: this.getBubbleType(),
+      };
     },
     async rejoinChannel(connection, channel) {
       if (this.busyChannelIds.includes(channel.id)) return;
@@ -1364,5 +1604,41 @@ export default {
 
 .emotion-note {
   margin-left: 6px;
+}
+
+/* Comic mode: what the next panel will look like, and the mood it carries */
+.expression-bar {
+  padding: 4px 8px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+  background: rgba(var(--v-theme-surface-variant), 0.35);
+}
+
+.expression-preview {
+  padding-right: 10px;
+  border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.expression-avatar {
+  width: 34px;
+  height: 48px;
+}
+
+.expression-labels {
+  line-height: 1.2;
+  min-width: 64px;
+}
+
+/* The chosen chip has to read at a glance, not as a faint tint */
+.expression-bar :deep(.expression-chip--active) {
+  background-color: rgb(var(--v-theme-primary)) !important;
+  border-color: rgb(var(--v-theme-primary)) !important;
+  color: rgb(var(--v-theme-on-primary)) !important;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.28);
+}
+
+.expression-bar :deep(.expression-chip--active .v-chip__overlay) {
+  opacity: 0;
 }
 </style>

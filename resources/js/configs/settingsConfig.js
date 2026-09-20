@@ -140,6 +140,7 @@ export const settingsCategories = [
         color: 'indigo',
         settings: [
             { id: 'client', title: 'Client Settings', description: 'Comic chat and client options', icon: 'mdi-tune', component: 'IrcClientSettingsPage' },
+            { id: 'characters', title: 'Character Creator', description: 'Build the comic chat characters members pick from', icon: 'mdi-account-edit-outline', component: 'IrcCharactersPage' },
             { id: 'dashboard', title: 'Dashboard', description: 'Daemon status, stats, and monitoring', icon: 'mdi-monitor-dashboard', component: 'IrcDashboardPage' },
             { id: 'servers', title: 'Servers', description: 'Manage IRC servers', icon: 'mdi-server-network', component: 'IrcServersPage' },
             { id: 'connections', title: 'Connections', description: 'Active user connections', icon: 'mdi-connection', component: 'IrcConnectionsPage' },

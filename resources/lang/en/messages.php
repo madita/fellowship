@@ -299,6 +299,14 @@ return [
         'event_joined' => ':name is going to :event.',
     ],
 
+    // IRC
+    'irc' => [
+        'daemon_offline' => 'The IRC chat is currently unavailable — the IRC daemon is not running.',
+        'not_connected'  => 'You are not connected to this IRC server.',
+        'builtin_character' => 'A character that ships with the site can be switched off, but not deleted.',
+        'character_deleted' => 'The character was deleted.',
+    ],
+
     // SPA
     'spa' => [
         'no_javascript' => "We're sorry but this website doesn't work properly without JavaScript enabled. Please enable it to continue.",

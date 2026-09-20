@@ -5125,6 +5125,13 @@ export default {
             'noConnections': 'Noch keine Verbindungen',
             'noConnectionsText': 'Füge eine Verbindung hinzu, um loszulegen.',
             'classicView': 'Klassische IRC-Ansicht',
+            'showWheel': 'Stimmungsrad',
+            'hideWheel': 'Rad ausblenden',
+            'notConnected': 'Nicht verbunden — verbinde dich mit dem Server, um zu chatten',
+            'connecting': 'Verbindung zum Server wird aufgebaut …',
+            'connectionError': 'Die Verbindung ist fehlgeschlagen — verbinde dich neu, um zu chatten',
+            'unavailableTitle': 'IRC-Chat ist derzeit nicht verfügbar',
+            'unavailableText': 'Der IRC-Daemon läuft nicht, daher kann keine Verbindung zu einem IRC-Server aufgebaut werden. Der Chat öffnet sich von selbst wieder, sobald der Daemon läuft.',
             'comicView': 'Comic-Chat-Ansicht',
             'showUsers': 'Nutzer anzeigen',
             'hideUsers': 'Nutzer ausblenden',
@@ -5142,7 +5149,8 @@ export default {
                 'sad': 'Traurig',
                 'angry': 'Wütend',
                 'surprised': 'Überrascht',
-                'confused': 'Verwirrt'
+                'confused': 'Verwirrt',
+                'excited': 'Begeistert'
             },
             'gestures': {
                 'none': 'Keine',
@@ -5151,6 +5159,33 @@ export default {
                 'think': 'Nachdenken',
                 'shout': 'Rufen',
                 'whisper': 'Flüstern'
+            },
+            'comic': {
+                'emptyTitle': 'Willkommen im Comic-Chat!',
+                'emptyText': 'Schreib etwas und die Panels zeichnen sich von selbst.'
+            },
+            'characterDialog': {
+                'title': 'Comic-Charakter auswählen',
+                'intro': 'Wähle, wer dich in den Comic-Panels vertritt — dein Charakter zieht das Gesicht zu dem, was du schreibst.',
+                'backgroundTitle': 'Szene auswählen'
+            },
+            'characters': {
+                'cat': 'Katze',
+                'dog': 'Hund',
+                'robot': 'Roboter',
+                'alien': 'Alien',
+                'wizard': 'Zauberer',
+                'ninja': 'Ninja',
+                'pirate': 'Pirat',
+                'knight': 'Ritter'
+            },
+            'backgrounds': {
+                'room': 'Zimmer',
+                'office': 'Büro',
+                'outdoor': 'Draußen',
+                'space': 'Weltall',
+                'cafe': 'Café',
+                'beach': 'Strand'
             },
             'deleteConnectionTitle': 'Verbindung löschen',
             'deleteConnectionConfirm': 'Die Verbindung zu {server} löschen?',
@@ -5189,6 +5224,50 @@ export default {
             'joinFailed': 'Der Channel konnte nicht betreten werden'
         },
         'admin': {
+            'charactersTitle': 'Comic-Charakter-Editor',
+            'charactersDescription': 'Baue die Charaktere, aus denen Mitglieder im Comic-Chat wählen',
+            'characters': 'Charaktere',
+            'charactersHint': 'Mitglieder wählen einen davon für den Comic-Chat. Ein abgeschalteter Charakter bleibt bei denen, die ihn schon nutzen, kann aber nicht mehr gewählt werden.',
+            'addCharacter': 'Neuer Charakter',
+            'editCharacter': 'Charakter bearbeiten',
+            'noCharacters': 'Noch keine Charaktere',
+            'builtinCharacter': 'Gehört zur Seite — kann abgeschaltet, aber nicht gelöscht werden',
+            'previewMood': 'In jeder Stimmung ansehen',
+            'hueHint': 'Die Farbe, mit der ein Charakter startet. Im Chat wird jedes Mitglied nach seinem Nickname eingefärbt, damit zwei Leute mit dem gleichen Charakter unterscheidbar bleiben.',
+            'characterSaved': 'Der Charakter wurde gespeichert',
+            'characterSaveFailed': 'Der Charakter konnte nicht gespeichert werden',
+            'charactersLoadFailed': 'Die Charaktere konnten nicht geladen werden',
+            'characterDeleteFailed': 'Der Charakter konnte nicht gelöscht werden',
+            'deleteCharacterTitle': 'Charakter löschen',
+            'deleteCharacterConfirm': '{name} löschen? Wer ihn nutzt, bekommt wieder die Katze.',
+            'parts': {
+                'body': 'Statur',
+                'head': 'Kopf',
+                'ears': 'Ohren',
+                'sideParts': 'Seiten',
+                'hat': 'Kopfbedeckung',
+                'snout': 'Schnauze',
+                'mask': 'Gesichtsbedeckung',
+                'accessory': 'Accessoire',
+                'tone': 'Ton',
+                'hue': 'Farbe'
+            },
+            'tones': {
+                'normal': 'Haut',
+                'dark': 'Dunkel',
+                'metal': 'Metall',
+                'bright': 'Leuchtend'
+            },
+            'partOptions': {
+                'body': { 'slim': 'Schlank', 'robe': 'Robe', 'boxy': 'Kantig', 'sturdy': 'Kräftig' },
+                'head': { 'round': 'Rund', 'box': 'Eckig', 'egg': 'Spitz', 'helmet': 'Helm' },
+                'ears': { 'none': 'Keine', 'cat': 'Spitz', 'round': 'Rund' },
+                'sideParts': { 'none': 'Keine', 'floppy': 'Schlappohren', 'panels': 'Platten', 'whiskers': 'Schnurrhaare' },
+                'hat': { 'none': 'Keine', 'wizard': 'Zauberhut', 'bandana': 'Bandana', 'plume': 'Federbusch', 'antenna': 'Antenne', 'feelers': 'Fühler', 'crown': 'Krone' },
+                'snout': { 'none': 'Keine', 'cat': 'Katzennase', 'dog': 'Schnauze', 'beak': 'Schnabel' },
+                'mask': { 'none': 'Offen', 'ninja': 'Maske', 'visor': 'Visier' },
+                'accessory': { 'none': 'Keins', 'beard': 'Bart', 'eyepatch': 'Augenklappe', 'scarf': 'Schal', 'glasses': 'Brille' }
+            },
             'clientTitle': 'Client-Einstellungen',
             'clientDescription': 'Optionen für den IRC-Client',
             'comicChat': 'Comic-Chat',
@@ -5244,6 +5323,8 @@ export default {
             'form': {
                 'name': 'Servername',
                 'host': 'Host',
+                'characterName': 'Name des Charakters',
+                'characterEnabled': 'Mitglieder können diesen Charakter wählen',
                 'hostHint': 'z. B. irc.libera.chat',
                 'port': 'Port',
                 'invalidPort': 'Ungültiger Port',

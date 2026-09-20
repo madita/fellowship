@@ -4965,6 +4965,13 @@ export default {
             'rejoin': 'Rejoin',
             'noConnections': 'No connections yet',
             'noConnectionsText': 'Add a connection to get started.',
+            'showWheel': 'Mood wheel',
+            'hideWheel': 'Hide wheel',
+            'notConnected': 'Not connected — connect to the server to chat',
+            'connecting': 'Connecting to the server…',
+            'connectionError': 'The connection failed — reconnect to chat',
+            'unavailableTitle': 'IRC chat is currently unavailable',
+            'unavailableText': 'The IRC daemon is not running, so no connection to an IRC server can be made. The chat opens again by itself once the daemon is back.',
             'classicView': 'Classic IRC view',
             'comicView': 'Comic chat view',
             'showUsers': 'Show users',
@@ -4983,7 +4990,8 @@ export default {
                 'sad': 'Sad',
                 'angry': 'Angry',
                 'surprised': 'Surprised',
-                'confused': 'Confused'
+                'confused': 'Confused',
+                'excited': 'Excited'
             },
             'gestures': {
                 'none': 'None',
@@ -4992,6 +5000,33 @@ export default {
                 'think': 'Think',
                 'shout': 'Shout',
                 'whisper': 'Whisper'
+            },
+            'comic': {
+                'emptyTitle': 'Welcome to the comic chat!',
+                'emptyText': 'Say something and the panels draw themselves.'
+            },
+            'characterDialog': {
+                'title': 'Choose your comic character',
+                'intro': 'Pick who stands in for you in the comic panels — your character pulls a face to match what you write.',
+                'backgroundTitle': 'Choose the scene'
+            },
+            'characters': {
+                'cat': 'Cat',
+                'dog': 'Dog',
+                'robot': 'Robot',
+                'alien': 'Alien',
+                'wizard': 'Wizard',
+                'ninja': 'Ninja',
+                'pirate': 'Pirate',
+                'knight': 'Knight'
+            },
+            'backgrounds': {
+                'room': 'Room',
+                'office': 'Office',
+                'outdoor': 'Outdoors',
+                'space': 'Space',
+                'cafe': 'Cafe',
+                'beach': 'Beach'
             },
             'deleteConnectionTitle': 'Delete connection',
             'deleteConnectionConfirm': 'Delete the connection to {server}?',
@@ -5030,6 +5065,50 @@ export default {
             'joinFailed': 'The channel could not be joined'
         },
         'admin': {
+            'charactersTitle': 'Comic Character Creator',
+            'charactersDescription': 'Build the characters members pick from in comic chat',
+            'characters': 'Characters',
+            'charactersHint': 'Members pick one of these for comic chat. A switched-off character stays with anyone already using it but cannot be picked again.',
+            'addCharacter': 'New character',
+            'editCharacter': 'Edit character',
+            'noCharacters': 'No characters yet',
+            'builtinCharacter': 'Ships with the site — it can be switched off, but not deleted',
+            'previewMood': 'Try it in every mood',
+            'hueHint': 'The colour a character starts with. In chat each member is tinted by their nickname, so two people with the same character still tell apart.',
+            'characterSaved': 'The character was saved',
+            'characterSaveFailed': 'The character could not be saved',
+            'charactersLoadFailed': 'The characters could not be loaded',
+            'characterDeleteFailed': 'The character could not be deleted',
+            'deleteCharacterTitle': 'Delete character',
+            'deleteCharacterConfirm': 'Delete {name}? Anyone using it falls back to the cat.',
+            'parts': {
+                'body': 'Build',
+                'head': 'Head',
+                'ears': 'Ears',
+                'sideParts': 'Sides',
+                'hat': 'Headwear',
+                'snout': 'Snout',
+                'mask': 'Face cover',
+                'accessory': 'Accessory',
+                'tone': 'Tone',
+                'hue': 'Colour'
+            },
+            'tones': {
+                'normal': 'Skin',
+                'dark': 'Dark',
+                'metal': 'Metal',
+                'bright': 'Bright'
+            },
+            'partOptions': {
+                'body': { 'slim': 'Slim', 'robe': 'Robe', 'boxy': 'Boxy', 'sturdy': 'Sturdy' },
+                'head': { 'round': 'Round', 'box': 'Boxed', 'egg': 'Tapered', 'helmet': 'Helmet' },
+                'ears': { 'none': 'None', 'cat': 'Pointed', 'round': 'Round' },
+                'sideParts': { 'none': 'None', 'floppy': 'Floppy ears', 'panels': 'Panels', 'whiskers': 'Whiskers' },
+                'hat': { 'none': 'None', 'wizard': 'Wizard hat', 'bandana': 'Bandana', 'plume': 'Plume', 'antenna': 'Antenna', 'feelers': 'Feelers', 'crown': 'Crown' },
+                'snout': { 'none': 'None', 'cat': 'Cat nose', 'dog': 'Muzzle', 'beak': 'Beak' },
+                'mask': { 'none': 'Open face', 'ninja': 'Mask', 'visor': 'Visor' },
+                'accessory': { 'none': 'None', 'beard': 'Beard', 'eyepatch': 'Eye patch', 'scarf': 'Scarf', 'glasses': 'Glasses' }
+            },
             'clientTitle': 'Client Settings',
             'clientDescription': 'Options for the IRC client',
             'comicChat': 'Comic Chat',
@@ -5085,6 +5164,8 @@ export default {
             'form': {
                 'name': 'Server name',
                 'host': 'Host',
+                'characterName': 'Character name',
+                'characterEnabled': 'Members can pick this character',
                 'hostHint': 'e.g. irc.libera.chat',
                 'port': 'Port',
                 'invalidPort': 'Invalid port',

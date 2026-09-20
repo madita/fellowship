@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Irc;
 
 use App\Http\Controllers\Controller;
 use App\Models\Irc\IrcChannel;
+use App\Models\Irc\IrcComicCharacter;
 use App\Models\Irc\IrcConnection;
 use App\Models\Irc\IrcMessage;
 use App\Models\Irc\IrcServer;
@@ -12,9 +13,33 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Validation\Rule;
 
 class IrcController extends Controller
 {
+    /**
+     * Whether the IRC chat can be used at all. The daemon holds the sockets
+     * to the IRC servers, so with it down nothing can connect and the client
+     * hides the feature rather than offering a chat that cannot work.
+     */
+    public function status(): JsonResponse
+    {
+        return response()->json([
+            'daemon_running' => IrcConnectionManager::isDaemonRunning(),
+        ]);
+    }
+
+    /**
+     * The comic characters a member can pick from — the ones that ship with
+     * the site plus whatever an admin has built, minus anything switched off.
+     */
+    public function comicCharacters(): JsonResponse
+    {
+        return response()->json([
+            'data' => IrcComicCharacter::enabled()->inOrder()->get(['key', 'name', 'spec']),
+        ]);
+    }
+
     /**
      * Get all available IRC servers.
      */
@@ -81,7 +106,8 @@ class IrcController extends Controller
             'realname'           => 'nullable|string|max:100',
             'auto_connect'       => 'boolean',
             'auto_join_channels' => 'nullable|array',
-            'comic_character'    => 'nullable|string|in:cat,dog,robot,alien,wizard,ninja,pirate,knight',
+            // Only a character that exists and is switched on can be picked
+            'comic_character'    => ['nullable', 'string', Rule::exists('irc_comic_characters', 'key')->where('is_enabled', true)],
             'comic_view_mode'    => 'nullable|string|in:classic,comic',
         ]);
 
@@ -120,15 +146,10 @@ class IrcController extends Controller
      */
     public function connect(IrcConnection $connection): JsonResponse
     {
+        // A queued command is only consumed by a running daemon — the
+        // irc.daemon middleware on this route keeps us from queueing into
+        // the void and leaving the connection stuck in "connecting".
         $this->authorize('update', $connection);
-
-        // Without a running daemon the queued command is never consumed and
-        // the connection would hang in "connecting" forever.
-        if ( ! IrcConnectionManager::isDaemonRunning()) {
-            return response()->json([
-                'message' => 'The IRC daemon is not running — connecting is currently unavailable.',
-            ], 503);
-        }
 
         $connection->update(['status' => 'connecting']);
 
@@ -183,6 +204,10 @@ class IrcController extends Controller
     public function joinChannel(Request $request, IrcConnection $connection): JsonResponse
     {
         $this->authorize('update', $connection);
+
+        if ($offline = $this->offlineConnection($connection)) {
+            return $offline;
+        }
 
         $request->validate([
             'channel' => 'required|string|max:50',
@@ -258,7 +283,15 @@ class IrcController extends Controller
         // Mark as read
         $channel->markAsRead();
 
-        return response()->json($messages);
+        return response()->json([
+            'data' => $messages,
+            // Comic chat draws each speaker as the character they picked.
+            // Everyone keeps their own copy of a channel's messages, so the
+            // choice is looked up per nickname instead of travelling with
+            // the message — a nickname nobody here has connected as (a
+            // plain IRC client, say) is left to the client's own fallback.
+            'characters' => $this->charactersOnChannel($channel),
+        ]);
     }
 
     /**
@@ -268,12 +301,16 @@ class IrcController extends Controller
     {
         $this->authorize('update', $channel->connection);
 
+        if ($offline = $this->offlineConnection($channel->connection)) {
+            return $offline;
+        }
+
         $request->validate([
             'message'     => 'required|string',
             'type'        => 'nullable|string|in:message,action',
-            'emotion'     => 'nullable|string',
-            'gesture'     => 'nullable|string',
-            'bubble_type' => 'nullable|string',
+            'emotion'     => 'nullable|string|in:normal,happy,sad,angry,surprised,confused,excited',
+            'gesture'     => 'nullable|string|in:none,wave,laugh,think,shout,whisper',
+            'bubble_type' => 'nullable|string|in:speech,thought,shout,whisper,action',
         ]);
 
         $msgType = $request->type ?? 'message';
@@ -428,6 +465,10 @@ class IrcController extends Controller
     {
         $this->authorize('update', $connection);
 
+        if ($offline = $this->offlineConnection($connection)) {
+            return $offline;
+        }
+
         $request->validate([
             'nickname' => 'required|string|max:30',
         ]);
@@ -450,9 +491,16 @@ class IrcController extends Controller
     {
         $this->authorize('update', $connection);
 
+        if ($offline = $this->offlineConnection($connection)) {
+            return $offline;
+        }
+
         $request->validate([
-            'nick'    => 'required|string|max:30',
-            'message' => 'nullable|string',
+            'nick'        => 'required|string|max:30',
+            'message'     => 'nullable|string',
+            'emotion'     => 'nullable|string|in:normal,happy,sad,angry,surprised,confused,excited',
+            'gesture'     => 'nullable|string|in:none,wave,laugh,think,shout,whisper',
+            'bubble_type' => 'nullable|string|in:speech,thought,shout,whisper,action',
         ]);
 
         $nick = $request->nick;
@@ -478,6 +526,9 @@ class IrcController extends Controller
                 'type'              => 'message',
                 'from_nick'         => $connection->nickname,
                 'message'           => $request->message,
+                'emotion'           => $request->emotion ?? 'normal',
+                'gesture'           => $request->gesture ?? 'none',
+                'bubble_type'       => $request->bubble_type ?? 'speech',
                 'is_private'        => true,
                 'sent_at'           => now(),
             ]);
@@ -496,5 +547,36 @@ class IrcController extends Controller
             'message' => $request->message ? "Message sent to {$nick}" : "Opened chat with {$nick}",
             'channel' => $channel,
         ]);
+    }
+
+    /**
+     * A command only reaches the IRC server over a live connection. Sending
+     * on one that is disconnected (or still connecting) would store the
+     * message and show it in the log as though it had gone out, so refuse it
+     * and let the client say the connection is not up.
+     */
+    private function offlineConnection(IrcConnection $connection): ?JsonResponse
+    {
+        if ($connection->status === 'connected') {
+            return null;
+        }
+
+        return response()->json([
+            'message' => __('messages.irc.not_connected'),
+            'status'  => $connection->status,
+        ], 409);
+    }
+
+    /**
+     * The comic character each nickname on this channel's server has picked.
+     */
+    private function charactersOnChannel(IrcChannel $channel): array
+    {
+        return IrcConnection::where('irc_server_id', $channel->connection->irc_server_id)
+            ->whereNotNull('nickname')
+            ->pluck('comic_character', 'nickname')
+            ->mapWithKeys(fn ($character, $nickname) => [mb_strtolower($nickname) => $character])
+            ->filter()
+            ->all();
     }
 }

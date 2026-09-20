@@ -1,77 +1,64 @@
 <template>
   <div class="comic-chat-view" :class="`bg-${background}`">
-    <!-- Comic Panels Container -->
     <div ref="comicContainer" class="comic-panels-container">
-      <!-- Comic strip: panels flow left-to-right in rows. Each panel shows
-           its speakers standing in the scene with their bubbles above them,
-           like classic comic chat — not a vertical chat log. -->
+      <!-- The chat as a comic strip: panels flow left-to-right and wrap into
+           rows. Each panel holds a few lines, with the speakers standing
+           below their balloons and facing each other. -->
       <div
-        v-for="(panel, panelIndex) in comicPanels"
-        :key="panelIndex"
+        v-for="panel in comicPanels"
+        :key="panel.key"
         class="comic-panel"
       >
-        <!-- Speech bubbles, aligned toward their speaker -->
         <div class="panel-bubbles">
           <div
-            v-for="message in panel"
-            :key="message.id"
-            :class="['bubble-row', speakerIndex(panel, message.from_nick) === 0 ? 'bubble-align-left' : 'bubble-align-right']"
+            v-for="line in panel.lines"
+            :key="line.id"
+            class="bubble-row"
+            :class="line.side === 0 ? 'from-left' : 'from-right'"
           >
-            <div :class="['speech-bubble', getBubbleClass(message)]">
-              <div class="bubble-content">
-                <span v-if="showTimestamps" class="bubble-timestamp">
-                  {{ formatTime(message.sent_at) }}
-                </span>
-                <span v-if="message.type === 'action'" class="bubble-text action-text">
-                  * {{ message.from_nick }} {{ message.message }}
-                </span>
-                <span v-else class="bubble-text">{{ message.message }}</span>
-                <span v-if="message.gesture && message.gesture !== 'none'" class="gesture-indicator">
-                  {{ getGestureEmoji(message.gesture) }}
-                </span>
-              </div>
+            <div class="speech-bubble" :class="`bubble-${line.bubble}`">
+              <span v-if="showTimestamps && line.time" class="bubble-timestamp">{{ line.time }}</span>
+              <span class="bubble-text">
+                <template v-if="line.isAction">* {{ line.nick }} {{ line.text }}</template>
+                <template v-else>{{ line.text }}</template>
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- The speakers of this panel, standing side by side -->
-        <div class="panel-characters">
+        <div class="panel-stage">
           <div
-            v-for="speaker in panelSpeakers(panel)"
+            v-for="speaker in panel.speakers"
             :key="speaker.nick"
             class="character-container"
+            :class="[speaker.facing < 0 ? 'stands-right' : 'stands-left', { 'is-listening': !speaker.speaking }]"
           >
-            <div class="character-figure">
-              <svg
-                viewBox="0 0 100 140"
-                class="character-avatar"
-                :class="getEmotionClass(speaker.emotion)"
-              >
-                <comic-character
-                  :character="getCharacterType(speaker.nick)"
-                  :emotion="speaker.emotion"
-                  :color="getNickHue(speaker.nick)"
-                />
-              </svg>
-              <span
-                v-if="speaker.gesture && speaker.gesture !== 'none'"
-                class="character-gesture"
-              >{{ getGestureEmoji(speaker.gesture) }}</span>
-            </div>
-            <div class="character-name">{{ speaker.nick }}</div>
+            <svg
+              viewBox="0 0 100 140"
+              class="character-avatar"
+              :class="speaker.speaking ? `emotion-${speaker.emotion}` : ''"
+            >
+              <comic-character
+                :character="characterFor(speaker.nick)"
+                :emotion="speaker.emotion"
+                :gesture="speaker.gesture"
+                :facing="speaker.facing"
+                :speaking="speaker.speaking"
+                :color="hueFor(speaker.nick)"
+              />
+            </svg>
+            <div class="character-name" :title="speaker.nick">{{ speaker.nick }}</div>
           </div>
         </div>
       </div>
 
-      <!-- Empty State -->
       <div v-if="!comicPanels.length" class="empty-comic">
         <svg viewBox="0 0 100 140" class="welcome-character">
-          <comic-character character="cat" emotion="happy" :color="200" />
+          <comic-character :character="character" emotion="happy" gesture="wave" :color="200" />
         </svg>
-        <div class="speech-bubble speech">
-          <div class="bubble-content">
-            <span class="bubble-text">Welcome to Comic Chat! Start chatting to see the magic!</span>
-          </div>
+        <div class="speech-bubble bubble-speech">
+          <span class="bubble-text">{{ $t('irc.client.comic.emptyTitle') }}</span>
+          <span class="bubble-hint">{{ $t('irc.client.comic.emptyText') }}</span>
         </div>
       </div>
     </div>
@@ -80,6 +67,7 @@
 
 <script>
 import ComicCharacter from './ComicCharacterParts.vue';
+import { expressionOf } from '@/utils/comicExpression.js';
 
 export default {
   name: 'ComicChatView',
@@ -87,12 +75,13 @@ export default {
   props: {
     messages: { type: Array, default: () => [] },
     character: { type: String, default: 'cat' },
+    // nickname (lower case) → the comic character that member picked, so
+    // everyone is drawn as themselves and not as a stand-in
+    characters: { type: Object, default: () => ({}) },
     myNick: { type: String, default: '' },
     background: { type: String, default: 'room' },
     showTimestamps: { type: Boolean, default: true },
-    showEmotionBar: { type: Boolean, default: false },
   },
-  emits: ['emotion-selected', 'gesture-selected'],
   data() {
     return {
       messagesPerPanel: 3,
@@ -100,25 +89,47 @@ export default {
     };
   },
   computed: {
-    // Group consecutive messages into strip panels. A panel closes when it
-    // reaches messagesPerPanel messages or a third speaker would enter —
-    // classic comic panels show at most two characters talking.
+    /**
+     * The strip. A panel closes once it holds messagesPerPanel lines or a
+     * third speaker would walk in — a comic panel shows two people talking.
+     * Each panel carries its lines and the speakers standing in it, the
+     * last one to speak in the foreground.
+     */
     comicPanels() {
-      const msgs = this.messages.filter(m => m.type === 'message' || m.type === 'action');
+      const spoken = this.messages
+        .filter(m => m.type === 'message' || m.type === 'action')
+        .map(message => ({ message, expression: expressionOf(message) }));
+
       const panels = [];
-      let panel = [];
-      let speakers = new Set();
-      for (const message of msgs) {
-        const isNewSpeaker = !speakers.has(message.from_nick);
-        if (panel.length >= this.messagesPerPanel || (isNewSpeaker && speakers.size >= 2)) {
-          panels.push(panel);
-          panel = [];
-          speakers = new Set();
+      let entries = [];
+
+      const close = () => {
+        if (entries.length) panels.push(this.buildPanel(entries, panels.length));
+        entries = [];
+      };
+
+      for (const entry of spoken) {
+        const nick = entry.message.from_nick;
+        const speakers = new Set(entries.map(e => e.message.from_nick));
+
+        // A character is drawn once per panel and holds one expression, so
+        // a speaker changing face or gesture starts a new panel rather than
+        // rewriting the one the reader already passed.
+        const standing = entries.find(e => e.message.from_nick === nick);
+        const changedExpression = standing
+          && (standing.expression.emotion !== entry.expression.emotion
+            || standing.expression.gesture !== entry.expression.gesture);
+
+        if (entries.length >= this.messagesPerPanel
+          || (!speakers.has(nick) && speakers.size >= 2)
+          || changedExpression) {
+          close();
         }
-        panel.push(message);
-        speakers.add(message.from_nick);
+
+        entries.push(entry);
       }
-      if (panel.length) panels.push(panel);
+      close();
+
       return panels;
     },
   },
@@ -128,63 +139,76 @@ export default {
     },
   },
   methods: {
-    // Unique speakers of a panel in speaking order, each carrying the
-    // emotion/gesture of their latest message so the standing character
-    // reflects what they last did.
-    panelSpeakers(panel) {
-      const speakers = new Map();
-      for (const message of panel) {
-        speakers.set(message.from_nick, {
-          nick: message.from_nick,
-          emotion: message.emotion || 'normal',
-          gesture: message.gesture || 'none',
-        });
+    /**
+     * One panel: who stands where, and how each line is drawn. The member's
+     * own emotion/gesture wins; otherwise the text decides.
+     */
+    buildPanel(entries, index) {
+      const order = [];
+      for (const { message } of entries) {
+        if (!order.includes(message.from_nick)) order.push(message.from_nick);
       }
-      return [...speakers.values()];
+
+      const last = entries[entries.length - 1].message;
+      const expressions = new Map();
+
+      const lines = entries.map(({ message, expression }) => {
+        expressions.set(message.from_nick, expression);
+
+        return {
+          id: message.id ?? `${message.from_nick}-${message.sent_at}`,
+          nick: message.from_nick,
+          text: message.message,
+          isAction: message.type === 'action',
+          bubble: expression.bubble,
+          side: order.indexOf(message.from_nick),
+          time: this.formatTime(message.sent_at),
+        };
+      });
+
+      const speakers = order.map((nick, position) => ({
+        nick,
+        // Two characters turn toward each other; a lone one faces the reader's right
+        facing: position === 1 ? -1 : 1,
+        speaking: nick === last.from_nick,
+        emotion: expressions.get(nick).emotion,
+        gesture: expressions.get(nick).gesture,
+      }));
+
+      return { key: `${index}-${lines[0].id}`, lines, speakers };
     },
-    speakerIndex(panel, nick) {
-      return this.panelSpeakers(panel).findIndex(s => s.nick === nick);
-    },
-    getCharacterType(nick) {
-      // Use selected character for current user, hash-based for others
-      if (this.myNick && nick.toLowerCase() === this.myNick.toLowerCase()) {
+    characterFor(nick) {
+      const key = String(nick).toLowerCase();
+
+      if (this.myNick && key === this.myNick.toLowerCase()) {
         return this.character;
       }
-      const idx = this.hashCode(nick) % this.characterTypes.length;
-      return this.characterTypes[idx];
+
+      // Someone chatting from a plain IRC client has no choice on file, so
+      // they get a stable stand-in drawn from their nickname.
+      return this.characters[key]
+        || this.characterTypes[this.hashCode(nick) % this.characterTypes.length];
     },
-    getNickHue(nick) {
+    hueFor(nick) {
       return this.hashCode(nick) % 360;
-    },
-    getEmotionClass(emotion) {
-      return emotion ? `emotion-${emotion}` : '';
-    },
-    getBubbleClass(message) {
-      if (message.bubble_type === 'thought' || message.gesture === 'think') return 'thought';
-      if (message.bubble_type === 'shout' || message.gesture === 'shout') return 'shout';
-      if (message.bubble_type === 'whisper' || message.gesture === 'whisper') return 'whisper';
-      if (message.type === 'action') return 'action-bubble';
-      return 'speech';
-    },
-    getGestureEmoji(gesture) {
-      return { wave: '👋', laugh: '😂', think: '💭', shout: '📢', whisper: '🤫' }[gesture] || '';
     },
     hashCode(str) {
       let hash = 0;
-      for (let i = 0; i < str.length; i++) {
+      for (let i = 0; i < String(str).length; i++) {
         hash = str.charCodeAt(i) + ((hash << 5) - hash);
       }
       return Math.abs(hash);
     },
     formatTime(timestamp) {
       if (!timestamp) return '';
-      return new Date(timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      return new Date(timestamp).toLocaleTimeString(this.$i18n?.locale || 'en', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
     },
     scrollToBottom() {
       const container = this.$refs.comicContainer;
-      if (container) {
-        container.scrollTop = container.scrollHeight;
-      }
+      if (container) container.scrollTop = container.scrollHeight;
     },
   },
 };
@@ -226,12 +250,6 @@ export default {
   background-size: 50px 50px, 30px 30px;
   background-position: 0 0, 15px 15px;
 }
-.bg-space .comic-panel {
-  background: rgba(255, 255, 255, 0.92);
-}
-.bg-space .character-name {
-  color: #e0e0e0;
-}
 
 .bg-cafe {
   background-color: #efebe9;
@@ -244,7 +262,7 @@ export default {
   background: linear-gradient(180deg, #b3e5fc 0%, #b3e5fc 40%, #ffe0b2 40%, #ffcc80 100%);
 }
 
-/* Comic strip: panels flow left-to-right, wrapping into rows */
+/* The strip */
 .comic-panels-container {
   flex: 1;
   overflow-y: auto;
@@ -256,42 +274,51 @@ export default {
 }
 
 .comic-panel {
-  background: white;
+  position: relative;
+  background: #fffdf8;
   border: 3px solid #222;
-  border-radius: 6px;
-  padding: 12px;
-  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  padding: 12px 12px 4px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.18);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 260px;
+  min-height: 280px;
+  overflow: hidden;
+}
+
+/* A floor line so the characters stand on something */
+.comic-panel::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 34px;
+  border-top: 2px solid rgba(34, 34, 34, 0.25);
 }
 
 .panel-bubbles {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 10px;
+  z-index: 1;
 }
 
 .bubble-row {
   display: flex;
 }
 
-.bubble-align-left {
-  justify-content: flex-start;
-}
+.from-left { justify-content: flex-start; }
+.from-right { justify-content: flex-end; }
 
-.bubble-align-right {
-  justify-content: flex-end;
-}
-
-/* The speakers stand side by side at the bottom of the panel */
-.panel-characters {
+/* The speakers stand at the bottom, facing each other */
+.panel-stage {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: flex-end;
   gap: 8px;
+  padding: 0 4px;
 }
 
 .character-container {
@@ -299,125 +326,172 @@ export default {
   flex-direction: column;
   align-items: center;
   flex-shrink: 0;
+  transition: opacity 0.2s;
 }
 
-.character-figure {
-  position: relative;
-}
+.stands-right { margin-left: auto; }
 
-.character-gesture {
-  position: absolute;
-  top: -6px;
-  right: -14px;
-  font-size: 20px;
-}
+.is-listening { opacity: 0.85; }
 
 .character-avatar {
-  width: 64px;
-  height: 90px;
-  filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.2));
+  width: 72px;
+  height: 100px;
+  filter: drop-shadow(1px 2px 1px rgba(0, 0, 0, 0.2));
 }
 
 .character-name {
   font-family: 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
   font-size: 11px;
   font-weight: bold;
-  margin-top: 2px;
   text-align: center;
-  max-width: 72px;
+  max-width: 86px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  background: #fffdf8;
+  padding: 0 4px;
 }
 
+/* Balloons */
 .speech-bubble {
   position: relative;
-  background: white;
-  border: 2px solid #222;
-  border-radius: 18px;
-  padding: 10px 14px;
-  max-width: 85%;
-  min-width: 60px;
-  font-family: 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.12);
-}
-
-/* Tail pointing down toward the speaker standing below */
-.speech-bubble::after {
-  content: '';
-  position: absolute;
-  bottom: -10px;
-  border-width: 10px 8px 0 8px;
-  border-style: solid;
-  border-color: #222 transparent transparent transparent;
-}
-
-.bubble-align-left .speech-bubble::after {
-  left: 24px;
-}
-
-.bubble-align-right .speech-bubble::after {
-  right: 24px;
-}
-
-/* Thought bubbles have no tail (classic comic convention) */
-.speech-bubble.thought::after {
-  display: none;
-}
-
-.speech-bubble.thought {
-  border-radius: 50% / 40%;
-  border-style: dotted;
-  background: #f8f8ff;
-}
-
-.speech-bubble.shout {
-  background: #fff3e0;
-  border-width: 3px;
-  border-color: #e65100;
-  font-weight: bold;
-  text-transform: uppercase;
-  font-size: 0.95em;
-}
-
-.speech-bubble.whisper {
-  background: #f3f3f3;
-  border-style: dashed;
-  border-color: #999;
-  font-style: italic;
-  font-size: 0.85em;
-  color: #666;
-}
-
-.speech-bubble.action-bubble {
-  background: #f3e5f5;
-  border-color: #9c27b0;
-  font-style: italic;
-}
-
-.bubble-content {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  background: #fff;
+  border: 2px solid #222;
+  border-radius: 18px;
+  padding: 9px 14px;
+  max-width: 86%;
+  min-width: 56px;
+  font-family: 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
 }
+
+/* The tail is drawn twice: the outline, then the fill just inside it, so
+   the balloon keeps its ink line all the way to the point. */
+.speech-bubble::before,
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+.speech-bubble::before {
+  bottom: -14px;
+  border-width: 14px 11px 0 0;
+  border-color: #222 transparent transparent transparent;
+}
+
+.speech-bubble::after {
+  bottom: -10px;
+  border-width: 11px 8px 0 0;
+  border-color: #fff transparent transparent transparent;
+}
+
+.from-left .speech-bubble::before { left: 22px; }
+.from-left .speech-bubble::after { left: 25px; }
+
+/* Mirrored so the tail leans toward the speaker on the right */
+.from-right .speech-bubble::before {
+  right: 22px;
+  border-width: 14px 0 0 11px;
+  border-color: #222 transparent transparent transparent;
+}
+
+.from-right .speech-bubble::after {
+  right: 25px;
+  border-width: 11px 0 0 8px;
+  border-color: #fff transparent transparent transparent;
+}
+
+/* A thought balloon trails little clouds instead of a point */
+.bubble-thought {
+  border-radius: 40% 40% 42% 42% / 46%;
+  background: #f9f9ff;
+  padding: 12px 18px;
+}
+
+.bubble-row .bubble-thought::before,
+.bubble-row .bubble-thought::after {
+  border: 2px solid #222;
+  border-radius: 50%;
+  background: #f9f9ff;
+}
+
+.bubble-row .bubble-thought::before {
+  bottom: -15px;
+  width: 12px;
+  height: 12px;
+}
+
+.bubble-row .bubble-thought::after {
+  bottom: -28px;
+  width: 7px;
+  height: 7px;
+}
+
+.from-left .bubble-thought::before { left: 22px; }
+.from-left .bubble-thought::after { left: 15px; }
+.from-right .bubble-thought::before { right: 22px; }
+.from-right .bubble-thought::after { right: 15px; }
+
+/* A shout bursts out of its edges */
+.bubble-shout {
+  background: #fff6e5;
+  border: 3px solid #e65100;
+  border-radius: 6px;
+  font-weight: bold;
+  clip-path: polygon(
+    0% 12%, 6% 6%, 4% 0%, 18% 6%, 32% 0%, 46% 6%, 60% 0%, 74% 6%, 88% 0%, 96% 8%,
+    100% 16%, 95% 30%, 100% 46%, 95% 62%, 100% 78%, 94% 92%, 82% 88%, 68% 100%,
+    54% 90%, 40% 100%, 26% 90%, 12% 98%, 5% 88%, 0% 74%, 5% 58%, 0% 42%, 5% 26%
+  );
+  padding: 14px 18px;
+}
+
+.bubble-shout::before,
+.bubble-shout::after { display: none; }
+
+/* A whisper is drawn faintly, in a dashed outline */
+.bubble-whisper {
+  background: #f5f5f5;
+  border-style: dashed;
+  border-color: #9e9e9e;
+  font-style: italic;
+  color: #616161;
+}
+
+.bubble-row .bubble-whisper::before { border-top-color: #9e9e9e; }
+.bubble-row .bubble-whisper::after { border-top-color: #f5f5f5; }
+
+/* An action is narration, so it gets a caption box, not a balloon */
+.bubble-action {
+  background: #fdf6e3;
+  border-color: #8d6e63;
+  border-radius: 3px;
+  font-style: italic;
+  color: #5d4037;
+}
+
+.bubble-action::before,
+.bubble-action::after { display: none; }
 
 .bubble-timestamp {
   font-size: 9px;
-  color: #999;
+  color: #9e9e9e;
 }
 
 .bubble-text {
   font-size: 13px;
   line-height: 1.4;
+  word-break: break-word;
 }
 
-.action-text {
-  color: #7b1fa2;
-}
-
-.gesture-indicator {
-  font-size: 18px;
-  text-align: right;
+.bubble-hint {
+  font-size: 11px;
+  color: #757575;
 }
 
 .empty-comic {
@@ -427,19 +501,23 @@ export default {
   align-items: center;
   justify-content: center;
   height: 300px;
-  gap: 16px;
+  gap: 18px;
 }
+
+.empty-comic .speech-bubble { text-align: center; }
+.empty-comic .speech-bubble::before,
+.empty-comic .speech-bubble::after { display: none; }
 
 .welcome-character {
-  width: 100px;
-  height: 140px;
+  width: 110px;
+  height: 154px;
 }
 
-/* Emotion animations */
+/* A beat of movement when a character takes the stage */
 .emotion-happy { animation: bounce 0.5s ease-in-out; }
+.emotion-excited { animation: bounce 0.45s ease-in-out 2; }
 .emotion-angry { animation: shake 0.3s ease-in-out; }
 .emotion-surprised { animation: pop 0.3s ease-out; }
-.emotion-excited { animation: bounce 0.4s ease-in-out infinite alternate; }
 
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
@@ -458,14 +536,15 @@ export default {
   100% { transform: scale(1); }
 }
 
-.comic-panels-container::-webkit-scrollbar {
-  width: 8px;
+@media (prefers-reduced-motion: reduce) {
+  .character-avatar { animation: none !important; }
 }
 
-.comic-panels-container::-webkit-scrollbar-track {
-  background: #ece6d6;
-}
+.bg-space .comic-panel,
+.bg-space .character-name { background: #fffdf8; }
 
+.comic-panels-container::-webkit-scrollbar { width: 8px; }
+.comic-panels-container::-webkit-scrollbar-track { background: #ece6d6; }
 .comic-panels-container::-webkit-scrollbar-thumb {
   background: #c4b99a;
   border-radius: 4px;

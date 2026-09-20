@@ -615,6 +615,15 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'admin']], f
         Route::delete('/connections/{connection}', 'App\Http\Controllers\Admin\IrcAdminController@deleteConnection');
         Route::get('/daemon/status', 'App\Http\Controllers\Admin\IrcAdminController@getDaemonStatus');
         Route::get('/stats', 'App\Http\Controllers\Admin\IrcAdminController@getStats');
+
+        // The comic chat character creator. The /admin prefix only requires
+        // a signed-in user, so being an admin is asked for here.
+        Route::middleware('admin')->group(function () {
+            Route::get('/comic-characters', 'App\Http\Controllers\Admin\IrcComicCharacterController@index');
+            Route::post('/comic-characters', 'App\Http\Controllers\Admin\IrcComicCharacterController@store');
+            Route::patch('/comic-characters/{character}', 'App\Http\Controllers\Admin\IrcComicCharacterController@update');
+            Route::delete('/comic-characters/{character}', 'App\Http\Controllers\Admin\IrcComicCharacterController@destroy');
+        });
     });
 });
 
@@ -650,6 +659,13 @@ Route::post('/login', function (Request $request) {
 
 // IRC Client Routes
 Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {
+    // Whether the daemon is up. The client asks before it opens the chat at
+    // all — without the daemon nothing can connect, so the feature is hidden.
+    Route::get('/status', 'App\Http\Controllers\Irc\IrcController@status');
+
+    // The comic characters a member can pick from
+    Route::get('/comic-characters', 'App\Http\Controllers\Irc\IrcController@comicCharacters');
+
     // Servers
     Route::get('/servers', 'App\Http\Controllers\Irc\IrcController@getServers');
 
@@ -658,24 +674,32 @@ Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {
     Route::post('/connections', 'App\Http\Controllers\Irc\IrcController@createConnection');
     Route::patch('/connections/{connection}', 'App\Http\Controllers\Irc\IrcController@updateConnection');
     Route::delete('/connections/{connection}', 'App\Http\Controllers\Irc\IrcController@deleteConnection');
-    Route::post('/connections/{connection}/connect', 'App\Http\Controllers\Irc\IrcController@connect');
+    // Disconnecting stays open: with the daemon gone it tidies up the
+    // connection state instead of queueing a command nobody consumes.
     Route::post('/connections/{connection}/disconnect', 'App\Http\Controllers\Irc\IrcController@disconnect');
 
     // Channels
     Route::get('/available-channels', 'App\Http\Controllers\Irc\IrcController@availableChannels');
     Route::get('/connections/{connection}/channels', 'App\Http\Controllers\Irc\IrcController@getServerChannels');
-    Route::post('/connections/{connection}/join', 'App\Http\Controllers\Irc\IrcController@joinChannel');
-    Route::post('/channels/{channel}/part', 'App\Http\Controllers\Irc\IrcController@partChannel');
     Route::post('/channels/{channel}/favorite', 'App\Http\Controllers\Irc\IrcController@toggleFavorite');
 
     // Messages
     Route::get('/channels/{channel}/users', 'App\Http\Controllers\Irc\IrcController@getChannelUsers');
     Route::get('/channels/{channel}/messages', 'App\Http\Controllers\Irc\IrcController@getChannelMessages');
-    Route::post('/channels/{channel}/messages', 'App\Http\Controllers\Irc\IrcController@sendMessage');
     Route::get('/connections/{connection}/unread', 'App\Http\Controllers\Irc\IrcController@getUnreadCount');
-    Route::post('/connections/{connection}/nick', 'App\Http\Controllers\Irc\IrcController@changeNick');
-    Route::post('/connections/{connection}/pm', 'App\Http\Controllers\Irc\IrcController@sendPrivateMessage');
 
     // Events polling
     Route::get('/events', 'App\Http\Controllers\Irc\IrcController@pollEvents');
+
+    // Anything that talks to an IRC server goes through the daemon's command
+    // queue — with the daemon down the command is never consumed, so the
+    // request would silently do nothing. Refuse it instead.
+    Route::middleware('irc.daemon')->group(function () {
+        Route::post('/connections/{connection}/connect', 'App\Http\Controllers\Irc\IrcController@connect');
+        Route::post('/connections/{connection}/join', 'App\Http\Controllers\Irc\IrcController@joinChannel');
+        Route::post('/channels/{channel}/part', 'App\Http\Controllers\Irc\IrcController@partChannel');
+        Route::post('/channels/{channel}/messages', 'App\Http\Controllers\Irc\IrcController@sendMessage');
+        Route::post('/connections/{connection}/nick', 'App\Http\Controllers\Irc\IrcController@changeNick');
+        Route::post('/connections/{connection}/pm', 'App\Http\Controllers\Irc\IrcController@sendPrivateMessage');
+    });
 });
