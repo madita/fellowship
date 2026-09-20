@@ -8,13 +8,32 @@
       class="irc-header mb-0 flex-shrink-0"
     >
       <template #actions>
-        <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showConnectionDialog = true">
+        <v-btn
+          v-if="chatAvailable"
+          color="primary"
+          variant="elevated"
+          prepend-icon="mdi-plus"
+          @click="showConnectionDialog = true"
+        >
           {{ $t('irc.client.addConnection') }}
         </v-btn>
       </template>
     </page-header>
 
-    <v-row no-gutters class="irc-row">
+    <!-- Without the daemon nothing can connect, so the client is not opened
+         at all — it says why, and comes back on its own once the daemon is
+         running again. -->
+    <loading-state v-if="daemonStatus === null" class="flex-grow-1" />
+
+    <empty-state
+      v-else-if="!chatAvailable"
+      icon="mdi-lan-disconnect"
+      :title="$t('irc.client.unavailableTitle')"
+      :text="$t('irc.client.unavailableText')"
+      class="flex-grow-1"
+    />
+
+    <v-row v-else no-gutters class="irc-row">
       <!-- Server/Channel Sidebar -->
       <v-col cols="12" md="3" class="sidebar">
         <v-card flat height="100%">
@@ -302,9 +321,6 @@
             :my-nick="currentConnection?.nickname || ''"
             :background="comicBackground"
             :show-timestamps="true"
-            :show-emotion-bar="true"
-            @emotion-selected="onEmotionSelected"
-            @gesture-selected="onGestureSelected"
             class="flex-grow-1"
             style="min-height: 0; overflow-y: auto;"
           />
@@ -323,6 +339,7 @@
                     <v-chip size="small" variant="tonal" value="angry">{{ $t('irc.client.emotions.angry') }}</v-chip>
                     <v-chip size="small" variant="tonal" value="surprised">{{ $t('irc.client.emotions.surprised') }}</v-chip>
                     <v-chip size="small" variant="tonal" value="confused">{{ $t('irc.client.emotions.confused') }}</v-chip>
+                    <v-chip size="small" variant="tonal" value="excited">{{ $t('irc.client.emotions.excited') }}</v-chip>
                   </v-chip-group>
                   <v-divider vertical />
                   <v-chip-group v-model="selectedGesture">
@@ -336,11 +353,34 @@
                 </div>
               </v-col>
 
-              <!-- Message Input -->
+              <!-- Message Input. Typing into a connection that is not up
+                   would go nowhere, so the bar is closed until it is. -->
               <v-col cols="12">
+                <v-alert
+                  v-if="!canSend"
+                  type="warning"
+                  variant="tonal"
+                  density="compact"
+                  class="mb-2"
+                  :text="notConnectedHint"
+                >
+                  <template v-if="currentConnection?.status === 'disconnected'" #append>
+                    <v-btn
+                      size="small"
+                      variant="tonal"
+                      prepend-icon="mdi-power"
+                      :loading="busyConnectionIds.includes(currentConnection.id)"
+                      @click="connect(currentConnection)"
+                    >
+                      {{ $t('irc.client.connect') }}
+                    </v-btn>
+                  </template>
+                </v-alert>
+
                 <v-text-field
                   v-model="newMessage"
-                  :placeholder="$t('irc.client.messagePlaceholder')"
+                  :placeholder="canSend ? $t('irc.client.messagePlaceholder') : notConnectedHint"
+                  :disabled="!canSend"
                   variant="outlined"
                   density="compact"
                   hide-details
@@ -353,7 +393,7 @@
                       variant="text"
                       size="small"
                       color="primary"
-                      :disabled="!newMessage.trim()"
+                      :disabled="!canSend || !newMessage.trim()"
                       :loading="sending"
                       @click="sendMessage"
                     >
@@ -425,9 +465,12 @@
 
           <v-divider />
           <v-card-actions class="pa-2 flex-shrink-0">
+            <!-- The console takes commands, which also need a live
+                 connection — /join and the rest go through the daemon too. -->
             <v-text-field
               v-model="newMessage"
-              :placeholder="$t('irc.client.consolePlaceholder')"
+              :placeholder="canSend ? $t('irc.client.consolePlaceholder') : notConnectedHint"
+              :disabled="!canSend"
               variant="outlined"
               density="compact"
               hide-details
@@ -439,7 +482,7 @@
                   variant="text"
                   size="small"
                   color="primary"
-                  :disabled="!newMessage.trim()"
+                  :disabled="!canSend || !newMessage.trim()"
                   :loading="sending"
                   @click="sendMessage"
                 >
@@ -527,12 +570,14 @@
 <script>
 import axios from 'axios';
 import { useSettingsStore } from '@/store/settingStore.js';
+import { useIrcStore } from '@/store/ircStore.js';
 import IrcConnectionDialog from '@/components/irc/IrcConnectionDialog.vue';
 import IrcJoinDialog from '@/components/irc/IrcJoinDialog.vue';
 import ComicChatView from '@/components/irc/ComicChatView.vue';
 import ComicCharacterSelector from '@/components/irc/ComicCharacterSelector.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
+import LoadingState from '@/components/common/LoadingState.vue';
 
 export default {
   name: 'IrcClient',
@@ -543,6 +588,7 @@ export default {
     ComicCharacterSelector,
     PageHeader,
     EmptyState,
+    LoadingState,
   },
   data() {
     return {
@@ -575,9 +621,34 @@ export default {
       serverLogs: {},
       serverLogId: 0,
       layoutObserver: null,
+      daemonPolling: null,
     };
   },
   computed: {
+    // The IRC daemon holds the sockets to the IRC servers; with it down no
+    // connection can be made, so the client is not opened at all.
+    daemonStatus() {
+      return useIrcStore().daemonRunning;
+    },
+    chatAvailable() {
+      return useIrcStore().chatAvailable;
+    },
+    /**
+     * Anything typed only reaches IRC over a live connection. Without one
+     * the message would be stored and shown in the log as if it had gone
+     * out, so the input bar stays closed instead.
+     */
+    canSend() {
+      return this.chatAvailable && this.currentConnection?.status === 'connected';
+    },
+    notConnectedHint() {
+      const status = this.currentConnection?.status;
+
+      if (status === 'connecting') return this.$t('irc.client.connecting');
+      if (status === 'error') return this.$t('irc.client.connectionError');
+
+      return this.$t('irc.client.notConnected');
+    },
     // Comic chat can be turned off in Admin → Settings → IRC → Client.
     comicChatEnabled() {
       return useSettingsStore().ircComicChatEnabled;
@@ -613,13 +684,14 @@ export default {
     } else {
       setTimeout(() => this.calculateHeight(), 300);
     }
-    this.fetchServers();
-    this.fetchConnections().then(() => this.openChannelFromRoute());
-    this.startEventPolling();
+    this.openClient();
   },
   beforeUnmount() {
     if (this.eventPolling) {
       clearInterval(this.eventPolling);
+    }
+    if (this.daemonPolling) {
+      clearInterval(this.daemonPolling);
     }
     window.removeEventListener('resize', this.calculateHeight);
     if (this.layoutObserver) {
@@ -627,6 +699,56 @@ export default {
     }
   },
   methods: {
+    /**
+     * Open the client, but only once the daemon has answered for itself.
+     * While it is down nothing is loaded and nothing is polled — the page
+     * just watches for the daemon to come back.
+     */
+    async openClient() {
+      const running = await useIrcStore().fetchStatus({ force: true });
+
+      if (!running) {
+        this.watchForDaemon();
+        return;
+      }
+
+      this.fetchServers();
+      this.fetchConnections().then(() => this.openChannelFromRoute());
+      this.startEventPolling();
+    },
+    /**
+     * A 503 from an IRC action means the daemon stopped while we were using
+     * it. Shut the client down and wait for it to come back.
+     */
+    daemonWentDown(error) {
+      if (error?.response?.status !== 503) return false;
+
+      useIrcStore().setDaemonRunning(false);
+
+      if (this.eventPolling) {
+        clearInterval(this.eventPolling);
+        this.eventPolling = null;
+      }
+
+      this.watchForDaemon();
+
+      return true;
+    },
+    /**
+     * Keep asking while the chat is unavailable, so a daemon started in the
+     * meantime opens the client without a page reload.
+     */
+    watchForDaemon() {
+      if (this.daemonPolling) return;
+
+      this.daemonPolling = setInterval(async () => {
+        if (await useIrcStore().fetchStatus({ force: true })) {
+          clearInterval(this.daemonPolling);
+          this.daemonPolling = null;
+          this.openClient();
+        }
+      }, 15000);
+    },
     calculateHeight() {
       this.$nextTick(() => {
         const el = this.$el;
@@ -881,7 +1003,7 @@ export default {
       }
     },
     async sendMessage() {
-      if (!this.newMessage.trim() || this.sending) return;
+      if (!this.newMessage.trim() || this.sending || !this.canSend) return;
 
       this.sending = true;
       try {
@@ -916,6 +1038,17 @@ export default {
           this.newMessage = '';
           await this.fetchMessages(this.activeChannel);
         } catch (error) {
+          // The daemon died under us — close the client rather than let the
+          // member keep typing into a chat that goes nowhere.
+          if (this.daemonWentDown(error)) return;
+
+          // The connection dropped since the page last heard about it;
+          // refreshing closes the input bar with the right reason.
+          if (error?.response?.status === 409) {
+            await this.fetchConnections();
+            return;
+          }
+
           console.error('Error sending message:', error);
           await this.$dialog.requestError(error, this.$t('irc.client.sendFailed'));
         }
@@ -1088,12 +1221,6 @@ export default {
       if (this.selectedGesture === 'shout') return 'shout';
       if (this.selectedGesture === 'think') return 'thought';
       return 'speech';
-    },
-    onEmotionSelected(emotion) {
-      this.selectedEmotion = emotion;
-    },
-    onGestureSelected(gesture) {
-      this.selectedGesture = gesture;
     },
     async rejoinChannel(connection, channel) {
       if (this.busyChannelIds.includes(channel.id)) return;

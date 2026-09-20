@@ -4965,6 +4965,11 @@ export default {
             'rejoin': 'Rejoin',
             'noConnections': 'No connections yet',
             'noConnectionsText': 'Add a connection to get started.',
+            'notConnected': 'Not connected — connect to the server to chat',
+            'connecting': 'Connecting to the server…',
+            'connectionError': 'The connection failed — reconnect to chat',
+            'unavailableTitle': 'IRC chat is currently unavailable',
+            'unavailableText': 'The IRC daemon is not running, so no connection to an IRC server can be made. The chat opens again by itself once the daemon is back.',
             'classicView': 'Classic IRC view',
             'comicView': 'Comic chat view',
             'showUsers': 'Show users',
@@ -4983,7 +4988,8 @@ export default {
                 'sad': 'Sad',
                 'angry': 'Angry',
                 'surprised': 'Surprised',
-                'confused': 'Confused'
+                'confused': 'Confused',
+                'excited': 'Excited'
             },
             'gestures': {
                 'none': 'None',
@@ -4992,6 +4998,33 @@ export default {
                 'think': 'Think',
                 'shout': 'Shout',
                 'whisper': 'Whisper'
+            },
+            'comic': {
+                'emptyTitle': 'Welcome to the comic chat!',
+                'emptyText': 'Say something and the panels draw themselves.'
+            },
+            'characterDialog': {
+                'title': 'Choose your comic character',
+                'intro': 'Pick who stands in for you in the comic panels — your character pulls a face to match what you write.',
+                'backgroundTitle': 'Choose the scene'
+            },
+            'characters': {
+                'cat': 'Cat',
+                'dog': 'Dog',
+                'robot': 'Robot',
+                'alien': 'Alien',
+                'wizard': 'Wizard',
+                'ninja': 'Ninja',
+                'pirate': 'Pirate',
+                'knight': 'Knight'
+            },
+            'backgrounds': {
+                'room': 'Room',
+                'office': 'Office',
+                'outdoor': 'Outdoors',
+                'space': 'Space',
+                'cafe': 'Cafe',
+                'beach': 'Beach'
             },
             'deleteConnectionTitle': 'Delete connection',
             'deleteConnectionConfirm': 'Delete the connection to {server}?',

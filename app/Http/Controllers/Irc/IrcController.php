@@ -16,6 +16,36 @@ use Illuminate\Support\Facades\Redis;
 class IrcController extends Controller
 {
     /**
+     * Whether the IRC chat can be used at all. The daemon holds the sockets
+     * to the IRC servers, so with it down nothing can connect and the client
+     * hides the feature rather than offering a chat that cannot work.
+     */
+    public function status(): JsonResponse
+    {
+        return response()->json([
+            'daemon_running' => IrcConnectionManager::isDaemonRunning(),
+        ]);
+    }
+
+    /**
+     * A command only reaches the IRC server over a live connection. Sending
+     * on one that is disconnected (or still connecting) would store the
+     * message and show it in the log as though it had gone out, so refuse it
+     * and let the client say the connection is not up.
+     */
+    private function offlineConnection(IrcConnection $connection): ?JsonResponse
+    {
+        if ($connection->status === 'connected') {
+            return null;
+        }
+
+        return response()->json([
+            'message' => __('messages.irc.not_connected'),
+            'status'  => $connection->status,
+        ], 409);
+    }
+
+    /**
      * Get all available IRC servers.
      */
     public function getServers(): JsonResponse
@@ -120,15 +150,10 @@ class IrcController extends Controller
      */
     public function connect(IrcConnection $connection): JsonResponse
     {
+        // A queued command is only consumed by a running daemon — the
+        // irc.daemon middleware on this route keeps us from queueing into
+        // the void and leaving the connection stuck in "connecting".
         $this->authorize('update', $connection);
-
-        // Without a running daemon the queued command is never consumed and
-        // the connection would hang in "connecting" forever.
-        if ( ! IrcConnectionManager::isDaemonRunning()) {
-            return response()->json([
-                'message' => 'The IRC daemon is not running — connecting is currently unavailable.',
-            ], 503);
-        }
 
         $connection->update(['status' => 'connecting']);
 
@@ -183,6 +208,10 @@ class IrcController extends Controller
     public function joinChannel(Request $request, IrcConnection $connection): JsonResponse
     {
         $this->authorize('update', $connection);
+
+        if ($offline = $this->offlineConnection($connection)) {
+            return $offline;
+        }
 
         $request->validate([
             'channel' => 'required|string|max:50',
@@ -268,12 +297,16 @@ class IrcController extends Controller
     {
         $this->authorize('update', $channel->connection);
 
+        if ($offline = $this->offlineConnection($channel->connection)) {
+            return $offline;
+        }
+
         $request->validate([
             'message'     => 'required|string',
             'type'        => 'nullable|string|in:message,action',
-            'emotion'     => 'nullable|string',
-            'gesture'     => 'nullable|string',
-            'bubble_type' => 'nullable|string',
+            'emotion'     => 'nullable|string|in:normal,happy,sad,angry,surprised,confused,excited',
+            'gesture'     => 'nullable|string|in:none,wave,laugh,think,shout,whisper',
+            'bubble_type' => 'nullable|string|in:speech,thought,shout,whisper,action',
         ]);
 
         $msgType = $request->type ?? 'message';
@@ -428,6 +461,10 @@ class IrcController extends Controller
     {
         $this->authorize('update', $connection);
 
+        if ($offline = $this->offlineConnection($connection)) {
+            return $offline;
+        }
+
         $request->validate([
             'nickname' => 'required|string|max:30',
         ]);
@@ -449,6 +486,10 @@ class IrcController extends Controller
     public function sendPrivateMessage(Request $request, IrcConnection $connection): JsonResponse
     {
         $this->authorize('update', $connection);
+
+        if ($offline = $this->offlineConnection($connection)) {
+            return $offline;
+        }
 
         $request->validate([
             'nick'    => 'required|string|max:30',

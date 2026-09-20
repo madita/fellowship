@@ -5125,6 +5125,11 @@ export default {
             'noConnections': 'Noch keine Verbindungen',
             'noConnectionsText': 'Füge eine Verbindung hinzu, um loszulegen.',
             'classicView': 'Klassische IRC-Ansicht',
+            'notConnected': 'Nicht verbunden — verbinde dich mit dem Server, um zu chatten',
+            'connecting': 'Verbindung zum Server wird aufgebaut …',
+            'connectionError': 'Die Verbindung ist fehlgeschlagen — verbinde dich neu, um zu chatten',
+            'unavailableTitle': 'IRC-Chat ist derzeit nicht verfügbar',
+            'unavailableText': 'Der IRC-Daemon läuft nicht, daher kann keine Verbindung zu einem IRC-Server aufgebaut werden. Der Chat öffnet sich von selbst wieder, sobald der Daemon läuft.',
             'comicView': 'Comic-Chat-Ansicht',
             'showUsers': 'Nutzer anzeigen',
             'hideUsers': 'Nutzer ausblenden',
@@ -5142,7 +5147,8 @@ export default {
                 'sad': 'Traurig',
                 'angry': 'Wütend',
                 'surprised': 'Überrascht',
-                'confused': 'Verwirrt'
+                'confused': 'Verwirrt',
+                'excited': 'Begeistert'
             },
             'gestures': {
                 'none': 'Keine',
@@ -5151,6 +5157,33 @@ export default {
                 'think': 'Nachdenken',
                 'shout': 'Rufen',
                 'whisper': 'Flüstern'
+            },
+            'comic': {
+                'emptyTitle': 'Willkommen im Comic-Chat!',
+                'emptyText': 'Schreib etwas und die Panels zeichnen sich von selbst.'
+            },
+            'characterDialog': {
+                'title': 'Comic-Charakter auswählen',
+                'intro': 'Wähle, wer dich in den Comic-Panels vertritt — dein Charakter zieht das Gesicht zu dem, was du schreibst.',
+                'backgroundTitle': 'Szene auswählen'
+            },
+            'characters': {
+                'cat': 'Katze',
+                'dog': 'Hund',
+                'robot': 'Roboter',
+                'alien': 'Alien',
+                'wizard': 'Zauberer',
+                'ninja': 'Ninja',
+                'pirate': 'Pirat',
+                'knight': 'Ritter'
+            },
+            'backgrounds': {
+                'room': 'Zimmer',
+                'office': 'Büro',
+                'outdoor': 'Draußen',
+                'space': 'Weltall',
+                'cafe': 'Café',
+                'beach': 'Strand'
             },
             'deleteConnectionTitle': 'Verbindung löschen',
             'deleteConnectionConfirm': 'Die Verbindung zu {server} löschen?',

@@ -1,144 +1,239 @@
 <template>
-  <g v-html="svgContent"></g>
+    <g v-html="svgContent" />
 </template>
 
 <script>
+/**
+ * A comic chat character, drawn from parts: a body, a head that differs per
+ * character, a face that carries the emotion, and arms that carry the
+ * gesture. Characters can face left or right so two of them talk to each
+ * other across a panel.
+ *
+ * Original artwork, drawn for this site — in the spirit of the 1996 comic
+ * chat clients, not copied from them.
+ *
+ * The drawing area is 100 × 140: head around (50, 46), feet at 138.
+ */
 export default {
-  name: 'ComicCharacter',
-  props: {
-    character: { type: String, default: 'cat' },
-    emotion: { type: String, default: 'normal' },
-    color: { type: Number, default: 200 },
-  },
-  computed: {
-    bodyColor() {
-      return `hsl(${this.color}, 55%, 75%)`;
+    name: 'ComicCharacter',
+    props: {
+        character: { type: String, default: 'cat' },
+        emotion: { type: String, default: 'normal' },
+        gesture: { type: String, default: null },
+        // 1 faces right, -1 faces left
+        facing: { type: Number, default: 1 },
+        color: { type: Number, default: 200 },
+        // The one talking stands out; the others listen
+        speaking: { type: Boolean, default: true },
     },
-    bodyDark() {
-      return `hsl(${this.color}, 55%, 60%)`;
+    computed: {
+        ink() {
+            return '#2b2b2b';
+        },
+        body() {
+            return `hsl(${this.color}, 52%, 72%)`;
+        },
+        bodyDark() {
+            return `hsl(${this.color}, 52%, 58%)`;
+        },
+        bodyLight() {
+            return `hsl(${this.color}, 60%, 86%)`;
+        },
+
+        /**
+         * Eyes, brows and mouth per emotion. Everything is drawn around the
+         * face centre so each character can reuse it.
+         */
+        face() {
+            const ink = this.ink;
+            const eye = (x, open = 1) => `<ellipse cx="${x}" cy="46" rx="3.4" ry="${3.4 * open}" fill="${ink}"/>`
+                + `<circle cx="${x + 1}" cy="44.6" r="1.1" fill="#fff"/>`;
+            const brow = (x, dy, rot) => `<path d="M ${x - 5} ${38 + dy} Q ${x} ${35 + dy} ${x + 5} ${38 + dy}"`
+                + ` fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round" transform="rotate(${rot} ${x} ${38 + dy})"/>`;
+
+            switch (this.emotion) {
+                case 'happy':
+                    return `<path d="M 34 46 Q 39 41 44 46" fill="none" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>`
+                        + `<path d="M 56 46 Q 61 41 66 46" fill="none" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>`
+                        + `<path d="M 38 56 Q 50 66 62 56" fill="none" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>`
+                        + `<circle cx="32" cy="54" r="3.5" fill="hsl(${this.color}, 70%, 70%)" opacity="0.7"/>`
+                        + `<circle cx="68" cy="54" r="3.5" fill="hsl(${this.color}, 70%, 70%)" opacity="0.7"/>`;
+                case 'excited':
+                    return `<path d="M 35 42 l 4 8 l 4 -8 l -8 4 h 8 z" fill="${ink}"/>`
+                        + `<path d="M 57 42 l 4 8 l 4 -8 l -8 4 h 8 z" fill="${ink}"/>`
+                        + `<path d="M 38 54 Q 50 70 62 54 Z" fill="#b5423a" stroke="${ink}" stroke-width="2"/>`
+                        + `<path d="M 44 62 Q 50 66 56 62" fill="#f0a0a0" stroke="none"/>`;
+                case 'sad':
+                    return brow(39, -2, 14) + brow(61, -2, -14)
+                        + eye(39) + eye(61)
+                        + `<path d="M 40 62 Q 50 54 60 62" fill="none" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>`
+                        + `<path d="M 43 50 q -1 6 1 9" fill="none" stroke="#5fa8d3" stroke-width="2" stroke-linecap="round"/>`;
+                case 'angry':
+                    return brow(39, -1, 22) + brow(61, -1, -22)
+                        + eye(39, 0.7) + eye(61, 0.7)
+                        + `<path d="M 40 62 Q 50 55 60 62" fill="none" stroke="${ink}" stroke-width="2.6" stroke-linecap="round"/>`
+                        + `<path d="M 24 34 l 6 -6 M 24 28 l 6 6" stroke="#d94f3d" stroke-width="2" stroke-linecap="round"/>`;
+                case 'surprised':
+                    return brow(39, -5, 0) + brow(61, -5, 0)
+                        + `<circle cx="39" cy="46" r="5" fill="#fff" stroke="${ink}" stroke-width="1.6"/><circle cx="39" cy="46" r="2.4" fill="${ink}"/>`
+                        + `<circle cx="61" cy="46" r="5" fill="#fff" stroke="${ink}" stroke-width="1.6"/><circle cx="61" cy="46" r="2.4" fill="${ink}"/>`
+                        + `<ellipse cx="50" cy="60" rx="5" ry="7" fill="#b5423a" stroke="${ink}" stroke-width="2"/>`;
+                case 'confused':
+                    return brow(39, -4, 10) + brow(61, -1, -18)
+                        + eye(39) + eye(61, 0.8)
+                        + `<path d="M 40 60 Q 46 56 52 61 Q 57 64 60 59" fill="none" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>`;
+                default:
+                    return brow(39, 0, 0) + brow(61, 0, 0)
+                        + eye(39) + eye(61)
+                        + `<path d="M 42 58 Q 50 63 58 58" fill="none" stroke="${ink}" stroke-width="2.2" stroke-linecap="round"/>`;
+            }
+        },
+
+        /**
+         * Arms follow the gesture; otherwise they rest at the sides.
+         */
+        arms() {
+            const ink = this.ink;
+            const skin = this.body;
+            const arm = (d, hand) => `<path d="${d}" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/>`
+                + `<path d="${d}" fill="none" stroke="${skin}" stroke-width="3.4" stroke-linecap="round"/>`
+                + `<circle cx="${hand[0]}" cy="${hand[1]}" r="4.6" fill="${skin}" stroke="${ink}" stroke-width="1.8"/>`;
+
+            switch (this.gesture) {
+                case 'wave':
+                    return arm('M 30 92 Q 20 86 18 74', [18, 72]) + arm('M 70 92 Q 78 100 76 110', [76, 112]);
+                case 'laugh':
+                    return arm('M 30 92 Q 22 100 30 106', [31, 108]) + arm('M 70 92 Q 78 100 70 106', [69, 108]);
+                case 'think':
+                    return arm('M 30 92 Q 24 102 30 108', [31, 110]) + arm('M 70 92 Q 66 76 58 66', [56, 64]);
+                case 'shout':
+                    return arm('M 30 92 Q 18 84 16 70', [16, 68]) + arm('M 70 92 Q 82 84 84 70', [84, 68]);
+                case 'whisper':
+                    return arm('M 30 92 Q 24 102 30 108', [31, 110]) + arm('M 70 92 Q 72 78 64 62', [62, 60]);
+                default:
+                    return arm('M 30 92 Q 24 102 26 112', [26, 114]) + arm('M 70 92 Q 76 102 74 112', [74, 114]);
+            }
+        },
+
+        /**
+         * Torso, legs and feet — the same build under every head.
+         */
+        torso() {
+            const ink = this.ink;
+
+            if (this.character === 'robot') {
+                return `<rect x="30" y="74" width="40" height="44" rx="6" fill="${this.body}" stroke="${ink}" stroke-width="2.4"/>`
+                    + `<rect x="38" y="84" width="24" height="14" rx="3" fill="${this.bodyLight}" stroke="${ink}" stroke-width="1.6"/>`
+                    + `<circle cx="44" cy="91" r="2.2" fill="#e57373"/><circle cx="50" cy="91" r="2.2" fill="#fff176"/><circle cx="56" cy="91" r="2.2" fill="#81c784"/>`
+                    + `<rect x="36" y="118" width="12" height="16" rx="3" fill="${this.bodyDark}" stroke="${ink}" stroke-width="2"/>`
+                    + `<rect x="52" y="118" width="12" height="16" rx="3" fill="${this.bodyDark}" stroke="${ink}" stroke-width="2"/>`;
+            }
+
+            const robe = this.character === 'wizard';
+            const body = robe
+                ? `<path d="M 50 70 L 68 76 L 76 132 L 24 132 L 32 76 Z" fill="${this.body}" stroke="${ink}" stroke-width="2.4"/>`
+                : `<path d="M 50 70 Q 70 74 70 96 L 68 118 L 32 118 L 30 96 Q 30 74 50 70 Z" fill="${this.body}" stroke="${ink}" stroke-width="2.4"/>`;
+
+            const legs = robe
+                ? ''
+                : `<path d="M 38 118 L 37 132" stroke="${ink}" stroke-width="6" stroke-linecap="round"/>`
+                    + `<path d="M 62 118 L 63 132" stroke="${ink}" stroke-width="6" stroke-linecap="round"/>`
+                    + `<ellipse cx="35" cy="135" rx="8" ry="4" fill="${this.bodyDark}" stroke="${ink}" stroke-width="1.8"/>`
+                    + `<ellipse cx="65" cy="135" rx="8" ry="4" fill="${this.bodyDark}" stroke="${ink}" stroke-width="1.8"/>`;
+
+            return body + legs;
+        },
+
+        /**
+         * The head, which is what tells the characters apart.
+         */
+        head() {
+            const ink = this.ink;
+            const skin = this.body;
+            const dark = this.bodyDark;
+            const round = `<circle cx="50" cy="46" r="24" fill="${skin}" stroke="${ink}" stroke-width="2.4"/>`;
+
+            switch (this.character) {
+                case 'cat':
+                    return `<path d="M 30 30 L 27 10 L 44 22 Z" fill="${skin}" stroke="${ink}" stroke-width="2.2"/>`
+                        + `<path d="M 70 30 L 73 10 L 56 22 Z" fill="${skin}" stroke="${ink}" stroke-width="2.2"/>`
+                        + `<path d="M 31.5 27 L 30 15 L 40 22 Z" fill="${dark}"/>`
+                        + `<path d="M 68.5 27 L 70 15 L 60 22 Z" fill="${dark}"/>`
+                        + round
+                        + `<path d="M 26 48 L 14 45 M 26 52 L 14 53 M 74 48 L 86 45 M 74 52 L 86 53" stroke="${ink}" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>`
+                        + `<path d="M 47 53 L 53 53 L 50 57 Z" fill="${dark}" stroke="${ink}" stroke-width="1.2"/>`;
+                case 'dog':
+                    return round
+                        + `<path d="M 28 34 Q 14 40 20 62 Q 30 62 32 46 Z" fill="${dark}" stroke="${ink}" stroke-width="2.2"/>`
+                        + `<path d="M 72 34 Q 86 40 80 62 Q 70 62 68 46 Z" fill="${dark}" stroke="${ink}" stroke-width="2.2"/>`
+                        + `<ellipse cx="50" cy="56" rx="9" ry="7" fill="${this.bodyLight}" stroke="${ink}" stroke-width="1.6"/>`
+                        + `<ellipse cx="50" cy="52" rx="3.6" ry="2.8" fill="${ink}"/>`;
+                case 'robot':
+                    return `<rect x="44" y="62" width="12" height="14" fill="${dark}" stroke="${ink}" stroke-width="1.8"/>`
+                        + `<rect x="28" y="26" width="44" height="40" rx="8" fill="${skin}" stroke="${ink}" stroke-width="2.4"/>`
+                        + `<line x1="50" y1="26" x2="50" y2="14" stroke="${ink}" stroke-width="2.4"/>`
+                        + `<circle cx="50" cy="11" r="4.5" fill="#ef5350" stroke="${ink}" stroke-width="1.8"/>`
+                        + `<rect x="22" y="40" width="6" height="14" rx="2" fill="${dark}" stroke="${ink}" stroke-width="1.8"/>`
+                        + `<rect x="72" y="40" width="6" height="14" rx="2" fill="${dark}" stroke="${ink}" stroke-width="1.8"/>`;
+                case 'alien':
+                    return `<path d="M 50 20 Q 78 24 74 50 Q 70 70 50 72 Q 30 70 26 50 Q 22 24 50 20 Z" fill="${skin}" stroke="${ink}" stroke-width="2.4"/>`
+                        + `<path d="M 36 22 L 30 8 M 64 22 L 70 8" stroke="${ink}" stroke-width="2.2" stroke-linecap="round"/>`
+                        + `<circle cx="30" cy="7" r="3.6" fill="#9ccc65" stroke="${ink}" stroke-width="1.6"/>`
+                        + `<circle cx="70" cy="7" r="3.6" fill="#9ccc65" stroke="${ink}" stroke-width="1.6"/>`;
+                case 'wizard':
+                    return round
+                        + `<path d="M 50 2 Q 58 20 74 34 L 26 34 Q 42 20 50 2 Z" fill="#4527a0" stroke="${ink}" stroke-width="2.4"/>`
+                        + `<ellipse cx="50" cy="34" rx="26" ry="5" fill="#5e35b1" stroke="${ink}" stroke-width="2.2"/>`
+                        + `<path d="M 50 12 l 2 5 l 5 1 l -4 4 l 1 5 l -4 -3 l -4 3 l 1 -5 l -4 -4 l 5 -1 z" fill="#ffd54f"/>`
+                        + `<path d="M 36 62 Q 40 84 50 88 Q 60 84 64 62 Q 50 70 36 62 Z" fill="#eceff1" stroke="#b0bec5" stroke-width="1.6"/>`;
+                case 'ninja':
+                    return `<circle cx="50" cy="46" r="24" fill="#37474f" stroke="${ink}" stroke-width="2.4"/>`
+                        + `<path d="M 26 40 Q 50 34 74 40 L 74 52 Q 50 46 26 52 Z" fill="#263238"/>`
+                        + `<path d="M 74 42 Q 88 46 92 58" fill="none" stroke="#263238" stroke-width="4" stroke-linecap="round"/>`;
+                case 'pirate':
+                    return round
+                        + `<path d="M 24 36 Q 50 12 76 36 Q 50 30 24 36 Z" fill="#c62828" stroke="${ink}" stroke-width="2.2"/>`
+                        + `<path d="M 24 36 Q 50 44 76 36 L 76 39 Q 50 47 24 39 Z" fill="#8e0000"/>`;
+                case 'knight':
+                    return `<path d="M 30 30 Q 50 22 70 30 L 70 60 Q 50 72 30 60 Z" fill="#b0bec5" stroke="${ink}" stroke-width="2.4"/>`
+                        + `<rect x="34" y="42" width="32" height="7" rx="2" fill="#37474f"/>`
+                        + `<circle cx="42" cy="45.5" r="1.8" fill="#eceff1"/><circle cx="58" cy="45.5" r="1.8" fill="#eceff1"/>`
+                        + `<path d="M 50 22 Q 62 6 74 22 Q 62 16 50 24 Z" fill="#e53935" stroke="${ink}" stroke-width="1.8"/>`
+                        + `<path d="M 34 56 L 66 56" stroke="${ink}" stroke-width="1.4" opacity="0.5"/>`;
+                default:
+                    return round;
+            }
+        },
+
+        /**
+         * What is worn over the face, and so is drawn after it.
+         */
+        overlay() {
+            if (this.character === 'ninja') {
+                return `<circle cx="41" cy="46" r="3.2" fill="#fff"/><circle cx="59" cy="46" r="3.2" fill="#fff"/>`;
+            }
+
+            if (this.character === 'pirate') {
+                return `<path d="M 32 39 L 20 33" stroke="${this.ink}" stroke-width="2" stroke-linecap="round"/>`
+                    + `<circle cx="39" cy="45" r="7.5" fill="${this.ink}"/>`;
+            }
+
+            return '';
+        },
+
+        svgContent() {
+            // A helmet or a mask hides the face; the rest wear their emotion
+            const facePainted = !['knight', 'ninja'].includes(this.character);
+            const faceParts = facePainted ? this.face : '';
+
+            const parts = `<g>${this.torso}${this.arms}${this.head}${faceParts}${this.overlay}</g>`;
+
+            // Facing is a mirror around the middle of the drawing
+            const flip = this.facing < 0 ? '<g transform="translate(100,0) scale(-1,1)">' : '<g>';
+            const dimmed = this.speaking ? '' : ' opacity="0.72"';
+
+            return `<g${dimmed}>${flip}${parts}</g></g>`;
+        },
     },
-    eyes() {
-      const e = this.emotion;
-      if (e === 'happy') return { left: '&#x25E1;', right: '&#x25E1;', yOff: 0 };
-      if (e === 'sad') return { left: '&#x2565;', right: '&#x2565;', yOff: 2 };
-      if (e === 'angry') return { left: '&gt;', right: '&lt;', yOff: 0 };
-      if (e === 'surprised') return { left: 'O', right: 'O', yOff: -2 };
-      if (e === 'confused') return { left: '?', right: '&#x2022;', yOff: 0 };
-      if (e === 'excited') return { left: '&#x2605;', right: '&#x2605;', yOff: -2 };
-      return { left: '&#x2022;', right: '&#x2022;', yOff: 0 };
-    },
-    mouth() {
-      const e = this.emotion;
-      if (e === 'happy' || e === 'excited') return 'M 38 72 Q 50 82 62 72';
-      if (e === 'sad') return 'M 38 76 Q 50 68 62 76';
-      if (e === 'angry') return 'M 38 76 L 62 76';
-      if (e === 'surprised') return 'M 44 72 Q 50 80 56 72 Q 50 80 44 72';
-      if (e === 'confused') return 'M 40 74 Q 48 70 56 76';
-      return 'M 42 74 Q 50 78 58 74';
-    },
-    svgContent() {
-      const parts = [];
-      const c = this.character;
-      const col = this.bodyColor;
-      const colD = this.bodyDark;
-
-      // --- Body & Head ---
-      if (c === 'cat') {
-        parts.push(`<ellipse cx="50" cy="100" rx="28" ry="35" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<circle cx="50" cy="52" r="26" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<polygon points="30,38 24,14 42,32" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<polygon points="70,38 76,14 58,32" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<polygon points="31,36 27,20 40,33" fill="${colD}"/>`);
-        parts.push(`<polygon points="69,36 73,20 60,33" fill="${colD}"/>`);
-        parts.push(`<line x1="12" y1="60" x2="34" y2="62" stroke="#888" stroke-width="1"/>`);
-        parts.push(`<line x1="12" y1="66" x2="34" y2="65" stroke="#888" stroke-width="1"/>`);
-        parts.push(`<line x1="88" y1="60" x2="66" y2="62" stroke="#888" stroke-width="1"/>`);
-        parts.push(`<line x1="88" y1="66" x2="66" y2="65" stroke="#888" stroke-width="1"/>`);
-      } else if (c === 'dog') {
-        parts.push(`<ellipse cx="50" cy="100" rx="28" ry="35" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<circle cx="50" cy="52" r="26" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<ellipse cx="26" cy="48" rx="12" ry="18" fill="${colD}" stroke="#333" stroke-width="2" transform="rotate(-10 26 48)"/>`);
-        parts.push(`<ellipse cx="74" cy="48" rx="12" ry="18" fill="${colD}" stroke="#333" stroke-width="2" transform="rotate(10 74 48)"/>`);
-        parts.push(`<ellipse cx="50" cy="64" rx="12" ry="8" fill="${colD}" stroke="#333" stroke-width="1.5"/>`);
-        parts.push(`<ellipse cx="50" cy="60" rx="4" ry="3" fill="#333"/>`);
-      } else if (c === 'robot') {
-        parts.push(`<rect x="24" y="68" width="52" height="64" rx="4" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<rect x="26" y="42" width="48" height="32" rx="6" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<line x1="50" y1="42" x2="50" y2="28" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<circle cx="50" cy="26" r="5" fill="#f44336" stroke="#333" stroke-width="1.5"/>`);
-        parts.push(`<rect x="34" y="82" width="32" height="14" rx="2" fill="${colD}" stroke="#333" stroke-width="1"/>`);
-        // Bolts
-        parts.push(`<circle cx="36" cy="89" r="2" fill="#fdd835"/>`);
-        parts.push(`<circle cx="44" cy="89" r="2" fill="#4caf50"/>`);
-        parts.push(`<circle cx="52" cy="89" r="2" fill="#f44336"/>`);
-      } else if (c === 'alien') {
-        parts.push(`<ellipse cx="50" cy="100" rx="24" ry="32" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<ellipse cx="50" cy="50" rx="28" ry="24" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<line x1="38" y1="30" x2="30" y2="12" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<circle cx="30" cy="10" r="4" fill="#76ff03" stroke="#333" stroke-width="1"/>`);
-        parts.push(`<line x1="62" y1="30" x2="70" y2="12" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<circle cx="70" cy="10" r="4" fill="#76ff03" stroke="#333" stroke-width="1"/>`);
-      } else if (c === 'wizard') {
-        parts.push(`<ellipse cx="50" cy="100" rx="28" ry="35" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<circle cx="50" cy="52" r="26" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<polygon points="50,2 28,42 72,42" fill="#4a148c" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<ellipse cx="50" cy="42" rx="26" ry="6" fill="#6a1b9a" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<text x="50" y="30" text-anchor="middle" fill="#ffd54f" font-size="14">&#9733;</text>`);
-        // Beard
-        parts.push(`<path d="M 38 70 Q 42 90 50 92 Q 58 90 62 70" fill="#e0e0e0" stroke="#bbb" stroke-width="1"/>`);
-      } else if (c === 'ninja') {
-        parts.push(`<ellipse cx="50" cy="100" rx="26" ry="34" fill="#444" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<circle cx="50" cy="52" r="26" fill="#444" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<rect x="24" y="44" width="52" height="18" rx="8" fill="#222"/>`);
-        // Belt
-        parts.push(`<rect x="28" y="84" width="44" height="6" rx="2" fill="#8d6e63" stroke="#333" stroke-width="1"/>`);
-        parts.push(`<circle cx="50" cy="87" r="4" fill="#fdd835" stroke="#333" stroke-width="1"/>`);
-      } else if (c === 'pirate') {
-        parts.push(`<ellipse cx="50" cy="100" rx="26" ry="34" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<circle cx="50" cy="52" r="26" fill="${col}" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<path d="M 24 44 Q 50 20 76 44 L 76 48 Q 50 40 24 48 Z" fill="#333"/>`);
-        parts.push(`<text x="50" y="40" text-anchor="middle" fill="white" font-size="10">&#9760;</text>`);
-        parts.push(`<ellipse cx="38" cy="56" rx="8" ry="6" fill="#333"/>`);
-        parts.push(`<line x1="38" y1="50" x2="50" y2="36" stroke="#333" stroke-width="1.5"/>`);
-      } else if (c === 'knight') {
-        parts.push(`<ellipse cx="50" cy="100" rx="28" ry="35" fill="#bdbdbd" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<circle cx="50" cy="52" r="26" fill="#bdbdbd" stroke="#333" stroke-width="2"/>`);
-        parts.push(`<rect x="30" y="48" width="40" height="14" rx="4" fill="#9e9e9e" stroke="#333" stroke-width="1.5"/>`);
-        // Visor slits
-        parts.push(`<line x1="36" y1="54" x2="46" y2="54" stroke="#555" stroke-width="2"/>`);
-        parts.push(`<line x1="54" y1="54" x2="64" y2="54" stroke="#555" stroke-width="2"/>`);
-        // Plume
-        parts.push(`<path d="M 50 26 Q 60 8 72 26 Q 62 20 50 26" fill="#f44336" stroke="#c62828" stroke-width="1"/>`);
-        // Shield emblem on chest
-        parts.push(`<path d="M 42 88 L 50 82 L 58 88 L 58 100 Q 50 106 42 100 Z" fill="#1565c0" stroke="#333" stroke-width="1"/>`);
-        parts.push(`<text x="50" y="98" text-anchor="middle" fill="#ffd54f" font-size="8">&#9733;</text>`);
-      }
-
-      // --- Eyes ---
-      if (c !== 'knight') {
-        const eyeY = 54 + this.eyes.yOff;
-        const eyeColor = c === 'ninja' ? 'white' : '#333';
-        parts.push(`<text x="40" y="${eyeY}" text-anchor="middle" fill="${eyeColor}" font-size="12" font-weight="bold">${this.eyes.left}</text>`);
-        if (c !== 'pirate') {
-          parts.push(`<text x="60" y="${eyeY}" text-anchor="middle" fill="${eyeColor}" font-size="12" font-weight="bold">${this.eyes.right}</text>`);
-        }
-      }
-
-      // --- Mouth ---
-      if (c !== 'ninja' && c !== 'knight') {
-        parts.push(`<path d="${this.mouth}" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>`);
-      }
-
-      // --- Arms ---
-      parts.push(`<line x1="24" y1="88" x2="8" y2="102" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>`);
-      parts.push(`<line x1="76" y1="88" x2="92" y2="102" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>`);
-
-      // --- Feet ---
-      parts.push(`<ellipse cx="38" cy="134" rx="10" ry="5" fill="${c === 'knight' ? '#757575' : colD}" stroke="#333" stroke-width="1.5"/>`);
-      parts.push(`<ellipse cx="62" cy="134" rx="10" ry="5" fill="${c === 'knight' ? '#757575' : colD}" stroke="#333" stroke-width="1.5"/>`);
-
-      return parts.join('');
-    },
-  },
 };
 </script>

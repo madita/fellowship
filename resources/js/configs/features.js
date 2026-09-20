@@ -11,6 +11,8 @@
  * Features default to ENABLED when the setting is missing, so existing
  * installs keep their menus until an admin explicitly turns something off.
  */
+import { useIrcStore } from '@/store/ircStore.js';
+
 export const FEATURES = [
     {
         key: 'timeline',
@@ -78,5 +80,26 @@ export const FEATURES = [
 ];
 
 export const featureSettingKey = (key) => `feature_${key}_enabled`;
+
+/**
+ * A feature can be switched on and still be unusable right now.
+ *
+ * IRC is the case: the daemon holds the sockets to the IRC servers and is
+ * the only thing that consumes the command queue, so with it down nothing
+ * can connect. The client hides the chat instead of offering one that
+ * cannot work — the same rule the menu and the page both read.
+ *
+ * Gates are synchronous so menus can use them while rendering; whatever
+ * they read has to be kept up to date elsewhere.
+ */
+export const RUNTIME_GATES = {
+    irc: () => useIrcStore().chatAvailable,
+};
+
+export const isFeatureAvailable = (key) => {
+    const gate = RUNTIME_GATES[key];
+
+    return gate ? gate() : true;
+};
 
 export default FEATURES;

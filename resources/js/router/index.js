@@ -136,6 +136,17 @@ router.beforeEach(async (to, from, next) => {
         return next({ name: 'access-denied' })
     }
 
+    // Keep the IRC daemon status current so the menu never offers a chat
+    // that cannot connect. Throttled inside the store, and not awaited —
+    // the menu picks the answer up when it arrives.
+    if (settingsStore.isFeatureEnabled('irc')) {
+        const { useAuthStore } = await import('@/store/authStore.js')
+        if (useAuthStore().isAuthenticated) {
+            const { useIrcStore } = await import('@/store/ircStore.js')
+            useIrcStore().fetchStatus()
+        }
+    }
+
     // Continue with route-specific middleware
     if (!to.meta.middleware) {
         return next()
