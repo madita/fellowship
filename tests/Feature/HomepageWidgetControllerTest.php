@@ -6,6 +6,8 @@ use App\Models\Section;
 use App\Models\User;
 use App\Models\Widget;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class HomepageWidgetControllerTest extends TestCase
@@ -20,8 +22,12 @@ class HomepageWidgetControllerTest extends TestCase
     {
         parent::setUp();
 
-        // Create an authenticated user
+        // These endpoints live under /api/admin, which is for admins
+        $this->app->make(PermissionRegistrar::class)->forgetCachedPermissions();
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'api'], ['display_name' => 'Admin']);
+
         $this->user = User::factory()->create();
+        $this->user->assignRole('admin');
 
         // Create a test section
         $this->section = Section::create([

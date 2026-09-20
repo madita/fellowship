@@ -43,8 +43,10 @@ class RouteServiceProvider extends ServiceProvider
                 ->namespace($this->namespace)
                 ->group(base_path('routes/api.php'));
 
+            // Same guard as the admin group in routes/api.php: these are
+            // admin pages, and the file itself declares no middleware.
             Route::prefix('api/admin')
-                ->middleware('api')
+                ->middleware(['api', 'auth:sanctum', 'admin'])
                 ->namespace($this->namespace)
                 ->group(base_path('routes/admin.php'));
 
