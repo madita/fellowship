@@ -15,21 +15,6 @@ class IrcComicCharacter extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'key',
-        'name',
-        'spec',
-        'is_enabled',
-        'sort_order',
-    ];
-
-    protected $casts = [
-        'spec'       => 'array',
-        'is_enabled' => 'boolean',
-        'is_builtin' => 'boolean',
-        'sort_order' => 'integer',
-    ];
-
     /**
      * The parts a character is made of, and what each one may be set to.
      * The client's own catalogue is the same list — see the comment there
@@ -47,6 +32,21 @@ class IrcComicCharacter extends Model
     ];
 
     public const TONES = ['normal', 'dark', 'metal', 'bright'];
+
+    protected $fillable = [
+        'key',
+        'name',
+        'spec',
+        'is_enabled',
+        'sort_order',
+    ];
+
+    protected $casts = [
+        'spec'       => 'array',
+        'is_enabled' => 'boolean',
+        'is_builtin' => 'boolean',
+        'sort_order' => 'integer',
+    ];
 
     public function scopeEnabled(Builder $query): Builder
     {
