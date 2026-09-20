@@ -30,24 +30,6 @@ class IrcController extends Controller
     }
 
     /**
-     * A command only reaches the IRC server over a live connection. Sending
-     * on one that is disconnected (or still connecting) would store the
-     * message and show it in the log as though it had gone out, so refuse it
-     * and let the client say the connection is not up.
-     */
-    private function offlineConnection(IrcConnection $connection): ?JsonResponse
-    {
-        if ($connection->status === 'connected') {
-            return null;
-        }
-
-        return response()->json([
-            'message' => __('messages.irc.not_connected'),
-            'status'  => $connection->status,
-        ], 409);
-    }
-
-    /**
      * The comic characters a member can pick from — the ones that ship with
      * the site plus whatever an admin has built, minus anything switched off.
      */
@@ -313,19 +295,6 @@ class IrcController extends Controller
     }
 
     /**
-     * The comic character each nickname on this channel's server has picked.
-     */
-    private function charactersOnChannel(IrcChannel $channel): array
-    {
-        return IrcConnection::where('irc_server_id', $channel->connection->irc_server_id)
-            ->whereNotNull('nickname')
-            ->pluck('comic_character', 'nickname')
-            ->mapWithKeys(fn ($character, $nickname) => [mb_strtolower($nickname) => $character])
-            ->filter()
-            ->all();
-    }
-
-    /**
      * Send a message to a channel.
      */
     public function sendMessage(Request $request, IrcChannel $channel): JsonResponse
@@ -578,5 +547,36 @@ class IrcController extends Controller
             'message' => $request->message ? "Message sent to {$nick}" : "Opened chat with {$nick}",
             'channel' => $channel,
         ]);
+    }
+
+    /**
+     * A command only reaches the IRC server over a live connection. Sending
+     * on one that is disconnected (or still connecting) would store the
+     * message and show it in the log as though it had gone out, so refuse it
+     * and let the client say the connection is not up.
+     */
+    private function offlineConnection(IrcConnection $connection): ?JsonResponse
+    {
+        if ($connection->status === 'connected') {
+            return null;
+        }
+
+        return response()->json([
+            'message' => __('messages.irc.not_connected'),
+            'status'  => $connection->status,
+        ], 409);
+    }
+
+    /**
+     * The comic character each nickname on this channel's server has picked.
+     */
+    private function charactersOnChannel(IrcChannel $channel): array
+    {
+        return IrcConnection::where('irc_server_id', $channel->connection->irc_server_id)
+            ->whereNotNull('nickname')
+            ->pluck('comic_character', 'nickname')
+            ->mapWithKeys(fn ($character, $nickname) => [mb_strtolower($nickname) => $character])
+            ->filter()
+            ->all();
     }
 }
