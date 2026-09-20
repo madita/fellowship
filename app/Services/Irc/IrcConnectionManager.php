@@ -512,13 +512,16 @@ class IrcConnectionManager
             return;
         }
 
-        $connection = $this->connections[$connectionId] ?? null;
+        // Fall back to the database: after a daemon restart the in-memory
+        // map is empty, and without the connection there is no server to
+        // resolve the sender's expression against.
+        $connection = $this->connections[$connectionId] ?? IrcConnection::find($connectionId);
         $isMention  = ! $isPrivate && $connection && str_contains(
             strtolower($message),
             strtolower($connection->nickname)
         );
 
-        $ircMessage = IrcMessage::create([
+        $ircMessage = IrcMessage::create(array_merge([
             'irc_channel_id'    => $channel->id,
             'irc_connection_id' => $connectionId,
             'type'              => $type,
@@ -527,7 +530,14 @@ class IrcConnectionManager
             'is_private'        => $isPrivate,
             'is_mention'        => $isMention,
             'sent_at'           => now(),
-        ]);
+            // The sender files a private message under the name of whoever
+            // they sent it to — us — not under their own.
+        ], $this->expressionFrom(
+            $connection?->irc_server_id,
+            $nick,
+            $isPrivate ? (string) $connection?->nickname : $channelName,
+            $message
+        )));
 
         $channel->incrementUnread();
 
@@ -752,6 +762,53 @@ class IrcConnectionManager
     }
 
     // --- Helpers ---
+
+    /**
+     * The comic expression a line was sent with.
+     *
+     * IRC carries no such thing, and everyone keeps their own copy of a
+     * channel's messages: the sender's copy is written by the API with the
+     * face and gesture they picked, while the copy the daemon writes for
+     * everyone else would fall back to the plain defaults. Rather than
+     * spelling the expression out over IRC — where it would be junk in the
+     * channel for anyone on a normal client — the sender's own line is
+     * looked up here and its expression carried over.
+     *
+     * Only members of this site connected to the same server can be found
+     * this way; anyone else keeps the defaults, and the client reads their
+     * expression out of the text as it always has.
+     */
+    private function expressionFrom(?int $serverId, string $nick, string $channelName, string $message): array
+    {
+        $defaults = ['emotion' => 'normal', 'gesture' => 'none', 'bubble_type' => 'speech'];
+
+        if ( ! $serverId || $message === '') {
+            return $defaults;
+        }
+
+        $sent = IrcMessage::query()
+            ->where('from_nick', $nick)
+            ->where('message', $message)
+            // The sender wrote their copy moments ago, on its way out
+            ->where('sent_at', '>=', now()->subSeconds(30))
+            ->whereHas('channel', fn ($query) => $query->where('name', $channelName))
+            ->whereHas('connection', fn ($query) => $query
+                ->where('irc_server_id', $serverId)
+                ->whereRaw('LOWER(nickname) = ?', [mb_strtolower($nick)]))
+            ->orderByDesc('sent_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ( ! $sent) {
+            return $defaults;
+        }
+
+        return [
+            'emotion'     => $sent->emotion ?: $defaults['emotion'],
+            'gesture'     => $sent->gesture ?: $defaults['gesture'],
+            'bubble_type' => $sent->bubble_type ?: $defaults['bubble_type'],
+        ];
+    }
 
     private function findOrCreateChannel(int $connectionId, string $channelName, bool $isPrivate = false): ?IrcChannel
     {

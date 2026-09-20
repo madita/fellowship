@@ -287,7 +287,28 @@ class IrcController extends Controller
         // Mark as read
         $channel->markAsRead();
 
-        return response()->json($messages);
+        return response()->json([
+            'data' => $messages,
+            // Comic chat draws each speaker as the character they picked.
+            // Everyone keeps their own copy of a channel's messages, so the
+            // choice is looked up per nickname instead of travelling with
+            // the message — a nickname nobody here has connected as (a
+            // plain IRC client, say) is left to the client's own fallback.
+            'characters' => $this->comicCharacters($channel),
+        ]);
+    }
+
+    /**
+     * The comic character each nickname on this channel's server has picked.
+     */
+    private function comicCharacters(IrcChannel $channel): array
+    {
+        return IrcConnection::where('irc_server_id', $channel->connection->irc_server_id)
+            ->whereNotNull('nickname')
+            ->pluck('comic_character', 'nickname')
+            ->mapWithKeys(fn ($character, $nickname) => [mb_strtolower($nickname) => $character])
+            ->filter()
+            ->all();
     }
 
     /**
@@ -492,8 +513,11 @@ class IrcController extends Controller
         }
 
         $request->validate([
-            'nick'    => 'required|string|max:30',
-            'message' => 'nullable|string',
+            'nick'        => 'required|string|max:30',
+            'message'     => 'nullable|string',
+            'emotion'     => 'nullable|string|in:normal,happy,sad,angry,surprised,confused,excited',
+            'gesture'     => 'nullable|string|in:none,wave,laugh,think,shout,whisper',
+            'bubble_type' => 'nullable|string|in:speech,thought,shout,whisper,action',
         ]);
 
         $nick = $request->nick;
@@ -519,6 +543,9 @@ class IrcController extends Controller
                 'type'              => 'message',
                 'from_nick'         => $connection->nickname,
                 'message'           => $request->message,
+                'emotion'           => $request->emotion ?? 'normal',
+                'gesture'           => $request->gesture ?? 'none',
+                'bubble_type'       => $request->bubble_type ?? 'speech',
                 'is_private'        => true,
                 'sent_at'           => now(),
             ]);

@@ -318,6 +318,7 @@
             ref="comicView"
             :messages="messages"
             :character="currentConnection?.comic_character || 'cat'"
+            :characters="nickCharacters"
             :my-nick="currentConnection?.nickname || ''"
             :background="comicBackground"
             :show-timestamps="true"
@@ -329,27 +330,67 @@
           <v-divider />
           <v-card-actions class="pa-2 flex-shrink-0">
             <v-row dense>
-              <!-- Emotion/Gesture Bar (Comic Mode Only) -->
+              <!-- Emotion/Gesture Bar (Comic Mode Only). The character
+                   alongside shows exactly what the next panel will look
+                   like, so the current mood is never a guess. -->
               <v-col v-if="isComicMode" cols="12">
-                <div class="d-flex ga-2 flex-wrap">
-                  <v-chip-group v-model="selectedEmotion" mandatory>
-                    <v-chip size="small" variant="tonal" value="normal">{{ $t('irc.client.emotions.normal') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="happy">{{ $t('irc.client.emotions.happy') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="sad">{{ $t('irc.client.emotions.sad') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="angry">{{ $t('irc.client.emotions.angry') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="surprised">{{ $t('irc.client.emotions.surprised') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="confused">{{ $t('irc.client.emotions.confused') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="excited">{{ $t('irc.client.emotions.excited') }}</v-chip>
-                  </v-chip-group>
-                  <v-divider vertical />
-                  <v-chip-group v-model="selectedGesture">
-                    <v-chip size="small" variant="tonal" value="none">{{ $t('irc.client.gestures.none') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="wave">{{ $t('irc.client.gestures.wave') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="laugh">{{ $t('irc.client.gestures.laugh') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="think">{{ $t('irc.client.gestures.think') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="shout">{{ $t('irc.client.gestures.shout') }}</v-chip>
-                    <v-chip size="small" variant="tonal" value="whisper">{{ $t('irc.client.gestures.whisper') }}</v-chip>
-                  </v-chip-group>
+                <div class="expression-bar d-flex ga-3 align-center flex-wrap">
+                  <div class="expression-preview d-flex align-center ga-2 flex-shrink-0">
+                    <svg viewBox="0 0 100 140" class="expression-avatar">
+                      <comic-character
+                        :character="currentConnection?.comic_character || 'cat'"
+                        :emotion="selectedEmotion"
+                        :gesture="selectedGesture === 'none' ? null : selectedGesture"
+                        :color="myHue"
+                      />
+                    </svg>
+                    <div class="expression-labels">
+                      <div class="text-caption font-weight-bold">
+                        {{ $t(`irc.client.emotions.${selectedEmotion}`) }}
+                      </div>
+                      <div v-if="selectedGesture && selectedGesture !== 'none'" class="text-caption text-medium-emphasis">
+                        {{ $t(`irc.client.gestures.${selectedGesture}`) }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex ga-2 flex-wrap align-center flex-grow-1">
+                    <v-chip-group
+                      v-model="selectedEmotion"
+                      mandatory
+                      selected-class="expression-chip--active"
+                    >
+                      <v-chip
+                        v-for="emotion in emotionChoices"
+                        :key="emotion"
+                        size="small"
+                        variant="outlined"
+                        :value="emotion"
+                      >
+                        <span class="mr-1">{{ getEmotionEmoji(emotion) || '😐' }}</span>
+                        {{ $t(`irc.client.emotions.${emotion}`) }}
+                      </v-chip>
+                    </v-chip-group>
+
+                    <v-divider vertical class="mx-1" />
+
+                    <v-chip-group
+                      v-model="selectedGesture"
+                      mandatory
+                      selected-class="expression-chip--active"
+                    >
+                      <v-chip
+                        v-for="gesture in gestureChoices"
+                        :key="gesture"
+                        size="small"
+                        variant="outlined"
+                        :value="gesture"
+                      >
+                        <span v-if="getGestureEmoji(gesture)" class="mr-1">{{ getGestureEmoji(gesture) }}</span>
+                        {{ $t(`irc.client.gestures.${gesture}`) }}
+                      </v-chip>
+                    </v-chip-group>
+                  </div>
                 </div>
               </v-col>
 
@@ -574,6 +615,7 @@ import { useIrcStore } from '@/store/ircStore.js';
 import IrcConnectionDialog from '@/components/irc/IrcConnectionDialog.vue';
 import IrcJoinDialog from '@/components/irc/IrcJoinDialog.vue';
 import ComicChatView from '@/components/irc/ComicChatView.vue';
+import ComicCharacter from '@/components/irc/ComicCharacterParts.vue';
 import ComicCharacterSelector from '@/components/irc/ComicCharacterSelector.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
@@ -585,6 +627,7 @@ export default {
     IrcConnectionDialog,
     IrcJoinDialog,
     ComicChatView,
+    ComicCharacter,
     ComicCharacterSelector,
     PageHeader,
     EmptyState,
@@ -622,6 +665,10 @@ export default {
       serverLogId: 0,
       layoutObserver: null,
       daemonPolling: null,
+      // nickname (lower case) → the comic character that member picked
+      nickCharacters: {},
+      emotionChoices: ['normal', 'happy', 'sad', 'angry', 'surprised', 'confused', 'excited'],
+      gestureChoices: ['none', 'wave', 'laugh', 'think', 'shout', 'whisper'],
     };
   },
   computed: {
@@ -640,6 +687,16 @@ export default {
      */
     canSend() {
       return this.chatAvailable && this.currentConnection?.status === 'connected';
+    },
+    // The preview has to be coloured like the panels, which hue the
+    // characters from the nickname.
+    myHue() {
+      const nick = this.currentConnection?.nickname || '';
+      let hash = 0;
+      for (let i = 0; i < nick.length; i++) {
+        hash = nick.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return Math.abs(hash) % 360;
     },
     notConnectedHint() {
       const status = this.currentConnection?.status;
@@ -996,7 +1053,10 @@ export default {
     async fetchMessages(channel) {
       try {
         const { data } = await axios.get(`/api/irc/channels/${channel.id}/messages`);
-        this.messages = data;
+        this.messages = data.data || [];
+        // Who is drawn as what in comic chat — kept so a message arriving
+        // live is drawn as its sender, not as a stand-in.
+        this.nickCharacters = data.characters || {};
         this.$nextTick(() => this.scrollToBottom());
       } catch (error) {
         console.error('Error fetching messages:', error);
@@ -1029,9 +1089,7 @@ export default {
 
           // Add comic chat metadata if in comic mode
           if (this.isComicMode) {
-            payload.emotion = this.selectedEmotion;
-            payload.gesture = this.selectedGesture;
-            payload.bubble_type = this.getBubbleType();
+            Object.assign(payload, this.comicPayload());
           }
 
           await axios.post(`/api/irc/channels/${this.activeChannel.id}/messages`, payload);
@@ -1173,6 +1231,9 @@ export default {
               await axios.post(`/api/irc/connections/${conn.id}/pm`, {
                 nick: targetNick,
                 message: privMsg,
+                // A private line is drawn in comic chat too, so it carries
+                // the same expression as anything else typed right now
+                ...(this.isComicMode ? this.comicPayload() : {}),
               });
               await this.fetchConnections();
               this.addSystemMessage(`-> ${targetNick}: ${privMsg}`);
@@ -1221,6 +1282,17 @@ export default {
       if (this.selectedGesture === 'shout') return 'shout';
       if (this.selectedGesture === 'think') return 'thought';
       return 'speech';
+    },
+    /**
+     * How the line being typed should be drawn, sent along so the other
+     * members see the expression that was picked and not a default.
+     */
+    comicPayload() {
+      return {
+        emotion: this.selectedEmotion,
+        gesture: this.selectedGesture,
+        bubble_type: this.getBubbleType(),
+      };
     },
     async rejoinChannel(connection, channel) {
       if (this.busyChannelIds.includes(channel.id)) return;
@@ -1491,5 +1563,41 @@ export default {
 
 .emotion-note {
   margin-left: 6px;
+}
+
+/* Comic mode: what the next panel will look like, and the mood it carries */
+.expression-bar {
+  padding: 4px 8px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+  background: rgba(var(--v-theme-surface-variant), 0.35);
+}
+
+.expression-preview {
+  padding-right: 10px;
+  border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.expression-avatar {
+  width: 34px;
+  height: 48px;
+}
+
+.expression-labels {
+  line-height: 1.2;
+  min-width: 64px;
+}
+
+/* The chosen chip has to read at a glance, not as a faint tint */
+.expression-bar :deep(.expression-chip--active) {
+  background-color: rgb(var(--v-theme-primary)) !important;
+  border-color: rgb(var(--v-theme-primary)) !important;
+  color: rgb(var(--v-theme-on-primary)) !important;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.28);
+}
+
+.expression-bar :deep(.expression-chip--active .v-chip__overlay) {
+  opacity: 0;
 }
 </style>

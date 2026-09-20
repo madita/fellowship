@@ -22,6 +22,8 @@ class IrcComicMessageTest extends TestCase
 
     protected IrcChannel $channel;
 
+    protected IrcConnection $connection;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -39,7 +41,7 @@ class IrcComicMessageTest extends TestCase
             'port' => 6667,
         ]);
 
-        $connection = IrcConnection::create([
+        $this->connection = IrcConnection::create([
             'user_id'       => $this->user->id,
             'irc_server_id' => $server->id,
             'nickname'      => 'frodo',
@@ -47,7 +49,7 @@ class IrcComicMessageTest extends TestCase
         ]);
 
         $this->channel = IrcChannel::create([
-            'irc_connection_id' => $connection->id,
+            'irc_connection_id' => $this->connection->id,
             'name'              => '#shire',
             'is_joined'         => true,
             'is_private'        => false,
@@ -86,6 +88,52 @@ class IrcComicMessageTest extends TestCase
             'gesture'     => 'none',
             'bubble_type' => 'speech',
         ]);
+    }
+
+    public function test_the_channel_says_which_character_each_nickname_picked(): void
+    {
+        $this->connection->update(['comic_character' => 'wizard']);
+
+        // Another member on the same server, chatting in the same channel
+        IrcConnection::create([
+            'user_id'         => User::factory()->create()->id,
+            'irc_server_id'   => $this->connection->irc_server_id,
+            'nickname'        => 'Samwise',
+            'status'          => 'connected',
+            'comic_character' => 'knight',
+        ]);
+
+        $characters = $this->actingAs($this->user, 'sanctum')
+            ->getJson("/api/irc/channels/{$this->channel->id}/messages")
+            ->assertOk()
+            ->json('characters');
+
+        // Looked up by nickname, which IRC treats case-insensitively
+        $this->assertSame(['frodo' => 'wizard', 'samwise' => 'knight'], $characters);
+    }
+
+    public function test_a_nickname_from_another_server_is_not_borrowed(): void
+    {
+        $other = IrcServer::create([
+            'name' => 'Other Net',
+            'host' => 'irc.other.test',
+            'port' => 6667,
+        ]);
+
+        IrcConnection::create([
+            'user_id'         => User::factory()->create()->id,
+            'irc_server_id'   => $other->id,
+            'nickname'        => 'stranger',
+            'status'          => 'connected',
+            'comic_character' => 'alien',
+        ]);
+
+        $characters = $this->actingAs($this->user, 'sanctum')
+            ->getJson("/api/irc/channels/{$this->channel->id}/messages")
+            ->assertOk()
+            ->json('characters');
+
+        $this->assertArrayNotHasKey('stranger', $characters);
     }
 
     public function test_expressions_outside_the_known_set_are_refused(): void

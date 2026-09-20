@@ -75,6 +75,9 @@ export default {
   props: {
     messages: { type: Array, default: () => [] },
     character: { type: String, default: 'cat' },
+    // nickname (lower case) → the comic character that member picked, so
+    // everyone is drawn as themselves and not as a stand-in
+    characters: { type: Object, default: () => ({}) },
     myNick: { type: String, default: '' },
     background: { type: String, default: 'room' },
     showTimestamps: { type: Boolean, default: true },
@@ -93,21 +96,37 @@ export default {
      * last one to speak in the foreground.
      */
     comicPanels() {
-      const spoken = this.messages.filter(m => m.type === 'message' || m.type === 'action');
+      const spoken = this.messages
+        .filter(m => m.type === 'message' || m.type === 'action')
+        .map(message => ({ message, expression: expressionOf(message) }));
+
       const panels = [];
-      let lines = [];
+      let entries = [];
 
       const close = () => {
-        if (lines.length) panels.push(this.buildPanel(lines, panels.length));
-        lines = [];
+        if (entries.length) panels.push(this.buildPanel(entries, panels.length));
+        entries = [];
       };
 
-      for (const message of spoken) {
-        const speakers = new Set(lines.map(l => l.from_nick));
-        if (lines.length >= this.messagesPerPanel || (!speakers.has(message.from_nick) && speakers.size >= 2)) {
+      for (const entry of spoken) {
+        const nick = entry.message.from_nick;
+        const speakers = new Set(entries.map(e => e.message.from_nick));
+
+        // A character is drawn once per panel and holds one expression, so
+        // a speaker changing face or gesture starts a new panel rather than
+        // rewriting the one the reader already passed.
+        const standing = entries.find(e => e.message.from_nick === nick);
+        const changedExpression = standing
+          && (standing.expression.emotion !== entry.expression.emotion
+            || standing.expression.gesture !== entry.expression.gesture);
+
+        if (entries.length >= this.messagesPerPanel
+          || (!speakers.has(nick) && speakers.size >= 2)
+          || changedExpression) {
           close();
         }
-        lines.push(message);
+
+        entries.push(entry);
       }
       close();
 
@@ -124,17 +143,16 @@ export default {
      * One panel: who stands where, and how each line is drawn. The member's
      * own emotion/gesture wins; otherwise the text decides.
      */
-    buildPanel(messages, index) {
+    buildPanel(entries, index) {
       const order = [];
-      for (const message of messages) {
+      for (const { message } of entries) {
         if (!order.includes(message.from_nick)) order.push(message.from_nick);
       }
 
-      const last = messages[messages.length - 1];
+      const last = entries[entries.length - 1].message;
       const expressions = new Map();
 
-      const lines = messages.map((message) => {
-        const expression = expressionOf(message);
+      const lines = entries.map(({ message, expression }) => {
         expressions.set(message.from_nick, expression);
 
         return {
@@ -160,10 +178,16 @@ export default {
       return { key: `${index}-${lines[0].id}`, lines, speakers };
     },
     characterFor(nick) {
-      if (this.myNick && nick.toLowerCase() === this.myNick.toLowerCase()) {
+      const key = String(nick).toLowerCase();
+
+      if (this.myNick && key === this.myNick.toLowerCase()) {
         return this.character;
       }
-      return this.characterTypes[this.hashCode(nick) % this.characterTypes.length];
+
+      // Someone chatting from a plain IRC client has no choice on file, so
+      // they get a stable stand-in drawn from their nickname.
+      return this.characters[key]
+        || this.characterTypes[this.hashCode(nick) % this.characterTypes.length];
     },
     hueFor(nick) {
       return this.hashCode(nick) % 360;
