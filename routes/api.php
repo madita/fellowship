@@ -439,7 +439,10 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api.key', 'api.rate']], functi
 });
 
 // Admin Settings Routes
-Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function () {
+// Being an admin is asked for once, here, rather than route by route: the
+// group used to require only a signed-in user and each route was expected to
+// add the admin middleware for itself, which several dozen never did.
+Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'admin']], function () {
     // Admin overview
     Route::get('/dashboard', 'App\Http\Controllers\Admin\AdminDashboardController@index');
 

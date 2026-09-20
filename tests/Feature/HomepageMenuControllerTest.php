@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\HomepageMenuItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class HomepageMenuControllerTest extends TestCase
@@ -17,8 +19,12 @@ class HomepageMenuControllerTest extends TestCase
     {
         parent::setUp();
 
-        // Create an authenticated user
+        // These endpoints live under /api/admin, which is for admins
+        $this->app->make(PermissionRegistrar::class)->forgetCachedPermissions();
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'api'], ['display_name' => 'Admin']);
+
         $this->user = User::factory()->create();
+        $this->user->assignRole('admin');
     }
 
     public function test_authenticated_user_can_get_all_menu_items()
