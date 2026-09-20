@@ -9,31 +9,30 @@
         <v-row>
           <v-col
             v-for="character in characters"
-            :key="character.id"
+            :key="character.key"
             cols="6"
             sm="4"
             md="3"
           >
             <v-card
-              :class="{ 'selected-character': selectedCharacter === character.id }"
+              :class="{ 'selected-character': selectedCharacter === character.key }"
               class="character-card pa-2"
               hover
-              @click="selectedCharacter = character.id"
+              @click="selectedCharacter = character.key"
             >
               <div class="d-flex justify-center">
                 <!-- The preview cycles through the faces so the member sees
                      what the character does, not just a still portrait -->
                 <svg viewBox="0 0 100 140" class="character-preview">
                   <comic-character
-                    :character="character.id"
+                    :character="character.key"
                     :emotion="previewEmotion"
-                    :gesture="selectedCharacter === character.id ? 'wave' : null"
-                    :color="character.hue"
+                    :gesture="selectedCharacter === character.key ? 'wave' : null"
                   />
                 </svg>
               </div>
               <v-card-subtitle class="text-center pt-1">
-                {{ $t(`irc.client.characters.${character.id}`) }}
+                {{ characterName(character) }}
               </v-card-subtitle>
             </v-card>
           </v-col>
@@ -61,6 +60,7 @@
 
 <script>
 import ComicCharacter from './ComicCharacterParts.vue';
+import { useComicCharacterStore } from '@/store/comicCharacterStore.js';
 
 const PREVIEW_EMOTIONS = ['happy', 'surprised', 'excited', 'confused'];
 
@@ -80,17 +80,13 @@ export default {
       previewEmotion: 'happy',
       previewTimer: null,
       backgrounds: ['room', 'office', 'outdoor', 'space', 'cafe', 'beach'],
-      characters: [
-        { id: 'cat', hue: 30 },
-        { id: 'dog', hue: 25 },
-        { id: 'robot', hue: 200 },
-        { id: 'alien', hue: 120 },
-        { id: 'wizard', hue: 270 },
-        { id: 'ninja', hue: 0 },
-        { id: 'pirate', hue: 45 },
-        { id: 'knight', hue: 210 },
-      ],
     };
+  },
+  computed: {
+    // The ones that ship with the site plus whatever an admin has built
+    characters() {
+      return useComicCharacterStore().available;
+    },
   },
   watch: {
     // The dialog component is created once at page mount; re-sync the
@@ -100,6 +96,7 @@ export default {
       if (open) {
         this.selectedCharacter = this.currentCharacter || 'cat';
         this.selectedBackground = this.currentBackground || 'room';
+        useComicCharacterStore().load();
         this.startPreview();
       } else {
         this.stopPreview();
@@ -110,6 +107,15 @@ export default {
     this.stopPreview();
   },
   methods: {
+    /**
+     * A character that ships with the site is named in the member's
+     * language; one an admin built carries the name they gave it.
+     */
+    characterName(character) {
+      const key = `irc.client.characters.${character.key}`;
+
+      return this.$te(key) ? this.$t(key) : character.name;
+    },
     startPreview() {
       this.stopPreview();
       if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;

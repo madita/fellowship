@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Irc;
 
 use App\Http\Controllers\Controller;
 use App\Models\Irc\IrcChannel;
+use App\Models\Irc\IrcComicCharacter;
 use App\Models\Irc\IrcConnection;
 use App\Models\Irc\IrcMessage;
 use App\Models\Irc\IrcServer;
@@ -12,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Validation\Rule;
 
 class IrcController extends Controller
 {
@@ -43,6 +45,17 @@ class IrcController extends Controller
             'message' => __('messages.irc.not_connected'),
             'status'  => $connection->status,
         ], 409);
+    }
+
+    /**
+     * The comic characters a member can pick from — the ones that ship with
+     * the site plus whatever an admin has built, minus anything switched off.
+     */
+    public function comicCharacters(): JsonResponse
+    {
+        return response()->json([
+            'data' => IrcComicCharacter::enabled()->inOrder()->get(['key', 'name', 'spec']),
+        ]);
     }
 
     /**
@@ -111,7 +124,8 @@ class IrcController extends Controller
             'realname'           => 'nullable|string|max:100',
             'auto_connect'       => 'boolean',
             'auto_join_channels' => 'nullable|array',
-            'comic_character'    => 'nullable|string|in:cat,dog,robot,alien,wizard,ninja,pirate,knight',
+            // Only a character that exists and is switched on can be picked
+            'comic_character'    => ['nullable', 'string', Rule::exists('irc_comic_characters', 'key')->where('is_enabled', true)],
             'comic_view_mode'    => 'nullable|string|in:classic,comic',
         ]);
 
@@ -294,14 +308,14 @@ class IrcController extends Controller
             // choice is looked up per nickname instead of travelling with
             // the message — a nickname nobody here has connected as (a
             // plain IRC client, say) is left to the client's own fallback.
-            'characters' => $this->comicCharacters($channel),
+            'characters' => $this->charactersOnChannel($channel),
         ]);
     }
 
     /**
      * The comic character each nickname on this channel's server has picked.
      */
-    private function comicCharacters(IrcChannel $channel): array
+    private function charactersOnChannel(IrcChannel $channel): array
     {
         return IrcConnection::where('irc_server_id', $channel->connection->irc_server_id)
             ->whereNotNull('nickname')

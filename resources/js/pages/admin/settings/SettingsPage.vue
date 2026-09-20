@@ -123,6 +123,7 @@ const componentMap = {
     'irc/IrcDashboardPage': () => import('@/pages/admin/settings/irc/IrcDashboardPage.vue'),
     'irc/IrcServersPage': () => import('@/pages/admin/settings/irc/IrcServersPage.vue'),
     'irc/IrcConnectionsPage': () => import('@/pages/admin/settings/irc/IrcConnectionsPage.vue'),
+    'irc/IrcCharactersPage': () => import('@/pages/admin/settings/irc/IrcCharactersPage.vue'),
     // Moderation
     'moderation/AutoApprovalPage': () => import('@/pages/admin/settings/moderation/AutoApprovalPage.vue'),
     // Sandbox

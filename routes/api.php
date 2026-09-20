@@ -612,6 +612,15 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum']], function (
         Route::delete('/connections/{connection}', 'App\Http\Controllers\Admin\IrcAdminController@deleteConnection');
         Route::get('/daemon/status', 'App\Http\Controllers\Admin\IrcAdminController@getDaemonStatus');
         Route::get('/stats', 'App\Http\Controllers\Admin\IrcAdminController@getStats');
+
+        // The comic chat character creator. The /admin prefix only requires
+        // a signed-in user, so being an admin is asked for here.
+        Route::middleware('admin')->group(function () {
+            Route::get('/comic-characters', 'App\Http\Controllers\Admin\IrcComicCharacterController@index');
+            Route::post('/comic-characters', 'App\Http\Controllers\Admin\IrcComicCharacterController@store');
+            Route::patch('/comic-characters/{character}', 'App\Http\Controllers\Admin\IrcComicCharacterController@update');
+            Route::delete('/comic-characters/{character}', 'App\Http\Controllers\Admin\IrcComicCharacterController@destroy');
+        });
     });
 });
 
@@ -650,6 +659,9 @@ Route::middleware(['auth:sanctum'])->prefix('irc')->group(function () {
     // Whether the daemon is up. The client asks before it opens the chat at
     // all — without the daemon nothing can connect, so the feature is hidden.
     Route::get('/status', 'App\Http\Controllers\Irc\IrcController@status');
+
+    // The comic characters a member can pick from
+    Route::get('/comic-characters', 'App\Http\Controllers\Irc\IrcController@comicCharacters');
 
     // Servers
     Route::get('/servers', 'App\Http\Controllers\Irc\IrcController@getServers');

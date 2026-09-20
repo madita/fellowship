@@ -97,10 +97,10 @@ describe('ComicChatView', () => {
             { character: 'wizard', characters: { sam: 'knight' } },
         );
 
-        // The knight wears a visor, the wizard a hat with a star
+        // The wizard's hat, and the knight's plume and visor
         const svgs = w.findAll('.character-avatar').map(svg => svg.html());
         expect(svgs[0]).toContain('#4527a0');
-        expect(svgs[1]).toContain('#b0bec5');
+        expect(svgs[1]).toContain('#37474f');
     });
 
     it('falls back to a stand-in for a nickname with no choice on file', () => {

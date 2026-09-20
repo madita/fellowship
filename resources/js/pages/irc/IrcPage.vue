@@ -335,7 +335,17 @@
                    like, so the current mood is never a guess. -->
               <v-col v-if="isComicMode" cols="12">
                 <div class="expression-bar d-flex ga-3 align-center flex-wrap">
-                  <div class="expression-preview d-flex align-center ga-2 flex-shrink-0">
+                  <expression-wheel
+                    v-if="showExpressionWheel"
+                    v-model="selectedEmotion"
+                    :gesture="selectedGesture === 'none' ? null : selectedGesture"
+                    :character="currentConnection?.comic_character || 'cat'"
+                    :color="myHue"
+                    :size="164"
+                  />
+
+                  <!-- Folded away, the character still shows what is picked -->
+                  <div v-else class="expression-preview d-flex align-center ga-2 flex-shrink-0">
                     <svg viewBox="0 0 100 140" class="expression-avatar">
                       <comic-character
                         :character="currentConnection?.comic_character || 'cat'"
@@ -344,36 +354,32 @@
                         :color="myHue"
                       />
                     </svg>
-                    <div class="expression-labels">
-                      <div class="text-caption font-weight-bold">
-                        {{ $t(`irc.client.emotions.${selectedEmotion}`) }}
-                      </div>
-                      <div v-if="selectedGesture && selectedGesture !== 'none'" class="text-caption text-medium-emphasis">
-                        {{ $t(`irc.client.gestures.${selectedGesture}`) }}
-                      </div>
-                    </div>
                   </div>
 
-                  <div class="d-flex ga-2 flex-wrap align-center flex-grow-1">
-                    <v-chip-group
-                      v-model="selectedEmotion"
-                      mandatory
-                      selected-class="expression-chip--active"
-                    >
-                      <v-chip
-                        v-for="emotion in emotionChoices"
-                        :key="emotion"
-                        size="small"
-                        variant="outlined"
-                        :value="emotion"
+                  <div class="d-flex flex-column ga-2 flex-grow-1">
+                    <div class="d-flex align-center ga-2">
+                      <span class="text-caption font-weight-bold">
+                        {{ $t(`irc.client.emotions.${selectedEmotion}`) }}
+                      </span>
+                      <span
+                        v-if="selectedGesture && selectedGesture !== 'none'"
+                        class="text-caption text-medium-emphasis"
                       >
-                        <span class="mr-1">{{ getEmotionEmoji(emotion) || '😐' }}</span>
-                        {{ $t(`irc.client.emotions.${emotion}`) }}
-                      </v-chip>
-                    </v-chip-group>
+                        · {{ $t(`irc.client.gestures.${selectedGesture}`) }}
+                      </span>
+                      <v-spacer />
+                      <v-btn
+                        size="x-small"
+                        variant="text"
+                        :prepend-icon="showExpressionWheel ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+                        @click="toggleExpressionWheel()"
+                      >
+                        {{ showExpressionWheel ? $t('irc.client.hideWheel') : $t('irc.client.showWheel') }}
+                      </v-btn>
+                    </div>
 
-                    <v-divider vertical class="mx-1" />
-
+                    <!-- The wheel covers the mood; these cover what the
+                         character does with its hands -->
                     <v-chip-group
                       v-model="selectedGesture"
                       mandatory
@@ -388,6 +394,25 @@
                       >
                         <span v-if="getGestureEmoji(gesture)" class="mr-1">{{ getGestureEmoji(gesture) }}</span>
                         {{ $t(`irc.client.gestures.${gesture}`) }}
+                      </v-chip>
+                    </v-chip-group>
+
+                    <!-- Without the wheel the moods still need a way in -->
+                    <v-chip-group
+                      v-if="!showExpressionWheel"
+                      v-model="selectedEmotion"
+                      mandatory
+                      selected-class="expression-chip--active"
+                    >
+                      <v-chip
+                        v-for="emotion in emotionChoices"
+                        :key="emotion"
+                        size="small"
+                        variant="outlined"
+                        :value="emotion"
+                      >
+                        <span class="mr-1">{{ getEmotionEmoji(emotion) || '😐' }}</span>
+                        {{ $t(`irc.client.emotions.${emotion}`) }}
                       </v-chip>
                     </v-chip-group>
                   </div>
@@ -612,11 +637,13 @@
 import axios from 'axios';
 import { useSettingsStore } from '@/store/settingStore.js';
 import { useIrcStore } from '@/store/ircStore.js';
+import { useComicCharacterStore } from '@/store/comicCharacterStore.js';
 import IrcConnectionDialog from '@/components/irc/IrcConnectionDialog.vue';
 import IrcJoinDialog from '@/components/irc/IrcJoinDialog.vue';
 import ComicChatView from '@/components/irc/ComicChatView.vue';
 import ComicCharacter from '@/components/irc/ComicCharacterParts.vue';
 import ComicCharacterSelector from '@/components/irc/ComicCharacterSelector.vue';
+import ExpressionWheel from '@/components/irc/ExpressionWheel.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
@@ -629,6 +656,7 @@ export default {
     ComicChatView,
     ComicCharacter,
     ComicCharacterSelector,
+    ExpressionWheel,
     PageHeader,
     EmptyState,
     LoadingState,
@@ -669,6 +697,9 @@ export default {
       nickCharacters: {},
       emotionChoices: ['normal', 'happy', 'sad', 'angry', 'surprised', 'confused', 'excited'],
       gestureChoices: ['none', 'wave', 'laugh', 'think', 'shout', 'whisper'],
+      // The wheel is the point of comic mode, so it starts open; folding it
+      // away for more chat room is remembered.
+      showExpressionWheel: localStorage.getItem('irc:expressionWheel') !== '0',
     };
   },
   computed: {
@@ -768,6 +799,10 @@ export default {
         this.watchForDaemon();
         return;
       }
+
+      // Comic chat needs to know what the characters are made of before it
+      // can draw anyone
+      useComicCharacterStore().load();
 
       this.fetchServers();
       this.fetchConnections().then(() => this.openChannelFromRoute());
@@ -945,6 +980,12 @@ export default {
     toggleUserList() {
       this.showUserList = !this.showUserList;
       localStorage.setItem('irc:showUserList', this.showUserList ? '1' : '0');
+    },
+    toggleExpressionWheel() {
+      this.showExpressionWheel = !this.showExpressionWheel;
+      localStorage.setItem('irc:expressionWheel', this.showExpressionWheel ? '1' : '0');
+      // The bar changes height, so the chat area has to be re-measured
+      this.calculateHeight();
     },
     setConnectionBusy(id, busy) {
       this.busyConnectionIds = busy

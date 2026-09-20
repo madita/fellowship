@@ -258,6 +258,8 @@ return [
     'irc' => [
         'daemon_offline' => 'Der IRC-Chat ist derzeit nicht verfügbar — der IRC-Daemon läuft nicht.',
         'not_connected'  => 'Du bist nicht mit diesem IRC-Server verbunden.',
+        'builtin_character' => 'Ein Charakter, der zur Seite gehört, kann abgeschaltet, aber nicht gelöscht werden.',
+        'character_deleted' => 'Der Charakter wurde gelöscht.',
     ],
 
     // SPA
