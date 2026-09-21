@@ -118,6 +118,9 @@ const componentMap = {
     'footer/FooterWidgetsPage': () => import('@/pages/admin/settings/footer/FooterWidgetsPage.vue'),
     'footer/CustomHtmlPage': () => import('@/pages/admin/settings/footer/CustomHtmlPage.vue'),
 
+    // Achievements
+    'achievements/AchievementsSettingsPage': () => import('@/pages/admin/settings/achievements/AchievementsSettingsPage.vue'),
+
     // IRC
     'irc/IrcClientSettingsPage': () => import('@/pages/admin/settings/irc/IrcClientSettingsPage.vue'),
     'irc/IrcDashboardPage': () => import('@/pages/admin/settings/irc/IrcDashboardPage.vue'),

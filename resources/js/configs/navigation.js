@@ -14,6 +14,7 @@ export default {
                 { feature: 'forum', icon: 'mdi-forum', key: 'menu.forum', text: 'Forum', link: '/forum' },
                 { feature: 'irc', icon: 'mdi-chat-processing-outline', key: 'menu.irc', text: 'IRC', link: '/irc' },
                 { feature: 'gallery', icon: 'mdi-image-multiple-outline', key: 'menu.gallery', text: 'Gallery', link: '/gallery' },
+                { icon: 'mdi-trophy-outline', key: 'menu.achievements', text: 'Achievements', link: '/achievements' },
                 { feature: 'feedback', icon: 'mdi-message-alert-outline', key: 'menu.feedback', text: 'Feedback', link: '/feedback' }
             ]
         },

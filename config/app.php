@@ -239,6 +239,7 @@ return [
         OAuthConfigServiceProvider::class,
         ImageOptimizationServiceProvider::class,
         App\Providers\TranslationServiceProvider::class,
+        App\Providers\AchievementServiceProvider::class,
 
     ],
 

@@ -133,6 +133,16 @@ export const settingsCategories = [
         ]
     },
     {
+        id: 'achievements',
+        title: 'Achievements',
+        description: 'What members can earn, and handing out the ones the site cannot see',
+        icon: 'mdi-trophy-outline',
+        color: 'amber',
+        settings: [
+            { id: 'list', title: 'Achievements', description: 'Set up achievements and award them', icon: 'mdi-trophy-outline', component: 'AchievementsSettingsPage' },
+        ]
+    },
+    {
         id: 'irc',
         title: 'IRC',
         description: 'IRC servers, daemon, and connection management',

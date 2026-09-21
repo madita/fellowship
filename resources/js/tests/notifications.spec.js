@@ -40,6 +40,36 @@ describe('notification display', () => {
         expect(notificationSubject({}, t)).toBe('Notifications');
     });
 
+    it('reads an achievement the site counted, wearing its own look', () => {
+        const data = {
+            type: 'achievement_earned',
+            achievement_name: 'Marked Helpful',
+            icon: 'mdi-check-decagram-outline',
+            color: 'green',
+            url: '/achievements',
+        };
+
+        expect(notificationSubject(data, t)).toBe('You earned Marked Helpful');
+        expect(notificationIcon(data)).toBe('mdi-check-decagram-outline');
+        expect(notificationColor(data)).toBe('green');
+        expect(notificationUrl(data)).toBe('/achievements');
+    });
+
+    it('says who handed an achievement over, and why', () => {
+        const data = {
+            type: 'achievement_earned',
+            achievement_name: 'Cook',
+            awarded_by: 'alice',
+            note: 'Cooked for twelve people',
+        };
+
+        expect(notificationSubject(data, t)).toBe('alice awarded you Cook');
+        expect(notificationExcerpt(data)).toBe('Cooked for twelve people');
+        // No look of its own falls back to something sensible
+        expect(notificationIcon(data)).toBe('mdi-trophy-outline');
+        expect(notificationColor(data)).toBe('amber');
+    });
+
     it('uses the thread address of forum notifications', () => {
         const data = { type: 'forum_reply', thread_title: 'Hi', thread_url: '/forum/general/hi', post_excerpt: 'Welcome' };
 

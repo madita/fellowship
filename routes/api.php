@@ -59,6 +59,23 @@ Route::get('/forums/{slug}', 'App\Http\Controllers\Forum\ForumController@show');
 Route::get('/forums/{forumSlug}/threads/{threadSlug}', 'App\Http\Controllers\Forum\ForumThreadController@show');
 Route::get('/activity', 'App\Http\Controllers\ActivityController@index');
 
+// Achievements: a member's own standing needs a sign-in, a badge case does not
+Route::get('/achievements/user/{user}', 'App\Http\Controllers\AchievementController@forUser');
+Route::get('/achievements/leaderboard', 'App\Http\Controllers\AchievementController@leaderboard');
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/achievements', 'App\Http\Controllers\AchievementController@index');
+    Route::get('/achievements/summary', 'App\Http\Controllers\AchievementController@summary');
+
+    // Handing one out for something that happened away from the site.
+    // Admins can; so can anyone given the award-achievements permission,
+    // which is why this sits outside the admin-only group.
+    Route::middleware('permission.any:award-achievements')->group(function () {
+        Route::post('/achievements/{achievement}/award', 'App\Http\Controllers\Admin\AchievementAdminController@award');
+        Route::post('/achievements/{achievement}/revoke', 'App\Http\Controllers\Admin\AchievementAdminController@revoke');
+    });
+});
+
 Route::group(['middleware' => ['auth:sanctum']], function () {
     // Forum management (admin only)
     Route::post('/forums', 'App\Http\Controllers\Forum\ForumController@store');
@@ -445,6 +462,16 @@ Route::group(['prefix' => 'v1', 'middleware' => ['api.key', 'api.rate']], functi
 Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'admin']], function () {
     // Admin overview
     Route::get('/dashboard', 'App\Http\Controllers\Admin\AdminDashboardController@index');
+
+    // Achievements. Setting them up is an admin's job; handing one out for
+    // something that happened in the real world can be delegated with the
+    // award-achievements permission.
+    Route::get('/achievements', 'App\Http\Controllers\Admin\AchievementAdminController@index');
+    Route::get('/achievements/stats', 'App\Http\Controllers\Admin\AchievementAdminController@stats');
+    Route::post('/achievements', 'App\Http\Controllers\Admin\AchievementAdminController@store');
+    Route::patch('/achievements/{achievement}', 'App\Http\Controllers\Admin\AchievementAdminController@update');
+    Route::delete('/achievements/{achievement}', 'App\Http\Controllers\Admin\AchievementAdminController@destroy');
+    Route::get('/achievements/{achievement}/holders', 'App\Http\Controllers\Admin\AchievementAdminController@holders');
 
     // Tickets
     Route::get('/tickets/stats', 'App\Http\Controllers\Admin\TicketAdminController@stats');

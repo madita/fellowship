@@ -235,6 +235,33 @@
                 </v-col>
             </v-row>
 
+            <!-- The badge case: what this member has earned -->
+            <v-card v-if="achievements.length" class="info-card mb-4" elevation="2" rounded="lg">
+                <v-card-text class="pa-4">
+                    <div class="d-flex align-center justify-space-between mb-3">
+                        <span class="text-subtitle-2 font-weight-medium">
+                            <v-icon size="small" class="mr-1">mdi-trophy-outline</v-icon>
+                            {{ $t('achievements.profile.title') }}
+                        </span>
+                        <span class="text-caption text-medium-emphasis">
+                            {{ achievementPoints }} {{ $t('achievements.points') }}
+                        </span>
+                    </div>
+
+                    <div class="d-flex ga-2 flex-wrap">
+                        <v-tooltip v-for="badge in achievements" :key="badge.id" location="top">
+                            <template #activator="{ props }">
+                                <v-avatar v-bind="props" :color="badge.color" size="40">
+                                    <v-icon :icon="badge.icon" color="white" />
+                                </v-avatar>
+                            </template>
+                            <div class="font-weight-medium">{{ badge.name }}</div>
+                            <div v-if="badge.description" class="text-caption">{{ badge.description }}</div>
+                        </v-tooltip>
+                    </div>
+                </v-card-text>
+            </v-card>
+
             <!-- Enhanced Tabs Section -->
             <v-card class="tabs-card" elevation="2" rounded="lg">
                 <v-tabs
@@ -490,6 +517,7 @@
 
 <script>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import axios from 'axios'
 import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
 import { useAuthStore } from '@/store/authStore.js'
@@ -782,15 +810,36 @@ export default {
             }
         }
 
+        // The badge case — only what this member has actually earned
+        const achievements = ref([])
+        const achievementPoints = ref(0)
+
+        async function loadAchievements() {
+            if (!user.value?.id) return
+
+            try {
+                const { data } = await axios.get(`/api/achievements/user/${user.value.id}`)
+                achievements.value = data.data || []
+                achievementPoints.value = data.points || 0
+            } catch {
+                // A profile is still worth showing without its badges
+                achievements.value = []
+            }
+        }
+
         // Lifecycle
         onMounted(() => {
             // Set initial step based on active tab
             if (activeTab.value === 'account') currentStep.value = 2
             else if (activeTab.value === 'info') currentStep.value = 3
             else currentStep.value = 1
+
+            loadAchievements()
         })
 
         return {
+            achievements,
+            achievementPoints,
             // Reactive data
             currentStep,
             activeTab,

@@ -272,6 +272,25 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->hasMany(Page::class);
     }
 
+    /**
+     * The achievements this member has earned.
+     */
+    public function achievements()
+    {
+        return $this->belongsToMany(Achievement::class)
+            ->withPivot(['awarded_at', 'awarded_by', 'note', 'count_at_award'])
+            ->withTimestamps()
+            ->orderByPivot('awarded_at', 'desc');
+    }
+
+    /**
+     * What the earned achievements add up to.
+     */
+    public function achievementPoints(): int
+    {
+        return (int) $this->achievements()->sum('points');
+    }
+
     public function posts()
     {
         return $this->hasMany(Post::class);
