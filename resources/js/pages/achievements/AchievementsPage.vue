@@ -81,9 +81,7 @@
                         :class="{ 'is-locked': !achievement.earned }"
                     >
                         <div class="d-flex ga-3">
-                            <v-avatar :color="achievement.earned ? achievement.color : 'grey-lighten-1'" size="48">
-                                <v-icon :icon="achievement.icon" color="white" />
-                            </v-avatar>
+                            <achievement-badge :achievement="achievement" :locked="!achievement.earned" :size="48" />
 
                             <div class="flex-grow-1 min-width-0">
                                 <div class="d-flex align-center justify-space-between ga-2">
@@ -144,10 +142,11 @@ import axios from 'axios';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
+import AchievementBadge from '@/components/achievements/AchievementBadge.vue';
 
 export default {
     name: 'AchievementsPage',
-    components: { PageHeader, EmptyState, LoadingState },
+    components: { PageHeader, EmptyState, LoadingState, AchievementBadge },
     data() {
         return {
             loading: true,

@@ -307,6 +307,16 @@ return [
         'character_deleted' => 'The character was deleted.',
     ],
 
+    // Achievements
+    'achievements' => [
+        'deleted'       => 'The achievement was deleted.',
+        'awarded'       => 'Awarded to :name.',
+        'already_held'  => ':name already has it.',
+        'revoked'       => 'The achievement was taken back.',
+        'badge_uploaded' => 'The badge picture was saved.',
+        'badge_removed'  => 'The badge picture was removed.',
+    ],
+
     // SPA
     'spa' => [
         'no_javascript' => "We're sorry but this website doesn't work properly without JavaScript enabled. Please enable it to continue.",

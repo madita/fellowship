@@ -7,10 +7,12 @@ use App\Models\Achievement;
 use App\Models\AchievementProgress;
 use App\Models\User;
 use App\Services\AchievementService;
+use App\Services\ImageOptimizationService;
 use App\Support\AchievementMetrics;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -71,9 +73,80 @@ class AchievementAdminController extends Controller
      */
     public function destroy(Achievement $achievement): JsonResponse
     {
+        // Take its picture with it rather than leaving the file orphaned
+        $this->removeBadgeFile($achievement);
         $achievement->delete();
 
         return response()->json(['message' => __('messages.achievements.deleted')]);
+    }
+
+    /**
+     * Give a badge a picture of its own instead of one of the built-in
+     * icons. The icon stays on the record as the fallback, so removing the
+     * picture later leaves the achievement with a look.
+     */
+    public function uploadBadge(Request $request, Achievement $achievement): JsonResponse
+    {
+        $request->validate([
+            // Square-ish artwork at a modest size; svg is allowed because a
+            // drawn badge is exactly the case for it
+            'image' => ['required', 'image', 'mimes:jpeg,jpg,png,gif,webp,svg', 'max:2048'],
+        ]);
+
+        $file = $request->file('image');
+
+        if (! $file || ! $file->isValid()) {
+            return response()->json(['message' => __('messages.media.invalid_upload')], 422);
+        }
+
+        $this->removeBadgeFile($achievement);
+
+        $extension = strtolower($file->getClientOriginalExtension());
+        $path      = 'achievements/' . uniqid('badge_') . '.' . $extension;
+
+        Storage::disk('public')->put($path, file_get_contents($file->getRealPath() ?: $file->getPathname()));
+
+        // A badge is never shown large, so there is no reason to keep a
+        // full-size photograph around
+        if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+            ImageOptimizationService::optimize(Storage::disk('public')->path($path), [
+                'quality'    => 85,
+                'max_width'  => 512,
+                'max_height' => 512,
+            ]);
+        }
+
+        $achievement->update(['image_path' => $path]);
+
+        return response()->json([
+            'message' => __('messages.achievements.badge_uploaded'),
+            'data'    => $achievement->fresh(),
+        ]);
+    }
+
+    /**
+     * Drop the picture and fall back to the icon.
+     */
+    public function deleteBadge(Achievement $achievement): JsonResponse
+    {
+        $this->removeBadgeFile($achievement);
+        $achievement->update(['image_path' => null]);
+
+        return response()->json([
+            'message' => __('messages.achievements.badge_removed'),
+            'data'    => $achievement->fresh(),
+        ]);
+    }
+
+    /**
+     * Take the stored file with it, so replacing a badge does not leave the
+     * old one behind on disk.
+     */
+    private function removeBadgeFile(Achievement $achievement): void
+    {
+        if ($achievement->image_path && Storage::disk('public')->exists($achievement->image_path)) {
+            Storage::disk('public')->delete($achievement->image_path);
+        }
     }
 
     /**

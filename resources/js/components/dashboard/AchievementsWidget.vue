@@ -15,9 +15,7 @@
             <div v-if="summary.recent.length" class="d-flex ga-2 flex-wrap mb-3">
                 <v-tooltip v-for="item in summary.recent" :key="item.id" location="top">
                     <template #activator="{ props }">
-                        <v-avatar v-bind="props" :color="item.color" size="34">
-                            <v-icon :icon="item.icon" size="small" color="white" />
-                        </v-avatar>
+                        <achievement-badge v-bind="props" :achievement="item" :size="34" />
                     </template>
                     {{ item.name }}
                 </v-tooltip>
@@ -47,11 +45,12 @@
 <script>
 import axios from 'axios';
 import WidgetState from './WidgetState.vue';
+import AchievementBadge from '@/components/achievements/AchievementBadge.vue';
 import widgetMixin from './widgetMixin.js';
 
 export default {
     name: 'AchievementsWidget',
-    components: { WidgetState },
+    components: { WidgetState, AchievementBadge },
     mixins: [widgetMixin],
     data() {
         return { summary: null };

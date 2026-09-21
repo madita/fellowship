@@ -34,6 +34,7 @@ class AchievementEarned extends Notification
             'achievement_id'   => $this->achievement->id,
             'achievement_name' => $this->achievement->name,
             'icon'             => $this->achievement->icon,
+            'image'            => $this->achievement->image_url,
             'color'            => $this->achievement->color,
             'points'           => $this->achievement->points,
             'url'              => '/achievements',

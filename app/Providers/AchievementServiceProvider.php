@@ -67,13 +67,14 @@ class AchievementServiceProvider extends ServiceProvider
 
     private function watchForum(): void
     {
+        // The forum calls the member behind a thread or post its author
         ForumThread::created(fn (ForumThread $thread) => Achievements::record(
-            $thread->user,
+            $thread->author,
             'forum.thread.created'
         ));
 
         ForumPost::created(fn (ForumPost $post) => Achievements::record(
-            $post->user,
+            $post->author,
             'forum.post.created'
         ));
 
@@ -81,13 +82,13 @@ class AchievementServiceProvider extends ServiceProvider
         // marker's, and it counts the once — when the flag goes up.
         ForumPost::updated(function (ForumPost $post) {
             if ($post->wasChanged('is_solution') && $post->is_solution) {
-                Achievements::record($post->user, 'forum.post.solution');
+                Achievements::record($post->author, 'forum.post.solution');
             }
         });
 
         // Likewise a like counts for whoever wrote the post
         ForumPostLike::created(fn (ForumPostLike $like) => Achievements::record(
-            $like->post?->user,
+            $like->post?->author,
             'forum.post.liked'
         ));
     }
@@ -112,8 +113,10 @@ class AchievementServiceProvider extends ServiceProvider
 
     private function watchTickets(): void
     {
+        // A ticket records its author as created_by_user_id, reached through
+        // creator() — not the user_id the other models use.
         Ticket::created(function (Ticket $ticket) {
-            $author = $this->userFor($ticket->user_id);
+            $author = $ticket->creator;
 
             Achievements::record($author, 'ticket.created');
 
@@ -136,7 +139,7 @@ class AchievementServiceProvider extends ServiceProvider
         // Getting a ticket resolved counts for whoever raised it
         Ticket::updated(function (Ticket $ticket) {
             if ($ticket->wasChanged('status') && $ticket->status === 'resolved') {
-                Achievements::record($this->userFor($ticket->user_id), 'ticket.resolved');
+                Achievements::record($ticket->creator, 'ticket.resolved');
             }
         });
     }

@@ -251,9 +251,7 @@
                     <div class="d-flex ga-2 flex-wrap">
                         <v-tooltip v-for="badge in achievements" :key="badge.id" location="top">
                             <template #activator="{ props }">
-                                <v-avatar v-bind="props" :color="badge.color" size="40">
-                                    <v-icon :icon="badge.icon" color="white" />
-                                </v-avatar>
+                                <achievement-badge v-bind="props" :achievement="badge" :size="40" />
                             </template>
                             <div class="font-weight-medium">{{ badge.name }}</div>
                             <div v-if="badge.description" class="text-caption">{{ badge.description }}</div>
@@ -525,6 +523,7 @@ import { useUserStore } from '@/store/userStore.js'
 import { useDialog } from '@/composables/useDialog.js'
 import { formatDate, formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import CopyLabel from '../../components/common/CopyLabel.vue'
+import AchievementBadge from '@/components/achievements/AchievementBadge.vue'
 import AccountTab from './EditUser/AccountTab.vue'
 import InformationTab from './EditUser/InformationTab.vue'
 import SocialAccountsTab from './EditUser/SocialAccountsTab.vue'
@@ -540,6 +539,7 @@ export default {
         SocialAccountsTab,
         ActivityTab,
         PermissionsTab,
+        AchievementBadge,
     },
     setup() {
         // Reactive data

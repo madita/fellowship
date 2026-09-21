@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Something a member can earn: a name, a look, and how it is earned.
@@ -28,6 +29,7 @@ class Achievement extends Model
         'name',
         'description',
         'icon',
+        'image_path',
         'color',
         'category',
         'points',
@@ -48,6 +50,20 @@ class Achievement extends Model
         'threshold'  => 'integer',
         'sort_order' => 'integer',
     ];
+
+    /**
+     * The picture goes out as an address the client can use, alongside the
+     * stored path.
+     */
+    protected $appends = ['image_url'];
+
+    /**
+     * Where the badge picture lives, or null when it falls back to an icon.
+     */
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image_path ? Storage::url($this->image_path) : null;
+    }
 
     public function holders(): BelongsToMany
     {

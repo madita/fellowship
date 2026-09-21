@@ -7,12 +7,23 @@ use App\Models\AchievementProgress;
 use App\Models\Event\Event;
 use App\Models\Event\EventGuest;
 use App\Models\Event\EventType;
+use App\Models\Forum\ForumPost;
+use App\Models\Forum\ForumPostLike;
+use App\Models\Forum\ForumThread;
+use App\Models\Tag\Taxonomy;
+use App\Models\Tag\Term;
+use App\Models\Ticket\Ticket;
+use App\Models\Ticket\TicketComment;
+use App\Models\Ticket\TicketType;
 use App\Models\User;
 use App\Notifications\AchievementEarned;
 use App\Services\AchievementService;
 use App\Support\Achievements;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -194,6 +205,126 @@ class AchievementsTest extends TestCase
 
         $this->assertTrue($this->member->fresh()->achievements()->exists());
         $this->assertFalse($this->admin->fresh()->achievements()->exists());
+    }
+
+    /**
+     * The hooks are where this goes wrong in practice: every model names the
+     * member behind its records differently, so these create the real thing
+     * rather than calling the service.
+     */
+    public function test_opening_a_bug_report_and_a_feature_request_each_count(): void
+    {
+        $bug     = $this->achievement(['metric' => 'feedback.bug', 'threshold' => 1]);
+        $feature = $this->achievement(['metric' => 'feedback.feature', 'threshold' => 1]);
+        $any     = $this->achievement(['metric' => 'ticket.created', 'threshold' => 2]);
+
+        $this->ticket('bug');
+        $this->ticket('feature');
+
+        $held = $this->member->fresh()->achievements()->pluck('achievements.id');
+
+        $this->assertTrue($held->contains($bug->id), 'the bug report earned nothing');
+        $this->assertTrue($held->contains($feature->id), 'the feature request earned nothing');
+        $this->assertTrue($held->contains($any->id), 'the two tickets together earned nothing');
+    }
+
+    public function test_a_resolved_ticket_counts_for_whoever_raised_it(): void
+    {
+        $achievement = $this->achievement(['metric' => 'ticket.resolved', 'threshold' => 1]);
+
+        $ticket = $this->ticket('bug');
+        $ticket->update(['status' => 'resolved']);
+
+        $this->assertTrue($this->member->fresh()->achievements()->where('achievements.id', $achievement->id)->exists());
+    }
+
+    public function test_commenting_on_a_ticket_counts(): void
+    {
+        $achievement = $this->achievement(['metric' => 'ticket.comment', 'threshold' => 1]);
+
+        TicketComment::create([
+            'ticket_id' => $this->ticket('bug')->id,
+            'user_id'   => $this->member->id,
+            'comment'   => 'Same here.',
+        ]);
+
+        $this->assertTrue($this->member->fresh()->achievements()->where('achievements.id', $achievement->id)->exists());
+    }
+
+    public function test_forum_threads_replies_and_solutions_count_for_their_author(): void
+    {
+        $threads   = $this->achievement(['metric' => 'forum.thread.created', 'threshold' => 1]);
+        $replies   = $this->achievement(['metric' => 'forum.post.created', 'threshold' => 1]);
+        $solutions = $this->achievement(['metric' => 'forum.post.solution', 'threshold' => 1]);
+
+        $thread = ForumThread::create([
+            'taxonomy_id' => $this->forumCategory()->id,
+            'user_id'     => $this->member->id,
+            'title'       => 'Hello',
+            'body'        => '<p>First thread</p>',
+        ]);
+
+        $post = ForumPost::create([
+            'thread_id' => $thread->id,
+            'user_id'   => $this->member->id,
+            'body'      => '<p>A reply</p>',
+        ]);
+
+        $post->update(['is_solution' => true]);
+
+        $held = $this->member->fresh()->achievements()->pluck('achievements.id');
+
+        $this->assertTrue($held->contains($threads->id), 'the thread earned nothing');
+        $this->assertTrue($held->contains($replies->id), 'the reply earned nothing');
+        $this->assertTrue($held->contains($solutions->id), 'being marked helpful earned nothing');
+    }
+
+    public function test_a_like_counts_for_whoever_wrote_the_post(): void
+    {
+        $achievement = $this->achievement(['metric' => 'forum.post.liked', 'threshold' => 1]);
+
+        $thread = ForumThread::create([
+            'taxonomy_id' => $this->forumCategory()->id,
+            'user_id'     => $this->member->id,
+            'title'       => 'Hello',
+            'body'        => '<p>First thread</p>',
+        ]);
+
+        $post = ForumPost::create([
+            'thread_id' => $thread->id,
+            'user_id'   => $this->member->id,
+            'body'      => '<p>A reply</p>',
+        ]);
+
+        // Somebody else does the liking
+        ForumPostLike::create(['post_id' => $post->id, 'user_id' => $this->admin->id]);
+
+        $this->assertTrue($this->member->fresh()->achievements()->where('achievements.id', $achievement->id)->exists());
+        $this->assertFalse($this->admin->fresh()->achievements()->exists());
+    }
+
+    private function ticket(string $typeSlug): Ticket
+    {
+        $type = TicketType::firstOrCreate(
+            ['slug' => $typeSlug],
+            ['name' => ucfirst($typeSlug), 'is_active' => true]
+        );
+
+        return Ticket::create([
+            'ticket_type_id'     => $type->id,
+            'created_by_user_id' => $this->member->id,
+            'title'              => 'Something happened',
+            'status'             => 'open',
+            'priority'           => 'normal',
+        ]);
+    }
+
+    private function forumCategory(): Taxonomy
+    {
+        return Taxonomy::firstOrCreate(
+            ['term_id' => Term::firstOrCreateByTitle('General')->id, 'taxonomy' => 'forum_cat'],
+            ['sort' => 0, 'visible' => true, 'searchable' => true, 'properties' => []]
+        );
     }
 
     public function test_an_admin_hands_out_a_real_world_achievement(): void
@@ -386,6 +517,201 @@ class AchievementsTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.achievements.awarded', 1)
             ->assertJsonPath('data.achievements.members', 1);
+    }
+
+    public function test_a_badge_can_wear_a_picture_instead_of_an_icon(): void
+    {
+        Storage::fake('public');
+        $achievement = $this->achievement();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/admin/achievements/{$achievement->id}/badge", [
+                'image' => UploadedFile::fake()->image('medal.png', 256, 256),
+            ])
+            ->assertOk();
+
+        $path = $achievement->fresh()->image_path;
+
+        $this->assertNotNull($path);
+        Storage::disk('public')->assertExists($path);
+        // The icon stays on the record as the fallback
+        $this->assertNotNull($achievement->fresh()->icon);
+    }
+
+    public function test_the_picture_reaches_the_member_alongside_the_icon(): void
+    {
+        Storage::fake('public');
+        $achievement = $this->achievement(['trigger' => 'manual', 'metric' => null]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/admin/achievements/{$achievement->id}/badge", [
+                'image' => UploadedFile::fake()->image('medal.png'),
+            ])
+            ->assertOk();
+
+        $this->service()->award($this->member, $achievement->fresh());
+
+        $mine = collect($this->actingAs($this->member, 'sanctum')->getJson('/api/achievements')->json('data'))
+            ->firstWhere('id', $achievement->id);
+
+        $this->assertStringContainsString('achievements/', $mine['image_url']);
+
+        // And to anyone looking at their badge case
+        $this->getJson("/api/achievements/user/{$this->member->id}")
+            ->assertOk()
+            ->assertJsonPath('data.0.image_url', $mine['image_url']);
+    }
+
+    public function test_an_achievement_without_a_picture_says_so(): void
+    {
+        $achievement = $this->achievement();
+
+        $this->assertNull($achievement->image_url);
+    }
+
+    public function test_replacing_a_picture_does_not_leave_the_old_one_behind(): void
+    {
+        Storage::fake('public');
+        $achievement = $this->achievement();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/admin/achievements/{$achievement->id}/badge", ['image' => UploadedFile::fake()->image('one.png')]);
+
+        $first = $achievement->fresh()->image_path;
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/admin/achievements/{$achievement->id}/badge", ['image' => UploadedFile::fake()->image('two.png')]);
+
+        $second = $achievement->fresh()->image_path;
+
+        $this->assertNotSame($first, $second);
+        Storage::disk('public')->assertMissing($first);
+        Storage::disk('public')->assertExists($second);
+    }
+
+    public function test_the_picture_can_be_taken_off_again(): void
+    {
+        Storage::fake('public');
+        $achievement = $this->achievement();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/admin/achievements/{$achievement->id}/badge", ['image' => UploadedFile::fake()->image('medal.png')]);
+
+        $path = $achievement->fresh()->image_path;
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->deleteJson("/api/admin/achievements/{$achievement->id}/badge")
+            ->assertOk();
+
+        $this->assertNull($achievement->fresh()->image_path);
+        Storage::disk('public')->assertMissing($path);
+    }
+
+    public function test_deleting_an_achievement_takes_its_picture_with_it(): void
+    {
+        Storage::fake('public');
+        $achievement = $this->achievement();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/admin/achievements/{$achievement->id}/badge", ['image' => UploadedFile::fake()->image('medal.png')]);
+
+        $path = $achievement->fresh()->image_path;
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->deleteJson("/api/admin/achievements/{$achievement->id}")
+            ->assertOk();
+
+        Storage::disk('public')->assertMissing($path);
+    }
+
+    public function test_only_a_picture_can_be_uploaded_as_a_badge(): void
+    {
+        Storage::fake('public');
+        $achievement = $this->achievement();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/admin/achievements/{$achievement->id}/badge", [
+                'image' => UploadedFile::fake()->create('notes.pdf', 100, 'application/pdf'),
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['image']);
+
+        $this->assertNull($achievement->fresh()->image_path);
+    }
+
+    public function test_uploading_a_badge_is_for_admins(): void
+    {
+        Storage::fake('public');
+        $achievement = $this->achievement();
+
+        $this->actingAs($this->member, 'sanctum')
+            ->postJson("/api/admin/achievements/{$achievement->id}/badge", [
+                'image' => UploadedFile::fake()->image('medal.png'),
+            ])
+            ->assertForbidden();
+    }
+
+    /**
+     * Records made before achievements existed left no tally behind, which
+     * is what clearing the progress here stands for.
+     */
+    private function asIfItPredatedAchievements(): void
+    {
+        AchievementProgress::query()->delete();
+        DB::table('achievement_user')->delete();
+    }
+
+    public function test_the_backfill_counts_what_happened_before_achievements_existed(): void
+    {
+        $this->ticket('bug');
+        $this->ticket('feature');
+        $this->asIfItPredatedAchievements();
+
+        $bug = $this->achievement(['metric' => 'feedback.bug', 'threshold' => 1]);
+
+        $this->assertSame(0, $bug->progressFor($this->member));
+
+        $this->artisan('achievements:backfill')->assertSuccessful();
+
+        $this->assertSame(1, $bug->progressFor($this->member->fresh()));
+        $this->assertTrue($this->member->fresh()->achievements()->where('achievements.id', $bug->id)->exists());
+    }
+
+    public function test_running_the_backfill_twice_does_not_double_the_count(): void
+    {
+        $this->ticket('bug');
+        $this->ticket('bug');
+        $this->asIfItPredatedAchievements();
+
+        $achievement = $this->achievement(['metric' => 'feedback.bug', 'threshold' => 2]);
+
+        $this->artisan('achievements:backfill')->assertSuccessful();
+        $this->artisan('achievements:backfill')->assertSuccessful();
+
+        // Rebuilt from the records, not added to them
+        $this->assertSame(2, $achievement->progressFor($this->member->fresh()));
+
+        // And held once, however often the backfill runs
+        $this->assertSame(1, $this->member->fresh()->achievements()
+            ->where('achievements.id', $achievement->id)
+            ->count());
+    }
+
+    public function test_the_backfill_can_be_asked_to_report_without_awarding(): void
+    {
+        $this->ticket('bug');
+        $this->asIfItPredatedAchievements();
+        $this->achievement(['metric' => 'feedback.bug', 'threshold' => 1]);
+
+        $this->artisan('achievements:backfill --dry-run')->assertSuccessful();
+
+        $this->assertDatabaseCount('achievement_progress', 0);
+        $this->assertFalse($this->member->fresh()->achievements()->exists());
+    }
+
+    public function test_the_backfill_refuses_an_action_nobody_counts(): void
+    {
+        $this->artisan('achievements:backfill --metric=made.this.up')->assertFailed();
     }
 
     public function test_recording_never_breaks_what_the_member_was_doing(): void

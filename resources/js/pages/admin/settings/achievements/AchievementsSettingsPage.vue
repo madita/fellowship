@@ -73,9 +73,7 @@
                     <tr v-for="achievement in achievements" :key="achievement.id">
                         <td>
                             <div class="d-flex align-center ga-2">
-                                <v-avatar :color="achievement.color" size="30">
-                                    <v-icon :icon="achievement.icon" size="small" color="white" />
-                                </v-avatar>
+                                <achievement-badge :achievement="achievement" :size="30" />
                                 <div>
                                     <div class="font-weight-medium">
                                         {{ achievement.name }}
@@ -197,11 +195,54 @@
                             class="mb-2"
                         />
 
+                        <!-- How the badge looks: a picture of its own, or
+                             one of the built-in icons in a colour -->
+                        <div class="d-flex ga-4 align-start mb-2">
+                            <div class="text-center flex-shrink-0">
+                                <achievement-badge :achievement="badgePreview" :size="64" />
+                                <div class="text-caption text-medium-emphasis mt-1">
+                                    {{ $t('achievements.admin.form.preview') }}
+                                </div>
+                            </div>
+
+                            <div class="flex-grow-1">
+                                <v-file-input
+                                    v-model="badgeFile"
+                                    :label="$t('achievements.admin.form.badgeImage')"
+                                    :hint="$t('achievements.admin.form.badgeImageHint')"
+                                    persistent-hint
+                                    accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+                                    prepend-icon=""
+                                    prepend-inner-icon="mdi-image-outline"
+                                    density="compact"
+                                    variant="outlined"
+                                    show-size
+                                    :loading="uploadingBadge"
+                                    @update:model-value="onBadgeChosen"
+                                />
+
+                                <v-btn
+                                    v-if="form.image_url"
+                                    size="x-small"
+                                    variant="text"
+                                    color="error"
+                                    prepend-icon="mdi-close"
+                                    :loading="uploadingBadge"
+                                    @click="removeBadge"
+                                >
+                                    {{ $t('achievements.admin.form.removeImage') }}
+                                </v-btn>
+                            </div>
+                        </div>
+
                         <v-row dense>
                             <v-col cols="12" sm="4">
                                 <v-text-field
                                     v-model="form.icon"
                                     :label="$t('achievements.admin.form.icon')"
+                                    :disabled="Boolean(form.image_url)"
+                                    :hint="form.image_url ? $t('achievements.admin.form.iconUnused') : ''"
+                                    persistent-hint
                                     density="compact"
                                     variant="outlined"
                                     :prepend-inner-icon="form.icon || 'mdi-trophy-outline'"
@@ -388,6 +429,7 @@ import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
+import AchievementBadge from '@/components/achievements/AchievementBadge.vue';
 import { useDialog } from '@/composables/useDialog.js';
 
 defineProps({
@@ -417,6 +459,13 @@ const editing = ref(null);
 const formRef = ref(null);
 const form = ref(blankForm());
 
+// A badge picture needs an achievement to belong to, so one chosen while
+// creating is held back and uploaded as soon as the record exists.
+const badgeFile = ref(null);
+const pendingBadge = ref(null);
+const pendingPreview = ref(null);
+const uploadingBadge = ref(false);
+
 const showAward = ref(false);
 const awarding = ref(null);
 const awardingBusy = ref(false);
@@ -432,6 +481,7 @@ function blankForm() {
         name: '',
         description: '',
         icon: 'mdi-trophy-outline',
+        image_url: null,
         color: 'amber',
         category: 'community',
         points: 10,
@@ -466,6 +516,87 @@ const narrowChoices = computed(() => {
 watch(() => form.value.metric, () => {
     if (!narrowChoices.value.length) form.value.filters = { values: [] };
 });
+
+// What the badge will look like, including a file chosen but not yet saved
+const badgePreview = computed(() => ({
+    name: form.value.name,
+    icon: form.value.icon,
+    color: form.value.color,
+    image_url: pendingPreview.value || form.value.image_url,
+}));
+
+function clearPendingBadge() {
+    if (pendingPreview.value) URL.revokeObjectURL(pendingPreview.value);
+
+    pendingPreview.value = null;
+    pendingBadge.value = null;
+    badgeFile.value = null;
+}
+
+/**
+ * An existing achievement takes the picture straight away; a new one holds
+ * it until the record has been created.
+ */
+async function onBadgeChosen(value) {
+    const file = Array.isArray(value) ? value[0] : value;
+
+    if (!file) return;
+
+    if (editing.value) {
+        await uploadBadge(editing.value.id, file);
+        badgeFile.value = null;
+        return;
+    }
+
+    if (pendingPreview.value) URL.revokeObjectURL(pendingPreview.value);
+
+    pendingBadge.value = file;
+    pendingPreview.value = URL.createObjectURL(file);
+}
+
+async function uploadBadge(id, file) {
+    uploadingBadge.value = true;
+    try {
+        const payload = new FormData();
+        payload.append('image', file);
+
+        const { data } = await axios.post(`/api/admin/achievements/${id}/badge`, payload, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        form.value.image_url = data.data.image_url;
+        clearPendingBadge();
+
+        return true;
+    } catch (error) {
+        await dialog.requestError(error, t('achievements.admin.badgeFailed'));
+
+        return false;
+    } finally {
+        uploadingBadge.value = false;
+    }
+}
+
+async function removeBadge() {
+    // Nothing saved yet — just drop what was chosen
+    if (!editing.value || pendingBadge.value) {
+        clearPendingBadge();
+        form.value.image_url = null;
+        return;
+    }
+
+    uploadingBadge.value = true;
+    try {
+        await axios.delete(`/api/admin/achievements/${editing.value.id}/badge`);
+        form.value.image_url = null;
+        clearPendingBadge();
+        await load();
+    } catch (error) {
+        await dialog.requestError(error, t('achievements.admin.badgeFailed'));
+    } finally {
+        uploadingBadge.value = false;
+    }
+}
 
 const statCards = computed(() => [
     { key: 'achievements', value: stats.value.achievements ?? 0, color: 'primary' },
@@ -503,6 +634,7 @@ async function load() {
 }
 
 function openEditor(achievement = null) {
+    clearPendingBadge();
     editing.value = achievement;
     form.value = achievement
         ? {
@@ -530,9 +662,15 @@ async function save() {
         if (editing.value) {
             await axios.patch(`/api/admin/achievements/${editing.value.id}`, payload);
         } else {
-            await axios.post('/api/admin/achievements', payload);
+            const { data } = await axios.post('/api/admin/achievements', payload);
+
+            // The picture chosen before the record existed goes up now
+            if (pendingBadge.value) {
+                await uploadBadge(data.data.id, pendingBadge.value);
+            }
         }
 
+        clearPendingBadge();
         showEditor.value = false;
         await load();
         await dialog.success(t('achievements.admin.saved'));

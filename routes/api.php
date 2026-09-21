@@ -472,6 +472,9 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'admin']], f
     Route::patch('/achievements/{achievement}', 'App\Http\Controllers\Admin\AchievementAdminController@update');
     Route::delete('/achievements/{achievement}', 'App\Http\Controllers\Admin\AchievementAdminController@destroy');
     Route::get('/achievements/{achievement}/holders', 'App\Http\Controllers\Admin\AchievementAdminController@holders');
+    // A badge can wear a picture instead of one of the built-in icons
+    Route::post('/achievements/{achievement}/badge', 'App\Http\Controllers\Admin\AchievementAdminController@uploadBadge');
+    Route::delete('/achievements/{achievement}/badge', 'App\Http\Controllers\Admin\AchievementAdminController@deleteBadge');
 
     // Tickets
     Route::get('/tickets/stats', 'App\Http\Controllers\Admin\TicketAdminController@stats');

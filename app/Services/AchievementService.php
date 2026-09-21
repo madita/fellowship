@@ -171,6 +171,7 @@ class AchievementService
                     'name'        => $achievement->name,
                     'description' => $achievement->description,
                     'icon'        => $achievement->icon,
+                    'image_url'   => $achievement->image_url,
                     'color'       => $achievement->color,
                     'category'    => $achievement->category,
                     'points'      => $achievement->points,
