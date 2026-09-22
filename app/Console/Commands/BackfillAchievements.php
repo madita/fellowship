@@ -36,7 +36,7 @@ class BackfillAchievements extends Command
         $dry  = (bool) $this->option('dry-run');
 
         foreach ($only as $metric) {
-            if (! AchievementMetrics::exists($metric)) {
+            if ( ! AchievementMetrics::exists($metric)) {
                 $this->error("No such action: {$metric}");
 
                 return self::FAILURE;
@@ -108,7 +108,7 @@ class BackfillAchievements extends Command
         $this->withProgressBar($userIds, function ($userId) use ($achievable, $achievements, &$awarded) {
             $user = User::find($userId);
 
-            if (! $user) {
+            if ( ! $user) {
                 return;
             }
 
@@ -160,9 +160,9 @@ class BackfillAchievements extends Command
                 ->where('revisionable_type', Page::class)
                 ->where('action', '!=', 'created')),
 
-            'ticket.created'  => $this->count('tickets', 'created_by_user_id'),
-            'ticket.resolved' => $this->count('tickets', 'created_by_user_id', fn ($q) => $q->where('status', 'resolved')),
-            'ticket.comment'  => $this->count('ticket_comments', 'user_id'),
+            'ticket.created'    => $this->count('tickets', 'created_by_user_id'),
+            'ticket.resolved'   => $this->count('tickets', 'created_by_user_id', fn ($q) => $q->where('status', 'resolved')),
+            'ticket.comment'    => $this->count('ticket_comments', 'user_id'),
             'feedback.bug'      => $this->ticketsOfType('bug'),
             'feedback.feature'  => $this->ticketsOfType('feature'),
 
@@ -180,7 +180,7 @@ class BackfillAchievements extends Command
      */
     private function count(string $table, string $userColumn, ?callable $filter = null): ?array
     {
-        if (! $this->tableExists($table)) {
+        if ( ! $this->tableExists($table)) {
             return null;
         }
 
@@ -206,7 +206,7 @@ class BackfillAchievements extends Command
      */
     private function joinedCount(string $table, string $ownerTable, string $foreignKey, string $ownerColumn): ?array
     {
-        if (! $this->tableExists($table) || ! $this->tableExists($ownerTable)) {
+        if ( ! $this->tableExists($table) || ! $this->tableExists($ownerTable)) {
             return null;
         }
 
@@ -221,7 +221,7 @@ class BackfillAchievements extends Command
 
     private function ticketsOfType(string $slug): ?array
     {
-        if (! $this->tableExists('tickets') || ! $this->tableExists('ticket_types')) {
+        if ( ! $this->tableExists('tickets') || ! $this->tableExists('ticket_types')) {
             return null;
         }
 
@@ -246,7 +246,7 @@ class BackfillAchievements extends Command
      */
     private function eventCounts(): ?array
     {
-        if (! $this->tableExists('events')) {
+        if ( ! $this->tableExists('events')) {
             return null;
         }
 
@@ -270,7 +270,7 @@ class BackfillAchievements extends Command
 
     private function guestCounts(): ?array
     {
-        if (! $this->tableExists('event_guests') || ! $this->tableExists('events')) {
+        if ( ! $this->tableExists('event_guests') || ! $this->tableExists('events')) {
             return null;
         }
 

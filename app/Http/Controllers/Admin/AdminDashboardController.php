@@ -77,10 +77,10 @@ class AdminDashboardController extends Controller
                     'messages_7d'      => ConversationMessage::where('created_at', '>=', $now->copy()->subDays(7))->count(),
                 ],
                 'achievements' => [
-                    'total'    => Achievement::count(),
-                    'enabled'  => Achievement::enabled()->count(),
-                    'awarded'  => DB::table('achievement_user')->count(),
-                    'members'  => DB::table('achievement_user')->distinct('user_id')->count('user_id'),
+                    'total'      => Achievement::count(),
+                    'enabled'    => Achievement::enabled()->count(),
+                    'awarded'    => DB::table('achievement_user')->count(),
+                    'members'    => DB::table('achievement_user')->distinct('user_id')->count('user_id'),
                     'awarded_7d' => DB::table('achievement_user')
                         ->where('awarded_at', '>=', $now->copy()->subDays(7))
                         ->count(),

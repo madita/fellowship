@@ -57,43 +57,6 @@ class AchievementAdminController extends Controller
     }
 
     /**
-     * The kinds of achievement, as a taxonomy so admins can add one.
-     */
-    private function types(): array
-    {
-        return Taxonomy::where('taxonomy', Achievement::TYPE_TAXONOMY)
-            ->with('term')
-            ->orderBy('sort')
-            ->get()
-            ->map(fn (Taxonomy $taxonomy) => [
-                'id'   => $taxonomy->id,
-                'name' => $taxonomy->term?->title,
-                'slug' => $taxonomy->term?->slug,
-            ])
-            ->all();
-    }
-
-    /**
-     * What the achievement is called in each locale, blank where it has
-     * not been written yet.
-     */
-    private function translationsOf(Achievement $achievement): array
-    {
-        $wording = [];
-
-        foreach (Locales::all() as $locale) {
-            $translation = $achievement->translate($locale, true);
-
-            $wording[$locale] = [
-                'name'        => $translation?->name ?? '',
-                'description' => $translation?->description ?? '',
-            ];
-        }
-
-        return $wording;
-    }
-
-    /**
      * Add a kind of achievement. The name goes on a term, so it is
      * translated like every other taxonomy on the site.
      */
@@ -182,7 +145,7 @@ class AchievementAdminController extends Controller
 
         $file = $request->file('image');
 
-        if (! $file || ! $file->isValid()) {
+        if ( ! $file || ! $file->isValid()) {
             return response()->json(['message' => __('messages.media.invalid_upload')], 422);
         }
 
@@ -223,17 +186,6 @@ class AchievementAdminController extends Controller
             'message' => __('messages.achievements.badge_removed'),
             'data'    => $achievement->fresh(),
         ]);
-    }
-
-    /**
-     * Take the stored file with it, so replacing a badge does not leave the
-     * old one behind on disk.
-     */
-    private function removeBadgeFile(Achievement $achievement): void
-    {
-        if ($achievement->image_path && Storage::disk('public')->exists($achievement->image_path)) {
-            Storage::disk('public')->delete($achievement->image_path);
-        }
     }
 
     /**
@@ -320,20 +272,68 @@ class AchievementAdminController extends Controller
 
         return response()->json([
             'data' => [
-                'achievements'   => Achievement::count(),
-                'enabled'        => Achievement::enabled()->count(),
-                'manual'         => Achievement::where('trigger', 'manual')->count(),
-                'awarded'        => (clone $awarded)->count(),
-                'members'        => (clone $awarded)->distinct('user_id')->count('user_id'),
+                'achievements'    => Achievement::count(),
+                'enabled'         => Achievement::enabled()->count(),
+                'manual'          => Achievement::where('trigger', 'manual')->count(),
+                'awarded'         => (clone $awarded)->count(),
+                'members'         => (clone $awarded)->distinct('user_id')->count('user_id'),
                 'awarded_by_hand' => (clone $awarded)->whereNotNull('awarded_by')->count(),
-                'recent'         => (clone $awarded)->where('awarded_at', '>=', now()->subDays(30))->count(),
+                'recent'          => (clone $awarded)->where('awarded_at', '>=', now()->subDays(30))->count(),
                 // Nobody has managed these — either very hard, or misconfigured
-                'unearned'       => $perAchievement->where('holders_count', 0)->pluck('name')->values(),
+                'unearned'        => $perAchievement->where('holders_count', 0)->pluck('name')->values(),
                 'per_achievement' => $perAchievement,
-                'top_members'    => $topMembers,
+                'top_members'     => $topMembers,
                 'tracked_actions' => AchievementProgress::distinct('metric')->count('metric'),
             ],
         ]);
+    }
+
+    /**
+     * The kinds of achievement, as a taxonomy so admins can add one.
+     */
+    private function types(): array
+    {
+        return Taxonomy::where('taxonomy', Achievement::TYPE_TAXONOMY)
+            ->with('term')
+            ->orderBy('sort')
+            ->get()
+            ->map(fn (Taxonomy $taxonomy) => [
+                'id'   => $taxonomy->id,
+                'name' => $taxonomy->term?->title,
+                'slug' => $taxonomy->term?->slug,
+            ])
+            ->all();
+    }
+
+    /**
+     * What the achievement is called in each locale, blank where it has
+     * not been written yet.
+     */
+    private function translationsOf(Achievement $achievement): array
+    {
+        $wording = [];
+
+        foreach (Locales::all() as $locale) {
+            $translation = $achievement->translate($locale, true);
+
+            $wording[$locale] = [
+                'name'        => $translation?->name ?? '',
+                'description' => $translation?->description ?? '',
+            ];
+        }
+
+        return $wording;
+    }
+
+    /**
+     * Take the stored file with it, so replacing a badge does not leave the
+     * old one behind on disk.
+     */
+    private function removeBadgeFile(Achievement $achievement): void
+    {
+        if ($achievement->image_path && Storage::disk('public')->exists($achievement->image_path)) {
+            Storage::disk('public')->delete($achievement->image_path);
+        }
     }
 
     /**
@@ -353,21 +353,21 @@ class AchievementAdminController extends Controller
             "translations.{$default}.name"    => ['required', 'string', 'max:80'],
             'translations.*.name'             => ['nullable', 'string', 'max:80'],
             'translations.*.description'      => ['nullable', 'string', 'max:500'],
-            'icon'        => ['nullable', 'string', 'max:60'],
-            'color'       => ['nullable', 'string', 'max:30'],
-            'taxonomy_id' => [
+            'icon'                            => ['nullable', 'string', 'max:60'],
+            'color'                           => ['nullable', 'string', 'max:30'],
+            'taxonomy_id'                     => [
                 'nullable',
                 Rule::exists('taxonomies', 'id')->where('taxonomy', Achievement::TYPE_TAXONOMY),
             ],
-            'points'      => ['required', 'integer', 'min:0', 'max:1000'],
-            'trigger'     => ['required', Rule::in(Achievement::TRIGGERS)],
-            'metric'      => ['nullable', 'required_if:trigger,metric', Rule::in(AchievementMetrics::keys())],
-            'threshold'   => ['required', 'integer', 'min:1', 'max:100000'],
+            'points'             => ['required', 'integer', 'min:0', 'max:1000'],
+            'trigger'            => ['required', Rule::in(Achievement::TRIGGERS)],
+            'metric'             => ['nullable', 'required_if:trigger,metric', Rule::in(AchievementMetrics::keys())],
+            'threshold'          => ['required', 'integer', 'min:1', 'max:100000'],
             'filters'            => ['nullable', 'array'],
             'filters.values'     => ['nullable', 'array'],
             'filters.values.*'   => ['string', 'max:60'],
-            'is_enabled'  => ['nullable', 'boolean'],
-            'is_secret'   => ['nullable', 'boolean'],
+            'is_enabled'         => ['nullable', 'boolean'],
+            'is_secret'          => ['nullable', 'boolean'],
         ]);
 
         // A narrowing only means something for an action that supports one

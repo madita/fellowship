@@ -70,7 +70,7 @@ class RankAdminController extends Controller
 
         $file = $request->file('image');
 
-        if (! $file || ! $file->isValid()) {
+        if ( ! $file || ! $file->isValid()) {
             return response()->json(['message' => __('messages.media.invalid_upload')], 422);
         }
 
@@ -164,10 +164,10 @@ class RankAdminController extends Controller
             "translations.{$default}.name" => ['required', 'string', 'max:60'],
             'translations.*.name'          => ['nullable', 'string', 'max:60'],
             'translations.*.description'   => ['nullable', 'string', 'max:300'],
-            'points_required' => ['required', 'integer', 'min:0', 'max:1000000'],
-            'icon'            => ['nullable', 'string', 'max:60'],
-            'color'           => ['nullable', 'string', 'max:30'],
-            'is_enabled'      => ['nullable', 'boolean'],
+            'points_required'              => ['required', 'integer', 'min:0', 'max:1000000'],
+            'icon'                         => ['nullable', 'string', 'max:60'],
+            'color'                        => ['nullable', 'string', 'max:30'],
+            'is_enabled'                   => ['nullable', 'boolean'],
         ]);
 
         $data['icon']  = $data['icon'] ?? null ?: 'mdi-shield-outline';

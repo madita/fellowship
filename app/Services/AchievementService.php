@@ -33,7 +33,7 @@ class AchievementService
      */
     public function record(?User $user, string $metric, ?string $scope = null, int $times = 1): void
     {
-        if (! $user || $times < 1 || ! AchievementMetrics::exists($metric)) {
+        if ( ! $user || $times < 1 || ! AchievementMetrics::exists($metric)) {
             return;
         }
 
@@ -51,49 +51,6 @@ class AchievementService
                 'user'  => $user->id,
                 'error' => $e->getMessage(),
             ]);
-        }
-    }
-
-    /**
-     * Add to one tally, creating it the first time.
-     */
-    private function bump(User $user, string $metric, string $scope, int $times): void
-    {
-        $progress = AchievementProgress::firstOrNew([
-            'user_id' => $user->id,
-            'metric'  => $metric,
-            'scope'   => $scope,
-        ]);
-
-        $progress->count   = (int) $progress->count + $times;
-        $progress->last_at = now();
-        $progress->save();
-    }
-
-    /**
-     * Award every achievement watching this action that the member has now
-     * reached and does not already hold.
-     */
-    private function awardEarned(User $user, string $metric): void
-    {
-        $candidates = Achievement::forMetric($metric)->get();
-
-        if ($candidates->isEmpty()) {
-            return;
-        }
-
-        $held = $user->achievements()->pluck('achievements.id')->all();
-
-        foreach ($candidates as $achievement) {
-            if (in_array($achievement->id, $held, true)) {
-                continue;
-            }
-
-            $progress = $achievement->progressFor($user);
-
-            if ($progress >= $achievement->threshold) {
-                $this->award($user, $achievement, null, null, $progress);
-            }
         }
     }
 
@@ -147,29 +104,6 @@ class AchievementService
     }
 
     /**
-     * Tell a member when the points they just gained carried them into a
-     * rank they had not reached before. Losing a rank — an award taken
-     * back — passes in silence; there is nothing kind to say about it.
-     */
-    private function announceRank(User $user, ?Rank $before): void
-    {
-        $points = $user->achievementPoints();
-        $now    = Rank::forPoints($points);
-
-        if (! $now || $now->id === $before?->id) {
-            return;
-        }
-
-        // Only upward: a threshold edited downward should not congratulate
-        // somebody for standing still
-        if ($before && $now->points_required <= $before->points_required) {
-            return;
-        }
-
-        $user->notify(new RankReached($now, $points));
-    }
-
-    /**
      * Take an achievement back — a mistaken award, or one given to the
      * wrong member.
      */
@@ -216,5 +150,71 @@ class AchievementService
             })
             ->values()
             ->all();
+    }
+
+    /**
+     * Add to one tally, creating it the first time.
+     */
+    private function bump(User $user, string $metric, string $scope, int $times): void
+    {
+        $progress = AchievementProgress::firstOrNew([
+            'user_id' => $user->id,
+            'metric'  => $metric,
+            'scope'   => $scope,
+        ]);
+
+        $progress->count   = (int) $progress->count + $times;
+        $progress->last_at = now();
+        $progress->save();
+    }
+
+    /**
+     * Award every achievement watching this action that the member has now
+     * reached and does not already hold.
+     */
+    private function awardEarned(User $user, string $metric): void
+    {
+        $candidates = Achievement::forMetric($metric)->get();
+
+        if ($candidates->isEmpty()) {
+            return;
+        }
+
+        $held = $user->achievements()->pluck('achievements.id')->all();
+
+        foreach ($candidates as $achievement) {
+            if (in_array($achievement->id, $held, true)) {
+                continue;
+            }
+
+            $progress = $achievement->progressFor($user);
+
+            if ($progress >= $achievement->threshold) {
+                $this->award($user, $achievement, null, null, $progress);
+            }
+        }
+    }
+
+    /**
+     * Tell a member when the points they just gained carried them into a
+     * rank they had not reached before. Losing a rank — an award taken
+     * back — passes in silence; there is nothing kind to say about it.
+     */
+    private function announceRank(User $user, ?Rank $before): void
+    {
+        $points = $user->achievementPoints();
+        $now    = Rank::forPoints($points);
+
+        if ( ! $now || $now->id === $before?->id) {
+            return;
+        }
+
+        // Only upward: a threshold edited downward should not congratulate
+        // somebody for standing still
+        if ($before && $now->points_required <= $before->points_required) {
+            return;
+        }
+
+        $user->notify(new RankReached($now, $points));
     }
 }
