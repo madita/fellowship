@@ -307,6 +307,24 @@ return [
         'character_deleted' => 'The character was deleted.',
     ],
 
+    // Achievements
+    'achievements' => [
+        'deleted'       => 'The achievement was deleted.',
+        'awarded'       => 'Awarded to :name.',
+        'already_held'  => ':name already has it.',
+        'revoked'       => 'The achievement was taken back.',
+        'badge_uploaded' => 'The badge picture was saved.',
+        'badge_removed'  => 'The badge picture was removed.',
+        'type_deleted'   => 'The kind was removed. Its achievements kept everything else.',
+    ],
+
+    // Ranks
+    'ranks' => [
+        'deleted'        => 'The rank was deleted.',
+        'image_uploaded' => 'The picture was saved.',
+        'image_removed'  => 'The picture was removed.',
+    ],
+
     // SPA
     'spa' => [
         'no_javascript' => "We're sorry but this website doesn't work properly without JavaScript enabled. Please enable it to continue.",

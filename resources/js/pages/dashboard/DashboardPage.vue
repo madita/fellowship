@@ -295,6 +295,7 @@ import ConversationsWidget from '@/components/dashboard/ConversationsWidget.vue'
 import SandboxWidget from '@/components/dashboard/SandboxWidget.vue';
 import GalleryWidget from '@/components/dashboard/GalleryWidget.vue';
 import TicketOverviewWidget from '@/components/dashboard/TicketOverviewWidget.vue';
+import AchievementsWidget from '@/components/dashboard/AchievementsWidget.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
@@ -340,7 +341,8 @@ export default {
         ConversationsWidget,
         SandboxWidget,
         GalleryWidget,
-        TicketOverviewWidget
+        TicketOverviewWidget,
+        AchievementsWidget
     },
     data() {
         return {

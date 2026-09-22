@@ -76,7 +76,10 @@ class ImageOptimizationService
             $image->save($path);
 
             return true;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            // Throwable, not Exception: a host without the imagick extension
+            // raises an Error, and an upload must not be lost because the
+            // file could not be made smaller afterwards.
             \Log::warning('Image optimization failed: ' . $e->getMessage(), [
                 'path'    => $path,
                 'options' => $options,

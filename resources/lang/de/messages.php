@@ -262,6 +262,24 @@ return [
         'character_deleted' => 'Der Charakter wurde gelöscht.',
     ],
 
+    // Achievements
+    'achievements' => [
+        'deleted'       => 'Der Erfolg wurde gelöscht.',
+        'awarded'       => 'An :name vergeben.',
+        'already_held'  => ':name hat ihn bereits.',
+        'revoked'       => 'Der Erfolg wurde zurückgenommen.',
+        'badge_uploaded' => 'Das Bild wurde gespeichert.',
+        'badge_removed'  => 'Das Bild wurde entfernt.',
+        'type_deleted'   => 'Die Art wurde entfernt. Ihre Erfolge bleiben sonst unverändert.',
+    ],
+
+    // Ränge
+    'ranks' => [
+        'deleted'        => 'Der Rang wurde gelöscht.',
+        'image_uploaded' => 'Das Bild wurde gespeichert.',
+        'image_removed'  => 'Das Bild wurde entfernt.',
+    ],
+
     // SPA
     'spa' => [
         'no_javascript' => 'Es tut uns leid, aber diese Website funktioniert ohne aktiviertes JavaScript nicht richtig. Bitte aktivieren Sie es, um fortzufahren.',

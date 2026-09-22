@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Translations\WikiTranslation;
 use App\Services\DiscordWebhookService;
+use App\Support\Achievements;
 use App\Support\DiscordEvents;
 use App\Traits\Approvable;
 use App\Traits\HasCache;
@@ -57,6 +58,10 @@ class Wiki extends Model implements TranslatableContract
             // Credited to whoever wrote the page, not to the admin approving it
             $wikiable->notifyMentionedMembers($wikiable->user ?? null);
         }
+
+        // An approved page is the one worth counting: a draft nobody has
+        // read yet is not an achievement. Credited to its author.
+        Achievements::record($wikiable?->user ?? null, 'wiki.page.approved');
 
         app(DiscordWebhookService::class)->announce(DiscordEvents::WIKI_PAGE_APPROVED, [
             'title'       => $this->title,

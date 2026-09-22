@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Achievement;
 use App\Models\Collection;
 use App\Models\Conversation\ConversationMessage;
 use App\Models\Event\Event;
@@ -74,6 +75,15 @@ class AdminDashboardController extends Controller
                     'media_size'       => $this->formatBytes((int) Media::sum('size')),
                     'sandboxes'        => Sandbox::count(),
                     'messages_7d'      => ConversationMessage::where('created_at', '>=', $now->copy()->subDays(7))->count(),
+                ],
+                'achievements' => [
+                    'total'      => Achievement::count(),
+                    'enabled'    => Achievement::enabled()->count(),
+                    'awarded'    => DB::table('achievement_user')->count(),
+                    'members'    => DB::table('achievement_user')->distinct('user_id')->count('user_id'),
+                    'awarded_7d' => DB::table('achievement_user')
+                        ->where('awarded_at', '>=', $now->copy()->subDays(7))
+                        ->count(),
                 ],
                 'system' => $this->system(),
                 'recent' => [

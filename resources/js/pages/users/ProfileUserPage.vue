@@ -235,6 +235,38 @@
                 </v-col>
             </v-row>
 
+            <!-- The badge case: what this member has earned -->
+            <v-card v-if="achievements.length" class="info-card mb-4" elevation="2" rounded="lg">
+                <v-card-text class="pa-4">
+                    <div class="d-flex align-center justify-space-between mb-3">
+                        <span class="text-subtitle-2 font-weight-medium">
+                            <v-icon size="small" class="mr-1">mdi-trophy-outline</v-icon>
+                            {{ $t('achievements.profile.title') }}
+                        </span>
+                        <div class="d-flex align-center ga-2">
+                            <!-- The rank those points have reached -->
+                            <v-chip v-if="rank" size="small" :color="rank.color" variant="tonal">
+                                <v-icon :icon="rank.icon" size="x-small" start />
+                                {{ rank.name }}
+                            </v-chip>
+                            <span class="text-caption text-medium-emphasis">
+                                {{ achievementPoints }} {{ $t('achievements.points') }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex ga-2 flex-wrap">
+                        <v-tooltip v-for="badge in achievements" :key="badge.id" location="top">
+                            <template #activator="{ props }">
+                                <achievement-badge v-bind="props" :achievement="badge" :size="40" />
+                            </template>
+                            <div class="font-weight-medium">{{ badge.name }}</div>
+                            <div v-if="badge.description" class="text-caption">{{ badge.description }}</div>
+                        </v-tooltip>
+                    </div>
+                </v-card-text>
+            </v-card>
+
             <!-- Enhanced Tabs Section -->
             <v-card class="tabs-card" elevation="2" rounded="lg">
                 <v-tabs
@@ -490,6 +522,7 @@
 
 <script>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import axios from 'axios'
 import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
 import { useAuthStore } from '@/store/authStore.js'
@@ -497,6 +530,7 @@ import { useUserStore } from '@/store/userStore.js'
 import { useDialog } from '@/composables/useDialog.js'
 import { formatDate, formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import CopyLabel from '../../components/common/CopyLabel.vue'
+import AchievementBadge from '@/components/achievements/AchievementBadge.vue'
 import AccountTab from './EditUser/AccountTab.vue'
 import InformationTab from './EditUser/InformationTab.vue'
 import SocialAccountsTab from './EditUser/SocialAccountsTab.vue'
@@ -512,6 +546,7 @@ export default {
         SocialAccountsTab,
         ActivityTab,
         PermissionsTab,
+        AchievementBadge,
     },
     setup() {
         // Reactive data
@@ -782,15 +817,39 @@ export default {
             }
         }
 
+        // The badge case — only what this member has actually earned
+        const achievements = ref([])
+        const achievementPoints = ref(0)
+        const rank = ref(null)
+
+        async function loadAchievements() {
+            if (!user.value?.id) return
+
+            try {
+                const { data } = await axios.get(`/api/achievements/user/${user.value.id}`)
+                achievements.value = data.data || []
+                achievementPoints.value = data.points || 0
+                rank.value = data.rank || null
+            } catch {
+                // A profile is still worth showing without its badges
+                achievements.value = []
+            }
+        }
+
         // Lifecycle
         onMounted(() => {
             // Set initial step based on active tab
             if (activeTab.value === 'account') currentStep.value = 2
             else if (activeTab.value === 'info') currentStep.value = 3
             else currentStep.value = 1
+
+            loadAchievements()
         })
 
         return {
+            achievements,
+            achievementPoints,
+            rank,
             // Reactive data
             currentStep,
             activeTab,

@@ -48,6 +48,15 @@ export function notificationSubject(data = {}, t) {
         return t('notifications.ticketStatus', { title: data.ticket_title, status: t(`tickets.status.${data.status}`) });
     }
 
+    if (type === 'rank_reached') {
+        return t('notifications.rankReached', { rank: data.rank_name });
+    }
+    if (type === 'achievement_earned') {
+        return data.awarded_by
+            ? t('notifications.achievementAwarded', { name: data.awarded_by, title: data.achievement_name })
+            : t('notifications.achievementEarned', { title: data.achievement_name });
+    }
+
     return data.subject || data.thread_title || data.sandbox_title || t('notifications.title');
 }
 
@@ -58,6 +67,10 @@ export function notificationIcon(data = {}) {
     if (type.startsWith('forum_')) return FORUM_ICONS[type] || 'mdi-forum';
     if (type.startsWith('status_') || type === 'mention') return 'mdi-at';
     if (type.startsWith('ticket_')) return TICKET_ICONS[type] || 'mdi-ticket-outline';
+
+    // The achievement carries the look an admin gave it
+    if (type === 'achievement_earned') return data.icon || 'mdi-trophy-outline';
+    if (type === 'rank_reached') return data.icon || 'mdi-shield-star-outline';
 
     return 'mdi-bell-outline';
 }
@@ -76,6 +89,8 @@ export function notificationColor(data = {}) {
 
     if (type.startsWith('sandbox_')) return SANDBOX_COLORS[type] || 'primary';
     if (type.startsWith('forum_')) return 'warning';
+    if (type === 'achievement_earned') return data.color || 'amber';
+    if (type === 'rank_reached') return data.color || 'indigo';
 
     return 'primary';
 }
@@ -91,5 +106,5 @@ export function notificationUrl(data = {}) {
  * The bit of the content the notification is about, as plain text.
  */
 export function notificationExcerpt(data = {}) {
-    return data.excerpt || data.post_excerpt || null;
+    return data.excerpt || data.post_excerpt || data.note || null;
 }

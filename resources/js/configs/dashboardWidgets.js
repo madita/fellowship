@@ -5,6 +5,14 @@
  * `dashboard.widgets.<type>` translation keys.
  */
 export const WIDGET_TYPES = {
+    achievements: {
+        component: 'AchievementsWidget',
+        feature: null,
+        icon: 'mdi-trophy-outline',
+        color: 'amber',
+        size: 'medium',
+        action: { icon: 'mdi-trophy', to: '/achievements' },
+    },
     events: {
         component: 'EventsWidget',
         feature: 'events',

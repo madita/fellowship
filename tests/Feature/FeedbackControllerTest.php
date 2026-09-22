@@ -267,7 +267,9 @@ class FeedbackControllerTest extends TestCase
 
         $ticket->comments()->create(['user_id' => $this->admin->id, 'comment' => 'Note', 'is_internal' => true]);
 
-        Notification::assertNothingSent();
+        // Only the watcher notification is in question here — commenting can
+        // also earn an achievement, which is not this test's business.
+        Notification::assertNotSentTo($this->user, TicketActivityNotification::class);
     }
 
     // ── Moderation ──────────────────────────────────────

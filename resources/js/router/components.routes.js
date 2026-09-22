@@ -92,6 +92,16 @@ export const componentsRoutes = [{
                 auth, verified
             ]
         }
+    },
+    {
+        path: '/achievements',
+        name: 'achievements',
+        component: () => import(/* webpackChunkName: "achievements" */ '@/pages/achievements/AchievementsPage.vue'),
+        meta: {
+            middleware: [
+                auth, verified
+            ]
+        }
     }]
 
 export default componentsRoutes;
