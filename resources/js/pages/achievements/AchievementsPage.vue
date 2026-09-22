@@ -6,12 +6,38 @@
             icon="mdi-trophy-outline"
         >
             <template #actions>
-                <div class="text-right">
-                    <div class="text-h5 font-weight-bold">{{ points }}</div>
-                    <div class="text-caption text-medium-emphasis">{{ $t('achievements.points') }}</div>
+                <div class="d-flex align-center ga-3">
+                    <!-- Where the points have carried them, and how far to
+                         the next rung -->
+                    <div v-if="rank.current" class="d-flex align-center ga-2">
+                        <achievement-badge :achievement="rank.current" :size="40" />
+                        <div>
+                            <div class="text-body-2 font-weight-bold">{{ rank.current.name }}</div>
+                            <div v-if="rank.next" class="text-caption text-medium-emphasis">
+                                {{ $t('achievements.toNextRank', { points: rank.to_next, rank: rank.next.name }) }}
+                            </div>
+                            <div v-else class="text-caption text-medium-emphasis">
+                                {{ $t('achievements.topRank') }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <div class="text-h5 font-weight-bold">{{ points }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('achievements.points') }}</div>
+                    </div>
                 </div>
             </template>
         </page-header>
+
+        <v-progress-linear
+            v-if="rank.current && rank.next"
+            :model-value="rank.percent"
+            :color="rank.next.color"
+            height="6"
+            rounded
+            class="mb-4"
+        />
 
         <loading-state v-if="loading" />
 
@@ -30,15 +56,17 @@
                         />
                     </div>
 
-                    <v-chip-group v-model="category" mandatory>
+                    <!-- The kinds in use, named by whoever set them up and
+                         already in the member's language when they arrive -->
+                    <v-chip-group v-model="type" mandatory>
                         <v-chip size="small" value="all">{{ $t('achievements.all') }}</v-chip>
                         <v-chip
-                            v-for="group in categories"
-                            :key="group"
+                            v-for="kind in types"
+                            :key="kind"
                             size="small"
-                            :value="group"
+                            :value="kind"
                         >
-                            {{ $t(`achievements.categories.${group}`) }}
+                            {{ kind }}
                         </v-chip>
                     </v-chip-group>
                 </v-col>
@@ -54,7 +82,10 @@
                             class="d-flex align-center ga-2 py-1"
                         >
                             <span class="text-caption text-medium-emphasis" style="width: 18px">{{ index + 1 }}</span>
-                            <span class="text-body-2 flex-grow-1 text-truncate">{{ leader.username }}</span>
+                            <span class="text-body-2 flex-grow-1 text-truncate">
+                                {{ leader.username }}
+                                <span v-if="leader.rank" class="text-caption text-medium-emphasis">· {{ leader.rank }}</span>
+                            </span>
                             <span class="text-body-2 font-weight-bold">{{ leader.points }}</span>
                         </div>
                         <empty-state
@@ -153,20 +184,21 @@ export default {
             achievements: [],
             leaders: [],
             points: 0,
-            category: 'all',
+            rank: { current: null, next: null, to_next: null, percent: 0 },
+            type: 'all',
         };
     },
     computed: {
-        categories() {
-            return [...new Set(this.achievements.map(a => a.category))];
+        types() {
+            return [...new Set(this.achievements.map(a => a.type).filter(Boolean))];
         },
         earnedCount() {
             return this.achievements.filter(a => a.earned).length;
         },
         visible() {
-            if (this.category === 'all') return this.achievements;
+            if (this.type === 'all') return this.achievements;
 
-            return this.achievements.filter(a => a.category === this.category);
+            return this.achievements.filter(a => a.type === this.type);
         },
     },
     async mounted() {
@@ -183,6 +215,7 @@ export default {
 
                 this.achievements = mine.data.data || [];
                 this.points = mine.data.points || 0;
+                this.rank = mine.data.rank || this.rank;
                 this.leaders = board.data.data || [];
             } catch (error) {
                 await this.$dialog.requestError(error, this.$t('achievements.loadFailed'));

@@ -243,9 +243,16 @@
                             <v-icon size="small" class="mr-1">mdi-trophy-outline</v-icon>
                             {{ $t('achievements.profile.title') }}
                         </span>
-                        <span class="text-caption text-medium-emphasis">
-                            {{ achievementPoints }} {{ $t('achievements.points') }}
-                        </span>
+                        <div class="d-flex align-center ga-2">
+                            <!-- The rank those points have reached -->
+                            <v-chip v-if="rank" size="small" :color="rank.color" variant="tonal">
+                                <v-icon :icon="rank.icon" size="x-small" start />
+                                {{ rank.name }}
+                            </v-chip>
+                            <span class="text-caption text-medium-emphasis">
+                                {{ achievementPoints }} {{ $t('achievements.points') }}
+                            </span>
+                        </div>
                     </div>
 
                     <div class="d-flex ga-2 flex-wrap">
@@ -813,6 +820,7 @@ export default {
         // The badge case — only what this member has actually earned
         const achievements = ref([])
         const achievementPoints = ref(0)
+        const rank = ref(null)
 
         async function loadAchievements() {
             if (!user.value?.id) return
@@ -821,6 +829,7 @@ export default {
                 const { data } = await axios.get(`/api/achievements/user/${user.value.id}`)
                 achievements.value = data.data || []
                 achievementPoints.value = data.points || 0
+                rank.value = data.rank || null
             } catch {
                 // A profile is still worth showing without its badges
                 achievements.value = []
@@ -840,6 +849,7 @@ export default {
         return {
             achievements,
             achievementPoints,
+            rank,
             // Reactive data
             currentStep,
             activeTab,

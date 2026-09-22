@@ -2,9 +2,12 @@
     <widget-state :loading="loading" :error="error" :empty="!summary" :empty-icon="'mdi-trophy-outline'">
         <div v-if="summary">
             <div class="d-flex align-center justify-space-between mb-2">
-                <div>
+                <div class="d-flex align-center ga-2">
                     <span class="text-h6 font-weight-bold">{{ summary.points }}</span>
-                    <span class="text-caption text-medium-emphasis ml-1">{{ $t('achievements.points') }}</span>
+                    <span class="text-caption text-medium-emphasis">{{ $t('achievements.points') }}</span>
+                    <v-chip v-if="summary.rank?.current" size="x-small" :color="summary.rank.current.color" variant="tonal">
+                        {{ summary.rank.current.name }}
+                    </v-chip>
                 </div>
                 <span class="text-caption text-medium-emphasis">
                     {{ $t('achievements.earnedOf', { earned: summary.earned, total: summary.total }) }}

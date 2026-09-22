@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Achievement;
 use App\Models\AchievementProgress;
+use App\Models\Tag\Taxonomy;
+use App\Models\Tag\Term;
 use App\Models\User;
 use App\Services\AchievementService;
 use App\Services\ImageOptimizationService;
 use App\Support\AchievementMetrics;
+use App\Support\Locales;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +35,7 @@ class AchievementAdminController extends Controller
     public function index(): JsonResponse
     {
         $achievements = Achievement::inOrder()
+            ->with(['type.term', 'translations'])
             ->withCount('holders')
             ->get()
             ->map(fn (Achievement $achievement) => array_merge($achievement->toArray(), [
@@ -39,21 +43,104 @@ class AchievementAdminController extends Controller
                 // counts would never be earned — say so rather than leave
                 // it looking fine
                 'metric_is_known' => $achievement->metricIsKnown(),
+                'type'            => $achievement->typeName(),
+                // Every locale's wording, so the editor can show them all
+                'translations'    => $this->translationsOf($achievement),
             ]));
 
         return response()->json([
-            'data'       => $achievements,
-            'metrics'    => AchievementMetrics::forPicker(),
-            'categories' => Achievement::CATEGORIES,
+            'data'    => $achievements,
+            'metrics' => AchievementMetrics::forPicker(),
+            'types'   => $this->types(),
+            'locales' => Locales::all(),
         ]);
+    }
+
+    /**
+     * The kinds of achievement, as a taxonomy so admins can add one.
+     */
+    private function types(): array
+    {
+        return Taxonomy::where('taxonomy', Achievement::TYPE_TAXONOMY)
+            ->with('term')
+            ->orderBy('sort')
+            ->get()
+            ->map(fn (Taxonomy $taxonomy) => [
+                'id'   => $taxonomy->id,
+                'name' => $taxonomy->term?->title,
+                'slug' => $taxonomy->term?->slug,
+            ])
+            ->all();
+    }
+
+    /**
+     * What the achievement is called in each locale, blank where it has
+     * not been written yet.
+     */
+    private function translationsOf(Achievement $achievement): array
+    {
+        $wording = [];
+
+        foreach (Locales::all() as $locale) {
+            $translation = $achievement->translate($locale, true);
+
+            $wording[$locale] = [
+                'name'        => $translation?->name ?? '',
+                'description' => $translation?->description ?? '',
+            ];
+        }
+
+        return $wording;
+    }
+
+    /**
+     * Add a kind of achievement. The name goes on a term, so it is
+     * translated like every other taxonomy on the site.
+     */
+    public function storeType(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:60'],
+        ]);
+
+        $term = Term::firstOrCreateByTitle($data['name']);
+
+        $taxonomy = Taxonomy::firstOrCreate(
+            ['term_id' => $term->id, 'taxonomy' => Achievement::TYPE_TAXONOMY],
+            ['sort' => 0, 'visible' => true, 'searchable' => false]
+        );
+
+        return response()->json([
+            'data' => ['id' => $taxonomy->id, 'name' => $term->title, 'slug' => $term->slug],
+        ], 201);
+    }
+
+    /**
+     * Remove a kind. The achievements that carried it keep everything else
+     * and simply have no kind until one is picked.
+     */
+    public function destroyType(Taxonomy $taxonomy): JsonResponse
+    {
+        if ($taxonomy->taxonomy !== Achievement::TYPE_TAXONOMY) {
+            return response()->json(['message' => __('messages.error.validation')], 422);
+        }
+
+        Achievement::where('taxonomy_id', $taxonomy->id)->update(['taxonomy_id' => null]);
+        $taxonomy->delete();
+
+        return response()->json(['message' => __('messages.achievements.type_deleted')]);
     }
 
     public function store(Request $request): JsonResponse
     {
         $data = $this->validated($request);
 
+        // The key reads from the fallback locale's name, which validation
+        // has already insisted on
+        $default = config('app.fallback_locale', 'en');
+
         $achievement = Achievement::create(array_merge($data, [
-            'key'        => $this->uniqueKey($data['name']),
+            'key'        => $this->uniqueKey($data[$default]['name']),
             'sort_order' => (int) Achievement::max('sort_order') + 1,
         ]));
 
@@ -256,12 +343,22 @@ class AchievementAdminController extends Controller
      */
     private function validated(Request $request): array
     {
+        $locales = Locales::all();
+        $default = config('app.fallback_locale', 'en');
+
         $data = $request->validate([
-            'name'        => ['required', 'string', 'max:80'],
-            'description' => ['nullable', 'string', 'max:500'],
+            // The wording per locale; only the fallback has to be written,
+            // the rest fall back to it
+            'translations'                    => ['required', 'array'],
+            "translations.{$default}.name"    => ['required', 'string', 'max:80'],
+            'translations.*.name'             => ['nullable', 'string', 'max:80'],
+            'translations.*.description'      => ['nullable', 'string', 'max:500'],
             'icon'        => ['nullable', 'string', 'max:60'],
             'color'       => ['nullable', 'string', 'max:30'],
-            'category'    => ['required', Rule::in(Achievement::CATEGORIES)],
+            'taxonomy_id' => [
+                'nullable',
+                Rule::exists('taxonomies', 'id')->where('taxonomy', Achievement::TYPE_TAXONOMY),
+            ],
             'points'      => ['required', 'integer', 'min:0', 'max:1000'],
             'trigger'     => ['required', Rule::in(Achievement::TRIGGERS)],
             'metric'      => ['nullable', 'required_if:trigger,metric', Rule::in(AchievementMetrics::keys())],
@@ -282,8 +379,28 @@ class AchievementAdminController extends Controller
             $data['metric'] = null;
         }
 
-        $data['icon']  = $data['icon'] ?: 'mdi-trophy-outline';
-        $data['color'] = $data['color'] ?: 'amber';
+        // Both are optional, so they may not be in the payload at all
+        $data['icon']  = $data['icon'] ?? null ?: 'mdi-trophy-outline';
+        $data['color'] = $data['color'] ?? null ?: 'amber';
+
+        // Astrotomic takes the wording keyed by locale, so the payload is
+        // flattened into what it expects and a locale left blank is dropped
+        // rather than saved as an empty name.
+        foreach ($locales as $locale) {
+            $name = trim((string) ($data['translations'][$locale]['name'] ?? ''));
+
+            if ($name === '') {
+                unset($data['translations'][$locale]);
+                continue;
+            }
+
+            $data[$locale] = [
+                'name'        => $name,
+                'description' => $data['translations'][$locale]['description'] ?? null,
+            ];
+        }
+
+        unset($data['translations']);
 
         return $data;
     }

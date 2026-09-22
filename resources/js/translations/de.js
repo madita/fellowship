@@ -3358,6 +3358,7 @@ export default {
         'statusMention': '{name} hat dich in einem Beitrag erwähnt',
         'statusCommentMention': '{name} hat dich in einem Kommentar erwähnt',
         'ticketComment': '{name} hat „{title}“ kommentiert',
+        'rankReached': 'Du hast {rank} erreicht',
         'achievementEarned': 'Du hast {title} erreicht',
         'achievementAwarded': '{name} hat dir {title} verliehen',
         'ticketStatus': '„{title}“ ist jetzt {status}',
@@ -5112,6 +5113,37 @@ export default {
             'statsLoadFailed': 'Die Sandbox-Statistiken konnten nicht geladen werden'
         }
     },
+    'ranks': {
+        'admin': {
+            'title': 'Ränge',
+            'description': 'Die Leiter, die Mitglieder mit ihren Punkten erklimmen',
+            'ladder': 'Leiter',
+            'hint': 'Ein Mitglied hat den höchsten Rang, den seine Punkte erreichen. Nichts wird am Mitglied gespeichert — eine geänderte Schwelle stuft alle auf einmal neu ein.',
+            'add': 'Neuer Rang',
+            'edit': 'Rang bearbeiten',
+            'empty': 'Noch keine Ränge',
+            'saved': 'Der Rang wurde gespeichert',
+            'saveFailed': 'Der Rang konnte nicht gespeichert werden',
+            'loadFailed': 'Die Ränge konnten nicht geladen werden',
+            'imageFailed': 'Das Bild konnte nicht gespeichert werden',
+            'deleteTitle': 'Rang löschen',
+            'deleteConfirm': '{name} löschen? Mitglieder auf dieser Stufe fallen auf den Rang darunter.',
+            'deleteFailed': 'Der Rang konnte nicht gelöscht werden',
+            'table': {
+                'rank': 'Rang',
+                'points': 'Nötige Punkte',
+                'members': 'Mitglieder hier',
+                'enabled': 'An'
+            },
+            'form': {
+                'name': 'Name',
+                'description': 'Beschreibung',
+                'points': 'Nötige Punkte',
+                'image': 'Bild',
+                'enabled': 'Mitglieder können diesen Rang erreichen'
+            }
+        }
+    },
     'achievements': {
         'title': 'Erfolge',
         'subtitle': 'Was du erreicht hast — und was noch auf dich wartet',
@@ -5119,17 +5151,12 @@ export default {
         'all': 'Alle',
         'earnedOf': '{earned} von {total} erreicht',
         'awardedByHand': 'Von Hand vergeben',
+        'toNextRank': 'Noch {points} Punkte bis {rank}',
+        'topRank': 'Spitze der Leiter',
         'leaderboard': 'Meiste Punkte',
         'noLeaders': 'Noch hat niemand etwas erreicht',
         'none': 'Hier ist noch nichts',
         'loadFailed': 'Die Erfolge konnten nicht geladen werden',
-        'categories': {
-            'community': 'Community',
-            'content': 'Inhalte',
-            'events': 'Events',
-            'support': 'Support',
-            'special': 'Besonderes'
-        },
         'metricGroups': {
             'forum': 'Forum',
             'wiki': 'Wiki',
@@ -5191,6 +5218,7 @@ export default {
             'deleteConfirm': '{name} löschen? {count} Mitglied(er) haben ihn und würden ihn verlieren. Abschalten behält sie.',
             'deleteFailed': 'Der Erfolg konnte nicht gelöscht werden',
             'badgeFailed': 'Das Bild konnte nicht gespeichert werden',
+            'typeFailed': 'Die Art konnte nicht gespeichert werden',
             'awardFailed': 'Der Erfolg konnte nicht vergeben werden',
             'revokeFailed': 'Der Erfolg konnte nicht zurückgenommen werden',
             'stat': {
@@ -5215,7 +5243,9 @@ export default {
                 'removeImage': 'Bild entfernen',
                 'preview': 'Abzeichen',
                 'color': 'Farbe',
-                'category': 'Kategorie',
+                'type': 'Art',
+                'typeHint': 'Eine auswählen — oder eine neue eintippen, um sie anzulegen.',
+                'fallsBack': 'Leer gelassen wird {locale} verwendet',
                 'points': 'Punkte',
                 'automatic': 'Von der Seite gezählt',
                 'byHand': 'Von Hand vergeben',

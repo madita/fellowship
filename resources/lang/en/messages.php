@@ -315,6 +315,14 @@ return [
         'revoked'       => 'The achievement was taken back.',
         'badge_uploaded' => 'The badge picture was saved.',
         'badge_removed'  => 'The badge picture was removed.',
+        'type_deleted'   => 'The kind was removed. Its achievements kept everything else.',
+    ],
+
+    // Ranks
+    'ranks' => [
+        'deleted'        => 'The rank was deleted.',
+        'image_uploaded' => 'The picture was saved.',
+        'image_removed'  => 'The picture was removed.',
     ],
 
     // SPA

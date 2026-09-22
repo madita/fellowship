@@ -164,17 +164,62 @@
 
                 <v-card-text>
                     <v-form ref="formRef" @submit.prevent="save">
-                        <v-row dense>
-                            <v-col cols="12" sm="8">
+                        <!-- The wording, one tab per language. Only the
+                             default has to be filled in; the rest fall back
+                             to it. -->
+                        <v-tabs v-model="activeLocale" density="compact" class="mb-3">
+                            <v-tab v-for="locale in locales" :key="locale" :value="locale">
+                                {{ locale.toUpperCase() }}
+                                <v-icon
+                                    v-if="!form.translations[locale]?.name"
+                                    icon="mdi-circle-small"
+                                    size="small"
+                                    class="ml-1 text-medium-emphasis"
+                                />
+                            </v-tab>
+                        </v-tabs>
+
+                        <v-window v-model="activeLocale" class="mb-2">
+                            <v-window-item v-for="locale in locales" :key="locale" :value="locale">
                                 <v-text-field
-                                    v-model="form.name"
+                                    v-model="form.translations[locale].name"
                                     :label="$t('achievements.admin.form.name')"
-                                    :rules="[v => !!v || $t('common.required')]"
+                                    :rules="locale === defaultLocale ? [v => !!v || $t('common.required')] : []"
+                                    :hint="locale === defaultLocale ? '' : $t('achievements.admin.form.fallsBack', { locale: defaultLocale.toUpperCase() })"
+                                    persistent-hint
+                                    density="compact"
+                                    variant="outlined"
+                                    class="mb-2"
+                                />
+                                <v-textarea
+                                    v-model="form.translations[locale].description"
+                                    :label="$t('achievements.admin.form.description')"
+                                    rows="2"
                                     density="compact"
                                     variant="outlined"
                                 />
+                            </v-window-item>
+                        </v-window>
+
+                        <v-row dense>
+                            <v-col cols="12" sm="6">
+                                <!-- Kinds are a taxonomy, so one can be added
+                                     here without a deploy -->
+                                <v-combobox
+                                    v-model="selectedType"
+                                    :items="typeItems"
+                                    item-title="name"
+                                    item-value="id"
+                                    :label="$t('achievements.admin.form.type')"
+                                    :hint="$t('achievements.admin.form.typeHint')"
+                                    persistent-hint
+                                    clearable
+                                    density="compact"
+                                    variant="outlined"
+                                    :loading="addingType"
+                                />
                             </v-col>
-                            <v-col cols="12" sm="4">
+                            <v-col cols="12" sm="6">
                                 <v-text-field
                                     v-model.number="form.points"
                                     :label="$t('achievements.admin.form.points')"
@@ -185,15 +230,6 @@
                                 />
                             </v-col>
                         </v-row>
-
-                        <v-textarea
-                            v-model="form.description"
-                            :label="$t('achievements.admin.form.description')"
-                            rows="2"
-                            density="compact"
-                            variant="outlined"
-                            class="mb-2"
-                        />
 
                         <!-- How the badge looks: a picture of its own, or
                              one of the built-in icons in a colour -->
@@ -236,7 +272,7 @@
                         </div>
 
                         <v-row dense>
-                            <v-col cols="12" sm="4">
+                            <v-col cols="12" sm="6">
                                 <v-text-field
                                     v-model="form.icon"
                                     :label="$t('achievements.admin.form.icon')"
@@ -248,20 +284,11 @@
                                     :prepend-inner-icon="form.icon || 'mdi-trophy-outline'"
                                 />
                             </v-col>
-                            <v-col cols="12" sm="4">
+                            <v-col cols="12" sm="6">
                                 <v-select
                                     v-model="form.color"
                                     :items="colors"
                                     :label="$t('achievements.admin.form.color')"
-                                    density="compact"
-                                    variant="outlined"
-                                />
-                            </v-col>
-                            <v-col cols="12" sm="4">
-                                <v-select
-                                    v-model="form.category"
-                                    :items="categoryItems"
-                                    :label="$t('achievements.admin.form.category')"
                                     density="compact"
                                     variant="outlined"
                                 />
@@ -449,7 +476,12 @@ const loading = ref(true);
 const saving = ref(false);
 const achievements = ref([]);
 const metrics = ref([]);
-const categories = ref([]);
+const types = ref([]);
+const locales = ref(['en']);
+const defaultLocale = ref('en');
+const activeLocale = ref('en');
+const selectedType = ref(null);
+const addingType = ref(false);
 const stats = ref({});
 const busyId = ref(null);
 const deletingId = ref(null);
@@ -476,14 +508,21 @@ const searchingUsers = ref(false);
 
 const colors = COLORS;
 
+/**
+ * A blank slot for every language the site speaks, so a tab is never
+ * missing its fields.
+ */
+function blankTranslations() {
+    return Object.fromEntries(locales.value.map(locale => [locale, { name: '', description: '' }]));
+}
+
 function blankForm() {
     return {
-        name: '',
-        description: '',
+        translations: blankTranslations(),
+        taxonomy_id: null,
         icon: 'mdi-trophy-outline',
         image_url: null,
         color: 'amber',
-        category: 'community',
         points: 10,
         trigger: 'metric',
         metric: null,
@@ -494,10 +533,7 @@ function blankForm() {
     };
 }
 
-const categoryItems = computed(() => categories.value.map(value => ({
-    value,
-    title: t(`achievements.categories.${value}`, value),
-})));
+const typeItems = computed(() => types.value.map(type => ({ id: type.id, name: type.name })));
 
 const metricItems = computed(() => metrics.value.map(metric => ({
     value: metric.key,
@@ -624,7 +660,11 @@ async function load() {
 
         achievements.value = list.data.data || [];
         metrics.value = list.data.metrics || [];
-        categories.value = list.data.categories || [];
+        types.value = list.data.types || [];
+        locales.value = list.data.locales?.length ? list.data.locales : ['en'];
+        // The one a name is required in, and the one the tabs open on
+        defaultLocale.value = locales.value.includes('en') ? 'en' : locales.value[0];
+        activeLocale.value = defaultLocale.value;
         stats.value = statsResponse.data.data || {};
     } catch (error) {
         await dialog.requestError(error, t('achievements.admin.loadFailed'));
@@ -636,13 +676,54 @@ async function load() {
 function openEditor(achievement = null) {
     clearPendingBadge();
     editing.value = achievement;
-    form.value = achievement
-        ? {
-            ...achievement,
-            filters: { values: achievement.filters?.values || [] },
+    activeLocale.value = defaultLocale.value;
+
+    if (achievement) {
+        // Start from a blank slot per language so a tab is never missing
+        // its fields, then lay whatever is written over the top
+        const translations = blankTranslations();
+
+        for (const [locale, wording] of Object.entries(achievement.translations || {})) {
+            translations[locale] = { name: wording.name || '', description: wording.description || '' };
         }
-        : blankForm();
+
+        form.value = { ...achievement, translations, filters: { values: achievement.filters?.values || [] } };
+        selectedType.value = types.value.find(type => type.id === achievement.taxonomy_id) || null;
+    } else {
+        form.value = blankForm();
+        selectedType.value = null;
+    }
+
     showEditor.value = true;
+}
+
+/**
+ * The picker takes a kind from the list or a name typed in; a typed name
+ * becomes a new kind before the achievement is saved.
+ */
+async function resolveType() {
+    const chosen = selectedType.value;
+
+    if (!chosen) return null;
+    if (typeof chosen === 'object') return chosen.id;
+
+    const name = String(chosen).trim();
+
+    if (name === '') return null;
+
+    const existing = types.value.find(type => type.name?.toLowerCase() === name.toLowerCase());
+
+    if (existing) return existing.id;
+
+    addingType.value = true;
+    try {
+        const { data } = await axios.post('/api/admin/achievement-types', { name });
+        types.value.push(data.data);
+
+        return data.data.id;
+    } finally {
+        addingType.value = false;
+    }
 }
 
 async function save() {
@@ -653,7 +734,7 @@ async function save() {
 
     saving.value = true;
     try {
-        const payload = { ...form.value };
+        const payload = { ...form.value, taxonomy_id: await resolveType() };
 
         if (payload.trigger !== 'metric' || !narrowChoices.value.length) {
             payload.filters = null;
@@ -684,8 +765,10 @@ async function save() {
 async function toggle(achievement, enabled) {
     busyId.value = achievement.id;
     try {
+        // The whole record goes back, so its wording has to travel with it
         await axios.patch(`/api/admin/achievements/${achievement.id}`, {
             ...achievement,
+            translations: achievement.translations,
             is_enabled: enabled,
         });
         achievement.is_enabled = enabled;

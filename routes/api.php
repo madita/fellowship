@@ -66,6 +66,8 @@ Route::get('/achievements/leaderboard', 'App\Http\Controllers\AchievementControl
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/achievements', 'App\Http\Controllers\AchievementController@index');
     Route::get('/achievements/summary', 'App\Http\Controllers\AchievementController@summary');
+    // The ladder, and how far up it the member is
+    Route::get('/ranks', 'App\Http\Controllers\AchievementController@ranks');
 
     // Handing one out for something that happened away from the site.
     // Admins can; so can anyone given the award-achievements permission,
@@ -472,6 +474,18 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'admin']], f
     Route::patch('/achievements/{achievement}', 'App\Http\Controllers\Admin\AchievementAdminController@update');
     Route::delete('/achievements/{achievement}', 'App\Http\Controllers\Admin\AchievementAdminController@destroy');
     Route::get('/achievements/{achievement}/holders', 'App\Http\Controllers\Admin\AchievementAdminController@holders');
+    // Kinds of achievement, kept as a taxonomy so one can be added without
+    // a deploy and its name is translated
+    Route::post('/achievement-types', 'App\Http\Controllers\Admin\AchievementAdminController@storeType');
+    Route::delete('/achievement-types/{taxonomy}', 'App\Http\Controllers\Admin\AchievementAdminController@destroyType');
+
+    // Ranks: the ladder members climb with their points
+    Route::get('/ranks', 'App\Http\Controllers\Admin\RankAdminController@index');
+    Route::post('/ranks', 'App\Http\Controllers\Admin\RankAdminController@store');
+    Route::patch('/ranks/{rank}', 'App\Http\Controllers\Admin\RankAdminController@update');
+    Route::delete('/ranks/{rank}', 'App\Http\Controllers\Admin\RankAdminController@destroy');
+    Route::post('/ranks/{rank}/image', 'App\Http\Controllers\Admin\RankAdminController@uploadImage');
+    Route::delete('/ranks/{rank}/image', 'App\Http\Controllers\Admin\RankAdminController@deleteImage');
     // A badge can wear a picture instead of one of the built-in icons
     Route::post('/achievements/{achievement}/badge', 'App\Http\Controllers\Admin\AchievementAdminController@uploadBadge');
     Route::delete('/achievements/{achievement}/badge', 'App\Http\Controllers\Admin\AchievementAdminController@deleteBadge');

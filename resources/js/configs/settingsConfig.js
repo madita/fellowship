@@ -140,6 +140,7 @@ export const settingsCategories = [
         color: 'amber',
         settings: [
             { id: 'list', title: 'Achievements', description: 'Set up achievements and award them', icon: 'mdi-trophy-outline', component: 'AchievementsSettingsPage' },
+            { id: 'ranks', title: 'Ranks', description: 'The ladder members climb with their points', icon: 'mdi-shield-star-outline', component: 'RanksSettingsPage' },
         ]
     },
     {

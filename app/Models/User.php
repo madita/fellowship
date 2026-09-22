@@ -291,6 +291,15 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return (int) $this->achievements()->sum('points');
     }
 
+    /**
+     * The rank those points have reached. Worked out rather than stored,
+     * so editing a rank's threshold re-ranks everyone at once.
+     */
+    public function rank(): ?Rank
+    {
+        return Rank::forPoints($this->achievementPoints());
+    }
+
     public function posts()
     {
         return $this->hasMany(Post::class);

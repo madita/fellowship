@@ -70,6 +70,20 @@ describe('notification display', () => {
         expect(notificationColor(data)).toBe('amber');
     });
 
+    it('reads a rank a member climbed into', () => {
+        const data = {
+            type: 'rank_reached',
+            rank_name: 'Veteran',
+            icon: 'mdi-shield-star-outline',
+            color: 'deep-purple',
+            url: '/achievements',
+        };
+
+        expect(notificationSubject(data, t)).toBe('You reached Veteran');
+        expect(notificationIcon(data)).toBe('mdi-shield-star-outline');
+        expect(notificationColor(data)).toBe('deep-purple');
+    });
+
     it('uses the thread address of forum notifications', () => {
         const data = { type: 'forum_reply', thread_title: 'Hi', thread_url: '/forum/general/hi', post_excerpt: 'Welcome' };
 

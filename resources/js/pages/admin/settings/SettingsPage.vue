@@ -120,6 +120,7 @@ const componentMap = {
 
     // Achievements
     'achievements/AchievementsSettingsPage': () => import('@/pages/admin/settings/achievements/AchievementsSettingsPage.vue'),
+    'achievements/RanksSettingsPage': () => import('@/pages/admin/settings/achievements/RanksSettingsPage.vue'),
 
     // IRC
     'irc/IrcClientSettingsPage': () => import('@/pages/admin/settings/irc/IrcClientSettingsPage.vue'),

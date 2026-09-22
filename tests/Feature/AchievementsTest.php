@@ -57,8 +57,7 @@ class AchievementsTest extends TestCase
     {
         return Achievement::create(array_merge([
             'key'       => 'test-' . uniqid(),
-            'name'      => 'Test',
-            'category'  => 'community',
+            'en'        => ['name' => 'Test'],
             'points'    => 10,
             'trigger'   => 'metric',
             'metric'    => 'forum.post.created',
@@ -712,6 +711,159 @@ class AchievementsTest extends TestCase
     public function test_the_backfill_refuses_an_action_nobody_counts(): void
     {
         $this->artisan('achievements:backfill --metric=made.this.up')->assertFailed();
+    }
+
+    public function test_an_achievement_is_written_in_every_language_and_read_in_the_members_own(): void
+    {
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/achievements', [
+                'translations' => [
+                    'en' => ['name' => 'Sous Chef', 'description' => 'You cooked for the others.'],
+                    'de' => ['name' => 'Beikoch', 'description' => 'Du hast für die anderen gekocht.'],
+                ],
+                'points'    => 50,
+                'trigger'   => 'manual',
+                'threshold' => 1,
+            ])
+            ->assertCreated();
+
+        $achievement = Achievement::where('key', 'sous-chef')->firstOrFail();
+
+        dump(DB::table('achievement_translations')->get()->toArray());
+        dump($achievement->id);
+        $this->assertSame('Sous Chef', $achievement->translate('en')->name);
+        $this->assertSame('Beikoch', $achievement->translate('de')->name);
+
+        // And the member sees it in the language they are using
+        app()->setLocale('de');
+        $this->assertSame('Beikoch', $achievement->fresh()->name);
+    }
+
+    public function test_a_language_left_blank_falls_back_rather_than_saving_an_empty_name(): void
+    {
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/achievements', [
+                'translations' => [
+                    'en' => ['name' => 'Sous Chef'],
+                    'de' => ['name' => '   '],
+                ],
+                'points'    => 10,
+                'trigger'   => 'manual',
+                'threshold' => 1,
+            ])
+            ->assertCreated();
+
+        $achievement = Achievement::where('key', 'sous-chef')->firstOrFail();
+
+        $this->assertDatabaseMissing('achievement_translations', [
+            'achievement_id' => $achievement->id,
+            'locale'         => 'de',
+        ]);
+    }
+
+    public function test_the_name_is_required_in_the_default_language(): void
+    {
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/achievements', [
+                'translations' => ['de' => ['name' => 'Koch']],
+                'points'       => 10,
+                'trigger'      => 'manual',
+                'threshold'    => 1,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['translations.en.name']);
+    }
+
+    public function test_the_editor_is_given_every_language_and_what_is_written_in_each(): void
+    {
+        $achievement = $this->achievement(['de' => ['name' => 'Koch']]);
+
+        $body = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/admin/achievements')
+            ->assertOk()
+            ->json();
+
+        $this->assertContains('en', $body['locales']);
+        $this->assertContains('de', $body['locales']);
+
+        $mine = collect($body['data'])->firstWhere('id', $achievement->id);
+
+        $this->assertSame('Test', $mine['translations']['en']['name']);
+        $this->assertSame('Koch', $mine['translations']['de']['name']);
+    }
+
+    /**
+     * The kinds of achievement are a taxonomy, so one can be added without
+     * a deploy and its name is translated like any other term.
+     */
+    public function test_the_kinds_that_shipped_became_taxonomies(): void
+    {
+        $kinds = Taxonomy::where('taxonomy', Achievement::TYPE_TAXONOMY)->with('term')->get();
+
+        $this->assertNotEmpty($kinds);
+        $this->assertContains('Community', $kinds->map(fn ($k) => $k->term?->title)->all());
+
+        // And the seeded achievements point at one
+        $this->assertNotNull(Achievement::where('key', 'first-bug-report')->firstOrFail()->taxonomy_id);
+    }
+
+    public function test_an_admin_adds_a_kind_of_achievement(): void
+    {
+        $id = $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/achievement-types', ['name' => 'Real world'])
+            ->assertCreated()
+            ->json('data.id');
+
+        $achievement = $this->achievement(['taxonomy_id' => $id]);
+
+        $this->assertSame('Real world', $achievement->fresh()->typeName());
+    }
+
+    public function test_an_achievement_can_only_be_given_a_kind_that_exists(): void
+    {
+        // A taxonomy that is not a kind of achievement is not one either
+        $forumCategory = $this->forumCategory();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/achievements', [
+                'translations' => ['en' => ['name' => 'Odd']],
+                'taxonomy_id'  => $forumCategory->id,
+                'points'       => 10,
+                'trigger'      => 'manual',
+                'threshold'    => 1,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['taxonomy_id']);
+    }
+
+    public function test_removing_a_kind_leaves_its_achievements_alone(): void
+    {
+        $id = $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/achievement-types', ['name' => 'Seasonal'])
+            ->json('data.id');
+
+        $achievement = $this->achievement(['taxonomy_id' => $id]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->deleteJson("/api/admin/achievement-types/{$id}")
+            ->assertOk();
+
+        $this->assertDatabaseHas('achievements', ['id' => $achievement->id, 'taxonomy_id' => null]);
+        $this->assertNull($achievement->fresh()->typeName());
+    }
+
+    public function test_the_kind_reaches_the_member(): void
+    {
+        $id = $this->actingAs($this->admin, 'sanctum')
+            ->postJson('/api/admin/achievement-types', ['name' => 'Real world'])
+            ->json('data.id');
+
+        $this->achievement(['taxonomy_id' => $id, 'trigger' => 'manual', 'metric' => null]);
+
+        $mine = collect($this->actingAs($this->member, 'sanctum')->getJson('/api/achievements')->json('data'))
+            ->firstWhere('type', 'Real world');
+
+        $this->assertNotNull($mine);
     }
 
     public function test_recording_never_breaks_what_the_member_was_doing(): void

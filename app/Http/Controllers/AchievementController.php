@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Achievement;
+use App\Models\Rank;
 use App\Models\User;
 use App\Services\AchievementService;
 use Illuminate\Http\JsonResponse;
@@ -24,11 +25,66 @@ class AchievementController extends Controller
      */
     public function index(): JsonResponse
     {
-        $user = Auth::user();
+        $user   = Auth::user();
+        $points = $user->achievementPoints();
 
         return response()->json([
             'data'   => $this->achievements->overviewFor($user),
-            'points' => $user->achievementPoints(),
+            'points' => $points,
+            'rank'   => $this->standing($points),
+        ]);
+    }
+
+    /**
+     * Where a member stands on the ladder: the rank their points have
+     * reached, the next one up, and how far along they are between them.
+     */
+    private function standing(int $points): array
+    {
+        $ladder = Rank::ladder();
+        $now    = Rank::forPoints($points, $ladder);
+        $next   = Rank::nextAfter($points, $ladder);
+
+        // The stretch between the two, so a bar can show the climb rather
+        // than progress from zero every time
+        $from    = $now?->points_required ?? 0;
+        $toGo    = $next ? max($next->points_required - $from, 1) : 0;
+        $covered = $next ? max($points - $from, 0) : 0;
+
+        return [
+            'current' => $now ? $this->rankShape($now) : null,
+            'next'    => $next ? $this->rankShape($next) : null,
+            'to_next' => $next ? max($next->points_required - $points, 0) : null,
+            'percent' => $next ? (int) round($covered / $toGo * 100) : 100,
+        ];
+    }
+
+    private function rankShape(Rank $rank): array
+    {
+        return [
+            'id'              => $rank->id,
+            'key'             => $rank->key,
+            'name'            => $rank->name,
+            'description'     => $rank->description,
+            'icon'            => $rank->icon,
+            'image_url'       => $rank->image_url,
+            'color'           => $rank->color,
+            'points_required' => $rank->points_required,
+        ];
+    }
+
+    /**
+     * The whole ladder, so members can see what is ahead of them.
+     */
+    public function ranks(): JsonResponse
+    {
+        $points = Auth::check() ? Auth::user()->achievementPoints() : 0;
+
+        return response()->json([
+            'data'   => Rank::ladder()->map(fn (Rank $rank) => array_merge($this->rankShape($rank), [
+                'reached' => $points >= $rank->points_required,
+            ])),
+            'points' => $points,
         ]);
     }
 
@@ -38,7 +94,7 @@ class AchievementController extends Controller
      */
     public function forUser(User $user): JsonResponse
     {
-        $earned = $user->achievements()->get()->map(fn (Achievement $achievement) => [
+        $earned = $user->achievements()->with('type.term')->get()->map(fn (Achievement $achievement) => [
             'id'          => $achievement->id,
             'key'         => $achievement->key,
             'name'        => $achievement->name,
@@ -46,7 +102,7 @@ class AchievementController extends Controller
             'icon'        => $achievement->icon,
             'image_url'   => $achievement->image_url,
             'color'       => $achievement->color,
-            'category'    => $achievement->category,
+            'type'        => $achievement->typeName(),
             'points'      => $achievement->points,
             'awarded_at'  => $achievement->pivot->awarded_at,
         ]);
@@ -55,6 +111,7 @@ class AchievementController extends Controller
             'data'   => $earned,
             'points' => (int) $earned->sum('points'),
             'user'   => ['id' => $user->id, 'username' => $user->username],
+            'rank'   => $user->rank() ? $this->rankShape($user->rank()) : null,
         ]);
     }
 
@@ -78,7 +135,21 @@ class AchievementController extends Controller
                 DB::raw('SUM(achievements.points) as points'),
             ]);
 
-        return response()->json(['data' => $leaders]);
+        // The ladder is read once and each row placed against it, rather
+        // than asked per member
+        $ladder = Rank::ladder();
+
+        return response()->json([
+            'data' => $leaders->map(function ($leader) use ($ladder) {
+                $rank = Rank::forPoints((int) $leader->points, $ladder);
+
+                $leader->rank       = $rank?->name;
+                $leader->rank_icon  = $rank?->icon;
+                $leader->rank_color = $rank?->color;
+
+                return $leader;
+            }),
+        ]);
     }
 
     /**
@@ -89,10 +160,12 @@ class AchievementController extends Controller
         $user      = Auth::user();
         $overview  = collect($this->achievements->overviewFor($user));
         $earned    = $overview->where('earned', true);
+        $points    = $user->achievementPoints();
 
         return response()->json([
             'data' => [
-                'points' => $user->achievementPoints(),
+                'points' => $points,
+                'rank'   => $this->standing($points),
                 'earned' => $earned->count(),
                 'total'  => $overview->count(),
                 'recent' => $earned->sortByDesc('awarded_at')->take(4)->values(),

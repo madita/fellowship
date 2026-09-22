@@ -139,10 +139,36 @@ return new class extends Migration
             $table->unique(['homepage_menu_item_id', 'locale'], 'homepage_menu_item_trans_unique');
             $table->timestamps();
         });
+
+        // Achievement translations. The achievements table is created later,
+        // so the foreign key is added there rather than here.
+        Schema::create('achievement_translations', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('achievement_id');
+            $table->string('locale')->index();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->unique(['achievement_id', 'locale']);
+            $table->timestamps();
+        });
+
+        // Rank translations — same story: the ranks table comes later and
+        // carries the constraint.
+        Schema::create('rank_translations', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('rank_id');
+            $table->string('locale')->index();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->unique(['rank_id', 'locale']);
+            $table->timestamps();
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('rank_translations');
+        Schema::dropIfExists('achievement_translations');
         Schema::dropIfExists('homepage_menu_item_translations');
         Schema::dropIfExists('widget_translations');
         Schema::dropIfExists('section_translations');

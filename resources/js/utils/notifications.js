@@ -48,6 +48,9 @@ export function notificationSubject(data = {}, t) {
         return t('notifications.ticketStatus', { title: data.ticket_title, status: t(`tickets.status.${data.status}`) });
     }
 
+    if (type === 'rank_reached') {
+        return t('notifications.rankReached', { rank: data.rank_name });
+    }
     if (type === 'achievement_earned') {
         return data.awarded_by
             ? t('notifications.achievementAwarded', { name: data.awarded_by, title: data.achievement_name })
@@ -67,6 +70,7 @@ export function notificationIcon(data = {}) {
 
     // The achievement carries the look an admin gave it
     if (type === 'achievement_earned') return data.icon || 'mdi-trophy-outline';
+    if (type === 'rank_reached') return data.icon || 'mdi-shield-star-outline';
 
     return 'mdi-bell-outline';
 }
@@ -86,6 +90,7 @@ export function notificationColor(data = {}) {
     if (type.startsWith('sandbox_')) return SANDBOX_COLORS[type] || 'primary';
     if (type.startsWith('forum_')) return 'warning';
     if (type === 'achievement_earned') return data.color || 'amber';
+    if (type === 'rank_reached') return data.color || 'indigo';
 
     return 'primary';
 }

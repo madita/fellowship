@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Tag\Taxonomy;
 use App\Support\AchievementMetrics;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Storage;
 
@@ -16,22 +20,28 @@ use Illuminate\Support\Facades\Storage;
  * awards it once the threshold is met — or 'manual', for anything the site
  * cannot see, like whether someone actually cooked.
  */
-class Achievement extends Model
+class Achievement extends Model implements TranslatableContract
 {
     use HasFactory;
+    use Translatable;
 
     public const TRIGGERS = ['metric', 'manual'];
 
-    public const CATEGORIES = ['community', 'content', 'events', 'support', 'special'];
+    /**
+     * The kind of achievement — its name lives on a term, so it reads in
+     * the member's language like everything else.
+     */
+    public const TYPE_TAXONOMY = 'achievement_type';
+
+    /** {@inheritdoc} */
+    public $translatedAttributes = ['name', 'description'];
 
     protected $fillable = [
         'key',
-        'name',
-        'description',
+        'taxonomy_id',
         'icon',
         'image_path',
         'color',
-        'category',
         'points',
         'trigger',
         'metric',
@@ -63,6 +73,23 @@ class Achievement extends Model
     public function getImageUrlAttribute(): ?string
     {
         return $this->image_path ? Storage::url($this->image_path) : null;
+    }
+
+    /**
+     * What kind of achievement this is — a taxonomy, so admins can add a
+     * kind without a deploy and its name is translated.
+     */
+    public function type(): BelongsTo
+    {
+        return $this->belongsTo(Taxonomy::class, 'taxonomy_id');
+    }
+
+    /**
+     * The kind's name in the member's language, or null when it has none.
+     */
+    public function typeName(): ?string
+    {
+        return $this->type?->term?->title;
     }
 
     public function holders(): BelongsToMany

@@ -270,6 +270,14 @@ return [
         'revoked'       => 'Der Erfolg wurde zurückgenommen.',
         'badge_uploaded' => 'Das Bild wurde gespeichert.',
         'badge_removed'  => 'Das Bild wurde entfernt.',
+        'type_deleted'   => 'Die Art wurde entfernt. Ihre Erfolge bleiben sonst unverändert.',
+    ],
+
+    // Ränge
+    'ranks' => [
+        'deleted'        => 'Der Rang wurde gelöscht.',
+        'image_uploaded' => 'Das Bild wurde gespeichert.',
+        'image_removed'  => 'Das Bild wurde entfernt.',
     ],
 
     // SPA

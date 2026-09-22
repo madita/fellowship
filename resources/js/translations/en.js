@@ -3195,6 +3195,7 @@ export default {
         'statusMention': '{name} mentioned you in a post',
         'statusCommentMention': '{name} mentioned you in a comment',
         'ticketComment': '{name} commented on "{title}"',
+        'rankReached': 'You reached {rank}',
         'achievementEarned': 'You earned {title}',
         'achievementAwarded': '{name} awarded you {title}',
         'ticketStatus': '"{title}" is now {status}',
@@ -4953,6 +4954,37 @@ export default {
             'statsLoadFailed': 'The sandbox statistics could not be loaded'
         }
     },
+    'ranks': {
+        'admin': {
+            'title': 'Ranks',
+            'description': 'The ladder members climb with their achievement points',
+            'ladder': 'Ladder',
+            'hint': 'A member holds the highest rank their points reach. Nothing is stored on them, so moving a threshold re-ranks everyone at once.',
+            'add': 'New rank',
+            'edit': 'Edit rank',
+            'empty': 'No ranks yet',
+            'saved': 'The rank was saved',
+            'saveFailed': 'The rank could not be saved',
+            'loadFailed': 'The ranks could not be loaded',
+            'imageFailed': 'The picture could not be saved',
+            'deleteTitle': 'Delete rank',
+            'deleteConfirm': 'Delete {name}? Members standing there drop to the rank below.',
+            'deleteFailed': 'The rank could not be deleted',
+            'table': {
+                'rank': 'Rank',
+                'points': 'Points needed',
+                'members': 'Members here',
+                'enabled': 'On'
+            },
+            'form': {
+                'name': 'Name',
+                'description': 'Description',
+                'points': 'Points needed',
+                'image': 'Picture',
+                'enabled': 'Members can reach this rank'
+            }
+        }
+    },
     'achievements': {
         'title': 'Achievements',
         'subtitle': 'What you have earned, and what is still out there',
@@ -4960,17 +4992,12 @@ export default {
         'all': 'All',
         'earnedOf': '{earned} of {total} earned',
         'awardedByHand': 'Awarded by hand',
+        'toNextRank': '{points} points to {rank}',
+        'topRank': 'Top of the ladder',
         'leaderboard': 'Most points',
         'noLeaders': 'Nobody has earned anything yet',
         'none': 'Nothing here yet',
         'loadFailed': 'The achievements could not be loaded',
-        'categories': {
-            'community': 'Community',
-            'content': 'Content',
-            'events': 'Events',
-            'support': 'Support',
-            'special': 'Special'
-        },
         'metricGroups': {
             'forum': 'Forum',
             'wiki': 'Wiki',
@@ -5032,6 +5059,7 @@ export default {
             'deleteConfirm': 'Delete {name}? {count} member(s) hold it and would lose it. Switching it off keeps them.',
             'deleteFailed': 'The achievement could not be deleted',
             'badgeFailed': 'The badge picture could not be saved',
+            'typeFailed': 'The kind could not be saved',
             'awardFailed': 'The achievement could not be awarded',
             'revokeFailed': 'The achievement could not be taken back',
             'stat': {
@@ -5056,7 +5084,9 @@ export default {
                 'removeImage': 'Remove picture',
                 'preview': 'Badge',
                 'color': 'Colour',
-                'category': 'Category',
+                'type': 'Kind',
+                'typeHint': 'Pick one, or type a new kind to add it.',
+                'fallsBack': 'Left blank, {locale} is used',
                 'points': 'Points',
                 'automatic': 'Counted by the site',
                 'byHand': 'Awarded by hand',

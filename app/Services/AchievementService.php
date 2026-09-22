@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\Achievement;
 use App\Models\AchievementProgress;
+use App\Models\Rank;
 use App\Models\User;
 use App\Notifications\AchievementEarned;
+use App\Notifications\RankReached;
 use App\Support\AchievementMetrics;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -110,6 +112,9 @@ class AchievementService
         int $countAtAward = 0
     ): bool {
         $inserted = false;
+        // Where they stood before, so a rank crossed by this award can be
+        // told apart from one they already held
+        $rankBefore = $user->rank();
 
         DB::transaction(function () use ($user, $achievement, $awardedBy, $note, $countAtAward, &$inserted) {
             $already = $user->achievements()
@@ -135,9 +140,33 @@ class AchievementService
 
         if ($inserted) {
             $user->notify(new AchievementEarned($achievement, $awardedBy, $note));
+            $this->announceRank($user, $rankBefore);
         }
 
         return $inserted;
+    }
+
+    /**
+     * Tell a member when the points they just gained carried them into a
+     * rank they had not reached before. Losing a rank — an award taken
+     * back — passes in silence; there is nothing kind to say about it.
+     */
+    private function announceRank(User $user, ?Rank $before): void
+    {
+        $points = $user->achievementPoints();
+        $now    = Rank::forPoints($points);
+
+        if (! $now || $now->id === $before?->id) {
+            return;
+        }
+
+        // Only upward: a threshold edited downward should not congratulate
+        // somebody for standing still
+        if ($before && $now->points_required <= $before->points_required) {
+            return;
+        }
+
+        $user->notify(new RankReached($now, $points));
     }
 
     /**
@@ -160,7 +189,7 @@ class AchievementService
             ->get()
             ->keyBy('id');
 
-        return Achievement::enabled()->inOrder()->get()
+        return Achievement::enabled()->with('type.term')->inOrder()->get()
             ->filter(fn (Achievement $a) => ! $a->is_secret || $earned->has($a->id))
             ->map(function (Achievement $achievement) use ($earned, $user) {
                 $held = $earned->get($achievement->id);
@@ -173,7 +202,8 @@ class AchievementService
                     'icon'        => $achievement->icon,
                     'image_url'   => $achievement->image_url,
                     'color'       => $achievement->color,
-                    'category'    => $achievement->category,
+                    'type'        => $achievement->typeName(),
+                    'type_id'     => $achievement->taxonomy_id,
                     'points'      => $achievement->points,
                     'trigger'     => $achievement->trigger,
                     'threshold'   => $achievement->threshold,
