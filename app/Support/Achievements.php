@@ -19,7 +19,7 @@ class Achievements
 {
     public static function record(?User $user, string $metric, $scope = null, int $times = 1): void
     {
-        if (! $user) {
+        if ( ! $user) {
             return;
         }
 

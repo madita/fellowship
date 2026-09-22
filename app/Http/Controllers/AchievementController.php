@@ -36,44 +36,6 @@ class AchievementController extends Controller
     }
 
     /**
-     * Where a member stands on the ladder: the rank their points have
-     * reached, the next one up, and how far along they are between them.
-     */
-    private function standing(int $points): array
-    {
-        $ladder = Rank::ladder();
-        $now    = Rank::forPoints($points, $ladder);
-        $next   = Rank::nextAfter($points, $ladder);
-
-        // The stretch between the two, so a bar can show the climb rather
-        // than progress from zero every time
-        $from    = $now?->points_required ?? 0;
-        $toGo    = $next ? max($next->points_required - $from, 1) : 0;
-        $covered = $next ? max($points - $from, 0) : 0;
-
-        return [
-            'current' => $now ? $this->rankShape($now) : null,
-            'next'    => $next ? $this->rankShape($next) : null,
-            'to_next' => $next ? max($next->points_required - $points, 0) : null,
-            'percent' => $next ? (int) round($covered / $toGo * 100) : 100,
-        ];
-    }
-
-    private function rankShape(Rank $rank): array
-    {
-        return [
-            'id'              => $rank->id,
-            'key'             => $rank->key,
-            'name'            => $rank->name,
-            'description'     => $rank->description,
-            'icon'            => $rank->icon,
-            'image_url'       => $rank->image_url,
-            'color'           => $rank->color,
-            'points_required' => $rank->points_required,
-        ];
-    }
-
-    /**
      * The whole ladder, so members can see what is ahead of them.
      */
     public function ranks(): JsonResponse
@@ -179,5 +141,43 @@ class AchievementController extends Controller
                     ->values(),
             ],
         ]);
+    }
+
+    /**
+     * Where a member stands on the ladder: the rank their points have
+     * reached, the next one up, and how far along they are between them.
+     */
+    private function standing(int $points): array
+    {
+        $ladder = Rank::ladder();
+        $now    = Rank::forPoints($points, $ladder);
+        $next   = Rank::nextAfter($points, $ladder);
+
+        // The stretch between the two, so a bar can show the climb rather
+        // than progress from zero every time
+        $from    = $now?->points_required ?? 0;
+        $toGo    = $next ? max($next->points_required - $from, 1) : 0;
+        $covered = $next ? max($points - $from, 0) : 0;
+
+        return [
+            'current' => $now ? $this->rankShape($now) : null,
+            'next'    => $next ? $this->rankShape($next) : null,
+            'to_next' => $next ? max($next->points_required - $points, 0) : null,
+            'percent' => $next ? (int) round($covered / $toGo * 100) : 100,
+        ];
+    }
+
+    private function rankShape(Rank $rank): array
+    {
+        return [
+            'id'              => $rank->id,
+            'key'             => $rank->key,
+            'name'            => $rank->name,
+            'description'     => $rank->description,
+            'icon'            => $rank->icon,
+            'image_url'       => $rank->image_url,
+            'color'           => $rank->color,
+            'points_required' => $rank->points_required,
+        ];
     }
 }
