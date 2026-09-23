@@ -74,7 +74,7 @@ class UserProfile extends Model
      */
     public function shows(string $field): bool
     {
-        if (! array_key_exists($field, self::SHAREABLE)) {
+        if ( ! array_key_exists($field, self::SHAREABLE)) {
             return false;
         }
 
@@ -90,7 +90,7 @@ class UserProfile extends Model
         $shown = [];
 
         foreach (array_keys(self::SHAREABLE) as $field) {
-            if (! $this->shows($field)) {
+            if ( ! $this->shows($field)) {
                 continue;
             }
 

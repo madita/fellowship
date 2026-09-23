@@ -25,7 +25,7 @@ class Ranks
     {
         $missing = array_values(array_diff(array_unique(array_filter($userIds)), array_keys(self::$known)));
 
-        if (! $missing) {
+        if ( ! $missing) {
             return;
         }
 
@@ -54,15 +54,23 @@ class Ranks
      */
     public static function of(?int $userId): ?array
     {
-        if (! $userId) {
+        if ( ! $userId) {
             return null;
         }
 
-        if (! array_key_exists($userId, self::$known)) {
+        if ( ! array_key_exists($userId, self::$known)) {
             self::prime([$userId]);
         }
 
         return self::$known[$userId] ?? null;
+    }
+
+    /**
+     * Only for tests, which build a different ladder per case.
+     */
+    public static function forget(): void
+    {
+        self::$known = [];
     }
 
     /**
@@ -76,13 +84,5 @@ class Ranks
             'image_url' => $rank->image_url,
             'color'     => $rank->color,
         ];
-    }
-
-    /**
-     * Only for tests, which build a different ladder per case.
-     */
-    public static function forget(): void
-    {
-        self::$known = [];
     }
 }
