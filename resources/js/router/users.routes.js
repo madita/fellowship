@@ -60,5 +60,11 @@ export const users = [{
         ]
     },
     component: () => import(/* webpackChunkName: "ticket-detail" */ '@/pages/tickets/TicketDetail.vue')
+}, {
+    // A member's public page, reached by clicking their name anywhere.
+    // The forum is readable without signing in, so this is too.
+    path: '/members/:username',
+    name: 'member-profile',
+    component: () => import(/* webpackChunkName: "member-profile" */ '@/pages/users/MemberProfilePage.vue')
 }]
 export default users

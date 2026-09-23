@@ -3978,6 +3978,18 @@ export default {
             'preferencesSaveFailed': 'The preferences could not be saved.',
             'avatarUploadFailed': 'The avatar could not be uploaded.',
             'rolesLoadFailed': 'The roles could not be loaded.',
+            'shownToOthers': 'Shown on your page',
+            'shownToOthersHint': 'Other members see these. The eye beside a field switches it off.',
+            'privateDetails': 'Kept private',
+            'privateDetailsHint': 'For our records only. These are never shown to other members.',
+            'bio': 'About you',
+            'pronouns': 'Pronouns',
+            'shown': 'Others can see this',
+            'hidden': 'Hidden from others',
+            'websiteInvalid': 'Start with http:// or https://',
+            'informationSaved': 'Your details were saved',
+            'informationSaveFailed': 'Your details could not be saved',
+            'informationLoadFailed': 'Your details could not be loaded',
             'userInformation': 'User Information',
             'addressLine1': 'Address Line 1',
             'addressLine2': 'Address Line 2',
@@ -4983,6 +4995,26 @@ export default {
                 'image': 'Picture',
                 'enabled': 'Members can reach this rank'
             }
+        }
+    },
+    'memberProfile': {
+        'notFound': 'No such member',
+        'notFoundText': 'Nobody here goes by that name.',
+        'memberSince': 'Member since {date}',
+        'contributions': 'Contributions',
+        'recent': {
+            'forum': 'Recent forum posts',
+            'timeline': 'Recent timeline posts',
+            'wiki': 'Recent wiki pages',
+            'gallery': 'Recent albums',
+            'none': 'Nothing yet'
+        },
+        'counts': {
+            'threads': 'Threads started',
+            'posts': 'Replies written',
+            'wiki_pages': 'Wiki pages',
+            'timeline': 'Timeline posts',
+            'albums': 'Albums'
         }
     },
     'achievements': {

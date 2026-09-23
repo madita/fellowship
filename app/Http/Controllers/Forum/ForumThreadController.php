@@ -9,6 +9,7 @@ use App\Models\Forum\ForumThreadRead;
 use App\Models\Tag\Taxonomy;
 use App\Services\PollService;
 use App\Services\SpamDetectionService;
+use App\Traits\ShowsRanks;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +18,8 @@ use Stevebauman\Purify\Facades\Purify;
 
 class ForumThreadController extends Controller
 {
+    use ShowsRanks;
+
     /**
      * Get a specific thread with its posts.
      */
@@ -59,6 +62,12 @@ class ForumThreadController extends Controller
             ->with(['author'])
             ->orderBy('created_at')
             ->paginate(20);
+
+        // The rank shown beside each name. Worked out for the whole page in
+        // one go, rather than a lookup per post.
+        $this->attachRanks(
+            collect($posts->items())->pluck('author')->push($thread->author)->filter()
+        );
 
         // Batch query liked post IDs for the authenticated user
         $likedPostIds = [];

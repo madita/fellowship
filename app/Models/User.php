@@ -7,6 +7,7 @@ use App\Models\Conversation\Conversation;
 use App\Models\Event\Event;
 use App\Models\Forum\ForumPostLike;
 use App\Models\Forum\ThreadSubscription;
+use App\Support\Ranks;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -74,6 +75,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'remember_token',
         // Only the owner reads it, through the dashboard layout endpoint.
         'dashboard_layout',
+        // A user travels with its content — a forum post carries its
+        // author, and the forum is readable without signing in. Hidden by
+        // default and made visible where it is genuinely wanted: the
+        // owner's own account, and the admin screens.
+        'email',
     ];
 
     /**
@@ -124,6 +130,18 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function getInitialsAttribute()
     {
         return $this->getInitals();
+    }
+
+    /**
+     * The rank beside a member's name, just enough to draw it.
+     *
+     * Not appended: a user travels with a lot of content and this costs a
+     * lookup, so the places that show it ask for it with append('rank')
+     * after priming the lot — see App\Support\Ranks.
+     */
+    public function getRankAttribute(): ?array
+    {
+        return Ranks::of($this->id);
     }
 
     public function getAvatar()
@@ -270,6 +288,22 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function pages()
     {
         return $this->hasMany(Page::class);
+    }
+
+    /**
+     * The rest of what this member has told us about themselves.
+     */
+    public function profile()
+    {
+        return $this->hasOne(UserProfile::class);
+    }
+
+    /**
+     * Their profile, made on the spot the first time they fill it in.
+     */
+    public function profileOrNew(): UserProfile
+    {
+        return $this->profile ?: $this->profile()->make();
     }
 
     /**

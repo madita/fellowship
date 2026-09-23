@@ -4,9 +4,23 @@
             <!-- Post Header -->
             <v-card-text class="pb-2">
                 <div class="d-flex align-center mb-3">
-                    <UserAvatar v-if="post.author || post.meta?.legacy_author" :user="post.author" :legacy-name="post.meta?.legacy_author" />
+                    <UserAvatar
+                        v-if="post.author || post.meta?.legacy_author"
+                        :user="post.author"
+                        :legacy-name="post.meta?.legacy_author"
+                        show-rank
+                    />
                     <div class="ml-3">
-                        <span class="font-weight-medium">{{ post.display_author || post.author?.username }}</span>
+                        <!-- The name leads to the member's page; an imported
+                             name from the old site has nobody behind it -->
+                        <router-link
+                            v-if="post.author?.username && !post.meta?.legacy_author"
+                            :to="{ name: 'member-profile', params: { username: post.author.username } }"
+                            class="font-weight-medium author-link"
+                        >{{ post.author.username }}</router-link>
+                        <span v-else class="font-weight-medium">
+                            {{ post.display_author || post.author?.username }}
+                        </span>
                         <div class="text-caption text-medium-emphasis">
                             {{ formatDateDistance(post.created_at) }}
                         </div>
@@ -256,6 +270,15 @@ export default {
     margin: 8px 0;
     background: rgba(var(--v-theme-primary), 0.05);
     border-radius: 0 8px 8px 0;
+}
+
+.author-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.author-link:hover {
+    text-decoration: underline;
 }
 
 .post-body :deep(blockquote .quote-author) {

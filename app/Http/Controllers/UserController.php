@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\UserProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -78,6 +79,61 @@ class UserController extends Controller
         return response()->json([
             'message' => __('messages.user.profile_updated'),
             'user'    => $user,
+        ]);
+    }
+
+    /**
+     * The rest of what the member has told us about themselves, as they see
+     * it — including the parts they keep to themselves.
+     */
+    public function information()
+    {
+        return response()->json([
+            'data'      => auth()->user()->profileOrNew()->ownShape(),
+            // So the form knows which fields can be shown to others at all
+            'shareable' => array_keys(UserProfile::SHAREABLE),
+        ]);
+    }
+
+    /**
+     * Save it. Everything is optional — a member owes us none of this.
+     */
+    public function updateInformation(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'bio'           => ['nullable', 'string', 'max:1000'],
+            'pronouns'      => ['nullable', 'string', 'max:40'],
+            'city'          => ['nullable', 'string', 'max:120'],
+            'country'       => ['nullable', 'string', 'max:120'],
+            'website'       => ['nullable', 'url', 'max:255'],
+            'birthday'      => ['nullable', 'date', 'before:today'],
+            'socials'       => ['nullable', 'array'],
+            'socials.*'     => ['nullable', 'string', 'max:120'],
+            'phone'         => ['nullable', 'string', 'max:40'],
+            'address_line1' => ['nullable', 'string', 'max:255'],
+            'address_line2' => ['nullable', 'string', 'max:255'],
+            'postcode'      => ['nullable', 'string', 'max:20'],
+            'state'         => ['nullable', 'string', 'max:120'],
+            'visibility'    => ['nullable', 'array'],
+            'visibility.*'  => ['boolean'],
+        ]);
+
+        // Only the fields that can be shown at all are worth remembering a
+        // choice for; anything else in the payload is dropped.
+        $visibility = collect($validated['visibility'] ?? [])
+            ->only(array_keys(UserProfile::SHAREABLE))
+            ->map(fn ($shown) => (bool) $shown)
+            ->all();
+
+        $profile = $user->profile()->firstOrNew();
+        $profile->fill(array_merge($validated, ['visibility' => $visibility]));
+        $user->profile()->save($profile);
+
+        return response()->json([
+            'message' => __('messages.user.profile_updated'),
+            'data'    => $profile->fresh()->ownShape(),
         ]);
     }
 
