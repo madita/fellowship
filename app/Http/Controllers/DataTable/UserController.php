@@ -23,6 +23,20 @@ class UserController extends DataTableController
         return User::query();
     }
 
+    /**
+     * Managing members means seeing their address. It is hidden on the model
+     * by default — a user travels with its content, and the forum is read
+     * without signing in — so this screen asks for it back.
+     */
+    public function getRecords(Request $request)
+    {
+        $records = parent::getRecords($request);
+
+        $records->getCollection()->each->makeVisible('email');
+
+        return $records;
+    }
+
     public function getCustomColumnsNames()
     {
         return [

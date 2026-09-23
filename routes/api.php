@@ -59,6 +59,9 @@ Route::get('/forums/{slug}', 'App\Http\Controllers\Forum\ForumController@show');
 Route::get('/forums/{forumSlug}/threads/{threadSlug}', 'App\Http\Controllers\Forum\ForumThreadController@show');
 Route::get('/activity', 'App\Http\Controllers\ActivityController@index');
 
+// A member's public page, reachable from a username anywhere on the site
+Route::get('/members/{username}', 'App\Http\Controllers\MemberProfileController@show');
+
 // Achievements: a member's own standing needs a sign-in, a badge case does not
 Route::get('/achievements/user/{user}', 'App\Http\Controllers\AchievementController@forUser');
 Route::get('/achievements/leaderboard', 'App\Http\Controllers\AchievementController@leaderboard');
@@ -123,6 +126,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     $permissions = $user->getAllPermissions()->pluck('name');
     $roles       = $user->roles()->pluck('name');
 
+    // Their own address is theirs to see; it is hidden by default because a
+    // user travels with its content
+    $user->makeVisible('email');
+
     return ['user' => $user, 'roles' => $roles, 'permissions' => $permissions];
 });
 
@@ -150,6 +157,10 @@ Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 
     Route::post('/avatar', 'App\Http\Controllers\UserController@uploadAvatar');
     Route::patch('/preferences', 'App\Http\Controllers\UserController@updatePreferences');
     Route::patch('/profile', 'App\Http\Controllers\UserController@updateProfile');
+    // The rest a member may tell us about themselves, and what of it they
+    // let others see
+    Route::get('/information', 'App\Http\Controllers\UserController@information');
+    Route::patch('/information', 'App\Http\Controllers\UserController@updateInformation');
 
     // Social Account Management
     Route::get('/social-accounts', [SocialAccountController::class, 'index'])

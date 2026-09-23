@@ -4137,6 +4137,18 @@ export default {
             'preferencesSaveFailed': 'Die Einstellungen konnten nicht gespeichert werden.',
             'avatarUploadFailed': 'Der Avatar konnte nicht hochgeladen werden.',
             'rolesLoadFailed': 'Die Rollen konnten nicht geladen werden.',
+            'shownToOthers': 'Auf deiner Seite sichtbar',
+            'shownToOthersHint': 'Das sehen andere Mitglieder. Das Auge neben einem Feld schaltet es ab.',
+            'privateDetails': 'Bleibt privat',
+            'privateDetailsHint': 'Nur für unsere Unterlagen. Andere Mitglieder sehen das nie.',
+            'bio': 'Über dich',
+            'pronouns': 'Pronomen',
+            'shown': 'Andere sehen das',
+            'hidden': 'Für andere verborgen',
+            'websiteInvalid': 'Mit http:// oder https:// beginnen',
+            'informationSaved': 'Deine Angaben wurden gespeichert',
+            'informationSaveFailed': 'Deine Angaben konnten nicht gespeichert werden',
+            'informationLoadFailed': 'Deine Angaben konnten nicht geladen werden',
             'userInformation': 'Benutzerinformationen',
             'addressLine1': 'Adresszeile 1',
             'addressLine2': 'Adresszeile 2',
@@ -5142,6 +5154,26 @@ export default {
                 'image': 'Bild',
                 'enabled': 'Mitglieder können diesen Rang erreichen'
             }
+        }
+    },
+    'memberProfile': {
+        'notFound': 'Kein solches Mitglied',
+        'notFoundText': 'Unter diesem Namen ist hier niemand unterwegs.',
+        'memberSince': 'Mitglied seit {date}',
+        'contributions': 'Beiträge',
+        'recent': {
+            'forum': 'Neueste Forumsbeiträge',
+            'timeline': 'Neueste Timeline-Beiträge',
+            'wiki': 'Neueste Wiki-Seiten',
+            'gallery': 'Neueste Alben',
+            'none': 'Noch nichts'
+        },
+        'counts': {
+            'threads': 'Themen eröffnet',
+            'posts': 'Antworten geschrieben',
+            'wiki_pages': 'Wiki-Seiten',
+            'timeline': 'Timeline-Beiträge',
+            'albums': 'Alben'
         }
     },
     'achievements': {
