@@ -210,6 +210,9 @@ async function load() {
             location: normalizeLocation(found.location),
         };
     } catch (error) {
+        // Drop the spinner before the dialog: awaiting it here would leave
+        // the page as a bare header for as long as the dialog stood open.
+        loading.value = false;
         await dialog.requestError(error, t('events.loadError'));
     } finally {
         loading.value = false;

@@ -4,6 +4,16 @@
             <v-skeleton-loader type="heading, subtitle, article, actions" />
         </v-container>
 
+        <empty-state
+            v-else-if="loadFailed"
+            icon="mdi-calendar-remove"
+            :title="$t('events.loadError')"
+        >
+            <template #actions>
+                <v-btn variant="tonal" :to="{ name: 'events' }">{{ $t('common.back') }}</v-btn>
+            </template>
+        </empty-state>
+
         <template v-else>
             <page-header
                 :title="event.title"
@@ -116,6 +126,7 @@ import { useSettingsStore } from '@/store/settingStore.js'
 //import EventDatePicker from '@/components/event/EventDatePicker.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import EmptyState from '@/components/common/EmptyState.vue'
 import EventLocationDisplay from '@/components/event/EventLocationDisplay.vue'
 import axios from 'axios'
 import { useDialog } from '@/composables/useDialog.js'
@@ -145,6 +156,7 @@ const userTimeFormat = computed(() => {
 
 // Reactive state
 const isLoading = ref(true)
+const loadFailed = ref(false)
 const eventData = ref(null)
 const event = ref({ title: '', description: '' })
 const endpoint = '/api/events'
@@ -164,12 +176,33 @@ const canEdit = computed(() => {
         || permissions.some(permission => (permission?.name ?? permission) === 'manage-posts');
 });
 
-// Start and end shown under the title as "date time - date time"
+/**
+ * When the event happens, in as few words as it takes.
+ *
+ * An event with no startTime is an all-day one and has no clock to show —
+ * formatting its date-only value with a time format only ever printed
+ * "00:00". One that starts and ends on the same day names that day once.
+ */
 const dateRange = computed(() => {
-    if (!event.value?.startDate) return ''
-    const start = `${formatDate(event.value.startDate)} ${formatDate(event.value.startDate, userTimeFormat.value)}`
-    if (!event.value.endDate) return start
-    return `${start} - ${formatDate(event.value.endDate)} ${formatDate(event.value.endDate, userTimeFormat.value)}`
+    const from = event.value?.start || event.value?.startDate
+    if (!from) return ''
+
+    const to = event.value?.end || event.value?.endDate
+    const allDay = !event.value?.startTime
+
+    const day = value => formatDate(value)
+    const time = value => formatDate(value, userTimeFormat.value)
+    const sameDay = to && day(from) === day(to)
+
+    if (allDay) {
+        return sameDay || !to ? day(from) : `${day(from)} - ${day(to)}`
+    }
+
+    if (!to) return `${day(from)} ${time(from)}`
+
+    return sameDay
+        ? `${day(from)} ${time(from)} - ${time(to)}`
+        : `${day(from)} ${time(from)} - ${day(to)} ${time(to)}`
 })
 
 // Methods
@@ -181,8 +214,10 @@ const getEvent = async () => {
         event.value = response.data.event
         isLoading.value = false
     } catch (error) {
-        console.error('Error fetching event:', error)
+        // Say so rather than rendering an empty page around a blank title
         isLoading.value = false
+        loadFailed.value = true
+        await dialog.requestError(error, t('events.loadError'))
     }
 }
 
@@ -213,12 +248,9 @@ const register = async (answer) => {
     }
 }
 
-const getIsGoing = (answer) => {
-    if (eventData.value === null) {
-        return false
-    }
-    return eventData.value.isGoing !== undefined && eventData.value.isGoing.type === answer
-}
+// A member who has not answered yet has isGoing null, not undefined — the
+// difference used to throw mid-render and take the whole page with it.
+const getIsGoing = (answer) => eventData.value?.isGoing?.type === answer
 
 // Locale change handler
 function onLocaleChange() {
