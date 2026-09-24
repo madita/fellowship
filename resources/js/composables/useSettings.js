@@ -193,6 +193,13 @@ export function useSettings() {
         // IRC
         irc_comic_chat_enabled: false,
 
+        // Events: which maps to draw, and the channels offered when an
+        // event is held on IRC. Declared here or the form has nothing to
+        // bind to until somebody saves them once.
+        map_provider: 'osm',
+        google_maps_api_key: '',
+        event_irc_channels: '[]',
+
         // Feature Toggles
         feature_timeline_enabled: true,
         feature_chat_enabled: true,

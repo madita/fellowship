@@ -16,6 +16,7 @@ export const settingsCategories = [
             { id: 'admin-contact', title: 'Admin Contact', description: 'Admin and support email addresses', icon: 'mdi-email-outline', component: 'AdminContactPage' },
             { id: 'public-contact', title: 'Public Contact', description: 'Public contact information', icon: 'mdi-phone-outline', component: 'PublicContactPage' },
             { id: 'social-media', title: 'Social Media', description: 'Social media profile links', icon: 'mdi-share-variant-outline', component: 'SocialMediaPage' },
+            { id: 'maps', title: 'Maps', description: 'Which maps are drawn and linked to', icon: 'mdi-map', component: 'MapsPage' },
         ]
     },
     {
@@ -151,6 +152,7 @@ export const settingsCategories = [
         color: 'indigo',
         settings: [
             { id: 'client', title: 'Client Settings', description: 'Comic chat and client options', icon: 'mdi-tune', component: 'IrcClientSettingsPage' },
+            { id: 'event-channels', title: 'Event Channels', description: 'Channels suggested when an event is held on IRC', icon: 'mdi-pound', component: 'IrcEventChannelsPage' },
             { id: 'characters', title: 'Character Creator', description: 'Build the comic chat characters members pick from', icon: 'mdi-account-edit-outline', component: 'IrcCharactersPage' },
             { id: 'dashboard', title: 'Dashboard', description: 'Daemon status, stats, and monitoring', icon: 'mdi-monitor-dashboard', component: 'IrcDashboardPage' },
             { id: 'servers', title: 'Servers', description: 'Manage IRC servers', icon: 'mdi-server-network', component: 'IrcServersPage' },

@@ -187,6 +187,13 @@ class SettingsController extends Controller
             // IRC client
             'irc_comic_chat_enabled',
 
+            // Events: which maps to draw, and the channels offered as a
+            // starting point. The Google key is public by design — it is
+            // meant to be sent to the browser and restricted by referrer.
+            'map_provider',
+            'google_maps_api_key',
+            'event_irc_channels',
+
             // Feature toggles (drive menu visibility and route guards)
             'feature_timeline_enabled',
             'feature_chat_enabled',

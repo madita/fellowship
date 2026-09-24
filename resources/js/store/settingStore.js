@@ -151,6 +151,25 @@ export const useSettingsStore = defineStore({
         },
         // Feature toggles (Admin → Settings → Features). Unset means enabled,
         // so existing installs keep their features until turned off.
+        // Which maps the event form draws: 'osm' (no key needed) or
+        // 'google', which needs one of its own.
+        mapProvider: (state) => (state.appSettings.map_provider === 'google' ? 'google' : 'osm'),
+        googleMapsApiKey: (state) => state.appSettings.google_maps_api_key || '',
+        // Channels offered as a starting point when an event is held on IRC
+        eventIrcChannels: (state) => {
+            const raw = state.appSettings.event_irc_channels;
+            if (Array.isArray(raw)) return raw;
+            if (typeof raw === 'string' && raw.trim() !== '') {
+                try {
+                    const parsed = JSON.parse(raw);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch (e) {
+                    // Saved as plain lines before it was a list
+                    return raw.split(/[\n,]/).map(v => v.trim()).filter(Boolean);
+                }
+            }
+            return [];
+        },
         isFeatureEnabled: (state) => (featureKey) => {
             const value = state.appSettings[`feature_${featureKey}_enabled`];
             if (value === undefined || value === null) return true;

@@ -17,6 +17,7 @@ import { useDialog } from '@/composables/useDialog.js';
 import ProfileDialog from '../common/ProfileDialog.vue';
 import DetailsDialog from '../common/DetailsDialog.vue';
 import RelatedContentList from '../common/RelatedContentList.vue';
+import MapPicker from '../common/MapPicker.vue';
 import { useUserStore } from "@/store/userStore.js";
 import { useSettingsStore } from "@/store/settingStore.js";
 import { useDateFormat } from '@/plugins/formatDate.js';
@@ -143,10 +144,72 @@ const fetchIrcChannels = async () => {
     }
 };
 
+// The channels offered: the ones an admin set up, then the ones already
+// open that are not already in that list. Anything else can be typed.
+const ircChannelSuggestions = computed(() => {
+    const preset = useSettingsStore().eventIrcChannels
+        .map(name => ({ name: String(name).startsWith('#') ? String(name) : `#${name}`, id: null }));
+
+    const known = new Set(preset.map(channel => channel.name.toLowerCase()));
+
+    return [
+        ...preset,
+        ...ircChannels.value.filter(channel => !known.has(String(channel.name).toLowerCase())),
+    ];
+});
+
+/**
+ * The combobox hands back either a suggestion or the raw text typed. A
+ * suggestion that is a channel the member is in keeps its id, so the link
+ * opens that window; anything else travels as a name.
+ */
+const ircChannelChoice = computed({
+    get() {
+        const loc = localEvent.value?.extendedProps?.location;
+
+        if (!loc) return null;
+        if (loc.irc_channel) return { name: loc.irc_channel, id: loc.irc_channel_id ?? null };
+
+        return loc.irc_channel_id
+            ? ircChannels.value.find(channel => channel.id === loc.irc_channel_id) ?? null
+            : null;
+    },
+    set(value) {
+        const loc = localEvent.value?.extendedProps?.location;
+
+        if (!loc) return;
+
+        if (!value) {
+            loc.irc_channel_id = null;
+            loc.irc_channel = '';
+            return;
+        }
+
+        const name = typeof value === 'string' ? value : value.name;
+
+        loc.irc_channel_id = typeof value === 'object' ? value.id ?? null : null;
+        loc.irc_channel = String(name || '').trim();
+    },
+});
+
+// A point picked on the map can also fill in an address that was left blank
+const onPointPicked = ({ address }) => {
+    const loc = localEvent.value?.extendedProps?.location;
+
+    if (loc && address && !String(loc.address || '').trim()) {
+        loc.address = address;
+    }
+};
+
 // How the location renders in view mode: an icon, a label and (optionally) a
-// link — a Google Maps search for physical addresses, the internal IRC client
-// for a channel, or the raw URL for an online link.
-const viewLocation = computed(() => buildViewLocation(localEvent.value?.extendedProps?.location, t));
+// link — a map search for physical addresses, the internal IRC client for a
+// channel, or the raw URL for an online link.
+const showMap = ref(false);
+const viewLocation = computed(() => buildViewLocation(
+    localEvent.value?.extendedProps?.location,
+    t,
+    useSettingsStore().mapProvider
+));
 
 const isDirty = computed(() => {
     if (!initialSnapshot.value) return false;
@@ -824,15 +887,37 @@ onMounted(() => {
                                         </VBtn>
                                     </VBtnToggle>
 
-                                    <!-- real: physical address (rendered as a map link in view mode) -->
-                                    <VTextField
-                                        v-if="localEvent.extendedProps.location.type === 'real'"
-                                        v-model="localEvent.extendedProps.location.address"
-                                        :label="$t('events.locationAddress')"
-                                        variant="outlined"
-                                        density="comfortable"
-                                        prepend-inner-icon="mdi-map-marker"
-                                    />
+                                    <!-- real: an address, a point on the map, or both -->
+                                    <template v-if="localEvent.extendedProps.location.type === 'real'">
+                                        <VTextField
+                                            v-model="localEvent.extendedProps.location.address"
+                                            :label="$t('events.locationAddress')"
+                                            variant="outlined"
+                                            density="comfortable"
+                                            prepend-inner-icon="mdi-map-marker"
+                                        >
+                                            <template #append-inner>
+                                                <VBtn
+                                                    :icon="showMap ? 'mdi-map-minus' : 'mdi-map-search-outline'"
+                                                    :title="showMap ? $t('events.map.hide') : $t('events.map.show')"
+                                                    variant="text"
+                                                    size="small"
+                                                    density="comfortable"
+                                                    @click="showMap = !showMap"
+                                                />
+                                            </template>
+                                        </VTextField>
+
+                                        <!-- Picking a point is optional: an address on its own
+                                             is a perfectly good location -->
+                                        <MapPicker
+                                            v-if="showMap"
+                                            v-model:lat="localEvent.extendedProps.location.lat"
+                                            v-model:lng="localEvent.extendedProps.location.lng"
+                                            class="mb-2"
+                                            @picked="onPointPicked"
+                                        />
+                                    </template>
 
                                     <!-- virtual: an internal IRC channel or an external URL -->
                                     <template v-else-if="localEvent.extendedProps.location.type === 'virtual'">
@@ -847,28 +932,33 @@ onMounted(() => {
                                             <VBtn value="url" prepend-icon="mdi-link-variant">{{ $t('events.locationUrl') }}</VBtn>
                                         </VBtnToggle>
 
-                                        <VSelect
+                                        <!-- Any channel may be typed: an event is often held
+                                             somewhere nobody has joined yet. The list offers the
+                                             ones set up by an admin and the ones already open. -->
+                                        <VCombobox
                                             v-if="localEvent.extendedProps.location.virtualMode === 'irc'"
-                                            v-model="localEvent.extendedProps.location.irc_channel_id"
-                                            :items="ircChannels"
+                                            v-model="ircChannelChoice"
+                                            :items="ircChannelSuggestions"
                                             item-title="name"
-                                            item-value="id"
                                             :label="$t('events.locationIrcChannel')"
+                                            :hint="$t('events.locationIrcChannelHint')"
+                                            persistent-hint
                                             :loading="ircChannelsLoading"
-                                            :no-data-text="$t('events.locationNoChannels')"
+                                            :no-data-text="$t('events.locationTypeChannel')"
                                             variant="outlined"
                                             density="comfortable"
                                             prepend-inner-icon="mdi-pound"
                                             clearable
+                                            return-object
                                         >
                                             <template #item="{ props: itemProps, item }">
                                                 <VListItem
                                                     v-bind="itemProps"
                                                     :title="item.raw.name"
-                                                    :subtitle="item.raw.server"
+                                                    :subtitle="item.raw.server || $t('events.locationSuggested')"
                                                 />
                                             </template>
-                                        </VSelect>
+                                        </VCombobox>
                                         <VTextField
                                             v-else
                                             v-model="localEvent.extendedProps.location.url"
