@@ -1,6 +1,6 @@
 <template>
     <div class="map-picker">
-        <div class="d-flex align-center ga-2 mb-2">
+        <div v-if="!readonly" class="d-flex align-center ga-2 mb-2">
             <v-text-field
                 v-model="search"
                 :label="$t('events.map.search')"
@@ -18,7 +18,7 @@
 
         <div ref="canvas" class="map-canvas" />
 
-        <div class="d-flex align-center justify-space-between mt-2">
+        <div v-if="!readonly" class="d-flex align-center justify-space-between mt-2">
             <span class="text-caption text-medium-emphasis">
                 <template v-if="hasPoint">{{ readablePoint }}</template>
                 <template v-else>{{ $t('events.map.hint') }}</template>
@@ -49,6 +49,8 @@ export default {
     props: {
         lat: { type: [Number, String], default: null },
         lng: { type: [Number, String], default: null },
+        // Just show the place: no search, no clearing, no picking
+        readonly: { type: Boolean, default: false },
     },
     emits: ['update:lat', 'update:lng', 'picked'],
     data() {
@@ -131,7 +133,9 @@ export default {
                 attribution: '&copy; OpenStreetMap contributors',
             }).addTo(this.map);
 
-            this.map.on('click', event => this.pick(event.latlng.lat, event.latlng.lng));
+            if (!this.readonly) {
+                this.map.on('click', event => this.pick(event.latlng.lat, event.latlng.lng));
+            }
 
             if (this.hasPoint) this.moveMarker();
         },
@@ -161,7 +165,9 @@ export default {
                 gestureHandling: 'cooperative',
             });
 
-            this.map.addListener('click', event => this.pick(event.latLng.lat(), event.latLng.lng()));
+            if (!this.readonly) {
+                this.map.addListener('click', event => this.pick(event.latLng.lat(), event.latLng.lng()));
+            }
 
             if (this.hasPoint) this.moveMarker();
         },

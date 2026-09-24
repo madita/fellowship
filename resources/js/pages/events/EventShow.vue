@@ -46,10 +46,21 @@
                             <span>{{ $t('events.location') }}</span>
                         </div>
                         <div class="pl-8 mb-4">
-                            <event-location-display :location="event.location" />
+                            <event-location-display :location="event.location" map />
                         </div>
 
                         <div v-html="event.description"></div>
+
+                        <!-- Anything linked to this event: wiki pages,
+                             albums, threads -->
+                        <related-content-list
+                            v-if="event.id"
+                            class="mt-6"
+                            type="App\Models\Event\Event"
+                            :id="event.id"
+                            :title="event.title"
+                            :can-edit="canEdit"
+                        />
                     </v-col>
                     <v-col cols="12" md="4">
                         <h2 class="text-h6 mb-3">{{ $t('events.areYouComing') }}</h2>
@@ -128,6 +139,7 @@ import UserAvatar from '@/components/common/UserAvatar.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import EventLocationDisplay from '@/components/event/EventLocationDisplay.vue'
+import RelatedContentList from '@/components/common/RelatedContentList.vue'
 import axios from 'axios'
 import { useDialog } from '@/composables/useDialog.js'
 

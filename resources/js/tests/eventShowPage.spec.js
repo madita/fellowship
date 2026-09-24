@@ -6,6 +6,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import axios from 'axios';
 import en from '@/translations/en.js';
 import EventShow from '@/pages/events/EventShow.vue';
+import { useSettingsStore } from '@/store/settingStore.js';
 
 vi.mock('axios');
 vi.mock('@/composables/useDialog.js', () => ({
@@ -42,7 +43,12 @@ const render = async (event = eventPayload(), isGoing = null) => {
     const wrapper = mount(EventShow, {
         global: {
             plugins: [i18n, router],
-            stubs: { 'page-header': { props: ['title', 'subtitle'], template: '<header><h1>{{ title }}</h1><p class="sub">{{ subtitle }}</p><slot name="actions" /></header>' } },
+            stubs: {
+                'page-header': { props: ['title', 'subtitle'], template: '<header><h1>{{ title }}</h1><p class="sub">{{ subtitle }}</p><slot name="actions" /></header>' },
+                // Leaflet wants a real canvas; the map's own spec covers it
+                MapPicker: { props: { lat: null, lng: null, readonly: Boolean }, template: '<div class="map" :data-at="lat + \',\' + lng" :data-readonly="String(readonly)" />' },
+                RelatedContentList: { props: ['type', 'id'], template: '<div class="related" :data-type="type" :data-id="id" />' },
+            },
         },
     });
     await flushPromises();
@@ -88,6 +94,48 @@ describe('EventShow', () => {
         const w = await render(eventPayload({ endDate: '2026-09-24', end: '2026-09-24T23:59:59Z' }));
 
         expect(w.find('.sub').text()).not.toContain(' - ');
+    });
+
+    it('draws the map for a place that was pinned, without letting it be moved', async () => {
+        const w = await render(eventPayload({
+            location: { type: 'real', address: 'Marktplatz 1', lat: 52.52, lng: 13.405 },
+        }));
+        const map = w.find('.map');
+
+        expect(map.exists()).toBe(true);
+        expect(map.attributes('data-at')).toBe('52.52,13.405');
+        expect(map.attributes('data-readonly')).toBe('true');
+    });
+
+    it('draws no map for an address with no point on it', async () => {
+        const w = await render(eventPayload({ location: { type: 'real', address: 'Marktplatz 1' } }));
+        expect(w.find('.map').exists()).toBe(false);
+    });
+
+    it('draws no map when Google is picked but has no key to draw with', async () => {
+        useSettingsStore().appSettings = { map_provider: 'google', google_maps_api_key: '' };
+
+        const w = await render(eventPayload({
+            location: { type: 'real', address: 'Marktplatz 1', lat: 52.52, lng: 13.405 },
+        }));
+
+        expect(w.find('.map').exists()).toBe(false);
+    });
+
+    it('draws no map for an online event', async () => {
+        const w = await render(eventPayload({
+            location: { type: 'virtual', virtualMode: 'irc', irc_channel: '#rivendell' },
+        }));
+        expect(w.find('.map').exists()).toBe(false);
+    });
+
+    it('lists what is linked to the event', async () => {
+        const w = await render();
+        const related = w.find('.related');
+
+        expect(related.exists()).toBe(true);
+        expect(related.attributes('data-type')).toBe('App\\Models\\Event\\Event');
+        expect(related.attributes('data-id')).toBe('1');
     });
 
     it('shows the clock for an event that has a start time', async () => {
