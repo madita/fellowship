@@ -22,6 +22,7 @@
             <span class="text-caption text-medium-emphasis">
                 <template v-if="hasPoint">{{ readablePoint }}</template>
                 <template v-else>{{ $t('events.map.hint') }}</template>
+                <span class="d-block">{{ $t('events.map.zoomHint') }}</span>
             </span>
             <v-btn
                 v-if="hasPoint"
@@ -88,7 +89,10 @@ export default {
     },
     beforeUnmount() {
         // Leaflet holds listeners on the container; Google cleans up with it
-        if (this.provider !== 'google' && this.map) this.map.remove();
+        if (this.provider !== 'google') {
+            this.$refs.canvas?.removeEventListener('wheel', this.onWheel);
+            if (this.map) this.map.remove();
+        }
     },
     methods: {
         startPoint() {
@@ -109,10 +113,18 @@ export default {
 
             const start = this.startPoint();
 
-            this.map = L.map(this.$refs.canvas).setView(
+            this.map = L.map(this.$refs.canvas, {
+                // The map sits inside a scrolling panel, so the wheel has to
+                // keep scrolling that panel. Zooming is the buttons, or the
+                // wheel with ctrl held — the same bargain Google calls
+                // cooperative gestures.
+                scrollWheelZoom: false,
+            }).setView(
                 [start.lat, start.lng],
                 this.hasPoint ? 14 : DEFAULT_VIEW.zoom
             );
+
+            this.$refs.canvas.addEventListener('wheel', this.onWheel, { passive: false });
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
@@ -145,11 +157,26 @@ export default {
                 zoom: this.hasPoint ? 14 : DEFAULT_VIEW.zoom,
                 streetViewControl: false,
                 mapTypeControl: false,
+                // Wheel scrolls the panel the map sits in; ctrl+wheel zooms
+                gestureHandling: 'cooperative',
             });
 
             this.map.addListener('click', event => this.pick(event.latLng.lat(), event.latLng.lng()));
 
             if (this.hasPoint) this.moveMarker();
+        },
+
+        /**
+         * Ctrl (or cmd) plus the wheel zooms; a plain wheel is left alone so
+         * the panel behind the map keeps scrolling.
+         */
+        onWheel(event) {
+            if (!this.map) return;
+
+            if (!(event.ctrlKey || event.metaKey)) return;
+
+            event.preventDefault();
+            this.map.setZoom(this.map.getZoom() + (event.deltaY < 0 ? 1 : -1));
         },
 
         pick(lat, lng) {

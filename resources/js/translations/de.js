@@ -1,6 +1,7 @@
 export default {
     'common': {
         'add': 'Hinzufügen',
+        'required': 'Erforderlich',
         'name': 'Name',
         'actions': 'Aktionen',
         'cancel': 'Abbrechen',
@@ -1596,6 +1597,13 @@ export default {
         'dateRequired': 'Datum ist erforderlich',
         'updateEvent': 'Termin aktualisieren',
         'unsavedChangesWarning': 'Sie haben ungespeicherte Änderungen. Bitte „Speichern“ oder „Abbrechen“ verwenden – ein Klick außerhalb schließt das Formular nicht.',
+        'openFullPage': 'Als Seite öffnen',
+        'unsavedChanges': 'Ungespeicherte Änderungen',
+        'unsavedChangesLeave': 'Sie haben ungespeicherte Änderungen. Trotzdem verlassen?',
+        'leave': 'Verlassen',
+        'loadError': 'Termin konnte nicht geladen werden',
+        'endBeforeStart': 'Das Ende darf nicht vor dem Beginn liegen',
+        'eventType': 'Termintyp',
         'type': 'Typ',
         'selectEventType': 'Termintyp auswählen',
         'startDateRequired': 'Startdatum ist erforderlich',
@@ -1611,7 +1619,8 @@ export default {
             'show': 'Punkt auf der Karte wählen',
             'hide': 'Karte ausblenden',
             'hint': 'Klick auf die Karte setzt eine Nadel. Eine Adresse allein reicht auch.',
-            'clear': 'Nadel entfernen'
+            'clear': 'Nadel entfernen',
+            'zoomHint': 'Strg und scrollen zum Zoomen'
         },
         'locationIrcChannelHint': 'Einen auswählen — oder einen beliebigen Channel eintippen, er muss noch nicht existieren.',
         'locationTypeChannel': 'Channel-Namen eintippen',

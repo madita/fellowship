@@ -10,7 +10,18 @@
                 :subtitle="dateRange"
                 icon="mdi-calendar"
                 :back-to="{ name: 'events' }"
-            />
+            >
+                <template v-if="canEdit" #actions>
+                    <v-btn
+                        color="primary"
+                        variant="elevated"
+                        prepend-icon="mdi-pencil"
+                        :to="{ name: 'event-edit', params: { id } }"
+                    >
+                        {{ $t('common.edit') }}
+                    </v-btn>
+                </template>
+            </page-header>
 
             <v-container>
                 <div class="calendar-day">
@@ -20,6 +31,14 @@
 
                 <v-row justify="center">
                     <v-col cols="12" md="8">
+                        <div class="d-flex align-center font-weight-medium mb-1">
+                            <v-icon color="primary" start>mdi-map-marker</v-icon>
+                            <span>{{ $t('events.location') }}</span>
+                        </div>
+                        <div class="pl-8 mb-4">
+                            <event-location-display :location="event.location" />
+                        </div>
+
                         <div v-html="event.description"></div>
                     </v-col>
                     <v-col cols="12" md="4">
@@ -97,6 +116,7 @@ import { useSettingsStore } from '@/store/settingStore.js'
 //import EventDatePicker from '@/components/event/EventDatePicker.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import EventLocationDisplay from '@/components/event/EventLocationDisplay.vue'
 import axios from 'axios'
 import { useDialog } from '@/composables/useDialog.js'
 
@@ -131,6 +151,18 @@ const endpoint = '/api/events'
 const id = ref(null)
 // Which answer is currently being sent (null when idle)
 const answering = ref(null)
+
+// Same rule as EventController@update: the owner, or anyone with manage-posts
+const canEdit = computed(() => {
+    const me = userStore.user;
+    if (!me?.id || !event.value?.id) return false;
+
+    const permissions = userStore.permissions || [];
+
+    return event.value.user_id === me.id
+        || !!me.isAdmin
+        || permissions.some(permission => (permission?.name ?? permission) === 'manage-posts');
+});
 
 // Start and end shown under the title as "date time - date time"
 const dateRange = computed(() => {

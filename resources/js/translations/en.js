@@ -1,6 +1,7 @@
 export default {
     'common': {
         'add': 'Add',
+        'required': 'Required',
         'name': 'Name',
         'actions': 'Actions',
         'cancel': 'Cancel',
@@ -1649,6 +1650,13 @@ export default {
         'dateRequired': 'Date is required',
         'updateEvent': 'Update Event',
         'unsavedChangesWarning': 'You have unsaved changes. Use the Save or Cancel buttons — clicking outside won’t close the form.',
+        'openFullPage': 'Open as a page',
+        'unsavedChanges': 'Unsaved changes',
+        'unsavedChangesLeave': 'You have unsaved changes. Leave anyway?',
+        'leave': 'Leave',
+        'loadError': 'Failed to load the event',
+        'endBeforeStart': 'The end must not be before the start',
+        'eventType': 'Event type',
         'type': 'Type',
         'selectEventType': 'Select event type',
         'startDateRequired': 'Start date is required',
@@ -1664,7 +1672,8 @@ export default {
             'show': 'Pick a point on the map',
             'hide': 'Hide the map',
             'hint': 'Click the map to drop a pin. An address on its own is fine too.',
-            'clear': 'Remove pin'
+            'clear': 'Remove pin',
+            'zoomHint': 'Ctrl and scroll to zoom'
         },
         'locationIrcChannelHint': 'Pick one, or type any channel — it does not have to exist yet.',
         'locationTypeChannel': 'Type a channel name',

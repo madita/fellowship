@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, computed, nextTick, onMounted  } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import CustomDatePicker from "../common/CustomDatePicker.vue";
 
@@ -17,11 +18,12 @@ import { useDialog } from '@/composables/useDialog.js';
 import ProfileDialog from '../common/ProfileDialog.vue';
 import DetailsDialog from '../common/DetailsDialog.vue';
 import RelatedContentList from '../common/RelatedContentList.vue';
-import MapPicker from '../common/MapPicker.vue';
+import EventLocationField from './EventLocationField.vue';
+import EventLocationDisplay from './EventLocationDisplay.vue';
 import { useUserStore } from "@/store/userStore.js";
 import { useSettingsStore } from "@/store/settingStore.js";
 import { useDateFormat } from '@/plugins/formatDate.js';
-import { buildViewLocation, mergeTopLevelIntoExtendedProps } from '@/utils/eventLocation.js';
+import { mergeTopLevelIntoExtendedProps } from '@/utils/eventLocation.js';
 
 const props = defineProps({
     isDrawerOpen: Boolean,
@@ -40,6 +42,7 @@ const emit = defineEmits([
 ]);
 
 const dialog = useDialog();
+const router = useRouter();
 
 const selectedStatus = ref(null);
 const showProfileDialog = ref(false);
@@ -122,94 +125,34 @@ watch([allowedLocationModes, selectedEventTypeId], () => {
     }
 });
 
-const locationModeIcon = (mode) => ({
-    real: 'mdi-map-marker',
-    virtual: 'mdi-web',
-    custom: 'mdi-map-marker-outline',
-}[mode] || 'mdi-map-marker');
-
-// IRC channels for the "virtual" picker, loaded lazily.
-const ircChannels = ref([]);
-const ircChannelsLoading = ref(false);
-const fetchIrcChannels = async () => {
-    if (ircChannels.value.length || ircChannelsLoading.value) return;
-    ircChannelsLoading.value = true;
-    try {
-        const { data } = await axios.get('/api/irc/available-channels');
-        ircChannels.value = Array.isArray(data) ? data : [];
-    } catch (e) {
-        console.error('Failed to load IRC channels:', e);
-    } finally {
-        ircChannelsLoading.value = false;
-    }
-};
-
-// The channels offered: the ones an admin set up, then the ones already
-// open that are not already in that list. Anything else can be typed.
-const ircChannelSuggestions = computed(() => {
-    const preset = useSettingsStore().eventIrcChannels
-        .map(name => ({ name: String(name).startsWith('#') ? String(name) : `#${name}`, id: null }));
-
-    const known = new Set(preset.map(channel => channel.name.toLowerCase()));
-
-    return [
-        ...preset,
-        ...ircChannels.value.filter(channel => !known.has(String(channel.name).toLowerCase())),
-    ];
-});
-
 /**
- * The combobox hands back either a suggestion or the raw text typed. A
- * suggestion that is a channel the member is in keeps its id, so the link
- * opens that window; anything else travels as a name.
+ * Leave the drawer for the event's own page. An event that has never been
+ * saved has no page to go to yet, so it opens the create form instead.
  */
-const ircChannelChoice = computed({
-    get() {
-        const loc = localEvent.value?.extendedProps?.location;
+const openFullPage = async () => {
+    const id = localEvent.value?.id;
 
-        if (!loc) return null;
-        if (loc.irc_channel) return { name: loc.irc_channel, id: loc.irc_channel_id ?? null };
+    if (isDirty.value) {
+        const leave = await dialog.confirm({
+            title: t('events.unsavedChanges'),
+            message: t('events.unsavedChangesLeave'),
+            confirmText: t('events.leave'),
+        });
 
-        return loc.irc_channel_id
-            ? ircChannels.value.find(channel => channel.id === loc.irc_channel_id) ?? null
-            : null;
-    },
-    set(value) {
-        const loc = localEvent.value?.extendedProps?.location;
-
-        if (!loc) return;
-
-        if (!value) {
-            loc.irc_channel_id = null;
-            loc.irc_channel = '';
-            return;
-        }
-
-        const name = typeof value === 'string' ? value : value.name;
-
-        loc.irc_channel_id = typeof value === 'object' ? value.id ?? null : null;
-        loc.irc_channel = String(name || '').trim();
-    },
-});
-
-// A point picked on the map can also fill in an address that was left blank
-const onPointPicked = ({ address }) => {
-    const loc = localEvent.value?.extendedProps?.location;
-
-    if (loc && address && !String(loc.address || '').trim()) {
-        loc.address = address;
+        if (!leave) return;
     }
-};
 
-// How the location renders in view mode: an icon, a label and (optionally) a
-// link — a map search for physical addresses, the internal IRC client for a
-// channel, or the raw URL for an online link.
-const showMap = ref(false);
-const viewLocation = computed(() => buildViewLocation(
-    localEvent.value?.extendedProps?.location,
-    t,
-    useSettingsStore().mapProvider
-));
+    dialogModelValueUpdate(false);
+
+    if (!id) {
+        router.push({ name: 'event-create' });
+        return;
+    }
+
+    router.push(localEditMode.value
+        ? { name: 'event-edit', params: { id } }
+        : { name: 'event-show', params: { id } });
+};
 
 const isDirty = computed(() => {
     if (!initialSnapshot.value) return false;
@@ -673,7 +616,6 @@ watch(() => props.isDrawerOpen, (isOpen) => {
 });
 
 onMounted(() => {
-    fetchIrcChannels();
     if (!localEvent.value.start) {
         // Set initial start date with proper timezone handling
         localEvent.value.start = roundDateToNextTimeIncrement(new Date());
@@ -709,6 +651,16 @@ onMounted(() => {
                 >
                     {{ localEditMode ? $t('events.view') : $t('events.edit') }}
                 </VBtn>
+
+                <!-- The same event with room to breathe, for anything the
+                     drawer is too narrow for -->
+                <VBtn
+                    icon="mdi-arrow-expand"
+                    variant="text"
+                    density="comfortable"
+                    :title="$t('events.openFullPage')"
+                    @click="openFullPage"
+                />
             </div>
 
             <div v-else class="d-flex align-center py-3 px-4">
@@ -725,6 +677,14 @@ onMounted(() => {
                 <slot name="beforeClose"/>
 
                 <div class="d-flex align-center ga-1">
+                    <v-btn
+                        icon="mdi-arrow-expand"
+                        variant="text"
+                        density="comfortable"
+                        :title="$t('events.openFullPage')"
+                        @click="openFullPage"
+                    />
+
                     <v-btn
                         icon="mdi-pencil"
                         variant="text"
@@ -868,116 +828,10 @@ onMounted(() => {
                                 </VCol>
 
                                 <VCol cols="12" v-if="localEvent.extendedProps.location">
-                                    <!-- Mode selector: only when the event type allows more than one -->
-                                    <VBtnToggle
-                                        v-if="allowedLocationModes.length > 1"
-                                        v-model="localEvent.extendedProps.location.type"
-                                        color="primary"
-                                        density="comfortable"
-                                        mandatory
-                                        class="mb-3 flex-wrap"
-                                    >
-                                        <VBtn
-                                            v-for="mode in allowedLocationModes"
-                                            :key="mode"
-                                            :value="mode"
-                                            :prepend-icon="locationModeIcon(mode)"
-                                        >
-                                            {{ $t('events.locationModes.' + mode) }}
-                                        </VBtn>
-                                    </VBtnToggle>
-
-                                    <!-- real: an address, a point on the map, or both -->
-                                    <template v-if="localEvent.extendedProps.location.type === 'real'">
-                                        <VTextField
-                                            v-model="localEvent.extendedProps.location.address"
-                                            :label="$t('events.locationAddress')"
-                                            variant="outlined"
-                                            density="comfortable"
-                                            prepend-inner-icon="mdi-map-marker"
-                                        >
-                                            <template #append-inner>
-                                                <VBtn
-                                                    :icon="showMap ? 'mdi-map-minus' : 'mdi-map-search-outline'"
-                                                    :title="showMap ? $t('events.map.hide') : $t('events.map.show')"
-                                                    variant="text"
-                                                    size="small"
-                                                    density="comfortable"
-                                                    @click="showMap = !showMap"
-                                                />
-                                            </template>
-                                        </VTextField>
-
-                                        <!-- Picking a point is optional: an address on its own
-                                             is a perfectly good location -->
-                                        <MapPicker
-                                            v-if="showMap"
-                                            v-model:lat="localEvent.extendedProps.location.lat"
-                                            v-model:lng="localEvent.extendedProps.location.lng"
-                                            class="mb-2"
-                                            @picked="onPointPicked"
-                                        />
-                                    </template>
-
-                                    <!-- virtual: an internal IRC channel or an external URL -->
-                                    <template v-else-if="localEvent.extendedProps.location.type === 'virtual'">
-                                        <VBtnToggle
-                                            v-model="localEvent.extendedProps.location.virtualMode"
-                                            color="primary"
-                                            density="comfortable"
-                                            mandatory
-                                            class="mb-3"
-                                        >
-                                            <VBtn value="irc" prepend-icon="mdi-pound">{{ $t('events.locationIrc') }}</VBtn>
-                                            <VBtn value="url" prepend-icon="mdi-link-variant">{{ $t('events.locationUrl') }}</VBtn>
-                                        </VBtnToggle>
-
-                                        <!-- Any channel may be typed: an event is often held
-                                             somewhere nobody has joined yet. The list offers the
-                                             ones set up by an admin and the ones already open. -->
-                                        <VCombobox
-                                            v-if="localEvent.extendedProps.location.virtualMode === 'irc'"
-                                            v-model="ircChannelChoice"
-                                            :items="ircChannelSuggestions"
-                                            item-title="name"
-                                            :label="$t('events.locationIrcChannel')"
-                                            :hint="$t('events.locationIrcChannelHint')"
-                                            persistent-hint
-                                            :loading="ircChannelsLoading"
-                                            :no-data-text="$t('events.locationTypeChannel')"
-                                            variant="outlined"
-                                            density="comfortable"
-                                            prepend-inner-icon="mdi-pound"
-                                            clearable
-                                            return-object
-                                        >
-                                            <template #item="{ props: itemProps, item }">
-                                                <VListItem
-                                                    v-bind="itemProps"
-                                                    :title="item.raw.name"
-                                                    :subtitle="item.raw.server || $t('events.locationSuggested')"
-                                                />
-                                            </template>
-                                        </VCombobox>
-                                        <VTextField
-                                            v-else
-                                            v-model="localEvent.extendedProps.location.url"
-                                            :label="$t('events.locationUrl')"
-                                            placeholder="https://"
-                                            variant="outlined"
-                                            density="comfortable"
-                                            prepend-inner-icon="mdi-link-variant"
-                                        />
-                                    </template>
-
-                                    <!-- custom: free text -->
-                                    <VTextField
-                                        v-else
-                                        v-model="localEvent.extendedProps.location.text"
-                                        :label="$t('events.location')"
-                                        variant="outlined"
-                                        density="comfortable"
-                                        prepend-inner-icon="mdi-map-marker-outline"
+                                    <!-- The same field the event page uses -->
+                                    <EventLocationField
+                                        :location="localEvent.extendedProps.location"
+                                        :allowed-modes="allowedLocationModes"
                                     />
                                 </VCol>
 
@@ -1028,28 +882,7 @@ onMounted(() => {
                                 <span>{{ $t('events.location') }}</span>
                             </div>
                             <div class="pl-8">
-                                <template v-if="viewLocation">
-                                    <a
-                                        v-if="viewLocation.external"
-                                        :href="viewLocation.href"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="d-inline-flex align-center location-link"
-                                    >
-                                        <v-icon size="18" class="mr-1">{{ viewLocation.icon }}</v-icon>{{ viewLocation.label }}
-                                    </a>
-                                    <router-link
-                                        v-else-if="viewLocation.to"
-                                        :to="viewLocation.to"
-                                        class="d-inline-flex align-center location-link"
-                                    >
-                                        <v-icon size="18" class="mr-1">{{ viewLocation.icon }}</v-icon>{{ viewLocation.label }}
-                                    </router-link>
-                                    <span v-else class="d-inline-flex align-center">
-                                        <v-icon size="18" class="mr-1">{{ viewLocation.icon }}</v-icon>{{ viewLocation.label }}
-                                    </span>
-                                </template>
-                                <template v-else>{{ $t('events.noLocationSpecified') }}</template>
+                                <event-location-display :location="localEvent?.extendedProps?.location" />
                             </div>
                         </div>
 
@@ -1236,13 +1069,29 @@ onMounted(() => {
 }
 
 .event-drawer-header {
+    /* Outside the scrolling area, and stuck to the top of it either way —
+       sticky still earns its keep if the header ever ends up inside a
+       scrolling parent again. */
     position: sticky;
     top: 0;
+    flex: 0 0 auto;
     z-index: 10;
 }
 
+/* One scrollbar, not two. The drawer's own content box used to scroll as
+   well as the panel inside it, because the inner panel was given a fixed
+   height that only matched one of the two headers. The drawer is a column
+   now: header fixed, the rest takes what is left and scrolls on its own. */
+.event-drawer :deep(.v-navigation-drawer__content) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
 .event-drawer-content {
-    height: calc(100vh - 65px);
+    flex: 1 1 auto;
+    /* Without this a flex child refuses to shrink below its content */
+    min-height: 0;
 }
 
 .description-content {
