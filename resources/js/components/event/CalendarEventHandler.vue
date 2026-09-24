@@ -24,6 +24,7 @@ import { useUserStore } from "@/store/userStore.js";
 import { useSettingsStore } from "@/store/settingStore.js";
 import { useDateFormat } from '@/plugins/formatDate.js';
 import { mergeTopLevelIntoExtendedProps } from '@/utils/eventLocation.js';
+import { hasEventEnded } from '@/utils/eventTime.js';
 
 const props = defineProps({
     isDrawerOpen: Boolean,
@@ -186,14 +187,9 @@ const resetEvent = () => {
 };
 
 const canJoinEvent = computed(() => {
-
     if (!localEvent.value?.id) return false;
-    // const now = new Date();
-    const utcDate = new Date();
-    utcDate.setTime(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000);
-    console.log('enddate', localEvent.value.end, utcDate )
-    // return localEvent.value.end ? new Date(localEvent.value.end) > now : new Date(localEvent.value.start) > now;
-    return localEvent.value.end ? new Date(localEvent.value.end) >= utcDate : new Date(localEvent.value.start) >= utcDate;
+
+    return !hasEventEnded(localEvent.value);
 });
 
 // Confirms, then hands the delete to the parent. The parent closes the

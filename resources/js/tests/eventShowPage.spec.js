@@ -48,6 +48,8 @@ const render = async (event = eventPayload(), isGoing = null) => {
                 // Leaflet wants a real canvas; the map's own spec covers it
                 MapPicker: { props: { lat: null, lng: null, readonly: Boolean }, template: '<div class="map" :data-at="lat + \',\' + lng" :data-readonly="String(readonly)" />' },
                 RelatedContentList: { props: ['type', 'id'], template: '<div class="related" :data-type="type" :data-id="id" />' },
+                // Renders its message through a prop, so it needs a stub to be readable
+                'v-alert': { props: ['text'], template: '<div class="alert">{{ text }}<slot /></div>' },
             },
         },
     });
@@ -127,6 +129,28 @@ describe('EventShow', () => {
             location: { type: 'virtual', virtualMode: 'irc', irc_channel: '#rivendell' },
         }));
         expect(w.find('.map').exists()).toBe(false);
+    });
+
+    it('offers the answer buttons while the event is still ahead', async () => {
+        const w = await render(eventPayload({
+            startDate: '2099-01-01', endDate: '2099-01-02',
+            start: '2099-01-01T00:00:00Z', end: '2099-01-02T23:59:59Z',
+        }));
+
+        expect(w.text()).toContain(en.events.yes);
+        expect(w.text()).not.toContain(en.events.eventOver);
+    });
+
+    it('does not let an event that is over be answered', async () => {
+        const w = await render(eventPayload({
+            startDate: '2020-01-01', endDate: '2020-01-02',
+            start: '2020-01-01T00:00:00Z', end: '2020-01-02T23:59:59Z',
+        }));
+
+        expect(w.text()).toContain(en.events.eventOver);
+        expect(w.text()).not.toContain(en.events.yes);
+        // Who came is still worth reading
+        expect(w.text()).toContain(en.events.isGoing);
     });
 
     it('lists what is linked to the event', async () => {

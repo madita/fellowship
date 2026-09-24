@@ -64,7 +64,19 @@
                     </v-col>
                     <v-col cols="12" md="4">
                         <h2 class="text-h6 mb-3">{{ $t('events.areYouComing') }}</h2>
-                        <div class="d-flex flex-wrap ga-2">
+
+                        <!-- Who came is still worth reading once it is over;
+                             answering is not. -->
+                        <v-alert
+                            v-if="hasEnded"
+                            type="info"
+                            variant="tonal"
+                            density="compact"
+                            class="mb-3"
+                            :text="$t('events.eventOver')"
+                        />
+
+                        <div v-else class="d-flex flex-wrap ga-2">
                             <v-btn
                                 color="primary"
                                 variant="elevated"
@@ -140,6 +152,7 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import EventLocationDisplay from '@/components/event/EventLocationDisplay.vue'
 import RelatedContentList from '@/components/common/RelatedContentList.vue'
+import { hasEventEnded } from '@/utils/eventTime.js'
 import axios from 'axios'
 import { useDialog } from '@/composables/useDialog.js'
 
@@ -216,6 +229,10 @@ const dateRange = computed(() => {
         ? `${day(from)} ${time(from)} - ${time(to)}`
         : `${day(from)} ${time(from)} - ${day(to)} ${time(to)}`
 })
+
+// Answering is only possible while the event is still ahead — the same
+// reading the drawer and Event::hasEnded() use.
+const hasEnded = computed(() => !!event.value?.id && hasEventEnded(event.value));
 
 // Methods
 const getEvent = async () => {

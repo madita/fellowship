@@ -298,6 +298,7 @@ return [
     // Events
     'events' => [
         'created'              => 'Event erstellt',
+        'ended'                => 'Dieser Termin ist vorbei, eine Antwort ist nicht mehr möglich.',
         'deleted'              => 'Event erfolgreich gelöscht',
         'unauthorized'         => 'Nicht autorisiert. Sie haben keine Berechtigung, dieses Event zu ändern.',
         'unauthorized_approve' => 'Nicht autorisiert. Nur Event-Besitzer können Gäste genehmigen.',

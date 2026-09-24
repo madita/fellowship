@@ -1651,6 +1651,7 @@ export default {
         'updateEvent': 'Update Event',
         'unsavedChangesWarning': 'You have unsaved changes. Use the Save or Cancel buttons — clicking outside won’t close the form.',
         'openFullPage': 'Open as a page',
+        'eventOver': 'This event is over, so you can no longer answer.',
         'unsavedChanges': 'Unsaved changes',
         'unsavedChangesLeave': 'You have unsaved changes. Leave anyway?',
         'leave': 'Leave',

@@ -8,6 +8,7 @@ use App\Traits\HasRelateableContent;
 use App\Traits\NotifiesMentions;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
+use Carbon\Carbon;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -35,6 +36,36 @@ class Event extends Model implements TranslatableContract
         'endDate',
         'event_type_id',
     ];
+
+    /**
+     * When the event is over.
+     *
+     * An event with no end date ends the day it starts, and one with no
+     * end time runs to the end of that day — the same reading the show
+     * endpoint uses when it composes `end`.
+     */
+    public function endsAt(): ?Carbon
+    {
+        $date = $this->endDate ?: $this->startDate;
+
+        if (! $date) {
+            return null;
+        }
+
+        $time = $this->endDate ? $this->endTime : ($this->endTime ?: $this->startTime);
+
+        return Carbon::parse(
+            Carbon::parse($date)->format('Y-m-d') . ' ' . ($time ?: '23:59:59')
+        );
+    }
+
+    // An event nobody can still attend, because it has already happened.
+    public function hasEnded(): bool
+    {
+        $endsAt = $this->endsAt();
+
+        return $endsAt !== null && $endsAt->isPast();
+    }
 
     public function sluggable(): array
     {

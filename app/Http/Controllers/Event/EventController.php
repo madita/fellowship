@@ -392,6 +392,11 @@ class EventController extends Controller
 
     public function isGoing(Event $event, $answer)
     {
+        // Nobody can still be going to something that is over.
+        if ($event->hasEnded()) {
+            return response()->json(['message' => __('messages.events.ended')], 422);
+        }
+
         // ToDo get just the guests???
         /** @var User $user */
         $user = auth()->user();
@@ -416,6 +421,10 @@ class EventController extends Controller
 
     public function joinEvent(Request $request, Event $event)
     {
+        if ($event->hasEnded()) {
+            return response()->json(['message' => __('messages.events.ended')], 422);
+        }
+
         /** @var User $user */
         $user = auth()->user();
 

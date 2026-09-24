@@ -1598,6 +1598,7 @@ export default {
         'updateEvent': 'Termin aktualisieren',
         'unsavedChangesWarning': 'Sie haben ungespeicherte Änderungen. Bitte „Speichern“ oder „Abbrechen“ verwenden – ein Klick außerhalb schließt das Formular nicht.',
         'openFullPage': 'Als Seite öffnen',
+        'eventOver': 'Dieser Termin ist vorbei, eine Antwort ist nicht mehr möglich.',
         'unsavedChanges': 'Ungespeicherte Änderungen',
         'unsavedChangesLeave': 'Sie haben ungespeicherte Änderungen. Trotzdem verlassen?',
         'leave': 'Verlassen',
