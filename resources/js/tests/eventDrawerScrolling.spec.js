@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
 import { createRouter, createWebHistory } from 'vue-router';
@@ -14,11 +15,20 @@ const router = createRouter({
     routes: [{ path: '/', component: { template: '<div/>' } }],
 });
 
-const render = (event) => mount(CalendarEventHandler, {
+const render = (event, props = {}) => mount(CalendarEventHandler, {
     // Shallow: this is about the drawer's own structure, not its children
     shallow: true,
-    props: { isDrawerOpen: true, editMode: false, event, saving: false },
-    global: { plugins: [i18n, router] },
+    props: { isDrawerOpen: true, editMode: false, event, saving: false, ...props },
+    global: {
+        plugins: [i18n, router],
+        stubs: {
+            // The real drawer is not rendered under shallow, but the box it
+            // scrolls is the one the component reaches for by class.
+            VNavigationDrawer: {
+                template: '<aside><div class="v-navigation-drawer__content"><slot /></div></aside>',
+            },
+        },
+    },
 });
 
 const anEvent = {
@@ -70,5 +80,44 @@ describe('event drawer scrolling', () => {
     it('mounts with an event already selected', () => {
         expect(() => render(anEvent)).not.toThrow();
         expect(render(anEvent).find('.event-drawer-header').exists()).toBe(true);
+    });
+
+    describe('opening at the top', () => {
+        // The drawer is mounted once and only shown and hidden, so the box
+        // it scrolls keeps the position the last event was left at.
+        const scrollBox = w => w.find('.v-navigation-drawer__content').element;
+
+        it('jumps back to the top when the drawer opens', async () => {
+            const w = render(anEvent, { isDrawerOpen: false });
+
+            scrollBox(w).scrollTop = 250;
+
+            await w.setProps({ isDrawerOpen: true });
+            await nextTick();
+
+            expect(scrollBox(w).scrollTop).toBe(0);
+        });
+
+        it('jumps back to the top when another event is opened', async () => {
+            const w = render(anEvent);
+
+            scrollBox(w).scrollTop = 250;
+
+            await w.setProps({ event: { ...anEvent, id: 2, title: 'Another' } });
+            await nextTick();
+
+            expect(scrollBox(w).scrollTop).toBe(0);
+        });
+
+        it('leaves the position alone while the drawer is shut', async () => {
+            const w = render(anEvent, { isDrawerOpen: false });
+
+            scrollBox(w).scrollTop = 250;
+
+            await w.setProps({ event: { ...anEvent, id: 2 } });
+            await nextTick();
+
+            expect(scrollBox(w).scrollTop).toBe(250);
+        });
     });
 });

@@ -82,6 +82,32 @@ const answering = ref(null);
 // Guest whose approval/rejection request is in flight (null when idle)
 const busyGuestId = ref(null);
 
+const contentRef = ref(null);
+
+/**
+ * Open every event at its top.
+ *
+ * The drawer is mounted once and only shown and hidden, so the box that
+ * scrolls keeps whatever position the last event was left at — which lands
+ * a short event half way down a blank panel.
+ */
+const scrollToTop = async () => {
+    await nextTick();
+
+    // The drawer's own content box is what scrolls; the panel inside it
+    // only supplies the content.
+    const box = contentRef.value?.closest('.v-navigation-drawer__content');
+
+    if (box) box.scrollTop = 0;
+};
+
+watch(
+    [() => props.isDrawerOpen, () => props.event],
+    () => {
+        if (props.isDrawerOpen) scrollToTop();
+    }
+);
+
 const localEvent = ref(null);
 const initialSnapshot = ref('');
 watch(
@@ -728,7 +754,7 @@ onMounted(() => {
             <VDivider/>
         </div>
 
-        <div class="event-drawer-content">
+        <div ref="contentRef" class="event-drawer-content">
             <!-- Edit Mode Form -->
             <VCard flat class="px-2" v-if="localEditMode">
                 <VCardText>
