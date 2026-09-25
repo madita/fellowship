@@ -2,7 +2,6 @@
 import { ref, watch, computed, nextTick, onMounted  } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
 import CustomDatePicker from "../common/CustomDatePicker.vue";
 
 const { t, te } = useI18n();
@@ -239,7 +238,9 @@ const onCancel = () => {
     emit('update:isDrawerOpen', false);
 };
 
-const getEvent = async (eventId) => {
+// Declared, not assigned to a const: the immediate watcher above calls it
+// during setup, which a const would still be too early for.
+async function getEvent(eventId) {
     try {
         loadEventDetails.value = true;
         const response = await axios.get(`/api/events/${eventId}`);
@@ -251,7 +252,7 @@ const getEvent = async (eventId) => {
     } finally {
         loadEventDetails.value = false;
     }
-};
+}
 
 const approveGuest = async (guestId, action) => {
     if (busyGuestId.value !== null) return;
@@ -572,7 +573,9 @@ const handleStartDateChange = (newStartDate) => {
 }
 
 // Watch for changes in the all-day toggle
-watch(() => localEvent.value.allDay, (isAllDay) => {
+watch(() => localEvent.value?.allDay, (isAllDay) => {
+    if (!localEvent.value) return;
+
     if (isAllDay && localEvent.value.start && localEvent.value.end) {
         // If switching to all-day...
     } else if (!localEvent.value.allDay && localEvent.value.start) {
@@ -721,11 +724,11 @@ onMounted(() => {
                     />
                 </div>
             </div>
+
+            <VDivider/>
         </div>
 
-        <VDivider/>
-
-        <PerfectScrollbar :options="{ wheelPropagation: false }" class="event-drawer-content">
+        <div class="event-drawer-content">
             <!-- Edit Mode Form -->
             <VCard flat class="px-2" v-if="localEditMode">
                 <VCardText>
@@ -1037,12 +1040,12 @@ onMounted(() => {
                     compact
                 />
             </div>
-        </PerfectScrollbar>
+        </div>
     </VNavigationDrawer>
 
     <!-- Dialogs -->
     <ProfileDialog
-        v-if="localEvent.id > 0"
+        v-if="localEvent?.id > 0"
         v-model="showProfileDialog"
         :event="localEvent"
         :is-going="isGoing"
@@ -1051,7 +1054,7 @@ onMounted(() => {
     />
 
     <DetailsDialog
-        v-if="localEvent.id > 0"
+        v-if="localEvent?.id > 0"
         v-model="showDetailsDialog"
         :eventGuests="eventGuests"
         :event="localEvent"
@@ -1064,30 +1067,20 @@ onMounted(() => {
     border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
+/* The drawer's own content box does the scrolling — Vuetify already gives
+   it overflow-y: auto — so there is one scrollbar and the header can stay
+   stuck to the top of it.
+
+   An inner scrolling panel was tried here and is not worth repeating: it
+   needs a height of its own, and a JS scrollbar measures that height once,
+   while the drawer is still closed and zero-tall, so it decides there is
+   nothing to scroll and never reconsiders. */
 .event-drawer-header {
-    /* Outside the scrolling area, and stuck to the top of it either way —
-       sticky still earns its keep if the header ever ends up inside a
-       scrolling parent again. */
     position: sticky;
     top: 0;
-    flex: 0 0 auto;
     z-index: 10;
-}
-
-/* One scrollbar, not two. The drawer's own content box used to scroll as
-   well as the panel inside it, because the inner panel was given a fixed
-   height that only matched one of the two headers. The drawer is a column
-   now: header fixed, the rest takes what is left and scrolls on its own. */
-.event-drawer :deep(.v-navigation-drawer__content) {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.event-drawer-content {
-    flex: 1 1 auto;
-    /* Without this a flex child refuses to shrink below its content */
-    min-height: 0;
+    /* Opaque, or the content scrolls visibly underneath it */
+    background: rgb(var(--v-theme-surface));
 }
 
 .description-content {
