@@ -98,7 +98,8 @@ export default {
     },
     'profileDialog': {
         'title': 'Ihre Angaben',
-        'days': 'Tage'
+        'days': 'Tage',
+        'prefilled': 'Aus dem zuletzt beantworteten Termin übernommen – bitte vor dem Senden prüfen.'
     },
     'board': {
         'titlePlaceholder': 'Geben Sie einen Titel für diese Karte ein',

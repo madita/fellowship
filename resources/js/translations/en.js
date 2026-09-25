@@ -98,7 +98,8 @@ export default {
     },
     'profileDialog': {
         'title': 'Your details',
-        'days': 'Days'
+        'days': 'Days',
+        'prefilled': 'Filled in from the last event you answered — please check it before sending.'
     },
     'board': {
         'titlePlaceholder': 'Enter a title for this card',

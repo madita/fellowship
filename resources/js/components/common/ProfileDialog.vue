@@ -5,6 +5,17 @@
             <VCardTitle class="text-h6">{{ $t('profileDialog.title') }}</VCardTitle>
             <VDivider />
             <VCardText>
+                <!-- Carried over from an earlier event, so it is worth a
+                     glance before it is sent -->
+                <v-alert
+                    v-if="prefilled"
+                    type="info"
+                    variant="tonal"
+                    density="compact"
+                    class="mb-4"
+                    :text="$t('profileDialog.prefilled')"
+                />
+
                 <!-- Fix 1: Add v-if to ensure formData.days exists before rendering -->
                 <v-select v-if="eventDays.length > 1 && formData.days"
                           v-model="formData.days"
@@ -77,6 +88,9 @@ const taxonomieItems = ref({});    // Fix 3: Initialize as object not array
 const formData = ref({             // Fix 4: Initialize formData with days property
     days: []
 });
+// True once the form has been filled in from an earlier event, so the
+// member is told to check it rather than trusting it blindly.
+const prefilled = ref(false);
 
 // Define the modelValue prop
 const props = defineProps({
@@ -153,29 +167,62 @@ const profileId = computed(() => {
     return localEvent.value.extendedProps.event_profile_id || 0;
 });
 
+/**
+ * Build the form: empty fields, then whatever we can fill in for the
+ * member — their answer to this event if they have given one, otherwise
+ * what they said the last time an event asked the same questions.
+ *
+ * The answers are applied here rather than in the isGoing watcher because
+ * this runs across an await: anything that watcher set would be wiped by
+ * the reset below.
+ */
 const profileForm = async () => {
     try {
         const response = await axios.get(`/api/datatable/event-profiles/${profileId.value}`);
         profile.value = response.data;
         fields.value = profile.value.options;
 
-        // Fix 7: Create formData object correctly with days array
-        // Instead of trying to spread the form fields (which is an array, not an object)
-        formData.value = {days: []};
+        const blank = {days: []};
 
-        // Fix 8: Properly initialize form fields
-        if (fields.value && fields.value.form) {
-            fields.value.form.forEach(field => {
-                // Initialize each field with appropriate default value
-                if (field.type === 'taxonomy') {
-                    formData.value[field.name] = [];
-                } else {
-                    formData.value[field.name] = '';
-                }
-            });
+        (fields.value?.form || []).forEach(field => {
+            blank[field.name] = field.type === 'taxonomy' ? [] : '';
+        });
+
+        const answered = localisGoing.value?.profile;
+
+        if (answered) {
+            formData.value = {...blank, ...answered, days: answered.days || []};
+            return;
         }
+
+        formData.value = blank;
+        await applyDraft();
     } catch (error) {
         console.log(error);
+    }
+}
+
+/**
+ * Carry over the member's last answers. A convenience, so a failure is
+ * never worth reporting — the form simply stays empty.
+ */
+const applyDraft = async () => {
+    try {
+        const {data} = await axios.get(`/api/events/${localEvent.value.id}/profile-draft`);
+        const draft = data?.data;
+
+        if (!draft || !Object.keys(draft).length) return;
+
+        Object.entries(draft).forEach(([name, value]) => {
+            // Only fields this form actually has, and never the days
+            if (name === 'days' || !(name in formData.value)) return;
+
+            formData.value[name] = value;
+        });
+
+        prefilled.value = true;
+    } catch (error) {
+        console.log('No previous event profile to prefill from:', error);
     }
 }
 
@@ -192,31 +239,25 @@ const getTerms = async (name, taxonomy) => {
     }
 }
 
+// Kept in step before the event watcher builds the form, which reads it
 watch(
-    () => props.event,
-    (newEvent) => {
-        localEvent.value = newEvent ? JSON.parse(JSON.stringify(newEvent)) : null;
-        if (profileId.value > 0) {
-            profileForm();
-        }
+    () => props.isGoing,
+    (isGoing) => {
+        localisGoing.value = isGoing;
     },
     {immediate: true}
 );
 
 watch(
-    () => props.isGoing,
-    (isGoing) => {
-        localisGoing.value = isGoing;
-        if (isGoing && isGoing.profile) {
-            // Fix 10: Ensure days property exists
-            const profile = isGoing.profile || {};
-            formData.value = {
-                ...profile,
-                days: profile.days || []
-            };
+    () => props.event,
+    (newEvent) => {
+        localEvent.value = newEvent ? JSON.parse(JSON.stringify(newEvent)) : null;
+        prefilled.value = false;
+        if (profileId.value > 0) {
+            profileForm();
         }
     },
-    {immediate: true} // Fix 11: Added immediate: true to initialize correctly
+    {immediate: true}
 );
 
 watch(

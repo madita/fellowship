@@ -21,6 +21,7 @@ use App\Support\TaxonomyHelper;
 use DateTime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 
 class EventController extends Controller
@@ -417,6 +418,55 @@ class EventController extends Controller
                 //                'maybe'    => $event->maybegoing()->get(),
             ]
         );
+    }
+
+    /**
+     * What the member filled in the last time they answered an event that
+     * asks the same questions, so the form arrives filled in rather than
+     * blank. Only ever the caller's own answers, only the fields the form
+     * still asks for, and never the days — those belong to this event's
+     * own dates.
+     */
+    public function profileDraft(Event $event)
+    {
+        /** @var User $user */
+        $user = auth()->user();
+
+        $profileId = EventType::find($event->event_type_id)?->event_profile_id;
+
+        if (! $profileId) {
+            return response()->json(['data' => null]);
+        }
+
+        $options = json_decode(EventProfile::find($profileId)?->options ?? '{}');
+        $fields  = collect($options->form ?? [])->pluck('name')->filter()->all();
+
+        if (! $fields) {
+            return response()->json(['data' => null]);
+        }
+
+        // Every event that asks these same questions, this one aside
+        $eventIds = Event::whereIn(
+            'event_type_id',
+            EventType::where('event_profile_id', $profileId)->pluck('id')
+        )->where('id', '!=', $event->id)->pluck('id');
+
+        $last = EventGuest::where('user_id', $user->id)
+            ->whereIn('event_id', $eventIds)
+            ->whereNotNull('profile')
+            ->latest('updated_at')
+            ->first();
+
+        $answers = json_decode($last?->profile ?? 'null', true);
+
+        if (! is_array($answers)) {
+            return response()->json(['data' => null]);
+        }
+
+        $draft = Arr::only($answers, $fields);
+        unset($draft['days']);
+
+        return response()->json(['data' => $draft ?: null]);
     }
 
     public function joinEvent(Request $request, Event $event)
