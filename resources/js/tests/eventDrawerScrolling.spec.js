@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { nextTick } from 'vue';
-import { mount } from '@vue/test-utils';
+import { mount, flushPromises } from '@vue/test-utils';
 import { createI18n } from 'vue-i18n';
 import { createRouter, createWebHistory } from 'vue-router';
 import { createPinia, setActivePinia } from 'pinia';
@@ -104,6 +104,28 @@ describe('event drawer scrolling', () => {
             scrollBox(w).scrollTop = 250;
 
             await w.setProps({ event: { ...anEvent, id: 2, title: 'Another' } });
+            await nextTick();
+
+            expect(scrollBox(w).scrollTop).toBe(0);
+        });
+
+        /**
+         * The details are fetched, so on open the drawer holds little more
+         * than a loader and there is nothing to scroll yet. Whatever the
+         * box was left at comes back with the content, so the reset has to
+         * happen again once it lands.
+         */
+        it('jumps back to the top once the guests and answers arrive', async () => {
+            const w = render(anEvent);
+            await flushPromises();
+
+            // The content is back, and with it the old offset
+            scrollBox(w).scrollTop = 250;
+
+            w.vm.loadEventDetails = true;
+            await nextTick();
+            w.vm.loadEventDetails = false;
+            await nextTick();
             await nextTick();
 
             expect(scrollBox(w).scrollTop).toBe(0);

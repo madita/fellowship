@@ -108,6 +108,18 @@ watch(
     }
 );
 
+/**
+ * …and again once the guests and answers arrive.
+ *
+ * Resetting on open alone is not enough: the details are fetched, so at
+ * that point the drawer holds little more than a loader and there is
+ * nothing to scroll yet. The reset lands on an empty panel, and the old
+ * offset comes back with the content a moment later.
+ */
+watch(loadEventDetails, (loading) => {
+    if (!loading && props.isDrawerOpen) scrollToTop();
+});
+
 const localEvent = ref(null);
 const initialSnapshot = ref('');
 watch(
@@ -1107,6 +1119,13 @@ onMounted(() => {
     z-index: 10;
     /* Opaque, or the content scrolls visibly underneath it */
     background: rgb(var(--v-theme-surface));
+}
+
+/* The guests and answers arrive after the drawer opens. Scroll anchoring
+   would keep whatever was on screen in place as they are inserted, which
+   here means reinstating the offset the previous event was left at. */
+.event-drawer :deep(.v-navigation-drawer__content) {
+    overflow-anchor: none;
 }
 
 .description-content {
