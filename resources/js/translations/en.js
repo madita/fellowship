@@ -1621,6 +1621,7 @@ export default {
         'day': 'Day',
         'list': 'List',
         'today': 'Today',
+        'tomorrow': 'Tomorrow',
         'upcomingEvents': 'Upcoming Events',
         'next7Days': 'Next 7 Days',
         'event': 'Event',

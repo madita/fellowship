@@ -1568,6 +1568,7 @@ export default {
         'day': 'Tag',
         'list': 'Liste',
         'today': 'Heute',
+        'tomorrow': 'Morgen',
         'upcomingEvents': 'Anstehende Termine',
         'next7Days': 'Nächste 7 Tage',
         'event': 'Termin',
