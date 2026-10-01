@@ -434,14 +434,14 @@ class EventController extends Controller
 
         $profileId = EventType::find($event->event_type_id)?->event_profile_id;
 
-        if (! $profileId) {
+        if ( ! $profileId) {
             return response()->json(['data' => null]);
         }
 
         $options = json_decode(EventProfile::find($profileId)?->options ?? '{}');
         $fields  = collect($options->form ?? [])->pluck('name')->filter()->all();
 
-        if (! $fields) {
+        if ( ! $fields) {
             return response()->json(['data' => null]);
         }
 
@@ -459,7 +459,7 @@ class EventController extends Controller
 
         $answers = json_decode($last?->profile ?? 'null', true);
 
-        if (! is_array($answers)) {
+        if ( ! is_array($answers)) {
             return response()->json(['data' => null]);
         }
 

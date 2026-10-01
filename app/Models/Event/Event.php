@@ -48,7 +48,7 @@ class Event extends Model implements TranslatableContract
     {
         $date = $this->endDate ?: $this->startDate;
 
-        if (! $date) {
+        if ( ! $date) {
             return null;
         }
 
