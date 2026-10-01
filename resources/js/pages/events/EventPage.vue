@@ -65,41 +65,9 @@
 
                                 <v-divider class="my-2" />
 
-                                <div class="pa-4">
-                                    <div class="d-flex align-center justify-space-between mb-4">
-                                        <h5 class="text-h6 font-weight-bold">{{ $t('events.eventFilters') }}</h5>
-                                        <v-btn
-                                            variant="text"
-                                            density="comfortable"
-                                            size="small"
-                                            @click="checkAll = !checkAll"
-                                        >{{ checkAll ? $t('events.clearAll') : $t('events.selectAll') }}</v-btn>
-                                    </div>
-
-                                    <v-fade-transition hide-on-leave>
-                                        <div class="d-flex flex-column calendars-checkbox">
-                                            <v-checkbox
-                                                v-model="checkAll"
-                                                :label="$t('events.viewAll')"
-                                                color="primary"
-                                                hide-details
-                                                density="compact"
-                                            />
-                                            <v-checkbox
-                                                v-for="type in calendarStore.eventTypes"
-                                                :key="type.name"
-                                                v-model="calendarStore.selectedEventTypes"
-                                                :value="type.name"
-                                                :color="type.color"
-                                                :label="translateTypeName(type.name)"
-                                                hide-details
-                                                density="compact"
-                                            />
-                                        </div>
-                                    </v-fade-transition>
-                                </div>
-
-                                <v-divider class="my-2" />
+                                <!-- The type filters used to sit here. They
+                                     are in the toolbar now, beside the view
+                                     switch, where they cost no room at all. -->
 
                                 <!-- Quick Upcoming Events Preview -->
                                 <div class="pa-4">
@@ -142,9 +110,11 @@
                             <!-- Main Calendar Content -->
                             <v-main>
                                 <v-card
+                                    ref="calendarCard"
                                     flat
                                     class="pa-4 calendar-main"
                                     rounded="lg"
+                                    :style="{ '--calendar-offset': `${calendarOffset}px` }"
                                 >
                                     <div class="d-flex justify-space-between align-center mb-4">
                                         <v-btn-toggle
@@ -160,12 +130,89 @@
                                             <v-btn value="custom">{{ $t('events.list') }}</v-btn>
                                         </v-btn-toggle>
 
-                                        <v-btn
-                                            :icon="isLeftSidebarOpen ? 'mdi-menu-open' : 'mdi-menu'"
-                                            variant="text"
-                                            class="d-md-none"
-                                            @click="isLeftSidebarOpen = !isLeftSidebarOpen"
-                                        />
+                                        <div class="d-flex align-center ga-1">
+                                            <!-- A menu rather than a dialog: a
+                                                 handful of checkboxes is not
+                                                 worth taking the screen over,
+                                                 and the calendar stays visible
+                                                 as they are toggled. -->
+                                            <v-menu
+                                                v-model="isFilterMenuOpen"
+                                                :close-on-content-click="false"
+                                                location="bottom end"
+                                                offset="6"
+                                            >
+                                                <template #activator="{ props: filterProps }">
+                                                    <!-- The count is the only
+                                                         clue that something is
+                                                         hidden, now that the
+                                                         filters are not on show -->
+                                                    <v-badge
+                                                        :model-value="hiddenTypeCount > 0"
+                                                        :content="hiddenTypeCount"
+                                                        color="primary"
+                                                        offset-x="6"
+                                                        offset-y="6"
+                                                    >
+                                                        <v-btn
+                                                            v-bind="filterProps"
+                                                            :icon="hiddenTypeCount > 0 ? 'mdi-filter' : 'mdi-filter-outline'"
+                                                            :color="hiddenTypeCount > 0 ? 'primary' : undefined"
+                                                            variant="text"
+                                                            density="comfortable"
+                                                            :title="$t('events.eventFilters')"
+                                                            :aria-label="$t('events.eventFilters')"
+                                                        />
+                                                    </v-badge>
+                                                </template>
+
+                                                <v-card min-width="240" rounded="lg">
+                                                    <div class="d-flex align-center justify-space-between pl-4 pr-2 py-2">
+                                                        <span class="text-subtitle-2 font-weight-medium">
+                                                            {{ $t('events.eventFilters') }}
+                                                        </span>
+                                                        <v-btn
+                                                            variant="text"
+                                                            size="small"
+                                                            density="comfortable"
+                                                            @click="checkAll = !checkAll"
+                                                        >
+                                                            {{ checkAll ? $t('events.clearAll') : $t('events.selectAll') }}
+                                                        </v-btn>
+                                                    </div>
+
+                                                    <v-divider />
+
+                                                    <div class="px-4 py-2">
+                                                        <v-checkbox
+                                                            v-model="checkAll"
+                                                            :label="$t('events.viewAll')"
+                                                            color="primary"
+                                                            hide-details
+                                                            density="compact"
+                                                        />
+                                                        <v-checkbox
+                                                            v-for="type in calendarStore.eventTypes"
+                                                            :key="type.name"
+                                                            v-model="calendarStore.selectedEventTypes"
+                                                            :value="type.name"
+                                                            :color="type.color"
+                                                            :label="translateTypeName(type.name)"
+                                                            hide-details
+                                                            density="compact"
+                                                        />
+                                                    </div>
+                                                </v-card>
+                                            </v-menu>
+
+                                            <v-btn
+                                                :icon="isLeftSidebarOpen ? 'mdi-menu-open' : 'mdi-menu'"
+                                                variant="text"
+                                                density="comfortable"
+                                                class="d-md-none"
+                                                @click="isLeftSidebarOpen = !isLeftSidebarOpen"
+                                            />
+                                        </div>
                                     </div>
 
                                     <full-calendar
@@ -396,7 +443,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
+import { ref, watch, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import { addDays, isEqual, isAfter, isBefore } from "date-fns";
@@ -419,6 +466,7 @@ import CalendarEventHandler from "@/components/event/CalendarEventHandler.vue";
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
+import { spaceAbove } from '@/utils/fillViewport.js';
 import { useCalendarStore } from '@/store/calendarStore.js';
 import { useUserStore } from '@/store/userStore.js';
 import { useSettingsStore } from '@/store/settingStore.js';
@@ -472,6 +520,20 @@ const blankEvent = {
 const selectedEvent = ref(structuredClone(blankEvent));
 
 // Check all computed property
+const isFilterMenuOpen = ref(false);
+
+/**
+ * How many event types are being hidden.
+ *
+ * The filters live behind a toolbar button now, so this count on the button
+ * is the only sign that the calendar is not showing everything.
+ */
+const hiddenTypeCount = computed(() => {
+    const all = Object.values(calendarStore.eventTypes || {}).length;
+
+    return Math.max(0, all - calendarStore.selectedEventTypes.length);
+});
+
 const checkAll = computed({
     get: () => calendarStore.selectedEventTypes.length === Object.values(calendarStore.eventTypes).length,
     set: val => {
@@ -558,6 +620,27 @@ const eventStats = computed(() => [
 ]);
 
 // Get user's timezone preference
+/**
+ * The calendar fills whatever is left of the screen below it.
+ *
+ * This was a fixed `100dvh - 300px`, which left the month grid cramped: the
+ * card's own padding and the view-toggle row come out of that budget too,
+ * and the guess had to cover a page header whose height changes with the
+ * breakpoint. Measuring what is actually above it does not have to guess.
+ */
+const calendarCard = ref(null);
+const calendarOffset = ref(0);
+
+const measureCalendar = () => {
+    const el = calendarCard.value?.$el ?? calendarCard.value;
+    const above = spaceAbove(el);
+
+    if (above !== null) calendarOffset.value = above;
+};
+
+// The header and the toggle row reflow when the window or the view changes
+watch(calendarViewType, () => nextTick(measureCalendar));
+
 const userTimezone = computed(() => {
     const timezone = userStore.user?.timezone ||
            settingsStore.appSettings?.default_timezone ||
@@ -857,11 +940,16 @@ onMounted(async () => {
         loading.value = false;
     }
 
+    measureCalendar();
+    window.addEventListener('resize', measureCalendar);
+
     // Listen for locale changes to refetch content in new language
     window.addEventListener('locale-changed', onLocaleChange);
 });
 
 onUnmounted(() => {
+    window.removeEventListener('resize', measureCalendar);
+
     // Clean up locale change listener
     window.removeEventListener('locale-changed', onLocaleChange);
 });
@@ -887,13 +975,17 @@ onUnmounted(() => {
 .calendar-main {
     background-color: rgb(var(--v-theme-background));
     // Cap the calendar to the viewport so it scrolls internally instead of
-    // growing the page. The offset accounts for the app bar, the page header
-    // (with tabs) and the view-toggle row above; min-height keeps it usable
-    // on short screens.
+    // growing the page. What sits above it — the app bar, the page header
+    // and its tabs — is measured rather than guessed at, since the header's
+    // height moves with the breakpoint. min-height keeps a month grid
+    // readable on a short screen.
     display: flex;
     flex-direction: column;
-    height: calc(100dvh - 300px);
-    min-height: 500px;
+    // --calendar-offset is measured on mount and on resize; the fallback
+    // only covers the moment before the first measurement lands
+    height: 100%;
+    //height: calc(100dvh - var(--calendar-offset, 300px));
+    min-height: 560px;
 
     // The view-toggle row is fixed height; the calendar fills the rest.
     .calendar-component {
