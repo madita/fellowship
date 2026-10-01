@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, computed, nextTick, onMounted  } from 'vue';
+import { ref, watch, computed, nextTick, onMounted, onUnmounted  } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import CustomDatePicker from "../common/CustomDatePicker.vue";
@@ -81,44 +81,6 @@ const relatedListRef = ref(null);
 const answering = ref(null);
 // Guest whose approval/rejection request is in flight (null when idle)
 const busyGuestId = ref(null);
-
-const contentRef = ref(null);
-
-/**
- * Open every event at its top.
- *
- * The drawer is mounted once and only shown and hidden, so the box that
- * scrolls keeps whatever position the last event was left at — which lands
- * a short event half way down a blank panel.
- */
-const scrollToTop = async () => {
-    await nextTick();
-
-    // The drawer's own content box is what scrolls; the panel inside it
-    // only supplies the content.
-    const box = contentRef.value?.closest('.v-navigation-drawer__content');
-
-    if (box) box.scrollTop = 0;
-};
-
-watch(
-    [() => props.isDrawerOpen, () => props.event],
-    () => {
-        if (props.isDrawerOpen) scrollToTop();
-    }
-);
-
-/**
- * …and again once the guests and answers arrive.
- *
- * Resetting on open alone is not enough: the details are fetched, so at
- * that point the drawer holds little more than a loader and there is
- * nothing to scroll yet. The reset lands on an empty panel, and the old
- * offset comes back with the content a moment later.
- */
-watch(loadEventDetails, (loading) => {
-    if (!loading && props.isDrawerOpen) scrollToTop();
-});
 
 const localEvent = ref(null);
 const initialSnapshot = ref('');
@@ -276,9 +238,7 @@ const onCancel = () => {
     emit('update:isDrawerOpen', false);
 };
 
-// Declared, not assigned to a const: the immediate watcher above calls it
-// during setup, which a const would still be too early for.
-async function getEvent(eventId) {
+const getEvent = async (eventId) => {
     try {
         loadEventDetails.value = true;
         const response = await axios.get(`/api/events/${eventId}`);
@@ -290,7 +250,7 @@ async function getEvent(eventId) {
     } finally {
         loadEventDetails.value = false;
     }
-}
+};
 
 const approveGuest = async (guestId, action) => {
     if (busyGuestId.value !== null) return;
@@ -611,9 +571,7 @@ const handleStartDateChange = (newStartDate) => {
 }
 
 // Watch for changes in the all-day toggle
-watch(() => localEvent.value?.allDay, (isAllDay) => {
-    if (!localEvent.value) return;
-
+watch(() => localEvent.value.allDay, (isAllDay) => {
     if (isAllDay && localEvent.value.start && localEvent.value.end) {
         // If switching to all-day...
     } else if (!localEvent.value.allDay && localEvent.value.start) {
@@ -652,7 +610,75 @@ watch(() => props.isDrawerOpen, (isOpen) => {
     }
 });
 
+const contentRef = ref(null);
+
+/**
+ * Open every event at its top.
+ *
+ * The drawer is mounted once and only shown and hidden, so the panel keeps
+ * whatever position the last event was left at. This is the element that
+ * scrolls — an earlier attempt reset Vuetify's box instead, which is not.
+ */
+const scrollToTop = async () => {
+    await nextTick();
+
+    if (contentRef.value) contentRef.value.scrollTop = 0;
+};
+
+watch(
+    [() => props.isDrawerOpen, () => props.event],
+    () => {
+        if (props.isDrawerOpen) scrollToTop();
+    }
+);
+
+// Where the member was reading before the drawer took the screen over
+let pageScrollBeforeOpen = 0;
+
+/**
+ * Bring the page to the top, then hold it there while the drawer is open.
+ *
+ * The drawer is positioned against the page rather than the screen, so it
+ * always sits at the very top of the document. Open an event after
+ * scrolling down — past the upcoming events, say — and the drawer opens
+ * above the viewport, out of sight, and has to be scrolled back up to.
+ *
+ * Holding the page still afterwards also settles the two scrollbars down
+ * the right-hand side, leaving the panel inside the drawer with the only
+ * one on screen.
+ */
+const lockPageScroll = (locked) => {
+    const { body, documentElement: root } = document;
+
+    if (!locked) {
+        // Let it move again before putting it back where it was
+        body.classList.remove('event-drawer-open');
+        body.style.removeProperty('--event-drawer-scroll-gap');
+        window.scrollTo(0, pageScrollBeforeOpen);
+        return;
+    }
+
+    // Both of these happen before the lock: a page that cannot scroll
+    // cannot be scrolled to the top either.
+    pageScrollBeforeOpen = window.scrollY;
+    window.scrollTo(0, 0);
+
+    // Standing in for the scrollbar that is about to disappear, so the
+    // page does not jump sideways as it goes
+    const gap = window.innerWidth - root.clientWidth;
+
+    body.style.setProperty('--event-drawer-scroll-gap', `${gap}px`);
+    body.classList.add('event-drawer-open');
+};
+
+watch(() => props.isDrawerOpen, lockPageScroll);
+
+// Leaving the page with the drawer open must not leave it locked
+onUnmounted(() => lockPageScroll(false));
+
 onMounted(() => {
+    if (props.isDrawerOpen) lockPageScroll(true);
+
     if (!localEvent.value.start) {
         // Set initial start date with proper timezone handling
         localEvent.value.start = roundDateToNextTimeIncrement(new Date());
@@ -762,9 +788,9 @@ onMounted(() => {
                     />
                 </div>
             </div>
-
-            <VDivider/>
         </div>
+
+        <VDivider/>
 
         <div ref="contentRef" class="event-drawer-content">
             <!-- Edit Mode Form -->
@@ -1083,7 +1109,7 @@ onMounted(() => {
 
     <!-- Dialogs -->
     <ProfileDialog
-        v-if="localEvent?.id > 0"
+        v-if="localEvent.id > 0"
         v-model="showProfileDialog"
         :event="localEvent"
         :is-going="isGoing"
@@ -1092,7 +1118,7 @@ onMounted(() => {
     />
 
     <DetailsDialog
-        v-if="localEvent?.id > 0"
+        v-if="localEvent.id > 0"
         v-model="showDetailsDialog"
         :eventGuests="eventGuests"
         :event="localEvent"
@@ -1105,27 +1131,35 @@ onMounted(() => {
     border-left: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-/* The drawer's own content box does the scrolling — Vuetify already gives
-   it overflow-y: auto — so there is one scrollbar and the header can stay
-   stuck to the top of it.
-
-   An inner scrolling panel was tried here and is not worth repeating: it
-   needs a height of its own, and a JS scrollbar measures that height once,
-   while the drawer is still closed and zero-tall, so it decides there is
-   nothing to scroll and never reconsiders. */
 .event-drawer-header {
     position: sticky;
     top: 0;
     z-index: 10;
-    /* Opaque, or the content scrolls visibly underneath it */
-    background: rgb(var(--v-theme-surface));
 }
 
-/* The guests and answers arrive after the drawer opens. Scroll anchoring
-   would keep whatever was on screen in place as they are inserted, which
-   here means reinstating the offset the previous event was left at. */
-.event-drawer :deep(.v-navigation-drawer__content) {
+/* This panel is the one thing on screen that scrolls, and it needs both
+   halves of that to be true: a height of its own, and an overflow. It had
+   the height before and no overflow, so it never scrolled — a JS
+   scrollbar sat on it instead, which sets overflow: hidden !important on
+   the container and measures the geometry as it mounts, with the drawer
+   still shut. What actually scrolled was Vuetify's box around it, which is
+   where the second scrollbar came from.
+
+   Don't swap the height for flex sizing: the height chain above this
+   element is not bounded, so the panel collapses and scrolling stops. */
+.event-drawer-content {
+    height: calc(100vh - 65px);
+    overflow-y: auto;
+    /* The guests arrive after the drawer opens. Anchoring would hold what
+       is on screen in place as they are inserted, undoing the reset to the
+       top — the JS scrollbar that used to sit here set this too. */
     overflow-anchor: none;
+}
+
+/* Vuetify's box no longer needs to scroll, and clipping it keeps its
+   scrollbar from appearing beside the panel's */
+.event-drawer :deep(.v-navigation-drawer__content) {
+    overflow: hidden;
 }
 
 .description-content {
@@ -1142,5 +1176,14 @@ onMounted(() => {
 .pending-guest-item {
     border-radius: 8px;
     margin-bottom: 4px;
+}
+</style>
+
+<!-- Unscoped: the lock goes on <body>, which no scoped rule can reach -->
+<style>
+body.event-drawer-open {
+    overflow: hidden;
+    /* Holds the width the vanished scrollbar was taking up */
+    padding-right: var(--event-drawer-scroll-gap, 0px);
 }
 </style>
