@@ -368,4 +368,106 @@ class EventLocationTest extends TestCase
         $this->assertSame('custom', $listed['location']['type']);
         $this->assertSame('Town square', $listed['location']['text']);
     }
+
+    // --- Picking a point on the map, and naming any channel ---
+
+    /**
+     * Coordinates come from a pin dropped on the map, so anything that is
+     * not a real point on the globe is refused rather than stored.
+     */
+    public function test_coordinates_off_the_globe_are_refused(): void
+    {
+        $this->actingAs($this->user, 'sanctum')
+            ->patchJson("/api/events/{$this->event->id}", $this->updatePayload([
+                'extendedProps' => ['location' => [
+                    'type'    => 'real',
+                    'address' => 'Nowhere',
+                    'lat'     => 999,
+                    'lng'     => 0,
+                ]],
+            ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['extendedProps.location.lat']);
+    }
+
+    public function test_something_that_is_not_a_number_is_not_a_point(): void
+    {
+        $this->actingAs($this->user, 'sanctum')
+            ->patchJson("/api/events/{$this->event->id}", $this->updatePayload([
+                'extendedProps' => ['location' => [
+                    'type'    => 'real',
+                    'address' => 'Hall',
+                    'lat'     => 'over there',
+                    'lng'     => 'yonder',
+                ]],
+            ]))
+            ->assertStatus(422);
+    }
+
+    /**
+     * An event is often held in a channel nobody has joined yet, so a name
+     * on its own is enough — no open window required.
+     */
+    public function test_any_channel_may_be_named(): void
+    {
+        $this->actingAs($this->user, 'sanctum')
+            ->patchJson("/api/events/{$this->event->id}", $this->updatePayload([
+                'extendedProps' => ['location' => [
+                    'type'        => 'virtual',
+                    'virtualMode' => 'irc',
+                    'irc_channel' => 'moot',
+                ]],
+            ]))
+            ->assertStatus(200);
+
+        $location = $this->detailOptions()['location'];
+
+        // Stored wearing its #, so no reader has to add one
+        $this->assertSame('#moot', $location['irc_channel']);
+        $this->assertArrayNotHasKey('irc_channel_id', $location);
+    }
+
+    public function test_a_hash_typed_by_hand_is_not_doubled(): void
+    {
+        $this->actingAs($this->user, 'sanctum')
+            ->patchJson("/api/events/{$this->event->id}", $this->updatePayload([
+                'extendedProps' => ['location' => [
+                    'type'        => 'virtual',
+                    'virtualMode' => 'irc',
+                    'irc_channel' => '#moot',
+                ]],
+            ]))
+            ->assertStatus(200);
+
+        $this->assertSame('#moot', $this->detailOptions()['location']['irc_channel']);
+    }
+
+    public function test_a_channel_name_with_spaces_is_refused(): void
+    {
+        $this->actingAs($this->user, 'sanctum')
+            ->patchJson("/api/events/{$this->event->id}", $this->updatePayload([
+                'extendedProps' => ['location' => [
+                    'type'        => 'virtual',
+                    'virtualMode' => 'irc',
+                    'irc_channel' => 'the moot',
+                ]],
+            ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['extendedProps.location.irc_channel']);
+    }
+
+    public function test_naming_no_channel_at_all_leaves_no_location(): void
+    {
+        $this->actingAs($this->user, 'sanctum')
+            ->patchJson("/api/events/{$this->event->id}", $this->updatePayload([
+                'extendedProps' => ['location' => [
+                    'type'        => 'virtual',
+                    'virtualMode' => 'irc',
+                    'irc_channel' => '',
+                ]],
+            ]))
+            ->assertStatus(200);
+
+        $this->assertArrayNotHasKey('location', $this->detailOptions());
+    }
 }

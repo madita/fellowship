@@ -17,6 +17,8 @@ class EventGuest extends Model
         'event_id',
         'type',
         'options',
+        // The answers to the event's own questions, as JSON
+        'profile',
         'approved_at',
         'created_at',
         'updated_at',

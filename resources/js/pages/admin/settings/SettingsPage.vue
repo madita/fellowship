@@ -76,6 +76,7 @@ const componentMap = {
     'general/AdminContactPage': () => import('@/pages/admin/settings/general/AdminContactPage.vue'),
     'general/PublicContactPage': () => import('@/pages/admin/settings/general/PublicContactPage.vue'),
     'general/SocialMediaPage': () => import('@/pages/admin/settings/general/SocialMediaPage.vue'),
+    'general/MapsPage': () => import('@/pages/admin/settings/general/MapsPage.vue'),
 
     // Features
     'features/FeatureTogglesPage': () => import('@/pages/admin/settings/features/FeatureTogglesPage.vue'),
@@ -124,6 +125,7 @@ const componentMap = {
 
     // IRC
     'irc/IrcClientSettingsPage': () => import('@/pages/admin/settings/irc/IrcClientSettingsPage.vue'),
+    'irc/IrcEventChannelsPage': () => import('@/pages/admin/settings/irc/IrcEventChannelsPage.vue'),
     'irc/IrcDashboardPage': () => import('@/pages/admin/settings/irc/IrcDashboardPage.vue'),
     'irc/IrcServersPage': () => import('@/pages/admin/settings/irc/IrcServersPage.vue'),
     'irc/IrcConnectionsPage': () => import('@/pages/admin/settings/irc/IrcConnectionsPage.vue'),

@@ -6,6 +6,7 @@ import {
     buildViewLocation,
     formatEventLocationLabel,
     mergeTopLevelIntoExtendedProps,
+    mapSearchUrl,
 } from '@/utils/eventLocation.js';
 
 // i18n stand-in: returns the key so assertions can match on it.
@@ -64,7 +65,7 @@ describe('buildViewLocation', () => {
     });
 
     it('builds a Google Maps link for a real address', () => {
-        const view = buildViewLocation({ type: 'real', address: 'Main St 1, Berlin' }, t);
+        const view = buildViewLocation({ type: 'real', address: 'Main St 1, Berlin' }, t, 'google');
         expect(view.label).toBe('Main St 1, Berlin');
         expect(view.external).toBe(true);
         expect(view.href).toBe(
@@ -73,7 +74,7 @@ describe('buildViewLocation', () => {
     });
 
     it('prefers coordinates for the maps query and labels them when no address', () => {
-        const view = buildViewLocation({ type: 'real', address: '', lat: 52.5, lng: 13.4 }, t);
+        const view = buildViewLocation({ type: 'real', address: '', lat: 52.5, lng: 13.4 }, t, 'google');
         expect(view.label).toBe('52.5, 13.4');
         expect(view.href).toContain(encodeURIComponent('52.5,13.4'));
     });
@@ -202,5 +203,75 @@ describe('mergeTopLevelIntoExtendedProps', () => {
         const event = mergeTopLevelIntoExtendedProps({ id: 1, location: 'Old hall' });
         expect(event.extendedProps.location.type).toBe('custom');
         expect(event.extendedProps.location.text).toBe('Old hall');
+    });
+});
+
+describe('map links follow the configured provider', () => {
+    const point = { type: 'real', address: 'Community hall', lat: 51.5, lng: -0.12 };
+
+    it('sends a picked point to OpenStreetMap by default', () => {
+        const view = buildViewLocation(point, t);
+
+        expect(view.href).toContain('openstreetmap.org');
+        expect(view.href).toContain('mlat=51.5');
+        expect(view.label).toBe('Community hall');
+    });
+
+    it('sends the same point to Google when that is the provider', () => {
+        const view = buildViewLocation(point, t, 'google');
+
+        expect(view.href).toContain('google.com/maps');
+        expect(view.href).toContain('51.5%2C-0.12');
+    });
+
+    it('searches the address when no point was picked', () => {
+        const address = { type: 'real', address: 'Community hall' };
+
+        expect(mapSearchUrl(address, 'osm')).toContain('search?query=Community%20hall');
+        expect(mapSearchUrl(address, 'google')).toContain('query=Community%20hall');
+    });
+
+    it('has nowhere to send an empty location', () => {
+        expect(mapSearchUrl({ type: 'real', address: '' })).toBeNull();
+    });
+});
+
+describe('an IRC channel as a location', () => {
+    it('links to the window of a channel the member is in', () => {
+        const view = buildViewLocation(
+            { type: 'virtual', virtualMode: 'irc', irc_channel_id: 7, irc_channel: '#shire' },
+            t
+        );
+
+        expect(view.label).toBe('#shire');
+        expect(view.to).toEqual({ path: '/irc', query: { channel: 7 } });
+    });
+
+    /**
+     * An event is often held in a channel nobody has joined yet, so the
+     * name reads on its own rather than linking nowhere.
+     */
+    it('names a channel that has no window yet, without a link', () => {
+        const view = buildViewLocation(
+            { type: 'virtual', virtualMode: 'irc', irc_channel: '#moot' },
+            t
+        );
+
+        expect(view.label).toBe('#moot');
+        expect(view.to).toBeUndefined();
+        expect(view.href).toBeUndefined();
+    });
+
+    it('shows nothing when there is neither a channel nor a name', () => {
+        expect(buildViewLocation({ type: 'virtual', virtualMode: 'irc' }, t)).toBeNull();
+    });
+
+    it('labels a list row with the channel name', () => {
+        const label = formatEventLocationLabel(
+            { location: { type: 'virtual', virtualMode: 'irc', irc_channel: '#moot' } },
+            t
+        );
+
+        expect(label).toBe('#moot');
     });
 });

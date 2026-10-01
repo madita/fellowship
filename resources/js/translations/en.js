@@ -1,6 +1,7 @@
 export default {
     'common': {
         'add': 'Add',
+        'required': 'Required',
         'name': 'Name',
         'actions': 'Actions',
         'cancel': 'Cancel',
@@ -97,7 +98,8 @@ export default {
     },
     'profileDialog': {
         'title': 'Your details',
-        'days': 'Days'
+        'days': 'Days',
+        'prefilled': 'Filled in from the last event you answered — please check it before sending.'
     },
     'board': {
         'titlePlaceholder': 'Enter a title for this card',
@@ -1619,6 +1621,7 @@ export default {
         'day': 'Day',
         'list': 'List',
         'today': 'Today',
+        'tomorrow': 'Tomorrow',
         'upcomingEvents': 'Upcoming Events',
         'next7Days': 'Next 7 Days',
         'event': 'Event',
@@ -1649,6 +1652,14 @@ export default {
         'dateRequired': 'Date is required',
         'updateEvent': 'Update Event',
         'unsavedChangesWarning': 'You have unsaved changes. Use the Save or Cancel buttons — clicking outside won’t close the form.',
+        'openFullPage': 'Open as a page',
+        'eventOver': 'This event is over, so you can no longer answer.',
+        'unsavedChanges': 'Unsaved changes',
+        'unsavedChangesLeave': 'You have unsaved changes. Leave anyway?',
+        'leave': 'Leave',
+        'loadError': 'Failed to load the event',
+        'endBeforeStart': 'The end must not be before the start',
+        'eventType': 'Event type',
         'type': 'Type',
         'selectEventType': 'Select event type',
         'startDateRequired': 'Start date is required',
@@ -1658,6 +1669,38 @@ export default {
         'locationAddress': 'Address',
         'locationIrc': 'IRC channel',
         'locationUrl': 'Link',
+        'map': {
+            'search': 'Search for a place',
+            'find': 'Find',
+            'show': 'Pick a point on the map',
+            'hide': 'Hide the map',
+            'hint': 'Click the map to drop a pin. An address on its own is fine too.',
+            'clear': 'Remove pin',
+            'zoomHint': 'Ctrl and scroll to zoom'
+        },
+        'locationIrcChannelHint': 'Pick one, or type any channel — it does not have to exist yet.',
+        'locationTypeChannel': 'Type a channel name',
+        'locationSuggested': 'Suggested',
+        'admin': {
+            'mapsTitle': 'Maps',
+            'mapsDescription': 'Which maps are drawn when picking a place, and where an address opens',
+            'ircChannelsDescription': 'Channels suggested when an event is held on IRC',
+            'locationsTitle': 'Event Locations',
+            'locationsDescription': 'Which maps to draw, and the IRC channels offered when an event is held online',
+            'mapProvider': 'Map provider',
+            'mapProviderHint': 'Used for picking a point when creating an event, and for the link an address opens.',
+            'osm': 'OpenStreetMap',
+            'osmHint': 'No account and no key needed.',
+            'google': 'Google Maps',
+            'googleHint': 'Needs an API key with the Maps JavaScript API enabled.',
+            'googleKey': 'Google Maps API key',
+            'googleKeyHint': 'Sent to the browser by design — restrict it to your domain in the Google console.',
+            'googleKeyMissing': 'Google Maps is selected but no key is set, so no map will be drawn.',
+            'ircChannels': 'Suggested IRC channels',
+            'ircChannelsHint': 'Offered when an event is held on IRC. Members can still type any channel.',
+            'ircChannelsLabel': 'Channels',
+            'ircChannelsPlaceholder': 'Type a channel and press enter'
+        },
         'locationIrcChannel': 'Select a channel',
         'locationNoChannels': 'No IRC channels available',
         'locationModes': {

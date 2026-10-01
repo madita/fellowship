@@ -40,26 +40,50 @@ export const isSafeWebUrl = (url) => /^https?:\/\//i.test(url);
 // client for a channel, or the raw URL for an online link.
 // `t` is the i18n translate function. Returns null when there is nothing
 // to show.
-export const buildViewLocation = (loc, t) => {
+// Where a physical location opens, on whichever maps the site is set to.
+// A picked point goes out as coordinates; otherwise the address is searched.
+export const mapSearchUrl = (loc, provider = 'osm') => {
+    const address = (loc.address || '').trim();
+    const hasCoords = loc.lat != null && loc.lng != null && loc.lat !== '' && loc.lng !== '';
+
+    if (!address && !hasCoords) return null;
+
+    if (provider === 'google') {
+        const query = hasCoords ? `${loc.lat},${loc.lng}` : address;
+        return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+    }
+
+    // OpenStreetMap shows a pin for a point and searches for an address
+    return hasCoords
+        ? `https://www.openstreetmap.org/?mlat=${loc.lat}&mlon=${loc.lng}#map=17/${loc.lat}/${loc.lng}`
+        : `https://www.openstreetmap.org/search?query=${encodeURIComponent(address)}`;
+};
+
+export const buildViewLocation = (loc, t, provider = 'osm') => {
     if (!loc || !loc.type) return null;
 
     if (loc.type === 'real') {
         const address = (loc.address || '').trim();
         const hasCoords = loc.lat != null && loc.lng != null && loc.lat !== '' && loc.lng !== '';
         if (!address && !hasCoords) return null;
-        const query = hasCoords ? `${loc.lat},${loc.lng}` : address;
         return {
             icon: 'mdi-map-marker',
             label: address || `${loc.lat}, ${loc.lng}`,
-            href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`,
+            href: mapSearchUrl(loc, provider),
             external: true,
         };
     }
 
     if (loc.type === 'virtual') {
         if (loc.virtualMode === 'irc') {
-            if (!loc.irc_channel_id) return null;
             const name = loc.irc_channel ? String(loc.irc_channel).replace(/^#/, '') : null;
+
+            // A channel nobody has joined yet has a name but no window to
+            // open, so it reads as a name rather than a dead link.
+            if (!loc.irc_channel_id) {
+                return name ? { icon: 'mdi-pound', label: `#${name}` } : null;
+            }
+
             return {
                 icon: 'mdi-pound',
                 label: name ? `#${name}` : t('events.locationIrcChannel'),

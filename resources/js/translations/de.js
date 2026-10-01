@@ -1,6 +1,7 @@
 export default {
     'common': {
         'add': 'Hinzufügen',
+        'required': 'Erforderlich',
         'name': 'Name',
         'actions': 'Aktionen',
         'cancel': 'Abbrechen',
@@ -97,7 +98,8 @@ export default {
     },
     'profileDialog': {
         'title': 'Ihre Angaben',
-        'days': 'Tage'
+        'days': 'Tage',
+        'prefilled': 'Aus dem zuletzt beantworteten Termin übernommen – bitte vor dem Senden prüfen.'
     },
     'board': {
         'titlePlaceholder': 'Geben Sie einen Titel für diese Karte ein',
@@ -1566,6 +1568,7 @@ export default {
         'day': 'Tag',
         'list': 'Liste',
         'today': 'Heute',
+        'tomorrow': 'Morgen',
         'upcomingEvents': 'Anstehende Termine',
         'next7Days': 'Nächste 7 Tage',
         'event': 'Termin',
@@ -1596,6 +1599,14 @@ export default {
         'dateRequired': 'Datum ist erforderlich',
         'updateEvent': 'Termin aktualisieren',
         'unsavedChangesWarning': 'Sie haben ungespeicherte Änderungen. Bitte „Speichern“ oder „Abbrechen“ verwenden – ein Klick außerhalb schließt das Formular nicht.',
+        'openFullPage': 'Als Seite öffnen',
+        'eventOver': 'Dieser Termin ist vorbei, eine Antwort ist nicht mehr möglich.',
+        'unsavedChanges': 'Ungespeicherte Änderungen',
+        'unsavedChangesLeave': 'Sie haben ungespeicherte Änderungen. Trotzdem verlassen?',
+        'leave': 'Verlassen',
+        'loadError': 'Termin konnte nicht geladen werden',
+        'endBeforeStart': 'Das Ende darf nicht vor dem Beginn liegen',
+        'eventType': 'Termintyp',
         'type': 'Typ',
         'selectEventType': 'Termintyp auswählen',
         'startDateRequired': 'Startdatum ist erforderlich',
@@ -1605,6 +1616,38 @@ export default {
         'locationAddress': 'Adresse',
         'locationIrc': 'IRC-Kanal',
         'locationUrl': 'Link',
+        'map': {
+            'search': 'Nach einem Ort suchen',
+            'find': 'Suchen',
+            'show': 'Punkt auf der Karte wählen',
+            'hide': 'Karte ausblenden',
+            'hint': 'Klick auf die Karte setzt eine Nadel. Eine Adresse allein reicht auch.',
+            'clear': 'Nadel entfernen',
+            'zoomHint': 'Strg und scrollen zum Zoomen'
+        },
+        'locationIrcChannelHint': 'Einen auswählen — oder einen beliebigen Channel eintippen, er muss noch nicht existieren.',
+        'locationTypeChannel': 'Channel-Namen eintippen',
+        'locationSuggested': 'Vorschlag',
+        'admin': {
+            'mapsTitle': 'Karten',
+            'mapsDescription': 'Welche Karten beim Wählen eines Ortes gezeichnet werden — und wo eine Adresse aufgeht',
+            'ircChannelsDescription': 'Channels, die vorgeschlagen werden, wenn ein Event auf IRC stattfindet',
+            'locationsTitle': 'Event-Orte',
+            'locationsDescription': 'Welche Karten gezeichnet werden und welche IRC-Channels vorgeschlagen werden',
+            'mapProvider': 'Kartenanbieter',
+            'mapProviderHint': 'Wird beim Anlegen eines Events zum Setzen des Punktes genutzt — und für den Link, den eine Adresse öffnet.',
+            'osm': 'OpenStreetMap',
+            'osmHint': 'Kein Konto und kein Schlüssel nötig.',
+            'google': 'Google Maps',
+            'googleHint': 'Benötigt einen API-Schlüssel mit aktivierter Maps JavaScript API.',
+            'googleKey': 'Google-Maps-API-Schlüssel',
+            'googleKeyHint': 'Geht bewusst an den Browser — beschränke ihn in der Google Console auf deine Domain.',
+            'googleKeyMissing': 'Google Maps ist gewählt, aber kein Schlüssel gesetzt — es wird keine Karte gezeichnet.',
+            'ircChannels': 'Vorgeschlagene IRC-Channels',
+            'ircChannelsHint': 'Werden angeboten, wenn ein Event auf IRC stattfindet. Mitglieder können trotzdem jeden Channel eintippen.',
+            'ircChannelsLabel': 'Channels',
+            'ircChannelsPlaceholder': 'Channel eintippen und Enter drücken'
+        },
         'locationIrcChannel': 'Kanal auswählen',
         'locationNoChannels': 'Keine IRC-Kanäle verfügbar',
         'locationModes': {

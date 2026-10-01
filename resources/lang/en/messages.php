@@ -61,6 +61,7 @@ return [
     // Events
     'events' => [
         'created'              => 'Event created',
+        'ended'                => 'This event is over, so you can no longer answer.',
         'deleted'              => 'Event deleted successfully',
         'unauthorized'         => 'Unauthorized. You do not have permission to modify this event.',
         'unauthorized_approve' => 'Unauthorized. Only event owners can approve guests.',

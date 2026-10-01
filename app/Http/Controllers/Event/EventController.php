@@ -21,6 +21,7 @@ use App\Support\TaxonomyHelper;
 use DateTime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 
 class EventController extends Controller
@@ -392,6 +393,11 @@ class EventController extends Controller
 
     public function isGoing(Event $event, $answer)
     {
+        // Nobody can still be going to something that is over.
+        if ($event->hasEnded()) {
+            return response()->json(['message' => __('messages.events.ended')], 422);
+        }
+
         // ToDo get just the guests???
         /** @var User $user */
         $user = auth()->user();
@@ -414,8 +420,61 @@ class EventController extends Controller
         );
     }
 
+    /**
+     * What the member filled in the last time they answered an event that
+     * asks the same questions, so the form arrives filled in rather than
+     * blank. Only ever the caller's own answers, only the fields the form
+     * still asks for, and never the days — those belong to this event's
+     * own dates.
+     */
+    public function profileDraft(Event $event)
+    {
+        /** @var User $user */
+        $user = auth()->user();
+
+        $profileId = EventType::find($event->event_type_id)?->event_profile_id;
+
+        if ( ! $profileId) {
+            return response()->json(['data' => null]);
+        }
+
+        $options = json_decode(EventProfile::find($profileId)?->options ?? '{}');
+        $fields  = collect($options->form ?? [])->pluck('name')->filter()->all();
+
+        if ( ! $fields) {
+            return response()->json(['data' => null]);
+        }
+
+        // Every event that asks these same questions, this one aside
+        $eventIds = Event::whereIn(
+            'event_type_id',
+            EventType::where('event_profile_id', $profileId)->pluck('id')
+        )->where('id', '!=', $event->id)->pluck('id');
+
+        $last = EventGuest::where('user_id', $user->id)
+            ->whereIn('event_id', $eventIds)
+            ->whereNotNull('profile')
+            ->latest('updated_at')
+            ->first();
+
+        $answers = json_decode($last?->profile ?? 'null', true);
+
+        if ( ! is_array($answers)) {
+            return response()->json(['data' => null]);
+        }
+
+        $draft = Arr::only($answers, $fields);
+        unset($draft['days']);
+
+        return response()->json(['data' => $draft ?: null]);
+    }
+
     public function joinEvent(Request $request, Event $event)
     {
+        if ($event->hasEnded()) {
+            return response()->json(['message' => __('messages.events.ended')], 422);
+        }
+
         /** @var User $user */
         $user = auth()->user();
 
@@ -664,9 +723,17 @@ class EventController extends Controller
         switch ($loc['type']) {
             case 'real':
                 $clean = ['type' => 'real', 'address' => (string) ($loc['address'] ?? '')];
-                if (isset($loc['lat'], $loc['lng']) && $loc['lat'] !== '' && $loc['lng'] !== '') {
-                    $clean['lat'] = $loc['lat'];
-                    $clean['lng'] = $loc['lng'];
+
+                // A point picked on the map. Anything that is not a real
+                // pair of coordinates is dropped rather than stored, so a
+                // map never opens on nonsense.
+                $lat = $loc['lat'] ?? null;
+                $lng = $loc['lng'] ?? null;
+
+                if (is_numeric($lat) && is_numeric($lng)
+                    && abs((float) $lat) <= 90 && abs((float) $lng) <= 180) {
+                    $clean['lat'] = round((float) $lat, 7);
+                    $clean['lng'] = round((float) $lng, 7);
                 }
 
                 return $clean['address'] === '' && ! isset($clean['lat']) ? null : $clean;
@@ -674,9 +741,7 @@ class EventController extends Controller
             case 'virtual':
                 $mode = ($loc['virtualMode'] ?? 'url') === 'irc' ? 'irc' : 'url';
                 if ($mode === 'irc') {
-                    $channelId = $loc['irc_channel_id'] ?? null;
-
-                    return $channelId ? ['type' => 'virtual', 'virtualMode' => 'irc', 'irc_channel_id' => (int) $channelId] : null;
+                    return $this->ircLocation($loc);
                 }
                 $url = trim((string) ($loc['url'] ?? ''));
                 // The URL is rendered as a link for every viewer — only plain
@@ -693,6 +758,53 @@ class EventController extends Controller
 
                 return trim($text) === '' ? null : ['type' => 'custom', 'text' => $text];
         }
+    }
+
+    /**
+     * An IRC channel as an event's location.
+     *
+     * A channel the member is already in can be picked from the list, and
+     * that keeps its id so the link opens the right window. Anything else
+     * is taken as typed — an event may well be held in a channel nobody
+     * has joined yet, which is why the name alone is enough.
+     *
+     * @param  array<string,mixed>  $loc
+     * @return array<string,mixed>|null
+     */
+    private function ircLocation(array $loc): ?array
+    {
+        $channelId = $loc['irc_channel_id'] ?? null;
+        $name      = trim((string) ($loc['irc_channel'] ?? ''));
+
+        // A channel name is one word, and wears its # here so every reader
+        // does not have to remember to add one
+        $name = ltrim($name, '#');
+        $name = preg_replace('/\s+/', '', $name) ?? '';
+        $name = mb_substr($name, 0, 50);
+
+        if ($channelId) {
+            $channel = IrcChannel::find($channelId);
+
+            // An id nobody can point at is worth less than the name typed
+            if ($channel) {
+                return [
+                    'type'           => 'virtual',
+                    'virtualMode'    => 'irc',
+                    'irc_channel_id' => (int) $channelId,
+                    'irc_channel'    => $channel->name,
+                ];
+            }
+        }
+
+        if ($name === '') {
+            return null;
+        }
+
+        return [
+            'type'        => 'virtual',
+            'virtualMode' => 'irc',
+            'irc_channel' => '#' . $name,
+        ];
     }
 
     /**
@@ -754,8 +866,11 @@ class EventController extends Controller
         }
 
         if (($loc['type'] === 'virtual') && (($loc['virtualMode'] ?? null) === 'irc') && ! empty($loc['irc_channel_id'])) {
-            $channel            = IrcChannel::find($loc['irc_channel_id']);
-            $loc['irc_channel'] = $channel?->name;
+            $channel = IrcChannel::find($loc['irc_channel_id']);
+
+            // A channel that has since been parted or deleted leaves the
+            // name that was stored with it, rather than nothing
+            $loc['irc_channel'] = $channel?->name ?? ($loc['irc_channel'] ?? null);
         }
 
         return $loc;
@@ -781,6 +896,11 @@ class EventController extends Controller
                         ->whereIn('irc_connection_id', IrcConnection::where('user_id', auth()->id())->select('id'))
                 ),
             ],
+            // A channel typed by hand: an event is often held somewhere
+            // nobody has joined yet. One word, and the # is optional.
+            'extendedProps.location.irc_channel' => ['nullable', 'string', 'max:51', 'regex:/^#?[^\s,]+$/'],
+            'extendedProps.location.lat'         => ['nullable', 'numeric', 'between:-90,90'],
+            'extendedProps.location.lng'         => ['nullable', 'numeric', 'between:-180,180'],
         ];
     }
 }

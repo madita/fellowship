@@ -258,6 +258,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/events/types', "\App\Http\Controllers\Event\EventController@getTypes");
     Route::get('/events/upcoming', "\App\Http\Controllers\Event\EventController@upcoming");
     Route::post('/events/{event}/answer', "\App\Http\Controllers\Event\EventController@joinEvent");
+    Route::get('/events/{event}/profile-draft', "\App\Http\Controllers\Event\EventController@profileDraft");
     //    Route::resource('events', "\App\Http\Controllers\Event\EventController");
     Route::get('events/create', ['as' => 'event.create', 'uses' => "\App\Http\Controllers\Event\EventController@create"]);
     Route::get('events', ['as' => 'event.index', 'uses' => "\App\Http\Controllers\Event\EventController@index"]);

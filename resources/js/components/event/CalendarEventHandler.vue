@@ -1,7 +1,7 @@
 <script setup>
-import { ref, watch, computed, nextTick, onMounted  } from 'vue';
+import { ref, watch, computed, nextTick, onMounted, onUnmounted  } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar';
+import { useRouter } from 'vue-router';
 import CustomDatePicker from "../common/CustomDatePicker.vue";
 
 const { t, te } = useI18n();
@@ -17,10 +17,13 @@ import { useDialog } from '@/composables/useDialog.js';
 import ProfileDialog from '../common/ProfileDialog.vue';
 import DetailsDialog from '../common/DetailsDialog.vue';
 import RelatedContentList from '../common/RelatedContentList.vue';
+import EventLocationField from './EventLocationField.vue';
+import EventLocationDisplay from './EventLocationDisplay.vue';
 import { useUserStore } from "@/store/userStore.js";
 import { useSettingsStore } from "@/store/settingStore.js";
 import { useDateFormat } from '@/plugins/formatDate.js';
-import { buildViewLocation, mergeTopLevelIntoExtendedProps } from '@/utils/eventLocation.js';
+import { mergeTopLevelIntoExtendedProps } from '@/utils/eventLocation.js';
+import { hasEventEnded } from '@/utils/eventTime.js';
 
 const props = defineProps({
     isDrawerOpen: Boolean,
@@ -39,6 +42,7 @@ const emit = defineEmits([
 ]);
 
 const dialog = useDialog();
+const router = useRouter();
 
 const selectedStatus = ref(null);
 const showProfileDialog = ref(false);
@@ -121,32 +125,34 @@ watch([allowedLocationModes, selectedEventTypeId], () => {
     }
 });
 
-const locationModeIcon = (mode) => ({
-    real: 'mdi-map-marker',
-    virtual: 'mdi-web',
-    custom: 'mdi-map-marker-outline',
-}[mode] || 'mdi-map-marker');
+/**
+ * Leave the drawer for the event's own page. An event that has never been
+ * saved has no page to go to yet, so it opens the create form instead.
+ */
+const openFullPage = async () => {
+    const id = localEvent.value?.id;
 
-// IRC channels for the "virtual" picker, loaded lazily.
-const ircChannels = ref([]);
-const ircChannelsLoading = ref(false);
-const fetchIrcChannels = async () => {
-    if (ircChannels.value.length || ircChannelsLoading.value) return;
-    ircChannelsLoading.value = true;
-    try {
-        const { data } = await axios.get('/api/irc/available-channels');
-        ircChannels.value = Array.isArray(data) ? data : [];
-    } catch (e) {
-        console.error('Failed to load IRC channels:', e);
-    } finally {
-        ircChannelsLoading.value = false;
+    if (isDirty.value) {
+        const leave = await dialog.confirm({
+            title: t('events.unsavedChanges'),
+            message: t('events.unsavedChangesLeave'),
+            confirmText: t('events.leave'),
+        });
+
+        if (!leave) return;
     }
-};
 
-// How the location renders in view mode: an icon, a label and (optionally) a
-// link — a Google Maps search for physical addresses, the internal IRC client
-// for a channel, or the raw URL for an online link.
-const viewLocation = computed(() => buildViewLocation(localEvent.value?.extendedProps?.location, t));
+    dialogModelValueUpdate(false);
+
+    if (!id) {
+        router.push({ name: 'event-create' });
+        return;
+    }
+
+    router.push(localEditMode.value
+        ? { name: 'event-edit', params: { id } }
+        : { name: 'event-show', params: { id } });
+};
 
 const isDirty = computed(() => {
     if (!initialSnapshot.value) return false;
@@ -180,14 +186,9 @@ const resetEvent = () => {
 };
 
 const canJoinEvent = computed(() => {
-
     if (!localEvent.value?.id) return false;
-    // const now = new Date();
-    const utcDate = new Date();
-    utcDate.setTime(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000);
-    console.log('enddate', localEvent.value.end, utcDate )
-    // return localEvent.value.end ? new Date(localEvent.value.end) > now : new Date(localEvent.value.start) > now;
-    return localEvent.value.end ? new Date(localEvent.value.end) >= utcDate : new Date(localEvent.value.start) >= utcDate;
+
+    return !hasEventEnded(localEvent.value);
 });
 
 // Confirms, then hands the delete to the parent. The parent closes the
@@ -609,8 +610,75 @@ watch(() => props.isDrawerOpen, (isOpen) => {
     }
 });
 
+const contentRef = ref(null);
+
+/**
+ * Open every event at its top.
+ *
+ * The drawer is mounted once and only shown and hidden, so the panel keeps
+ * whatever position the last event was left at. This is the element that
+ * scrolls — an earlier attempt reset Vuetify's box instead, which is not.
+ */
+const scrollToTop = async () => {
+    await nextTick();
+
+    if (contentRef.value) contentRef.value.scrollTop = 0;
+};
+
+watch(
+    [() => props.isDrawerOpen, () => props.event],
+    () => {
+        if (props.isDrawerOpen) scrollToTop();
+    }
+);
+
+// Where the member was reading before the drawer took the screen over
+let pageScrollBeforeOpen = 0;
+
+/**
+ * Bring the page to the top, then hold it there while the drawer is open.
+ *
+ * The drawer is positioned against the page rather than the screen, so it
+ * always sits at the very top of the document. Open an event after
+ * scrolling down — past the upcoming events, say — and the drawer opens
+ * above the viewport, out of sight, and has to be scrolled back up to.
+ *
+ * Holding the page still afterwards also settles the two scrollbars down
+ * the right-hand side, leaving the panel inside the drawer with the only
+ * one on screen.
+ */
+const lockPageScroll = (locked) => {
+    const { body, documentElement: root } = document;
+
+    if (!locked) {
+        // Let it move again before putting it back where it was
+        body.classList.remove('event-drawer-open');
+        body.style.removeProperty('--event-drawer-scroll-gap');
+        window.scrollTo(0, pageScrollBeforeOpen);
+        return;
+    }
+
+    // Both of these happen before the lock: a page that cannot scroll
+    // cannot be scrolled to the top either.
+    pageScrollBeforeOpen = window.scrollY;
+    window.scrollTo(0, 0);
+
+    // Standing in for the scrollbar that is about to disappear, so the
+    // page does not jump sideways as it goes
+    const gap = window.innerWidth - root.clientWidth;
+
+    body.style.setProperty('--event-drawer-scroll-gap', `${gap}px`);
+    body.classList.add('event-drawer-open');
+};
+
+watch(() => props.isDrawerOpen, lockPageScroll);
+
+// Leaving the page with the drawer open must not leave it locked
+onUnmounted(() => lockPageScroll(false));
+
 onMounted(() => {
-    fetchIrcChannels();
+    if (props.isDrawerOpen) lockPageScroll(true);
+
     if (!localEvent.value.start) {
         // Set initial start date with proper timezone handling
         localEvent.value.start = roundDateToNextTimeIncrement(new Date());
@@ -646,6 +714,16 @@ onMounted(() => {
                 >
                     {{ localEditMode ? $t('events.view') : $t('events.edit') }}
                 </VBtn>
+
+                <!-- The same event with room to breathe, for anything the
+                     drawer is too narrow for -->
+                <VBtn
+                    icon="mdi-arrow-expand"
+                    variant="text"
+                    density="comfortable"
+                    :title="$t('events.openFullPage')"
+                    @click="openFullPage"
+                />
             </div>
 
             <div v-else class="d-flex align-center py-3 px-4">
@@ -662,6 +740,14 @@ onMounted(() => {
                 <slot name="beforeClose"/>
 
                 <div class="d-flex align-center ga-1">
+                    <v-btn
+                        icon="mdi-arrow-expand"
+                        variant="text"
+                        density="comfortable"
+                        :title="$t('events.openFullPage')"
+                        @click="openFullPage"
+                    />
+
                     <v-btn
                         icon="mdi-pencil"
                         variant="text"
@@ -706,7 +792,7 @@ onMounted(() => {
 
         <VDivider/>
 
-        <PerfectScrollbar :options="{ wheelPropagation: false }" class="event-drawer-content">
+        <div ref="contentRef" class="event-drawer-content">
             <!-- Edit Mode Form -->
             <VCard flat class="px-2" v-if="localEditMode">
                 <VCardText>
@@ -805,89 +891,10 @@ onMounted(() => {
                                 </VCol>
 
                                 <VCol cols="12" v-if="localEvent.extendedProps.location">
-                                    <!-- Mode selector: only when the event type allows more than one -->
-                                    <VBtnToggle
-                                        v-if="allowedLocationModes.length > 1"
-                                        v-model="localEvent.extendedProps.location.type"
-                                        color="primary"
-                                        density="comfortable"
-                                        mandatory
-                                        class="mb-3 flex-wrap"
-                                    >
-                                        <VBtn
-                                            v-for="mode in allowedLocationModes"
-                                            :key="mode"
-                                            :value="mode"
-                                            :prepend-icon="locationModeIcon(mode)"
-                                        >
-                                            {{ $t('events.locationModes.' + mode) }}
-                                        </VBtn>
-                                    </VBtnToggle>
-
-                                    <!-- real: physical address (rendered as a map link in view mode) -->
-                                    <VTextField
-                                        v-if="localEvent.extendedProps.location.type === 'real'"
-                                        v-model="localEvent.extendedProps.location.address"
-                                        :label="$t('events.locationAddress')"
-                                        variant="outlined"
-                                        density="comfortable"
-                                        prepend-inner-icon="mdi-map-marker"
-                                    />
-
-                                    <!-- virtual: an internal IRC channel or an external URL -->
-                                    <template v-else-if="localEvent.extendedProps.location.type === 'virtual'">
-                                        <VBtnToggle
-                                            v-model="localEvent.extendedProps.location.virtualMode"
-                                            color="primary"
-                                            density="comfortable"
-                                            mandatory
-                                            class="mb-3"
-                                        >
-                                            <VBtn value="irc" prepend-icon="mdi-pound">{{ $t('events.locationIrc') }}</VBtn>
-                                            <VBtn value="url" prepend-icon="mdi-link-variant">{{ $t('events.locationUrl') }}</VBtn>
-                                        </VBtnToggle>
-
-                                        <VSelect
-                                            v-if="localEvent.extendedProps.location.virtualMode === 'irc'"
-                                            v-model="localEvent.extendedProps.location.irc_channel_id"
-                                            :items="ircChannels"
-                                            item-title="name"
-                                            item-value="id"
-                                            :label="$t('events.locationIrcChannel')"
-                                            :loading="ircChannelsLoading"
-                                            :no-data-text="$t('events.locationNoChannels')"
-                                            variant="outlined"
-                                            density="comfortable"
-                                            prepend-inner-icon="mdi-pound"
-                                            clearable
-                                        >
-                                            <template #item="{ props: itemProps, item }">
-                                                <VListItem
-                                                    v-bind="itemProps"
-                                                    :title="item.raw.name"
-                                                    :subtitle="item.raw.server"
-                                                />
-                                            </template>
-                                        </VSelect>
-                                        <VTextField
-                                            v-else
-                                            v-model="localEvent.extendedProps.location.url"
-                                            :label="$t('events.locationUrl')"
-                                            placeholder="https://"
-                                            variant="outlined"
-                                            density="comfortable"
-                                            prepend-inner-icon="mdi-link-variant"
-                                        />
-                                    </template>
-
-                                    <!-- custom: free text -->
-                                    <VTextField
-                                        v-else
-                                        v-model="localEvent.extendedProps.location.text"
-                                        :label="$t('events.location')"
-                                        variant="outlined"
-                                        density="comfortable"
-                                        prepend-inner-icon="mdi-map-marker-outline"
+                                    <!-- The same field the event page uses -->
+                                    <EventLocationField
+                                        :location="localEvent.extendedProps.location"
+                                        :allowed-modes="allowedLocationModes"
                                     />
                                 </VCol>
 
@@ -938,28 +945,7 @@ onMounted(() => {
                                 <span>{{ $t('events.location') }}</span>
                             </div>
                             <div class="pl-8">
-                                <template v-if="viewLocation">
-                                    <a
-                                        v-if="viewLocation.external"
-                                        :href="viewLocation.href"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="d-inline-flex align-center location-link"
-                                    >
-                                        <v-icon size="18" class="mr-1">{{ viewLocation.icon }}</v-icon>{{ viewLocation.label }}
-                                    </a>
-                                    <router-link
-                                        v-else-if="viewLocation.to"
-                                        :to="viewLocation.to"
-                                        class="d-inline-flex align-center location-link"
-                                    >
-                                        <v-icon size="18" class="mr-1">{{ viewLocation.icon }}</v-icon>{{ viewLocation.label }}
-                                    </router-link>
-                                    <span v-else class="d-inline-flex align-center">
-                                        <v-icon size="18" class="mr-1">{{ viewLocation.icon }}</v-icon>{{ viewLocation.label }}
-                                    </span>
-                                </template>
-                                <template v-else>{{ $t('events.noLocationSpecified') }}</template>
+                                <event-location-display :location="localEvent?.extendedProps?.location" />
                             </div>
                         </div>
 
@@ -1118,7 +1104,7 @@ onMounted(() => {
                     compact
                 />
             </div>
-        </PerfectScrollbar>
+        </div>
     </VNavigationDrawer>
 
     <!-- Dialogs -->
@@ -1151,8 +1137,29 @@ onMounted(() => {
     z-index: 10;
 }
 
+/* This panel is the one thing on screen that scrolls, and it needs both
+   halves of that to be true: a height of its own, and an overflow. It had
+   the height before and no overflow, so it never scrolled — a JS
+   scrollbar sat on it instead, which sets overflow: hidden !important on
+   the container and measures the geometry as it mounts, with the drawer
+   still shut. What actually scrolled was Vuetify's box around it, which is
+   where the second scrollbar came from.
+
+   Don't swap the height for flex sizing: the height chain above this
+   element is not bounded, so the panel collapses and scrolling stops. */
 .event-drawer-content {
     height: calc(100vh - 65px);
+    overflow-y: auto;
+    /* The guests arrive after the drawer opens. Anchoring would hold what
+       is on screen in place as they are inserted, undoing the reset to the
+       top — the JS scrollbar that used to sit here set this too. */
+    overflow-anchor: none;
+}
+
+/* Vuetify's box no longer needs to scroll, and clipping it keeps its
+   scrollbar from appearing beside the panel's */
+.event-drawer :deep(.v-navigation-drawer__content) {
+    overflow: hidden;
 }
 
 .description-content {
@@ -1169,5 +1176,14 @@ onMounted(() => {
 .pending-guest-item {
     border-radius: 8px;
     margin-bottom: 4px;
+}
+</style>
+
+<!-- Unscoped: the lock goes on <body>, which no scoped rule can reach -->
+<style>
+body.event-drawer-open {
+    overflow: hidden;
+    /* Holds the width the vanished scrollbar was taking up */
+    padding-right: var(--event-drawer-scroll-gap, 0px);
 }
 </style>
