@@ -8,6 +8,7 @@ use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
 use App\Models\Ticket\Ticket;
 use App\Models\Wiki;
+use App\Notifications\WikiUpdatedNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -323,16 +324,18 @@ class WikiController extends Controller
         $approval = $wiki->approval;
 
         return response()->json([
-            'page'        => $data,
-            'user'        => $user,
-            'wiki'        => $wiki,
-            'parent'      => $wiki->parent,
-            'children'    => $wiki->children,
-            'terms'       => $taxonomies,
-            'tags'        => $terms,
-            'is_approved' => $approval !== null,
-            'approved_at' => $approval?->approved_at,
-            'approved_by' => $approval?->approver?->name,
+            'page'           => $data,
+            'user'           => $user,
+            'wiki'           => $wiki,
+            'parent'         => $wiki->parent,
+            'children'       => $wiki->children,
+            'terms'          => $taxonomies,
+            'tags'           => $terms,
+            'is_approved'    => $approval !== null,
+            'approved_at'    => $approval?->approved_at,
+            'approved_by'    => $approval?->approver?->name,
+            'is_watching'    => $wiki->isWatchedBy($currentUser),
+            'watchers_count' => $wiki->watches()->count(),
         ]);
     }
 
@@ -440,6 +443,15 @@ class WikiController extends Controller
         $data = $model::where('id', $wiki->wikiable_id)->first();
 
         $data->update($request->only($this->getUpdatableColumns($request->get('type'))));
+
+        // Tell everyone watching the page, bar whoever just edited it, and
+        // start the editor watching what they have worked on
+        $wiki->notifyWatchers(
+            new WikiUpdatedNotification($wiki, auth()->user()),
+            auth()->id()
+        );
+
+        $wiki->watch(auth()->user());
 
         //
         //        if ($request->get('parent')) {

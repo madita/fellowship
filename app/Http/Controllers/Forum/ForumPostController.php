@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Forum;
 use App\Http\Controllers\Controller;
 use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
-use App\Models\User;
 use App\Notifications\ForumMentionNotification;
 use App\Notifications\ForumReplyNotification;
 use App\Services\MentionService;
@@ -13,6 +12,7 @@ use App\Services\SpamDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 use Stevebauman\Purify\Facades\Purify;
 
 class ForumPostController extends Controller
@@ -67,8 +67,8 @@ class ForumPostController extends Controller
             'parent_id' => $validated['parent_id'] ?? null,
         ]);
 
-        // Auto-subscribe the replier
-        $thread->subscribe($user);
+        // Replying starts you watching the thread
+        $thread->watch($user);
 
         // Record activity
         activity('forum')
@@ -78,22 +78,20 @@ class ForumPostController extends Controller
             ->event('post_created')
             ->log('replied in a thread');
 
-        // Notify all subscribers except the post author
-        $thread->load('subscriptions');
-        $subscriberIds = $thread->subscriptions
-            ->pluck('user_id')
-            ->filter(fn ($id) => $id !== $user->id);
+        // Tell the watchers, bar whoever just posted. The trait also drops
+        // anyone who can no longer see the thread.
+        $watchers = $thread->watcherRecipients($user->id);
 
-        $subscribers = User::whereIn('id', $subscriberIds)->get();
-        foreach ($subscribers as $subscriber) {
-            $subscriber->notify(new ForumReplyNotification($thread, $post));
-        }
+        NotificationFacade::send($watchers, new ForumReplyNotification($thread, $post));
+
+        $alreadyTold = $watchers->pluck('id');
 
         // Parse @mentions and notify
         $mentionedUsers = $mentionService->parseMentions($validated['body']);
         foreach ($mentionedUsers as $mentionedUser) {
-            // Don't notify the post author or already-notified subscribers
-            if ($mentionedUser->id !== $user->id && ! $subscriberIds->contains($mentionedUser->id)) {
+            // One notice each: not the author, and not anyone the reply
+            // notification has just reached
+            if ($mentionedUser->id !== $user->id && ! $alreadyTold->contains($mentionedUser->id)) {
                 $mentionedUser->notify(new ForumMentionNotification($thread, $post));
             }
         }

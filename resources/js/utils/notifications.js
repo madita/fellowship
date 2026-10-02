@@ -47,6 +47,9 @@ export function notificationSubject(data = {}, t) {
     if (type === 'ticket_status') {
         return t('notifications.ticketStatus', { title: data.ticket_title, status: t(`tickets.status.${data.status}`) });
     }
+    if (type === 'wiki_updated') {
+        return t('notifications.wikiUpdated', { name: data.editor, title: data.wiki_title });
+    }
 
     if (type === 'rank_reached') {
         return t('notifications.rankReached', { rank: data.rank_name });
@@ -67,6 +70,7 @@ export function notificationIcon(data = {}) {
     if (type.startsWith('forum_')) return FORUM_ICONS[type] || 'mdi-forum';
     if (type.startsWith('status_') || type === 'mention') return 'mdi-at';
     if (type.startsWith('ticket_')) return TICKET_ICONS[type] || 'mdi-ticket-outline';
+    if (type === 'wiki_updated') return 'mdi-book-edit-outline';
 
     // The achievement carries the look an admin gave it
     if (type === 'achievement_earned') return data.icon || 'mdi-trophy-outline';

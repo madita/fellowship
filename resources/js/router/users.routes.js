@@ -22,6 +22,15 @@ export const users = [{
     },
     component: () => import(/* webpackChunkName: "users-edit" */ '@/pages/users/EditUserPage.vue')
 }, {
+    path: '/account/watching',
+    name: 'my-watching',
+    meta: {
+        middleware: [
+            auth
+        ]
+    },
+    component: () => import(/* webpackChunkName: "my-watching" */ '@/pages/users/WatchingPage.vue')
+}, {
     path: '/account/notifications',
     name: 'my-notifications',
     meta: {

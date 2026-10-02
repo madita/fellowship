@@ -59,6 +59,9 @@ return [
     ],
 
     // Events
+    'watch' => [
+        'not_found' => 'That is not something you can watch.',
+    ],
     'events' => [
         'created'              => 'Event created',
         'ended'                => 'This event is over, so you can no longer answer.',

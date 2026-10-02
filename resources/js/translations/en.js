@@ -3242,6 +3242,7 @@ export default {
         'achievementEarned': 'You earned {title}',
         'achievementAwarded': '{name} awarded you {title}',
         'ticketStatus': '"{title}" is now {status}',
+        'wikiUpdated': '{name} edited {title}',
         'ticketMention': '{name} mentioned you in "{title}"',
         'mention': '{name} mentioned you in "{title}"',
         'title': 'Notifications',
@@ -6512,6 +6513,24 @@ export default {
             'eventDetails': 'Event Details',
             'exportToCsv': 'Export to CSV'
         }
+    },
+    'watch': {
+        'watch': 'Watch',
+        'watching': 'Watching',
+        'watchHint': 'Get a notification when this moves on',
+        'watchingHint': 'Stop getting notifications about this',
+        'failed': 'Could not change whether you are watching this',
+        'title': 'Watching',
+        'subtitle': 'Everything you are following',
+        'empty': 'You are not watching anything yet',
+        'emptyHint': 'Watch a forum thread or a ticket and it will show up here.',
+        'all': 'All',
+        'kinds': {
+            'wiki': 'Wiki pages',
+            'forum-thread': 'Forum threads',
+            'ticket': 'Tickets'
+        },
+        'stop': 'Stop watching'
     },
     'forum': {
         'title': 'Forum',

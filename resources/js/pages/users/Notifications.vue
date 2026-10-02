@@ -5,8 +5,18 @@
             :subtitle="$t('notifications.subtitle')"
             icon="mdi-bell-outline"
         >
-            <template v-if="unreadCount" #actions>
+            <template #actions>
+                <!-- Most of what lands here comes from watching something,
+                     so this is where members look for the list -->
                 <v-btn
+                    variant="text"
+                    prepend-icon="mdi-eye-check-outline"
+                    :to="{ name: 'my-watching' }"
+                >
+                    {{ $t('watch.title') }}
+                </v-btn>
+                <v-btn
+                    v-if="unreadCount"
                     variant="tonal"
                     prepend-icon="mdi-email-open-outline"
                     :loading="markingAll"

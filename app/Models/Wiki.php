@@ -10,6 +10,7 @@ use App\Traits\Approvable;
 use App\Traits\HasCache;
 use App\Traits\HasRelateableContent;
 use App\Traits\HasTickets;
+use App\Traits\Watchable;
 use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Astrotomic\Translatable\Translatable;
 use Cviebrock\EloquentSluggable\Sluggable;
@@ -23,6 +24,7 @@ class Wiki extends Model implements TranslatableContract
     use HasTickets;
     use Sluggable;
     use Translatable;
+    use Watchable;
     //    protected $guard_name = 'api';
 
     public $translatedAttributes = ['title'];
@@ -43,6 +45,39 @@ class Wiki extends Model implements TranslatableContract
     protected $fillable = [
         'slug', 'status', 'parent_id', 'wikiable_type', 'wikiable_id',
     ];
+
+    /**
+     * Whether the member may read this page.
+     *
+     * A page awaiting approval cannot be opened by anyone but the author
+     * who wrote it and the admins who will approve it — the same rule the
+     * mention notifications wait on. Watching honours it, so a page that
+     * goes back to pending stops appearing in other people's lists.
+     */
+    public function isVisibleTo(?User $user): bool
+    {
+        if ($this->isApproved()) {
+            return true;
+        }
+
+        if ( ! $user) {
+            return false;
+        }
+
+        $model  = $this->wikiable_type;
+        $author = $model ? $model::find($this->wikiable_id)?->user_id : null;
+
+        return (int) $author === (int) $user->id || $user->isAdmin();
+    }
+
+    /**
+     * How the page reads on the watching list. It has no url accessor of
+     * its own, so the Watchable default has nothing to find.
+     */
+    public function watchUrl(): ?string
+    {
+        return "/wiki/{$this->slug}";
+    }
 
     /**
      * A pending wiki page cannot be opened, so mentions in its text wait

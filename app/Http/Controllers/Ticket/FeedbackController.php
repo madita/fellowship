@@ -190,21 +190,7 @@ class FeedbackController extends Controller
         ]);
     }
 
-    /**
-     * Start or stop watching the ticket.
-     */
-    public function watch(Request $request, Ticket $ticket): JsonResponse
-    {
-        $user = $request->user();
-        $this->ensureVisible($ticket, $user);
-
-        $watching = $ticket->toggleWatch($user);
-
-        return response()->json([
-            'watching'       => $watching,
-            'watchers_count' => $ticket->watchers()->count(),
-        ]);
-    }
+    // Watching moved to WatchController: POST /api/watch/ticket/{id}.
 
     /**
      * Post a public comment. Commenting watches the ticket.
@@ -251,10 +237,12 @@ class FeedbackController extends Controller
         return Ticket::query()
             ->feedback()
             ->with(['ticketType', 'creator', 'tags'])
-            ->withCount(['votes', 'watchers', 'publicComments as comments_count'])
+            // Counted through the watch rows rather than the users behind
+            // them: no join, and `user_id` cannot be ambiguous
+            ->withCount(['votes', 'watches as watchers_count', 'publicComments as comments_count'])
             ->when($user, fn ($q) => $q->withExists([
-                'votes as user_has_voted'       => fn ($q) => $q->where('user_id', $user->id),
-                'watchers as user_is_watching'  => fn ($q) => $q->where('user_id', $user->id),
+                'votes as user_has_voted'      => fn ($q) => $q->where('user_id', $user->id),
+                'watches as user_is_watching'  => fn ($q) => $q->where('user_id', $user->id),
             ]));
     }
 

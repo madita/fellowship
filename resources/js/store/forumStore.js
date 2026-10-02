@@ -17,7 +17,10 @@ export const useForumStore = defineStore('forum', {
             can_moderate: false,
             can_delete_others: false
         },
-        isSubscribed: false,
+        // Watching is shared with the rest of the site now; the button
+        // talks to /api/watch and writes these back.
+        isWatching: false,
+        watchersCount: 0,
         activities: [],
         activitiesPagination: {},
         loading: false,
@@ -115,7 +118,8 @@ export const useForumStore = defineStore('forum', {
                     can_moderate: response.data.can_moderate ?? false,
                     can_delete_others: response.data.can_delete_others ?? false
                 }
-                this.isSubscribed = response.data.is_subscribed ?? false
+                this.isWatching = response.data.is_watching ?? false
+                this.watchersCount = response.data.watchers_count ?? 0
             } catch (error) {
                 this.error = error.response?.data?.message || 'Failed to load thread'
                 throw error
@@ -247,24 +251,8 @@ export const useForumStore = defineStore('forum', {
             }
         },
 
-        async toggleSubscription(threadId) {
-            this.submitting = true
-            this.error = null
-            try {
-                if (this.isSubscribed) {
-                    const response = await axios.delete(`/api/threads/${threadId}/subscribe`)
-                    this.isSubscribed = response.data.is_subscribed
-                } else {
-                    const response = await axios.post(`/api/threads/${threadId}/subscribe`)
-                    this.isSubscribed = response.data.is_subscribed
-                }
-            } catch (error) {
-                this.error = error.response?.data?.message || 'Failed to update subscription'
-                throw error
-            } finally {
-                this.submitting = false
-            }
-        },
+        // Toggling lives in WatchButton, which posts to /api/watch and
+        // writes isWatching/watchersCount back through v-model.
 
         async toggleLike(postId) {
             const post = this.posts.find(p => p.id === postId)

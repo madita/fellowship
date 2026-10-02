@@ -6,16 +6,13 @@
             :back-to="backTo"
         >
             <template v-if="forumStore.currentThread && !forumStore.loading" #actions>
-                <v-btn
-                    v-if="authStore.isAuthenticated"
-                    :variant="forumStore.isSubscribed ? 'elevated' : 'tonal'"
-                    color="primary"
-                    :prepend-icon="forumStore.isSubscribed ? 'mdi-bell-ring' : 'mdi-bell-outline'"
-                    :loading="forumStore.submitting"
-                    @click="onToggleSubscription"
-                >
-                    {{ forumStore.isSubscribed ? $t('forum.subscribed') : $t('forum.subscribe') }}
-                </v-btn>
+                <watch-button
+                    v-if="authStore.isAuthenticated && forumStore.currentThread?.id"
+                    v-model="forumStore.isWatching"
+                    kind="forum-thread"
+                    :id="forumStore.currentThread.id"
+                    :watchers-count="forumStore.watchersCount"
+                />
                 <v-menu v-if="forumStore.threadPermissions.can_edit || forumStore.threadPermissions.can_delete">
                     <template v-slot:activator="{ props }">
                         <v-btn icon="mdi-dots-vertical" variant="text" v-bind="props" :loading="deletingThread"/>
@@ -227,11 +224,12 @@ import ForumPostItem from '@/components/forum/ForumPostItem.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
+import WatchButton from '@/components/common/WatchButton.vue'
 import PollCard from '@/components/poll/PollCard.vue'
 
 export default {
     name: 'ForumThread',
-    components: {UserAvatar, Tiptap, ForumPostItem, PageHeader, EmptyState, LoadingState, PollCard},
+    components: {UserAvatar, Tiptap, ForumPostItem, PageHeader, EmptyState, LoadingState, PollCard, WatchButton},
     setup() {
         const forumStore = useForumStore()
         const userStore = useUserStore()
@@ -380,14 +378,6 @@ export default {
             const ok = await this.$dialog.confirmDelete(this.$t('forum.confirmDeletePost'))
             if (!ok) return
             await this.runPostAction(postId, () => this.forumStore.deletePost(postId), 'forum.errorSubmitting')
-        },
-        async onToggleSubscription() {
-            if (this.forumStore.submitting) return
-            try {
-                await this.forumStore.toggleSubscription(this.forumStore.currentThread.id)
-            } catch (error) {
-                this.$dialog.requestError(error, this.$t('forum.errorSubmitting'))
-            }
         },
         onToggleLike(postId) {
             return this.runPostAction(postId, () => this.forumStore.toggleLike(postId), 'forum.errorSubmitting')
