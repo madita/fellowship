@@ -38,6 +38,15 @@ export function notificationSubject(data = {}, t) {
     if (type === 'mention') {
         return t('notifications.mention', { name: data.mentioned_by, title: data.subject });
     }
+    // Both forum types carry the thread as thread_title rather than
+    // subject, so without these they fell through to the default below and
+    // read as a bare thread name — no sign of who had done anything.
+    if (type === 'forum_reply') {
+        return t('notifications.forumReply', { name: data.post_author, title: data.thread_title });
+    }
+    if (type === 'forum_mention') {
+        return t('notifications.mention', { name: data.mentioned_by, title: data.thread_title });
+    }
     if (type === 'ticket_mention') {
         return t('notifications.ticketMention', { name: data.mentioned_by, title: data.ticket_title });
     }

@@ -3400,6 +3400,7 @@ export default {
     'notifications': {
         'statusMention': '{name} hat dich in einem Beitrag erwähnt',
         'statusCommentMention': '{name} hat dich in einem Kommentar erwähnt',
+        'forumReply': '{name} hat auf „{title}“ geantwortet',
         'ticketComment': '{name} hat „{title}“ kommentiert',
         'rankReached': 'Du hast {rank} erreicht',
         'achievementEarned': 'Du hast {title} erreicht',

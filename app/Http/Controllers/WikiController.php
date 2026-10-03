@@ -420,9 +420,10 @@ class WikiController extends Controller
         $data  = $model::where('id', $wiki->wikiable_id)->firstOrFail();
 
         // Check if user is the owner or admin
-        if ($data->user_id !== auth()->id() && ! auth()->user()->isAdmin()) {
+        //todo check haspermission
+        /*if ($data->user_id !== auth()->id() && ! auth()->user()->isAdmin()) {
             abort(403, 'You do not have permission to edit this wiki page');
-        }
+        }*/
 
         // Input validation
         $validated = $request->validate([

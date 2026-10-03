@@ -92,4 +92,26 @@ describe('notification display', () => {
         expect(notificationColor(data)).toBe('warning');
         expect(notificationExcerpt(data)).toBe('Welcome');
     });
+
+    /**
+     * Both forum types carry the thread as thread_title rather than
+     * subject, so with no case of their own they fell through to the
+     * fallback and read as a bare thread name — saying nothing about who
+     * had done what, while the ticket equivalents said both.
+     */
+    it('says who replied in a thread, as the ticket notifications do', () => {
+        const reply = { type: 'forum_reply', post_author: 'frodo', thread_title: 'Second breakfast' };
+        const comment = { type: 'ticket_comment', comment_author: 'frodo', ticket_title: 'Second breakfast' };
+
+        expect(notificationSubject(reply, t)).toBe('frodo replied to "Second breakfast"');
+        expect(notificationSubject(reply, t)).not.toBe('Second breakfast');
+        // The same shape of sentence as its ticket counterpart
+        expect(notificationSubject(comment, t)).toBe('frodo commented on "Second breakfast"');
+    });
+
+    it('says who mentioned you in a thread', () => {
+        const data = { type: 'forum_mention', mentioned_by: 'sam', thread_title: 'Second breakfast' };
+
+        expect(notificationSubject(data, t)).toBe('sam mentioned you in "Second breakfast"');
+    });
 });
