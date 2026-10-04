@@ -3400,11 +3400,13 @@ export default {
     'notifications': {
         'statusMention': '{name} hat dich in einem Beitrag erwähnt',
         'statusCommentMention': '{name} hat dich in einem Kommentar erwähnt',
+        'forumReply': '{name} hat auf „{title}“ geantwortet',
         'ticketComment': '{name} hat „{title}“ kommentiert',
         'rankReached': 'Du hast {rank} erreicht',
         'achievementEarned': 'Du hast {title} erreicht',
         'achievementAwarded': '{name} hat dir {title} verliehen',
         'ticketStatus': '„{title}“ ist jetzt {status}',
+        'wikiUpdated': '{name} hat {title} bearbeitet',
         'ticketMention': '{name} hat dich in „{title}“ erwähnt',
         'mention': '{name} hat dich in „{title}“ erwähnt',
         'title': 'Benachrichtigungen',
@@ -6687,6 +6689,24 @@ export default {
             'eventDetails': 'Veranstaltungsdetails',
             'exportToCsv': 'Als CSV exportieren'
         }
+    },
+    'watch': {
+        'watch': 'Beobachten',
+        'watching': 'Beobachtet',
+        'watchHint': 'Benachrichtigung erhalten, wenn es hier weitergeht',
+        'watchingHint': 'Keine Benachrichtigungen mehr dazu erhalten',
+        'failed': 'Beobachtung konnte nicht geändert werden',
+        'title': 'Beobachtet',
+        'subtitle': 'Alles, dem Sie folgen',
+        'empty': 'Sie beobachten noch nichts',
+        'emptyHint': 'Beobachten Sie ein Forenthema oder ein Ticket, dann erscheint es hier.',
+        'all': 'Alle',
+        'kinds': {
+            'wiki': 'Wiki-Seiten',
+            'forum-thread': 'Forenthemen',
+            'ticket': 'Tickets'
+        },
+        'stop': 'Nicht mehr beobachten'
     },
     'forum': {
         'title': 'Forum',

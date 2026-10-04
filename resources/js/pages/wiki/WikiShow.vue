@@ -12,6 +12,13 @@
                 :back-to="{ name: 'wiki-index' }"
             >
                 <template #actions>
+                    <watch-button
+                        v-if="authStore.isLoggedIn && wiki?.id"
+                        v-model="isWatching"
+                        kind="wiki"
+                        :id="wiki.id"
+                        :watchers-count="watchersCount"
+                    />
                     <v-btn
                         variant="tonal"
                         prepend-icon="mdi-history"
@@ -243,6 +250,7 @@ import PageHeader from '@/components/common/PageHeader.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 import RelatedContentList from '@/components/common/RelatedContentList.vue'
 import VersionHistoryDialog from '@/components/common/VersionHistoryDialog.vue'
+import WatchButton from '@/components/common/WatchButton.vue'
 
 const { t } = useI18n()
 const dialog = useDialog()
@@ -272,6 +280,8 @@ const tags = ref([])
 const wikiuser = ref({})
 const slug = ref('')
 const isApproved = ref(true)
+const isWatching = ref(false)
+const watchersCount = ref(0)
 const approving = ref(false)
 
 // Computed properties
@@ -317,6 +327,8 @@ const getWikiPage = async () => {
         tags.value = response.data.tags || []
         wikiuser.value = response.data.user || {}
         isApproved.value = response.data.is_approved ?? true
+        isWatching.value = response.data.is_watching ?? false
+        watchersCount.value = response.data.watchers_count ?? 0
         mode.value = 'edit'
         loading.value = false
 

@@ -6,10 +6,10 @@ use App\Models\Chat\Message;
 use App\Models\Conversation\Conversation;
 use App\Models\Event\Event;
 use App\Models\Forum\ForumPostLike;
-use App\Models\Forum\ThreadSubscription;
 use App\Support\Ranks;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -399,9 +399,12 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->hasMany(ApiKey::class);
     }
 
-    public function forumSubscriptions()
+    /**
+     * Everything the member is following, whatever kind of thing it is.
+     */
+    public function watches(): HasMany
     {
-        return $this->hasMany(ThreadSubscription::class);
+        return $this->hasMany(Watch::class);
     }
 
     public function forumPostLikes()

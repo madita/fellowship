@@ -9,6 +9,7 @@ use App\Services\DiscordWebhookService;
 use App\Services\MentionService;
 use App\Support\DiscordEvents;
 use App\Traits\Revisionable;
+use App\Traits\Watchable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,13 +17,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class Ticket extends Model
 {
-    use HasFactory, Revisionable, SoftDeletes;
+    use HasFactory, Revisionable, SoftDeletes, Watchable;
 
     public const STATUSES = ['open', 'in_progress', 'pending', 'resolved', 'closed'];
 
@@ -281,13 +281,8 @@ class Ticket extends Model
         return $this->hasMany(TicketVote::class);
     }
 
-    /**
-     * Get the users watching this ticket.
-     */
-    public function watchers(): HasMany
-    {
-        return $this->hasMany(TicketWatcher::class);
-    }
+    // watches(), watchers(), watch(), unwatch(), toggleWatch() and
+    // notifyWatchers() all come from the Watchable trait now.
 
     /**
      * Get the tags of this ticket.
@@ -342,46 +337,6 @@ class Ticket extends Model
         $this->votes()->createOrFirst(['user_id' => $user->id]);
 
         return true;
-    }
-
-    /**
-     * Start or stop watching; returns whether the user is watching now.
-     */
-    public function toggleWatch(User $user): bool
-    {
-        if ($this->watchers()->where('user_id', $user->id)->delete()) {
-            return false;
-        }
-
-        $this->watch($user);
-
-        return true;
-    }
-
-    /**
-     * Watch the ticket (no-op when already watching).
-     */
-    public function watch(User $user): void
-    {
-        $this->watchers()->createOrFirst(['user_id' => $user->id]);
-    }
-
-    /**
-     * Notify everyone watching the ticket, except the member who caused it
-     * and watchers who can no longer see the ticket.
-     */
-    public function notifyWatchers(Notification $notification, int|array|null $exceptUserIds = null): void
-    {
-        $except = array_filter((array) $exceptUserIds);
-
-        $recipients = User::query()
-            ->whereIn('id', $this->watchers()
-                ->when($except, fn ($q) => $q->whereNotIn('user_id', $except))
-                ->select('user_id'))
-            ->get()
-            ->filter(fn (User $user) => $this->isVisibleTo($user));
-
-        NotificationFacade::send($recipients, $notification);
     }
 
     /**

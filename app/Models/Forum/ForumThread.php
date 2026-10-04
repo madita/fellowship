@@ -9,6 +9,7 @@ use App\Support\DiscordEvents;
 use App\Traits\HasPolls;
 use App\Traits\NotifiesMentions;
 use App\Traits\SafeSearchable;
+use App\Traits\Watchable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,7 +27,7 @@ use Illuminate\Support\Str;
  */
 class ForumThread extends Model
 {
-    use HasFactory, HasPolls, NotifiesMentions, SafeSearchable, SoftDeletes;
+    use HasFactory, HasPolls, NotifiesMentions, SafeSearchable, SoftDeletes, Watchable;
 
     /**
      * The first post of a thread is its body; replies carry their own
@@ -202,37 +203,24 @@ class ForumThread extends Model
         return $this->hasMany(ForumThreadRead::class, 'thread_id');
     }
 
-    public function subscriptions(): HasMany
-    {
-        return $this->hasMany(ThreadSubscription::class, 'thread_id');
-    }
-
     /**
-     * Check if a user is subscribed to this thread.
+     * Whether the member may read this thread.
+     *
+     * A category can be marked private, which is kept in the taxonomy's
+     * json properties rather than a column of its own. The Watchable trait
+     * reads this to keep private threads out of other people's watching
+     * list and to stop notifying anyone who has lost access.
      */
-    public function isSubscribedBy(?User $user): bool
+    public function isVisibleTo(?User $user): bool
     {
-        if ( ! $user) {
-            return false;
+        $isPrivate = (bool) ($this->category?->properties['is_private'] ?? false);
+
+        if ( ! $isPrivate) {
+            return true;
         }
 
-        return $this->subscriptions()->where('user_id', $user->id)->exists();
-    }
-
-    /**
-     * Subscribe a user to this thread.
-     */
-    public function subscribe(User $user): void
-    {
-        $this->subscriptions()->firstOrCreate(['user_id' => $user->id]);
-    }
-
-    /**
-     * Unsubscribe a user from this thread.
-     */
-    public function unsubscribe(User $user): void
-    {
-        $this->subscriptions()->where('user_id', $user->id)->delete();
+        return $user !== null
+            && ((int) $this->user_id === (int) $user->id || $user->isAdmin());
     }
 
     /**

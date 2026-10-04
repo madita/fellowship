@@ -226,9 +226,9 @@ class FeedbackControllerTest extends TestCase
     {
         $ticket = $this->ticket();
 
-        $this->actingAs($this->other, 'sanctum')->postJson("/api/feedback/tickets/{$ticket->id}/watch")
+        $this->actingAs($this->other, 'sanctum')->postJson("/api/watch/ticket/{$ticket->id}")
             ->assertOk()->assertJson(['watching' => true, 'watchers_count' => 1]);
-        $this->actingAs($this->other, 'sanctum')->postJson("/api/feedback/tickets/{$ticket->id}/watch")
+        $this->actingAs($this->other, 'sanctum')->postJson("/api/watch/ticket/{$ticket->id}")
             ->assertOk()->assertJson(['watching' => false, 'watchers_count' => 0]);
     }
 
@@ -243,7 +243,7 @@ class FeedbackControllerTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('is_official', false);
 
-        $this->assertTrue($ticket->watchers()->where('user_id', $this->other->id)->exists());
+        $this->assertTrue($ticket->watches()->where('user_id', $this->other->id)->exists());
         Notification::assertSentTo($this->user, TicketActivityNotification::class,
             fn ($n) => $n->toArray($this->user)['type'] === 'ticket_comment');
         Notification::assertNotSentTo($this->other, TicketActivityNotification::class);

@@ -296,6 +296,9 @@ return [
     ],
 
     // Events
+    'watch' => [
+        'not_found' => 'Das kann nicht beobachtet werden.',
+    ],
     'events' => [
         'created'              => 'Event erstellt',
         'ended'                => 'Dieser Termin ist vorbei, eine Antwort ist nicht mehr möglich.',

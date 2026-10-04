@@ -112,7 +112,8 @@ class ForumThreadController extends Controller
             'can_delete'        => $thread->canDelete($user),
             'can_moderate'      => $canModerate,
             'can_delete_others' => $canDeleteOthers,
-            'is_subscribed'     => $thread->isSubscribedBy($user),
+            'is_watching'       => $thread->isWatchedBy($user),
+            'watchers_count'    => $thread->watches()->count(),
         ]);
     }
 
@@ -189,8 +190,8 @@ class ForumThreadController extends Controller
             return [$thread, $poll];
         });
 
-        // Auto-subscribe thread author
-        $thread->subscribe($user);
+        // The author watches their own thread
+        $thread->watch($user);
 
         // Record activity
         activity('forum')

@@ -160,19 +160,16 @@
                                     {{ ticket.user_has_voted ? $t('feedback.voted') : $t('feedback.vote') }}
                                     ({{ ticket.votes_count }})
                                 </v-btn>
-                                <v-btn
-                                    block
-                                    :prepend-icon="ticket.user_is_watching ? 'mdi-eye-check' : 'mdi-eye-outline'"
-                                    :color="ticket.user_is_watching ? 'secondary' : undefined"
-                                    :variant="ticket.user_is_watching ? 'flat' : 'tonal'"
-                                    :disabled="!authStore.isAuthenticated"
-                                    :loading="watching"
-                                    @click="toggleWatch"
-                                >
-                                    {{ ticket.user_is_watching ? $t('feedback.watching') : $t('feedback.watch') }}
-                                    ({{ ticket.watchers_count }})
-                                </v-btn>
-                                <div class="text-caption text-medium-emphasis mt-2">{{ $t('feedback.watchHint') }}</div>
+                                <watch-button
+                                    v-if="authStore.isAuthenticated"
+                                    v-model="ticket.user_is_watching"
+                                    v-model:watchers-count="ticket.watchers_count"
+                                    kind="ticket"
+                                    :id="ticket.id"
+                                    show-count
+                                    class="d-block w-100"
+                                />
+                                <div class="text-caption text-medium-emphasis mt-2">{{ $t('watch.watchHint') }}</div>
 
                                 <template v-if="ticket.duplicates.length">
                                     <v-divider class="my-4" />
@@ -216,10 +213,11 @@ import UserAvatar from '@/components/common/UserAvatar.vue'
 import SimpleEditor from '@/components/common/tiptap/SimpleEditor.vue'
 import { renderRichText, hasRichText } from '@/utils/richText.js'
 import FeedbackModerationCard from '@/components/feedback/FeedbackModerationCard.vue'
+import WatchButton from '@/components/common/WatchButton.vue'
 
 export default {
     name: 'FeedbackTicket',
-    components: { PageHeader, EmptyState, LoadingState, UserAvatar, SimpleEditor, FeedbackModerationCard },
+    components: { PageHeader, EmptyState, LoadingState, UserAvatar, SimpleEditor, FeedbackModerationCard, WatchButton },
     setup() {
         const authStore = useAuthStore()
         const userStore = useUserStore()
@@ -234,7 +232,6 @@ export default {
             newComment: '',
             commenting: false,
             voting: false,
-            watching: false,
         }
     },
     computed: {
@@ -290,19 +287,6 @@ export default {
                 await this.$dialog.requestError(error, this.$t('feedback.messages.voteFailed'))
             } finally {
                 this.voting = false
-            }
-        },
-        async toggleWatch() {
-            if (this.watching) return
-            this.watching = true
-            try {
-                const { data } = await axios.post(`/api/feedback/tickets/${this.ticket.id}/watch`)
-                this.ticket.user_is_watching = data.watching
-                this.ticket.watchers_count = data.watchers_count
-            } catch (error) {
-                await this.$dialog.requestError(error, this.$t('feedback.messages.watchFailed'))
-            } finally {
-                this.watching = false
             }
         },
         async submitComment() {

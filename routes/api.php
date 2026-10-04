@@ -98,9 +98,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/posts/{post}', 'App\Http\Controllers\Forum\ForumPostController@destroy');
     Route::post('/posts/{post}/mark-as-solution', 'App\Http\Controllers\Forum\ForumPostController@markAsSolution');
 
-    // Thread subscriptions
-    Route::post('/threads/{thread}/subscribe', 'App\Http\Controllers\Forum\ForumSubscriptionController@store');
-    Route::delete('/threads/{thread}/subscribe', 'App\Http\Controllers\Forum\ForumSubscriptionController@destroy');
+    // Watching anything: forum threads, tickets, whatever is registered in
+    // App\Support\Watchables. The kind is a registry slug, not a class name.
+    Route::get('/watching', 'App\Http\Controllers\WatchController@index');
+    Route::post('/watch/{kind}/{id}', 'App\Http\Controllers\WatchController@toggle')
+        ->whereNumber('id');
 
     // Post likes
     Route::post('/posts/{post}/like', 'App\Http\Controllers\Forum\ForumPostLikeController@store');
@@ -209,7 +211,6 @@ Route::group(['prefix' => '/feedback'], function () {
         Route::post('/tickets', 'App\Http\Controllers\Ticket\FeedbackController@store')->middleware('throttle:10,1');
         Route::patch('/tickets/{ticket}', 'App\Http\Controllers\Ticket\FeedbackController@update');
         Route::post('/tickets/{ticket}/vote', 'App\Http\Controllers\Ticket\FeedbackController@vote');
-        Route::post('/tickets/{ticket}/watch', 'App\Http\Controllers\Ticket\FeedbackController@watch');
         Route::post('/tickets/{ticket}/comments', 'App\Http\Controllers\Ticket\FeedbackController@comment')->middleware('throttle:20,1');
     });
 });

@@ -38,6 +38,15 @@ export function notificationSubject(data = {}, t) {
     if (type === 'mention') {
         return t('notifications.mention', { name: data.mentioned_by, title: data.subject });
     }
+    // Both forum types carry the thread as thread_title rather than
+    // subject, so without these they fell through to the default below and
+    // read as a bare thread name — no sign of who had done anything.
+    if (type === 'forum_reply') {
+        return t('notifications.forumReply', { name: data.post_author, title: data.thread_title });
+    }
+    if (type === 'forum_mention') {
+        return t('notifications.mention', { name: data.mentioned_by, title: data.thread_title });
+    }
     if (type === 'ticket_mention') {
         return t('notifications.ticketMention', { name: data.mentioned_by, title: data.ticket_title });
     }
@@ -46,6 +55,9 @@ export function notificationSubject(data = {}, t) {
     }
     if (type === 'ticket_status') {
         return t('notifications.ticketStatus', { title: data.ticket_title, status: t(`tickets.status.${data.status}`) });
+    }
+    if (type === 'wiki_updated') {
+        return t('notifications.wikiUpdated', { name: data.editor, title: data.wiki_title });
     }
 
     if (type === 'rank_reached') {
@@ -67,6 +79,7 @@ export function notificationIcon(data = {}) {
     if (type.startsWith('forum_')) return FORUM_ICONS[type] || 'mdi-forum';
     if (type.startsWith('status_') || type === 'mention') return 'mdi-at';
     if (type.startsWith('ticket_')) return TICKET_ICONS[type] || 'mdi-ticket-outline';
+    if (type === 'wiki_updated') return 'mdi-book-edit-outline';
 
     // The achievement carries the look an admin gave it
     if (type === 'achievement_earned') return data.icon || 'mdi-trophy-outline';
