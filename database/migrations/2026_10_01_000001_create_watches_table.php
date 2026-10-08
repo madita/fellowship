@@ -33,13 +33,13 @@ return new class extends Migration
             $table->unique(['user_id', 'watchable_type', 'watchable_id'], 'watches_unique');
         });
 
-        Schema::dropIfExists('forum_thread_subscriptions');
-        Schema::dropIfExists('ticket_watchers');
+        //Schema::dropIfExists('forum_thread_subscriptions');
+        //Schema::dropIfExists('ticket_watchers');
     }
 
     public function down(): void
     {
-        Schema::create('forum_thread_subscriptions', function (Blueprint $table) {
+        /*Schema::create('forum_thread_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('thread_id')->constrained('forum_threads')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -55,7 +55,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['ticket_id', 'user_id']);
-        });
+        });*/
 
         Schema::dropIfExists('watches');
     }

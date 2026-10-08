@@ -2,12 +2,14 @@
 
 namespace App\Models\Poll;
 
+use App\Traits\Voteable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PollOption extends Model
 {
+    use Voteable;
+
     protected $fillable = [
         'poll_id',
         'option_text',
@@ -23,8 +25,6 @@ class PollOption extends Model
         return $this->belongsTo(Poll::class);
     }
 
-    public function votes(): HasMany
-    {
-        return $this->hasMany(PollVote::class);
-    }
+    // votes() comes from the Voteable trait: a vote for a poll is a vote
+    // for one of its options, so the option is what gets voted for.
 }

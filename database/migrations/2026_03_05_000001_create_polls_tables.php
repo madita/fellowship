@@ -30,7 +30,8 @@ return new class extends Migration
             $table->index('poll_id');
         });
 
-        Schema::create('poll_votes', function (Blueprint $table) {
+        //done in voteable
+        /*Schema::create('poll_votes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('poll_id')->constrained()->cascadeOnDelete();
             $table->foreignId('poll_option_id')->constrained()->cascadeOnDelete();
@@ -41,12 +42,12 @@ return new class extends Migration
             // For multiple-choice: one vote per user per option
             $table->unique(['poll_id', 'poll_option_id', 'user_id']);
             $table->index(['poll_id', 'user_id']);
-        });
+        });*/
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('poll_votes');
+        //Schema::dropIfExists('poll_votes');
         Schema::dropIfExists('poll_options');
         Schema::dropIfExists('polls');
     }

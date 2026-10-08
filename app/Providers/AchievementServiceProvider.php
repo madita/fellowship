@@ -8,13 +8,14 @@ use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumPostLike;
 use App\Models\Forum\ForumThread;
 use App\Models\Page;
-use App\Models\Poll\PollVote;
+use App\Models\Poll\PollOption;
 use App\Models\Revision;
 use App\Models\Status\Status;
 use App\Models\Status\StatusComment;
 use App\Models\Ticket\Ticket;
 use App\Models\Ticket\TicketComment;
 use App\Models\User;
+use App\Models\Vote;
 use App\Models\Wiki;
 use App\Support\Achievements;
 use Illuminate\Support\ServiceProvider;
@@ -156,10 +157,17 @@ class AchievementServiceProvider extends ServiceProvider
             'timeline.comment'
         ));
 
-        PollVote::created(fn (PollVote $vote) => Achievements::record(
-            $this->userFor($vote->user_id),
-            'poll.voted'
-        ));
+        // Votes are one table now, shared with ticket up-votes, so the
+        // metric has to check what was voted for. Without this guard every
+        // ticket up-vote would quietly earn the poll achievement — and the
+        // backfill command would credit the old ones too.
+        Vote::created(function (Vote $vote): void {
+            if ($vote->voteable_type !== PollOption::class) {
+                return;
+            }
+
+            Achievements::record($this->userFor($vote->user_id), 'poll.voted');
+        });
     }
 
     /**
