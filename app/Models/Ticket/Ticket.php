@@ -8,7 +8,9 @@ use App\Notifications\TicketMentionNotification;
 use App\Services\DiscordWebhookService;
 use App\Services\MentionService;
 use App\Support\DiscordEvents;
+use App\Traits\HasPolls;
 use App\Traits\Revisionable;
+use App\Traits\Voteable;
 use App\Traits\Watchable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,7 +24,11 @@ use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class Ticket extends Model
 {
-    use HasFactory, Revisionable, SoftDeletes, Watchable;
+    // HasPolls because Ticket has always been listed in
+    // Poll::POLLABLE_TYPES and the polls endpoint accepts it, but without
+    // the trait $ticket->polls() did not exist — a poll could be attached
+    // to a ticket and never read back from it.
+    use HasFactory, HasPolls, Revisionable, SoftDeletes, Voteable, Watchable;
 
     public const STATUSES = ['open', 'in_progress', 'pending', 'resolved', 'closed'];
 
@@ -273,16 +279,9 @@ class Ticket extends Model
 
     // ── Public feedback (bug reports and feature requests) ──────────
 
-    /**
-     * Get all votes for this ticket.
-     */
-    public function votes(): HasMany
-    {
-        return $this->hasMany(TicketVote::class);
-    }
-
-    // watches(), watchers(), watch(), unwatch(), toggleWatch() and
-    // notifyWatchers() all come from the Watchable trait now.
+    // votes(), voters(), vote(), unvote() and toggleVote() come from the
+    // Voteable trait; watches(), watchers(), watch(), unwatch(),
+    // toggleWatch() and notifyWatchers() from Watchable.
 
     /**
      * Get the tags of this ticket.
@@ -323,20 +322,6 @@ class Ticket extends Model
     {
         return $this->is_public
             || ($user && ((int) $this->created_by_user_id === (int) $user->id || $user->isAdmin()));
-    }
-
-    /**
-     * Add or remove the user's vote; returns whether the user has voted now.
-     */
-    public function toggleVote(User $user): bool
-    {
-        if ($this->votes()->where('user_id', $user->id)->delete()) {
-            return false;
-        }
-
-        $this->votes()->createOrFirst(['user_id' => $user->id]);
-
-        return true;
     }
 
     /**

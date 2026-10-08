@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Achievement;
 use App\Models\AchievementProgress;
 use App\Models\Page;
+use App\Models\Poll\PollOption;
 use App\Models\User;
 use App\Services\AchievementService;
 use App\Support\AchievementMetrics;
@@ -171,7 +172,13 @@ class BackfillAchievements extends Command
 
             'timeline.post.created' => $this->count('statuses', 'user_id'),
             'timeline.comment'      => $this->count('status_comments', 'user_id'),
-            'poll.voted'            => $this->count('poll_votes', 'user_id'),
+            // The votes table holds ticket up-votes as well, so only the
+            // ones cast for a poll option count towards this
+            'poll.voted'            => $this->count(
+                'voteable',
+                'user_id',
+                fn ($query) => $query->where('voteable_type', PollOption::class)
+            ),
         ], fn ($rows) => $rows !== null);
     }
 

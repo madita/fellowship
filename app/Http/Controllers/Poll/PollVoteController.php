@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Poll;
 
 use App\Http\Controllers\Controller;
 use App\Models\Poll\Poll;
-use App\Models\Poll\PollVote;
+use App\Models\Poll\PollOption;
+use App\Models\Vote;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,17 +47,16 @@ class PollVoteController extends Controller
         DB::beginTransaction();
 
         try {
-            // Remove existing votes from this user for this poll
-            PollVote::where('poll_id', $poll->id)
-                ->where('user_id', $user->id)
-                ->delete();
+            // Clear whatever this member picked before: a vote may be
+            // changed while the poll is open, and for a single-choice poll
+            // the new pick must replace the old one rather than join it.
+            $this->clearVotes($poll, $user->id);
 
-            // Create new votes
             foreach ($validated['option_ids'] as $optionId) {
-                PollVote::create([
-                    'poll_id'        => $poll->id,
-                    'poll_option_id' => $optionId,
-                    'user_id'        => $user->id,
+                Vote::create([
+                    'user_id'       => $user->id,
+                    'voteable_type' => PollOption::class,
+                    'voteable_id'   => $optionId,
                 ]);
             }
 
@@ -94,9 +94,7 @@ class PollVoteController extends Controller
 
         $user = $request->user();
 
-        $deletedCount = PollVote::where('poll_id', $poll->id)
-            ->where('user_id', $user->id)
-            ->delete();
+        $deletedCount = $this->clearVotes($poll, $user->id);
 
         if ($deletedCount === 0) {
             return response()->json([
@@ -111,5 +109,20 @@ class PollVoteController extends Controller
             'message' => 'Vote removed successfully',
             'poll'    => $poll->toPayload($user),
         ]);
+    }
+
+    /**
+     * Drop every vote this member has cast in this poll, whichever options
+     * they picked. Returns how many there were.
+     *
+     * Votes point at the option chosen rather than the poll, so "this
+     * member's votes in this poll" is scoped by the poll's own option ids.
+     */
+    private function clearVotes(Poll $poll, int $userId): int
+    {
+        return Vote::where('user_id', $userId)
+            ->where('voteable_type', PollOption::class)
+            ->whereIn('voteable_id', $poll->options()->select('id'))
+            ->delete();
     }
 }

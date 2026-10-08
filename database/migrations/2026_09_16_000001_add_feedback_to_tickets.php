@@ -27,23 +27,25 @@ return new class extends Migration
             $table->boolean('is_official')->default(false)->after('is_internal');
         });
 
-        Schema::create('ticket_votes', function (Blueprint $table) {
+        //voteable
+        /*Schema::create('ticket_votes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
 
             $table->unique(['ticket_id', 'user_id']);
-        });
+        });*/
 
-        Schema::create('ticket_watchers', function (Blueprint $table) {
+        //watchable
+        /*Schema::create('ticket_watchers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('ticket_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
 
             $table->unique(['ticket_id', 'user_id']);
-        });
+        });*/
 
         Schema::create('ticket_tags', function (Blueprint $table) {
             $table->id();
@@ -89,7 +91,7 @@ return new class extends Migration
         Schema::dropIfExists('ticket_ticket_tag');
         Schema::dropIfExists('ticket_tags');
         Schema::dropIfExists('ticket_watchers');
-        Schema::dropIfExists('ticket_votes');
+        //Schema::dropIfExists('ticket_votes');
 
         Schema::table('ticket_comments', function (Blueprint $table) {
             $table->dropColumn('is_official');

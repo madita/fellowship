@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Poll\Poll;
-use App\Models\Poll\PollVote;
+use App\Models\Poll\PollOption;
+use App\Models\Vote;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -100,8 +101,11 @@ class PollAdminController extends Controller
                 'total'      => Poll::count(),
                 'open'       => Poll::open()->count(),
                 'closed'     => Poll::closed()->count(),
-                'votes'      => PollVote::count(),
-                'votes_7d'   => PollVote::where('created_at', '>=', $weekAgo)->count(),
+                // Poll votes only: the votes table also holds ticket
+                // up-votes, which are nothing to do with this dashboard
+                'votes'      => Vote::where('voteable_type', PollOption::class)->count(),
+                'votes_7d'   => Vote::where('voteable_type', PollOption::class)
+                    ->where('created_at', '>=', $weekAgo)->count(),
                 'polls_7d'   => Poll::where('created_at', '>=', $weekAgo)->count(),
                 'by_type'    => collect(Poll::POLLABLE_TYPES)->map(fn ($class) => (int) ($byType[$class] ?? 0)),
                 'most_voted' => $mostVoted,

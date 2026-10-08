@@ -72,14 +72,14 @@ return new class extends Migration
             $table->index('parent_id');
         });
 
-        Schema::create('forum_thread_subscriptions', function (Blueprint $table) {
+        /*Schema::create('forum_thread_subscriptions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('thread_id')->constrained('forum_threads')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
 
             $table->unique(['thread_id', 'user_id']);
-        });
+        });*/
 
         Schema::create('forum_post_likes', function (Blueprint $table) {
             $table->id();

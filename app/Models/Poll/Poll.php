@@ -7,10 +7,12 @@ use App\Models\Page;
 use App\Models\Status\Status;
 use App\Models\Ticket\Ticket;
 use App\Models\User;
+use App\Models\Vote;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Str;
 
@@ -62,9 +64,24 @@ class Poll extends Model
         return $this->hasMany(PollOption::class)->orderBy('position');
     }
 
-    public function votes(): HasMany
+    /**
+     * Every vote cast in this poll, reached through its options.
+     *
+     * Votes are polymorphic and point at the option chosen, so a poll no
+     * longer owns them directly. Still a relation rather than a query, and
+     * deliberately so: Status and ForumThread both eager-load
+     * `latestPoll.votes`, and withCount('votes') is used on it.
+     */
+    public function votes(): HasManyThrough
     {
-        return $this->hasMany(PollVote::class);
+        return $this->hasManyThrough(
+            Vote::class,
+            PollOption::class,
+            'poll_id',     // poll_options.poll_id → polls.id
+            'voteable_id', // voteable.voteable_id → poll_options.id
+            'id',
+            'id'
+        )->where('voteable.voteable_type', PollOption::class);
     }
 
     public function scopeOpen(Builder $query): Builder
@@ -108,13 +125,14 @@ class Poll extends Model
             return [];
         }
 
+        // The option voted for is the vote's voteable
         if ($this->relationLoaded('votes')) {
-            return $this->votes->where('user_id', $user->id)->pluck('poll_option_id')->values()->toArray();
+            return $this->votes->where('user_id', $user->id)->pluck('voteable_id')->values()->toArray();
         }
 
         return $this->votes()
             ->where('user_id', $user->id)
-            ->pluck('poll_option_id')
+            ->pluck('voteable_id')
             ->toArray();
     }
 
@@ -122,10 +140,11 @@ class Poll extends Model
     {
         $totalVotes = $this->total_votes;
         $byOption   = $this->relationLoaded('votes')
-            ? $this->votes->countBy('poll_option_id')
-            : $this->votes()->selectRaw('poll_option_id, count(*) as aggregate')
-                ->groupBy('poll_option_id')
-                ->pluck('aggregate', 'poll_option_id');
+            ? $this->votes->countBy('voteable_id')
+            // Qualified: the through-join puts poll_options alongside
+            : $this->votes()->selectRaw('voteable.voteable_id as voteable_id, count(*) as aggregate')
+                ->groupBy('voteable.voteable_id')
+                ->pluck('aggregate', 'voteable_id');
 
         return $this->options->map(function ($option) use ($totalVotes, $byOption) {
             $voteCount  = (int) ($byOption[$option->id] ?? 0);
