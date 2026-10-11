@@ -3,6 +3,7 @@
 namespace App\Models\Forum;
 
 use App\Models\User;
+use App\Traits\Likeable;
 use App\Traits\SafeSearchable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ForumPost extends Model
 {
-    use HasFactory, SafeSearchable, SoftDeletes;
+    use HasFactory, Likeable, SafeSearchable, SoftDeletes;
 
     protected $fillable = [
         'thread_id',
@@ -121,48 +122,6 @@ class ForumPost extends Model
     }
 
     /**
-     * Get likes for this post.
-     */
-    public function likes(): HasMany
-    {
-        return $this->hasMany(ForumPostLike::class, 'post_id');
-    }
-
-    /**
-     * Check if a user has liked this post.
-     */
-    public function isLikedBy(?User $user): bool
-    {
-        if ( ! $user) {
-            return false;
-        }
-
-        return $this->likes()->where('user_id', $user->id)->exists();
-    }
-
-    /**
-     * Like this post as a user.
-     */
-    public function like(User $user): void
-    {
-        if ( ! $this->isLikedBy($user)) {
-            $this->likes()->create(['user_id' => $user->id]);
-            $this->increment('like_count');
-        }
-    }
-
-    /**
-     * Unlike this post as a user.
-     */
-    public function unlike(User $user): void
-    {
-        $deleted = $this->likes()->where('user_id', $user->id)->delete();
-        if ($deleted) {
-            $this->decrement('like_count');
-        }
-    }
-
-    /**
      * Mark this post as the solution.
      */
     public function markAsSolution(): void
@@ -200,6 +159,18 @@ class ForumPost extends Model
     public function shouldBeSearchable(): bool
     {
         return ! $this->trashed();
+    }
+
+    // likes(), likers(), isLikedBy(), like(), unlike() and toggleLike()
+    // all come from the Likeable trait.
+
+    /**
+     * A forum post keeps its total in like_count — singular, unlike a
+     * status, which is why the trait is told rather than guessing.
+     */
+    protected function likeCounterColumn(): ?string
+    {
+        return 'like_count';
     }
 
     /**

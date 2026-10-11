@@ -22,8 +22,12 @@ class StatusController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        // The like rows themselves are not loaded: nothing in the client
+        // reads them, and each one dragged a full user object along with
+        // it. The count is the likes_count column and "did I like it" is
+        // the is_liked_by_me attribute.
         $query = Status::with(array_merge(
-            ['user', 'likes', 'comments.user', 'comments.replies.user'],
+            ['user', 'comments.user', 'comments.replies.user'],
             Status::POLL_RELATIONS
         ))->recent();
 
@@ -43,7 +47,7 @@ class StatusController extends Controller
     public function show(Status $status): JsonResponse
     {
         $status->load(array_merge(
-            ['user', 'likes.user', 'allComments.user', 'allComments.replies.user'],
+            ['user', 'allComments.user', 'allComments.replies.user'],
             Status::POLL_RELATIONS
         ));
 

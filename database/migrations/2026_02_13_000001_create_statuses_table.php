@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('statuses', function (Blueprint $table) {
+        /*Schema::create('statuses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->text('content');
@@ -25,9 +25,10 @@ return new class extends Migration
 
             $table->index(['user_id', 'created_at']);
             $table->index('created_at');
-        });
+        });*/
 
-        Schema::create('status_likes', function (Blueprint $table) {
+        //done in likeable
+        /*Schema::create('status_likes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('status_id')->constrained('statuses')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
@@ -36,7 +37,7 @@ return new class extends Migration
 
             $table->unique(['status_id', 'user_id']);
             $table->index(['status_id', 'created_at']);
-        });
+        });*/
 
         Schema::create('status_comments', function (Blueprint $table) {
             $table->id();
@@ -59,7 +60,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('status_comments');
-        Schema::dropIfExists('status_likes');
-        Schema::dropIfExists('statuses');
+        //Schema::dropIfExists('status_likes');
+        //Schema::dropIfExists('statuses');
     }
 };

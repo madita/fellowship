@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Forum;
 
 use App\Http\Controllers\Controller;
-use App\Models\Forum\ForumPostLike;
+use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
 use App\Models\Forum\ForumThreadRead;
+use App\Models\Like;
 use App\Models\Tag\Taxonomy;
 use App\Services\PollService;
 use App\Services\SpamDetectionService;
@@ -73,9 +74,12 @@ class ForumThreadController extends Controller
         $likedPostIds = [];
         if ($user) {
             $postIds      = collect($posts->items())->pluck('id');
-            $likedPostIds = ForumPostLike::where('user_id', $user->id)
-                ->whereIn('post_id', $postIds)
-                ->pluck('post_id')
+            // Likes are one table now, so the kind has to be named: the
+            // same member may well have liked a status with the same id
+            $likedPostIds = Like::where('user_id', $user->id)
+                ->where('likeable_type', ForumPost::class)
+                ->whereIn('likeable_id', $postIds)
+                ->pluck('likeable_id')
                 ->toArray();
         }
 

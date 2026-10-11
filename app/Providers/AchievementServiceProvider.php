@@ -5,8 +5,8 @@ namespace App\Providers;
 use App\Models\Event\Event;
 use App\Models\Event\EventGuest;
 use App\Models\Forum\ForumPost;
-use App\Models\Forum\ForumPostLike;
 use App\Models\Forum\ForumThread;
+use App\Models\Like;
 use App\Models\Page;
 use App\Models\Poll\PollOption;
 use App\Models\Revision;
@@ -87,11 +87,17 @@ class AchievementServiceProvider extends ServiceProvider
             }
         });
 
-        // Likewise a like counts for whoever wrote the post
-        ForumPostLike::created(fn (ForumPostLike $like) => Achievements::record(
-            $like->post?->author,
-            'forum.post.liked'
-        ));
+        // A like counts for whoever wrote the post, not the liker. Likes
+        // are one table now, shared with the timeline, so the kind has to
+        // be checked — and the timeline has no achievement of its own for
+        // a stray status like to land in.
+        Like::created(function (Like $like): void {
+            if ($like->likeable_type !== ForumPost::class) {
+                return;
+            }
+
+            Achievements::record($like->likeable?->author, 'forum.post.liked');
+        });
     }
 
     private function watchEvents(): void

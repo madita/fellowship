@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Models\Chat\Message;
 use App\Models\Conversation\Conversation;
 use App\Models\Event\Event;
-use App\Models\Forum\ForumPostLike;
 use App\Support\Ranks;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -407,8 +406,11 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return $this->hasMany(Watch::class);
     }
 
-    public function forumPostLikes()
+    /**
+     * Everything the member has liked, whatever kind of thing it is.
+     */
+    public function likes(): HasMany
     {
-        return $this->hasMany(ForumPostLike::class);
+        return $this->hasMany(Like::class);
     }
 }

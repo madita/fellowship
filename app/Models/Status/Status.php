@@ -4,6 +4,7 @@ namespace App\Models\Status;
 
 use App\Models\User;
 use App\Traits\HasPolls;
+use App\Traits\Likeable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Status extends Model implements HasMedia
 {
-    use HasFactory, HasPolls, InteractsWithMedia, SoftDeletes;
+    use HasFactory, HasPolls, InteractsWithMedia, Likeable, SoftDeletes;
 
     /**
      * Relations needed to build the `poll` attribute without extra queries.
@@ -82,14 +83,6 @@ class Status extends Model implements HasMedia
     }
 
     /**
-     * Get all likes for this status.
-     */
-    public function likes(): HasMany
-    {
-        return $this->hasMany(StatusLike::class);
-    }
-
-    /**
      * Get all comments for this status.
      */
     public function comments(): HasMany
@@ -125,29 +118,6 @@ class Status extends Model implements HasMedia
     public function getTimeAgoAttribute(): string
     {
         return $this->created_at->diffForHumans();
-    }
-
-    /**
-     * Toggle like from user.
-     */
-    public function toggleLike(User $user, string $reactionType = 'like'): bool
-    {
-        $existingLike = $this->likes()->where('user_id', $user->id)->first();
-
-        if ($existingLike) {
-            $existingLike->delete();
-            $this->decrement('likes_count');
-
-            return false;
-        }
-
-        $this->likes()->create([
-            'user_id'       => $user->id,
-            'reaction_type' => $reactionType,
-        ]);
-        $this->increment('likes_count');
-
-        return true;
     }
 
     /**
@@ -204,6 +174,18 @@ class Status extends Model implements HasMedia
     public function scopeRecent($query)
     {
         return $query->orderByDesc('created_at');
+    }
+
+    // likes(), likers(), isLikedBy(), like(), unlike() and toggleLike()
+    // all come from the Likeable trait.
+
+    /**
+     * A status keeps its total in likes_count — plural, unlike a forum
+     * post, which is why the trait is told rather than guessing.
+     */
+    protected function likeCounterColumn(): ?string
+    {
+        return 'likes_count';
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Achievement;
 use App\Models\AchievementProgress;
+use App\Models\Forum\ForumPost;
 use App\Models\Page;
 use App\Models\Poll\PollOption;
 use App\Models\User;
@@ -146,11 +147,15 @@ class BackfillAchievements extends Command
             'forum.thread.created' => $this->count('forum_threads', 'user_id'),
             'forum.post.created'   => $this->count('forum_posts', 'user_id'),
             'forum.post.solution'  => $this->count('forum_posts', 'user_id', fn ($q) => $q->where('is_solution', true)),
+            // Likes share a table with the timeline's, so only the ones
+            // left on a forum post count — and they count for whoever
+            // wrote the post, which is what the join is for
             'forum.post.liked'     => $this->joinedCount(
-                'forum_post_likes',
+                'likeable',
                 'forum_posts',
-                'forum_post_likes.post_id',
-                'forum_posts.user_id'
+                'likeable.likeable_id',
+                'forum_posts.user_id',
+                fn ($query) => $query->where('likeable.likeable_type', ForumPost::class)
             ),
 
             'wiki.page.created'  => $this->count('pages', 'user_id', fn ($q) => $q->whereIn(
@@ -211,19 +216,30 @@ class BackfillAchievements extends Command
      * Rows credited to the owner of something else — a like counts for
      * whoever wrote the post.
      */
-    private function joinedCount(string $table, string $ownerTable, string $foreignKey, string $ownerColumn): ?array
-    {
+    private function joinedCount(
+        string $table,
+        string $ownerTable,
+        string $foreignKey,
+        string $ownerColumn,
+        ?callable $filter = null
+    ): ?array {
         if ( ! $this->tableExists($table) || ! $this->tableExists($ownerTable)) {
             return null;
         }
 
-        return DB::table($table)
+        $query = DB::table($table)
             ->join($ownerTable, $ownerTable . '.id', '=', $foreignKey)
             ->whereNotNull($ownerColumn)
             ->groupBy($ownerColumn)
-            ->select([$ownerColumn . ' as user_id', DB::raw("'' as scope"), DB::raw('COUNT(*) as total')])
-            ->get()
-            ->all();
+            ->select([$ownerColumn . ' as user_id', DB::raw("'' as scope"), DB::raw('COUNT(*) as total')]);
+
+        // A shared table needs narrowing to the rows that belong to this
+        // metric — see forum.post.liked
+        if ($filter) {
+            $filter($query);
+        }
+
+        return $query->get()->all();
     }
 
     private function ticketsOfType(string $slug): ?array

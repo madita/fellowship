@@ -81,14 +81,15 @@ return new class extends Migration
             $table->unique(['thread_id', 'user_id']);
         });*/
 
-        Schema::create('forum_post_likes', function (Blueprint $table) {
+        //done in likeable
+        /*Schema::create('forum_post_likes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('post_id')->constrained('forum_posts')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
 
             $table->unique(['post_id', 'user_id']);
-        });
+        });*/
 
         Schema::create('forum_thread_reads', function (Blueprint $table) {
             $table->id();
@@ -105,7 +106,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('forum_thread_reads');
-        Schema::dropIfExists('forum_post_likes');
+        //Schema::dropIfExists('forum_post_likes');
         Schema::dropIfExists('forum_thread_subscriptions');
         Schema::dropIfExists('forum_posts');
         Schema::dropIfExists('forum_threads');

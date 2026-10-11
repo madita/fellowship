@@ -45,21 +45,32 @@ class CreateSystemTables extends Migration
         /**
          *  Misc.
          */
-        /*Schema::create('statuses', function (Blueprint $table) {
-            $table->increments('id');
-            $table->integer('user_id');
-            $table->integer('parent_id')->nullable();
+        Schema::create('statuses', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->text('content');
+            $table->json('media')->nullable(); // Array of media attachments
+            $table->string('feeling')->nullable();
+            $table->integer('likes_count')->default(0);
+            $table->integer('comments_count')->default(0);
+            $table->integer('shares_count')->default(0);
             $table->timestamps();
-        });*/
+            $table->softDeletes();
+
+            $table->index(['user_id', 'created_at']);
+            $table->index('created_at');
+        });
 
         Schema::create('likeable', function (Blueprint $table) {
-            $table->increments('id');
-            $table->integer('user_id');
-            $table->integer('likeable_id');
-            $table->string('likeable_type');
-            // $table->integer('icon_id');
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            // A morph cannot cascade, so the Likeable trait clears these
+            // rows itself when the liked thing is really deleted.
+            $table->morphs('likeable');
             $table->timestamps();
+
+            // What both old tables guaranteed: one like per member per thing
+            $table->unique(['user_id', 'likeable_type', 'likeable_id'], 'likeable_unique');
         });
 
         Schema::create('collections', function (Blueprint $table) {
@@ -95,8 +106,8 @@ class CreateSystemTables extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('page_translations');
-        Schema::dropIfExists('post_translations');
+        //Schema::dropIfExists('page_translations');
+        //Schema::dropIfExists('post_translations');
         Schema::dropIfExists('collection_translations');
         Schema::dropIfExists('relateables');
         Schema::dropIfExists('collections');

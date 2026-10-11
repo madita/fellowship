@@ -8,7 +8,6 @@ use App\Models\Event\Event;
 use App\Models\Event\EventGuest;
 use App\Models\Event\EventType;
 use App\Models\Forum\ForumPost;
-use App\Models\Forum\ForumPostLike;
 use App\Models\Forum\ForumThread;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
@@ -51,23 +50,6 @@ class AchievementsTest extends TestCase
         $this->member = User::factory()->create();
         $this->admin  = User::factory()->create();
         $this->admin->assignRole('admin');
-    }
-
-    private function achievement(array $attributes = []): Achievement
-    {
-        return Achievement::create(array_merge([
-            'key'       => 'test-' . uniqid(),
-            'en'        => ['name' => 'Test'],
-            'points'    => 10,
-            'trigger'   => 'metric',
-            'metric'    => 'forum.post.created',
-            'threshold' => 3,
-        ], $attributes));
-    }
-
-    private function service(): AchievementService
-    {
-        return app(AchievementService::class);
     }
 
     public function test_the_starter_achievements_arrive_with_the_migration(): void
@@ -296,34 +278,10 @@ class AchievementsTest extends TestCase
         ]);
 
         // Somebody else does the liking
-        ForumPostLike::create(['post_id' => $post->id, 'user_id' => $this->admin->id]);
+        $post->like($this->admin);
 
         $this->assertTrue($this->member->fresh()->achievements()->where('achievements.id', $achievement->id)->exists());
         $this->assertFalse($this->admin->fresh()->achievements()->exists());
-    }
-
-    private function ticket(string $typeSlug): Ticket
-    {
-        $type = TicketType::firstOrCreate(
-            ['slug' => $typeSlug],
-            ['name' => ucfirst($typeSlug), 'is_active' => true]
-        );
-
-        return Ticket::create([
-            'ticket_type_id'     => $type->id,
-            'created_by_user_id' => $this->member->id,
-            'title'              => 'Something happened',
-            'status'             => 'open',
-            'priority'           => 'normal',
-        ]);
-    }
-
-    private function forumCategory(): Taxonomy
-    {
-        return Taxonomy::firstOrCreate(
-            ['term_id' => Term::firstOrCreateByTitle('General')->id, 'taxonomy' => 'forum_cat'],
-            ['sort' => 0, 'visible' => true, 'searchable' => true, 'properties' => []]
-        );
     }
 
     public function test_an_admin_hands_out_a_real_world_achievement(): void
@@ -450,7 +408,7 @@ class AchievementsTest extends TestCase
 
         $this->actingAs($this->member, 'sanctum')
             ->postJson('/api/admin/achievements', [
-                'name' => 'Mine', 'category' => 'community', 'points' => 5,
+                'name'    => 'Mine', 'category' => 'community', 'points' => 5,
                 'trigger' => 'manual', 'threshold' => 1,
             ])
             ->assertForbidden();
@@ -648,16 +606,6 @@ class AchievementsTest extends TestCase
                 'image' => UploadedFile::fake()->image('medal.png'),
             ])
             ->assertForbidden();
-    }
-
-    /**
-     * Records made before achievements existed left no tally behind, which
-     * is what clearing the progress here stands for.
-     */
-    private function asIfItPredatedAchievements(): void
-    {
-        AchievementProgress::query()->delete();
-        DB::table('achievement_user')->delete();
     }
 
     public function test_the_backfill_counts_what_happened_before_achievements_existed(): void
@@ -872,5 +820,56 @@ class AchievementsTest extends TestCase
         Achievements::record(null, 'forum.post.created');
 
         $this->assertDatabaseCount('achievement_progress', 0);
+    }
+
+    private function achievement(array $attributes = []): Achievement
+    {
+        return Achievement::create(array_merge([
+            'key'       => 'test-' . uniqid(),
+            'en'        => ['name' => 'Test'],
+            'points'    => 10,
+            'trigger'   => 'metric',
+            'metric'    => 'forum.post.created',
+            'threshold' => 3,
+        ], $attributes));
+    }
+
+    private function service(): AchievementService
+    {
+        return app(AchievementService::class);
+    }
+
+    private function ticket(string $typeSlug): Ticket
+    {
+        $type = TicketType::firstOrCreate(
+            ['slug' => $typeSlug],
+            ['name' => ucfirst($typeSlug), 'is_active' => true]
+        );
+
+        return Ticket::create([
+            'ticket_type_id'     => $type->id,
+            'created_by_user_id' => $this->member->id,
+            'title'              => 'Something happened',
+            'status'             => 'open',
+            'priority'           => 'normal',
+        ]);
+    }
+
+    private function forumCategory(): Taxonomy
+    {
+        return Taxonomy::firstOrCreate(
+            ['term_id' => Term::firstOrCreateByTitle('General')->id, 'taxonomy' => 'forum_cat'],
+            ['sort' => 0, 'visible' => true, 'searchable' => true, 'properties' => []]
+        );
+    }
+
+    /**
+     * Records made before achievements existed left no tally behind, which
+     * is what clearing the progress here stands for.
+     */
+    private function asIfItPredatedAchievements(): void
+    {
+        AchievementProgress::query()->delete();
+        DB::table('achievement_user')->delete();
     }
 }
