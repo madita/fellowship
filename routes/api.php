@@ -228,11 +228,17 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // Likes
     Route::post('/statuses/{status}/like', 'App\Http\Controllers\Status\StatusController@toggleLike');
     Route::get('/statuses/{status}/likes', 'App\Http\Controllers\Status\StatusController@likes');
+});
 
-    // Comments
-    Route::post('/statuses/{status}/comments', 'App\Http\Controllers\Status\StatusController@addComment');
-    Route::patch('/status-comments/{comment}', 'App\Http\Controllers\Status\StatusCommentController@update');
-    Route::delete('/status-comments/{comment}', 'App\Http\Controllers\Status\StatusCommentController@destroy');
+// Comments on anything registered in App\Support\Commentables: a wiki
+// page's discussion, a timeline post. The kind is a registry slug, not a
+// class name. Reading is open; writing needs a login.
+Route::get('/comments/{kind}/{id}', 'App\Http\Controllers\CommentController@index')->whereNumber('id');
+
+Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::post('/comments/{kind}/{id}', 'App\Http\Controllers\CommentController@store')->whereNumber('id');
+    Route::patch('/comments/{comment}', 'App\Http\Controllers\CommentController@update')->whereNumber('comment');
+    Route::delete('/comments/{comment}', 'App\Http\Controllers\CommentController@destroy')->whereNumber('comment');
 });
 
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');

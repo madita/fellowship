@@ -121,31 +121,63 @@
                 <v-row>
                     <!-- Article Content -->
                     <v-col cols="12" lg="9">
-                        <v-card class="content-card" elevation="2" rounded="lg">
-                            <v-card-text class="pa-8">
-                                <!-- Main Content -->
-                                <div
-                                    class="wiki-content-body"
-                                    v-html="wikipage.content"
-                                />
+                        <!-- Article and its discussion, kept apart the way a
+                             wiki keeps a page and its talk page apart -->
+                        <v-tabs v-model="tab" color="primary" class="mb-4">
+                            <v-tab value="article" prepend-icon="mdi-book-open-page-variant">
+                                {{ $t('comments.tabArticle') }}
+                            </v-tab>
+                            <v-tab value="discussion" prepend-icon="mdi-forum-outline">
+                                {{ $t('comments.tabDiscussion') }}
+                                <v-chip v-if="commentCount" size="x-small" class="ms-2">
+                                    {{ commentCount }}
+                                </v-chip>
+                            </v-tab>
+                        </v-tabs>
 
-                                <!-- Description -->
-                                <div
-                                    v-if="wikipage.description"
-                                    class="wiki-description mt-6 pt-6"
-                                    v-html="wikipage.description"
-                                />
-                            </v-card-text>
-                        </v-card>
+                        <v-window v-model="tab">
+                            <v-window-item value="article">
+                                <v-card class="content-card" elevation="2" rounded="lg">
+                                    <v-card-text class="pa-8">
+                                        <!-- Main Content -->
+                                        <div
+                                            class="wiki-content-body"
+                                            v-html="wikipage.content"
+                                        />
 
-                        <related-content-list
-                            v-if="wiki?.id && mode === 'edit'"
-                            class="mt-6"
-                            type="App\Models\Wiki"
-                            :id="wiki.id"
-                            :title="wikipage.title || ''"
-                            :can-edit="canLinkContent"
-                        />
+                                        <!-- Description -->
+                                        <div
+                                            v-if="wikipage.description"
+                                            class="wiki-description mt-6 pt-6"
+                                            v-html="wikipage.description"
+                                        />
+                                    </v-card-text>
+                                </v-card>
+
+                                <related-content-list
+                                    v-if="wiki?.id && mode === 'edit'"
+                                    class="mt-6"
+                                    type="App\Models\Wiki"
+                                    :id="wiki.id"
+                                    :title="wikipage.title || ''"
+                                    :can-edit="canLinkContent"
+                                />
+                            </v-window-item>
+
+                            <v-window-item value="discussion">
+                                <v-card elevation="2" rounded="lg">
+                                    <v-card-text class="pa-6">
+                                        <comment-thread
+                                            v-if="wiki?.id"
+                                            kind="wiki"
+                                            :id="wiki.id"
+                                            :current-user="userStore.user"
+                                            @count="commentCount = $event"
+                                        />
+                                    </v-card-text>
+                                </v-card>
+                            </v-window-item>
+                        </v-window>
                     </v-col>
 
                     <!-- Sidebar -->
@@ -251,6 +283,7 @@ import LoadingState from '@/components/common/LoadingState.vue'
 import RelatedContentList from '@/components/common/RelatedContentList.vue'
 import VersionHistoryDialog from '@/components/common/VersionHistoryDialog.vue'
 import WatchButton from '@/components/common/WatchButton.vue'
+import CommentThread from '@/components/common/CommentThread.vue'
 
 const { t } = useI18n()
 const dialog = useDialog()
@@ -280,6 +313,9 @@ const tags = ref([])
 const wikiuser = ref({})
 const slug = ref('')
 const isApproved = ref(true)
+// `?tab=discussion` is what a mention in the discussion links to
+const tab = ref(route.query.tab === 'discussion' ? 'discussion' : 'article')
+const commentCount = ref(0)
 const isWatching = ref(false)
 const watchersCount = ref(0)
 const approving = ref(false)

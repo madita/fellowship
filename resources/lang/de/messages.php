@@ -296,6 +296,13 @@ return [
     ],
 
     // Events
+    'comments' => [
+        'not_found'      => 'Das kann nicht kommentiert werden.',
+        'bad_parent'     => 'Diese Antwort gehört nicht zu dieser Diskussion.',
+        'cannot_edit'    => 'Dieser Kommentar kann nicht mehr bearbeitet werden.',
+        'cannot_delete'  => 'Sie haben keine Berechtigung, diesen Kommentar zu löschen.',
+        'deleted'        => 'Kommentar gelöscht',
+    ],
     'watch' => [
         'not_found' => 'Das kann nicht beobachtet werden.',
     ],

@@ -6708,6 +6708,25 @@ export default {
         },
         'stop': 'Nicht mehr beobachten'
     },
+    'comments': {
+        'title': 'Diskussion',
+        'tabArticle': 'Artikel',
+        'tabDiscussion': 'Diskussion',
+        'empty': 'Noch keine Diskussion',
+        'emptyHint': 'Eröffnen Sie ein Thema, auf das andere antworten können.',
+        'newTopic': 'Thema eröffnen',
+        'writeComment': 'Kommentar schreiben…',
+        'writeReply': 'Antwort schreiben…',
+        'post': 'Senden',
+        'reply': 'Antworten',
+        'replyingTo': 'Antwort an {name}',
+        'loginHint': 'Melden Sie sich an, um mitzudiskutieren.',
+        'loadFailed': 'Diskussion konnte nicht geladen werden',
+        'postFailed': 'Kommentar konnte nicht gesendet werden',
+        'deleteTitle': 'Kommentar löschen',
+        'deleteConfirm': 'Diesen Kommentar löschen? Antworten darauf verschwinden mit.',
+        'deleteFailed': 'Kommentar konnte nicht gelöscht werden'
+    },
     'forum': {
         'title': 'Forum',
         'subtitle': 'Diskutiere mit deiner Community',

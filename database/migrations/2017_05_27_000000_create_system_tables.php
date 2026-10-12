@@ -85,6 +85,24 @@ class CreateSystemTables extends Migration
             $table->timestamps();
         });
 
+        Schema::create('commentable', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            // A morph cannot cascade, so the Commentable trait clears these
+            // rows itself when the commented-on thing is really deleted.
+            $table->morphs('commentable');
+            // A reply. One level deep is all any caller renders, but the
+            // column does not enforce that — see Comment::isReply().
+            $table->foreignId('parent_id')->nullable()->constrained('commentable')->cascadeOnDelete();
+            $table->text('content');
+            $table->timestamps();
+            $table->softDeletes();
+
+            // Reading a discussion in order, which is the only read pattern
+            $table->index(['commentable_type', 'commentable_id', 'created_at'], 'commentable_subject_index');
+            $table->index(['parent_id', 'created_at']);
+        });
+
         Schema::create('relateables', function (Blueprint $table) {
             $table->string('source_type');
             $table->unsignedInteger('source_id');
@@ -108,6 +126,7 @@ class CreateSystemTables extends Migration
     {
         //Schema::dropIfExists('page_translations');
         //Schema::dropIfExists('post_translations');
+        Schema::dropIfExists('commentable');
         Schema::dropIfExists('collection_translations');
         Schema::dropIfExists('relateables');
         Schema::dropIfExists('collections');

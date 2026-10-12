@@ -7,6 +7,7 @@ use App\Models\AchievementProgress;
 use App\Models\Forum\ForumPost;
 use App\Models\Page;
 use App\Models\Poll\PollOption;
+use App\Models\Status\Status;
 use App\Models\User;
 use App\Services\AchievementService;
 use App\Support\AchievementMetrics;
@@ -176,7 +177,13 @@ class BackfillAchievements extends Command
             'event.joined'    => $this->guestCounts(),
 
             'timeline.post.created' => $this->count('statuses', 'user_id'),
-            'timeline.comment'      => $this->count('status_comments', 'user_id'),
+            // Comments share a table with the wiki's discussions, so only
+            // the ones left on a timeline post count towards this
+            'timeline.comment'      => $this->count(
+                'commentable',
+                'user_id',
+                fn ($query) => $query->where('commentable_type', Status::class)
+            ),
             // The votes table holds ticket up-votes as well, so only the
             // ones cast for a poll option count towards this
             'poll.voted'            => $this->count(

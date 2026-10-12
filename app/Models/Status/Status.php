@@ -3,12 +3,12 @@
 namespace App\Models\Status;
 
 use App\Models\User;
+use App\Traits\Commentable;
 use App\Traits\HasPolls;
 use App\Traits\Likeable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -16,7 +16,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class Status extends Model implements HasMedia
 {
-    use HasFactory, HasPolls, InteractsWithMedia, Likeable, SoftDeletes;
+    use Commentable, HasFactory, HasPolls, InteractsWithMedia, Likeable, SoftDeletes;
 
     /**
      * Relations needed to build the `poll` attribute without extra queries.
@@ -83,22 +83,6 @@ class Status extends Model implements HasMedia
     }
 
     /**
-     * Get all comments for this status.
-     */
-    public function comments(): HasMany
-    {
-        return $this->hasMany(StatusComment::class)->whereNull('parent_id')->orderBy('created_at');
-    }
-
-    /**
-     * Get all comments including replies.
-     */
-    public function allComments(): HasMany
-    {
-        return $this->hasMany(StatusComment::class)->orderBy('created_at');
-    }
-
-    /**
      * Check if current user has liked this status.
      */
     public function getIsLikedByMeAttribute(): bool
@@ -118,22 +102,6 @@ class Status extends Model implements HasMedia
     public function getTimeAgoAttribute(): string
     {
         return $this->created_at->diffForHumans();
-    }
-
-    /**
-     * Add comment to status.
-     */
-    public function addComment(User $user, string $content, ?int $parentId = null): StatusComment
-    {
-        $comment = $this->comments()->create([
-            'user_id'   => $user->id,
-            'content'   => $content,
-            'parent_id' => $parentId,
-        ]);
-
-        $this->increment('comments_count');
-
-        return $comment;
     }
 
     /**
@@ -174,6 +142,19 @@ class Status extends Model implements HasMedia
     public function scopeRecent($query)
     {
         return $query->orderByDesc('created_at');
+    }
+
+    // comments() (topics), allComments() (replies too) and addComment()
+    // come from the Commentable trait.
+
+    /**
+     * A status keeps its running total in comments_count. The trait
+     * maintains it from the Comment model, so it no longer matters which
+     * route created the comment.
+     */
+    protected function commentCounterColumn(): ?string
+    {
+        return 'comments_count';
     }
 
     // likes(), likers(), isLikedBy(), like(), unlike() and toggleLike()

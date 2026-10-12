@@ -7,6 +7,7 @@ use App\Services\DiscordWebhookService;
 use App\Support\Achievements;
 use App\Support\DiscordEvents;
 use App\Traits\Approvable;
+use App\Traits\Commentable;
 use App\Traits\HasCache;
 use App\Traits\HasRelateableContent;
 use App\Traits\HasTickets;
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
 class Wiki extends Model implements TranslatableContract
 {
     use Approvable;
+    use Commentable;
     use HasCache;
     use HasRelateableContent;
     use HasTickets;
@@ -77,6 +79,14 @@ class Wiki extends Model implements TranslatableContract
     public function watchUrl(): ?string
     {
         return "/wiki/{$this->slug}";
+    }
+
+    /**
+     * Where the page's discussion is read, for a mention to link to.
+     */
+    public function commentUrl(): string
+    {
+        return "/wiki/{$this->slug}?tab=discussion";
     }
 
     /**

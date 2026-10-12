@@ -232,7 +232,7 @@ const addComment = async () => {
             payload.parent_id = replyingTo.value.id;
         }
 
-        const response = await axios.post(`/api/statuses/${props.status.id}/comments`, payload);
+        const response = await axios.post(`/api/comments/status/${props.status.id}`, payload);
 
         if (replyingTo.value) {
             // Add reply nested under the parent comment
@@ -266,7 +266,7 @@ const deleteComment = async (commentId) => {
 
     deletingCommentId.value = commentId;
     try {
-        await axios.delete(`/api/status-comments/${commentId}`);
+        await axios.delete(`/api/comments/${commentId}`);
         comments.value = comments.value.filter(c => c.id !== commentId);
         commentsCount.value--;
     } catch (error) {

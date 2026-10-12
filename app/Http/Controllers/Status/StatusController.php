@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Status;
 
 use App\Http\Controllers\Controller;
 use App\Models\Status\Status;
-use App\Models\Status\StatusComment;
 use App\Notifications\StatusMentionNotification;
 use App\Services\MentionService;
 use App\Services\PollService;
@@ -212,47 +211,25 @@ class StatusController extends Controller
     }
 
     /**
-     * Add a comment to a status.
+     * Commenting moved to CommentController, which serves every
+     * commentable kind: POST /api/comments/status/{id}.
      */
-    public function addComment(Request $request, Status $status): JsonResponse
-    {
-        $user = Auth::user();
-
-        if ( ! $user) {
-            abort(401, 'You must be logged in to comment.');
-        }
-
-        $validated = $request->validate([
-            'content'   => 'required|string|max:2000',
-            'parent_id' => 'nullable|exists:status_comments,id',
-        ]);
-
-        $comment = $status->addComment(
-            $user,
-            Purify::config('sandbox')->clean($validated['content']),
-            $validated['parent_id'] ?? null
-        );
-
-        $this->notifyMentions($status, $comment->content, null, $comment);
-
-        return response()->json($comment->load('user', 'replies.user'), 201);
-    }
 
     /**
      * Notify every member mentioned as @username in the text, except the
      * author and anyone who was already mentioned in the previous version.
      */
-    protected function notifyMentions(Status $status, string $content, ?string $previous = null, ?StatusComment $comment = null): void
+    protected function notifyMentions(Status $status, string $content, ?string $previous = null): void
     {
         $service = app(MentionService::class);
         $already = $previous ? $service->parseMentions($previous)->pluck('id') : collect();
-        $author  = $comment ? $comment->user_id : $status->user_id;
 
         foreach ($service->parseMentions($content) as $mentioned) {
-            if ($mentioned->id === $author || $already->contains($mentioned->id)) {
+            if ($mentioned->id === $status->user_id || $already->contains($mentioned->id)) {
                 continue;
             }
-            $mentioned->notify(new StatusMentionNotification($status, $comment));
+            // Mentions in a comment are CommentController's business now
+            $mentioned->notify(new StatusMentionNotification($status));
         }
     }
 }

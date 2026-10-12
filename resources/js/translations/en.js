@@ -6533,6 +6533,25 @@ export default {
         },
         'stop': 'Stop watching'
     },
+    'comments': {
+        'title': 'Discussion',
+        'tabArticle': 'Article',
+        'tabDiscussion': 'Discussion',
+        'empty': 'No discussion yet',
+        'emptyHint': 'Start a topic and others can reply to it.',
+        'newTopic': 'Start a topic',
+        'writeComment': 'Write a comment…',
+        'writeReply': 'Write a reply…',
+        'post': 'Post',
+        'reply': 'Reply',
+        'replyingTo': 'Replying to {name}',
+        'loginHint': 'Sign in to join the discussion.',
+        'loadFailed': 'Could not load the discussion',
+        'postFailed': 'Could not post your comment',
+        'deleteTitle': 'Delete comment',
+        'deleteConfirm': 'Delete this comment? Any replies to it go too.',
+        'deleteFailed': 'Could not delete the comment'
+    },
     'forum': {
         'title': 'Forum',
         'subtitle': 'Join the discussion with your community',

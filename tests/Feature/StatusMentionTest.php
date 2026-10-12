@@ -89,7 +89,7 @@ class StatusMentionTest extends TestCase
 
         $status = Status::create(['user_id' => $this->author->id, 'content' => '<p>Post</p>']);
 
-        $this->postJson('/api/statuses/' . $status->id . '/comments', [
+        $this->postJson('/api/comments/status/' . $status->id, [
             'content' => 'Look at this @alice',
         ])->assertCreated();
 
