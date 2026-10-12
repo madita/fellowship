@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Comment;
 use App\Models\Event\Event;
 use App\Models\Event\EventGuest;
 use App\Models\Forum\ForumPost;
@@ -11,7 +12,6 @@ use App\Models\Page;
 use App\Models\Poll\PollOption;
 use App\Models\Revision;
 use App\Models\Status\Status;
-use App\Models\Status\StatusComment;
 use App\Models\Ticket\Ticket;
 use App\Models\Ticket\TicketComment;
 use App\Models\User;
@@ -158,10 +158,16 @@ class AchievementServiceProvider extends ServiceProvider
             'timeline.post.created'
         ));
 
-        StatusComment::created(fn (StatusComment $comment) => Achievements::record(
-            $this->userFor($comment->user_id),
-            'timeline.comment'
-        ));
+        // Comments are one table now, shared with the wiki's discussions,
+        // so the kind has to be checked — commenting on a wiki page is not
+        // commenting on the timeline.
+        Comment::created(function (Comment $comment): void {
+            if ($comment->commentable_type !== Status::class) {
+                return;
+            }
+
+            Achievements::record($this->userFor($comment->user_id), 'timeline.comment');
+        });
 
         // Votes are one table now, shared with ticket up-votes, so the
         // metric has to check what was voted for. Without this guard every

@@ -2,8 +2,8 @@
 
 namespace App\Notifications;
 
+use App\Models\Comment;
 use App\Models\Status\Status;
-use App\Models\Status\StatusComment;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
@@ -15,9 +15,14 @@ class StatusMentionNotification extends Notification
 {
     use Queueable;
 
+    /**
+     * The payload keys below are matched on by the frontend presenter and
+     * its tests, so they stay exactly as they were when comments had a
+     * table of their own.
+     */
     public function __construct(
         protected Status $status,
-        protected ?StatusComment $comment = null
+        protected ?Comment $comment = null
     ) {
     }
 

@@ -59,6 +59,13 @@ return [
     ],
 
     // Events
+    'comments' => [
+        'not_found'      => 'That is not something you can comment on.',
+        'bad_parent'     => 'That reply does not belong to this discussion.',
+        'cannot_edit'    => 'You can no longer edit this comment.',
+        'cannot_delete'  => 'You do not have permission to delete this comment.',
+        'deleted'        => 'Comment deleted',
+    ],
     'watch' => [
         'not_found' => 'That is not something you can watch.',
     ],

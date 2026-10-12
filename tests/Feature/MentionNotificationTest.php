@@ -251,7 +251,7 @@ class MentionNotificationTest extends TestCase
         Notification::fake();
 
         $this->actingAs($this->author, 'sanctum')
-            ->patchJson("/api/status-comments/{$comment->id}", ['content' => '<p>Ask ' . $this->mention($this->mentioned) . '</p>'])
+            ->patchJson("/api/comments/{$comment->id}", ['content' => '<p>Ask ' . $this->mention($this->mentioned) . '</p>'])
             ->assertOk();
 
         Notification::assertSentTo($this->mentioned, StatusMentionNotification::class);
