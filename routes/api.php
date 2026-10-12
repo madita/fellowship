@@ -228,7 +228,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // Likes
     Route::post('/statuses/{status}/like', 'App\Http\Controllers\Status\StatusController@toggleLike');
     Route::get('/statuses/{status}/likes', 'App\Http\Controllers\Status\StatusController@likes');
-
 });
 
 // Comments on anything registered in App\Support\Commentables: a wiki
