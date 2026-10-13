@@ -111,6 +111,21 @@ class Sandbox extends Model
     }
 
     /**
+     * The same question as canView(), but answerable for a guest.
+     *
+     * canView() takes a User, so it cannot be asked about someone who is
+     * not signed in; the activity feed is open to guests and has to ask.
+     */
+    public function isVisibleTo(?User $user): bool
+    {
+        if ( ! $user) {
+            return $this->visibility === 'public';
+        }
+
+        return $this->canView($user);
+    }
+
+    /**
      * Check if user can view this sandbox.
      */
     public function canView(User $user): bool

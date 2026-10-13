@@ -54,6 +54,19 @@ class ForumPost extends Model
     }
 
     /**
+     * Whether the member may read this post — which is entirely a question
+     * about the thread it is in, and so about that thread's category.
+     *
+     * The activity feed asks subjects this before listing them, so without
+     * it a post in a private category would have its thread title shown to
+     * anyone.
+     */
+    public function isVisibleTo(?User $user): bool
+    {
+        return $this->thread?->isVisibleTo($user) ?? false;
+    }
+
+    /**
      * Get the author of the post.
      */
     public function author(): BelongsTo

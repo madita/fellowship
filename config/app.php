@@ -240,6 +240,7 @@ return [
         ImageOptimizationServiceProvider::class,
         App\Providers\TranslationServiceProvider::class,
         App\Providers\AchievementServiceProvider::class,
+        App\Providers\ActivityServiceProvider::class,
 
     ],
 

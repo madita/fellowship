@@ -25,6 +25,10 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+
+        // The activity log grows forever otherwise — nothing was pruning
+        // it. How long is kept is config/activitylog.php.
+        $schedule->command('activitylog:clean')->daily();
     }
 
     /**

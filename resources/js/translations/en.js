@@ -712,8 +712,7 @@ export default {
                 'empty': 'Every open ticket has an assignee.'
             },
             'activity': {
-                'title': 'Recent activity',
-                'empty': 'No activity recorded yet.'
+                'title': 'Recent activity'
             },
             'system': {
                 'title': 'System',
@@ -3143,8 +3142,7 @@ export default {
             'threadsCount': '{count} threads',
             'popularCategories': 'Popular Categories',
             'recentActivity': 'Recent Activity',
-            'noCategories': 'No forum categories yet',
-            'noForumActivity': 'No recent activity'
+            'noCategories': 'No forum categories yet'
         },
         'hero': {
             'defaultTitle': 'Welcome to Our Platform',
@@ -6552,6 +6550,50 @@ export default {
         'deleteConfirm': 'Delete this comment? Any replies to it go too.',
         'deleteFailed': 'Could not delete the comment'
     },
+    'activity': {
+        'title': 'Activity',
+        'latest': 'Latest activity',
+        'empty': 'Nothing has happened yet',
+        'emptyHint': 'Activity shows up here as people get going.',
+        'loadFailed': 'Could not load the activity',
+        'loadMore': 'Load more',
+        'icons': {
+            'forum': 'mdi-forum-outline',
+            'wiki': 'mdi-book-open-page-variant',
+            'tickets': 'mdi-ticket-outline',
+            'sandbox': 'mdi-flask-outline',
+            'events': 'mdi-calendar',
+            'timeline': 'mdi-timeline-text-outline',
+            'gallery': 'mdi-image-multiple-outline',
+            'polls': 'mdi-poll',
+            'members': 'mdi-account-outline'
+        },
+        'events': {
+            'thread_created': 'started the thread "{title}"',
+            'thread_deleted': 'deleted the thread "{title}"',
+            'post_created': 'replied in "{title}"',
+            'post_liked': 'liked a post in "{title}"',
+            'solution_marked': 'marked an answer helpful in "{title}"',
+            'page_created': 'created the wiki page "{title}"',
+            'page_renamed': 'renamed a wiki page to "{title}"',
+            'page_deleted': 'deleted the wiki page "{title}"',
+            'page_discussed': 'commented on the discussion for "{title}"',
+            'ticket_created': 'opened "{title}"',
+            'ticket_status_changed': 'set "{title}" to {status}',
+            'ticket_assigned': 'assigned "{title}" to {assignee}',
+            'ticket_commented': 'commented on "{title}"',
+            'sandbox_created': 'created the sandbox "{title}"',
+            'sandbox_renamed': 'renamed a sandbox to "{title}"',
+            'sandbox_deleted': 'deleted the sandbox "{title}"',
+            'event_created': 'added the event "{title}"',
+            'event_cancelled': 'cancelled the event "{title}"',
+            'event_joined': 'answered "{title}"',
+            'status_posted': 'posted on the timeline',
+            'status_commented': 'commented on a timeline post',
+            'poll_created': 'started a poll on "{title}"',
+            'album_created': 'created the album "{title}"'
+        }
+    },
     'forum': {
         'title': 'Forum',
         'subtitle': 'Join the discussion with your community',
@@ -6641,11 +6683,6 @@ export default {
         'sortOldest': 'Oldest',
         'sortMostViews': 'Most Views',
         'recentActivity': 'Recent Activity',
-        'noActivity': 'No recent activity yet',
-        'activityThreadCreated': 'created a new thread "{title}"',
-        'activityPostCreated': 'replied in "{title}"',
-        'activityPostLiked': 'liked a post in "{title}"',
-        'activitySolutionMarked': 'marked a post as helpful in "{title}"',
         'recentThreadsLabel': 'Recent Threads',
         'searchPlaceholder': 'Search threads and posts...',
         'searchResults': 'Search Results',
