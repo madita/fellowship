@@ -6,6 +6,7 @@ import { useDebounceFn } from '@vueuse/core';
 import axios from 'axios';
 import TicketKanban from '@/components/ticket/TicketKanban.vue';
 import TicketOverview from '@/components/ticket/TicketOverview.vue';
+import ActivityFeed from '@/components/common/ActivityFeed.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
@@ -54,7 +55,7 @@ const isUserView = computed(() => route.name === 'my-tickets');
 const user = computed(() => userStore.user || { id: null });
 const isAdmin = computed(() => !!user.value?.isAdmin);
 const detailRouteName = computed(() => (isUserView.value ? 'my-ticket' : 'admin-ticket'));
-const viewModes = computed(() => (isUserView.value ? ['list', 'kanban'] : ['overview', 'list', 'kanban']));
+const viewModes = computed(() => (isUserView.value ? ['list', 'kanban', 'activity'] : ['overview', 'list', 'kanban', 'activity']));
 const defaultView = computed(() => (isUserView.value ? 'list' : 'overview'));
 
 const defaultFilters = defaultTicketFilters;
@@ -224,6 +225,7 @@ onMounted(() => {
                     <v-btn v-if="!isUserView" value="overview" size="small" icon="mdi-view-dashboard-outline" :title="t('tickets.overviewView')" :aria-label="t('tickets.overviewView')" />
                     <v-btn value="list" size="small" icon="mdi-view-list" :title="t('tickets.listView')" :aria-label="t('tickets.listView')" />
                     <v-btn value="kanban" size="small" icon="mdi-view-column" :title="t('tickets.kanbanView')" :aria-label="t('tickets.kanbanView')" />
+                    <v-btn value="activity" size="small" icon="mdi-pulse" :title="t('activity.latest')" :aria-label="t('activity.latest')" />
                 </v-btn-toggle>
                 <v-btn v-if="isAdmin" color="primary" variant="elevated" prepend-icon="mdi-plus" :to="{ name: 'admin-ticket-create' }">
                     {{ t('tickets.createTicket') }}
@@ -237,6 +239,20 @@ onMounted(() => {
 
         <v-container v-else-if="viewMode === 'kanban'" fluid class="kanban-container pt-0">
             <ticket-kanban class="fill-height" @open-ticket="openTicket" />
+        </v-container>
+
+        <v-container v-else-if="viewMode === 'activity'" class="pt-0">
+            <!-- What has happened across the tickets — the bug reports and
+                 feature requests, that is: the feed leaves the support queue
+                 out, whoever is reading it (App\Support\Activities). A single
+                 ticket keeps its own story on its History tab either way,
+                 which is richer: built from the revisions, with the
+                 field-by-field diffs. -->
+            <v-card rounded="lg" variant="flat" border>
+                <v-card-title class="text-subtitle-1">{{ t('activity.latest') }}</v-card-title>
+                <v-divider />
+                <activity-feed log="tickets" />
+            </v-card>
         </v-container>
 
         <v-container v-else>

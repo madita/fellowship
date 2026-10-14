@@ -22,13 +22,6 @@ class ForumPostLikeController extends Controller
 
         $post->like($user);
 
-        activity('forum')
-            ->performedOn($post)
-            ->causedBy($user)
-            ->withProperties(['thread_title' => $post->thread->title])
-            ->event('post_liked')
-            ->log('liked a post');
-
         return response()->json([
             'is_liked'   => true,
             'like_count' => $post->fresh()->like_count,

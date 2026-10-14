@@ -21,8 +21,6 @@ export const useForumStore = defineStore('forum', {
         // talks to /api/watch and writes these back.
         isWatching: false,
         watchersCount: 0,
-        activities: [],
-        activitiesPagination: {},
         loading: false,
         submitting: false,
         error: null,
@@ -291,20 +289,6 @@ export const useForumStore = defineStore('forum', {
                 throw error
             } finally {
                 this.recentThreadsLoading = false
-            }
-        },
-
-        async fetchActivities(page = 1) {
-            try {
-                const response = await axios.get('/api/activity', { params: { page, log: 'forum' } })
-                this.activities = response.data.data || []
-                this.activitiesPagination = {
-                    current_page: response.data.current_page,
-                    last_page: response.data.last_page,
-                    total: response.data.total,
-                }
-            } catch (error) {
-                console.error('Failed to load activities:', error)
             }
         },
 

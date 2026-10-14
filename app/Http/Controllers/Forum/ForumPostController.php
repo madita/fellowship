@@ -70,14 +70,6 @@ class ForumPostController extends Controller
         // Replying starts you watching the thread
         $thread->watch($user);
 
-        // Record activity
-        activity('forum')
-            ->performedOn($post)
-            ->causedBy($user)
-            ->withProperties(['thread_title' => $thread->title])
-            ->event('post_created')
-            ->log('replied in a thread');
-
         // Tell the watchers, bar whoever just posted. The trait also drops
         // anyone who can no longer see the thread.
         $watchers = $thread->watcherRecipients($user->id);
@@ -167,14 +159,6 @@ class ForumPostController extends Controller
         }
 
         $post->markAsSolution();
-
-        // Record activity
-        activity('forum')
-            ->performedOn($post)
-            ->causedBy($user)
-            ->withProperties(['thread_title' => $thread->title])
-            ->event('solution_marked')
-            ->log('marked a post as helpful');
 
         return response()->json([
             'message' => 'Post marked as solution',

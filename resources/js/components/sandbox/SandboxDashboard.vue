@@ -57,13 +57,24 @@
             </div>
           </Teleport>
 
-          <!-- Empty State -->
-          <div v-if="!selectedUuid" class="d-flex align-center justify-center fill-height">
+          <!--
+            Nothing selected. The panel was a bare placeholder; the sandbox has
+            no tabs to hang a feed on — Settings, Collaborators and Versions are
+            all panels the editor toggles — so recent activity lives here, where
+            there was only empty space to fill.
+          -->
+          <div v-if="!selectedUuid" class="empty-panel pa-4">
             <empty-state
               icon="mdi-file-document-edit-outline"
               :title="$t('sandbox.selectSandbox')"
               :text="$t('sandbox.selectSandboxText')"
             />
+
+            <v-card rounded="lg" variant="flat" border class="mx-auto mt-4" max-width="640">
+              <v-card-title class="text-subtitle-1">{{ $t('activity.latest') }}</v-card-title>
+              <v-divider />
+              <activity-feed log="sandbox" :per-page="10" />
+            </v-card>
           </div>
         </v-col>
       </v-row>
@@ -78,12 +89,14 @@ import SandboxList from './SandboxList.vue'
 import SandboxEditor from './SandboxEditor.vue'
 import PageHeader from '../common/PageHeader.vue'
 import EmptyState from '../common/EmptyState.vue'
+import ActivityFeed from '../common/ActivityFeed.vue'
 
 export default {
   name: 'SandboxDashboard',
 
   components: {
     SandboxList,
+    ActivityFeed,
     SandboxEditor,
     PageHeader,
     EmptyState,

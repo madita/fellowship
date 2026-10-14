@@ -144,26 +144,13 @@
                                 <v-icon class="mr-2" color="primary">mdi-pulse</v-icon>
                                 {{ $t('admin.dashboard.activity.title') }}
                             </v-card-title>
-                            <v-card-text>
-                                <empty-state
-                                    v-if="data.recent.activity.length === 0"
-                                    icon="mdi-pulse"
-                                    :title="$t('admin.dashboard.activity.empty')"
-                                    compact
-                                />
-                                <v-list v-else density="compact" class="pa-0">
-                                    <v-list-item v-for="entry in data.recent.activity" :key="entry.id" class="px-0">
-                                        <template v-slot:prepend>
-                                            <v-icon size="18" color="primary">mdi-circle-small</v-icon>
-                                        </template>
-                                        <v-list-item-title class="text-body-2">
-                                            <strong v-if="entry.causer">{{ entry.causer }}</strong> {{ entry.description }}
-                                        </v-list-item-title>
-                                        <v-list-item-subtitle class="text-caption">
-                                            <span v-if="entry.subject">{{ entry.subject }} · </span>{{ relative(entry.created_at) }}
-                                        </v-list-item-subtitle>
-                                    </v-list-item>
-                                </v-list>
+                            <v-card-text class="pa-0">
+                                <!-- This card used to print the English
+                                     `description` column and the subject's
+                                     class name. The shared feed reads each
+                                     entry as a translated sentence and links
+                                     to the thing it is about. -->
+                                <activity-feed :per-page="8" />
                             </v-card-text>
                         </v-card>
                     </v-col>
@@ -214,6 +201,7 @@ import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
+import ActivityFeed from '@/components/common/ActivityFeed.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
 
 /**
@@ -223,7 +211,7 @@ import LoadingState from '@/components/common/LoadingState.vue';
  */
 export default {
     name: 'AdminDashboard',
-    components: { PageHeader, EmptyState, LoadingState },
+    components: { PageHeader, EmptyState, LoadingState, ActivityFeed },
     setup() {
         const { getPriorityColor, getPriorityIcon } = useTicketHelpers();
 

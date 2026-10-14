@@ -133,6 +133,9 @@
                                     {{ commentCount }}
                                 </v-chip>
                             </v-tab>
+                            <v-tab value="activity" prepend-icon="mdi-pulse">
+                                {{ $t('activity.title') }}
+                            </v-tab>
                         </v-tabs>
 
                         <v-window v-model="tab">
@@ -173,6 +176,21 @@
                                             :id="wiki.id"
                                             :current-user="userStore.user"
                                             @count="commentCount = $event"
+                                        />
+                                    </v-card-text>
+                                </v-card>
+                            </v-window-item>
+
+                            <v-window-item value="activity">
+                                <v-card elevation="2" rounded="lg">
+                                    <v-card-text class="pa-4">
+                                        <!-- This page's own history: the
+                                             tabs beside it are about this
+                                             page too -->
+                                        <activity-feed
+                                            log="wiki"
+                                            subject="wiki"
+                                            :subject-id="wiki?.id"
                                         />
                                     </v-card-text>
                                 </v-card>
@@ -284,6 +302,7 @@ import RelatedContentList from '@/components/common/RelatedContentList.vue'
 import VersionHistoryDialog from '@/components/common/VersionHistoryDialog.vue'
 import WatchButton from '@/components/common/WatchButton.vue'
 import CommentThread from '@/components/common/CommentThread.vue'
+import ActivityFeed from '@/components/common/ActivityFeed.vue'
 
 const { t } = useI18n()
 const dialog = useDialog()

@@ -251,8 +251,15 @@
             </template>
 
             <!-- Activity Feed -->
-            <div v-if="forumStore.activities.length > 0 && viewMode === 'categories'" class="mt-6">
-                <ForumActivityFeed :activities="forumStore.activities" />
+            <div v-if="viewMode === 'categories'" class="mt-6">
+                <v-card variant="outlined" rounded="lg">
+                    <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center ga-2">
+                        <v-icon>mdi-pulse</v-icon>
+                        {{ $t('forum.recentActivity') }}
+                    </v-card-title>
+                    <v-divider />
+                    <activity-feed log="forum" :per-page="10" />
+                </v-card>
             </div>
         </v-container>
     </div>
@@ -266,11 +273,11 @@ import UserAvatar from '@/components/common/UserAvatar.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
-import ForumActivityFeed from '@/components/forum/ForumActivityFeed.vue'
+import ActivityFeed from '@/components/common/ActivityFeed.vue'
 
 export default {
     name: 'ForumIndex',
-    components: { UserAvatar, PageHeader, EmptyState, LoadingState, ForumActivityFeed },
+    components: { UserAvatar, PageHeader, EmptyState, LoadingState, ActivityFeed },
     setup() {
         const forumStore = useForumStore()
         const userStore = useUserStore()
@@ -307,7 +314,6 @@ export default {
     mounted() {
         this.forumStore.fetchForums()
             .catch(error => this.$dialog.requestError(error, this.$t('forum.errorLoading')))
-        this.forumStore.fetchActivities()
     },
     methods: {
         goToForum(forum) {

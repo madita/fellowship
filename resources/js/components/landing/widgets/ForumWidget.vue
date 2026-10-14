@@ -71,34 +71,7 @@
         <v-col v-if="content.showActivity" cols="12" :md="content.showCategories ? 5 : 12">
           <h3 class="text-h6 font-weight-bold mb-4">{{ t('widgets.landing.recentActivity') }}</h3>
           <v-card variant="outlined" rounded="lg" class="activity-card">
-            <v-list v-if="displayedActivities.length" density="compact" class="py-0">
-              <v-list-item
-                v-for="activity in displayedActivities"
-                :key="activity.id"
-                class="activity-item"
-              >
-                <template v-slot:prepend>
-                  <v-avatar size="32" color="primary" class="mr-2">
-                    <span class="text-caption text-white font-weight-bold">
-                      {{ (activity.causer?.username || '?')[0].toUpperCase() }}
-                    </span>
-                  </v-avatar>
-                </template>
-                <v-list-item-title class="text-body-2">
-                  <strong>{{ activity.causer?.username }}</strong>
-                  {{ getActivityText(activity) }}
-                </v-list-item-title>
-                <v-list-item-subtitle class="text-caption">
-                  {{ formatTime(activity.created_at) }}
-                </v-list-item-subtitle>
-              </v-list-item>
-            </v-list>
-            <empty-state
-              v-else
-              compact
-              icon="mdi-timeline-text-outline"
-              :title="t('widgets.landing.noForumActivity')"
-            />
+            <activity-feed log="forum" :per-page="content.activitiesToShow || 5" />
           </v-card>
         </v-col>
       </v-row>
@@ -125,6 +98,7 @@ import { useI18n } from 'vue-i18n';
 import axios from 'axios';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
+import ActivityFeed from '@/components/common/ActivityFeed.vue';
 
 const { t } = useI18n();
 
@@ -151,7 +125,6 @@ const props = defineProps({
 
 const loading = ref(true);
 const categories = ref([]);
-const activities = ref([]);
 
 const totalCategories = computed(() => categories.value.length);
 const totalThreads = computed(() => categories.value.reduce((sum, c) => sum + (c.threads_count || 0), 0));
@@ -162,50 +135,10 @@ const displayedCategories = computed(() => {
   return categories.value.slice(0, limit);
 });
 
-const displayedActivities = computed(() => {
-  const limit = props.content.activitiesToShow || 5;
-  return activities.value.slice(0, limit);
-});
-
-function getActivityText(activity) {
-  const title = activity.properties?.thread_title || '';
-  switch (activity.event) {
-    case 'thread_created':
-      return `started a new thread: "${title}"`;
-    case 'post_created':
-      return `replied in "${title}"`;
-    case 'post_liked':
-      return `liked a post in "${title}"`;
-    case 'solution_marked':
-      return `marked a solution in "${title}"`;
-    default:
-      return activity.description || '';
-  }
-}
-
-function formatTime(dateStr) {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHrs = Math.floor(diffMin / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays < 30) return `${diffDays}d ago`;
-  return date.toLocaleDateString();
-}
-
 onMounted(async () => {
   try {
-    const [forumsRes, activityRes] = await Promise.all([
-      axios.get('/api/forums'),
-      axios.get('/api/activity', { params: { log: 'forum' } }),
-    ]);
-    categories.value = forumsRes.data || [];
-    activities.value = activityRes.data?.data || [];
+    const { data } = await axios.get('/api/forums');
+    categories.value = data || [];
   } catch (e) {
     console.error('ForumWidget: failed to load data', e);
   } finally {
@@ -222,13 +155,5 @@ onMounted(async () => {
 .forum-cat-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(var(--v-theme-on-surface), 0.1) !important;
-}
-
-.activity-item {
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.activity-item:last-child {
-  border-bottom: none;
 }
 </style>

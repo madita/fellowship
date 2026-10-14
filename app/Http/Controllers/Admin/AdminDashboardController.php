@@ -20,13 +20,14 @@ use App\Models\Wiki;
 use App\Services\Irc\IrcConnectionManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use Spatie\Activitylog\Models\Activity;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
  * Everything the admin overview shows in one request: what needs
  * attention (moderation queues), community and content numbers, system
- * health and the latest registrations, activity and tickets.
+ * health and the latest registrations and tickets. Activity is not in
+ * here: the dashboard reads /api/activity like every other feed, which
+ * is also what applies the visibility rules.
  */
 class AdminDashboardController extends Controller
 {
@@ -89,15 +90,6 @@ class AdminDashboardController extends Controller
                 'recent' => [
                     'users' => User::orderByDesc('created_at')->orderByDesc('id')->limit(5)
                         ->get(['id', 'username', 'created_at', 'email_verified_at', 'last_login_at']),
-                    'activity' => Activity::with('causer:id,username')->orderByDesc('created_at')->limit(8)->get()
-                        ->map(fn (Activity $activity) => [
-                            'id'          => $activity->id,
-                            'description' => $activity->description,
-                            'log_name'    => $activity->log_name,
-                            'causer'      => $activity->causer?->username,
-                            'subject'     => $activity->subject_type ? class_basename($activity->subject_type) : null,
-                            'created_at'  => $activity->created_at,
-                        ]),
                     'tickets' => Ticket::with('creator:id,username')->open()->whereNull('assigned_to_user_id')
                         ->orderByDesc('created_at')->limit(5)->get()
                         ->map(fn (Ticket $ticket) => [

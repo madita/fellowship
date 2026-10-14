@@ -197,14 +197,6 @@ class ForumThreadController extends Controller
         // The author watches their own thread
         $thread->watch($user);
 
-        // Record activity
-        activity('forum')
-            ->performedOn($thread)
-            ->causedBy($user)
-            ->withProperties(['thread_title' => $thread->title, 'forum_name' => $category->term->title])
-            ->event('thread_created')
-            ->log('created a new thread');
-
         $data         = $thread->load('author')->toArray();
         $data['poll'] = $poll?->toPayload($user);
 

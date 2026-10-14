@@ -712,8 +712,7 @@ export default {
                 'empty': 'Jedes offene Ticket hat eine zuständige Person.'
             },
             'activity': {
-                'title': 'Letzte Aktivität',
-                'empty': 'Noch keine Aktivität aufgezeichnet.'
+                'title': 'Letzte Aktivität'
             },
             'system': {
                 'title': 'System',
@@ -3302,8 +3301,7 @@ export default {
             'threadsCount': '{count} Themen',
             'popularCategories': 'Beliebte Kategorien',
             'recentActivity': 'Letzte Aktivitäten',
-            'noCategories': 'Noch keine Forenkategorien',
-            'noForumActivity': 'Keine aktuellen Aktivitäten'
+            'noCategories': 'Noch keine Forenkategorien'
         },
         'hero': {
             'defaultTitle': 'Willkommen auf unserer Plattform',
@@ -5206,6 +5204,11 @@ export default {
         'notFoundText': 'Unter diesem Namen ist hier niemand unterwegs.',
         'memberSince': 'Mitglied seit {date}',
         'contributions': 'Beiträge',
+        'activity': {
+            'title': 'Aktivität',
+            'none': 'Von {name} gibt es noch nichts',
+            'noneHint': 'Was hier auf der Seite passiert, erscheint in dieser Liste.'
+        },
         'recent': {
             'forum': 'Neueste Forumsbeiträge',
             'timeline': 'Neueste Timeline-Beiträge',
@@ -6727,6 +6730,50 @@ export default {
         'deleteConfirm': 'Diesen Kommentar löschen? Antworten darauf verschwinden mit.',
         'deleteFailed': 'Kommentar konnte nicht gelöscht werden'
     },
+    'activity': {
+        'title': 'Aktivität',
+        'latest': 'Letzte Aktivität',
+        'empty': 'Noch ist nichts passiert',
+        'emptyHint': 'Hier erscheint, was andere tun.',
+        'loadFailed': 'Aktivität konnte nicht geladen werden',
+        'loadMore': 'Mehr laden',
+        'icons': {
+            'forum': 'mdi-forum-outline',
+            'wiki': 'mdi-book-open-page-variant',
+            'tickets': 'mdi-ticket-outline',
+            'sandbox': 'mdi-flask-outline',
+            'events': 'mdi-calendar',
+            'timeline': 'mdi-timeline-text-outline',
+            'gallery': 'mdi-image-multiple-outline',
+            'polls': 'mdi-poll',
+            'members': 'mdi-account-outline'
+        },
+        'events': {
+            'thread_created': 'hat das Thema „{title}“ eröffnet',
+            'thread_deleted': 'hat das Thema „{title}“ gelöscht',
+            'post_created': 'hat in „{title}“ geantwortet',
+            'post_liked': 'gefällt ein Beitrag in „{title}“',
+            'solution_marked': 'hat eine Antwort in „{title}“ als hilfreich markiert',
+            'page_created': 'hat die Wiki-Seite „{title}“ erstellt',
+            'page_renamed': 'hat eine Wiki-Seite in „{title}“ umbenannt',
+            'page_deleted': 'hat die Wiki-Seite „{title}“ gelöscht',
+            'page_discussed': 'hat die Diskussion zu „{title}“ kommentiert',
+            'ticket_created': 'hat „{title}“ eröffnet',
+            'ticket_status_changed': 'hat „{title}“ auf {status} gesetzt',
+            'ticket_assigned': 'hat „{title}“ an {assignee} übergeben',
+            'ticket_commented': 'hat „{title}“ kommentiert',
+            'sandbox_created': 'hat die Sandbox „{title}“ erstellt',
+            'sandbox_renamed': 'hat eine Sandbox in „{title}“ umbenannt',
+            'sandbox_deleted': 'hat die Sandbox „{title}“ gelöscht',
+            'event_created': 'hat den Termin „{title}“ angelegt',
+            'event_cancelled': 'hat den Termin „{title}“ abgesagt',
+            'event_joined': 'hat auf „{title}“ geantwortet',
+            'status_posted': 'hat auf der Pinnwand gepostet',
+            'status_commented': 'hat einen Pinnwand-Beitrag kommentiert',
+            'poll_created': 'hat eine Umfrage zu „{title}“ gestartet',
+            'album_created': 'hat das Album „{title}“ erstellt'
+        }
+    },
     'forum': {
         'title': 'Forum',
         'subtitle': 'Diskutiere mit deiner Community',
@@ -6816,11 +6863,6 @@ export default {
         'sortOldest': 'Älteste',
         'sortMostViews': 'Meiste Aufrufe',
         'recentActivity': 'Letzte Aktivitäten',
-        'noActivity': 'Noch keine Aktivitäten',
-        'activityThreadCreated': 'hat ein neues Thema erstellt: „{title}"',
-        'activityPostCreated': 'hat in „{title}" geantwortet',
-        'activityPostLiked': 'hat einen Beitrag in „{title}" geliked',
-        'activitySolutionMarked': 'hat einen Beitrag in „{title}" als hilfreich markiert',
         'recentThreadsLabel': 'Neueste Themen',
         'searchPlaceholder': 'Themen und Beiträge durchsuchen...',
         'searchResults': 'Suchergebnisse',
