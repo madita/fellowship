@@ -5204,6 +5204,11 @@ export default {
         'notFoundText': 'Unter diesem Namen ist hier niemand unterwegs.',
         'memberSince': 'Mitglied seit {date}',
         'contributions': 'Beiträge',
+        'activity': {
+            'title': 'Aktivität',
+            'none': 'Von {name} gibt es noch nichts',
+            'noneHint': 'Was hier auf der Seite passiert, erscheint in dieser Liste.'
+        },
         'recent': {
             'forum': 'Neueste Forumsbeiträge',
             'timeline': 'Neueste Timeline-Beiträge',

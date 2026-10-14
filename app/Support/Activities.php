@@ -12,6 +12,7 @@ use App\Models\Status\Status;
 use App\Models\Ticket\Ticket;
 use App\Models\User;
 use App\Models\Wiki;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -98,6 +99,32 @@ class Activities
     public static function subjectClass(?string $subject): ?string
     {
         return self::subjects()[$subject] ?? null;
+    }
+
+    /**
+     * Narrow a feed to the entries worth listing at all.
+     *
+     * Every other subject is one kind of thing, and whether a reader may
+     * know of it is a visibility question the model answers for itself.
+     * A ticket is not one kind of thing: bug reports and feature requests
+     * are the site's public feedback, and everything else filed as a
+     * ticket is support and internal work. A row reading "set it to
+     * resolved" about somebody's sign-in trouble is noise in a feed — and
+     * noise that names what they were struggling with.
+     *
+     * Nothing stops being recorded: the ticket's own History tab is built
+     * from its revisions, and this only decides what the feeds list.
+     *
+     * Applied to the query rather than by dropping rows off a page that
+     * has already been fetched, because most tickets are not feedback: a
+     * page filtered afterwards would come back nearly empty while still
+     * saying there was more to load.
+     */
+    public static function onlyListable(Builder $query): Builder
+    {
+        return $query->whereNot(fn ($q) => $q
+            ->where('subject_type', Ticket::class)
+            ->whereNotIn('subject_id', Ticket::feedback()->select('tickets.id')));
     }
 
     /**

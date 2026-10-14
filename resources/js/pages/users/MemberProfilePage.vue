@@ -56,6 +56,68 @@
                 </p>
 
                 <v-row>
+                    <!-- The badge case -->
+                    <v-col cols="12" md="6">
+                        <v-card variant="outlined" class="pa-4 h-100">
+                            <div class="text-subtitle-2 font-weight-medium mb-3 d-inline-flex align-center">
+                                <v-icon icon="mdi-trophy-outline" color="amber" size="small" class="mr-2" />
+                                {{ $t('achievements.profile.title') }}
+                                <span class="text-caption text-medium-emphasis ml-1">
+                                    ({{ member.achievements.length }})
+                                </span>
+                            </div>
+
+                            <div v-if="member.achievements.length" class="d-flex ga-3 flex-wrap">
+                                <v-tooltip
+                                    v-for="badge in member.achievements"
+                                    :key="badge.id"
+                                    location="top"
+                                >
+                                    <template #activator="{ props }">
+                                        <achievement-badge v-bind="props" :achievement="badge" :size="48" />
+                                    </template>
+                                    <div class="font-weight-medium">{{ badge.name }}</div>
+                                    <div v-if="badge.description" class="text-caption">{{ badge.description }}</div>
+                                    <div class="text-caption text-medium-emphasis">
+                                        {{ formatDate(badge.awarded_at) }}
+                                    </div>
+                                </v-tooltip>
+                            </div>
+
+                            <empty-state
+                                v-else
+                                compact
+                                icon="mdi-trophy-outline"
+                                :title="$t('achievements.profile.none')"
+                            />
+                        </v-card>
+                    </v-col>
+
+                    <!-- Their log: everything they have done across the
+                         site, in order, which the per-kind cards below
+                         only summarise. Narrowed to this member, so the
+                         rows leave the name off. -->
+                    <v-col cols="12" md="6">
+                        <v-card variant="outlined" class="pa-4 h-100">
+                            <div class="text-subtitle-2 font-weight-medium mb-3 d-inline-flex align-center">
+                                <v-icon icon="mdi-pulse" color="primary" size="small" class="mr-2" />
+                                {{ $t('memberProfile.activity.title') }}
+                            </div>
+
+                            <!-- Five, the same as the cards below, so the
+                                 badge case beside it is not dwarfed; the
+                                 feed's own Load more goes on from there -->
+                            <activity-feed
+                                compact
+                                :causer-id="member.id"
+                                :show-causer="false"
+                                :per-page="5"
+                                :empty-title="$t('memberProfile.activity.none', { name: member.username })"
+                                :empty-text="$t('memberProfile.activity.noneHint')"
+                            />
+                        </v-card>
+                    </v-col>
+
                     <!-- What they have made, one card per kind, the way the
                          dashboard shows its widgets -->
                     <v-col
@@ -102,43 +164,6 @@
                             />
                         </v-card>
                     </v-col>
-
-                    <!-- The badge case -->
-                    <v-col cols="12">
-                        <v-card variant="outlined" class="pa-4">
-                            <div class="text-subtitle-2 font-weight-medium mb-3 d-inline-flex align-center">
-                                <v-icon icon="mdi-trophy-outline" color="amber" size="small" class="mr-2" />
-                                {{ $t('achievements.profile.title') }}
-                                <span class="text-caption text-medium-emphasis ml-1">
-                                    ({{ member.achievements.length }})
-                                </span>
-                            </div>
-
-                            <div v-if="member.achievements.length" class="d-flex ga-3 flex-wrap">
-                                <v-tooltip
-                                    v-for="badge in member.achievements"
-                                    :key="badge.id"
-                                    location="top"
-                                >
-                                    <template #activator="{ props }">
-                                        <achievement-badge v-bind="props" :achievement="badge" :size="48" />
-                                    </template>
-                                    <div class="font-weight-medium">{{ badge.name }}</div>
-                                    <div v-if="badge.description" class="text-caption">{{ badge.description }}</div>
-                                    <div class="text-caption text-medium-emphasis">
-                                        {{ formatDate(badge.awarded_at) }}
-                                    </div>
-                                </v-tooltip>
-                            </div>
-
-                            <empty-state
-                                v-else
-                                compact
-                                icon="mdi-trophy-outline"
-                                :title="$t('achievements.profile.none')"
-                            />
-                        </v-card>
-                    </v-col>
                 </v-row>
             </v-container>
         </template>
@@ -151,6 +176,7 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
 import AchievementBadge from '@/components/achievements/AchievementBadge.vue';
+import ActivityFeed from '@/components/common/ActivityFeed.vue';
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js';
 
 // What each kind of thing looks like, and which count belongs to it
@@ -163,7 +189,7 @@ const KINDS = [
 
 export default {
     name: 'MemberProfilePage',
-    components: { PageHeader, EmptyState, LoadingState, AchievementBadge },
+    components: { PageHeader, EmptyState, LoadingState, AchievementBadge, ActivityFeed },
     data() {
         return {
             loading: true,

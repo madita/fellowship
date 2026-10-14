@@ -242,9 +242,12 @@ onMounted(() => {
         </v-container>
 
         <v-container v-else-if="viewMode === 'activity'" class="pt-0">
-            <!-- What has happened across the tickets. A single ticket keeps its
-                 own story on its History tab, which is richer: built from the
-                 revisions, with the field-by-field diffs. -->
+            <!-- What has happened across the tickets — the bug reports and
+                 feature requests, that is: the feed leaves the support queue
+                 out, whoever is reading it (App\Support\Activities). A single
+                 ticket keeps its own story on its History tab either way,
+                 which is richer: built from the revisions, with the
+                 field-by-field diffs. -->
             <v-card rounded="lg" variant="flat" border>
                 <v-card-title class="text-subtitle-1">{{ t('activity.latest') }}</v-card-title>
                 <v-divider />

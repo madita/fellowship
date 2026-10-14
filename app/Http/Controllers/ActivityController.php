@@ -49,6 +49,9 @@ class ActivityController extends Controller
             // The subject is loaded because the visibility pass needs it,
             // never to be serialised — present() builds the row by hand
             ->with(['causer:id,username', 'subject'])
+            // What no feed lists, whoever is reading — see the method for
+            // why a support ticket is not feed material
+            ->tap(fn ($q) => Activities::onlyListable($q))
             ->when($validated['log'] ?? null, fn ($q, $log) => $q->where('log_name', $log))
             ->when($validated['causer_id'] ?? null, fn ($q, $id) => $q->where('causer_id', $id))
             ->when($validated['subject_id'] ?? null, fn ($q, $id) => $q->where('subject_id', $id))

@@ -7,6 +7,8 @@ use App\Models\Forum\ForumThread;
 use App\Models\Sandbox\Sandbox;
 use App\Models\Tag\Taxonomy;
 use App\Models\Tag\Term;
+use App\Models\Ticket\Ticket;
+use App\Models\Ticket\TicketType;
 use App\Models\User;
 use App\Support\Activities;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -121,6 +123,44 @@ class ActivityLogTest extends TestCase
         $this->assertCount(1, $data);
         $this->assertSame($second->title, $data[0]['title']);
         $this->assertNotSame($first->title, $data[0]['title']);
+    }
+
+    /**
+     * One member's own log, which is what their profile page asks for
+     * rather than the whole site's.
+     */
+    public function test_the_feed_can_be_narrowed_to_one_member(): void
+    {
+        $other = User::factory()->create();
+
+        $this->thread(null, 'Mine');
+        $this->thread(null, 'Theirs', $other);
+
+        $data = $this->getJson('/api/activity?causer_id=' . $other->id)
+            ->assertOk()
+            ->json('data');
+
+        $this->assertCount(1, $data);
+        $this->assertSame('Theirs', $data[0]['title']);
+        $this->assertSame($other->id, $data[0]['causer']['id']);
+    }
+
+    /**
+     * A member's page is readable without signing in, so their log is held
+     * to the same rule as the site-wide one: narrowing to a member is not
+     * a way around what the reader may see.
+     */
+    public function test_one_members_log_leaves_out_what_the_reader_may_not_see(): void
+    {
+        $this->thread($this->category(['is_private' => true]), 'Behind closed doors');
+        $this->thread(null, 'Out in the open');
+
+        $titles = collect(
+            $this->getJson('/api/activity?causer_id=' . $this->user->id)->assertOk()->json('data')
+        )->pluck('title');
+
+        $this->assertTrue($titles->contains('Out in the open'));
+        $this->assertFalse($titles->contains('Behind closed doors'));
     }
 
     /**
@@ -240,6 +280,118 @@ class ActivityLogTest extends TestCase
         $this->assertFalse($titles->contains('Council of Elrond'));
     }
 
+    // ── Which tickets are feed material ─────────────────────────────
+
+    /**
+     * A ticket is the one subject the feed is choosy about: the public
+     * feedback board belongs in it, the support queue does not.
+     */
+    public function test_a_bug_report_is_listed(): void
+    {
+        $ticket = $this->ticket('bug');
+
+        $titles = collect($this->getJson('/api/activity')->assertOk()->json('data'))
+            ->pluck('title');
+
+        $this->assertTrue($titles->contains($ticket->title));
+    }
+
+    public function test_a_feature_request_is_listed(): void
+    {
+        $ticket = $this->ticket('feature');
+
+        $titles = collect($this->getJson('/api/activity')->assertOk()->json('data'))
+            ->pluck('title');
+
+        $this->assertTrue($titles->contains($ticket->title));
+    }
+
+    /**
+     * Public, so nothing but its type keeps it out — "set it to resolved"
+     * about somebody's sign-in trouble is noise, and noise that names what
+     * they were struggling with.
+     */
+    public function test_a_ticket_that_is_neither_is_not_listed(): void
+    {
+        $support = $this->ticket('support');
+
+        $titles = collect($this->getJson('/api/activity')->assertOk()->json('data'))
+            ->pluck('title');
+
+        $this->assertFalse($titles->contains($support->title));
+    }
+
+    public function test_not_even_to_the_member_who_filed_it(): void
+    {
+        $support = $this->ticket('support');
+
+        $titles = collect(
+            $this->actingAs($this->user, 'sanctum')->getJson('/api/activity')->assertOk()->json('data')
+        )->pluck('title');
+
+        $this->assertFalse($titles->contains($support->title));
+    }
+
+    public function test_not_even_to_an_admin(): void
+    {
+        $support = $this->ticket('support');
+
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $titles = collect(
+            $this->actingAs($admin, 'sanctum')->getJson('/api/activity')->assertOk()->json('data')
+        )->pluck('title');
+
+        $this->assertFalse($titles->contains($support->title));
+    }
+
+    /**
+     * Everything that happens to such a ticket afterwards goes the same
+     * way — a status change is a second entry, with the same subject.
+     */
+    public function test_nor_is_anything_that_happens_to_it_afterwards(): void
+    {
+        $support = $this->ticket('support');
+        $support->update(['status' => 'resolved']);
+
+        $titles = collect($this->getJson('/api/activity?log=' . Activities::TICKETS)->assertOk()->json('data'))
+            ->pluck('title');
+
+        $this->assertFalse($titles->contains($support->title));
+    }
+
+    /**
+     * Keeping the support queue out is a read-time rule, not a hole in the
+     * audit trail: the ticket's own History tab is built from these.
+     */
+    public function test_it_is_still_recorded(): void
+    {
+        $support = $this->ticket('support');
+
+        $this->assertSame(1, Activity::where('subject_type', Ticket::class)
+            ->where('subject_id', $support->id)
+            ->where('event', 'ticket_created')
+            ->count());
+    }
+
+    /**
+     * The member's own log is the same feed narrowed to them, so it is
+     * held to the same rule.
+     */
+    public function test_one_members_log_leaves_the_support_queue_out_too(): void
+    {
+        $support = $this->ticket('support');
+        $bug     = $this->ticket('bug');
+
+        $titles = collect(
+            $this->getJson('/api/activity?causer_id=' . $this->user->id)->assertOk()->json('data')
+        )->pluck('title');
+
+        $this->assertTrue($titles->contains($bug->title));
+        $this->assertFalse($titles->contains($support->title));
+    }
+
     // ── Fixtures ────────────────────────────────────────────────────
 
     private function category(array $properties = []): Taxonomy
@@ -254,11 +406,29 @@ class ActivityLogTest extends TestCase
         ]);
     }
 
-    private function thread(?Taxonomy $category = null, string $title = 'Council of Elrond'): ForumThread
+    /**
+     * A ticket of one type, public so that nothing but the type decides
+     * whether its activity is listed.
+     */
+    private function ticket(string $typeSlug, ?User $creator = null): Ticket
+    {
+        // The slug is unique, and a test may well file two of a kind
+        $type = TicketType::where('slug', $typeSlug)->first()
+            ?? TicketType::factory()->create(['name' => ucfirst($typeSlug), 'slug' => $typeSlug]);
+
+        return Ticket::factory()->create([
+            'ticket_type_id'     => $type->id,
+            'created_by_user_id' => ($creator ?? $this->user)->id,
+            'title'              => 'The lamp, filed as ' . $typeSlug,
+            'is_public'          => true,
+        ]);
+    }
+
+    private function thread(?Taxonomy $category = null, string $title = 'Council of Elrond', ?User $author = null): ForumThread
     {
         return ForumThread::create([
             'taxonomy_id' => ($category ?? $this->category())->id,
-            'user_id'     => $this->user->id,
+            'user_id'     => ($author ?? $this->user)->id,
             'title'       => $title,
             'slug'        => 'council-' . uniqid(),
             'body'        => 'Bring the ring',

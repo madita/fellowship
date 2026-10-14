@@ -5,8 +5,9 @@
         <empty-state
             v-else-if="!rows.length"
             icon="mdi-pulse"
-            :title="$t('activity.empty')"
-            :text="$t('activity.emptyHint')"
+            :compact="compact"
+            :title="emptyTitle || $t('activity.empty')"
+            :text="emptyText || $t('activity.emptyHint')"
         />
 
         <v-list v-else lines="two" class="pa-0">
@@ -15,7 +16,7 @@
                 <v-list-item :to="row.url || undefined">
                     <template #prepend>
                         <user-avatar
-                            v-if="row.causer"
+                            v-if="showCauser && row.causer"
                             :user="row.causer"
                             size="32"
                             class="mr-1"
@@ -26,7 +27,7 @@
                     </template>
 
                     <v-list-item-title class="text-body-2">
-                        <strong v-if="row.causer">{{ row.causer.username }}</strong>
+                        <strong v-if="showCauser && row.causer">{{ row.causer.username }}</strong>
                         {{ activityText(row) }}
                     </v-list-item-title>
 
@@ -71,6 +72,17 @@ const props = defineProps({
     subjectId: { type: [Number, String], default: null },
     causerId: { type: [Number, String], default: null },
     perPage: { type: Number, default: 20 },
+    // One member's own log — their profile already says whose it is, so
+    // repeating the name and face on every row says nothing. The log icon
+    // takes the avatar's place, which is the only thing a row then tells
+    // you at a glance.
+    showCauser: { type: Boolean, default: true },
+    // "Nothing yet" is about the whole site by default; a feed narrowed to
+    // one member or one page wants to say whose, or which
+    emptyTitle: { type: String, default: null },
+    emptyText: { type: String, default: null },
+    // Sits inside a card rather than filling a page
+    compact: { type: Boolean, default: false },
 });
 
 const { t } = useI18n();

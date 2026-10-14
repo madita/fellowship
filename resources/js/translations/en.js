@@ -5045,6 +5045,11 @@ export default {
         'notFoundText': 'Nobody here goes by that name.',
         'memberSince': 'Member since {date}',
         'contributions': 'Contributions',
+        'activity': {
+            'title': 'Activity',
+            'none': 'Nothing from {name} yet',
+            'noneHint': 'Whatever they do around the site shows up here.'
+        },
         'recent': {
             'forum': 'Recent forum posts',
             'timeline': 'Recent timeline posts',
