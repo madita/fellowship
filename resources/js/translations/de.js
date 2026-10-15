@@ -2365,6 +2365,21 @@ export default {
                 'failedToDeleteWidget': 'Fehler beim Löschen des Widgets'
             }
         },
+        'navigation': {
+            'breadcrumbs': {
+                'title': 'Navigationspfad',
+                'description': 'Der Pfad über dem Seitentitel und seine Startseite',
+                'cardTitle': 'Navigationspfad',
+                'enabled': 'Navigationspfad anzeigen',
+                'enabledHintEnabled': 'Jede Seite zeigt über ihrem Titel, wo sie im Projekt steht',
+                'enabledHintDisabled': 'Keine Seite zeigt einen Pfad',
+                'root': 'Erster Schritt',
+                'rootHint': 'Die Seite, bei der jeder Pfad beginnt. Gäste landen immer auf der Startseite – das Dashboard setzt eine Anmeldung voraus.',
+                'rootAuto': 'Dashboard für Mitglieder, Startseite für Gäste',
+                'rootHome': 'Startseite für alle',
+                'rootNone': 'Kein erster Schritt'
+            }
+        },
         'saveSettings': 'Einstellungen speichern',
         'overview': {
             'applicationSettings': 'Anwendungseinstellungen',
@@ -3649,7 +3664,9 @@ export default {
             'of': 'von {total}'
         },
         'breadcrumb': {
-            'home': 'Startseite'
+            'home': 'Startseite',
+            'dashboard': 'Dashboard',
+            'label': 'Navigationspfad'
         },
         'tooltip': {
             'showMore': 'Mehr anzeigen'

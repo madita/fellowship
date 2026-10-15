@@ -168,6 +168,10 @@ class SettingsController extends Controller
             'age_confirmation_required',
             'age_minimum',
 
+            // Navigation: the trail above a page title
+            'breadcrumbs_enabled',
+            'breadcrumbs_root',
+
             // Footer
             'custom_footer_enabled',
             'custom_footer_html',
@@ -335,6 +339,13 @@ class SettingsController extends Controller
                 if ( ! preg_match('/^#[0-9A-Fa-f]{6}$/', $value)) {
                     $valueErrors["settings.{$index}.value"] = ["The {$key} must be a valid hex color (e.g., #1976D2)."];
                 }
+            }
+
+            // Where a breadcrumb trail starts: only what the admin screen
+            // offers, so a stray value cannot leave every page without
+            // its first step
+            if ($key === 'breadcrumbs_root' && ! in_array($value, ['auto', 'home', 'none'], true)) {
+                $valueErrors["settings.{$index}.value"] = ["The {$key} must be one of: auto, home, none."];
             }
 
             // Positive integer validation
@@ -852,7 +863,7 @@ class SettingsController extends Controller
             'oauth_google_enabled', 'oauth_discord_enabled', 'oauth_github_enabled',
             'oauth_facebook_enabled', 'oauth_allow_registration', 'oauth_auto_verify_email',
             'sandbox_enabled', 'sandbox_public_enabled', 'sandbox_collaboration_enabled',
-            'irc_comic_chat_enabled',
+            'irc_comic_chat_enabled', 'breadcrumbs_enabled',
             'feature_timeline_enabled', 'feature_chat_enabled', 'feature_events_enabled',
             'feature_wiki_enabled', 'feature_forum_enabled', 'feature_irc_enabled',
             'feature_gallery_enabled', 'feature_tickets_enabled', 'feature_feedback_enabled',

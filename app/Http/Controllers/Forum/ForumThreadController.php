@@ -29,7 +29,13 @@ class ForumThreadController extends Controller
         $user = Auth::user();
 
         $thread = ForumThread::where('slug', $threadSlug)
-            ->with(['category.term', 'author', 'latestPoll.creator', 'latestPoll.options', 'latestPoll.votes'])
+            ->with([
+                'category.term',
+                'author',
+                'latestPoll.creator',
+                'latestPoll.options',
+                'latestPoll.votes',
+            ])
             ->firstOrFail();
 
         // Check access via category properties
@@ -107,6 +113,31 @@ class ForumThreadController extends Controller
         $threadData         = $thread->toArray();
         $threadData['poll'] = $thread->latestPoll?->toPayload($user);
         unset($threadData['latest_poll']);
+
+        // The category the thread is in, named the way the rest of the
+        // forum API names it. The page has always read thread.forum.name
+        // and thread.forum.slug — for its subtitle, its back button and
+        // the redirect after a delete — and nothing ever sent them, so it
+        // fell back to the slug in the address bar. Threads are the one
+        // forum endpoint that handed out the raw category with its term.
+        //
+        // The parent is asked for through the relation rather than read as
+        // $category->parent: the taxonomies table carries a legacy `parent`
+        // integer column beside parent_id, an attribute wins over a
+        // relation of the same name, and eager loading does not change
+        // that — so that property is a number, not a category.
+        $parent = $category->parent()->with('term')->first();
+
+        $threadData['forum'] = $category->term ? [
+            'id'     => $category->id,
+            'name'   => $category->term->title,
+            'slug'   => $category->term->slug,
+            'parent' => $parent?->term ? [
+                'id'   => $parent->id,
+                'name' => $parent->term->title,
+                'slug' => $parent->term->slug,
+            ] : null,
+        ] : null;
 
         return response()->json([
             'thread'            => $threadData,

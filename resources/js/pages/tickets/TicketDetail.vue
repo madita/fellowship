@@ -20,6 +20,7 @@ import { useUserStore } from '@/store/userStore.js';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
 import { useDialog } from '@/composables/useDialog.js';
 import { formatDate, formatDateDistanceToNow } from '@/plugins/formatDate.js';
+import { section } from '@/utils/crumbs.js';
 
 /**
  * One ticket on its own page (/admin/tickets/:id for the admin,
@@ -65,6 +66,18 @@ const canComment = computed(() => isAdmin.value || ticket.value?.created_by_user
 // The list the ticket was opened from, filters included: for "back" and the ticket drawer
 const listQuery = rememberedTicketListQuery(listRouteName.value);
 const backTo = computed(() => ({ name: listRouteName.value, query: listQuery }));
+
+/**
+ * The list the ticket was opened from and the ticket itself — with the
+ * admin step in front when this is the support queue rather than a
+ * member looking at their own ticket. The link keeps the filters, like
+ * the back button.
+ */
+const breadcrumbs = computed(() => [
+    isAdminView.value && section('admin'),
+    { title: t('tickets.title'), to: backTo.value, icon: 'mdi-ticket-outline' },
+    ticket.value?.title,
+]);
 
 // Ticket drawer (admin): open by default on wide screens, remembered per browser
 const NAV_STORAGE_KEY = 'tickets.navDrawerOpen';
@@ -283,6 +296,7 @@ onMounted(loadTicket);
                     :title="ticket.title"
                     :subtitle="subtitle"
                     :icon="ticket.ticket_type?.icon || 'mdi-ticket-outline'"
+                    :breadcrumbs="breadcrumbs"
                     :back-to="backTo"
                 >
                     <template v-if="canManage" #actions>

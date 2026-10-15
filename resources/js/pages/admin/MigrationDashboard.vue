@@ -4,6 +4,7 @@
             :title="$t('migrationDashboard.title')"
             :subtitle="$t('migrationDashboard.description')"
             icon="mdi-database-arrow-right-outline"
+            :breadcrumbs="[$crumb('admin'), $crumb('settings'), $t('migrationDashboard.title')]"
             :back-to="{ name: 'admin-settings-category', params: { category: 'tools' } }"
             fluid
         >

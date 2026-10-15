@@ -6,6 +6,7 @@
             <page-header
                 :title="info.term?.title || slug"
                 icon="mdi-folder-outline"
+                :breadcrumbs="breadcrumbs"
                 back-to="/wiki/category"
             >
                 <template v-if="authenticated" #actions>
@@ -81,6 +82,7 @@
                 :title="$t('wiki.categories')"
                 :subtitle="$t('wiki.categoriesSubtitle')"
                 icon="mdi-folder-multiple-outline"
+                :breadcrumbs="listBreadcrumbs"
                 back-to="/wiki"
             >
                 <v-text-field
@@ -126,6 +128,7 @@ import { useAuthStore } from '@/store/authStore.js';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
+import { section } from '@/utils/crumbs.js';
 
 export default {
     components: {
@@ -218,6 +221,14 @@ export default {
         },
     },
     computed: {
+        // The wiki, the list of categories, and this one
+        breadcrumbs() {
+            return [section('wiki'), section('wikiCategories'), this.info.term?.title || this.slug];
+        },
+        // The same page without a slug is the list itself
+        listBreadcrumbs() {
+            return [section('wiki'), this.$t('wiki.categories')];
+        },
         authenticated() {
             const authStore = useAuthStore();
             return authStore.isLoggedIn;

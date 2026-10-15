@@ -4,6 +4,7 @@
             :title="page ? $t(`wiki.special.pages.${page.key}.title`) : $t('wiki.special.title')"
             :subtitle="page ? $t(`wiki.special.pages.${page.key}.description`) : $t('wiki.special.subtitle')"
             :icon="page?.icon || 'mdi-star-four-points-outline'"
+            :breadcrumbs="breadcrumbs"
             :back-to="page ? { name: 'wiki-special' } : { name: 'wiki-index' }"
         />
 
@@ -138,6 +139,7 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js';
+import { section } from '@/utils/crumbs.js';
 
 /**
  * The wiki's special pages: the hub at /wiki/special and each list under
@@ -173,6 +175,20 @@ export default {
     computed: {
         page() {
             return SPECIAL_PAGES.find(item => item.key === this.$route.params.page) || null;
+        },
+        /**
+         * The list of special pages is itself a page, so it is the last
+         * step when that is what is being shown and a link to itself when
+         * one of its pages is.
+         */
+        breadcrumbs() {
+            return [
+                section('wiki'),
+                this.page
+                    ? { title: this.$t('wiki.special.title'), to: { name: 'wiki-special' } }
+                    : this.$t('wiki.special.title'),
+                this.page && this.$t(`wiki.special.pages.${this.page.key}.title`),
+            ];
         },
         statistics() {
             return Object.entries(this.stats || {}).map(([key, value]) => ({ key, value }));

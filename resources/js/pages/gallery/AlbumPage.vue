@@ -4,6 +4,7 @@
             :title="album?.name || $t('gallery.album')"
             :subtitle="albumSubtitle"
             icon="mdi-image-album"
+            :breadcrumbs="[$crumb('gallery'), album?.name || $t('gallery.album')]"
             :back-to="{ name: 'gallery-index' }"
             fluid
         >

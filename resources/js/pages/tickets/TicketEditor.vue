@@ -13,6 +13,7 @@ import { useAssignableUsers } from '@/composables/useAssignableUsers.js';
 import { useDialog } from '@/composables/useDialog.js';
 import { rememberedTicketListQuery } from '@/composables/useTicketListQuery.js';
 import { hasRichText, toEditorHtml } from '@/utils/richText.js';
+import { section } from '@/utils/crumbs.js';
 
 /**
  * Create (/admin/tickets/create) or edit (/admin/tickets/:id/edit) a ticket
@@ -57,6 +58,21 @@ const selectedType = computed(() => types.value.find(type => type.id === form.va
 const backTo = computed(() => (isEdit.value
     ? { name: 'admin-ticket', params: { id: ticketId.value } }
     : { name: 'admin-tickets', query: rememberedTicketListQuery('admin-tickets') }));
+
+/**
+ * This form is the admin side of tickets: the queue, the ticket being
+ * edited where there is one, and the form.
+ */
+const breadcrumbs = computed(() => [
+    section('admin'),
+    {
+        title: t('tickets.title'),
+        to: { name: 'admin-tickets', query: rememberedTicketListQuery('admin-tickets') },
+        icon: 'mdi-ticket-outline',
+    },
+    isEdit.value && { title: `#${ticketId.value}`, to: { name: 'admin-ticket', params: { id: ticketId.value } } },
+    isEdit.value ? t('tickets.editor.editTitle') : t('tickets.createTicket'),
+]);
 
 const loadTypes = async () => {
     try {
@@ -154,6 +170,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
             :title="isEdit ? t('tickets.editor.editTitle') : t('tickets.createTicket')"
             :subtitle="isEdit ? `#${ticketId} · ${form.title}` : t('tickets.editor.createSubtitle')"
             :icon="isEdit ? 'mdi-pencil-outline' : 'mdi-ticket-confirmation-outline'"
+            :breadcrumbs="breadcrumbs"
             :back-to="backTo"
         >
             <template #actions>

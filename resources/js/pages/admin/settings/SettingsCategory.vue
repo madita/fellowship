@@ -6,14 +6,9 @@
                 :subtitle="category.description"
                 :icon="category.icon"
                 :back-to="{ name: 'admin-settings' }"
+                :breadcrumbs="breadcrumbs"
                 fluid
-            >
-                <v-breadcrumbs :items="breadcrumbs" density="compact" class="pa-0 text-caption">
-                    <template v-slot:divider>
-                        <v-icon size="small">mdi-chevron-right</v-icon>
-                    </template>
-                </v-breadcrumbs>
-            </page-header>
+            />
 
             <v-container fluid class="pa-2 pa-sm-4">
                 <v-row>
@@ -74,6 +69,7 @@ import { getCategoryBySlug } from '@/configs/settingsConfig';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import SettingsItemCard from '@/components/settings/SettingsItemCard.vue';
+import { section } from '@/utils/crumbs.js';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -82,6 +78,7 @@ const route = useRoute();
 const category = computed(() => getCategoryBySlug(route.params.category));
 
 const breadcrumbs = computed(() => [
+    section('admin'),
     {
         title: t('settings.overview.settings'),
         disabled: false,

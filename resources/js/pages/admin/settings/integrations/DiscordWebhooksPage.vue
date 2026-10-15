@@ -4,6 +4,7 @@
             :title="$t('discord.title')"
             :subtitle="$t('discord.subtitle')"
             icon="mdi-discord"
+            :breadcrumbs="[$crumb('admin'), $crumb('settings'), $t('discord.title')]"
             :back-to="{ name: 'admin-settings-category', params: { category: 'integrations' } }"
         >
             <template #actions>

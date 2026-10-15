@@ -11,7 +11,12 @@
 
         <template v-else>
             <!-- Same header as every other top-level page -->
-            <page-header :title="member.username" :subtitle="headerSubtitle" icon="mdi-account-circle-outline">
+            <page-header
+                :title="member.username"
+                :subtitle="headerSubtitle"
+                icon="mdi-account-circle-outline"
+                :breadcrumbs="[$crumb('members'), member.username]"
+            >
                 <template #actions>
                     <div class="d-flex align-center ga-4">
                         <v-avatar :color="member.avatar ? undefined : 'primary'" size="64">

@@ -3,6 +3,11 @@
         <page-header
             :title="album?.name || $t('gallery.album')"
             icon="mdi-image-album"
+            :breadcrumbs="[
+                $crumb('admin'),
+                { title: $t('gallery.manageTitle'), to: { name: 'admin-gallery' } },
+                album?.name || $t('gallery.album'),
+            ]"
             :back-to="{ name: 'admin-gallery' }"
             fluid
         />

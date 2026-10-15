@@ -4,6 +4,7 @@
             :title="$t('admin.forums.title')"
             :subtitle="$t('admin.forums.subtitle')"
             icon="mdi-forum"
+            :breadcrumbs="[$crumb('admin'), $crumb('settings'), $t('admin.forums.title')]"
             :back-to="{ name: 'admin-settings-category', params: { category: 'forum' } }"
             fluid
         >

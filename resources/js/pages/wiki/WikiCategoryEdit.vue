@@ -4,6 +4,7 @@
             :title="$t('wiki.editCategory')"
             :subtitle="info?.term?.title ? $t('wiki.editing', { title: info.term.title }) : slug"
             icon="mdi-folder-edit-outline"
+            :breadcrumbs="breadcrumbs"
             :back-to="`/wiki/category/${slug}`"
         >
             <template #actions>
@@ -74,6 +75,7 @@ import Tiptap from '@/components/common/tiptap/Tiptap.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 import { useAuthStore } from '@/store/authStore.js';
+import { section } from '@/utils/crumbs.js';
 
 export default {
     components: {
@@ -198,6 +200,15 @@ export default {
     },
 
     computed: {
+        // The category being edited, which the form links back to
+        breadcrumbs() {
+            return [
+                section('wiki'),
+                section('wikiCategories'),
+                { title: this.info?.term?.title || this.slug, to: `/wiki/category/${this.slug}` },
+                this.$t('wiki.editCategory'),
+            ];
+        },
         authenticated() {
             const authStore = useAuthStore();
             return authStore.isLoggedIn;

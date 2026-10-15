@@ -328,6 +328,16 @@ class WikiController extends Controller
             'user'           => $user,
             'wiki'           => $wiki,
             'parent'         => $wiki->parent,
+            // The whole way up, for the trail above the title. Nearest
+            // first, the way the model walks it, and reduced to what a
+            // link needs — the page has always read `parents` and only
+            // `parent` was ever sent, so there was nothing to build a
+            // trail from. PageController@view does the same for pages.
+            'parents'        => $wiki->parents->map(fn (Wiki $ancestor) => [
+                'id'    => $ancestor->id,
+                'title' => $ancestor->title,
+                'slug'  => $ancestor->slug,
+            ])->values(),
             'children'       => $wiki->children,
             'terms'          => $taxonomies,
             'tags'           => $terms,

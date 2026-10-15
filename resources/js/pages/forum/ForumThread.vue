@@ -2,7 +2,7 @@
     <div>
         <page-header
             :title="forumStore.currentThread?.title || $t('forum.title')"
-            :subtitle="forumStore.currentThread?.forum?.name || ''"
+            :breadcrumbs="breadcrumbs"
             :back-to="backTo"
         >
             <template v-if="forumStore.currentThread && !forumStore.loading" #actions>
@@ -222,6 +222,7 @@ import UserAvatar from '@/components/common/UserAvatar.vue'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
 import ForumPostItem from '@/components/forum/ForumPostItem.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import {section} from '@/utils/crumbs.js'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 import WatchButton from '@/components/common/WatchButton.vue'
@@ -257,6 +258,33 @@ export default {
         backTo() {
             const slug = this.forumStore.currentThread?.forum?.slug || this.$route.params.forumSlug
             return slug ? {name: 'forum-category', params: {slug}} : {name: 'forum-index'}
+        },
+        /**
+         * Where the thread sits: the forum, the category it is in — under
+         * its parent category, where there is one — and the thread itself.
+         *
+         * The category name only arrives with the thread, so until then
+         * the slug from the address stands in rather than the step going
+         * missing and the trail jumping about as it loads. This replaced
+         * the subtitle, which said the same thing without saying where it
+         * led.
+         */
+        breadcrumbs() {
+            const forum = this.forumStore.currentThread?.forum
+            const slug = forum?.slug || this.$route.params.forumSlug
+
+            return [
+                section('forum'),
+                forum?.parent && {
+                    title: forum.parent.name,
+                    to: {name: 'forum-category', params: {slug: forum.parent.slug}},
+                },
+                slug && {
+                    title: forum?.name || slug,
+                    to: {name: 'forum-category', params: {slug}},
+                },
+                this.forumStore.currentThread?.title,
+            ]
         },
         isReplyBodyEmpty() {
             if (!this.replyBody) return true

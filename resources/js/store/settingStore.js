@@ -37,6 +37,8 @@ export const useSettingsStore = defineStore({
             font_family: 'Roboto, sans-serif',
             custom_footer_enabled: false,
             custom_footer_html: '',
+            breadcrumbs_enabled: true,
+            breadcrumbs_root: 'auto',
             maintenance_mode: false,
             maintenance_message: '',
             sandbox_enabled: true,
@@ -130,6 +132,23 @@ export const useSettingsStore = defineStore({
             return value === true;
         },
         customFooterHtml: (state) => state.appSettings.custom_footer_html || '',
+        // The trail above a page title (Admin → Settings → Navigation →
+        // Breadcrumbs). Unset means on, so an install that predates the
+        // setting keeps showing them.
+        breadcrumbsEnabled: (state) => {
+            const value = state.appSettings.breadcrumbs_enabled;
+            if (typeof value === 'string') {
+                return value === 'true' || value === '1';
+            }
+            return value !== false;
+        },
+        // Where every trail starts: 'auto' (the dashboard for a member,
+        // the landing page for a guest), 'home' (the landing page for
+        // everyone) or 'none'
+        breadcrumbsRoot: (state) => {
+            const value = state.appSettings.breadcrumbs_root;
+            return ['auto', 'home', 'none'].includes(value) ? value : 'auto';
+        },
         themeMode: (state) => state.appSettings.theme_mode || 'system',
         fontFamily: (state) => state.appSettings.font_family || 'Roboto, sans-serif',
         maintenanceMode: (state) => {

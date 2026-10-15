@@ -46,6 +46,63 @@ class WikiShowTest extends TestCase
         return $page;
     }
 
+    /**
+     * The trail above a page title is built from the way up, and until now
+     * only the immediate `parent` was sent while the page read `parents` —
+     * so a nested page had nothing to build a trail from.
+     */
+    public function test_show_hands_out_the_whole_way_up_to_a_page(): void
+    {
+        $this->createWikiPage('Orga', 'orga', '<p>Top</p>');
+        $this->createWikiPage('Nachtwache', 'nachtwache', '<p>Middle</p>');
+        $this->createWikiPage('Dienstplan', 'dienstplan', '<p>Leaf</p>');
+
+        $top    = Wiki::where('slug', 'orga')->firstOrFail();
+        $middle = Wiki::where('slug', 'nachtwache')->firstOrFail();
+
+        $middle->update(['parent_id' => $top->id]);
+        Wiki::where('slug', 'dienstplan')->firstOrFail()->update(['parent_id' => $middle->id]);
+
+        $parents = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/wiki/dienstplan')
+            ->assertOk()
+            ->json('parents');
+
+        // Nearest first, the way the model walks up; the page reverses it
+        $this->assertSame(['Nachtwache', 'Orga'], array_column($parents, 'title'));
+        $this->assertSame(['nachtwache', 'orga'], array_column($parents, 'slug'));
+    }
+
+    public function test_a_page_with_nothing_above_it_has_nothing_in_its_way_up(): void
+    {
+        $this->createWikiPage('Allein', 'allein', '<p>Inhalt</p>');
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/wiki/allein')
+            ->assertOk()
+            ->assertJsonCount(0, 'parents');
+    }
+
+    /**
+     * An ancestor is a link in a trail, not a page to read: its content
+     * has no business being in another page's response.
+     */
+    public function test_the_way_up_is_reduced_to_what_a_link_needs(): void
+    {
+        $this->createWikiPage('Orga', 'orga', '<p>SECRET-ANCESTOR-BODY</p>');
+        $this->createWikiPage('Dienstplan', 'dienstplan', '<p>Leaf</p>');
+
+        $top = Wiki::where('slug', 'orga')->firstOrFail();
+        Wiki::where('slug', 'dienstplan')->firstOrFail()->update(['parent_id' => $top->id]);
+
+        $response = $this->actingAs($this->admin, 'sanctum')
+            ->getJson('/api/wiki/dienstplan')
+            ->assertOk();
+
+        $this->assertSame(['id', 'title', 'slug'], array_keys($response->json('parents.0')));
+        $this->assertStringNotContainsString('SECRET-ANCESTOR-BODY', $response->getContent());
+    }
+
     public function test_show_renders_page_with_unresolved_wiki_links(): void
     {
         // A link target that exists (found via its translated title) …

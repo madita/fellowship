@@ -4,6 +4,7 @@
             :title="$t('forum.searchResults')"
             :subtitle="forumStore.searchQuery ? $t('forum.searchResultsFor', { query: forumStore.searchQuery }) : ''"
             icon="mdi-magnify"
+            :breadcrumbs="breadcrumbs"
             :back-to="{ name: 'forum-index' }"
         >
             <v-text-field
@@ -191,6 +192,7 @@ import { useForumStore } from '@/store/forumStore.js'
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { section } from '@/utils/crumbs.js'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 
@@ -207,6 +209,11 @@ export default {
             activeTab: 'threads',
             threadPage: 1,
             postPage: 1
+        }
+    },
+    computed: {
+        breadcrumbs() {
+            return [section('forum'), this.$t('forum.searchResults')]
         }
     },
     watch: {

@@ -21,6 +21,7 @@ import {
     ticketFilterParams,
     rememberTicketListQuery,
 } from '@/composables/useTicketListQuery.js';
+import { section } from '@/utils/crumbs.js';
 
 /**
  * Tickets for the admin (/admin/tickets: overview, list, kanban) and for
@@ -74,6 +75,13 @@ const pagination = ref({ page: Number(route.query.page) || 1, per_page: 20, tota
 
 const pageTitle = computed(() => (isUserView.value ? t('tickets.myTickets') : t('tickets.title')));
 const pageSubtitle = computed(() => (isUserView.value ? t('tickets.myTicketsSubtitle') : t('tickets.subtitle')));
+
+// The support queue belongs to the admin area; a member's own tickets
+// are just one of their pages
+const breadcrumbs = computed(() => [
+    !isUserView.value && section('admin'),
+    pageTitle.value,
+]);
 
 const statusItems = computed(() => statusFilterOptions());
 const priorityItems = computed(() => priorityFilterOptions());
@@ -212,7 +220,7 @@ onMounted(() => {
 
 <template>
     <div>
-        <page-header :title="pageTitle" :subtitle="pageSubtitle" icon="mdi-ticket-outline">
+        <page-header :title="pageTitle" :subtitle="pageSubtitle" icon="mdi-ticket-outline" :breadcrumbs="breadcrumbs">
             <template #actions>
                 <v-btn-toggle
                     :model-value="viewMode"

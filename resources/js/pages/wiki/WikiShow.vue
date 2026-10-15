@@ -8,6 +8,7 @@
             <page-header
                 :title="wikipage.title || $t('wiki.untitledPage')"
                 :subtitle="pageSubtitle"
+                :breadcrumbs="breadcrumbs"
                 icon="mdi-book-open-page-variant-outline"
                 :back-to="{ name: 'wiki-index' }"
             >
@@ -303,6 +304,7 @@ import VersionHistoryDialog from '@/components/common/VersionHistoryDialog.vue'
 import WatchButton from '@/components/common/WatchButton.vue'
 import CommentThread from '@/components/common/CommentThread.vue'
 import ActivityFeed from '@/components/common/ActivityFeed.vue'
+import { section } from '@/utils/crumbs.js'
 
 const { t } = useI18n()
 const dialog = useDialog()
@@ -349,6 +351,37 @@ const canLinkContent = computed(() => {
     const permissions = userStore.permissions || []
     return isAdmin.value || permissions.some(permission => (permission?.name ?? permission) === 'manage-page')
 })
+/**
+ * Where the page sits: the wiki, the way down to it, and the page itself.
+ *
+ * A page nested under others is shown by that nesting, outermost first —
+ * `parents` comes back nearest-first, the way the model walks up. A page
+ * with no parent is shown by the first category it is filed under
+ * instead, which is the only other thing that says where it belongs; the
+ * rest of its categories stay in the sidebar, where a trail of six
+ * folders would be no help.
+ */
+const breadcrumbs = computed(() => {
+    const ancestors = [...(parents.value || [])].reverse().map(ancestor => ({
+        title: ancestor.title,
+        to: `/wiki/${ancestor.slug}`,
+        icon: 'mdi-book-open-page-variant-outline',
+    }))
+
+    const category = terms.value[0]
+
+    return [
+        section('wiki'),
+        ...ancestors,
+        !ancestors.length && category && {
+            title: category.title,
+            to: { name: 'wiki-category', params: { slug: category.slug } },
+            icon: 'mdi-folder-outline',
+        },
+        wikipage.value?.title || t('wiki.untitledPage'),
+    ]
+})
+
 const pageSubtitle = computed(() => {
     if (mode.value !== 'edit') return ''
     const parts = [`${t('wiki.author')}: ${wikiuser.value?.username || t('wiki.anonymous')}`]

@@ -68,6 +68,7 @@ import dialogs from './plugins/dialogs.js'
 
 //HELPERS
 import helpers from './utils/helpers.js'
+import { section } from './utils/crumbs.js'
 
 // FILTERS
 import { capitalize } from './utils/filters.js';
@@ -104,6 +105,9 @@ import { PerfectScrollbarPlugin } from 'vue3-perfect-scrollbar';
 //     }
 // });
 vueApp.config.globalProperties.$helpers = helpers
+// The section step of a breadcrumb trail, for templates that pass one
+// straight to a page header; script blocks import section() instead
+vueApp.config.globalProperties.$crumb = section
 
 // const vuetify = createVuetify({
 //     components,

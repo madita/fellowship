@@ -4,6 +4,7 @@
             :title="$t('settings.overview.applicationSettings')"
             :subtitle="$t('settings.overview.subtitle')"
             icon="mdi-cog"
+            :breadcrumbs="[$crumb('admin'), $t('settings.overview.settings')]"
             fluid
         >
             <template #actions>

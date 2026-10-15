@@ -5,6 +5,7 @@
             :title="$t('wiki.createNewPage')"
             :subtitle="slug ? $t('wiki.creatingPage', { slug: slug }) : $t('wiki.buildKnowledgeBase')"
             icon="mdi-file-document-plus-outline"
+            :breadcrumbs="breadcrumbs"
             :back-to="slug ? `/wiki/${slug}` : { name: 'wiki-index' }"
         >
             <template #actions>
@@ -546,6 +547,7 @@ import { useDisplay } from 'vuetify'
 import { useI18n } from 'vue-i18n'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { section } from '@/utils/crumbs.js'
 import { useAuthStore } from '@/store/authStore.js'
 import { useRouter } from 'vue-router'
 import { useDialog } from '@/composables/useDialog.js'
@@ -618,6 +620,14 @@ export default {
             const status = content ? `${words} words` : 'Empty'
             return { words, chars, status }
         })
+
+        // The wiki, the page this one is being created under where the
+        // address names one, and this form
+        const breadcrumbs = computed(() => [
+            section('wiki'),
+            slug.value && { title: slug.value, to: `/wiki/${slug.value}` },
+            t('wiki.createNewPage'),
+        ])
 
         const completionPercentage = computed(() => {
             let score = 0
@@ -979,6 +989,8 @@ Answer to the third question.`
         })
 
         return {
+            breadcrumbs,
+
             // Reactive data
             slug,
             currentStep,

@@ -1,6 +1,6 @@
 <template>
     <div>
-        <page-header :title="page.title || ''">
+        <page-header :title="page.title || ''" :breadcrumbs="breadcrumbs">
             <template #actions>
                 <v-btn
                     v-if="!showHistory && !showHistoryItem"
@@ -20,7 +20,6 @@
                     {{ $t('pages.show.showPage') }}
                 </v-btn>
             </template>
-            <v-breadcrumbs v-if="breadcrumbs.length" :items="breadcrumbs" class="pa-0" density="compact"></v-breadcrumbs>
         </page-header>
 
         <v-container fluid>

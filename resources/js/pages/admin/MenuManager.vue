@@ -4,6 +4,7 @@
         :title="t('menuAdmin.title')"
         :subtitle="t('menuAdmin.subtitle')"
         icon="mdi-menu"
+        :breadcrumbs="[$crumb('admin'), $crumb('settings'), t('menuAdmin.title')]"
         fluid
     />
 

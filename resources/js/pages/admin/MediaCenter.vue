@@ -4,6 +4,7 @@
             :title="t('mediaCenter.title')"
             :subtitle="t('mediaCenter.subtitle')"
             icon="mdi-folder-multiple-image"
+            :breadcrumbs="[$crumb('admin'), t('mediaCenter.title')]"
             fluid
         >
             <template #actions>

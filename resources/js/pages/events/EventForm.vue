@@ -3,6 +3,7 @@
         <page-header
             :title="heading"
             icon="mdi-calendar-edit"
+            :breadcrumbs="[$crumb('events'), heading]"
             :back-to="backTo"
         >
             <template #actions>

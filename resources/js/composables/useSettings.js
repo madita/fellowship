@@ -224,6 +224,10 @@ export function useSettings() {
         api_keys_enabled: false,
         background_jobs_enabled: true,
 
+        // Navigation
+        breadcrumbs_enabled: true,
+        breadcrumbs_root: 'auto',
+
         // Footer Settings
         custom_footer_enabled: false,
         custom_footer_html: '',

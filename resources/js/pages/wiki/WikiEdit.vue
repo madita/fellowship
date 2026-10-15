@@ -5,6 +5,7 @@
             :title="wikipage.title ? $t('wiki.editing', { title: wikipage.title }) : $t('wiki.editPage')"
             :subtitle="lastModified ? $t('wiki.lastModifiedAt', { date: lastModified }) : $t('wiki.makeChangesAndSave')"
             icon="mdi-pencil-outline"
+            :breadcrumbs="breadcrumbs"
             :back-to="`/wiki/${slug}`"
         >
             <template #actions>
@@ -588,6 +589,7 @@ import { useDisplay } from 'vuetify'
 import { useI18n } from 'vue-i18n'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { section } from '@/utils/crumbs.js'
 import DiffView from '@/components/common/DiffView.vue'
 import VersionHistoryDialog from '@/components/common/VersionHistoryDialog.vue'
 import { useAuthStore } from '@/store/authStore.js'
@@ -669,6 +671,13 @@ export default {
         // Computed properties
         const authenticated = computed(() => authStore.authenticated)
         const user = computed(() => authStore.user)
+
+        // The wiki, the page being edited, and this form
+        const breadcrumbs = computed(() => [
+            section('wiki'),
+            { title: wikipage.value?.title || slug.value, to: `/wiki/${slug.value}` },
+            t('wiki.editPage'),
+        ])
 
         const originalTitle = computed(() => originalData.value.title)
         const originalContent = computed(() => originalData.value.content)
@@ -1086,6 +1095,8 @@ export default {
         })
 
         return {
+            breadcrumbs,
+
             // Reactive data
             slug,
             currentStep,
