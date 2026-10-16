@@ -4,6 +4,7 @@
             :title="$t('gallery.manageTitle')"
             :subtitle="$t('gallery.manageSubtitle')"
             icon="mdi-image-multiple-outline"
+            :breadcrumbs="[$crumb('admin'), $t('gallery.manageTitle')]"
             fluid
         />
 

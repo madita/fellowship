@@ -4,6 +4,7 @@
             :title="forumStore.currentForum?.name || $t('forum.forums')"
             :subtitle="forumStore.currentForum?.description || ''"
             icon="mdi-forum"
+            :breadcrumbs="breadcrumbs"
             :back-to="backTo"
         >
             <template #actions>
@@ -247,6 +248,7 @@ import { useAuthStore } from '@/store/authStore.js'
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { section } from '@/utils/crumbs.js'
 import EmptyState from '@/components/common/EmptyState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 
@@ -276,6 +278,24 @@ export default {
             return parent
                 ? { name: 'forum-category', params: { slug: parent.slug } }
                 : { name: 'forum-index' }
+        },
+        /**
+         * The forum, the category this one sits under where there is one,
+         * and this category. Its name arrives with the threads, so the
+         * slug in the address stands in until then and the trail keeps
+         * its shape while the page loads.
+         */
+        breadcrumbs() {
+            const forum = this.forumStore.currentForum
+
+            return [
+                section('forum'),
+                forum?.parent && {
+                    title: forum.parent.name,
+                    to: { name: 'forum-category', params: { slug: forum.parent.slug } },
+                },
+                forum?.name || this.$route.params.slug,
+            ]
         },
         filters() {
             return [

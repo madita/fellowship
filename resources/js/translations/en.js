@@ -2364,6 +2364,21 @@ export default {
                 'failedToDeleteWidget': 'Failed to delete widget'
             }
         },
+        'navigation': {
+            'breadcrumbs': {
+                'title': 'Breadcrumbs',
+                'description': 'The trail above a page title, and where it starts',
+                'cardTitle': 'Breadcrumbs',
+                'enabled': 'Show breadcrumbs',
+                'enabledHintEnabled': 'Every page shows where it sits in the site, above its title',
+                'enabledHintDisabled': 'No page shows a trail',
+                'root': 'First step',
+                'rootHint': 'The page every trail starts at. A guest is always sent to the home page — the dashboard needs a login.',
+                'rootAuto': 'Dashboard for members, home page for guests',
+                'rootHome': 'Home page for everyone',
+                'rootNone': 'No first step'
+            }
+        },
         'saveSettings': 'Save Settings',
         'overview': {
             'applicationSettings': 'Application Settings',
@@ -3490,7 +3505,9 @@ export default {
             'of': 'of {total}'
         },
         'breadcrumb': {
-            'home': 'Home'
+            'home': 'Home',
+            'dashboard': 'Dashboard',
+            'label': 'Breadcrumb'
         },
         'tooltip': {
             'showMore': 'Show more'

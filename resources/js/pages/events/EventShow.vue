@@ -19,6 +19,7 @@
                 :title="event.title"
                 :subtitle="dateRange"
                 icon="mdi-calendar"
+                :breadcrumbs="[$crumb('events'), event.title]"
                 :back-to="{ name: 'events' }"
             >
                 <template v-if="canEdit" #actions>

@@ -4,6 +4,7 @@
             :title="$t(`feedback.${form.type}.create`)"
             :subtitle="$t('feedback.editor.subtitle')"
             :icon="form.type === 'bug' ? 'mdi-bug-outline' : 'mdi-lightbulb-on-outline'"
+            :breadcrumbs="breadcrumbs"
             :back-to="backTo"
         >
             <template #actions>
@@ -133,6 +134,7 @@ import axios from 'axios'
 import PageHeader from '@/components/common/PageHeader.vue'
 import SimpleEditor from '@/components/common/tiptap/SimpleEditor.vue'
 import { hasRichText } from '@/utils/richText.js'
+import { section } from '@/utils/crumbs.js'
 
 const TYPES = ['bug', 'feature']
 
@@ -162,6 +164,9 @@ export default {
         }
     },
     computed: {
+        breadcrumbs() {
+            return [section('feedback'), this.$t(`feedback.${this.form.type}.create`)]
+        },
         backTo() {
             return { name: 'feedback', query: TYPES.includes(this.$route.query.type) ? { type: this.$route.query.type } : {} }
         },

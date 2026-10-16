@@ -1,6 +1,11 @@
 <template>
     <div class="flex-grow-1">
-        <page-header :title="$t('admin.polls.title')" :subtitle="$t('admin.polls.subtitle')" icon="mdi-poll">
+        <page-header
+            :title="$t('admin.polls.title')"
+            :subtitle="$t('admin.polls.subtitle')"
+            icon="mdi-poll"
+            :breadcrumbs="[$crumb('admin'), $t('admin.polls.title')]"
+        >
             <template #actions>
                 <v-btn variant="tonal" prepend-icon="mdi-refresh" :loading="refreshing" :disabled="refreshing" @click="refresh">
                     {{ $t('dashboard.refresh') }}

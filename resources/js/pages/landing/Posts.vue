@@ -1,6 +1,6 @@
 <template>
     <div>
-        <page-header :title="post.title || ''" back-to="/blog" />
+        <page-header :title="post.title || ''" :breadcrumbs="[$crumb('blog'), post.title || '']" back-to="/blog" />
 
         <v-container>
             <div v-html="post.body"></div>

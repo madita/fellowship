@@ -4,6 +4,7 @@
             :title="$t('wiki.createCategory')"
             :subtitle="slug ? $t('wiki.creatingCategory', { slug: slug }) : ''"
             icon="mdi-folder-plus-outline"
+            :breadcrumbs="breadcrumbs"
             :back-to="slug ? `/wiki/category/${slug}` : '/wiki/category'"
         >
             <template #actions>
@@ -68,6 +69,7 @@
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import { useAuthStore } from '@/store/authStore.js';
+import { section } from '@/utils/crumbs.js';
 
 export default {
     components: {
@@ -164,6 +166,15 @@ export default {
     },
 
     computed: {
+        // The category it will sit under, where the address names one
+        breadcrumbs() {
+            return [
+                section('wiki'),
+                section('wikiCategories'),
+                this.slug && { title: this.slug, to: `/wiki/category/${this.slug}` },
+                this.$t('wiki.createCategory'),
+            ];
+        },
         authenticated() {
             const authStore = useAuthStore();
             return authStore.isLoggedIn;

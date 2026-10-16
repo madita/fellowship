@@ -5,6 +5,7 @@
         :title="$t('dashboard.welcomeBack', { username: user?.username || 'User' })"
         :subtitle="$t('dashboard.customizeDashboard')"
         icon="mdi-view-dashboard"
+        :breadcrumbs="false"
     >
         <template #actions>
             <v-btn

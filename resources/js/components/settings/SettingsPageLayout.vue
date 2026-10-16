@@ -5,6 +5,7 @@
             :subtitle="description"
             :icon="icon"
             :back-to="backTo"
+            :breadcrumbs="breadcrumbs"
             fluid
         >
             <template v-if="showSaveButton" #actions>
@@ -19,17 +20,6 @@
                     {{ $t('common.save') }}
                 </v-btn>
             </template>
-
-            <v-breadcrumbs
-                v-if="breadcrumbs.length > 0"
-                :items="breadcrumbs"
-                density="compact"
-                class="pa-0 text-caption"
-            >
-                <template v-slot:divider>
-                    <v-icon size="small">mdi-chevron-right</v-icon>
-                </template>
-            </v-breadcrumbs>
         </page-header>
 
         <v-container fluid class="pa-2 pa-sm-4">
@@ -58,6 +48,7 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import PageHeader from '@/components/common/PageHeader.vue';
+import { section } from '@/utils/crumbs.js';
 
 const { t } = useI18n();
 
@@ -106,6 +97,7 @@ const backTo = computed(() => props.backRoute || { name: 'admin-settings' });
 
 const breadcrumbs = computed(() => {
     const items = [
+        section('admin'),
         {
             title: t('settings.overview.settings'),
             disabled: false,

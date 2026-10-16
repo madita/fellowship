@@ -193,7 +193,14 @@ class SettingsSeeder extends Seeder
             'queue_driver'              => env('QUEUE_CONNECTION', 'sync'),
             'background_jobs_enabled'   => true,
 
-            // ===== 13. Footer Settings =====
+            // ===== 13. Navigation =====
+            // The trail above a page title, and where it starts: 'auto'
+            // means the dashboard for a member and the landing page for a
+            // guest — see Breadcrumbs.vue
+            'breadcrumbs_enabled' => true,
+            'breadcrumbs_root'    => 'auto',
+
+            // ===== 14. Footer Settings =====
             'custom_footer_enabled' => false,
             'custom_footer_html'    => '',
         ];

@@ -1,6 +1,6 @@
 <template>
     <div class="flex-grow-1">
-        <page-header :title="pageTitle" :subtitle="subtitle" :icon="icon" :back-to="backTo">
+        <page-header :title="pageTitle" :subtitle="subtitle" :icon="icon" :breadcrumbs="trail" :back-to="backTo">
             <template v-if="state.response.allow.creation" #actions>
                 <v-btn
                     color="primary"
@@ -489,6 +489,7 @@ import Tiptap from '../tiptap/Tiptap.vue'
 import PageHeader from '../PageHeader.vue'
 import EmptyState from '../EmptyState.vue'
 import LoadingState from '../LoadingState.vue'
+import { section } from '@/utils/crumbs.js'
 
 const SEARCH_DEBOUNCE_MS = 350
 const DEFAULT_PER_PAGE = 10
@@ -555,6 +556,12 @@ export default {
         backTo: {
             type: [String, Object],
             default: null
+        },
+        // The trail above the title; every table of this kind is an admin
+        // page, so it defaults to the admin area and this table's name
+        breadcrumbs: {
+            type: Array,
+            default: () => []
         }
     },
     setup(props) {
@@ -635,6 +642,10 @@ export default {
             if (!table) return t('dataTable.list')
             return table.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
         })
+
+        const trail = computed(() => (
+            props.breadcrumbs.length ? props.breadcrumbs : [section('admin'), pageTitle.value]
+        ))
 
         const searchOperators = computed(() => [
             { text: t('dataTable.operatorEquals'), value: 'equals' },
@@ -1151,6 +1162,7 @@ export default {
             // state & labels
             state,
             pageTitle,
+            trail,
             formTitle,
             searchOperators,
             densityLabel,

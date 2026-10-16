@@ -216,6 +216,11 @@ Promise.all([
             :title="form === 'edit' ? $t('admin.pages.edit') : $t('admin.pages.create')"
             :subtitle="page.title"
             icon="mdi-file-document-edit-outline"
+            :breadcrumbs="[
+                $crumb('admin'),
+                { title: $t('admin.pages.title'), to: { name: 'admin-pages' } },
+                form === 'edit' ? $t('admin.pages.edit') : $t('admin.pages.create'),
+            ]"
             :back-to="{ name: 'admin-pages' }"
         />
 

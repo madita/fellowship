@@ -4,6 +4,7 @@
             :title="$t('translationManager.title')"
             :subtitle="$t('translationManager.description')"
             icon="mdi-translate"
+            :breadcrumbs="[$crumb('admin'), $crumb('settings'), $t('translationManager.title')]"
             :back-to="{ name: 'admin-settings-category', params: { category: 'localization' } }"
             fluid
         >

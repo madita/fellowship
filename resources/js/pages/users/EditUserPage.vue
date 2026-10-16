@@ -4,6 +4,7 @@
             :title="$t('users.edit.title')"
             :subtitle="user.username"
             icon="mdi-account-edit"
+            :breadcrumbs="[$crumb('members'), user.username, $t('users.edit.title')]"
             back-to="/users/list"
         >
             <template #actions>

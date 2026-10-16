@@ -108,7 +108,7 @@ export const settingsCategories = [
     {
         id: 'menus',
         title: 'Navigation',
-        description: 'Site menus and menu items',
+        description: 'Site menus, menu items, and breadcrumbs',
         icon: 'mdi-menu-open',
         color: 'indigo',
         settings: [
@@ -119,6 +119,7 @@ export const settingsCategories = [
                 icon: 'mdi-menu',
                 routeName: 'admin-settings-menus',
             },
+            { id: 'breadcrumbs', title: 'Breadcrumbs', description: 'The trail above a page title, and where it starts', icon: 'mdi-chevron-right', component: 'BreadcrumbsPage' },
         ]
     },
     {

@@ -17,6 +17,7 @@
                 :title="ticket.title"
                 :subtitle="subtitle"
                 :icon="ticket.type?.icon || 'mdi-ticket-outline'"
+                :breadcrumbs="[$crumb('feedback'), ticket.title]"
                 :back-to="listRoute"
             />
 

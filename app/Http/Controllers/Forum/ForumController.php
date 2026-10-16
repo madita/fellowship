@@ -32,6 +32,12 @@ class ForumController extends Controller
             ->orderBy('sort')
             ->get()
             ->each(function ($cat) {
+                // A sub-forum's trail names the category it sits under,
+                // and that category is the row we are already holding —
+                // handing it over keeps transformParent() from going back
+                // to the database for each child
+                $cat->children->each(fn ($child) => $child->setRelation('parent', $cat));
+
                 // Query the actual latest ForumPost across all threads in this category
                 $latestPost = ForumPost::whereIn(
                     'thread_id',
@@ -547,13 +553,37 @@ class ForumController extends Controller
             'children'      => $cat->relationLoaded('children')
                 ? $cat->children->map(fn ($c) => $this->transformCategory($c))->values()
                 : [],
-            'parent'        => $cat->relationLoaded('parent') && $cat->parent
-                ? [
-                    'id'   => $cat->parent->id,
-                    'name' => $cat->parent->term->title,
-                    'slug' => $cat->parent->term->slug,
-                ]
-                : null,
+            'parent'        => $this->transformParent($cat),
         ];
+    }
+
+    /**
+     * The category this one sits under, for the breadcrumb trail and the
+     * back button on a sub-forum.
+     *
+     * Read through the relation rather than as $cat->parent: the
+     * taxonomies table carries a legacy `parent` integer column beside
+     * parent_id, an Eloquent attribute wins over a relation of the same
+     * name, and eager loading does not change that. So that property is
+     * a number — 0 for a top-level category — and this block used to be
+     * dead code that would have thrown the day the column was filled in.
+     * getRelation() reads what was eager loaded, which is why listing
+     * categories does not turn into a query per row.
+     */
+    private function transformParent(Taxonomy $cat): ?array
+    {
+        if ( ! $cat->parent_id) {
+            return null;
+        }
+
+        $parent = $cat->relationLoaded('parent')
+            ? $cat->getRelation('parent')
+            : $cat->parent()->with('term')->first();
+
+        return $parent?->term ? [
+            'id'   => $parent->id,
+            'name' => $parent->term->title,
+            'slug' => $parent->term->slug,
+        ] : null;
     }
 }

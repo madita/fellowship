@@ -1,7 +1,7 @@
 <template>
   <div class="py-3 min-w-0 w-full">
     <div class="text-h4 font-weight-bold">{{ $t('common.faq') }}</div>
-    <v-breadcrumbs :items="breadcrumbs" class="pa-0 py-2"></v-breadcrumbs>
+    <breadcrumbs :items="breadcrumbs" class="py-2" />
 
     <!-- search card -->
     <v-card img="/images/demo/cards/material2.jpg" class="mb-5">
@@ -61,18 +61,17 @@
 | Template to show frequently asked questions to your users
 |
 */
+import Breadcrumbs from '@/components/common/Breadcrumbs.vue';
+
 export default {
+  components: { Breadcrumbs },
   data() {
     return {
       search: '',
 
-      breadcrumbs: [{
-        title: this.$t('common.pages'),
-        disabled: false,
-        href: '#'
-      }, {
-        title: this.$t('common.faq')
-      }],
+      // The root step comes from Breadcrumbs; the step that used to sit
+      // here read "Pages" and linked to '#'
+      breadcrumbs: [{ title: this.$t('common.faq') }],
 
       faqs: [{
         id: 'general',

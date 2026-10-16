@@ -4,6 +4,7 @@
             :title="$t('forum.createThread')"
             :subtitle="forumStore.currentForum?.name || ''"
             icon="mdi-message-plus-outline"
+            :breadcrumbs="breadcrumbs"
             :back-to="{ name: 'forum-category', params: { slug: $route.params.slug } }"
         />
 
@@ -90,6 +91,7 @@
 import { useForumStore } from '@/store/forumStore.js'
 import Tiptap from '@/components/common/tiptap/Tiptap.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
+import { section } from '@/utils/crumbs.js'
 import PollForm from '@/components/poll/PollForm.vue'
 
 export default {
@@ -112,6 +114,22 @@ export default {
     computed: {
         isValid() {
             return this.title.trim().length > 0 && this.body.trim().length > 0
+        },
+        /**
+         * The forum, the category the thread is being written in — named
+         * once it has loaded, by its slug until then — and this form.
+         */
+        breadcrumbs() {
+            const slug = this.$route.params.slug
+
+            return [
+                section('forum'),
+                {
+                    title: this.forumStore.currentForum?.name || slug,
+                    to: { name: 'forum-category', params: { slug } },
+                },
+                this.$t('forum.createThread'),
+            ]
         }
     },
     mounted() {

@@ -4,6 +4,7 @@
             :title="$t('relatedContent.admin.title')"
             :subtitle="$t('relatedContent.admin.subtitle')"
             icon="mdi-link-variant"
+            :breadcrumbs="[$crumb('admin'), $t('relatedContent.admin.title')]"
             fluid
         >
             <template #actions>

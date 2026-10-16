@@ -59,11 +59,7 @@
                                             {{ $t('userProfile.online') }}
                                         </v-chip>
                                     </div>
-                                    <v-breadcrumbs
-                                        :items="breadcrumbs"
-                                        class="pa-0 py-1"
-                                        density="compact"
-                                    />
+                                    <breadcrumbs :items="breadcrumbs" class="py-1" />
                                 </div>
                             </div>
 
@@ -530,6 +526,8 @@ import { useUserStore } from '@/store/userStore.js'
 import { useDialog } from '@/composables/useDialog.js'
 import { formatDate, formatDateDistanceToNow } from '@/plugins/formatDate.js'
 import CopyLabel from '../../components/common/CopyLabel.vue'
+import Breadcrumbs from '@/components/common/Breadcrumbs.vue'
+import { section } from '@/utils/crumbs.js'
 import AchievementBadge from '@/components/achievements/AchievementBadge.vue'
 import AccountTab from './EditUser/AccountTab.vue'
 import InformationTab from './EditUser/InformationTab.vue'
@@ -540,6 +538,7 @@ import PermissionsTab from './EditUser/PermissionsTab.vue'
 export default {
     name: 'UserProfilePage',
     components: {
+        Breadcrumbs,
         CopyLabel,
         AccountTab,
         InformationTab,
@@ -580,11 +579,7 @@ export default {
         const roles = computed(() => userStore.roles || [])
 
         const breadcrumbs = computed(() => [
-            {
-                title: t('userProfile.users'),
-                to: '/users/list',
-                disabled: false
-            },
+            section('members'),
             {
                 title: user.value?.name || t('userProfile.editUser'),
                 disabled: true

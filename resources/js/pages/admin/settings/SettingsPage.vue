@@ -114,6 +114,9 @@ const componentMap = {
     'homepage/WidgetsPage': () => import('@/pages/admin/settings/homepage/WidgetsPage.vue'),
     'homepage/MenuPage': () => import('@/pages/admin/settings/homepage/MenuPage.vue'),
 
+    // Navigation
+    'menus/BreadcrumbsPage': () => import('@/pages/admin/settings/menus/BreadcrumbsPage.vue'),
+
     // Footer
     'footer/FooterSectionsPage': () => import('@/pages/admin/settings/footer/FooterSectionsPage.vue'),
     'footer/FooterWidgetsPage': () => import('@/pages/admin/settings/footer/FooterWidgetsPage.vue'),

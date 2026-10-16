@@ -4,6 +4,7 @@
           :title="$t('admin.announcements.title')"
           :subtitle="$t('admin.announcements.subtitle')"
           icon="mdi-bullhorn-outline"
+          :breadcrumbs="[$crumb('admin'), $t('admin.announcements.title')]"
       />
 
       <v-container>
