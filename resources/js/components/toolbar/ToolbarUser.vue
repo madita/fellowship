@@ -1,9 +1,11 @@
 <template>
     <v-menu transition="slide-y-transition">
         <template v-slot:activator="{ props }">
-            <v-btn icon variant="text" v-bind="props">
+            <!-- One size for every control in the bar (see _toolbar.scss);
+                 the avatar follows the button down to fit inside it -->
+            <v-btn icon variant="text" size="small" v-bind="props">
                 <v-badge color="success" dot location="bottom end" offset-x="4" offset-y="4">
-                    <user-avatar :user="user"></user-avatar>
+                    <user-avatar :user="user" :size="32"></user-avatar>
                 </v-badge>
             </v-btn>
         </template>

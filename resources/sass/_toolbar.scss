@@ -1,0 +1,144 @@
+/**
+ * The app bar: the logo on the left, the controls on the right.
+ *
+ * Three layouts build the same header — mega menu, language, the
+ * notification bells, the account menu — and two of them carried an
+ * identical hundred-line copy of these rules while the third carried
+ * none, so how the bar behaved on a phone depended on which layout the
+ * page happened to use. They live here once.
+ *
+ * The rule the old copies had backwards: the controls are what has to
+ * fit. The account menu sits at the end of that row, and a toolbar wider
+ * than the screen loses its end to `.v-toolbar__content`'s hidden
+ * overflow — so the way out was `overflow-x: hidden` on the bar, which
+ * only made the clipping tidier. The controls keep their width now and
+ * the logo gives way instead; it has a shrinkable `max-width` where the
+ * controls have an icon each.
+ *
+ * The other half of that fit is in the markup: every control in the bar
+ * is `size="small"`. The layouts already asked for it on the buttons they
+ * own, while the shared ones — the notification bells, the account menu —
+ * came in at Vuetify's default, so the row stepped between 48px and 38px
+ * and the wide ones were what ran off the end of a phone screen.
+ */
+
+.v-app-bar {
+    /**
+     * Shrinks, where it used to be flex-shrink: 0 and push the controls
+     * off the right-hand edge.
+     *
+     * The width cap is here rather than on the logo and the tagline
+     * separately, because the tagline is nowrap: with nothing to inherit a
+     * width from it would widen this box to its full length and never
+     * reach the ellipsis it asks for.
+     */
+    .logo-container {
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 180px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+
+    .logo-responsive {
+        height: 70px;
+        max-height: 100%;
+        width: auto;
+        max-width: 100%;
+        object-fit: contain;
+    }
+
+    .tagline-text {
+        max-width: 100%;
+        margin-top: 2px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: rgba(var(--v-theme-on-surface), 0.7);
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .toolbar-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        flex: 0 0 auto;
+        gap: 2px;
+    }
+
+    /* The search field fills whatever the spacer leaves, which on a wide
+       screen is most of the bar. Cap it so the bar reads the same from a
+       laptop to an ultrawide. */
+    .toolbar-search {
+        max-width: 360px;
+    }
+}
+
+/* Tablet: a smaller logo buys the controls room before they need it. */
+@media (min-width: 600px) and (max-width: 960px) {
+    .v-app-bar {
+        .logo-container {
+            max-width: 150px;
+        }
+
+        .logo-responsive {
+            height: 60px;
+        }
+
+        .tagline-text {
+            font-size: 0.7rem;
+        }
+
+        .toolbar-actions {
+            gap: 4px;
+        }
+    }
+}
+
+/* Phone: every pixel of the bar is spoken for, so the gaps close up and
+   the buttons give back the padding they do not need. */
+@media (max-width: 600px) {
+    .v-app-bar {
+        > .v-toolbar__content {
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+        }
+
+        .logo-container {
+            max-width: 100px;
+        }
+
+        .logo-responsive {
+            height: 48px;
+        }
+
+        .tagline-text {
+            font-size: 0.625rem;
+            margin-top: 1px;
+        }
+
+        .toolbar-actions {
+            gap: 0;
+
+            .v-btn {
+                min-width: 36px !important;
+                padding: 0 4px !important;
+            }
+
+            .v-btn:not(.v-btn--icon) {
+                padding: 0 8px !important;
+            }
+        }
+    }
+
+    /* Footer text that has to share a phone row with something else */
+    .v-footer .text-truncate {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}

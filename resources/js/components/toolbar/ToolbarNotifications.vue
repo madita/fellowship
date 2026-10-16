@@ -1,8 +1,8 @@
 <template>
     <v-menu transition="slide-y-transition" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
-            <v-btn icon variant="text" v-bind="props" :title="$t('notifications.title')" :aria-label="$t('notifications.title')">
-                <!-- The badge sits on the icon, not the 48px button, so it stays close and inside the bar -->
+            <v-btn icon variant="text" size="small" v-bind="props" :title="$t('notifications.title')" :aria-label="$t('notifications.title')">
+                <!-- The badge sits on the icon, not the button around it, so it stays close and inside the bar -->
                 <v-badge
                     :content="notifications.length"
                     :model-value="notifications.length > 0"
@@ -14,7 +14,9 @@
             </v-btn>
         </template>
 
-        <v-card min-width="360" max-width="420">
+        <!-- A flat 360 is wider than a 360px phone, so the panel hung off the
+             edge it is anchored to. Ask for 360 where there is room for it. -->
+        <v-card min-width="min(360px, calc(100vw - 24px))" max-width="min(420px, calc(100vw - 24px))">
             <v-card-title class="d-flex align-center justify-space-between py-2 px-4">
                 <span class="text-subtitle-1 font-weight-bold">{{ $t('notifications.title') }}</span>
                 <v-btn
