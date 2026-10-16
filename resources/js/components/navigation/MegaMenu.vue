@@ -9,7 +9,7 @@
             location="bottom end"
             transition="slide-y-transition"
             min-width="280"
-            max-width="min(960px, 96vw)"
+            max-width="min(960px, calc(100vw - 32px))"
         >
             <template #activator="{ props: activatorProps }">
                 <v-btn
@@ -23,17 +23,16 @@
                 </v-btn>
             </template>
 
-            <v-card rounded="0" class="pa-2 overflow-x-auto">
+            <v-card rounded="lg" class="mega-panel pa-2">
                 <div v-if="isLoading" class="text-center py-6">
                     <v-progress-circular indeterminate size="24" width="2" class="mb-2" />
                     <div class="text-caption text-medium-emphasis">{{ $t('megaMenu.loading') }}</div>
                 </div>
 
-                <v-row v-else-if="columns.length" no-gutters class="flex-nowrap align-start">
-                    <v-col
+                <div v-else-if="columns.length" class="mega-grid">
+                    <div
                         v-for="col in columns"
                         :key="col.key"
-                        cols="auto"
                         class="mega-col px-1"
                     >
                         <!-- Column for an item with children: heading + child cards -->
@@ -70,8 +69,8 @@
                                 @navigate="menuOpen = false"
                             />
                         </template>
-                    </v-col>
-                </v-row>
+                    </div>
+                </div>
 
                 <div v-else class="text-center text-caption text-medium-emphasis py-4">
                     {{ $t('megaMenu.noItems') }}
@@ -79,7 +78,16 @@
             </v-card>
         </v-menu>
 
-        <!-- Mobile: trigger + navigation drawer -->
+        <!-- Mobile: trigger + navigation drawer.
+
+             The drawer is teleported out of this component, because this
+             component renders inside the app bar and the bar is a Vuetify
+             layout item: it carries an inline transform, which makes it
+             the containing block for the fixed-position drawer nested
+             inside it, and `.v-toolbar__content` clips what overflows.
+             The drawer was being cut down to the height of the bar — its
+             title row and the close button were all of the menu a phone
+             ever saw. -->
         <template v-else>
             <v-btn
                 icon
@@ -91,71 +99,73 @@
                 <v-icon>{{ menuOpen ? 'mdi-close' : 'mdi-view-grid-outline' }}</v-icon>
             </v-btn>
 
-            <v-navigation-drawer
-                v-model="menuOpen"
-                temporary
-                location="left"
-                :width="320"
-            >
-                <div class="d-flex align-center justify-space-between pa-3">
-                    <span class="text-subtitle-1 font-weight-bold">{{ $t('megaMenu.menuTitle') }}</span>
-                    <v-btn
-                        icon
-                        variant="text"
-                        size="small"
-                        :aria-label="$t('megaMenu.closeMenu')"
-                        @click="menuOpen = false"
-                    >
-                        <v-icon>mdi-close</v-icon>
-                    </v-btn>
-                </div>
-                <v-divider />
-
-                <div class="pa-2">
-                    <div v-if="isLoading" class="d-flex align-center pa-3">
-                        <v-progress-circular indeterminate size="20" width="2" class="mr-2" />
-                        {{ $t('megaMenu.loading') }}
+            <teleport :to="drawerHost">
+                <v-navigation-drawer
+                    v-model="menuOpen"
+                    temporary
+                    location="right"
+                    :width="drawerWidth"
+                >
+                    <div class="d-flex align-center justify-space-between pa-3">
+                        <span class="text-subtitle-1 font-weight-bold">{{ $t('megaMenu.menuTitle') }}</span>
+                        <v-btn
+                            icon
+                            variant="text"
+                            size="small"
+                            :aria-label="$t('megaMenu.closeMenu')"
+                            @click="menuOpen = false"
+                        >
+                            <v-icon>mdi-close</v-icon>
+                        </v-btn>
                     </div>
+                    <v-divider />
 
-                    <template v-else-if="items.length">
-                        <div v-for="group in items" :key="group.id" class="mb-2">
-                            <template v-if="group.children && group.children.length">
-                                <component
-                                    :is="linkTag(group)"
-                                    v-bind="linkProps(group)"
-                                    class="mega-heading d-block px-3 pt-2 pb-1 text-decoration-none"
-                                    :class="{ 'mega-heading--link': hasLink(group) }"
-                                    @click="hasLink(group) && (menuOpen = false)"
-                                >
-                                    <div class="d-flex align-center text-overline">
-                                        <v-icon v-if="group.icon" :icon="group.icon" size="16" class="mr-2" />
-                                        {{ group.label }}
-                                    </div>
-                                    <div v-if="descOf(group)" class="text-caption">
-                                        {{ descOf(group) }}
-                                    </div>
-                                </component>
+                    <div class="pa-2">
+                        <div v-if="isLoading" class="d-flex align-center pa-3">
+                            <v-progress-circular indeterminate size="20" width="2" class="mr-2" />
+                            {{ $t('megaMenu.loading') }}
+                        </div>
+
+                        <template v-else-if="items.length">
+                            <div v-for="group in items" :key="group.id" class="mb-2">
+                                <template v-if="group.children && group.children.length">
+                                    <component
+                                        :is="linkTag(group)"
+                                        v-bind="linkProps(group)"
+                                        class="mega-heading d-block px-3 pt-2 pb-1 text-decoration-none"
+                                        :class="{ 'mega-heading--link': hasLink(group) }"
+                                        @click="hasLink(group) && (menuOpen = false)"
+                                    >
+                                        <div class="d-flex align-center text-overline">
+                                            <v-icon v-if="group.icon" :icon="group.icon" size="16" class="mr-2" />
+                                            {{ group.label }}
+                                        </div>
+                                        <div v-if="descOf(group)" class="text-caption">
+                                            {{ descOf(group) }}
+                                        </div>
+                                    </component>
+                                    <mega-menu-item
+                                        v-for="child in group.children"
+                                        :key="child.id"
+                                        :item="child"
+                                        @navigate="menuOpen = false"
+                                    />
+                                </template>
+
                                 <mega-menu-item
-                                    v-for="child in group.children"
-                                    :key="child.id"
-                                    :item="child"
+                                    v-else
+                                    :item="group"
                                     @navigate="menuOpen = false"
                                 />
-                            </template>
+                            </div>
+                        </template>
 
-                            <mega-menu-item
-                                v-else
-                                :item="group"
-                                @navigate="menuOpen = false"
-                            />
+                        <div v-else class="text-caption text-medium-emphasis pa-3">
+                            {{ $t('megaMenu.noItems') }}
                         </div>
-                    </template>
-
-                    <div v-else class="text-caption text-medium-emphasis pa-3">
-                        {{ $t('megaMenu.noItems') }}
                     </div>
-                </div>
-            </v-navigation-drawer>
+                </v-navigation-drawer>
+            </teleport>
         </template>
     </div>
 </template>
@@ -173,11 +183,24 @@ const props = defineProps({
 });
 
 const route = useRoute();
-const { mdAndUp } = useDisplay();
+const { mdAndUp, width } = useDisplay();
 const menuStore = useMenuStore();
 const { hasLink, linkTag, linkProps } = useMenuLink();
 
 const menuOpen = ref(false);
+
+// 320 is the width this drawer wants, but a phone narrower than that gets
+// a drawer that covers the page edge to edge, with the content it is
+// covering nowhere in sight. Leave a strip of it showing to tap back to.
+const drawerWidth = computed(() => Math.min(320, Math.round(width.value * 0.9)));
+
+// Where that drawer goes: the layout root, the nearest ancestor of the app
+// bar that is not transformed, so the drawer is laid out against the window
+// and its scrim covers the page however far down it is scrolled. Resolved
+// after mount, because that is when the element is there to find; `body`
+// stands in until then, and wherever there is no Vuetify app around this
+// component at all.
+const drawerHost = ref('body');
 
 // menuStore is keyed by location — wrap the per-location getters as computeds
 // so the template stays readable.
@@ -224,6 +247,7 @@ watch(() => props.location, (loc) => {
 });
 
 onMounted(() => {
+    drawerHost.value = document.querySelector('.v-application__wrap') ?? 'body';
     menuStore.fetchMenu(props.location);
 });
 </script>
@@ -234,9 +258,39 @@ onMounted(() => {
     align-items: center;
 }
 
-/* Each column of the panel has a fixed width for a tidy grid. */
+/**
+ * The panel wraps.
+ *
+ * It used to be one nowrap row of 260px columns inside a card capped at
+ * 960px, which is three and a half columns: a menu with four groups put
+ * the rest behind a horizontal scrollbar, and nothing in the panel said
+ * there was more to the right. Columns now run on to a second row.
+ *
+ * They ask for 230 and take what is going: four to a row on a full-width
+ * panel, which is about the 260 they used to be fixed at. The bounds are
+ * the lower so a column still fits an icon tile beside a line of
+ * description, the upper so a lone column on the last row does not
+ * stretch the width of the panel.
+ */
+.mega-grid {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px 0;
+}
+
 .mega-col {
-    width: 260px;
+    flex: 1 1 230px;
+    min-width: 210px;
+    max-width: 320px;
+}
+
+/* And it stays on screen vertically too: a group with a long list of
+   children scrolls inside the panel rather than running off the bottom,
+   where a dropdown has nothing to scroll with. */
+.mega-panel {
+    max-height: min(70vh, 620px);
+    overflow-y: auto;
 }
 
 /* Muted by default; label + description subtitle inherit this colour. */

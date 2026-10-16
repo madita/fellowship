@@ -1,8 +1,8 @@
 <template>
     <v-menu location="bottom end" transition="slide-y-transition" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
-            <v-btn icon variant="text" v-bind="props">
-                <!-- The badge sits on the icon, not the 48px button, so it stays close and inside the bar -->
+            <v-btn icon variant="text" size="small" v-bind="props">
+                <!-- The badge sits on the icon, not the button around it, so it stays close and inside the bar -->
                 <v-badge
                     :content="unreadCount"
                     :model-value="unreadCount > 0"
@@ -14,7 +14,7 @@
             </v-btn>
         </template>
 
-        <v-card min-width="380" max-width="440">
+        <v-card min-width="min(380px, calc(100vw - 24px))" max-width="min(440px, calc(100vw - 24px))">
             <v-card-title class="d-flex align-center justify-space-between py-2 px-4">
                 <div class="d-flex align-center ga-2 text-subtitle-1 font-weight-medium">
                     <v-icon size="20" color="primary">mdi-file-document-edit-outline</v-icon>

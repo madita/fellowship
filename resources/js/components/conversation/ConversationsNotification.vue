@@ -2,8 +2,8 @@
     <v-menu location="bottom end" transition="slide-y-transition">
 
         <template v-slot:activator="{ props }">
-            <v-btn icon variant="text" v-bind="props">
-                <!-- The badge sits on the icon, not the 48px button, so it stays close and inside the bar -->
+            <v-btn icon variant="text" size="small" v-bind="props">
+                <!-- The badge sits on the icon, not the button around it, so it stays close and inside the bar -->
                 <v-badge
                     :content="unreadCount"
                     :model-value="unreadCount > 0"
@@ -18,8 +18,8 @@
         <!-- Conversations menu list -->
         <v-card
             class="mx-auto"
-            min-width="350"
-            max-width="450"
+            min-width="min(350px, calc(100vw - 24px))"
+            max-width="min(450px, calc(100vw - 24px))"
         >
             <v-card-title class="text-subtitle-1 font-weight-medium d-flex align-center ga-2">
                 <v-icon>mdi-message-text</v-icon>

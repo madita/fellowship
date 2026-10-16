@@ -1,6 +1,9 @@
 // Import CSS custom properties declarations
 @import 'variables';
 
+// The app bar, shared by every layout that has one
+@import 'toolbar';
+
 *,
 *::before,
 *::after {

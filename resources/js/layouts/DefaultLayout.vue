@@ -64,12 +64,17 @@
                     <div v-else class="d-flex flex-grow-1 align-center">
                         <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
 
-                        <v-spacer class="d-none d-lg-block"></v-spacer>
+                        <!-- One spacer, always. The two it replaces were
+                             d-none d-lg-block and d-block d-sm-none, which
+                             between them left 600–1279px with no spacer at
+                             all: on a tablet the whole bar packed itself
+                             against the nav icon with the right half empty. -->
+                        <v-spacer></v-spacer>
 
                         <!-- search input desktop -->
                         <v-text-field
                             ref="search"
-                            class="mx-1 d-none d-md-block"
+                            class="mx-1 d-none d-md-block toolbar-search"
                             :placeholder="$t('menu.search')"
                             prepend-inner-icon="mdi-magnify"
                             hide-details
@@ -77,39 +82,36 @@
                             rounded
                         ></v-text-field>
 
-                        <v-spacer class="d-block d-sm-none"></v-spacer>
+                        <!-- The controls the other two layouts group the same
+                             way, so _toolbar.scss can keep them off the edge
+                             of a phone screen in one place -->
+                        <div class="toolbar-actions d-flex align-center">
+                            <v-btn class="d-flex d-md-none" icon="mdi-magnify" variant="text" size="small" :title="$t('layout.search')" @click="showSearch = true" />
 
-                        <v-btn class="d-flex d-md-none" icon="mdi-magnify" variant="text" :title="$t('layout.search')" @click="showSearch = true" />
-
-                        <mega-menu />
-                        <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-block"/>
+                            <mega-menu />
+                            <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-block"/>
 
 <!--                                                <toolbar-apps/>-->
 
-                        <template v-if="authenticated">
-                            <div class="mr-1">
+                            <template v-if="authenticated">
                                 <toolbar-notifications/>
-                            </div>
-                            <div v-if="sandboxEnabled" class="mr-1">
-                                <sandbox-notifications/>
-                            </div>
-                            <div class="mr-1">
+                                <sandbox-notifications v-if="sandboxEnabled"/>
                                 <conversations-notification/>
-                            </div>
-                            <v-btn icon variant="text" class="mx-1 d-none d-md-flex" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
-                                <v-icon>mdi-account-group</v-icon>
-                            </v-btn>
-                            <v-btn icon variant="text" class="mx-1 d-none d-md-flex" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t ? $t('toolbar.settings') : 'Settings'">
-                                <v-icon>mdi-cog</v-icon>
-                            </v-btn>
-                            <toolbar-user/>
-                        </template>
-                        <template v-else>
-                            <v-btn class="mx-1 d-none d-sm-flex" variant="text" to="/auth/signin">
-                                {{ $t('layout.signIn') }}
-                            </v-btn>
-                            <v-btn icon="mdi-login" variant="text" class="mx-1 d-flex d-sm-none" to="/auth/signin" :title="$t('layout.signIn')" />
-                        </template>
+                                <v-btn icon variant="text" size="small" class="d-none d-md-flex" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
+                                    <v-icon>mdi-account-group</v-icon>
+                                </v-btn>
+                                <v-btn icon variant="text" size="small" class="d-none d-md-flex" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t ? $t('toolbar.settings') : 'Settings'">
+                                    <v-icon>mdi-cog</v-icon>
+                                </v-btn>
+                                <toolbar-user/>
+                            </template>
+                            <template v-else>
+                                <v-btn class="d-none d-sm-flex" variant="text" to="/auth/signin">
+                                    {{ $t('layout.signIn') }}
+                                </v-btn>
+                                <v-btn icon="mdi-login" variant="text" size="small" class="d-flex d-sm-none" to="/auth/signin" :title="$t('layout.signIn')" />
+                            </template>
+                        </div>
 
                     </div>
                 </div>
