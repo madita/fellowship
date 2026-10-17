@@ -289,6 +289,18 @@ export const admin = [{
             ]
         },
         component: () => import(/* webpackChunkName: "admin-polls" */ '@/pages/admin/PollsDashboard.vue')
+    },
+    {
+        // Stays reachable with the podcast feature switched off, so an
+        // admin can still get at the episodes to switch it back on.
+        path: '/admin/podcast',
+        name: 'admin-podcast',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-podcast" */ '@/pages/admin/PodcastManager.vue')
     }]
 
 export default admin

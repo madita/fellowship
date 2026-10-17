@@ -41,6 +41,7 @@ const SECTIONS = {
     irc: { title: 'irc.client.title', to: { name: 'irc-client' }, icon: 'mdi-chat-processing-outline' },
     sandbox: { title: 'sandbox.title', to: { name: 'sandbox.index' }, icon: 'mdi-file-document-edit-outline' },
     achievements: { title: 'achievements.title', to: { name: 'achievements' }, icon: 'mdi-trophy-outline' },
+    podcast: { title: 'podcast.title', to: { name: 'podcast' }, icon: 'mdi-podcast' },
 };
 
 /**

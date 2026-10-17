@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { FEATURES, featureSettingKey } from '@/configs/features.js';
 import { useSettingsStore } from '@/store/settingStore.js';
+import { useSettings } from '@/composables/useSettings.js';
 import navigation from '@/configs/navigation.js';
 import toolbar from '@/configs/toolbar.js';
 
@@ -97,5 +98,26 @@ describe('settingsStore.isFeatureEnabled', () => {
         store.appSettings.feature_forum_enabled = false;
         expect(store.isFeatureEnabled('forum')).toBe(false);
         expect(store.isFeatureEnabled('wiki')).toBe(true);
+    });
+});
+
+describe('the toggle screen can show every feature', () => {
+    /**
+     * The switches bind to useSettings()'s own object, which the toggle
+     * screen renders before anything has been saved. A feature missing
+     * from it binds to undefined, so its switch reads "off" while the
+     * feature is in fact on — and saving that page then turns it off for
+     * real. A new feature has to be declared there too, and this says so
+     * rather than leaving it to be noticed in the UI.
+     */
+    it('every feature in the registry has a default to bind to', () => {
+        const { settings } = useSettings();
+
+        for (const feature of FEATURES) {
+            const key = featureSettingKey(feature.key);
+
+            expect(Object.keys(settings), `${key} missing from useSettings defaults`).toContain(key);
+            expect(settings[key], `${key} should default to enabled`).toBe(true);
+        }
     });
 });

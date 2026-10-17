@@ -15,6 +15,7 @@ export default {
                 { feature: 'irc', icon: 'mdi-chat-processing-outline', key: 'menu.irc', text: 'IRC', link: '/irc' },
                 { feature: 'gallery', icon: 'mdi-image-multiple-outline', key: 'menu.gallery', text: 'Gallery', link: '/gallery' },
                 { icon: 'mdi-trophy-outline', key: 'menu.achievements', text: 'Achievements', link: '/achievements' },
+                { feature: 'podcast', icon: 'mdi-podcast', key: 'menu.podcast', text: 'Podcast', link: '/podcast' },
                 { feature: 'feedback', icon: 'mdi-message-alert-outline', key: 'menu.feedback', text: 'Feedback', link: '/feedback' }
             ]
         },
@@ -38,6 +39,7 @@ export default {
                         {icon: 'mdi-calendar-account-outline', key: 'menu.adminEventsProfiles', text: 'Profiles', link: '/admin/events/profiles'}
                     ]
                 },
+                {icon: 'mdi-podcast', key: 'menu.adminPodcast', text: 'Podcast', link: '/admin/podcast'},
                 {icon: 'mdi-folder-multiple-image', key: 'menu.adminMedia', text: 'Media Center', link: '/admin/media'},
                 {icon: 'mdi-ticket-outline', key: 'menu.adminTickets', text: 'Tickets', link: '/admin/tickets'},
                 {icon: 'mdi-poll', key: 'menu.adminPolls', text: 'Polls', link: '/admin/polls'},

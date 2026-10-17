@@ -655,6 +655,8 @@ export default {
         'adminEventsList': 'List',
         'adminEventsTypes': 'Types',
         'adminEventsProfiles': 'Profiles',
+        'podcast': 'Podcast',
+        'adminPodcast': 'Podcast',
         'adminMedia': 'Media Center',
         'adminTickets': 'Tickets',
         'adminPolls': 'Polls',
@@ -732,6 +734,68 @@ export default {
                 'lastMigration': 'Last data import: {name} — {status}, {time}.'
             }
         },
+        'podcast': {
+            'title': 'Podcast',
+            'subtitle': 'Shows, their episodes and the audio for each',
+            'newShow': 'New show',
+            'editShow': 'Edit show',
+            'newEpisode': 'New episode',
+            'editEpisode': 'Edit episode',
+            'cover': 'Cover art',
+            'audio': 'Audio',
+            'state': 'State',
+            'published': 'Published',
+            'draft': 'Draft',
+            'publishShow': 'Publish this show',
+            'publishShowHint': 'An unpublished show and its episodes are not listed and have no feed.',
+            'publishEpisode': 'Publish this episode',
+            'uploadAudio': 'Upload audio',
+            'uploadingAudio': 'Uploading audio…',
+            'featureOff': 'The podcast feature is switched off, so listeners cannot see any of this. You can still manage shows and episodes here.',
+            'goToToggles': 'Feature toggles',
+            'loadFailed': 'Could not load the podcasts.',
+            'saveFailed': 'Could not save.',
+            'deleteFailed': 'Could not delete.',
+            'uploadFailed': 'Could not upload the file.',
+            'confirmDeleteShow': 'Delete the show "{title}" with all of its episodes and audio files? This cannot be undone.',
+            'confirmDeleteEpisode': 'Delete the episode "{title}" and its audio file? This cannot be undone.',
+            'stats': {
+                'podcasts': 'Shows',
+                'published_podcasts': 'Published',
+                'episodes': 'Episodes',
+                'published_episodes': 'Published',
+                'plays': 'Plays',
+                'audio_bytes': 'Audio'
+            },
+            'fields': {
+                'subtitle': 'Subtitle',
+                'author': 'Author',
+                'category': 'Category',
+                'language': 'Language',
+                'summary': 'Summary',
+                'summaryHint': 'One or two sentences, shown in lists and in podcast apps',
+                'showNotesHint': 'Links, chapters, whatever belongs with the episode',
+                'number': 'No.',
+                'episodeNumber': 'Episode',
+                'seasonNumber': 'Season',
+                'duration': 'Duration',
+                'durationHint': 'As a clock (12:30) or in seconds',
+                'durationInvalid': 'Use 12:30, 1:04:05 or a number of seconds',
+                'audioUrl': 'Audio URL',
+                'audioUrlHint': 'For an episode hosted elsewhere. Leave empty and upload a file instead.',
+                'publishedAt': 'Publication date',
+                'publishedAtHint': 'A date in the future keeps the episode out of the feed until then.'
+            },
+            'empty': {
+                'title': 'No shows yet',
+                'text': 'Create a show, then add episodes to it.'
+            },
+            'noEpisodes': {
+                'title': 'No episodes yet',
+                'text': 'Add an episode and upload its audio file.'
+            }
+        },
+
         'polls': {
             'title': 'Polls',
             'subtitle': 'Every poll attached to forum threads and timeline posts — numbers, results and moderation',
@@ -6066,6 +6130,50 @@ export default {
             'ogImageHint': 'Image displayed when your site is shared on social media'
         }
     },
+    'podcast': {
+        'title': 'Podcast',
+        'subtitle': 'Listen to our shows, or subscribe in the podcast app you already use',
+        'shows': 'Shows',
+        'episode': 'Episode',
+        'latestEpisodes': 'Latest episodes',
+        'allEpisodes': 'All episodes of this show',
+        'showNotes': 'Show notes',
+        'noShowNotes': 'This episode has no show notes.',
+        'subscribe': 'Subscribe',
+        'feedUrl': 'RSS feed',
+        'feedCopied': 'Feed URL copied',
+        'explicit': 'Explicit',
+        'noAudio': 'No audio',
+        'noAudioHint': 'This episode has no audio file yet.',
+        'episodeCount': '{count} episodes',
+        'playCount': '{count} plays',
+        'player': {
+            'label': 'Podcast player',
+            'play': 'Play',
+            'pause': 'Pause',
+            'seek': 'Seek within the episode',
+            'speed': 'Playback speed',
+            'back15': 'Back 15 seconds',
+            'forward30': 'Forward 30 seconds'
+        },
+        'empty': {
+            'title': 'No shows yet',
+            'text': 'Once a show is published it appears here.'
+        },
+        'noEpisodes': {
+            'title': 'No episodes yet',
+            'text': 'This show has not published an episode yet.'
+        },
+        'notFound': {
+            'title': 'Show not found',
+            'text': 'This show does not exist, or it has not been published.'
+        },
+        'episodeNotFound': {
+            'title': 'Episode not found',
+            'text': 'This episode does not exist, or it has not been published.'
+        }
+    },
+
     'feedback': {
         'title': 'Feedback',
         'subtitle': 'Report bugs, suggest features and vote on what matters most to you',

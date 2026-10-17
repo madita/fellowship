@@ -77,6 +77,13 @@ export const FEATURES = [
         icon: 'mdi-bug-outline',
         routePrefixes: ['/feedback'],
     },
+    {
+        key: 'podcast',
+        label: 'Podcast',
+        description: 'Shows and episodes with an audio player and an RSS feed',
+        icon: 'mdi-podcast',
+        routePrefixes: ['/podcast'],
+    },
 ];
 
 export const featureSettingKey = (key) => `feature_${key}_enabled`;

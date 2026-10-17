@@ -1,0 +1,358 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Podcast\Podcast;
+use App\Models\Podcast\PodcastEpisode;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+/**
+ * Managing shows and episodes.
+ *
+ * Deliberately not behind the feature gate: an admin who switched the
+ * podcast off still has to be able to reach the episodes to turn it back
+ * on, the same rule the menu follows when it keeps admin pages visible.
+ */
+class PodcastAdminController extends Controller
+{
+    /**
+     * What an episode's audio may be. mpeg covers mp3, mp4 covers m4a —
+     * the browser sends the container type, not the extension.
+     */
+    private const AUDIO_MIMES = 'mp3,m4a,mp4,wav,ogg,oga,flac,aac,weba,webm';
+
+    /** 200 MB: an hour of decent-bitrate audio with room to spare. */
+    private const AUDIO_MAX_KB = 204800;
+
+    public function __construct()
+    {
+        $this->middleware(['auth:sanctum']);
+        $this->middleware(['admin']);
+    }
+
+    // ----------------------------------------------------------------
+    // Shows
+    // ----------------------------------------------------------------
+
+    public function index(): JsonResponse
+    {
+        $podcasts = Podcast::withCount('episodes')
+            ->with('creator')
+            ->orderBy('title')
+            ->get()
+            ->map(fn (Podcast $podcast) => $podcast->toApiArray(detailed: true));
+
+        return response()->json(['podcasts' => $podcasts]);
+    }
+
+    public function stats(): JsonResponse
+    {
+        return response()->json([
+            'stats' => [
+                'podcasts'           => Podcast::count(),
+                'published_podcasts' => Podcast::published()->count(),
+                'episodes'           => PodcastEpisode::count(),
+                'published_episodes' => PodcastEpisode::where('is_published', true)->count(),
+                'plays'              => (int) PodcastEpisode::sum('plays'),
+                'audio_bytes'        => (int) PodcastEpisode::sum('audio_size'),
+            ],
+        ]);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $data = $request->validate($this->podcastRules());
+
+        $podcast = Podcast::create($data + [
+            'created_by' => $request->user()->id,
+        ]);
+
+        return response()->json([
+            'message' => __('messages.podcast.created'),
+            'podcast' => $podcast->toApiArray(detailed: true),
+        ], 201);
+    }
+
+    public function update(Request $request, Podcast $podcast): JsonResponse
+    {
+        $data = $request->validate($this->podcastRules(updating: true));
+
+        // A show people already subscribe to keeps its slug unless the
+        // title is actually changed, so feed URLs stay put.
+        $podcast->fill($data)->save();
+
+        return response()->json([
+            'message' => __('messages.podcast.updated'),
+            'podcast' => $podcast->fresh()->toApiArray(detailed: true),
+        ]);
+    }
+
+    public function destroy(Podcast $podcast): JsonResponse
+    {
+        // The episode rows go with the show through the foreign key, but
+        // their audio files are ours to clean up.
+        foreach ($podcast->episodes as $episode) {
+            $episode->deleteAudioFile();
+        }
+
+        $this->deleteStoredFile($podcast->cover_image);
+        $podcast->delete();
+
+        return response()->json([
+            'message' => __('messages.podcast.deleted'),
+        ]);
+    }
+
+    public function uploadCover(Request $request, Podcast $podcast): JsonResponse
+    {
+        $request->validate([
+            'cover' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
+        ]);
+
+        $this->deleteStoredFile($podcast->cover_image);
+
+        $path = $request->file('cover')->store('podcasts/covers', 'public');
+        $podcast->update(['cover_image' => $path]);
+
+        return response()->json([
+            'message' => __('messages.media.cover_updated'),
+            'podcast' => $podcast->fresh()->toApiArray(detailed: true),
+        ]);
+    }
+
+    // ----------------------------------------------------------------
+    // Episodes
+    // ----------------------------------------------------------------
+
+    public function episodes(Request $request, Podcast $podcast): JsonResponse
+    {
+        $validated = $request->validate([
+            'search'   => 'nullable|string|max:255',
+            'status'   => 'nullable|in:published,draft',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+
+        $query = $podcast->episodes()->newestFirst();
+
+        if (($validated['status'] ?? null) === 'published') {
+            $query->where('is_published', true);
+        } elseif (($validated['status'] ?? null) === 'draft') {
+            $query->where('is_published', false);
+        }
+
+        if ( ! empty($validated['search'])) {
+            $term = '%' . $validated['search'] . '%';
+            $query->where(function ($q) use ($term) {
+                $q->where('title', 'like', $term)->orWhere('summary', 'like', $term);
+            });
+        }
+
+        $episodes = $query->paginate($validated['per_page'] ?? 25);
+
+        return response()->json([
+            'episodes' => $episodes->getCollection()
+                ->map(fn (PodcastEpisode $episode) => $episode->toApiArray(detailed: true))
+                ->values(),
+            'meta'     => [
+                'current_page' => $episodes->currentPage(),
+                'last_page'    => $episodes->lastPage(),
+                'per_page'     => $episodes->perPage(),
+                'total'        => $episodes->total(),
+            ],
+        ]);
+    }
+
+    public function storeEpisode(Request $request, Podcast $podcast): JsonResponse
+    {
+        $data = $request->validate($this->episodeRules());
+
+        $audio = $this->pullAudio($request, $data);
+
+        $episode = $podcast->episodes()->create($data + $audio + [
+            'created_by' => $request->user()->id,
+        ]);
+
+        return response()->json([
+            'message' => __('messages.podcast.episode_created'),
+            'episode' => $episode->toApiArray(detailed: true),
+        ], 201);
+    }
+
+    public function updateEpisode(Request $request, Podcast $podcast, PodcastEpisode $episode): JsonResponse
+    {
+        $this->assertBelongsTo($podcast, $episode);
+
+        $data  = $request->validate($this->episodeRules(updating: true));
+        $audio = $this->pullAudio($request, $data, $episode);
+
+        $episode->fill($data + $audio)->save();
+
+        return response()->json([
+            'message' => __('messages.podcast.episode_updated'),
+            'episode' => $episode->fresh()->toApiArray(detailed: true),
+        ]);
+    }
+
+    public function destroyEpisode(Podcast $podcast, PodcastEpisode $episode): JsonResponse
+    {
+        $this->assertBelongsTo($podcast, $episode);
+
+        $episode->deleteAudioFile();
+        $this->deleteStoredFile($episode->cover_image);
+        $episode->delete();
+
+        return response()->json([
+            'message' => __('messages.podcast.episode_deleted'),
+        ]);
+    }
+
+    /**
+     * The audio file, uploaded on its own.
+     *
+     * Separate from the form because the file is large: the editor saves
+     * the text immediately and the upload gets its own progress bar.
+     */
+    public function uploadAudio(Request $request, Podcast $podcast, PodcastEpisode $episode): JsonResponse
+    {
+        $this->assertBelongsTo($podcast, $episode);
+
+        $request->validate([
+            'audio' => 'required|file|mimes:' . self::AUDIO_MIMES . '|max:' . self::AUDIO_MAX_KB,
+        ]);
+
+        $episode->deleteAudioFile();
+
+        $file = $request->file('audio');
+        $path = $file->store('podcasts/audio', 'public');
+
+        $episode->update([
+            'audio_path' => $path,
+            'audio_mime' => $file->getClientMimeType(),
+            'audio_size' => $file->getSize(),
+            // A hosted file wins over whatever remote URL was there
+            'audio_url'  => null,
+        ]);
+
+        return response()->json([
+            'message' => __('messages.media.uploaded'),
+            'episode' => $episode->fresh()->toApiArray(detailed: true),
+        ]);
+    }
+
+    public function deleteAudio(Podcast $podcast, PodcastEpisode $episode): JsonResponse
+    {
+        $this->assertBelongsTo($podcast, $episode);
+
+        $episode->deleteAudioFile();
+        $episode->update([
+            'audio_path' => null,
+            'audio_mime' => null,
+            'audio_size' => null,
+        ]);
+
+        return response()->json([
+            'message' => __('messages.media.deleted'),
+            'episode' => $episode->fresh()->toApiArray(detailed: true),
+        ]);
+    }
+
+    // ----------------------------------------------------------------
+    // Helpers
+    // ----------------------------------------------------------------
+
+    private function podcastRules(bool $updating = false): array
+    {
+        $required = $updating ? 'sometimes|required' : 'required';
+
+        return [
+            'title'        => $required . '|string|max:255',
+            'subtitle'     => 'nullable|string|max:255',
+            'description'  => 'nullable|string|max:5000',
+            'author'       => 'nullable|string|max:255',
+            'language'     => 'nullable|string|max:10',
+            'category'     => 'nullable|string|max:120',
+            'explicit'     => 'nullable|boolean',
+            'is_published' => 'nullable|boolean',
+        ];
+    }
+
+    private function episodeRules(bool $updating = false): array
+    {
+        $required = $updating ? 'sometimes|required' : 'required';
+
+        return [
+            'title'          => $required . '|string|max:255',
+            'summary'        => 'nullable|string|max:2000',
+            'show_notes'     => 'nullable|string|max:65000',
+            'audio_url'      => 'nullable|url|max:2048',
+            'duration'       => 'nullable|integer|min:0|max:86400',
+            'episode_number' => 'nullable|integer|min:0|max:100000',
+            'season_number'  => 'nullable|integer|min:0|max:1000',
+            'explicit'       => 'nullable|boolean',
+            'is_published'   => 'nullable|boolean',
+            'published_at'   => 'nullable|date',
+        ];
+    }
+
+    /**
+     * An episode pointed at someone else's host has no file of ours, so
+     * the size and type we recorded for a previous upload would be wrong.
+     */
+    private function pullAudio(Request $request, array &$data, ?PodcastEpisode $episode = null): array
+    {
+        if ( ! array_key_exists('audio_url', $data)) {
+            return [];
+        }
+
+        $url = $data['audio_url'] ? trim($data['audio_url']) : null;
+        unset($data['audio_url']);
+
+        if ( ! $url) {
+            // Clearing the URL on an episode that has no file either just
+            // leaves it without audio; a hosted file is left alone.
+            return $episode?->audio_path ? [] : ['audio_url' => null];
+        }
+
+        $episode?->deleteAudioFile();
+
+        return [
+            'audio_url'  => $url,
+            'audio_path' => null,
+            'audio_mime' => $this->guessMimeFromUrl($url),
+            'audio_size' => null,
+        ];
+    }
+
+    private function guessMimeFromUrl(string $url): string
+    {
+        return match (Str::lower(pathinfo(parse_url($url, PHP_URL_PATH) ?: '', PATHINFO_EXTENSION))) {
+            'm4a', 'mp4' => 'audio/mp4',
+            'ogg', 'oga' => 'audio/ogg',
+            'wav'        => 'audio/wav',
+            'flac'       => 'audio/flac',
+            'aac'        => 'audio/aac',
+            default      => 'audio/mpeg',
+        };
+    }
+
+    /**
+     * Guards against /podcasts/1/episodes/9 where 9 belongs to show 2 —
+     * route binding resolves both independently and would otherwise let
+     * an episode be edited through the wrong show.
+     */
+    private function assertBelongsTo(Podcast $podcast, PodcastEpisode $episode): void
+    {
+        abort_if($episode->podcast_id !== $podcast->id, 404);
+    }
+
+    private function deleteStoredFile(?string $path): void
+    {
+        if ($path && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
+    }
+}

@@ -655,6 +655,8 @@ export default {
         'adminEventsList': 'Liste',
         'adminEventsTypes': 'Typen',
         'adminEventsProfiles': 'Profile',
+        'podcast': 'Podcast',
+        'adminPodcast': 'Podcast',
         'adminMedia': 'Mediencenter',
         'adminTickets': 'Tickets',
         'adminPolls': 'Umfragen',
@@ -732,6 +734,68 @@ export default {
                 'lastMigration': 'Letzter Datenimport: {name} — {status}, {time}.'
             }
         },
+        'podcast': {
+            'title': 'Podcast',
+            'subtitle': 'Sendungen, ihre Episoden und die Audiodatei zu jeder',
+            'newShow': 'Neue Sendung',
+            'editShow': 'Sendung bearbeiten',
+            'newEpisode': 'Neue Episode',
+            'editEpisode': 'Episode bearbeiten',
+            'cover': 'Titelbild',
+            'audio': 'Audio',
+            'state': 'Status',
+            'published': 'Veröffentlicht',
+            'draft': 'Entwurf',
+            'publishShow': 'Diese Sendung veröffentlichen',
+            'publishShowHint': 'Eine unveröffentlichte Sendung und ihre Episoden erscheinen nirgends und haben keinen Feed.',
+            'publishEpisode': 'Diese Episode veröffentlichen',
+            'uploadAudio': 'Audio hochladen',
+            'uploadingAudio': 'Audio wird hochgeladen…',
+            'featureOff': 'Die Podcast-Funktion ist abgeschaltet, Besucher sehen davon also nichts. Sendungen und Episoden kannst du hier trotzdem verwalten.',
+            'goToToggles': 'Funktionen',
+            'loadFailed': 'Die Podcasts konnten nicht geladen werden.',
+            'saveFailed': 'Speichern fehlgeschlagen.',
+            'deleteFailed': 'Löschen fehlgeschlagen.',
+            'uploadFailed': 'Die Datei konnte nicht hochgeladen werden.',
+            'confirmDeleteShow': 'Die Sendung „{title}“ mit allen Episoden und Audiodateien löschen? Das lässt sich nicht rückgängig machen.',
+            'confirmDeleteEpisode': 'Die Episode „{title}“ und ihre Audiodatei löschen? Das lässt sich nicht rückgängig machen.',
+            'stats': {
+                'podcasts': 'Sendungen',
+                'published_podcasts': 'Veröffentlicht',
+                'episodes': 'Episoden',
+                'published_episodes': 'Veröffentlicht',
+                'plays': 'Wiedergaben',
+                'audio_bytes': 'Audio'
+            },
+            'fields': {
+                'subtitle': 'Untertitel',
+                'author': 'Autor',
+                'category': 'Kategorie',
+                'language': 'Sprache',
+                'summary': 'Kurzbeschreibung',
+                'summaryHint': 'Ein bis zwei Sätze, erscheinen in Listen und in Podcast-Apps',
+                'showNotesHint': 'Links, Kapitel, alles was zur Episode gehört',
+                'number': 'Nr.',
+                'episodeNumber': 'Episode',
+                'seasonNumber': 'Staffel',
+                'duration': 'Länge',
+                'durationHint': 'Als Uhrzeit (12:30) oder in Sekunden',
+                'durationInvalid': 'Nutze 12:30, 1:04:05 oder eine Sekundenzahl',
+                'audioUrl': 'Audio-Adresse',
+                'audioUrlHint': 'Für eine Episode, die woanders liegt. Leer lassen und stattdessen eine Datei hochladen.',
+                'publishedAt': 'Veröffentlichungsdatum',
+                'publishedAtHint': 'Ein Datum in der Zukunft hält die Episode bis dahin aus dem Feed.'
+            },
+            'empty': {
+                'title': 'Noch keine Sendungen',
+                'text': 'Erstelle eine Sendung und füge ihr dann Episoden hinzu.'
+            },
+            'noEpisodes': {
+                'title': 'Noch keine Episoden',
+                'text': 'Füge eine Episode hinzu und lade ihre Audiodatei hoch.'
+            }
+        },
+
         'polls': {
             'title': 'Umfragen',
             'subtitle': 'Alle Umfragen an Forenthemen und Timeline-Beiträgen — Zahlen, Ergebnisse und Moderation',
@@ -6241,6 +6305,50 @@ export default {
             'connectionError': 'Verbindung fehlgeschlagen'
         }
     },
+    'podcast': {
+        'title': 'Podcast',
+        'subtitle': 'Hör unsere Sendungen, oder abonniere sie in der Podcast-App, die du schon nutzt',
+        'shows': 'Sendungen',
+        'episode': 'Episode',
+        'latestEpisodes': 'Neueste Episoden',
+        'allEpisodes': 'Alle Episoden dieser Sendung',
+        'showNotes': 'Shownotes',
+        'noShowNotes': 'Diese Episode hat keine Shownotes.',
+        'subscribe': 'Abonnieren',
+        'feedUrl': 'RSS-Feed',
+        'feedCopied': 'Feed-Adresse kopiert',
+        'explicit': 'Explizit',
+        'noAudio': 'Keine Audiodatei',
+        'noAudioHint': 'Diese Episode hat noch keine Audiodatei.',
+        'episodeCount': '{count} Episoden',
+        'playCount': '{count} Wiedergaben',
+        'player': {
+            'label': 'Podcast-Player',
+            'play': 'Abspielen',
+            'pause': 'Pause',
+            'seek': 'In der Episode springen',
+            'speed': 'Wiedergabegeschwindigkeit',
+            'back15': '15 Sekunden zurück',
+            'forward30': '30 Sekunden vor'
+        },
+        'empty': {
+            'title': 'Noch keine Sendungen',
+            'text': 'Sobald eine Sendung veröffentlicht ist, erscheint sie hier.'
+        },
+        'noEpisodes': {
+            'title': 'Noch keine Episoden',
+            'text': 'Diese Sendung hat noch keine Episode veröffentlicht.'
+        },
+        'notFound': {
+            'title': 'Sendung nicht gefunden',
+            'text': 'Diese Sendung gibt es nicht, oder sie ist nicht veröffentlicht.'
+        },
+        'episodeNotFound': {
+            'title': 'Episode nicht gefunden',
+            'text': 'Diese Episode gibt es nicht, oder sie ist nicht veröffentlicht.'
+        }
+    },
+
     'feedback': {
         'title': 'Feedback',
         'subtitle': 'Melde Fehler, schlage Funktionen vor und stimme ab, was dir am wichtigsten ist',
