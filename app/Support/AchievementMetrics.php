@@ -21,6 +21,12 @@ class AchievementMetrics
      * Every metric, grouped for the picker. `scope` names the narrowing a
      * metric supports, if any; `feature` ties it to the feature toggles so
      * a metric of a switched-off feature is not offered.
+     *
+     * The filtering sits in the achievements screen rather than here: an
+     * achievement that already points at such a metric has to keep showing
+     * it while being edited, which a list filtered at the source could not
+     * do. Turning a feature off stops the recording; it never rewrites
+     * what members have already earned.
      */
     public static function all(): array
     {
@@ -47,6 +53,10 @@ class AchievementMetrics
             // for the kinds of event that actually take effort
             'event.organised' => ['group' => 'events', 'feature' => 'events', 'scope' => 'event_type'],
             'event.joined'    => ['group' => 'events', 'feature' => 'events', 'scope' => 'event_type'],
+
+            // Podcast
+            'podcast.episode.published' => ['group' => 'podcast', 'feature' => 'podcast'],
+            'podcast.episode.listened'  => ['group' => 'podcast', 'feature' => 'podcast'],
 
             // Everything else
             'timeline.post.created' => ['group' => 'content', 'feature' => 'timeline'],

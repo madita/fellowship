@@ -1,23 +1,37 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Podcast;
 
 use App\Http\Controllers\Controller;
 use App\Models\Podcast\Podcast;
 use App\Models\Podcast\PodcastEpisode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
- * Managing shows and episodes.
+ * Managing shows and episodes: creating them, writing them, publishing
+ * them, and uploading the audio.
  *
- * Deliberately not behind the feature gate: an admin who switched the
- * podcast off still has to be able to reach the episodes to turn it back
- * on, the same rule the menu follows when it keeps admin pages visible.
+ * One implementation behind two doors, because the same work is done by
+ * two kinds of people. The admin panel reaches it under /api/admin, and
+ * anyone holding manage-podcast reaches it under /api/podcasts/manage
+ * from the podcast's own pages — the people who record a show are rarely
+ * the people who administer the site, and making them pass through a
+ * back office to publish an episode means handing them the back office.
+ * This is the shape the wiki already has.
+ *
+ * Which door a request came through is the routes' business, not this
+ * class's: the middleware lives there, so neither caller can drift from
+ * the other on what the work actually is.
+ *
+ * Deliberately not behind the feature gate on the admin side: an admin
+ * who switched the podcast off still has to reach the episodes to turn
+ * it back on, the same rule the menu follows.
  */
-class PodcastAdminController extends Controller
+class PodcastManageController extends Controller
 {
     /**
      * What an episode's audio may be. mpeg covers mp3, mp4 covers m4a —
@@ -28,11 +42,9 @@ class PodcastAdminController extends Controller
     /** 200 MB: an hour of decent-bitrate audio with room to spare. */
     private const AUDIO_MAX_KB = 204800;
 
-    public function __construct()
-    {
-        $this->middleware(['auth:sanctum']);
-        $this->middleware(['admin']);
-    }
+    // No middleware here on purpose: the two route groups that reach this
+    // controller guard it differently (admin, or manage-podcast), and a
+    // constructor that insisted on one would lock the other out.
 
     // ----------------------------------------------------------------
     // Shows
@@ -115,7 +127,7 @@ class PodcastAdminController extends Controller
 
         $this->deleteStoredFile($podcast->cover_image);
 
-        $path = $request->file('cover')->store('podcasts/covers', 'public');
+        $path = $this->storeUpload($request->file('cover'), 'podcasts/covers');
         $podcast->update(['cover_image' => $path]);
 
         return response()->json([
@@ -227,7 +239,7 @@ class PodcastAdminController extends Controller
         $episode->deleteAudioFile();
 
         $file = $request->file('audio');
-        $path = $file->store('podcasts/audio', 'public');
+        $path = $this->storeUpload($file, 'podcasts/audio');
 
         $episode->update([
             'audio_path' => $path,
@@ -347,6 +359,40 @@ class PodcastAdminController extends Controller
     private function assertBelongsTo(Podcast $podcast, PodcastEpisode $episode): void
     {
         abort_if($episode->podcast_id !== $podcast->id, 404);
+    }
+
+    /**
+     * Put an upload on the public disk and answer with its path.
+     *
+     * Not $file->store(), which reaches the disk through putFileAs() and
+     * opens the temp file with getRealPath() — that is realpath(), and
+     * realpath() returns false whenever the upload directory cannot be
+     * resolved by this process. fopen() is then handed false, which PHP 8
+     * reads as an empty path, and the upload dies on "Path must not be
+     * empty" having already passed validation.
+     *
+     * It is not hypothetical: with mod_fcgid pointing TEMP at
+     * C:/Windows/Temp, PHP can write the upload there and read it back by
+     * name, while realpath() on the very same path fails. getPathname()
+     * is the raw tmp_name and needs no resolving, so it works wherever
+     * the file is readable at all — which validation has just proved.
+     */
+    private function storeUpload(UploadedFile $file, string $directory): string
+    {
+        $path   = trim($directory, '/') . '/' . $file->hashName();
+        $stream = fopen($file->getPathname(), 'rb');
+
+        abort_if($stream === false, 500, __('messages.media.invalid_upload'));
+
+        try {
+            Storage::disk('public')->put($path, $stream);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
+
+        return $path;
     }
 
     private function deleteStoredFile(?string $path): void

@@ -480,7 +480,7 @@
 <script>
 import axios from 'axios';
 import { useSettingsStore } from '@/store/settingStore.js';
-import { formatDuration, parseDuration, formatFileSize } from '@/utils/podcast.js';
+import { formatDuration, parseDuration, formatFileSize, uploadFailureMessage } from '@/utils/podcast.js';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
@@ -905,7 +905,11 @@ export default {
                 await this.refreshStats();
                 this.$dialog.success(data.message);
             } catch (error) {
-                this.$dialog.requestError(error, this.$t('admin.podcast.uploadFailed'));
+                // The field error says what was actually wrong with the
+                // file; requestError would only show "Validation failed".
+                this.$dialog.error(
+                    `${this.$t('admin.podcast.uploadFailed')} ${uploadFailureMessage(error, this.$t)}`
+                );
             } finally {
                 this.busy = null;
                 this.uploading = false;

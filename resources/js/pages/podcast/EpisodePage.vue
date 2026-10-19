@@ -9,6 +9,14 @@
         >
             <template v-if="episode" #actions>
                 <v-btn
+                    v-if="canManage"
+                    variant="tonal"
+                    prepend-icon="mdi-pencil"
+                    :to="{ name: 'podcast-episode-edit', params: { slug: $route.params.slug, episodeSlug: episode.slug } }"
+                >
+                    {{ $t('common.update') }}
+                </v-btn>
+                <v-btn
                     :prepend-icon="isPlaying ? 'mdi-pause' : 'mdi-play'"
                     color="primary"
                     variant="elevated"
@@ -108,7 +116,7 @@
 <script>
 import { usePodcastStore } from '@/store/podcastStore.js';
 import { renderRichText } from '@/utils/richText.js';
-import { formatDuration } from '@/utils/podcast.js';
+import { formatDuration, canManagePodcasts } from '@/utils/podcast.js';
 import { formatDate } from '@/plugins/formatDate.js';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
@@ -148,6 +156,9 @@ export default {
         },
         isPlaying() {
             return this.store.isCurrent(this.episode) && this.store.playing;
+        },
+        canManage() {
+            return canManagePodcasts();
         },
         notes() {
             return this.episode?.show_notes ? renderRichText(this.episode.show_notes) : '';

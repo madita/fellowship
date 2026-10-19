@@ -198,6 +198,7 @@
 <script>
 import axios from 'axios';
 import { useTicketHelpers } from '@/composables/useTicketHelpers.js';
+import { useSettingsStore } from '@/store/settingStore.js';
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
@@ -215,7 +216,7 @@ export default {
     setup() {
         const { getPriorityColor, getPriorityIcon } = useTicketHelpers();
 
-        return { getPriorityColor, getPriorityIcon };
+        return { getPriorityColor, getPriorityIcon, settingsStore: useSettingsStore() };
     },
     data() {
         return {
@@ -255,18 +256,27 @@ export default {
         attentionTotal() {
             return this.attentionItems.reduce((sum, item) => sum + (item.value || 0), 0);
         },
+        /**
+         * What there is of each kind of content. A row tagged with a
+         * `feature` drops out when that feature is switched off — the
+         * numbers would still be counted, but reporting on a feature
+         * nobody can reach only invites the question of why it is there.
+         */
         contentItems() {
             return [
-                { key: 'wiki_pages', icon: 'mdi-book-open-variant', color: 'warning', to: '/wiki' },
-                { key: 'forum_threads', delta: 'forum_threads_7d', icon: 'mdi-forum', color: 'primary', to: '/admin/forums' },
-                { key: 'forum_posts', delta: 'forum_posts_7d', icon: 'mdi-comment-multiple', color: 'primary', to: '/forum' },
-                { key: 'events_upcoming', icon: 'mdi-calendar-clock', color: 'info', to: '/admin/events' },
-                { key: 'open_tickets', icon: 'mdi-ticket-confirmation', color: 'secondary', to: '/admin/tickets' },
-                { key: 'albums', icon: 'mdi-image-multiple', color: 'warning', to: '/admin/gallery' },
+                { key: 'wiki_pages', icon: 'mdi-book-open-variant', color: 'warning', to: '/wiki', feature: 'wiki' },
+                { key: 'forum_threads', delta: 'forum_threads_7d', icon: 'mdi-forum', color: 'primary', to: '/admin/forums', feature: 'forum' },
+                { key: 'forum_posts', delta: 'forum_posts_7d', icon: 'mdi-comment-multiple', color: 'primary', to: '/forum', feature: 'forum' },
+                { key: 'events_upcoming', icon: 'mdi-calendar-clock', color: 'info', to: '/admin/events', feature: 'events' },
+                { key: 'open_tickets', icon: 'mdi-ticket-confirmation', color: 'secondary', to: '/admin/tickets', feature: 'tickets' },
+                { key: 'albums', icon: 'mdi-image-multiple', color: 'warning', to: '/admin/gallery', feature: 'gallery' },
                 { key: 'media_files', icon: 'mdi-folder-multiple-image', color: 'warning', to: '/admin/media' },
+                { key: 'podcasts', icon: 'mdi-podcast', color: 'cyan', to: '/admin/podcast', feature: 'podcast' },
+                { key: 'podcast_episodes', icon: 'mdi-playlist-music', color: 'cyan', to: '/admin/podcast', feature: 'podcast' },
+                { key: 'podcast_plays', icon: 'mdi-play-circle-outline', color: 'cyan', to: '/admin/podcast', feature: 'podcast' },
                 { key: 'sandboxes', icon: 'mdi-file-document-edit', color: 'info', to: '/sandbox' },
-                { key: 'messages_7d', icon: 'mdi-message-text', color: 'success', to: '/conversations' },
-            ];
+                { key: 'messages_7d', icon: 'mdi-message-text', color: 'success', to: '/conversations', feature: 'chat' },
+            ].filter(item => !item.feature || this.settingsStore.isFeatureEnabled(item.feature));
         },
         systemChips() {
             const s = this.data.system;

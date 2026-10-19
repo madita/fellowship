@@ -38,6 +38,17 @@ export default function permission({ to, next }) {
         "admin-forums": "manage-page",
         "admin-polls": "manage-post",
         "admin-relations": "manage-page",
+        "admin-podcast": "manage-page",
+        // Running a show from the podcast's own pages, the way the wiki
+        // is written from the wiki rather than from the admin panel
+        // Has to match the API, which guards the same work with
+        // permission.any:manage-podcast — a member let onto the form by a
+        // permission the API does not accept reaches the upload and is
+        // refused there instead.
+        "podcast-create": "manage-podcast",
+        "podcast-edit": "manage-podcast",
+        "podcast-episode-new": "manage-podcast",
+        "podcast-episode-edit": "manage-podcast",
     };
 
     const requiredPermission = permissionsMap[to.name];

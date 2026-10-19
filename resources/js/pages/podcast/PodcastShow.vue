@@ -17,6 +17,23 @@
                 >
                     {{ $t('podcast.subscribe') }}
                 </v-btn>
+                <template v-if="canManage">
+                    <v-btn
+                        variant="tonal"
+                        prepend-icon="mdi-pencil"
+                        :to="{ name: 'podcast-edit', params: { slug: podcast.slug } }"
+                    >
+                        {{ $t('podcast.manage.editShow') }}
+                    </v-btn>
+                    <v-btn
+                        color="primary"
+                        variant="elevated"
+                        prepend-icon="mdi-plus"
+                        :to="{ name: 'podcast-episode-new', params: { slug: podcast.slug } }"
+                    >
+                        {{ $t('podcast.manage.newEpisode') }}
+                    </v-btn>
+                </template>
             </template>
         </page-header>
 
@@ -109,6 +126,7 @@ import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
 import CopyLabel from '@/components/common/CopyLabel.vue';
 import EpisodeListItem from '@/components/podcast/EpisodeListItem.vue';
+import { canManagePodcasts } from '@/utils/podcast.js';
 
 /**
  * One show: its cover and description, the feed to subscribe with, and a
@@ -134,6 +152,9 @@ export default {
         },
         slug() {
             return this.$route.params.slug;
+        },
+        canManage() {
+            return canManagePodcasts();
         },
     },
     watch: {

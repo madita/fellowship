@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Podcast;
 use App\Http\Controllers\Controller;
 use App\Models\Podcast\Podcast;
 use App\Models\Podcast\PodcastEpisode;
+use App\Support\Achievements;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -98,7 +99,7 @@ class PodcastController extends Controller
      * row written, nothing to identify who listened. It answers the only
      * question the admin screen asks — which episodes get played.
      */
-    public function play(string $slug, string $episodeSlug): JsonResponse
+    public function play(Request $request, string $slug, string $episodeSlug): JsonResponse
     {
         $podcast = Podcast::published()->where('slug', $slug)->firstOrFail();
 
@@ -107,6 +108,18 @@ class PodcastController extends Controller
             ->firstOrFail();
 
         $episode->increment('plays');
+
+        // The count is anonymous, but an achievement needs somebody to
+        // credit — so listening only counts toward one when we know who
+        // is listening. A guest still moves the counter.
+        //
+        // The route asks for no sign-in, so the default guard sees nobody;
+        // the token guard has to be asked as well. Same idiom as
+        // RelateableController, which is public and user-aware too.
+        Achievements::record(
+            $request->user() ?? $request->user('sanctum'),
+            'podcast.episode.listened'
+        );
 
         return response()->json(['plays' => (int) $episode->plays]);
     }

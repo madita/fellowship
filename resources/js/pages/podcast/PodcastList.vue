@@ -4,7 +4,18 @@
             :title="$t('podcast.title')"
             :subtitle="$t('podcast.subtitle')"
             icon="mdi-podcast"
-        />
+        >
+            <template v-if="canManage" #actions>
+                <v-btn
+                    color="primary"
+                    variant="elevated"
+                    prepend-icon="mdi-plus"
+                    :to="{ name: 'podcast-create' }"
+                >
+                    {{ $t('podcast.manage.newShow') }}
+                </v-btn>
+            </template>
+        </page-header>
 
         <v-container>
             <loading-state v-if="loading && !podcasts.length" />
@@ -87,6 +98,7 @@ import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
 import EpisodeListItem from '@/components/podcast/EpisodeListItem.vue';
+import { canManagePodcasts } from '@/utils/podcast.js';
 
 /**
  * Every published show, with the newest episodes across all of them on
@@ -109,6 +121,9 @@ export default {
         },
         loading() {
             return this.store.loadingPodcasts;
+        },
+        canManage() {
+            return canManagePodcasts();
         },
     },
     async mounted() {

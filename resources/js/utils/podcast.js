@@ -2,6 +2,18 @@
  * Formatting shared by the player, the episode lists and the admin
  * screen — the same episode has to read the same everywhere.
  */
+import permission from '@/utils/permission.js';
+
+/**
+ * Whether the signed-in member may run a show: hold manage-podcast, or
+ * be an admin, which carries everything.
+ *
+ * The API decides for real — see the manage routes — but the pages have
+ * to know whether to offer an "Edit" button at all, and every page that
+ * offers one has to agree on the answer.
+ */
+export const canManagePodcasts = () =>
+    permission.hasRole('admin') || permission.can('manage-podcast');
 
 /**
  * Seconds as a clock: 4:05, and 1:04:05 once there is an hour to show.
@@ -43,6 +55,42 @@ export const parseDuration = (value) => {
     const numbers = parts.map((part) => parseInt(part, 10) || 0);
 
     return numbers.reduce((total, part) => total * 60 + part, 0);
+};
+
+/**
+ * Why an audio upload failed, in words a person can act on.
+ *
+ * A 422 carries the reason in `errors.audio` — "must be a file of type:
+ * mp3, …" — while `message` is only ever "Validation failed", so showing
+ * the message alone tells the uploader nothing. A 413 never reaches the
+ * application: the web server refuses the body, so there is no JSON to
+ * read and the limit has to be named instead. Both upload screens read
+ * this, so neither can go back to reporting a blank wall.
+ *
+ * `t` is the caller's translator, since this lives outside a component.
+ */
+export const uploadFailureMessage = (error, t) => {
+    const response = error?.response;
+
+    if ( ! response) {
+        return t('podcast.manage.uploadNoResponse');
+    }
+
+    if (response.status === 413) {
+        return t('podcast.manage.audioTooLargeForServer');
+    }
+
+    const fieldErrors = response.data?.errors;
+
+    if (fieldErrors && typeof fieldErrors === 'object') {
+        const messages = Object.values(fieldErrors).flat().filter(Boolean);
+
+        if (messages.length) {
+            return messages.join(' ');
+        }
+    }
+
+    return response.data?.message || error?.message || '';
 };
 
 export const formatFileSize = (bytes) => {

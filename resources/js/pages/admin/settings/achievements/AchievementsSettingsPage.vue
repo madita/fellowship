@@ -458,6 +458,7 @@ import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
 import AchievementBadge from '@/components/achievements/AchievementBadge.vue';
 import { useDialog } from '@/composables/useDialog.js';
+import { useSettingsStore } from '@/store/settingStore.js';
 
 defineProps({
     settings: Object,
@@ -471,6 +472,7 @@ const COLORS = ['amber', 'red', 'pink', 'purple', 'deep-purple', 'indigo', 'blue
 
 const { t } = useI18n();
 const dialog = useDialog();
+const settingsStore = useSettingsStore();
 
 const loading = ref(true);
 const saving = ref(false);
@@ -535,11 +537,24 @@ function blankForm() {
 
 const typeItems = computed(() => types.value.map(type => ({ id: type.id, name: type.name })));
 
-const metricItems = computed(() => metrics.value.map(metric => ({
-    value: metric.key,
-    title: t(`achievements.metrics.${metric.key}`, metric.key),
-    props: { subtitle: t(`achievements.metricGroups.${metric.group}`, metric.group) },
-})));
+/**
+ * The actions an achievement can be built on.
+ *
+ * A metric of a switched-off feature is not offered — there is no point
+ * rewarding something the site is not currently doing. The one exception
+ * is the metric the achievement being edited already uses: dropping that
+ * from the list would blank the select and the next save would wipe it,
+ * so it stays whatever its feature is doing.
+ */
+const metricItems = computed(() => metrics.value
+    .filter(metric => !metric.feature
+        || metric.key === form.value.metric
+        || settingsStore.isFeatureEnabled(metric.feature))
+    .map(metric => ({
+        value: metric.key,
+        title: t(`achievements.metrics.${metric.key}`, metric.key),
+        props: { subtitle: t(`achievements.metricGroups.${metric.group}`, metric.group) },
+    })));
 
 // What the chosen action can be narrowed by, if anything
 const narrowChoices = computed(() => {

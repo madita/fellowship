@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { formatDuration, parseDuration, formatFileSize } from '@/utils/podcast.js';
+import { formatDuration, parseDuration, formatFileSize, uploadFailureMessage } from '@/utils/podcast.js';
 import { FEATURES } from '@/configs/features.js';
 import navigation from '@/configs/navigation.js';
 import { sectionNames } from '@/utils/crumbs.js';
@@ -43,6 +43,53 @@ describe('podcast duration formatting', () => {
         expect(formatFileSize(null)).toBe('–');
         expect(formatFileSize(512)).toBe('512 B');
         expect(formatFileSize(1024 * 1024 * 12.5)).toBe('12.5 MB');
+    });
+});
+
+describe('why an audio upload failed', () => {
+    // Stands in for $t; returns the key so the branch is identifiable
+    const t = (key) => key;
+
+    it('names the field error, not the generic validation message', () => {
+        const error = {
+            response: {
+                status: 422,
+                data: {
+                    message: 'Validation failed',
+                    errors: { audio: ['The audio must be a file of type: mp3, m4a.'] },
+                },
+            },
+        };
+
+        expect(uploadFailureMessage(error, t)).toBe('The audio must be a file of type: mp3, m4a.');
+    });
+
+    it('explains a 413, which never reaches the application', () => {
+        const error = { response: { status: 413, data: '' } };
+
+        expect(uploadFailureMessage(error, t)).toBe('podcast.manage.audioTooLargeForServer');
+    });
+
+    it('says so when the request never arrived at all', () => {
+        expect(uploadFailureMessage({ message: 'Network Error' }, t))
+            .toBe('podcast.manage.uploadNoResponse');
+    });
+
+    it('falls back to the message when there are no field errors', () => {
+        const error = { response: { status: 403, data: { message: 'This feature is switched off.' } } };
+
+        expect(uploadFailureMessage(error, t)).toBe('This feature is switched off.');
+    });
+
+    it('joins several field errors rather than picking one', () => {
+        const error = {
+            response: {
+                status: 422,
+                data: { errors: { audio: ['Too big.', 'Wrong type.'] } },
+            },
+        };
+
+        expect(uploadFailureMessage(error, t)).toBe('Too big. Wrong type.');
     });
 });
 

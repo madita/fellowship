@@ -408,6 +408,13 @@ export default {
                 'images': '{count} Bilder',
                 'empty': 'Noch keine Alben'
             },
+            'podcast': {
+                'title': 'Podcast',
+                'description': 'Die neuesten Episoden, mit Abspielknopf',
+                'action': 'Podcast öffnen',
+                'subtitle': '{count} Episoden',
+                'empty': 'Noch keine Episoden'
+            },
             'stats': {
                 'title': 'Community',
                 'description': 'Aktuelle Community-Zahlen',
@@ -706,6 +713,9 @@ export default {
                 'open_tickets': 'Offene Tickets',
                 'albums': 'Galerie-Alben',
                 'media_files': 'Mediendateien',
+                'podcasts': 'Podcast-Sendungen',
+                'podcast_episodes': 'Podcast-Episoden',
+                'podcast_plays': 'Wiedergaben',
                 'sandboxes': 'Sandboxes',
                 'messages_7d': 'Nachrichten diese Woche'
             },
@@ -5295,6 +5305,7 @@ export default {
             'timeline': 'Neueste Timeline-Beiträge',
             'wiki': 'Neueste Wiki-Seiten',
             'gallery': 'Neueste Alben',
+            'podcast': 'Neueste Episoden',
             'none': 'Noch nichts'
         },
         'counts': {
@@ -5324,7 +5335,8 @@ export default {
             'tickets': 'Tickets',
             'events': 'Events',
             'content': 'Inhalte',
-            'community': 'Community'
+            'community': 'Community',
+            'podcast': 'Podcast'
         },
         'metrics': {
                 'forum.thread.created': 'Thema im Forum eröffnet',
@@ -5343,7 +5355,9 @@ export default {
                 'event.joined': 'An einem Event teilgenommen',
                 'timeline.post.created': 'Auf der Timeline gepostet',
                 'timeline.comment': 'Timeline kommentiert',
-                'poll.voted': 'An einer Umfrage teilgenommen'
+                'poll.voted': 'An einer Umfrage teilgenommen',
+                'podcast.episode.published': 'Eine Podcast-Episode veröffentlicht',
+                'podcast.episode.listened': 'Eine Episode gehört'
         },
         'widget': {
             'subtitle': '{count} erreicht',
@@ -6322,6 +6336,24 @@ export default {
         'noAudioHint': 'Diese Episode hat noch keine Audiodatei.',
         'episodeCount': '{count} Episoden',
         'playCount': '{count} Wiedergaben',
+        'manage': {
+            'newShow': 'Neue Sendung',
+            'editShow': 'Sendung bearbeiten',
+            'showSubtitle': 'Was Hörer und Podcast-Apps über die Sendung sehen',
+            'newEpisode': 'Neue Episode',
+            'editEpisode': 'Episode bearbeiten',
+            'chooseImage': 'Bild auswählen',
+            'coverAfterSave': 'Speichere die Sendung erst, dann lässt sich das Titelbild hochladen.',
+            'chooseAudio': 'Audiodatei auswählen',
+            'audioHint': 'mp3, m4a, wav, ogg oder flac',
+            'audioAfterSave': 'Speichere die Episode erst, dann lässt sich die Audiodatei hochladen.',
+            'uploadAudio': 'Audio hochladen',
+            'audioTooLarge': 'Diese Datei ist größer als {size}.',
+            'audioTooLargeForServer': 'Der Server hat die Datei als zu groß abgewiesen. Erhöhe upload_max_filesize und post_max_size in der php.ini sowie das Body-Limit des Webservers und versuche es erneut.',
+            'uploadNoResponse': 'Der Upload hat den Server nicht erreicht. Prüfe die Verbindung und versuche es erneut.',
+            'removeAudio': 'Audio entfernen',
+            'confirmRemoveAudio': 'Die Audiodatei dieser Episode entfernen? Die Episode selbst bleibt erhalten.'
+        },
         'player': {
             'label': 'Podcast-Player',
             'play': 'Abspielen',

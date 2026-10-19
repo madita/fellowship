@@ -183,18 +183,25 @@ import LoadingState from '@/components/common/LoadingState.vue';
 import AchievementBadge from '@/components/achievements/AchievementBadge.vue';
 import ActivityFeed from '@/components/common/ActivityFeed.vue';
 import { formatDateDistanceToNow } from '@/plugins/formatDate.js';
+import { useSettingsStore } from '@/store/settingStore.js';
 
-// What each kind of thing looks like, and which count belongs to it
+// What each kind of thing looks like, which count belongs to it, and the
+// feature it belongs to — a member's forum posts are nobody's business
+// while the forum is switched off, so the whole section goes with it.
 const KINDS = [
-    { key: 'forum', icon: 'mdi-forum-outline', color: 'primary', count: 'posts' },
-    { key: 'timeline', icon: 'mdi-timeline-text-outline', color: 'teal', count: 'timeline' },
-    { key: 'wiki', icon: 'mdi-book-open-page-variant-outline', color: 'deep-purple', count: 'wiki_pages' },
-    { key: 'gallery', icon: 'mdi-image-multiple-outline', color: 'pink', count: 'albums' },
+    { key: 'forum', icon: 'mdi-forum-outline', color: 'primary', count: 'posts', feature: 'forum' },
+    { key: 'timeline', icon: 'mdi-timeline-text-outline', color: 'teal', count: 'timeline', feature: 'timeline' },
+    { key: 'wiki', icon: 'mdi-book-open-page-variant-outline', color: 'deep-purple', count: 'wiki_pages', feature: 'wiki' },
+    { key: 'gallery', icon: 'mdi-image-multiple-outline', color: 'pink', count: 'albums', feature: 'gallery' },
+    { key: 'podcast', icon: 'mdi-podcast', color: 'cyan', count: 'episodes', feature: 'podcast' },
 ];
 
 export default {
     name: 'MemberProfilePage',
     components: { PageHeader, EmptyState, LoadingState, AchievementBadge, ActivityFeed },
+    setup() {
+        return { settingsStore: useSettingsStore() };
+    },
     data() {
         return {
             loading: true,
@@ -226,11 +233,13 @@ export default {
             const recent = this.member?.recent || {};
             const counts = this.member?.counts || {};
 
-            return KINDS.map(kind => ({
-                ...kind,
-                items: recent[kind.key] || [],
-                count: counts[kind.count] ?? 0,
-            }));
+            return KINDS
+                .filter(kind => !kind.feature || this.settingsStore.isFeatureEnabled(kind.feature))
+                .map(kind => ({
+                    ...kind,
+                    items: recent[kind.key] || [],
+                    count: counts[kind.count] ?? 0,
+                }));
         },
     },
     watch: {

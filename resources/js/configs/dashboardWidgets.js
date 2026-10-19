@@ -106,6 +106,14 @@ export const WIDGET_TYPES = {
         size: 'medium',
         action: { icon: 'mdi-image-multiple-outline', to: '/gallery' },
     },
+    podcast: {
+        component: 'PodcastWidget',
+        feature: 'podcast',
+        icon: 'mdi-podcast',
+        color: 'cyan',
+        size: 'medium',
+        action: { icon: 'mdi-playlist-music', to: '/podcast' },
+    },
     stats: {
         component: 'StatsWidget',
         feature: null,

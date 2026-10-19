@@ -12,6 +12,8 @@ use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
 use App\Models\Migration\MigrationLog;
 use App\Models\Page;
+use App\Models\Podcast\Podcast;
+use App\Models\Podcast\PodcastEpisode;
 use App\Models\Sandbox\Sandbox;
 use App\Models\Setting;
 use App\Models\Ticket\Ticket;
@@ -75,6 +77,11 @@ class AdminDashboardController extends Controller
                     'media_files'      => Media::count(),
                     'media_size'       => $this->formatBytes((int) Media::sum('size')),
                     'sandboxes'        => Sandbox::count(),
+                    // Only meaningful while the podcast feature is on; the
+                    // dashboard hides these rows when it is off.
+                    'podcasts'         => Podcast::count(),
+                    'podcast_episodes' => PodcastEpisode::count(),
+                    'podcast_plays'    => (int) PodcastEpisode::sum('plays'),
                     'messages_7d'      => ConversationMessage::where('created_at', '>=', $now->copy()->subDays(7))->count(),
                 ],
                 'achievements' => [
