@@ -203,6 +203,92 @@ describe('podcastStore playback', () => {
         expect(store.duration).toBe(1200);
     });
 
+    /**
+     * Only the audio host touches the element, so a scrubber anywhere
+     * else leaves its destination in the store and the host applies it.
+     */
+    it('a seek is left for the audio host to apply', () => {
+        const store = usePodcastStore();
+
+        store.play(episode(), { slug: 'nightly' });
+        store.syncProgress(100, 1200);
+        store.requestSeek(300);
+
+        // The position moves at once so the slider keeps up with the drag
+        expect(store.position).toBe(300);
+        expect(store.seekRequest).toBe(300);
+
+        store.seekHandled();
+        expect(store.seekRequest).toBeNull();
+    });
+
+    it('seeking back to the very start is a real request, not nothing', () => {
+        const store = usePodcastStore();
+
+        store.play(episode(), { slug: 'nightly' });
+        store.syncProgress(100, 1200);
+        store.requestSeek(0);
+
+        // null means "nothing pending", so 0 has to survive as 0
+        expect(store.seekRequest).toBe(0);
+        expect(store.position).toBe(0);
+    });
+
+    it('a seek never leaves the episode', () => {
+        const store = usePodcastStore();
+
+        store.play(episode(), { slug: 'nightly' });
+        store.syncProgress(10, 1200);
+
+        store.requestSeek(99999);
+        expect(store.position).toBe(1200);
+
+        store.requestSeek(-50);
+        expect(store.position).toBe(0);
+    });
+
+    it('skipping is relative to where the episode is now', () => {
+        const store = usePodcastStore();
+
+        store.play(episode(), { slug: 'nightly' });
+        store.syncProgress(100, 1200);
+
+        store.seekBy(30);
+        expect(store.position).toBe(130);
+
+        store.seekBy(-15);
+        expect(store.position).toBe(115);
+    });
+
+    it('skipping back past the start stops at the start', () => {
+        const store = usePodcastStore();
+
+        store.play(episode(), { slug: 'nightly' });
+        store.syncProgress(5, 1200);
+        store.seekBy(-15);
+
+        expect(store.position).toBe(0);
+    });
+
+    it('playback speed is remembered on the store, where the host reads it', () => {
+        const store = usePodcastStore();
+
+        expect(store.rate).toBe(1);
+
+        store.setRate(1.5);
+        expect(store.rate).toBe(1.5);
+    });
+
+    it('stopping clears a pending seek with everything else', () => {
+        const store = usePodcastStore();
+
+        store.play(episode(), { slug: 'nightly' });
+        store.requestSeek(120);
+        store.stop();
+
+        expect(store.seekRequest).toBeNull();
+    });
+
     it('stopping clears the player away', () => {
         const store = usePodcastStore();
 

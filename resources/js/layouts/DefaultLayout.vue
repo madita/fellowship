@@ -89,6 +89,10 @@
                             <v-btn class="d-flex d-md-none" icon="mdi-magnify" variant="text" size="small" :title="$t('layout.search')" @click="showSearch = true" />
 
                             <mega-menu />
+                            <!-- The episode that is playing, one icon
+                                 wide; the full player lives on the
+                                 podcast pages -->
+                            <podcast-toolbar-player v-if="podcastEnabled" />
                             <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-block"/>
 
 <!--                                                <toolbar-apps/>-->
@@ -182,10 +186,6 @@
 <!--            <ConversationBox v-if="showChatBox" />-->
             <conversation-box-manager />
 
-            <!-- Keeps an episode playing while the listener moves around
-                 the site. Renders nothing until something is playing. -->
-            <podcast-player-bar v-if="podcastEnabled" />
-
         </v-main>
 
         <v-footer app class="flex-shrink-0">
@@ -220,7 +220,7 @@ import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
 import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue'
 import ConversationsNotification from '../components/conversation/ConversationsNotification.vue'
 import SandboxNotifications from '../components/sandbox/SandboxNotifications.vue'
-import PodcastPlayerBar from '../components/podcast/PodcastPlayerBar.vue'
+import PodcastToolbarPlayer from '../components/podcast/PodcastToolbarPlayer.vue'
 import ConversationBox from '../components/conversation/ConversationBox.vue'
 import ConversationBoxManager from '../components/conversation/ConversationBoxManager.vue'
 import SidebarUsers from '../components/conversation/SidebarUsers.vue'
@@ -243,7 +243,7 @@ export default {
         UserSettingsSidebar,
         ConversationsNotification,
         SandboxNotifications,
-        PodcastPlayerBar,
+        PodcastToolbarPlayer,
     },
     setup() {
         const drawer = ref(true)

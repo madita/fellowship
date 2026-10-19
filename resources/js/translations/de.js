@@ -6351,6 +6351,7 @@ export default {
             'audioTooLarge': 'Diese Datei ist größer als {size}.',
             'audioTooLargeForServer': 'Der Server hat die Datei als zu groß abgewiesen. Erhöhe upload_max_filesize und post_max_size in der php.ini sowie das Body-Limit des Webservers und versuche es erneut.',
             'uploadNoResponse': 'Der Upload hat den Server nicht erreicht. Prüfe die Verbindung und versuche es erneut.',
+            'openEpisode': 'Episode öffnen',
             'removeAudio': 'Audio entfernen',
             'confirmRemoveAudio': 'Die Audiodatei dieser Episode entfernen? Die Episode selbst bleibt erhalten.'
         },

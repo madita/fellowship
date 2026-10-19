@@ -33,9 +33,22 @@ export const usePodcastStore = defineStore({
         position: 0,        // seconds
         duration: 0,        // seconds, as the audio file reports it
         volume: 1,
+        rate: 1,
         // Set when play() is called so the player component knows to
         // actually start, rather than just showing the episode
         playRequested: false,
+        /**
+         * Where a listener asked to jump to, in seconds, until the audio
+         * host has done it.
+         *
+         * Only one component owns the <audio> element — see
+         * PodcastAudioHost — so a scrubber anywhere else cannot set
+         * currentTime itself. It leaves the request here instead and the
+         * host applies it. null means nothing is pending; 0 is a real
+         * request to go back to the start, which is why this is not
+         * simply a falsy check anywhere.
+         */
+        seekRequest: null,
     }),
 
     getters: {
@@ -166,6 +179,33 @@ export const usePodcastStore = defineStore({
             this.volume = Math.min(Math.max(volume, 0), 1);
         },
 
+        setRate(rate) {
+            this.rate = rate;
+        },
+
+        /**
+         * Ask the audio host to jump to a point in the episode.
+         *
+         * The position moves immediately so the scrubber the listener is
+         * dragging keeps up; the host then moves the audio to match.
+         */
+        requestSeek(seconds) {
+            const max = this.duration || this.current?.duration || 0;
+            const target = Math.min(Math.max(seconds, 0), max || seconds);
+
+            this.position = target;
+            this.seekRequest = target;
+        },
+
+        /** Jump relative to where the episode is now: skip back or ahead. */
+        seekBy(delta) {
+            this.requestSeek(this.position + delta);
+        },
+
+        seekHandled() {
+            this.seekRequest = null;
+        },
+
         playHandled() {
             this.playRequested = false;
         },
@@ -176,6 +216,7 @@ export const usePodcastStore = defineStore({
             this.playing = false;
             this.position = 0;
             this.duration = 0;
+            this.seekRequest = null;
         },
 
         /**

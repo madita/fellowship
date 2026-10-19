@@ -7,17 +7,6 @@
         role="region"
         :aria-label="$t('podcast.player.label')"
     >
-        <audio
-            ref="audio"
-            :src="current.audio_url"
-            preload="metadata"
-            @loadedmetadata="onMeta"
-            @timeupdate="onTimeUpdate"
-            @ended="onEnded"
-            @play="store.setPlaying(true)"
-            @pause="store.setPlaying(false)"
-        ></audio>
-
         <v-container fluid class="py-2">
             <div class="d-flex align-center ga-2 ga-sm-3">
                 <v-avatar v-if="current.cover_url" :image="current.cover_url" rounded="md" size="44" class="d-none d-sm-flex" />
@@ -43,7 +32,7 @@
                     size="small"
                     class="d-none d-sm-flex"
                     :title="$t('podcast.player.back15')"
-                    @click="seekBy(-15)"
+                    @click="store.seekBy(-15)"
                 />
 
                 <v-btn
@@ -61,12 +50,14 @@
                     size="small"
                     class="d-none d-sm-flex"
                     :title="$t('podcast.player.forward30')"
-                    @click="seekBy(30)"
+                    @click="store.seekBy(30)"
                 />
 
-                <!-- The scrubber. Hidden on a phone, where the row has no
-                     room for it; the times stay so there is still a sense
-                     of where the episode is. -->
+                <!-- The scrubber, which is the reason this bar exists and
+                     the toolbar button does not try to be one. Hidden on a
+                     phone, where the row has no room for it; the times
+                     stay so there is still a sense of where the episode
+                     is. -->
                 <div class="podcast-player__scrub d-none d-md-flex align-center ga-2">
                     <span class="text-caption text-medium-emphasis">{{ formatTime(position) }}</span>
                     <v-slider
@@ -77,7 +68,7 @@
                         density="compact"
                         color="primary"
                         :aria-label="$t('podcast.player.seek')"
-                        @update:model-value="seekTo"
+                        @update:model-value="store.requestSeek"
                     />
                     <span class="text-caption text-medium-emphasis">{{ formatTime(sliderMax) }}</span>
                 </div>
@@ -95,15 +86,15 @@
                             class="d-none d-sm-flex"
                             :title="$t('podcast.player.speed')"
                         >
-                            {{ rate }}×
+                            {{ store.rate }}×
                         </v-btn>
                     </template>
                     <v-list density="compact">
                         <v-list-item
                             v-for="option in rates"
                             :key="option"
-                            :active="option === rate"
-                            @click="setRate(option)"
+                            :active="option === store.rate"
+                            @click="store.setRate(option)"
                         >
                             <v-list-item-title>{{ option }}×</v-list-item-title>
                         </v-list-item>
@@ -115,7 +106,7 @@
                     variant="text"
                     size="small"
                     :title="$t('common.close')"
-                    @click="close"
+                    @click="store.stop()"
                 />
             </div>
         </v-container>
@@ -127,15 +118,23 @@ import { usePodcastStore } from '@/store/podcastStore.js';
 import { formatDuration } from '@/utils/podcast.js';
 
 /**
- * The player that keeps playing.
+ * The full player: scrubber, skip, speed.
  *
- * Mounted once in DefaultLayout rather than on the podcast pages, because
- * a listener who opens the show notes — or wanders off to the forum —
- * should keep hearing the episode. The <audio> element therefore has to
- * outlive the pages, so the pages only ask the store to play something
- * and this component is the single thing that touches the element.
+ * Shown only on the podcast pages — App.vue decides — because that is
+ * where someone is actually working with an episode. Everywhere else the
+ * single toolbar button is enough, and a bar pinned across the bottom of
+ * every page would be a band of chrome the rest of the site has to live
+ * around.
  *
- * It renders nothing at all until there is something to play.
+ * Fixed to the viewport rather than sticky: it used to sit inside
+ * v-main, where `position: sticky` only sticks within the scrolling
+ * ancestor and the bar slid away on a short page. Being fixed, it covers
+ * what is behind it, so it marks the document while it is up and
+ * app.scss gives the page room at the bottom.
+ *
+ * It owns no audio — PodcastAudioHost does — so this survives being
+ * mounted and unmounted as the listener moves on and off the podcast
+ * pages without interrupting playback.
  */
 export default {
     name: 'PodcastPlayerBar',
@@ -144,7 +143,6 @@ export default {
     },
     data() {
         return {
-            rate: 1,
             rates: [0.75, 1, 1.25, 1.5, 2],
         };
     },
@@ -164,7 +162,7 @@ export default {
         /**
          * How long the episode is. The file is the authority once it has
          * loaded; until then the figure the episode was saved with keeps
-         * the slider from sitting at a nonsense 0.
+         * the slider off a nonsense 0.
          */
         sliderMax() {
             return this.store.duration || this.current?.duration || 0;
@@ -180,42 +178,26 @@ export default {
         },
     },
     watch: {
-        // A page asked for playback: the element can only be told to play
-        // from here, because only this component owns it.
-        'store.playRequested'(requested) {
-            if (requested) {
-                this.$nextTick(() => this.startPlayback());
-            }
+        current: {
+            immediate: true,
+            handler() {
+                this.markDocument();
+            },
         },
-        'store.playing'(playing) {
-            const audio = this.$refs.audio;
-
-            if ( ! audio) {
-                return;
-            }
-
-            if (playing && audio.paused) {
-                audio.play().catch(() => this.store.setPlaying(false));
-            } else if ( ! playing && ! audio.paused) {
-                audio.pause();
-            }
-        },
+    },
+    mounted() {
+        this.markDocument();
+    },
+    beforeUnmount() {
+        // Leaving the podcast pages takes the bar with it, so the page
+        // below must not keep the space it was holding open.
+        document.documentElement.classList.remove('podcast-bar-visible');
     },
     methods: {
         formatTime: formatDuration,
 
-        startPlayback() {
-            const audio = this.$refs.audio;
-            this.store.playHandled();
-
-            if ( ! audio) {
-                return;
-            }
-
-            audio.playbackRate = this.rate;
-            // A browser may refuse autoplay; the store has to agree with
-            // what actually happened or the button lies about its state.
-            audio.play().catch(() => this.store.setPlaying(false));
+        markDocument() {
+            document.documentElement.classList.toggle('podcast-bar-visible', !! this.current);
         },
 
         togglePlay() {
@@ -227,80 +209,19 @@ export default {
 
             this.store.setPlaying(true);
         },
-
-        onMeta() {
-            const audio = this.$refs.audio;
-
-            if (audio) {
-                audio.playbackRate = this.rate;
-                audio.volume = this.store.volume;
-                this.store.syncProgress(audio.currentTime, audio.duration);
-            }
-        },
-
-        onTimeUpdate() {
-            const audio = this.$refs.audio;
-
-            if (audio) {
-                this.store.syncProgress(audio.currentTime, audio.duration);
-            }
-        },
-
-        onEnded() {
-            this.store.setPlaying(false);
-            this.store.syncProgress(0, this.store.duration);
-
-            const audio = this.$refs.audio;
-
-            if (audio) {
-                audio.currentTime = 0;
-            }
-        },
-
-        seekTo(seconds) {
-            const audio = this.$refs.audio;
-
-            if (audio) {
-                audio.currentTime = seconds;
-            }
-
-            this.store.syncProgress(seconds, this.store.duration);
-        },
-
-        seekBy(delta) {
-            const max = this.sliderMax || this.position + Math.abs(delta);
-
-            this.seekTo(Math.min(Math.max(this.position + delta, 0), max));
-        },
-
-        setRate(rate) {
-            this.rate = rate;
-
-            const audio = this.$refs.audio;
-
-            if (audio) {
-                audio.playbackRate = rate;
-            }
-        },
-
-        close() {
-            const audio = this.$refs.audio;
-
-            if (audio) {
-                audio.pause();
-            }
-
-            this.store.stop();
-        },
     },
 };
 </script>
 
 <style scoped>
 .podcast-player {
-    position: sticky;
+    position: fixed;
     bottom: 0;
-    z-index: 5;
+    left: 0;
+    right: 0;
+    /* Above the content and the footer, below Vuetify's overlays (2400+)
+       so dialogs and menus still come out on top */
+    z-index: 1800;
     border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
