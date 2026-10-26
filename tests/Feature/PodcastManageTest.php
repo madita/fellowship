@@ -52,13 +52,18 @@ class PodcastManageTest extends TestCase
         Setting::clearCache();
     }
 
+    /** Approved, so the feed assertions here are about the feed itself. */
     private function show(array $attributes = []): Podcast
     {
-        return Podcast::create(array_merge([
+        $podcast = Podcast::create(array_merge([
             'title'        => 'The Nightly Watch',
             'is_published' => true,
             'created_by'   => $this->host->id,
         ], $attributes));
+
+        $podcast->approve($this->admin);
+
+        return $podcast->refresh();
     }
 
     // ----------------------------------------------------------------
@@ -107,6 +112,150 @@ class PodcastManageTest extends TestCase
         $this->actingAs($this->admin, 'sanctum')
             ->postJson('/api/podcasts/manage', ['title' => 'Admin show'])
             ->assertCreated();
+    }
+
+    // ----------------------------------------------------------------
+    // Who makes the show
+    // ----------------------------------------------------------------
+
+    /**
+     * The field used to be an empty box. The answer is almost always
+     * "the person creating it", so that is what it starts as.
+     */
+    public function test_a_new_show_is_authored_by_whoever_made_it(): void
+    {
+        $response = $this->actingAs($this->host, 'sanctum')
+            ->postJson('/api/podcasts/manage', ['title' => 'The Nightly Watch'])
+            ->assertCreated();
+
+        $response->assertJsonPath('podcast.authors.0.id', $this->host->id);
+        $this->assertSame($this->host->username, $response->json('podcast.author_line'));
+    }
+
+    public function test_a_show_can_name_a_co_author(): void
+    {
+        $cohost = User::factory()->create(['username' => 'cohost']);
+
+        $response = $this->actingAs($this->host, 'sanctum')
+            ->postJson('/api/podcasts/manage', [
+                'title'      => 'Two Voices',
+                'author_ids' => [$this->host->id, $cohost->id],
+            ])
+            ->assertCreated();
+
+        $response->assertJsonCount(2, 'podcast.authors');
+        // Joined for the feed, which wants one string
+        $this->assertSame("{$this->host->username} & cohost", $response->json('podcast.author_line'));
+    }
+
+    public function test_authors_are_replaced_on_update_and_left_alone_when_unmentioned(): void
+    {
+        $cohost = User::factory()->create(['username' => 'cohost']);
+        $show = $this->show();
+        $show->authors()->sync([$this->host->id]);
+
+        $this->actingAs($this->host, 'sanctum')
+            ->patchJson("/api/podcasts/manage/{$show->id}", ['author_ids' => [$cohost->id]])
+            ->assertOk()
+            ->assertJsonPath('podcast.authors.0.id', $cohost->id);
+
+        // A request that says nothing about authors must not clear them
+        $this->actingAs($this->host, 'sanctum')
+            ->patchJson("/api/podcasts/manage/{$show->id}", ['title' => 'Renamed'])
+            ->assertOk()
+            ->assertJsonCount(1, 'podcast.authors');
+    }
+
+    public function test_an_author_has_to_be_a_real_member(): void
+    {
+        $this->actingAs($this->host, 'sanctum')
+            ->postJson('/api/podcasts/manage', [
+                'title'      => 'Ghost written',
+                'author_ids' => [99999],
+            ])
+            ->assertStatus(422);
+    }
+
+    // ----------------------------------------------------------------
+    // What the show is about
+    // ----------------------------------------------------------------
+
+    /**
+     * Categories are terms of the `podcast` taxonomy, the mechanism the
+     * wiki already uses, so the vocabulary is shared.
+     */
+    public function test_categories_are_stored_as_taxonomy_terms(): void
+    {
+        $response = $this->actingAs($this->host, 'sanctum')
+            ->postJson('/api/podcasts/manage', [
+                'title'      => 'The Nightly Watch',
+                'categories' => ['True Crime', 'City Life'],
+            ])
+            ->assertCreated();
+
+        $response->assertJsonCount(2, 'podcast.categories');
+
+        $podcast = Podcast::find($response->json('podcast.id'));
+
+        $this->assertSame(
+            ['City Life', 'True Crime'],
+            $podcast->categoryTerms()->pluck('title')->sort()->values()->all()
+        );
+        // Under the podcast taxonomy, not loose in the table
+        $this->assertTrue($podcast->taxonomies->every(fn ($t) => $t->taxonomy === Podcast::TAXONOMY));
+    }
+
+    /**
+     * The picker hands an existing term back as an object and a new one
+     * as the title that was typed; both have to work.
+     */
+    public function test_a_category_may_arrive_as_a_term_object_or_a_title(): void
+    {
+        $show = $this->show();
+
+        $this->actingAs($this->host, 'sanctum')
+            ->patchJson("/api/podcasts/manage/{$show->id}", [
+                'categories' => [['id' => 1, 'title' => 'True Crime'], 'City Life'],
+            ])
+            ->assertOk()
+            ->assertJsonCount(2, 'podcast.categories');
+    }
+
+    public function test_categories_are_replaced_rather_than_added_to(): void
+    {
+        $show = $this->show();
+
+        $this->actingAs($this->host, 'sanctum')
+            ->patchJson("/api/podcasts/manage/{$show->id}", ['categories' => ['First']])
+            ->assertOk();
+
+        $this->actingAs($this->host, 'sanctum')
+            ->patchJson("/api/podcasts/manage/{$show->id}", ['categories' => ['Second']])
+            ->assertOk()
+            ->assertJsonCount(1, 'podcast.categories')
+            ->assertJsonPath('podcast.categories.0.title', 'Second');
+    }
+
+    public function test_the_feed_names_the_authors_and_every_category(): void
+    {
+        $cohost = User::factory()->create(['username' => 'cohost']);
+        $show = $this->show();
+        $show->authors()->sync([$this->host->id, $cohost->id]);
+        $show->syncCategories(['True Crime', 'City Life'], Podcast::TAXONOMY);
+        $show->episodes()->create([
+            'title'        => 'Pilot',
+            'audio_url'    => 'https://example.com/pilot.mp3',
+            'is_published' => true,
+            'published_at' => now()->subDay(),
+            'created_by'   => $this->host->id,
+        ]);
+
+        $xml = $this->get("/podcast/{$show->slug}/feed.xml")->assertOk()->getContent();
+
+        $this->assertStringContainsString("<itunes:author>{$this->host->username} &amp; cohost</itunes:author>", $xml);
+        $this->assertStringContainsString('<itunes:category text="True Crime"/>', $xml);
+        $this->assertStringContainsString('<itunes:category text="City Life"/>', $xml);
+        $this->assertNotFalse(simplexml_load_string($xml));
     }
 
     public function test_the_manage_list_includes_unpublished_shows(): void

@@ -47,7 +47,19 @@
                 :text="$t('podcast.notFound.text')"
             />
 
-            <v-row v-else>
+            <!-- Only its own author can be looking at a show in this
+                 state, so the message is addressed to them. -->
+            <v-alert
+                v-else-if="podcast && !podcast.is_approved"
+                type="info"
+                variant="tonal"
+                prepend-icon="mdi-clock-outline"
+                class="mb-4"
+            >
+                {{ $t('podcast.awaitingReview') }}
+            </v-alert>
+
+            <v-row v-if="podcast">
                 <v-col cols="12" md="4" lg="3">
                     <v-card variant="outlined">
                         <v-img v-if="podcast.cover_url" :src="podcast.cover_url" :alt="podcast.title" aspect-ratio="1" cover />
@@ -59,11 +71,13 @@
                             <v-divider class="my-3" />
 
                             <v-list density="compact" class="pa-0 bg-transparent">
-                                <v-list-item v-if="podcast.author" class="px-0" prepend-icon="mdi-account-voice">
-                                    <v-list-item-title class="text-body-2">{{ podcast.author }}</v-list-item-title>
+                                <v-list-item v-if="podcast.author_line" class="px-0" prepend-icon="mdi-account-voice">
+                                    <v-list-item-title class="text-body-2">{{ podcast.author_line }}</v-list-item-title>
                                 </v-list-item>
-                                <v-list-item v-if="podcast.category" class="px-0" prepend-icon="mdi-tag-outline">
-                                    <v-list-item-title class="text-body-2">{{ podcast.category }}</v-list-item-title>
+                                <v-list-item v-if="podcast.categories?.length" class="px-0" prepend-icon="mdi-tag-outline">
+                                    <v-list-item-title class="text-body-2">
+                                        {{ podcast.categories.map(term => term.title).join(', ') }}
+                                    </v-list-item-title>
                                 </v-list-item>
                                 <v-list-item class="px-0" prepend-icon="mdi-playlist-music">
                                     <v-list-item-title class="text-body-2">

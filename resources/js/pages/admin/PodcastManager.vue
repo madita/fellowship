@@ -306,21 +306,44 @@
                         density="comfortable"
                         class="mb-2"
                     />
+                    <!-- Members, not a typed name, so a show with two
+                         people behind it can say so -->
+                    <v-autocomplete
+                        v-model="showForm.author_ids"
+                        :items="assignableUsers"
+                        item-title="username"
+                        item-value="id"
+                        :label="$t('admin.podcast.fields.authors')"
+                        :hint="$t('admin.podcast.fields.authorsHint')"
+                        persistent-hint
+                        multiple
+                        chips
+                        closable-chips
+                        density="comfortable"
+                        prepend-inner-icon="mdi-account-voice"
+                        class="mb-3"
+                    />
+
+                    <!-- Terms of the `podcast` taxonomy, as a wiki page
+                         picks its categories -->
+                    <v-combobox
+                        v-model="showForm.categories"
+                        :items="categoryTerms"
+                        item-title="title"
+                        item-value="id"
+                        :label="$t('admin.podcast.fields.categories')"
+                        :hint="$t('admin.podcast.fields.categoriesHint')"
+                        persistent-hint
+                        multiple
+                        chips
+                        closable-chips
+                        clearable
+                        density="comfortable"
+                        prepend-inner-icon="mdi-folder-plus"
+                        class="mb-2"
+                    />
+
                     <v-row dense>
-                        <v-col cols="12" sm="6">
-                            <v-text-field
-                                v-model="showForm.author"
-                                :label="$t('admin.podcast.fields.author')"
-                                density="comfortable"
-                            />
-                        </v-col>
-                        <v-col cols="12" sm="6">
-                            <v-text-field
-                                v-model="showForm.category"
-                                :label="$t('admin.podcast.fields.category')"
-                                density="comfortable"
-                            />
-                        </v-col>
                         <v-col cols="12" sm="6">
                             <v-select
                                 v-model="showForm.language"
@@ -480,6 +503,8 @@
 <script>
 import axios from 'axios';
 import { useSettingsStore } from '@/store/settingStore.js';
+import { useUserStore } from '@/store/userStore.js';
+import { useAssignableUsers } from '@/composables/useAssignableUsers.js';
 import { formatDuration, parseDuration, formatFileSize, uploadFailureMessage } from '@/utils/podcast.js';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
@@ -492,8 +517,8 @@ const emptyShow = () => ({
     title: '',
     subtitle: '',
     description: '',
-    author: '',
-    category: '',
+    author_ids: [],
+    categories: [],
     language: 'de',
     explicit: false,
     is_published: false,
@@ -524,12 +549,20 @@ export default {
     name: 'PodcastManager',
     components: { PageHeader, EmptyState, LoadingState, CustomDatePicker, SimpleEditor },
     setup() {
-        return { settingsStore: useSettingsStore() };
+        const { assignableUsers, loadAssignableUsers } = useAssignableUsers();
+
+        return {
+            settingsStore: useSettingsStore(),
+            userStore: useUserStore(),
+            assignableUsers,
+            loadAssignableUsers,
+        };
     },
     data() {
         return {
             shows: [],
             stats: null,
+            categoryTerms: [],
             loadingShows: false,
             selectedId: null,
             episodes: [],
@@ -584,6 +617,8 @@ export default {
     },
     mounted() {
         this.refresh();
+        this.loadAssignableUsers();
+        this.loadCategoryTerms();
     },
     methods: {
         formatDuration,
@@ -591,6 +626,17 @@ export default {
 
         fieldError(field) {
             return this.errors[field] || [];
+        },
+
+        /** The podcast terms already in use, so a show can join them. */
+        async loadCategoryTerms() {
+            try {
+                const { data } = await axios.get('/api/tag/terms/podcast');
+                this.categoryTerms = data.terms || [];
+            } catch (error) {
+                // Not worth a dialog: a new term can still be typed
+                this.categoryTerms = [];
+            }
         },
 
         truncate(text, length = 90) {
@@ -671,12 +717,25 @@ export default {
         newShow() {
             this.errors = {};
             this.showForm = emptyShow();
+
+            // Whoever is creating it is its author to begin with
+            const me = this.userStore.user;
+
+            if (me?.id) {
+                this.showForm.author_ids = [me.id];
+            }
+
             this.showDialog = true;
         },
 
         editShow(show) {
             this.errors = {};
-            this.showForm = { ...emptyShow(), ...show };
+            this.showForm = {
+                ...emptyShow(),
+                ...show,
+                author_ids: (show.authors || []).map(author => author.id),
+                categories: show.categories || [],
+            };
             this.showDialog = true;
         },
 
@@ -688,8 +747,8 @@ export default {
                 title: this.showForm.title,
                 subtitle: this.showForm.subtitle || null,
                 description: this.showForm.description || null,
-                author: this.showForm.author || null,
-                category: this.showForm.category || null,
+                author_ids: this.showForm.author_ids,
+                categories: this.showForm.categories,
                 language: this.showForm.language || 'de',
                 explicit: !! this.showForm.explicit,
                 is_published: !! this.showForm.is_published,

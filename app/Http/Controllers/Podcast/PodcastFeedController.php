@@ -30,7 +30,10 @@ class PodcastFeedController extends Controller
             throw new NotFoundHttpException();
         }
 
-        $podcast = Podcast::published()->where('slug', $slug)->first();
+        // Approved as well as published: a podcast app caches a feed and
+        // hands it on, so anything that reaches one is out for good.
+        // There is no "own drafts" case here — a feed has no caller.
+        $podcast = Podcast::visible()->where('slug', $slug)->first();
 
         if ( ! $podcast) {
             throw new NotFoundHttpException();
@@ -45,7 +48,9 @@ class PodcastFeedController extends Controller
     private function buildFeed(Podcast $podcast, $episodes): string
     {
         $siteName = Setting::get('app_name', config('app.name'));
-        $author   = $podcast->author ?: $siteName;
+        // Everyone who makes the show, named; the site itself if the
+        // show somehow has nobody attached
+        $author   = $podcast->authorLine() ?: $siteName;
         $cover    = $this->absolute($podcast->coverUrl());
         $pageUrl  = url("/podcast/{$podcast->slug}");
 
@@ -67,8 +72,10 @@ class PodcastFeedController extends Controller
             $xml .= '    <itunes:subtitle>' . $this->escape($podcast->subtitle) . "</itunes:subtitle>\n";
         }
 
-        if ($podcast->category) {
-            $xml .= '    <itunes:category text="' . $this->escape($podcast->category) . '"/>' . "\n";
+        // A directory accepts several categories, so every term the show
+        // was given gets its own element
+        foreach ($podcast->categoryTerms() as $term) {
+            $xml .= '    <itunes:category text="' . $this->escape($term['title']) . '"/>' . "\n";
         }
 
         if ($cover) {

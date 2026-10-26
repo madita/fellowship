@@ -38,13 +38,18 @@ class PodcastSurfacesTest extends TestCase
         $this->member = User::factory()->create(['username' => 'listener']);
     }
 
+    /** Approved, because these tests are about the surfaces, not review. */
     private function show(array $attributes = []): Podcast
     {
-        return Podcast::create(array_merge([
+        $podcast = Podcast::create(array_merge([
             'title'        => 'The Nightly Watch',
             'is_published' => true,
             'created_by'   => $this->member->id,
         ], $attributes));
+
+        $podcast->approve($this->admin);
+
+        return $podcast->refresh();
     }
 
     private function episode(Podcast $show, array $attributes = []): PodcastEpisode

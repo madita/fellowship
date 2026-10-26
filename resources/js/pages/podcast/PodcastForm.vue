@@ -35,21 +35,47 @@
                                 density="comfortable"
                                 class="mb-2"
                             />
+                            <!-- Who makes the show. Starts as whoever is
+                                 creating it; anyone else involved is
+                                 added as a co-author rather than typed
+                                 into a line of text. -->
+                            <v-autocomplete
+                                v-model="form.author_ids"
+                                :items="assignableUsers"
+                                item-title="username"
+                                item-value="id"
+                                :label="$t('admin.podcast.fields.authors')"
+                                :hint="$t('admin.podcast.fields.authorsHint')"
+                                persistent-hint
+                                multiple
+                                chips
+                                closable-chips
+                                density="comfortable"
+                                prepend-inner-icon="mdi-account-voice"
+                                class="mb-3"
+                            />
+
+                            <!-- Terms of the `podcast` taxonomy, picked
+                                 or typed, the way a wiki page picks its
+                                 categories. -->
+                            <v-combobox
+                                v-model="form.categories"
+                                :items="categoryTerms"
+                                item-title="title"
+                                item-value="id"
+                                :label="$t('admin.podcast.fields.categories')"
+                                :hint="$t('admin.podcast.fields.categoriesHint')"
+                                persistent-hint
+                                multiple
+                                chips
+                                closable-chips
+                                clearable
+                                density="comfortable"
+                                prepend-inner-icon="mdi-folder-plus"
+                                class="mb-2"
+                            />
+
                             <v-row dense>
-                                <v-col cols="12" sm="6">
-                                    <v-text-field
-                                        v-model="form.author"
-                                        :label="$t('admin.podcast.fields.author')"
-                                        density="comfortable"
-                                    />
-                                </v-col>
-                                <v-col cols="12" sm="6">
-                                    <v-text-field
-                                        v-model="form.category"
-                                        :label="$t('admin.podcast.fields.category')"
-                                        density="comfortable"
-                                    />
-                                </v-col>
                                 <v-col cols="12" sm="6">
                                     <v-select
                                         v-model="form.language"
@@ -141,13 +167,15 @@
 import axios from 'axios';
 import PageHeader from '@/components/common/PageHeader.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
+import { useAssignableUsers } from '@/composables/useAssignableUsers.js';
+import { useUserStore } from '@/store/userStore.js';
 
 const blank = () => ({
     title: '',
     subtitle: '',
     description: '',
-    author: '',
-    category: '',
+    author_ids: [],
+    categories: [],
     language: 'de',
     explicit: false,
     is_published: false,
@@ -165,10 +193,16 @@ const blank = () => ({
 export default {
     name: 'PodcastForm',
     components: { PageHeader, LoadingState },
+    setup() {
+        const { assignableUsers, loadAssignableUsers } = useAssignableUsers();
+
+        return { assignableUsers, loadAssignableUsers, userStore: useUserStore() };
+    },
     data() {
         return {
             form: blank(),
             podcast: null,
+            categoryTerms: [],
             loading: false,
             saving: false,
             uploadingCover: false,
@@ -199,14 +233,37 @@ export default {
             ].filter(Boolean);
         },
     },
-    mounted() {
+    async mounted() {
+        await Promise.all([this.loadAssignableUsers(), this.loadCategoryTerms()]);
+
         if (this.editing) {
-            this.load();
+            await this.load();
+
+            return;
+        }
+
+        // A new show is authored by the person making it. That was an
+        // empty box before, and an empty box is never the right answer.
+        const me = this.userStore.user;
+
+        if (me?.id) {
+            this.form.author_ids = [me.id];
         }
     },
     methods: {
         fieldError(field) {
             return this.errors[field] || [];
+        },
+
+        /** The terms already in use, so a show can join them. */
+        async loadCategoryTerms() {
+            try {
+                const { data } = await axios.get('/api/tag/terms/podcast');
+                this.categoryTerms = data.terms || [];
+            } catch (error) {
+                // Not worth a dialog: the field still takes a new term
+                this.categoryTerms = [];
+            }
         },
 
         /**
@@ -232,8 +289,10 @@ export default {
                     title: this.podcast.title || '',
                     subtitle: this.podcast.subtitle || '',
                     description: this.podcast.description || '',
-                    author: this.podcast.author || '',
-                    category: this.podcast.category || '',
+                    author_ids: (this.podcast.authors || []).map(author => author.id),
+                    // Existing terms come back as objects, which is the
+                    // shape the combobox hands back for a chosen one
+                    categories: this.podcast.categories || [],
                     language: this.podcast.language || 'de',
                     explicit: !! this.podcast.explicit,
                     is_published: !! this.podcast.is_published,
@@ -253,11 +312,11 @@ export default {
                 title: this.form.title,
                 subtitle: this.form.subtitle || null,
                 description: this.form.description || null,
-                author: this.form.author || null,
-                category: this.form.category || null,
                 language: this.form.language || 'de',
                 explicit: !! this.form.explicit,
                 is_published: !! this.form.is_published,
+                author_ids: this.form.author_ids,
+                categories: this.form.categories,
             };
 
             try {

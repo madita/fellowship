@@ -53,7 +53,9 @@ class PodcastManageController extends Controller
     public function index(): JsonResponse
     {
         $podcasts = Podcast::withCount('episodes')
-            ->with('creator')
+            // Authors and category terms travel with every show, so the
+            // list does not fire two queries per row to name them
+            ->with(['creator', 'authors', 'taxonomies.term'])
             ->orderBy('title')
             ->get()
             ->map(fn (Podcast $podcast) => $podcast->toApiArray(detailed: true));
@@ -77,29 +79,52 @@ class PodcastManageController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $data = $request->validate($this->podcastRules());
+        [$data, $authorIds, $categories] = $this->splitPodcastData(
+            $request->validate($this->podcastRules())
+        );
 
         $podcast = Podcast::create($data + [
             'created_by' => $request->user()->id,
         ]);
 
+        // The person making the show is its author unless they said
+        // otherwise — an empty box was never the right answer, and a
+        // show with nobody behind it has nothing to put in its feed.
+        $podcast->authors()->sync($authorIds ?: [$request->user()->id]);
+
+        if ($categories) {
+            $this->applyCategories($podcast, $categories);
+        }
+
         return response()->json([
             'message' => __('messages.podcast.created'),
-            'podcast' => $podcast->toApiArray(detailed: true),
+            'podcast' => $podcast->fresh()->load(['authors', 'taxonomies.term'])->toApiArray(detailed: true),
         ], 201);
     }
 
     public function update(Request $request, Podcast $podcast): JsonResponse
     {
-        $data = $request->validate($this->podcastRules(updating: true));
+        [$data, $authorIds, $categories] = $this->splitPodcastData(
+            $request->validate($this->podcastRules(updating: true))
+        );
 
         // A show people already subscribe to keeps its slug unless the
         // title is actually changed, so feed URLs stay put.
         $podcast->fill($data)->save();
 
+        // null means the request said nothing about them, which is not
+        // the same as an empty list asking for them to be cleared.
+        if ($authorIds !== null) {
+            $podcast->authors()->sync($authorIds);
+        }
+
+        if ($categories !== null) {
+            $this->applyCategories($podcast, $categories);
+        }
+
         return response()->json([
             'message' => __('messages.podcast.updated'),
-            'podcast' => $podcast->fresh()->toApiArray(detailed: true),
+            'podcast' => $podcast->fresh()->load(['authors', 'taxonomies.term'])->toApiArray(detailed: true),
         ]);
     }
 
@@ -284,12 +309,56 @@ class PodcastManageController extends Controller
             'title'        => $required . '|string|max:255',
             'subtitle'     => 'nullable|string|max:255',
             'description'  => 'nullable|string|max:5000',
-            'author'       => 'nullable|string|max:255',
             'language'     => 'nullable|string|max:10',
-            'category'     => 'nullable|string|max:120',
             'explicit'     => 'nullable|boolean',
             'is_published' => 'nullable|boolean',
+            // Who makes the show: members, so a co-author is a real
+            // person rather than a name typed into a line of text
+            'author_ids'   => 'nullable|array',
+            'author_ids.*' => 'integer|exists:users,id',
+            // What it is about: terms of the `podcast` taxonomy, taken
+            // the way the wiki takes them — an existing term arrives as
+            // an object, a new one as the title somebody typed. No
+            // per-entry rule, because either shape is valid and
+            // applyCategories reads both.
+            'categories'   => 'nullable|array',
         ];
+    }
+
+    /**
+     * The columns of the shows table, with the parts that are now
+     * relations taken out — those are attached after the row exists.
+     *
+     * @return array{0: array<string, mixed>, 1: array<int>|null, 2: array|null}
+     */
+    private function splitPodcastData(array $data): array
+    {
+        $authorIds = array_key_exists('author_ids', $data) ? ($data['author_ids'] ?? []) : null;
+        $categories = array_key_exists('categories', $data) ? ($data['categories'] ?? []) : null;
+
+        unset($data['author_ids'], $data['categories']);
+
+        return [$data, $authorIds, $categories];
+    }
+
+    /**
+     * Attach the terms a show was given, replacing whatever it had.
+     *
+     * Each entry is either an existing term — the picker hands those back
+     * as objects — or a title somebody typed, which becomes a term. Same
+     * shape the wiki editor posts, so the two screens behave alike.
+     */
+    private function applyCategories(Podcast $podcast, array $categories): void
+    {
+        $titles = collect($categories)
+            ->map(fn ($category) => is_array($category) ? ($category['title'] ?? null) : $category)
+            ->map(fn ($title) => is_string($title) ? trim($title) : null)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $podcast->syncCategories($titles, Podcast::TAXONOMY);
     }
 
     private function episodeRules(bool $updating = false): array

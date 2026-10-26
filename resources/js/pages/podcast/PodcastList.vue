@@ -80,6 +80,25 @@
                                         <v-chip v-if="podcast.explicit" size="small" color="warning" variant="tonal">
                                             {{ $t('podcast.explicit') }}
                                         </v-chip>
+                                        <!-- Shows up only on your own, since
+                                             nobody else is shown one yet -->
+                                        <v-chip
+                                            v-if="!podcast.is_approved"
+                                            size="small"
+                                            color="info"
+                                            variant="tonal"
+                                            prepend-icon="mdi-clock-outline"
+                                        >
+                                            {{ $t('podcast.pendingReview') }}
+                                        </v-chip>
+                                        <v-chip
+                                            v-else-if="!podcast.is_published"
+                                            size="small"
+                                            color="secondary"
+                                            variant="tonal"
+                                        >
+                                            {{ $t('admin.podcast.draft') }}
+                                        </v-chip>
                                     </div>
                                 </v-card-text>
                             </v-card>

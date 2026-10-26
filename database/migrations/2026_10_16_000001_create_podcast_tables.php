@@ -17,9 +17,9 @@ return new class extends Migration
             $table->string('subtitle')->nullable();
             $table->text('description')->nullable();
             $table->string('cover_image')->nullable();
-            $table->string('author')->nullable();
+            //$table->string('author')->nullable();
             $table->string('language', 10)->default('de');
-            $table->string('category')->nullable();
+            //$table->string('category')->nullable();
             $table->boolean('explicit')->default(false);
             $table->boolean('is_published')->default(false);
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
@@ -57,10 +57,22 @@ return new class extends Migration
             $table->unique(['podcast_id', 'slug']);
             $table->index(['podcast_id', 'is_published', 'published_at']);
         });
+
+        Schema::create('podcast_authors', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('podcast_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->timestamps();
+
+            // One row per person per show; the order they were added is
+            // the order the feed names them
+            $table->unique(['podcast_id', 'user_id']);
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('podcast_authors');
         Schema::dropIfExists('podcast_episodes');
         Schema::dropIfExists('podcasts');
     }

@@ -36,16 +36,24 @@ class PodcastTest extends TestCase
         Setting::clearCache();
     }
 
+    /**
+     * A show the public can reach, which since review arrived means an
+     * approved one. These tests are about what a listener sees, not
+     * about moderation — PodcastApprovalTest covers the pending state.
+     */
     private function show(array $attributes = []): Podcast
     {
-        return Podcast::create(array_merge([
+        $podcast = Podcast::create(array_merge([
             'title'        => 'The Nightly Watch',
             'description'  => 'Stories from the city',
-            'author'       => 'Stadtwache',
             'language'     => 'de',
             'is_published' => true,
             'created_by'   => $this->admin->id,
         ], $attributes));
+
+        $podcast->approve($this->admin);
+
+        return $podcast->refresh();
     }
 
     private function episode(Podcast $show, array $attributes = []): PodcastEpisode
