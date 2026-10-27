@@ -13,6 +13,7 @@ import TicketActivity from '@/components/ticket/TicketActivity.vue';
 import TicketHistory from '@/components/ticket/TicketHistory.vue';
 import FeedbackModerationCard from '@/components/feedback/FeedbackModerationCard.vue';
 import TicketNavList from '@/components/ticket/TicketNavList.vue';
+import WatchButton from '@/components/common/WatchButton.vue';
 import { rememberedTicketListQuery } from '@/composables/useTicketListQuery.js';
 import { useAssignableUsers } from '@/composables/useAssignableUsers.js';
 import { renderRichText } from '@/utils/richText.js';
@@ -299,32 +300,47 @@ onMounted(loadTicket);
                     :breadcrumbs="breadcrumbs"
                     :back-to="backTo"
                 >
-                    <template v-if="canManage" #actions>
-                        <v-btn
-                            v-if="showNav && !navOpen"
-                            variant="text"
-                            prepend-icon="mdi-format-list-bulleted"
-                            :title="t('tickets.nav.show')"
-                            @click="navOpen = true"
-                        >
-                            {{ t('tickets.nav.title') }}
-                        </v-btn>
-                        <v-btn
-                            variant="tonal"
-                            prepend-icon="mdi-pencil-outline"
-                            :to="{ name: 'admin-ticket-edit', params: { id: ticket.id } }"
-                        >
-                            {{ t('tickets.edit') }}
-                        </v-btn>
-                        <v-btn
-                            variant="text"
-                            color="error"
-                            prepend-icon="mdi-delete-outline"
-                            :loading="deleting"
-                            @click="removeTicket"
-                        >
-                            {{ t('tickets.delete') }}
-                        </v-btn>
+                    <template #actions>
+                        <!-- Following a ticket is the same act here as on
+                             the feedback page, so it is the same button:
+                             anyone who can open the ticket can follow it,
+                             not only the people who can edit it. -->
+                        <watch-button
+                            v-if="userStore.user"
+                            v-model="ticket.user_is_watching"
+                            v-model:watchers-count="ticket.watchers_count"
+                            kind="ticket"
+                            :id="ticket.id"
+                            show-count
+                        />
+
+                        <template v-if="canManage">
+                            <v-btn
+                                v-if="showNav && !navOpen"
+                                variant="text"
+                                prepend-icon="mdi-format-list-bulleted"
+                                :title="t('tickets.nav.show')"
+                                @click="navOpen = true"
+                            >
+                                {{ t('tickets.nav.title') }}
+                            </v-btn>
+                            <v-btn
+                                variant="tonal"
+                                prepend-icon="mdi-pencil-outline"
+                                :to="{ name: 'admin-ticket-edit', params: { id: ticket.id } }"
+                            >
+                                {{ t('tickets.edit') }}
+                            </v-btn>
+                            <v-btn
+                                variant="text"
+                                color="error"
+                                prepend-icon="mdi-delete-outline"
+                                :loading="deleting"
+                                @click="removeTicket"
+                            >
+                                {{ t('tickets.delete') }}
+                            </v-btn>
+                        </template>
                     </template>
                 </page-header>
 

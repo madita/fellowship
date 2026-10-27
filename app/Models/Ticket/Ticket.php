@@ -19,7 +19,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class Ticket extends Model
@@ -407,6 +409,51 @@ class Ticket extends Model
     }
 
     /**
+     * The people who handle tickets, for telling them a new one arrived.
+     *
+     * "Access" here means being able to act on it, not merely being able
+     * to read it: a public feedback ticket is visible to every member,
+     * and notifying the whole membership each time somebody reports a
+     * bug would be noise, not news. Server-side that group is the admin
+     * role — the ticket screens live behind it (see
+     * AdminRoutesAreAdminOnlyTest) — so that is who is told.
+     *
+     * The creator is left out: they are watching it already, and the
+     * arrival of their own ticket is not news to them.
+     */
+    public function staffRecipients(): Collection
+    {
+        return User::whereHas('roles', fn ($query) => $query->where('name', 'admin'))
+            ->when(
+                $this->created_by_user_id,
+                fn ($query) => $query->whereKeyNot($this->created_by_user_id)
+            )
+            ->get();
+    }
+
+    /**
+     * Tell them, unless there is nobody to tell.
+     *
+     * Never throws: a ticket is somebody's actual work — a bug report, a
+     * wiki page waiting for review — and must not fail to exist because
+     * a notification could not be delivered.
+     */
+    public function notifyStaffOfNewTicket(): void
+    {
+        try {
+            $recipients = $this->staffRecipients();
+
+            if ($recipients->isEmpty()) {
+                return;
+            }
+
+            NotificationFacade::send($recipients, new TicketActivityNotification($this, 'created'));
+        } catch (\Throwable $e) {
+            Log::warning('[tickets] could not announce ticket ' . $this->id, ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * Scope: Tickets the user may see (see isVisibleTo()).
      */
     public function scopeVisibleTo($query, ?User $user)
@@ -440,6 +487,18 @@ class Ticket extends Model
         });
 
         static::created(function (Ticket $ticket): void {
+            // Whoever opened it follows it from the start, however it was
+            // opened. The feedback page did this for the tickets it
+            // creates, but a ticket raised anywhere else — the admin
+            // screen, a legacy claim, an approval ticket a wiki page or a
+            // podcast raised on its author's behalf — left its own author
+            // unsubscribed, so the reply telling them what happens next
+            // reached everyone except them.
+            if ($ticket->creator) {
+                $ticket->watch($ticket->creator);
+            }
+
+            $ticket->notifyStaffOfNewTicket();
             $ticket->notifyMentions($ticket->description, null, $ticket->creator);
             $ticket->announceOnDiscord();
         });

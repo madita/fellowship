@@ -121,7 +121,7 @@ class TicketController extends Controller
     /**
      * Get a specific ticket with comments.
      */
-    public function show(Ticket $ticket): JsonResponse
+    public function show(Request $request, Ticket $ticket): JsonResponse
     {
         $this->ensureCanView($ticket);
 
@@ -134,6 +134,12 @@ class TicketController extends Controller
         ]);
 
         $data = $ticket->toArray();
+
+        // Following a ticket is the same act on this page as on the
+        // feedback one — the same button, the same endpoint, the same
+        // ticket — so the page needs the same two facts to draw it with.
+        $data['watchers_count']   = $ticket->watches()->count();
+        $data['user_is_watching'] = $ticket->isWatchedBy($request->user());
 
         if ($ticket->ticketable && in_array(Approvable::class, class_uses_recursive($ticket->ticketable))) {
             $data['is_approvable'] = true;
