@@ -366,13 +366,26 @@ class Ticket extends Model
             return [];
         }
 
-        $recipients = app(MentionService::class)
-            ->newMentions($html, $previous, $author)
-            ->filter(fn (User $user) => $comment?->is_internal ? $user->isAdmin() : $this->canBeOpenedBy($user));
+        // Telling people must not be able to take down the thing it is
+        // about. This runs from the created and updated hooks, so an
+        // unreachable mail server or a malformed mention used to mean the
+        // ticket — somebody's bug report, a wiki page waiting for review
+        // — failed to save at all.
+        try {
+            $recipients = app(MentionService::class)
+                ->newMentions($html, $previous, $author)
+                ->filter(fn (User $user) => $comment?->is_internal ? $user->isAdmin() : $this->canBeOpenedBy($user));
 
-        NotificationFacade::send($recipients, new TicketMentionNotification($this, $author, $comment));
+            NotificationFacade::send($recipients, new TicketMentionNotification($this, $author, $comment));
 
-        return $recipients->pluck('id')->all();
+            return $recipients->pluck('id')->all();
+        } catch (\Throwable $e) {
+            Log::warning('[tickets] could not notify mentions on ticket ' . $this->id, [
+                'error' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
     }
 
     /**
