@@ -180,37 +180,6 @@ class Podcast extends Model
             || $this->authors->contains('id', $user->id);
     }
 
-    /**
-     * Opening a show for review, or letting it straight through.
-     *
-     * Mirrors Wiki: a role named in auto_approve_roles_podcast skips the
-     * ticket, everyone else gets one raised against the show itself, so
-     * the moderation queue is the ticket list people already watch.
-     */
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::created(function (self $podcast): void {
-            if ($podcast->shouldAutoApprove()) {
-                $podcast->approve(auth()->user());
-
-                return;
-            }
-
-            $podcast->autoCreateTicket('podcast_approval', [
-                'title'       => "New Podcast: {$podcast->title}",
-                'description' => 'A new podcast show has been created and needs review.',
-                'priority'    => 'normal',
-                // The show records who made it, so the ticket is
-                // credited from that rather than from whoever happens to
-                // be signed in — a show created by a command or a seeder
-                // would otherwise raise a ticket belonging to nobody.
-                'created_by_user_id' => $podcast->created_by,
-            ]);
-        });
-    }
-
     public function coverUrl(): ?string
     {
         return $this->cover_image ? '/storage/' . $this->cover_image : null;
@@ -268,5 +237,36 @@ class Podcast extends Model
         }
 
         return $data;
+    }
+
+    /**
+     * Opening a show for review, or letting it straight through.
+     *
+     * Mirrors Wiki: a role named in auto_approve_roles_podcast skips the
+     * ticket, everyone else gets one raised against the show itself, so
+     * the moderation queue is the ticket list people already watch.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function (self $podcast): void {
+            if ($podcast->shouldAutoApprove()) {
+                $podcast->approve(auth()->user());
+
+                return;
+            }
+
+            $podcast->autoCreateTicket('podcast_approval', [
+                'title'       => "New Podcast: {$podcast->title}",
+                'description' => 'A new podcast show has been created and needs review.',
+                'priority'    => 'normal',
+                // The show records who made it, so the ticket is
+                // credited from that rather than from whoever happens to
+                // be signed in — a show created by a command or a seeder
+                // would otherwise raise a ticket belonging to nobody.
+                'created_by_user_id' => $podcast->created_by,
+            ]);
+        });
     }
 }
