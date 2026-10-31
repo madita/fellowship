@@ -108,7 +108,7 @@
                                     {{ $t('achievements.admin.unknownMetric') }}
                                 </v-chip>
                                 <template v-else>
-                                    {{ $t(`achievements.metrics.${achievement.metric}`, achievement.metric) }}
+                                    {{ metricLabel(achievement.metric) }}
                                     × {{ achievement.threshold }}
                                     <span v-if="achievement.filters?.values?.length" class="text-medium-emphasis">
                                         ({{ narrowedLabel(achievement) }})
@@ -458,6 +458,7 @@ import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
 import AchievementBadge from '@/components/achievements/AchievementBadge.vue';
 import { useDialog } from '@/composables/useDialog.js';
+import { useSettingsStore } from '@/store/settingStore.js';
 
 defineProps({
     settings: Object,
@@ -471,6 +472,25 @@ const COLORS = ['amber', 'red', 'pink', 'purple', 'deep-purple', 'indigo', 'blue
 
 const { t } = useI18n();
 const dialog = useDialog();
+const settingsStore = useSettingsStore();
+
+/**
+ * What a metric is called, in words.
+ *
+ * The metric keys are dotted — "forum.thread.created" — and vue-i18n
+ * resolves a key by splitting it on dots, so asking for
+ * achievements.metrics.forum.thread.created looked for four nested
+ * levels and found none of them. Every label on this screen silently
+ * fell back to the raw key. The translations are keyed with underscores
+ * instead, so the metric name stays one segment.
+ */
+const metricLabel = (metric) => {
+    if ( ! metric) {
+        return '';
+    }
+
+    return t(`achievements.metrics.${String(metric).replace(/\./g, '_')}`, metric);
+};
 
 const loading = ref(true);
 const saving = ref(false);
@@ -535,11 +555,24 @@ function blankForm() {
 
 const typeItems = computed(() => types.value.map(type => ({ id: type.id, name: type.name })));
 
-const metricItems = computed(() => metrics.value.map(metric => ({
-    value: metric.key,
-    title: t(`achievements.metrics.${metric.key}`, metric.key),
-    props: { subtitle: t(`achievements.metricGroups.${metric.group}`, metric.group) },
-})));
+/**
+ * The actions an achievement can be built on.
+ *
+ * A metric of a switched-off feature is not offered — there is no point
+ * rewarding something the site is not currently doing. The one exception
+ * is the metric the achievement being edited already uses: dropping that
+ * from the list would blank the select and the next save would wipe it,
+ * so it stays whatever its feature is doing.
+ */
+const metricItems = computed(() => metrics.value
+    .filter(metric => !metric.feature
+        || metric.key === form.value.metric
+        || settingsStore.isFeatureEnabled(metric.feature))
+    .map(metric => ({
+        value: metric.key,
+        title: metricLabel(metric.key),
+        props: { subtitle: t(`achievements.metricGroups.${metric.group}`, metric.group) },
+    })));
 
 // What the chosen action can be narrowed by, if anything
 const narrowChoices = computed(() => {

@@ -59,6 +59,38 @@ Route::get('/forums/{slug}', 'App\Http\Controllers\Forum\ForumController@show');
 Route::get('/forums/{forumSlug}/threads/{threadSlug}', 'App\Http\Controllers\Forum\ForumThreadController@show');
 Route::get('/activity', 'App\Http\Controllers\ActivityController@index');
 
+// Podcast: a show is public by nature, so none of this asks for a
+// sign-in. The feature gate does apply — switching the podcast off in
+// Admin → Settings → Features closes these, not just the menu entry.
+// Running a show without the admin panel. Anyone holding manage-podcast
+// does this from the podcast's own pages, the way the wiki is written
+// from the wiki; admins pass too (see EnsureUserHasPermission). Declared
+// above the public routes because /podcasts/manage would otherwise be
+// read as a show whose slug is "manage".
+Route::middleware(['auth:sanctum', 'feature.enabled:podcast', 'permission.any:manage-podcast'])
+    ->prefix('podcasts/manage')
+    ->group(function () {
+        Route::get('/', 'App\Http\Controllers\Podcast\PodcastManageController@index');
+        Route::post('/', 'App\Http\Controllers\Podcast\PodcastManageController@store');
+        Route::patch('/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@update');
+        Route::delete('/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@destroy');
+        Route::post('/{podcast}/cover', 'App\Http\Controllers\Podcast\PodcastManageController@uploadCover');
+        Route::get('/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@episodes');
+        Route::post('/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@storeEpisode');
+        Route::patch('/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@updateEpisode');
+        Route::delete('/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@destroyEpisode');
+        Route::post('/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@uploadAudio');
+        Route::delete('/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@deleteAudio');
+    });
+
+Route::middleware(['feature.enabled:podcast'])->group(function () {
+    Route::get('/podcasts', 'App\Http\Controllers\Podcast\PodcastController@index');
+    Route::get('/podcasts/latest-episodes', 'App\Http\Controllers\Podcast\PodcastController@latest');
+    Route::get('/podcasts/{slug}', 'App\Http\Controllers\Podcast\PodcastController@show');
+    Route::get('/podcasts/{slug}/episodes/{episodeSlug}', 'App\Http\Controllers\Podcast\PodcastController@episode');
+    Route::post('/podcasts/{slug}/episodes/{episodeSlug}/play', 'App\Http\Controllers\Podcast\PodcastController@play');
+});
+
 // A member's public page, reachable from a username anywhere on the site
 Route::get('/members/{username}', 'App\Http\Controllers\MemberProfileController@show');
 
@@ -508,6 +540,22 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'admin']], f
     // A badge can wear a picture instead of one of the built-in icons
     Route::post('/achievements/{achievement}/badge', 'App\Http\Controllers\Admin\AchievementAdminController@uploadBadge');
     Route::delete('/achievements/{achievement}/badge', 'App\Http\Controllers\Admin\AchievementAdminController@deleteBadge');
+
+    // Podcast: shows, their episodes, and the audio for each.
+    // Reachable with the feature switched off on purpose — an admin has
+    // to be able to get at the episodes to switch it back on.
+    Route::get('/podcasts', 'App\Http\Controllers\Podcast\PodcastManageController@index');
+    Route::get('/podcasts/stats', 'App\Http\Controllers\Podcast\PodcastManageController@stats');
+    Route::post('/podcasts', 'App\Http\Controllers\Podcast\PodcastManageController@store');
+    Route::patch('/podcasts/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@update');
+    Route::delete('/podcasts/{podcast}', 'App\Http\Controllers\Podcast\PodcastManageController@destroy');
+    Route::post('/podcasts/{podcast}/cover', 'App\Http\Controllers\Podcast\PodcastManageController@uploadCover');
+    Route::get('/podcasts/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@episodes');
+    Route::post('/podcasts/{podcast}/episodes', 'App\Http\Controllers\Podcast\PodcastManageController@storeEpisode');
+    Route::patch('/podcasts/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@updateEpisode');
+    Route::delete('/podcasts/{podcast}/episodes/{episode}', 'App\Http\Controllers\Podcast\PodcastManageController@destroyEpisode');
+    Route::post('/podcasts/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@uploadAudio');
+    Route::delete('/podcasts/{podcast}/episodes/{episode}/audio', 'App\Http\Controllers\Podcast\PodcastManageController@deleteAudio');
 
     // Tickets
     Route::get('/tickets/stats', 'App\Http\Controllers\Admin\TicketAdminController@stats');

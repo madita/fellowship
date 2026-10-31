@@ -4,6 +4,22 @@
 // The app bar, shared by every layout that has one
 @import 'toolbar';
 
+/**
+ * Room for the podcast player bar.
+ *
+ * The bar is fixed to the bottom of the viewport — sticky only sticks
+ * within its scrolling ancestor, and inside v-main it slid away on a
+ * short page — so it covers whatever is behind it. The component marks
+ * the document while it is up and the page gives back the height, which
+ * is the one thing a fixed element cannot do for itself.
+ */
+.podcast-bar-visible {
+    .v-main,
+    .v-footer {
+        padding-bottom: 76px;
+    }
+}
+
 *,
 *::before,
 *::after {

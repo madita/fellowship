@@ -9,6 +9,7 @@ use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
 use App\Models\Like;
 use App\Models\Page;
+use App\Models\Podcast\PodcastEpisode;
 use App\Models\Poll\PollOption;
 use App\Models\Revision;
 use App\Models\Status\Status;
@@ -38,6 +39,7 @@ class AchievementServiceProvider extends ServiceProvider
         $this->watchEvents();
         $this->watchTickets();
         $this->watchWiki();
+        $this->watchPodcast();
         $this->watchContent();
     }
 
@@ -148,6 +150,34 @@ class AchievementServiceProvider extends ServiceProvider
             if ($ticket->wasChanged('status') && $ticket->status === 'resolved') {
                 Achievements::record($ticket->creator, 'ticket.resolved');
             }
+        });
+    }
+
+    /**
+     * Publishing an episode counts once, whenever it actually becomes
+     * published — on creation for an episode published straight away, and
+     * on the edit that flips the switch for one that was a draft.
+     *
+     * `updated` also fires for every play, because the counter is an
+     * increment on the row, so the transition has to be read off
+     * wasChanged() rather than the current value.
+     */
+    private function watchPodcast(): void
+    {
+        PodcastEpisode::created(function (PodcastEpisode $episode): void {
+            if ( ! $episode->is_published) {
+                return;
+            }
+
+            Achievements::record($this->userFor($episode->created_by), 'podcast.episode.published');
+        });
+
+        PodcastEpisode::updated(function (PodcastEpisode $episode): void {
+            if ( ! $episode->wasChanged('is_published') || ! $episode->is_published) {
+                return;
+            }
+
+            Achievements::record($this->userFor($episode->created_by), 'podcast.episode.published');
         });
     }
 

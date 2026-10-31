@@ -408,6 +408,13 @@ export default {
                 'images': '{count} Bilder',
                 'empty': 'Noch keine Alben'
             },
+            'podcast': {
+                'title': 'Podcast',
+                'description': 'Die neuesten Episoden, mit Abspielknopf',
+                'action': 'Podcast öffnen',
+                'subtitle': '{count} Episoden',
+                'empty': 'Noch keine Episoden'
+            },
             'stats': {
                 'title': 'Community',
                 'description': 'Aktuelle Community-Zahlen',
@@ -655,6 +662,8 @@ export default {
         'adminEventsList': 'Liste',
         'adminEventsTypes': 'Typen',
         'adminEventsProfiles': 'Profile',
+        'podcast': 'Podcast',
+        'adminPodcast': 'Podcast',
         'adminMedia': 'Mediencenter',
         'adminTickets': 'Tickets',
         'adminPolls': 'Umfragen',
@@ -704,6 +713,9 @@ export default {
                 'open_tickets': 'Offene Tickets',
                 'albums': 'Galerie-Alben',
                 'media_files': 'Mediendateien',
+                'podcasts': 'Podcast-Sendungen',
+                'podcast_episodes': 'Podcast-Episoden',
+                'podcast_plays': 'Wiedergaben',
                 'sandboxes': 'Sandboxes',
                 'messages_7d': 'Nachrichten diese Woche'
             },
@@ -732,6 +744,70 @@ export default {
                 'lastMigration': 'Letzter Datenimport: {name} — {status}, {time}.'
             }
         },
+        'podcast': {
+            'title': 'Podcast',
+            'subtitle': 'Sendungen, ihre Episoden und die Audiodatei zu jeder',
+            'newShow': 'Neue Sendung',
+            'editShow': 'Sendung bearbeiten',
+            'newEpisode': 'Neue Episode',
+            'editEpisode': 'Episode bearbeiten',
+            'cover': 'Titelbild',
+            'audio': 'Audio',
+            'state': 'Status',
+            'published': 'Veröffentlicht',
+            'draft': 'Entwurf',
+            'publishShow': 'Diese Sendung veröffentlichen',
+            'publishShowHint': 'Eine unveröffentlichte Sendung und ihre Episoden erscheinen nirgends und haben keinen Feed.',
+            'publishEpisode': 'Diese Episode veröffentlichen',
+            'uploadAudio': 'Audio hochladen',
+            'uploadingAudio': 'Audio wird hochgeladen…',
+            'featureOff': 'Die Podcast-Funktion ist abgeschaltet, Besucher sehen davon also nichts. Sendungen und Episoden kannst du hier trotzdem verwalten.',
+            'goToToggles': 'Funktionen',
+            'loadFailed': 'Die Podcasts konnten nicht geladen werden.',
+            'saveFailed': 'Speichern fehlgeschlagen.',
+            'deleteFailed': 'Löschen fehlgeschlagen.',
+            'uploadFailed': 'Die Datei konnte nicht hochgeladen werden.',
+            'confirmDeleteShow': 'Die Sendung „{title}“ mit allen Episoden und Audiodateien löschen? Das lässt sich nicht rückgängig machen.',
+            'confirmDeleteEpisode': 'Die Episode „{title}“ und ihre Audiodatei löschen? Das lässt sich nicht rückgängig machen.',
+            'stats': {
+                'podcasts': 'Sendungen',
+                'published_podcasts': 'Veröffentlicht',
+                'episodes': 'Episoden',
+                'published_episodes': 'Veröffentlicht',
+                'plays': 'Wiedergaben',
+                'audio_bytes': 'Audio'
+            },
+            'fields': {
+                'subtitle': 'Untertitel',
+                'authors': 'Autoren',
+                'authorsHint': 'Wer die Sendung macht. Du bist voreingestellt; wer sonst beteiligt ist, kommt als Co-Autor dazu.',
+                'categories': 'Kategorien',
+                'categoriesHint': 'Vorhandene auswählen oder neue eingeben, wie bei einer Wiki-Seite',
+                'language': 'Sprache',
+                'summary': 'Kurzbeschreibung',
+                'summaryHint': 'Ein bis zwei Sätze, erscheinen in Listen und in Podcast-Apps',
+                'showNotesHint': 'Links, Kapitel, alles was zur Episode gehört',
+                'number': 'Nr.',
+                'episodeNumber': 'Episode',
+                'seasonNumber': 'Staffel',
+                'duration': 'Länge',
+                'durationHint': 'Als Uhrzeit (12:30) oder in Sekunden',
+                'durationInvalid': 'Nutze 12:30, 1:04:05 oder eine Sekundenzahl',
+                'audioUrl': 'Audio-Adresse',
+                'audioUrlHint': 'Für eine Episode, die woanders liegt. Leer lassen und stattdessen eine Datei hochladen.',
+                'publishedAt': 'Veröffentlichungsdatum',
+                'publishedAtHint': 'Ein Datum in der Zukunft hält die Episode bis dahin aus dem Feed.'
+            },
+            'empty': {
+                'title': 'Noch keine Sendungen',
+                'text': 'Erstelle eine Sendung und füge ihr dann Episoden hinzu.'
+            },
+            'noEpisodes': {
+                'title': 'Noch keine Episoden',
+                'text': 'Füge eine Episode hinzu und lade ihre Audiodatei hoch.'
+            }
+        },
+
         'polls': {
             'title': 'Umfragen',
             'subtitle': 'Alle Umfragen an Forenthemen und Timeline-Beiträgen — Zahlen, Ergebnisse und Moderation',
@@ -3419,6 +3495,9 @@ export default {
         'achievementEarned': 'Du hast {title} erreicht',
         'achievementAwarded': '{name} hat dir {title} verliehen',
         'ticketStatus': '„{title}“ ist jetzt {status}',
+        'ticketCreatedBy': '{name} hat ein Ticket vom Typ {kind} eröffnet: „{title}“',
+        'ticketCreated': 'Neues Ticket: „{title}“',
+        'ticketKindFallback': 'Ticket',
         'wikiUpdated': '{name} hat {title} bearbeitet',
         'ticketMention': '{name} hat dich in „{title}“ erwähnt',
         'mention': '{name} hat dich in „{title}“ erwähnt',
@@ -5231,6 +5310,7 @@ export default {
             'timeline': 'Neueste Timeline-Beiträge',
             'wiki': 'Neueste Wiki-Seiten',
             'gallery': 'Neueste Alben',
+            'podcast': 'Neueste Episoden',
             'none': 'Noch nichts'
         },
         'counts': {
@@ -5260,26 +5340,29 @@ export default {
             'tickets': 'Tickets',
             'events': 'Events',
             'content': 'Inhalte',
-            'community': 'Community'
+            'community': 'Community',
+            'podcast': 'Podcast'
         },
         'metrics': {
-                'forum.thread.created': 'Thema im Forum eröffnet',
-                'forum.post.created': 'Im Forum geantwortet',
-                'forum.post.solution': 'Eine Antwort wurde als hilfreich markiert',
-                'forum.post.liked': 'Eine Antwort wurde gelikt',
-                'wiki.page.created': 'Wiki-Seite geschrieben',
-                'wiki.page.approved': 'Eine Wiki-Seite wurde freigegeben',
-                'wiki.page.edited': 'Wiki-Seite bearbeitet',
-                'ticket.created': 'Ticket erstellt',
-                'feedback.bug': 'Fehler gemeldet',
-                'feedback.feature': 'Feature vorgeschlagen',
-                'ticket.comment': 'Ticket kommentiert',
-                'ticket.resolved': 'Ein Ticket wurde gelöst',
-                'event.organised': 'Event organisiert',
-                'event.joined': 'An einem Event teilgenommen',
-                'timeline.post.created': 'Auf der Timeline gepostet',
-                'timeline.comment': 'Timeline kommentiert',
-                'poll.voted': 'An einer Umfrage teilgenommen'
+                'forum_thread_created': 'Thema im Forum eröffnet',
+                'forum_post_created': 'Im Forum geantwortet',
+                'forum_post_solution': 'Eine Antwort wurde als hilfreich markiert',
+                'forum_post_liked': 'Eine Antwort wurde gelikt',
+                'wiki_page_created': 'Wiki-Seite geschrieben',
+                'wiki_page_approved': 'Eine Wiki-Seite wurde freigegeben',
+                'wiki_page_edited': 'Wiki-Seite bearbeitet',
+                'ticket_created': 'Ticket erstellt',
+                'feedback_bug': 'Fehler gemeldet',
+                'feedback_feature': 'Feature vorgeschlagen',
+                'ticket_comment': 'Ticket kommentiert',
+                'ticket_resolved': 'Ein Ticket wurde gelöst',
+                'event_organised': 'Event organisiert',
+                'event_joined': 'An einem Event teilgenommen',
+                'timeline_post_created': 'Auf der Timeline gepostet',
+                'timeline_comment': 'Timeline kommentiert',
+                'poll_voted': 'An einer Umfrage teilgenommen',
+                'podcast_episode_published': 'Eine Podcast-Episode veröffentlicht',
+                'podcast_episode_listened': 'Eine Episode gehört'
         },
         'widget': {
             'subtitle': '{count} erreicht',
@@ -6241,6 +6324,71 @@ export default {
             'connectionError': 'Verbindung fehlgeschlagen'
         }
     },
+    'podcast': {
+        'title': 'Podcast',
+        'subtitle': 'Hör unsere Sendungen, oder abonniere sie in der Podcast-App, die du schon nutzt',
+        'shows': 'Sendungen',
+        'episode': 'Episode',
+        'latestEpisodes': 'Neueste Episoden',
+        'allEpisodes': 'Alle Episoden dieser Sendung',
+        'showNotes': 'Shownotes',
+        'noShowNotes': 'Diese Episode hat keine Shownotes.',
+        'subscribe': 'Abonnieren',
+        'feedUrl': 'RSS-Feed',
+        'feedCopied': 'Feed-Adresse kopiert',
+        'explicit': 'Explizit',
+        'pendingReview': 'Wartet auf Prüfung',
+        'awaitingReview': 'Diese Sendung wartet auf eine Prüfung. Bis dahin siehst nur du sie — ein Freigabe-Ticket ist angelegt, und sobald sie freigegeben ist, gehen Sendung und Feed online.',
+        'noAudio': 'Keine Audiodatei',
+        'noAudioHint': 'Diese Episode hat noch keine Audiodatei.',
+        'episodeCount': '{count} Episoden',
+        'playCount': '{count} Wiedergaben',
+        'manage': {
+            'newShow': 'Neue Sendung',
+            'editShow': 'Sendung bearbeiten',
+            'showSubtitle': 'Was Hörer und Podcast-Apps über die Sendung sehen',
+            'newEpisode': 'Neue Episode',
+            'editEpisode': 'Episode bearbeiten',
+            'chooseImage': 'Bild auswählen',
+            'coverAfterSave': 'Speichere die Sendung erst, dann lässt sich das Titelbild hochladen.',
+            'chooseAudio': 'Audiodatei auswählen',
+            'audioHint': 'mp3, m4a, wav, ogg oder flac',
+            'audioAfterSave': 'Speichere die Episode erst, dann lässt sich die Audiodatei hochladen.',
+            'uploadAudio': 'Audio hochladen',
+            'audioTooLarge': 'Diese Datei ist größer als {size}.',
+            'audioTooLargeForServer': 'Der Server hat die Datei als zu groß abgewiesen. Erhöhe upload_max_filesize und post_max_size in der php.ini sowie das Body-Limit des Webservers und versuche es erneut.',
+            'uploadNoResponse': 'Der Upload hat den Server nicht erreicht. Prüfe die Verbindung und versuche es erneut.',
+            'openEpisode': 'Episode öffnen',
+            'removeAudio': 'Audio entfernen',
+            'confirmRemoveAudio': 'Die Audiodatei dieser Episode entfernen? Die Episode selbst bleibt erhalten.'
+        },
+        'player': {
+            'label': 'Podcast-Player',
+            'play': 'Abspielen',
+            'pause': 'Pause',
+            'seek': 'In der Episode springen',
+            'speed': 'Wiedergabegeschwindigkeit',
+            'back15': '15 Sekunden zurück',
+            'forward30': '30 Sekunden vor'
+        },
+        'empty': {
+            'title': 'Noch keine Sendungen',
+            'text': 'Sobald eine Sendung veröffentlicht ist, erscheint sie hier.'
+        },
+        'noEpisodes': {
+            'title': 'Noch keine Episoden',
+            'text': 'Diese Sendung hat noch keine Episode veröffentlicht.'
+        },
+        'notFound': {
+            'title': 'Sendung nicht gefunden',
+            'text': 'Diese Sendung gibt es nicht, oder sie ist nicht veröffentlicht.'
+        },
+        'episodeNotFound': {
+            'title': 'Episode nicht gefunden',
+            'text': 'Diese Episode gibt es nicht, oder sie ist nicht veröffentlicht.'
+        }
+    },
+
     'feedback': {
         'title': 'Feedback',
         'subtitle': 'Melde Fehler, schlage Funktionen vor und stimme ab, was dir am wichtigsten ist',

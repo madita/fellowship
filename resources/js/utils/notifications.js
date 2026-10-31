@@ -24,6 +24,7 @@ const TICKET_ICONS = {
     ticket_mention: 'mdi-at',
     ticket_comment: 'mdi-comment-text-outline',
     ticket_status: 'mdi-progress-check',
+    ticket_created: 'mdi-ticket-outline',
 };
 
 /**
@@ -55,6 +56,18 @@ export function notificationSubject(data = {}, t) {
     }
     if (type === 'ticket_status') {
         return t('notifications.ticketStatus', { title: data.ticket_title, status: t(`tickets.status.${data.status}`) });
+    }
+    // Opened by somebody, for the people who handle tickets. The kind is
+    // worth saying: a bug report and a wiki page waiting for review are
+    // the same object and very different jobs.
+    if (type === 'ticket_created') {
+        return data.creator
+            ? t('notifications.ticketCreatedBy', {
+                name: data.creator,
+                title: data.ticket_title,
+                kind: data.ticket_type || t('notifications.ticketKindFallback'),
+            })
+            : t('notifications.ticketCreated', { title: data.ticket_title });
     }
     if (type === 'wiki_updated') {
         return t('notifications.wikiUpdated', { name: data.editor, title: data.wiki_title });

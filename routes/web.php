@@ -63,6 +63,12 @@ Route::get('/sitemap-pages.xml', 'App\Http\Controllers\SitemapController@pagesSi
 Route::get('/sitemap-posts.xml', 'App\Http\Controllers\SitemapController@postsSitemap')->name('sitemap.posts');
 Route::get('/robots.txt', 'App\Http\Controllers\SitemapController@robots')->name('robots');
 
+// The RSS feed a podcast app subscribes to. Not part of the SPA — a
+// podcast client wants XML over plain HTTP — so it has to be declared
+// above the catch-all, which would otherwise answer with the app shell.
+Route::get('/podcast/{slug}/feed.xml', 'App\Http\Controllers\Podcast\PodcastFeedController@show')
+    ->name('podcast.feed');
+
 // SPA Catch-all - MUST BE LAST and exclude actual files
 Route::get('/{any}', 'App\Http\Controllers\SpaController@index')
     ->where('any', '^(?!.*(\.js|\.css|\.json|\.woff|\.woff2|\.ttf|\.eot|\.svg|\.png|\.jpg|\.jpeg|\.gif|\.ico|\.webp)$).*')

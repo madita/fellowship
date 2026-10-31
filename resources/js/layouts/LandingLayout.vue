@@ -16,6 +16,8 @@
 
                 <div class="toolbar-actions d-flex align-center">
                     <mega-menu />
+                    <!-- The episode that is playing, one icon wide -->
+                    <podcast-toolbar-player v-if="podcastEnabled" />
                     <!-- Language Switcher -->
                     <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-flex"/>
                     <v-btn
@@ -189,6 +191,7 @@ import ConversationBoxManager from '../components/conversation/ConversationBoxMa
 import SidebarUsers from '../components/conversation/SidebarUsers.vue'
 import UserSettingsSidebar from '../components/settings/UserSettingsSidebar.vue'
 import FooterWidgetRenderer from '../components/footer/FooterWidgetRenderer.vue'
+import PodcastToolbarPlayer from '../components/podcast/PodcastToolbarPlayer.vue'
 import eventBus from '../components/common/eventBus.js'
 
 
@@ -206,7 +209,8 @@ export default {
         UserSettingsSidebar,
         FooterWidgetRenderer,
         MegaMenu,
-        LocationMenu
+        LocationMenu,
+        PodcastToolbarPlayer
     },
     setup() {
         const theme = useTheme()
@@ -259,6 +263,9 @@ export default {
 
             // Fallback to default logo
             return this.logoimg;
+        },
+        podcastEnabled() {
+            return useSettingsStore().isFeatureEnabled('podcast');
         },
         appName() {
             const settingsStore = useSettingsStore();

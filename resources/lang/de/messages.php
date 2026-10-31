@@ -23,6 +23,17 @@ return [
         'too_many_requests' => 'Zu viele Anfragen. Bitte versuchen Sie es später erneut.',
         'admin_required'    => 'Nicht autorisiert. Administrator-Zugriff erforderlich.',
         'permission_required' => 'Dir fehlt die Berechtigung dafür.',
+        'feature_disabled'    => 'Diese Funktion ist derzeit abgeschaltet.',
+    ],
+
+    // Podcast
+    'podcast' => [
+        'created'          => 'Podcast erfolgreich erstellt',
+        'updated'          => 'Podcast erfolgreich aktualisiert',
+        'deleted'          => 'Podcast erfolgreich gelöscht',
+        'episode_created'  => 'Episode erfolgreich erstellt',
+        'episode_updated'  => 'Episode erfolgreich aktualisiert',
+        'episode_deleted'  => 'Episode erfolgreich gelöscht',
     ],
 
     // Media

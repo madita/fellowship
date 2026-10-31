@@ -297,6 +297,7 @@ import SandboxWidget from '@/components/dashboard/SandboxWidget.vue';
 import GalleryWidget from '@/components/dashboard/GalleryWidget.vue';
 import TicketOverviewWidget from '@/components/dashboard/TicketOverviewWidget.vue';
 import AchievementsWidget from '@/components/dashboard/AchievementsWidget.vue';
+import PodcastWidget from '@/components/dashboard/PodcastWidget.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import LoadingState from '@/components/common/LoadingState.vue';
@@ -343,7 +344,8 @@ export default {
         SandboxWidget,
         GalleryWidget,
         TicketOverviewWidget,
-        AchievementsWidget
+        AchievementsWidget,
+        PodcastWidget
     },
     data() {
         return {

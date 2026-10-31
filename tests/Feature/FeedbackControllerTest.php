@@ -226,10 +226,14 @@ class FeedbackControllerTest extends TestCase
     {
         $ticket = $this->ticket();
 
+        // The author of a ticket watches it from the moment it is opened,
+        // so they are the count another member toggles on top of.
+        $this->assertTrue($ticket->isWatchedBy($this->user));
+
         $this->actingAs($this->other, 'sanctum')->postJson("/api/watch/ticket/{$ticket->id}")
-            ->assertOk()->assertJson(['watching' => true, 'watchers_count' => 1]);
+            ->assertOk()->assertJson(['watching' => true, 'watchers_count' => 2]);
         $this->actingAs($this->other, 'sanctum')->postJson("/api/watch/ticket/{$ticket->id}")
-            ->assertOk()->assertJson(['watching' => false, 'watchers_count' => 0]);
+            ->assertOk()->assertJson(['watching' => false, 'watchers_count' => 1]);
     }
 
     public function test_commenting_watches_and_notifies_the_other_watchers(): void

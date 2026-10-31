@@ -408,6 +408,13 @@ export default {
                 'images': '{count} images',
                 'empty': 'No albums yet'
             },
+            'podcast': {
+                'title': 'Podcast',
+                'description': 'The newest episodes, with a play button',
+                'action': 'Open Podcast',
+                'subtitle': '{count} episodes',
+                'empty': 'No episodes yet'
+            },
             'stats': {
                 'title': 'Community',
                 'description': 'Live community numbers',
@@ -655,6 +662,8 @@ export default {
         'adminEventsList': 'List',
         'adminEventsTypes': 'Types',
         'adminEventsProfiles': 'Profiles',
+        'podcast': 'Podcast',
+        'adminPodcast': 'Podcast',
         'adminMedia': 'Media Center',
         'adminTickets': 'Tickets',
         'adminPolls': 'Polls',
@@ -704,6 +713,9 @@ export default {
                 'open_tickets': 'Open tickets',
                 'albums': 'Gallery albums',
                 'media_files': 'Media files',
+                'podcasts': 'Podcast shows',
+                'podcast_episodes': 'Podcast episodes',
+                'podcast_plays': 'Episode plays',
                 'sandboxes': 'Sandboxes',
                 'messages_7d': 'Messages this week'
             },
@@ -732,6 +744,70 @@ export default {
                 'lastMigration': 'Last data import: {name} — {status}, {time}.'
             }
         },
+        'podcast': {
+            'title': 'Podcast',
+            'subtitle': 'Shows, their episodes and the audio for each',
+            'newShow': 'New show',
+            'editShow': 'Edit show',
+            'newEpisode': 'New episode',
+            'editEpisode': 'Edit episode',
+            'cover': 'Cover art',
+            'audio': 'Audio',
+            'state': 'State',
+            'published': 'Published',
+            'draft': 'Draft',
+            'publishShow': 'Publish this show',
+            'publishShowHint': 'An unpublished show and its episodes are not listed and have no feed.',
+            'publishEpisode': 'Publish this episode',
+            'uploadAudio': 'Upload audio',
+            'uploadingAudio': 'Uploading audio…',
+            'featureOff': 'The podcast feature is switched off, so listeners cannot see any of this. You can still manage shows and episodes here.',
+            'goToToggles': 'Feature toggles',
+            'loadFailed': 'Could not load the podcasts.',
+            'saveFailed': 'Could not save.',
+            'deleteFailed': 'Could not delete.',
+            'uploadFailed': 'Could not upload the file.',
+            'confirmDeleteShow': 'Delete the show "{title}" with all of its episodes and audio files? This cannot be undone.',
+            'confirmDeleteEpisode': 'Delete the episode "{title}" and its audio file? This cannot be undone.',
+            'stats': {
+                'podcasts': 'Shows',
+                'published_podcasts': 'Published',
+                'episodes': 'Episodes',
+                'published_episodes': 'Published',
+                'plays': 'Plays',
+                'audio_bytes': 'Audio'
+            },
+            'fields': {
+                'subtitle': 'Subtitle',
+                'authors': 'Authors',
+                'authorsHint': 'Whoever makes the show. You are added by default; add anyone else involved as a co-author.',
+                'categories': 'Categories',
+                'categoriesHint': 'Pick an existing one or type a new one, as a wiki page does',
+                'language': 'Language',
+                'summary': 'Summary',
+                'summaryHint': 'One or two sentences, shown in lists and in podcast apps',
+                'showNotesHint': 'Links, chapters, whatever belongs with the episode',
+                'number': 'No.',
+                'episodeNumber': 'Episode',
+                'seasonNumber': 'Season',
+                'duration': 'Duration',
+                'durationHint': 'As a clock (12:30) or in seconds',
+                'durationInvalid': 'Use 12:30, 1:04:05 or a number of seconds',
+                'audioUrl': 'Audio URL',
+                'audioUrlHint': 'For an episode hosted elsewhere. Leave empty and upload a file instead.',
+                'publishedAt': 'Publication date',
+                'publishedAtHint': 'A date in the future keeps the episode out of the feed until then.'
+            },
+            'empty': {
+                'title': 'No shows yet',
+                'text': 'Create a show, then add episodes to it.'
+            },
+            'noEpisodes': {
+                'title': 'No episodes yet',
+                'text': 'Add an episode and upload its audio file.'
+            }
+        },
+
         'polls': {
             'title': 'Polls',
             'subtitle': 'Every poll attached to forum threads and timeline posts — numbers, results and moderation',
@@ -3256,6 +3332,9 @@ export default {
         'achievementEarned': 'You earned {title}',
         'achievementAwarded': '{name} awarded you {title}',
         'ticketStatus': '"{title}" is now {status}',
+        'ticketCreatedBy': '{name} opened a {kind}: "{title}"',
+        'ticketCreated': 'New ticket: "{title}"',
+        'ticketKindFallback': 'ticket',
         'wikiUpdated': '{name} edited {title}',
         'ticketMention': '{name} mentioned you in "{title}"',
         'mention': '{name} mentioned you in "{title}"',
@@ -5072,6 +5151,7 @@ export default {
             'timeline': 'Recent timeline posts',
             'wiki': 'Recent wiki pages',
             'gallery': 'Recent albums',
+            'podcast': 'Recent episodes',
             'none': 'Nothing yet'
         },
         'counts': {
@@ -5101,26 +5181,29 @@ export default {
             'tickets': 'Tickets',
             'events': 'Events',
             'content': 'Content',
-            'community': 'Community'
+            'community': 'Community',
+            'podcast': 'Podcast'
         },
         'metrics': {
-                'forum.thread.created': 'Started a forum thread',
-                'forum.post.created': 'Replied in the forum',
-                'forum.post.solution': 'A reply was marked helpful',
-                'forum.post.liked': 'A reply was liked',
-                'wiki.page.created': 'Wrote a wiki page',
-                'wiki.page.approved': 'A wiki page was approved',
-                'wiki.page.edited': 'Edited a wiki page',
-                'ticket.created': 'Opened a ticket',
-                'feedback.bug': 'Reported a bug',
-                'feedback.feature': 'Requested a feature',
-                'ticket.comment': 'Commented on a ticket',
-                'ticket.resolved': 'A ticket was resolved',
-                'event.organised': 'Organised an event',
-                'event.joined': 'Went to an event',
-                'timeline.post.created': 'Posted on the timeline',
-                'timeline.comment': 'Commented on the timeline',
-                'poll.voted': 'Voted in a poll'
+                'forum_thread_created': 'Started a forum thread',
+                'forum_post_created': 'Replied in the forum',
+                'forum_post_solution': 'A reply was marked helpful',
+                'forum_post_liked': 'A reply was liked',
+                'wiki_page_created': 'Wrote a wiki page',
+                'wiki_page_approved': 'A wiki page was approved',
+                'wiki_page_edited': 'Edited a wiki page',
+                'ticket_created': 'Opened a ticket',
+                'feedback_bug': 'Reported a bug',
+                'feedback_feature': 'Requested a feature',
+                'ticket_comment': 'Commented on a ticket',
+                'ticket_resolved': 'A ticket was resolved',
+                'event_organised': 'Organised an event',
+                'event_joined': 'Went to an event',
+                'timeline_post_created': 'Posted on the timeline',
+                'timeline_comment': 'Commented on the timeline',
+                'poll_voted': 'Voted in a poll',
+                'podcast_episode_published': 'Published a podcast episode',
+                'podcast_episode_listened': 'Listened to an episode'
         },
         'widget': {
             'subtitle': '{count} earned',
@@ -6066,6 +6149,71 @@ export default {
             'ogImageHint': 'Image displayed when your site is shared on social media'
         }
     },
+    'podcast': {
+        'title': 'Podcast',
+        'subtitle': 'Listen to our shows, or subscribe in the podcast app you already use',
+        'shows': 'Shows',
+        'episode': 'Episode',
+        'latestEpisodes': 'Latest episodes',
+        'allEpisodes': 'All episodes of this show',
+        'showNotes': 'Show notes',
+        'noShowNotes': 'This episode has no show notes.',
+        'subscribe': 'Subscribe',
+        'feedUrl': 'RSS feed',
+        'feedCopied': 'Feed URL copied',
+        'explicit': 'Explicit',
+        'pendingReview': 'Awaiting review',
+        'awaitingReview': 'This show is waiting to be reviewed. Only you can see it until then — an approval ticket has been opened, and once it is approved the show and its feed go live.',
+        'noAudio': 'No audio',
+        'noAudioHint': 'This episode has no audio file yet.',
+        'episodeCount': '{count} episodes',
+        'playCount': '{count} plays',
+        'manage': {
+            'newShow': 'New show',
+            'editShow': 'Edit show',
+            'showSubtitle': 'What listeners and podcast apps see about the show',
+            'newEpisode': 'New episode',
+            'editEpisode': 'Edit episode',
+            'chooseImage': 'Choose an image',
+            'coverAfterSave': 'Save the show first, then its cover can be uploaded.',
+            'chooseAudio': 'Choose an audio file',
+            'audioHint': 'mp3, m4a, wav, ogg or flac',
+            'audioAfterSave': 'Save the episode first, then its audio can be uploaded.',
+            'uploadAudio': 'Upload audio',
+            'audioTooLarge': 'That file is larger than {size}.',
+            'audioTooLargeForServer': 'The server refused the file because it is too large. Raise upload_max_filesize and post_max_size in php.ini, and the body limit of the web server, then try again.',
+            'uploadNoResponse': 'The upload did not reach the server. Check the connection and try again.',
+            'openEpisode': 'Open the episode',
+            'removeAudio': 'Remove audio',
+            'confirmRemoveAudio': 'Remove the audio file from this episode? The episode itself is kept.'
+        },
+        'player': {
+            'label': 'Podcast player',
+            'play': 'Play',
+            'pause': 'Pause',
+            'seek': 'Seek within the episode',
+            'speed': 'Playback speed',
+            'back15': 'Back 15 seconds',
+            'forward30': 'Forward 30 seconds'
+        },
+        'empty': {
+            'title': 'No shows yet',
+            'text': 'Once a show is published it appears here.'
+        },
+        'noEpisodes': {
+            'title': 'No episodes yet',
+            'text': 'This show has not published an episode yet.'
+        },
+        'notFound': {
+            'title': 'Show not found',
+            'text': 'This show does not exist, or it has not been published.'
+        },
+        'episodeNotFound': {
+            'title': 'Episode not found',
+            'text': 'This episode does not exist, or it has not been published.'
+        }
+    },
+
     'feedback': {
         'title': 'Feedback',
         'subtitle': 'Report bugs, suggest features and vote on what matters most to you',

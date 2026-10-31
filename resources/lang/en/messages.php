@@ -23,6 +23,17 @@ return [
         'too_many_requests' => 'Too many requests. Please try again later.',
         'admin_required'    => 'Unauthorized. Admin access required.',
         'permission_required' => 'You do not have permission to do this.',
+        'feature_disabled'    => 'This feature is currently switched off.',
+    ],
+
+    // Podcast
+    'podcast' => [
+        'created'          => 'Podcast created successfully',
+        'updated'          => 'Podcast updated successfully',
+        'deleted'          => 'Podcast deleted successfully',
+        'episode_created'  => 'Episode created successfully',
+        'episode_updated'  => 'Episode updated successfully',
+        'episode_deleted'  => 'Episode deleted successfully',
     ],
 
     // Media

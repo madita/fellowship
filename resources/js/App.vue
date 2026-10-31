@@ -37,6 +37,15 @@
 
     <!-- App-wide message / confirm dialogs ($dialog, useDialog) -->
     <DialogHost />
+
+    <!-- The one <audio> element, above the layout and the router view so
+         an episode survives every navigation and every layout, including
+         the ones with no toolbar. Renders nothing. -->
+    <PodcastAudioHost v-if="podcastEnabled" />
+
+    <!-- The full player with its scrubber, only where someone is working
+         with an episode. Everywhere else the toolbar button carries it. -->
+    <PodcastPlayerBar v-if="podcastEnabled && onPodcastPage" />
   </v-app>
 </template>
 
@@ -57,12 +66,15 @@ import errorLayout from './layouts/ErrorLayout.vue'
 import CookieConsent from './components/common/CookieConsent.vue'
 import SessionTimeoutModal from './components/common/SessionTimeoutModal.vue'
 import DialogHost from './components/common/DialogHost.vue'
+import PodcastAudioHost from './components/podcast/PodcastAudioHost.vue'
+import PodcastPlayerBar from './components/podcast/PodcastPlayerBar.vue'
 // import { mapGetters } from 'vuex'
 
 
 // Import the Pinia store hook
 import { useAuthStore } from '@/store/authStore.js';
 import { useAppStore } from '@/store/app/index.js';
+import { useSettingsStore } from '@/store/settingStore.js';
 
 /*
 |---------------------------------------------------------------------
@@ -82,9 +94,20 @@ export default {
     errorLayout,
     CookieConsent,
     SessionTimeoutModal,
-    DialogHost
+    DialogHost,
+    PodcastAudioHost,
+    PodcastPlayerBar
   },
   computed: {
+      podcastEnabled() {
+          return useSettingsStore().isFeatureEnabled('podcast');
+      },
+      // The player bar belongs to the podcast's own pages. Matched on the
+      // path rather than the route name so the list, a show, an episode
+      // and both editors are all covered by one rule.
+      onPodcastPage() {
+          return (this.$route?.path || '').startsWith('/podcast');
+      },
       authenticated() {
           const authStore = useAuthStore();
           return authStore.isLoggedIn;

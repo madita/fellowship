@@ -8,6 +8,7 @@ use App\Http\Middleware\CacheControl;
 use App\Http\Middleware\ConditionalStartSession;
 use App\Http\Middleware\DynamicRateLimit;
 use App\Http\Middleware\EncryptCookies;
+use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureIrcDaemonIsRunning;
 use App\Http\Middleware\EnsureSandboxEnabled;
 use App\Http\Middleware\EnsureUserHasPermission;
@@ -112,6 +113,7 @@ class Kernel extends HttpKernel
         'api.rate'           => DynamicRateLimit::class,
         'lazy.loading'       => LazyLoadingMiddleware::class,
         'sandbox.enabled'    => EnsureSandboxEnabled::class,
+        'feature.enabled'    => EnsureFeatureEnabled::class,
         'irc.daemon'         => EnsureIrcDaemonIsRunning::class,
     ];
 }

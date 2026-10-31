@@ -180,6 +180,48 @@ class TicketControllerTest extends TestCase
 
     // ── Delete ──────────────────────────────────────────
 
+    /**
+     * The ticket page draws the same watch button as the feedback page,
+     * which needs the same two facts to draw it with.
+     */
+    public function test_show_reports_whether_the_viewer_is_watching(): void
+    {
+        $ticket = Ticket::factory()->createdBy($this->user)->create([
+            'ticket_type_id' => $this->ticketType->id,
+        ]);
+
+        // Its author watches it from the moment it is opened
+        $this->actingAs($this->user, 'sanctum')
+            ->getJson("/api/tickets/{$ticket->id}")
+            ->assertOk()
+            ->assertJsonPath('user_is_watching', true)
+            ->assertJsonPath('watchers_count', 1);
+
+        // Somebody else is shown the count but not a follow they never made
+        $this->actingAs($this->admin, 'sanctum')
+            ->getJson("/api/tickets/{$ticket->id}")
+            ->assertOk()
+            ->assertJsonPath('user_is_watching', false)
+            ->assertJsonPath('watchers_count', 1);
+    }
+
+    public function test_show_follows_the_watch_endpoint(): void
+    {
+        $ticket = Ticket::factory()->createdBy($this->user)->create([
+            'ticket_type_id' => $this->ticketType->id,
+        ]);
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->postJson("/api/watch/ticket/{$ticket->id}")
+            ->assertOk();
+
+        $this->actingAs($this->admin, 'sanctum')
+            ->getJson("/api/tickets/{$ticket->id}")
+            ->assertOk()
+            ->assertJsonPath('user_is_watching', true)
+            ->assertJsonPath('watchers_count', 2);
+    }
+
     public function test_admin_can_delete_ticket(): void
     {
         $ticket = Ticket::factory()->createdBy($this->user)->create([

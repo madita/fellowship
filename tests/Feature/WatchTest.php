@@ -57,7 +57,10 @@ class WatchTest extends TestCase
 
     public function test_the_same_endpoint_watches_a_ticket(): void
     {
-        $ticket = $this->ticket();
+        // Somebody else's ticket. Whoever opens one watches it from the
+        // start, so toggling as its author would switch watching *off*
+        // and this would be testing the wrong direction.
+        $ticket = $this->ticket(['created_by_user_id' => User::factory()->create()->id]);
 
         $this->actingAs($this->user, 'sanctum')
             ->postJson("/api/watch/ticket/{$ticket->id}")

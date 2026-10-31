@@ -6,6 +6,7 @@ use App\Models\Collection;
 use App\Models\Forum\ForumPost;
 use App\Models\Forum\ForumThread;
 use App\Models\Page;
+use App\Models\Podcast\PodcastEpisode;
 use App\Models\Rank;
 use App\Models\Status\Status;
 use App\Models\User;
@@ -97,6 +98,7 @@ class MemberProfileController extends Controller
             'timeline' => $this->recentStatuses($user),
             'wiki'     => $this->recentWikiPages($user),
             'gallery'  => $this->recentAlbums($user),
+            'podcast'  => $this->recentEpisodes($user),
         ];
     }
 
@@ -174,6 +176,29 @@ class MemberProfileController extends Controller
     }
 
     /**
+     * Episodes they published, of shows that are themselves published.
+     * An episode of an unpublished show is not readable, so it is not
+     * shown here either — the same rule the wiki pages follow.
+     */
+    private function recentEpisodes(User $user): array
+    {
+        return PodcastEpisode::where('created_by', $user->id)
+            ->published()
+            ->newestFirst()
+            ->whereHas('podcast', fn ($query) => $query->published())
+            ->with('podcast')
+            ->limit(self::PER_KIND)
+            ->get()
+            ->map(fn (PodcastEpisode $episode) => [
+                'id'    => $episode->id,
+                'title' => $episode->title,
+                'url'   => "/podcast/{$episode->podcast->slug}/{$episode->slug}",
+                'at'    => $episode->published_at ?: $episode->created_at,
+            ])
+            ->all();
+    }
+
+    /**
      * What they have written. Only what is readable anyway — a wiki page
      * still waiting for approval is not counted.
      */
@@ -188,6 +213,10 @@ class MemberProfileController extends Controller
                 ->count(),
             'timeline'   => Status::where('user_id', $user->id)->count(),
             'albums'     => Collection::where('user_id', $user->id)->count(),
+            'episodes'   => PodcastEpisode::where('created_by', $user->id)
+                ->published()
+                ->whereHas('podcast', fn ($query) => $query->published())
+                ->count(),
         ];
     }
 }

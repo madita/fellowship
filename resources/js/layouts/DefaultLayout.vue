@@ -89,6 +89,10 @@
                             <v-btn class="d-flex d-md-none" icon="mdi-magnify" variant="text" size="small" :title="$t('layout.search')" @click="showSearch = true" />
 
                             <mega-menu />
+                            <!-- The episode that is playing, one icon
+                                 wide; the full player lives on the
+                                 podcast pages -->
+                            <podcast-toolbar-player v-if="podcastEnabled" />
                             <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-block"/>
 
 <!--                                                <toolbar-apps/>-->
@@ -216,6 +220,7 @@ import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
 import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue'
 import ConversationsNotification from '../components/conversation/ConversationsNotification.vue'
 import SandboxNotifications from '../components/sandbox/SandboxNotifications.vue'
+import PodcastToolbarPlayer from '../components/podcast/PodcastToolbarPlayer.vue'
 import ConversationBox from '../components/conversation/ConversationBox.vue'
 import ConversationBoxManager from '../components/conversation/ConversationBoxManager.vue'
 import SidebarUsers from '../components/conversation/SidebarUsers.vue'
@@ -238,6 +243,7 @@ export default {
         UserSettingsSidebar,
         ConversationsNotification,
         SandboxNotifications,
+        PodcastToolbarPlayer,
     },
     setup() {
         const drawer = ref(true)
@@ -268,6 +274,7 @@ export default {
         const languageChangeEnabled = computed(() => settingsStore.languageChangeEnabled)
         const maintenanceMode = computed(() => settingsStore.maintenanceMode)
         const sandboxEnabled = computed(() => settingsStore.sandboxEnabled)
+        const podcastEnabled = computed(() => settingsStore.isFeatureEnabled('podcast'))
 
         const keys = useMagicKeys()
 
@@ -426,6 +433,7 @@ export default {
             languageChangeEnabled,
             maintenanceMode,
             sandboxEnabled,
+            podcastEnabled,
             signOut,
             routeHome,
             applyThemeSettings

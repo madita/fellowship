@@ -19,6 +19,7 @@ import ForumRoutes from './forum.routes'
 import SandboxRoutes from './sandbox.routes'
 import AdminRoutes from './admin.routes'
 import FeedbackRoutes from './feedback.routes'
+import PodcastRoutes from './podcast.routes'
 //import permission from "@/router/middleware/permission.js";
 
 //Vue.use(Router)
@@ -42,6 +43,7 @@ export const routes = [{
     ...SandboxRoutes,
     ...AdminRoutes,
     ...FeedbackRoutes,
+    ...PodcastRoutes,
     {
         path: '/error',
         name: 'access-denied',
