@@ -114,6 +114,33 @@ class PodcastController extends Controller
         return response()->json(['episodes' => $episodes]);
     }
 
+    public function play(Request $request, string $slug, string $episodeSlug): JsonResponse
+    {
+        // Counting a play is for shows people can actually reach, so
+        // this stays on the public reading rather than the caller's
+        $podcast = Podcast::visible()->where('slug', $slug)->firstOrFail();
+
+        $episode = $podcast->publishedEpisodes()
+            ->where('slug', $episodeSlug)
+            ->firstOrFail();
+
+        $episode->increment('plays');
+
+        // The count is anonymous, but an achievement needs somebody to
+        // credit — so listening only counts toward one when we know who
+        // is listening. A guest still moves the counter.
+        //
+        // The route asks for no sign-in, so the default guard sees nobody;
+        // the token guard has to be asked as well. Same idiom as
+        // RelateableController, which is public and user-aware too.
+        Achievements::record(
+            $request->user() ?? $request->user('sanctum'),
+            'podcast.episode.listened'
+        );
+
+        return response()->json(['plays' => (int) $episode->plays]);
+    }
+
     /**
      * A listener pressed play.
      *
@@ -154,32 +181,5 @@ class PodcastController extends Controller
         abort_unless($podcast->isVisibleTo($this->caller($request)), 404);
 
         return $podcast;
-    }
-
-    public function play(Request $request, string $slug, string $episodeSlug): JsonResponse
-    {
-        // Counting a play is for shows people can actually reach, so
-        // this stays on the public reading rather than the caller's
-        $podcast = Podcast::visible()->where('slug', $slug)->firstOrFail();
-
-        $episode = $podcast->publishedEpisodes()
-            ->where('slug', $episodeSlug)
-            ->firstOrFail();
-
-        $episode->increment('plays');
-
-        // The count is anonymous, but an achievement needs somebody to
-        // credit — so listening only counts toward one when we know who
-        // is listening. A guest still moves the counter.
-        //
-        // The route asks for no sign-in, so the default guard sees nobody;
-        // the token guard has to be asked as well. Same idiom as
-        // RelateableController, which is public and user-aware too.
-        Achievements::record(
-            $request->user() ?? $request->user('sanctum'),
-            'podcast.episode.listened'
-        );
-
-        return response()->json(['plays' => (int) $episode->plays]);
     }
 }

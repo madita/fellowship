@@ -333,7 +333,7 @@ class PodcastManageController extends Controller
      */
     private function splitPodcastData(array $data): array
     {
-        $authorIds = array_key_exists('author_ids', $data) ? ($data['author_ids'] ?? []) : null;
+        $authorIds  = array_key_exists('author_ids', $data) ? ($data['author_ids'] ?? []) : null;
         $categories = array_key_exists('categories', $data) ? ($data['categories'] ?? []) : null;
 
         unset($data['author_ids'], $data['categories']);
