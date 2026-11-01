@@ -119,6 +119,28 @@
 
           <v-divider class="my-4"></v-divider>
 
+          <!-- Realtime notification toasts -->
+          <div class="mb-6">
+            <div class="text-caption text-medium-emphasis mb-2">
+              <v-icon size="small" class="mr-1">mdi-bell-ring-outline</v-icon>
+              {{ $t('settings.realtime.title') }}
+            </div>
+            <v-switch
+              v-model="notificationToasts"
+              color="primary"
+              density="compact"
+              hide-details
+              :label="$t('settings.realtime.toasts')"
+            ></v-switch>
+            <div class="text-caption text-medium-emphasis mt-1">
+              {{ notificationToasts
+                ? $t('settings.realtime.toastsOnHint')
+                : $t('settings.realtime.toastsOffHint') }}
+            </div>
+          </div>
+
+          <v-divider class="my-4"></v-divider>
+
           <!-- Save Button -->
           <v-btn
             block
@@ -140,6 +162,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useTheme } from 'vuetify'
 import { useUserStore } from '@/store/userStore'
 import { useSettingsStore } from '@/store/settingStore'
+import { useNotificationToastStore } from '@/store/notificationToastStore.js'
 import { useI18n } from 'vue-i18n'
 import { formatDateInTimezone, formatDate } from '@/plugins/formatDate.js'
 import axios from 'axios'
@@ -150,6 +173,7 @@ const emit = defineEmits(['close'])
 const theme = useTheme()
 const userStore = useUserStore()
 const settingsStore = useSettingsStore()
+const toastStore = useNotificationToastStore()
 const { locale } = useI18n()
 const dialog = useDialog()
 
@@ -217,6 +241,12 @@ const timezones = ref([
   'Pacific/Fiji',
 ])
 
+// Whether a notification arriving over the socket also shows up as a
+// toast. Takes effect as it is switched, like the theme and the language;
+// Save Preferences is what makes it follow the member to their next
+// browser.
+const notificationToasts = ref(true)
+
 // Date Format
 const userDateFormat = ref('Y-m-d')
 const dateFormats = ref([
@@ -259,6 +289,11 @@ watch(userTimezone, () => {
   updateCurrentTime()
 })
 
+// Switching it off should stop the next toast, not the next save
+watch(notificationToasts, (enabled) => {
+  toastStore.setEnabled(enabled)
+})
+
 function applyTheme(mode) {
   if (mode === 'system') {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -288,6 +323,7 @@ async function savePreferences() {
       date_format: userDateFormat.value,
       theme_mode: themeMode.value,
       language: selectedLanguage.value,
+      notification_toasts: notificationToasts.value,
     })
 
     // Update user store
@@ -296,6 +332,7 @@ async function savePreferences() {
       userStore.user.date_format = userDateFormat.value
       userStore.user.theme_mode = themeMode.value
       userStore.user.language = selectedLanguage.value
+      userStore.user.notification_toasts = notificationToasts.value
     }
 
     dialog.success(t('settings.preferencesSaved'))
@@ -341,6 +378,11 @@ function loadPreferences() {
 
   // Load date format
   userDateFormat.value = user?.date_format || settingsStore.dateFormat || 'Y-m-d'
+
+  // The toast store already reconciled the member's record with the
+  // answer mirrored into localStorage, so it is the one to ask
+  toastStore.syncFromUser(user)
+  notificationToasts.value = toastStore.enabled
 
   // Update current time
   updateCurrentTime()

@@ -34,6 +34,17 @@ class Announcement extends Notification
     }
 
     /**
+     * What the socket says this is, matching the payload's own `type`.
+     *
+     * Without it Laravel broadcasts the class name under that key and
+     * overwrites it, leaving the browser a notification it cannot read.
+     */
+    public function broadcastType(): string
+    {
+        return 'announcement';
+    }
+
+    /**
      * Get the mail representation of the notification.
      *
      * @param  mixed  $notifiable

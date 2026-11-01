@@ -33,6 +33,17 @@ class TicketActivityNotification extends Notification
         return ['database', 'broadcast'];
     }
 
+    /**
+     * What the socket says this is, matching the payload's own `type`.
+     *
+     * Without it Laravel broadcasts the class name under that key and
+     * overwrites it, leaving the browser a notification it cannot read.
+     */
+    public function broadcastType(): string
+    {
+        return 'ticket_' . $this->event;
+    }
+
     public function toArray($notifiable): array
     {
         return array_filter([

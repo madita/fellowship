@@ -123,6 +123,7 @@ import { useDialog } from '@/composables/useDialog.js'
 import axios from 'axios'
 import EmptyState from '@/components/common/EmptyState.vue'
 import { notificationSubject, notificationIcon, notificationColor, notificationUrl } from '@/utils/notifications.js'
+import { onNotification } from '@/composables/useNotificationChannel.js'
 
 export default {
     components: { EmptyState },
@@ -237,13 +238,14 @@ export default {
             return date.toLocaleDateString()
         }
 
+        // The channel itself belongs to NotificationToastHost; the bell is
+        // one of several listeners on it, so it must not subscribe (or
+        // leave) on its own — see composables/useNotificationChannel.js
+        onNotification(() => {
+            getNotifications()
+        })
+
         onMounted(() => {
-            if (userStore.user?.id) {
-                Echo.private('users.' + userStore.user.id)
-                    .notification(() => {
-                        getNotifications()
-                    })
-            }
             getNotifications()
         })
 

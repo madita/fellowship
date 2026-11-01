@@ -38,6 +38,10 @@
     <!-- App-wide message / confirm dialogs ($dialog, useDialog) -->
     <DialogHost />
 
+    <!-- Realtime notifications: the toasts, and the one subscription to the
+         member's notification channel that the bell listens to as well -->
+    <NotificationToastHost v-if="authenticated" />
+
     <!-- The one <audio> element, above the layout and the router view so
          an episode survives every navigation and every layout, including
          the ones with no toolbar. Renders nothing. -->
@@ -66,6 +70,7 @@ import errorLayout from './layouts/ErrorLayout.vue'
 import CookieConsent from './components/common/CookieConsent.vue'
 import SessionTimeoutModal from './components/common/SessionTimeoutModal.vue'
 import DialogHost from './components/common/DialogHost.vue'
+import NotificationToastHost from './components/common/NotificationToastHost.vue'
 import PodcastAudioHost from './components/podcast/PodcastAudioHost.vue'
 import PodcastPlayerBar from './components/podcast/PodcastPlayerBar.vue'
 // import { mapGetters } from 'vuex'
@@ -95,6 +100,7 @@ export default {
     CookieConsent,
     SessionTimeoutModal,
     DialogHost,
+    NotificationToastHost,
     PodcastAudioHost,
     PodcastPlayerBar
   },

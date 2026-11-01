@@ -106,11 +106,11 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useUserStore } from '@/store/userStore.js'
 import { useRelativeTime } from '@/composables/useRelativeTime.js'
+import { onNotification } from '@/composables/useNotificationChannel.js'
 import { useDialog } from '@/composables/useDialog.js'
 import axios from 'axios'
 import EmptyState from '../common/EmptyState.vue'
@@ -128,7 +128,6 @@ export default {
         const router = useRouter()
         const { t } = useI18n()
         const dialog = useDialog()
-        const userStore = useUserStore()
         const allNotifications = ref([])
         const loading = ref(true)
         // Notification ids with a mark-as-read / dismiss request in flight
@@ -250,28 +249,17 @@ export default {
 
         const { formatRelativeTime: formatTime } = useRelativeTime()
 
-        let notificationChannel = null
+        // `users.{id}` is shared with the toolbar bell and the toasts, so
+        // this widget listens rather than subscribing: leaving the channel
+        // on unmount used to silence the other two for the rest of the
+        // session. NotificationToastHost owns it — see
+        // composables/useNotificationChannel.js
+        onNotification(() => {
+            fetchNotifications()
+        })
 
         onMounted(() => {
             fetchNotifications()
-
-            // Listen for real-time notifications
-            if (window.Echo && userStore.user?.id) {
-                notificationChannel = 'users.' + userStore.user.id
-                window.Echo.private(notificationChannel)
-                    .notification(() => {
-                        fetchNotifications()
-                    })
-            }
-        })
-
-        onUnmounted(() => {
-            // Leave the channel so remounts don't accumulate listeners or
-            // duplicate fetchNotifications calls.
-            if (window.Echo && notificationChannel) {
-                window.Echo.leave(notificationChannel)
-                notificationChannel = null
-            }
         })
 
         return {

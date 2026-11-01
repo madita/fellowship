@@ -1920,6 +1920,12 @@ export default {
             'saved': 'Kontoeinstellungen gespeichert',
             'saveError': 'Fehler beim Speichern der Kontoeinstellungen'
         },
+        'realtime': {
+            'title': 'Echtzeit',
+            'toasts': 'Kurzmeldung anzeigen, wenn etwas passiert',
+            'toastsOnHint': 'Benachrichtigungen erscheinen beim Eintreffen kurz in der Ecke.',
+            'toastsOffHint': 'Benachrichtigungen erscheinen nur an der Glocke.'
+        },
         'notifications': {
             'title': 'Benachrichtigungseinstellungen',
             'email': 'E-Mail-Benachrichtigungen',

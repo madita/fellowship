@@ -45,6 +45,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'time_format',
         'theme_mode',
         'language',
+        'notification_toasts',
         'email_verified_at',
     ];
 
@@ -82,13 +83,24 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     ];
 
     /**
+     * Column defaults the model carries itself, so a user that has just
+     * been made answers the same as one read back from the database.
+     *
+     * @var array
+     */
+    protected $attributes = [
+        'notification_toasts' => true,
+    ];
+
+    /**
      * The attributes that should be cast to native types.
      *
      * @var array
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'dashboard_layout'  => 'array',
+        'email_verified_at'   => 'datetime',
+        'dashboard_layout'    => 'array',
+        'notification_toasts' => 'boolean',
     ];
 
     /**

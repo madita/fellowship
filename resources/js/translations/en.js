@@ -1920,6 +1920,12 @@ export default {
             'saved': 'Account settings saved',
             'saveError': 'Failed to save account settings'
         },
+        'realtime': {
+            'title': 'Realtime',
+            'toasts': 'Show a toast when something happens',
+            'toastsOnHint': 'Notifications appear briefly in the corner as they arrive.',
+            'toastsOffHint': 'Notifications only show up on the bell.'
+        },
         'notifications': {
             'title': 'Notification Settings',
             'email': 'Email Notifications',

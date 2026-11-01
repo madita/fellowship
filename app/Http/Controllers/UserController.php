@@ -138,7 +138,8 @@ class UserController extends Controller
     }
 
     /**
-     * Update user preferences (timezone, date format, theme, language).
+     * Update user preferences (timezone, date format, theme, language,
+     * and whether a realtime notification also arrives as a toast).
      *
      *
      * @return JsonResponse
@@ -151,6 +152,10 @@ class UserController extends Controller
             'time_format' => 'nullable|string|in:H:i:s,h:i:s A,H:i,h:i A',
             'theme_mode'  => 'nullable|string|in:light,dark,system',
             'language'    => 'nullable|string|in:en,de,es,fr,it,pt,ja,zh',
+            // The toast switch. Not nullable like the rest: the column
+            // carries a real default, so a client leaving it out must
+            // leave the stored answer alone rather than blank it.
+            'notification_toasts' => 'sometimes|boolean',
         ]);
 
         $user = auth()->user();
