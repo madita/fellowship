@@ -235,14 +235,14 @@ class HelpTourManageController extends Controller
             'translations.*.description'    => ['nullable', 'string', 'max:500'],
 
             // A tour with no steps has nothing to show
-            'steps'                                => ['required', 'array', 'min:1', 'max:30'],
-            'steps.*.id'                           => ['nullable', 'integer'],
-            'steps.*.target'                       => ['nullable', 'string', 'max:255'],
-            'steps.*.placement'                    => ['nullable', Rule::in(HelpTourStep::PLACEMENTS)],
-            'steps.*.translations'                 => ['required', 'array'],
+            'steps'                                 => ['required', 'array', 'min:1', 'max:30'],
+            'steps.*.id'                            => ['nullable', 'integer'],
+            'steps.*.target'                        => ['nullable', 'string', 'max:255'],
+            'steps.*.placement'                     => ['nullable', Rule::in(HelpTourStep::PLACEMENTS)],
+            'steps.*.translations'                  => ['required', 'array'],
             "steps.*.translations.{$default}.title" => ['required', 'string', 'max:120'],
-            'steps.*.translations.*.title'         => ['nullable', 'string', 'max:120'],
-            'steps.*.translations.*.content'       => ['nullable', 'string', 'max:1000'],
+            'steps.*.translations.*.title'          => ['nullable', 'string', 'max:120'],
+            'steps.*.translations.*.content'        => ['nullable', 'string', 'max:1000'],
         ];
 
         $input = $request->validate($rules);
