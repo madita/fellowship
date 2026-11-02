@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Collection;
 use App\Models\Event\Event;
+use App\Models\Help\HelpTour;
+use App\Models\Help\HelpTourStep;
 use App\Models\HomepageMenuItem;
 use App\Models\Page;
 use App\Models\Post;
@@ -83,6 +85,24 @@ class ModelTranslationController extends Controller
             'fields'     => ['label'],
             'identifier' => 'label',
         ],
+        'help_tour' => [
+            'model'      => HelpTour::class,
+            'label'      => 'Help Tours',
+            'fields'     => ['title', 'description'],
+            'identifier' => 'title',
+        ],
+        // Most of a tour's words are in its steps, so they are reachable
+        // in their own right. A step title alone says nothing about which
+        // tour it belongs to, so these rows name the tour and the position
+        // as well — see identify().
+        'help_tour_step' => [
+            'model'      => HelpTourStep::class,
+            'label'      => 'Help Tour Steps',
+            'fields'     => ['title', 'content'],
+            'identifier' => 'title',
+            'with'       => ['tour.translations'],
+            'identify'   => [self::class, 'identifyHelpTourStep'],
+        ],
     ];
 
     /**
@@ -123,7 +143,9 @@ class ModelTranslationController extends Controller
         $config     = $this->translatableModels[$modelType];
         $modelClass = $config['model'];
 
-        $item = $modelClass::withoutGlobalScopes()->with('translations')->find($id);
+        $item = $modelClass::withoutGlobalScopes()
+            ->with(array_merge(['translations'], $config['with'] ?? []))
+            ->find($id);
 
         if ( ! $item) {
             return response()->json(['error' => 'Item not found'], 404);
@@ -139,7 +161,7 @@ class ModelTranslationController extends Controller
 
         return response()->json([
             'id'           => $item->id,
-            'identifier'   => $item->{$config['identifier']} ?? $item->getTranslation('en')?->{$config['identifier']} ?? "#{$item->id}",
+            'identifier'   => $this->identify($item, $config),
             'fields'       => $config['fields'],
             'translations' => $translations,
             'locales'      => $this->getLocales(),
@@ -286,6 +308,7 @@ class ModelTranslationController extends Controller
 
             // Get items without translation for this locale
             $items = $modelClass::withoutGlobalScopes()
+                ->with($config['with'] ?? [])
                 ->whereDoesntHave('translations', function ($query) use ($locale) {
                     $query->where('locale', $locale);
                 })
@@ -298,9 +321,7 @@ class ModelTranslationController extends Controller
                     'items' => $items->map(function ($item) use ($config) {
                         return [
                             'id'         => $item->id,
-                            'identifier' => $item->{$config['identifier']}
-                                ?? $item->getTranslation('en')?->{$config['identifier']}
-                                ?? "#{$item->id}",
+                            'identifier' => $this->identify($item, $config),
                         ];
                     }),
                 ];
@@ -335,7 +356,10 @@ class ModelTranslationController extends Controller
         $perPage = $request->input('per_page', 25);
         $search  = $request->input('search', '');
 
-        $query = $modelClass::withoutGlobalScopes()->with('translations');
+        // A model whose row label needs more than its own fields says
+        // what else to load, so a list of 25 is not 25 extra queries
+        $query = $modelClass::withoutGlobalScopes()
+            ->with(array_merge(['translations'], $config['with'] ?? []));
 
         // Basic search on identifier field
         if ($search) {
@@ -355,9 +379,7 @@ class ModelTranslationController extends Controller
 
             return [
                 'id'         => $item->id,
-                'identifier' => $item->{$config['identifier']}
-                    ?? $item->getTranslation('en')?->{$config['identifier']}
-                    ?? "#{$item->id}",
+                'identifier' => $this->identify($item, $config),
                 'translation_status' => $translationStatus,
                 'created_at'         => $item->created_at,
                 'updated_at'         => $item->updated_at,
@@ -449,6 +471,38 @@ class ModelTranslationController extends Controller
     protected function getLocales(): array
     {
         return config('translatable.locales', ['en', 'de']);
+    }
+
+    /**
+     * What to call one row in the translator's list.
+     *
+     * Normally the model's own identifier field, in the current locale and
+     * falling back to English. A model whose identifier means nothing on
+     * its own can name an `identify` callable in the registry instead.
+     */
+    protected function identify($item, array $config): string
+    {
+        if (isset($config['identify'])) {
+            return (string) call_user_func($config['identify'], $item);
+        }
+
+        return (string) ($item->{$config['identifier']}
+            ?? $item->getTranslation('en')?->{$config['identifier']}
+            ?? "#{$item->id}");
+    }
+
+    /**
+     * A help step reads as the tour it belongs to, where it comes in it,
+     * and what it says: "Welcome · 2. Your notifications". Translating a
+     * list of bare step titles is guesswork otherwise.
+     */
+    public static function identifyHelpTourStep(HelpTourStep $step): string
+    {
+        $title = $step->title ?: $step->translate('en', false)?->title ?: "#{$step->id}";
+        $tour  = $step->tour?->title ?: $step->tour?->translate('en', false)?->title;
+        $place = $step->sort_order + 1;
+
+        return $tour ? "{$tour} · {$place}. {$title}" : "{$place}. {$title}";
     }
 
     /**

@@ -126,6 +126,9 @@ const componentMap = {
     'achievements/AchievementsSettingsPage': () => import('@/pages/admin/settings/achievements/AchievementsSettingsPage.vue'),
     'achievements/RanksSettingsPage': () => import('@/pages/admin/settings/achievements/RanksSettingsPage.vue'),
 
+    // Help & Tours
+    'help/HelpToursPage': () => import('@/pages/admin/settings/help/HelpToursPage.vue'),
+
     // IRC
     'irc/IrcClientSettingsPage': () => import('@/pages/admin/settings/irc/IrcClientSettingsPage.vue'),
     'irc/IrcEventChannelsPage': () => import('@/pages/admin/settings/irc/IrcEventChannelsPage.vue'),

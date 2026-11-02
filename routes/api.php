@@ -98,6 +98,16 @@ Route::get('/members/{username}', 'App\Http\Controllers\MemberProfileController@
 Route::get('/achievements/user/{user}', 'App\Http\Controllers\AchievementController@forUser');
 Route::get('/achievements/leaderboard', 'App\Http\Controllers\AchievementController@leaderboard');
 
+// The help written for the page being looked at. Open to guests on
+// purpose: a tour can be written for the signed-out landing page, and what
+// comes back is narrowed to the viewer either way. Remembering that one has
+// been seen needs an account — for a guest that lives in their own browser.
+Route::get('/help-tours', 'App\Http\Controllers\Help\HelpTourController@index');
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/help-tours/{tour}/seen', 'App\Http\Controllers\Help\HelpTourController@seen');
+    Route::delete('/help-tours/seen', 'App\Http\Controllers\Help\HelpTourController@reset');
+});
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/achievements', 'App\Http\Controllers\AchievementController@index');
     Route::get('/achievements/summary', 'App\Http\Controllers\AchievementController@summary');
@@ -529,6 +539,15 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth:sanctum', 'admin']], f
     // a deploy and its name is translated
     Route::post('/achievement-types', 'App\Http\Controllers\Admin\AchievementAdminController@storeType');
     Route::delete('/achievement-types/{taxonomy}', 'App\Http\Controllers\Admin\AchievementAdminController@destroyType');
+
+    // Help & Tours: the walkthroughs and the hints an admin writes for a
+    // page. A tour and its steps are saved in one request — see the
+    // controller for why.
+    Route::get('/help-tours', 'App\Http\Controllers\Help\HelpTourManageController@index');
+    Route::post('/help-tours', 'App\Http\Controllers\Help\HelpTourManageController@store');
+    Route::patch('/help-tours/{tour}', 'App\Http\Controllers\Help\HelpTourManageController@update');
+    Route::delete('/help-tours/{tour}', 'App\Http\Controllers\Help\HelpTourManageController@destroy');
+    Route::post('/help-tours/{tour}/duplicate', 'App\Http\Controllers\Help\HelpTourManageController@duplicate');
 
     // Ranks: the ladder members climb with their points
     Route::get('/ranks', 'App\Http\Controllers\Admin\RankAdminController@index');

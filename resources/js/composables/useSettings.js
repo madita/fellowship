@@ -211,6 +211,7 @@ export function useSettings() {
         feature_tickets_enabled: true,
         feature_feedback_enabled: true,
         feature_podcast_enabled: true,
+        feature_help_enabled: true,
 
         // Sandbox Settings
         sandbox_enabled: false,

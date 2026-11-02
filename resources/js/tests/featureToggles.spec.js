@@ -7,12 +7,19 @@ import navigation from '@/configs/navigation.js';
 import toolbar from '@/configs/toolbar.js';
 
 describe('feature registry', () => {
-    it('every feature has a key, label and at least one route prefix', () => {
+    // Route prefixes are what the router guard blocks, so a feature that
+    // owns pages has to list them. Not every feature does: help lives on
+    // other features' pages and has none of its own, and an empty list is
+    // the honest answer for one of those rather than a missing field.
+    it('every feature has a key, a label and a list of route prefixes', () => {
         for (const feature of FEATURES) {
             expect(feature.key).toBeTruthy();
             expect(feature.label).toBeTruthy();
             expect(Array.isArray(feature.routePrefixes)).toBe(true);
-            expect(feature.routePrefixes.length).toBeGreaterThan(0);
+
+            for (const prefix of feature.routePrefixes) {
+                expect(prefix.startsWith('/'), `${feature.key} prefix ${prefix} should be a path`).toBe(true);
+            }
         }
     });
 
