@@ -1,6 +1,6 @@
 import { useUserStore } from "@/store/userStore.js";
 
-export default function permission({ to, next }) {
+export default async function permission({ to, next }) {
     const userStore = useUserStore();
     const permissionsMap = {
         "admin-dashboard": "manage-user",
@@ -59,7 +59,20 @@ export default function permission({ to, next }) {
         throw new Error(`No permission defined for the route "${to.name}". Please check the permissions configuration.`);
     }
 
-    const hasAccess = userStore.permissions.includes(requiredPermission);
+    // Opening a guarded page directly races app start-up, which fetches
+    // the member's permissions without the router waiting for it. Not
+    // knowing yet is not the same as not being allowed, so the answer is
+    // waited for rather than guessed at — and an absent one can no longer
+    // throw, which blanked the page instead of refusing it.
+    if (!Array.isArray(userStore.permissions)) {
+        try {
+            await userStore.storeInfo();
+        } catch (error) {
+            console.warn('Permission middleware: could not load the permissions for this member.', error);
+        }
+    }
+
+    const hasAccess = (userStore.permissions || []).includes(requiredPermission);
 
     if (!hasAccess) {
         // return next({

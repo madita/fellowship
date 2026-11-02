@@ -17,7 +17,11 @@ export function middlewarePipeline(context, middleware, index) {
 
         // Execute the current middleware and pass the modified context along.
         // The context's 'next' method is replaced with a new middlewarePipeline function, progressing to the next middleware.
-        nextMiddleware({
+        // Returned, not just called: a middleware that has to await
+        // something hands back a promise, and dropping it turned any
+        // failure inside one into an unhandled rejection with the
+        // navigation left hanging.
+        return nextMiddleware({
             ...context,
             next: middlewarePipeline(context, middleware, index + 1)
         });
