@@ -4,7 +4,6 @@
         :description="$t('irc.admin.clientDescription')"
         icon="mdi-tune"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'irc' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

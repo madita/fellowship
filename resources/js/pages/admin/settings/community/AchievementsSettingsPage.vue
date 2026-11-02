@@ -4,7 +4,6 @@
         :description="$t('achievements.admin.description')"
         icon="mdi-trophy-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'achievements' } }"
         :show-save-button="false"
     >
         <!-- How the achievements are doing -->

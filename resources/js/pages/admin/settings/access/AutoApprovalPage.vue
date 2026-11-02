@@ -4,7 +4,6 @@
         :description="$t('settings.moderation.autoApprovalDesc')"
         icon="mdi-shield-check"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'moderation' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

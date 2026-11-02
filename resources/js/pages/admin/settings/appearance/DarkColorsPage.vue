@@ -4,7 +4,6 @@
         :description="$t('settings.darkColors.description')"
         icon="mdi-moon-waning-crescent"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'theme' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

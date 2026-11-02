@@ -4,11 +4,10 @@
         :description="$t('help.admin.description')"
         icon="mdi-help-circle-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'help' } }"
         :show-save-button="false"
     >
-        <!-- The master switch. The same setting the Features screen
-             carries, offered here too because this is where somebody
+        <!-- The master switch. The same setting the Feature Toggles
+             page carries, offered here too because this is where somebody
              managing help looks for it. -->
         <settings-card icon="mdi-toggle-switch-outline" :title="$t('help.admin.feature')">
             <v-switch
@@ -439,7 +438,7 @@
 <script setup>
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
@@ -476,6 +475,7 @@ const COLORS = ['primary', 'teal', 'blue', 'indigo', 'deep-purple', 'amber', 'or
 const { t } = useI18n();
 const dialog = useDialog();
 const router = useRouter();
+const route = useRoute();
 const helpStore = useHelpStore();
 const settingsStore = useSettingsStore();
 
@@ -710,7 +710,9 @@ async function pickOnPage(index) {
     const parked = helpStore.beginPicking({
         draft: { editingId: editing.value?.id ?? null, form: form.value },
         stepIndex: index,
-        returnTo: { name: 'admin-settings-page', params: { category: 'help', setting: 'tours' } },
+        // Wherever this editor was opened from, which is the one
+        // place that knows which category it sits in now
+        returnTo: { name: 'admin-settings-page', params: { ...route.params } },
     });
 
     if (!parked) {

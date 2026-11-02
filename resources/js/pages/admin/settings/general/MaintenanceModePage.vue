@@ -4,7 +4,6 @@
         :description="$t('settings.maintenance.description')"
         icon="mdi-wrench-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'general' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

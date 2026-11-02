@@ -4,7 +4,6 @@
         :description="$t('settings.homepage.menu.description')"
         icon="mdi-menu"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'homepage' } }"
         :show-save-button="false"
     >
         <menu-builder />

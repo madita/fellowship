@@ -4,7 +4,6 @@
         :description="$t('settings.seo.searchEngine.description')"
         icon="mdi-robot-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'seo' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

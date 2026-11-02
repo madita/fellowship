@@ -4,7 +4,6 @@
         :description="$t('settings.oauth.general.description')"
         icon="mdi-account-cog-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'oauth' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

@@ -1,19 +1,18 @@
 <template>
     <settings-page-layout
-        :title="$t('settings.homepage.sections.title')"
-        :description="$t('settings.homepage.sections.description')"
+        :title="$t('settings.footer.sectionsGrid')"
+        :description="$t('settings.footer.description')"
         icon="mdi-view-grid-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'homepage' } }"
         :show-save-button="false"
     >
-        <section-builder
+        <footer-section-builder
             @edit-widget="editWidget"
             @add-widget="handleAddWidgetToSection"
         />
 
         <!-- Widget Editor Dialog -->
-        <widget-editor
+        <footer-widget-editor
             v-model="showEditor"
             :widget="selectedWidget"
             :saving="savingWidget"
@@ -21,7 +20,7 @@
         />
 
         <!-- Widget Library Dialog -->
-        <widget-library
+        <footer-widget-library
             v-model="showWidgetLibrary"
             :adding="addingWidget"
             @select="addWidget"
@@ -37,12 +36,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useHomepageStore } from '@/store/homepageStore';
-import { getWidgetDefinition } from '@/configs/widgetTypes';
+import { useFooterStore } from '@/store/footerStore';
+import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
-import SectionBuilder from '@/components/settings/homepage/SectionBuilder.vue';
-import WidgetEditor from '@/components/settings/homepage/WidgetEditor.vue';
-import WidgetLibrary from '@/components/settings/homepage/WidgetLibrary.vue';
+import FooterSectionBuilder from '@/components/settings/footer/FooterSectionBuilder.vue';
+import FooterWidgetEditor from '@/components/settings/footer/FooterWidgetEditor.vue';
+import FooterWidgetLibrary from '@/components/settings/footer/FooterWidgetLibrary.vue';
 
 const { t } = useI18n();
 
@@ -54,7 +53,7 @@ const props = defineProps({
     setting: Object,
 });
 
-const homepageStore = useHomepageStore();
+const footerStore = useFooterStore();
 
 const showEditor = ref(false);
 const showWidgetLibrary = ref(false);
@@ -67,8 +66,8 @@ const snackbar = ref(false);
 const snackbarMessage = ref('');
 const snackbarColor = ref('success');
 
-const sections = computed(() => homepageStore.orderedSections || []);
-const widgets = computed(() => homepageStore.orderedWidgets || []);
+const sections = computed(() => footerStore.orderedSections || []);
+const widgets = computed(() => footerStore.orderedWidgets || []);
 
 function editWidget(widget) {
     selectedWidget.value = { ...widget };
@@ -79,12 +78,13 @@ async function saveWidget(updatedWidget) {
     if (savingWidget.value) return;
     savingWidget.value = true;
     try {
-        await homepageStore.updateWidget(updatedWidget.id, updatedWidget);
-        showSnackbar(t('settings.homepage.sections.widgetUpdated'), 'success');
+        await footerStore.updateWidget(updatedWidget.id, updatedWidget);
+        showSnackbar(t('settings.footer.widgetUpdated'), 'success');
         showEditor.value = false;
+        await footerStore.fetchSections();
     } catch (error) {
         console.error('Failed to save widget:', error);
-        showSnackbar(t('settings.homepage.sections.failedToUpdateWidget'), 'error');
+        showSnackbar(t('settings.footer.failedToUpdateWidget'), 'error');
     } finally {
         savingWidget.value = false;
     }
@@ -100,32 +100,43 @@ async function addWidget(widgetType) {
     addingWidget.value = true;
     try {
         const definition = getWidgetDefinition(widgetType);
+        if (!definition) {
+            showSnackbar(t('settings.footer.widgetTypeNotFound', { type: widgetType }), 'error');
+            return;
+        }
+
         const newWidget = {
             type: widgetType,
-            title: definition.name,
             enabled: true,
-            order: widgets.value.length + 1,
-            content: definition.defaultContent,
-            config: {},
-            anchor_id: widgetType.replace('_', '-')
+            config: definition.defaultConfig || {},
         };
 
         if (widgetSectionContext.value) {
-            newWidget.section_id = widgetSectionContext.value.sectionId;
-            newWidget.column = widgetSectionContext.value.column;
-            newWidget.order = 1;
+            newWidget.section_id = parseInt(widgetSectionContext.value.sectionId);
+            newWidget.column = parseInt(widgetSectionContext.value.column);
+
+            const section = sections.value.find(s => s.id === widgetSectionContext.value.sectionId);
+            if (section && section.widgets) {
+                const columnWidgets = section.widgets.filter(w => Number(w.column) === newWidget.column);
+                newWidget.order = columnWidgets.length + 1;
+            } else {
+                newWidget.order = 1;
+            }
+        } else {
+            newWidget.order = widgets.value.length + 1;
         }
 
-        await homepageStore.createWidget(newWidget);
-        showSnackbar(t('settings.homepage.sections.widgetAdded'), 'success');
+        await footerStore.createWidget(newWidget);
+        showSnackbar(t('settings.footer.widgetAdded'), 'success');
         showWidgetLibrary.value = false;
         widgetSectionContext.value = null;
 
         if (newWidget.section_id) {
-            await homepageStore.fetchSections();
+            await footerStore.fetchSections();
         }
     } catch (error) {
-        showSnackbar(t('settings.homepage.sections.failedToAddWidget'), 'error');
+        console.error('Failed to add widget:', error);
+        showSnackbar(t('settings.footer.failedToAddWidget'), 'error');
     } finally {
         addingWidget.value = false;
     }
@@ -138,6 +149,6 @@ function showSnackbar(message, color = 'success') {
 }
 
 onMounted(async () => {
-    await homepageStore.fetchSections();
+    await footerStore.fetchSections();
 });
 </script>

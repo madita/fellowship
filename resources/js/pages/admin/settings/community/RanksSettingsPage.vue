@@ -4,7 +4,6 @@
         :description="$t('ranks.admin.description')"
         icon="mdi-shield-star-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'achievements' } }"
         :show-save-button="false"
     >
         <settings-card icon="mdi-stairs" :title="$t('ranks.admin.ladder')">

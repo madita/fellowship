@@ -4,7 +4,6 @@
         :description="$t('settings.lightColors.description')"
         icon="mdi-white-balance-sunny"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'theme' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

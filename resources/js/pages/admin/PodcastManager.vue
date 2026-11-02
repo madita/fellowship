@@ -38,7 +38,7 @@
                         size="small"
                         color="primary"
                         variant="elevated"
-                        :to="{ name: 'admin-settings-page', params: { category: 'features', setting: 'toggles' } }"
+                        :to="{ name: 'admin-settings-page', params: { category: 'general', setting: 'toggles' } }"
                     >
                         {{ $t('admin.podcast.goToToggles') }}
                     </v-btn>

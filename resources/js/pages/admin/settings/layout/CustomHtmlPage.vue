@@ -4,7 +4,6 @@
         :description="$t('settings.footer.customHtmlDescription')"
         icon="mdi-code-tags"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'footer' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

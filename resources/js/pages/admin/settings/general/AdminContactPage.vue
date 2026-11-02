@@ -4,7 +4,6 @@
         :description="$t('settings.adminContact.description')"
         icon="mdi-email-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'general' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

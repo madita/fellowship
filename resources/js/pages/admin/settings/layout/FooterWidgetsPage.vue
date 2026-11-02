@@ -1,24 +1,23 @@
 <template>
     <settings-page-layout
-        :title="$t('settings.homepage.widgets.title')"
-        :description="$t('settings.homepage.widgets.description')"
+        :title="$t('settings.footer.allWidgets')"
+        :description="$t('settings.footer.description')"
         icon="mdi-widgets-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'homepage' } }"
         :show-save-button="false"
     >
         <!-- Action Buttons -->
         <div class="d-flex justify-space-between align-center flex-wrap ga-2 mb-4">
             <div class="d-flex flex-wrap ga-2">
                 <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">
-                    {{ $t('settings.homepage.widgets.addWidget') }}
+                    {{ $t('settings.footer.addWidget') }}
                 </v-btn>
                 <v-btn variant="tonal" prepend-icon="mdi-refresh" @click="loadWidgets" :loading="isLoading">
-                    {{ $t('settings.homepage.widgets.refresh') }}
+                    {{ $t('settings.footer.refresh') }}
                 </v-btn>
             </div>
             <v-chip v-if="hasChanges" color="warning" variant="tonal" size="small">
-                {{ $t('settings.homepage.widgets.unsavedChanges') }}
+                {{ $t('settings.footer.unsavedChanges') }}
             </v-chip>
         </div>
 
@@ -28,7 +27,7 @@
                 <v-card>
                     <v-card-text class="text-center">
                         <div class="text-h4">{{ widgets.length }}</div>
-                        <div class="text-caption text-medium-emphasis">{{ $t('settings.homepage.widgets.totalWidgets') }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('settings.footer.totalWidgets') }}</div>
                     </v-card-text>
                 </v-card>
             </v-col>
@@ -36,7 +35,7 @@
                 <v-card>
                     <v-card-text class="text-center">
                         <div class="text-h4 text-success">{{ enabledCount }}</div>
-                        <div class="text-caption text-medium-emphasis">{{ $t('settings.homepage.widgets.enabled') }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('settings.footer.enabled') }}</div>
                     </v-card-text>
                 </v-card>
             </v-col>
@@ -46,20 +45,20 @@
         <v-card>
             <v-card-title class="text-subtitle-1 font-weight-medium">
                 <v-icon class="mr-2">mdi-drag</v-icon>
-                {{ $t('settings.homepage.widgets.dragToReorder') }}
+                {{ $t('settings.footer.dragToReorder') }}
             </v-card-title>
             <v-divider></v-divider>
 
-            <loading-state v-if="isLoading" compact :text="$t('settings.homepage.widgets.loadingWidgets')" />
+            <loading-state v-if="isLoading" compact :text="$t('settings.footer.loadingWidgets')" />
             <empty-state
                 v-else-if="widgets.length === 0"
                 compact
                 icon="mdi-widgets-outline"
-                :title="$t('settings.homepage.widgets.noWidgetsYet')"
-                :text="$t('settings.homepage.widgets.clickAddWidget')"
+                :title="$t('settings.footer.noWidgetsYet')"
+                :text="$t('settings.footer.clickAddWidget')"
             >
                 <template #actions>
-                    <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">{{ $t('settings.homepage.widgets.addFirstWidget') }}</v-btn>
+                    <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">{{ $t('settings.footer.addFirstWidget') }}</v-btn>
                 </template>
             </empty-state>
 
@@ -87,12 +86,13 @@
                         </template>
 
                         <v-list-item-title>
-                            {{ widget.title || widget.type }}
-                            <v-chip size="x-small" class="ml-2" variant="outlined">{{ widget.type }}</v-chip>
+                            {{ getWidgetTitle(widget) }}
+                            <v-chip size="x-small" class="ml-2" variant="outlined">{{ getWidgetName(widget.type) }}</v-chip>
                         </v-list-item-title>
 
                         <v-list-item-subtitle>
-                            {{ $t('settings.homepage.widgets.order') }}: {{ widget.order }} | {{ $t('settings.homepage.widgets.anchor') }}: {{ widget.anchor_id || $t('settings.homepage.widgets.none') }}
+                            {{ $t('settings.footer.order') }}: {{ widget.order }}
+                            <span v-if="widget.section_id"> | {{ $t('settings.footer.section') }}: {{ widget.section_id }} | {{ $t('settings.footer.column') }}: {{ widget.column }}</span>
                         </v-list-item-subtitle>
 
                         <template #append>
@@ -114,7 +114,7 @@
                                     variant="text"
                                     :disabled="isRowBusy(widget)"
                                     @click="editWidget(widget)"
-                                    :title="$t('settings.homepage.widgets.editWidget')"
+                                    :title="$t('settings.footer.editWidget')"
                                 ></v-btn>
 
                                 <v-btn
@@ -125,7 +125,7 @@
                                     :loading="deletingId === widget.id"
                                     :disabled="togglingIds.includes(widget.id)"
                                     @click="confirmDelete(widget)"
-                                    :title="$t('settings.homepage.widgets.deleteWidget')"
+                                    :title="$t('settings.footer.deleteWidget')"
                                 ></v-btn>
                             </div>
                         </template>
@@ -135,7 +135,7 @@
         </v-card>
 
         <!-- Widget Editor Dialog -->
-        <widget-editor
+        <footer-widget-editor
             v-model="showEditor"
             :widget="selectedWidget"
             :saving="savingWidget"
@@ -143,7 +143,7 @@
         />
 
         <!-- Widget Library Dialog -->
-        <widget-library
+        <footer-widget-library
             v-model="showWidgetLibrary"
             :adding="addingWidget"
             @select="addWidget"
@@ -159,15 +159,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useHomepageStore } from '@/store/homepageStore';
-import { getWidgetDefinition } from '@/configs/widgetTypes';
+import { useFooterStore } from '@/store/footerStore';
+import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
 import { useDialog } from '@/composables/useDialog.js';
 import draggable from 'vuedraggable';
 import LoadingState from '@/components/common/LoadingState.vue';
 import EmptyState from '@/components/common/EmptyState.vue';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
-import WidgetEditor from '@/components/settings/homepage/WidgetEditor.vue';
-import WidgetLibrary from '@/components/settings/homepage/WidgetLibrary.vue';
+import FooterWidgetEditor from '@/components/settings/footer/FooterWidgetEditor.vue';
+import FooterWidgetLibrary from '@/components/settings/footer/FooterWidgetLibrary.vue';
 
 const { t } = useI18n();
 const dialog = useDialog();
@@ -180,11 +180,11 @@ const props = defineProps({
     setting: Object,
 });
 
-const homepageStore = useHomepageStore();
+const footerStore = useFooterStore();
 const isLoading = ref(true);
 const hasChanges = ref(false);
 
-const widgets = computed(() => homepageStore.orderedWidgets || []);
+const widgets = computed(() => footerStore.orderedWidgets || []);
 const localWidgets = ref([]);
 const enabledCount = computed(() => localWidgets.value.filter(w => w.enabled).length);
 
@@ -211,14 +211,23 @@ function getWidgetIcon(type) {
     return definition?.icon || 'mdi-widgets';
 }
 
+function getWidgetName(type) {
+    const definition = getWidgetDefinition(type);
+    return definition?.name || type;
+}
+
+function getWidgetTitle(widget) {
+    return widget.config?.title || getWidgetName(widget.type);
+}
+
 async function loadWidgets() {
     isLoading.value = true;
     try {
-        await homepageStore.fetchWidgets();
+        await footerStore.fetchWidgets();
         localWidgets.value = [...widgets.value];
         hasChanges.value = false;
     } catch (error) {
-        showSnackbar(t('settings.homepage.widgets.failedToLoadWidgets'), 'error');
+        showSnackbar(t('settings.footer.failedToLoadData'), 'error');
     } finally {
         isLoading.value = false;
     }
@@ -230,11 +239,11 @@ async function onDragEnd() {
             id: widget.id,
             order: index + 1
         }));
-        await homepageStore.reorderWidgets(newOrder);
+        await footerStore.reorderWidgets(newOrder);
         hasChanges.value = false;
-        showSnackbar(t('settings.homepage.widgets.widgetOrderUpdated'), 'success');
+        showSnackbar(t('settings.footer.orderUpdated'), 'success');
     } catch (error) {
-        showSnackbar(t('settings.homepage.widgets.failedToUpdateWidgetOrder'), 'error');
+        showSnackbar(t('settings.footer.failedToUpdateOrder'), 'error');
         await loadWidgets();
     }
 }
@@ -248,12 +257,12 @@ async function saveWidget(updatedWidget) {
     if (savingWidget.value) return;
     savingWidget.value = true;
     try {
-        await homepageStore.updateWidget(updatedWidget.id, updatedWidget);
-        showSnackbar(t('settings.homepage.widgets.widgetUpdated'), 'success');
+        await footerStore.updateWidget(updatedWidget.id, updatedWidget);
+        showSnackbar(t('settings.footer.widgetUpdated'), 'success');
         showEditor.value = false;
         await loadWidgets();
     } catch (error) {
-        showSnackbar(t('settings.homepage.widgets.failedToUpdateWidget'), 'error');
+        showSnackbar(t('settings.footer.failedToUpdateWidget'), 'error');
     } finally {
         savingWidget.value = false;
     }
@@ -264,22 +273,24 @@ async function addWidget(widgetType) {
     addingWidget.value = true;
     try {
         const definition = getWidgetDefinition(widgetType);
+        if (!definition) {
+            showSnackbar(t('settings.footer.widgetTypeNotFound', { type: widgetType }), 'error');
+            return;
+        }
+
         const newWidget = {
             type: widgetType,
-            title: definition.name,
             enabled: true,
             order: localWidgets.value.length + 1,
-            content: definition.defaultContent,
-            config: {},
-            anchor_id: widgetType.replace('_', '-')
+            config: definition.defaultConfig || {},
         };
 
-        await homepageStore.createWidget(newWidget);
-        showSnackbar(t('settings.homepage.widgets.widgetAdded'), 'success');
+        await footerStore.createWidget(newWidget);
+        showSnackbar(t('settings.footer.widgetAdded'), 'success');
         showWidgetLibrary.value = false;
         await loadWidgets();
     } catch (error) {
-        showSnackbar(t('settings.homepage.widgets.failedToAddWidget'), 'error');
+        showSnackbar(t('settings.footer.failedToAddWidget'), 'error');
     } finally {
         addingWidget.value = false;
     }
@@ -289,10 +300,10 @@ async function toggleWidget(widget) {
     if (togglingIds.value.includes(widget.id)) return;
     togglingIds.value.push(widget.id);
     try {
-        await homepageStore.toggleWidget(widget.id);
-        showSnackbar(widget.enabled ? t('settings.homepage.widgets.widgetEnabled') : t('settings.homepage.widgets.widgetDisabled'), 'success');
+        await footerStore.toggleWidget(widget.id);
+        showSnackbar(widget.enabled ? t('settings.footer.widgetEnabled') : t('settings.footer.widgetDisabled'), 'success');
     } catch (error) {
-        showSnackbar(t('settings.homepage.widgets.failedToToggleWidget'), 'error');
+        showSnackbar(t('settings.footer.failedToToggleWidget'), 'error');
         widget.enabled = !widget.enabled;
     } finally {
         togglingIds.value = togglingIds.value.filter(id => id !== widget.id);
@@ -302,18 +313,18 @@ async function toggleWidget(widget) {
 async function confirmDelete(widget) {
     if (deletingId.value !== null) return;
     const ok = await dialog.confirmDelete(
-        t('settings.homepage.widgets.deleteConfirmText', { name: widget.title || widget.type }),
-        { title: t('settings.homepage.widgets.confirmDelete') }
+        t('settings.footer.deleteConfirmMessage', { name: getWidgetTitle(widget) }),
+        { title: t('settings.footer.confirmDelete') }
     );
     if (!ok) return;
 
     deletingId.value = widget.id;
     try {
-        await homepageStore.deleteWidget(widget.id);
-        showSnackbar(t('settings.homepage.widgets.widgetDeleted'), 'success');
+        await footerStore.deleteWidget(widget.id);
+        showSnackbar(t('settings.footer.widgetDeleted'), 'success');
         await loadWidgets();
     } catch (error) {
-        showSnackbar(t('settings.homepage.widgets.failedToDeleteWidget'), 'error');
+        showSnackbar(t('settings.footer.failedToDeleteWidget'), 'error');
     } finally {
         deletingId.value = null;
     }

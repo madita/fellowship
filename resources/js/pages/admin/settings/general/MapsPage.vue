@@ -4,7 +4,6 @@
         :description="$t('events.admin.mapsDescription')"
         icon="mdi-map"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'general' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

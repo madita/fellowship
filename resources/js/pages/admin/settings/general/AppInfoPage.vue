@@ -4,7 +4,6 @@
         :description="$t('settings.appInfo.description')"
         icon="mdi-information-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'general' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

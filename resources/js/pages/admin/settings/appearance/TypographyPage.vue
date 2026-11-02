@@ -4,7 +4,6 @@
         :description="$t('settings.typography.description')"
         icon="mdi-format-font"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'theme' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

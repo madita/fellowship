@@ -4,7 +4,6 @@
         :description="$t('irc.admin.charactersDescription')"
         icon="mdi-account-edit-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'irc' } }"
         :show-save-button="false"
     >
         <settings-card icon="mdi-drama-masks" :title="$t('irc.admin.characters')">

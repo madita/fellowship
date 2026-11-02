@@ -1,6 +1,7 @@
 import auth from './middleware/auth'
 import verified from "./middleware/verified";
 import permission from "./middleware/permission";
+import { movedCategories, resolveMovedSetting } from '@/configs/settingsConfig';
 
 export const admin = [{
     path: '/admin',
@@ -228,6 +229,16 @@ export const admin = [{
                 auth, permission, verified
             ]
         },
+        // A category that was folded into another still answers, so a
+        // link written down before the regrouping lands where its
+        // settings went instead of on "category not found".
+        beforeEnter: (to) => {
+            const category = movedCategories[to.params.category];
+
+            return category
+                ? { name: 'admin-settings-category', params: { category } }
+                : true;
+        },
         component: () => import(/* webpackChunkName: "admin-settings-category" */ '@/pages/admin/settings/SettingsCategory.vue')
     },
     {
@@ -237,6 +248,13 @@ export const admin = [{
             middleware: [
                 auth, permission, verified
             ]
+        },
+        // Same for a single page, which may also have been renamed on
+        // the way into its new category.
+        beforeEnter: (to) => {
+            const params = resolveMovedSetting(to.params.category, to.params.setting);
+
+            return params ? { name: 'admin-settings-page', params } : true;
         },
         component: () => import(/* webpackChunkName: "admin-settings-page" */ '@/pages/admin/settings/SettingsPage.vue')
     },

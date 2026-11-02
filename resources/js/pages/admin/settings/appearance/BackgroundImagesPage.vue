@@ -4,7 +4,6 @@
         :description="$t('settings.backgroundImages.description')"
         icon="mdi-image-multiple-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'theme' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

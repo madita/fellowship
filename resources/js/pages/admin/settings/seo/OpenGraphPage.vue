@@ -4,7 +4,6 @@
         :description="$t('settings.seo.openGraph.description')"
         icon="mdi-share-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'seo' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

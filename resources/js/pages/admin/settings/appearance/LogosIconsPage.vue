@@ -4,7 +4,6 @@
         :description="$t('settings.branding.logosIcons.description')"
         icon="mdi-image-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'branding' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

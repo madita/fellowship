@@ -4,7 +4,7 @@ import { createI18n } from 'vue-i18n';
 import { createPinia, setActivePinia } from 'pinia';
 import axios from 'axios';
 import en from '@/translations/en.js';
-import HelpToursPage from '@/pages/admin/settings/help/HelpToursPage.vue';
+import HelpToursPage from '@/pages/admin/settings/community/HelpToursPage.vue';
 import { useHelpStore } from '@/store/helpStore.js';
 import { useSettingsStore } from '@/store/settingStore.js';
 
@@ -31,7 +31,7 @@ const routes = [
 
 vi.mock('vue-router', () => ({
     useRouter: () => ({ push, getRoutes: () => routes }),
-    useRoute: () => ({ params: { category: 'help', setting: 'tours' }, path: '/admin/settings/help/tours', query: {} }),
+    useRoute: () => ({ params: { category: 'community', setting: 'tours' }, path: '/admin/settings/community/tours', query: {} }),
 }));
 
 const passthrough = (tag = 'div') => ({ template: `<${tag}><slot /></${tag}>` });

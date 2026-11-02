@@ -4,7 +4,6 @@
         description="Activate or deactivate site features. Deactivated features are hidden from the sidebar menu and their pages become unavailable."
         icon="mdi-toggle-switch-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'features' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

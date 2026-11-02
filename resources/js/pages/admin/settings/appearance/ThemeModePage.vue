@@ -1,21 +1,25 @@
 <template>
     <settings-page-layout
-        :title="$t('settings.branding.options.title')"
-        :description="$t('settings.branding.options.description')"
-        icon="mdi-toggle-switch-outline"
+        :title="$t('settings.themeMode.title')"
+        :description="$t('settings.themeMode.description')"
+        icon="mdi-brightness-6"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'branding' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >
-        <settings-card icon="mdi-cog-outline" :title="$t('settings.branding.options.cardTitle')">
-            <v-switch
-                v-model="settings.login_branding_enabled"
-                :label="$t('settings.branding.options.enableLoginBranding')"
-                color="primary"
-                :hint="settings.login_branding_enabled ? $t('settings.branding.options.enableLoginBrandingHintEnabled') : $t('settings.branding.options.enableLoginBrandingHintDisabled')"
+        <settings-card icon="mdi-theme-light-dark" :title="$t('settings.themeMode.cardTitle')">
+            <v-select
+                v-model="settings.theme_mode"
+                :label="$t('settings.themeMode.defaultThemeMode')"
+                :items="themeModes"
+                item-title="label"
+                item-value="value"
+                prepend-inner-icon="mdi-theme-light-dark"
+                variant="outlined"
+                :error-messages="errors.theme_mode"
+                :hint="$t('settings.themeMode.hint')"
                 persistent-hint
-            ></v-switch>
+            ></v-select>
         </settings-card>
 
         <v-btn
@@ -33,8 +37,12 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n';
 import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
 import SettingsCard from '@/components/settings/SettingsCard.vue';
+import { themeModes } from '@/configs/settingsConstants';
+
+const { t } = useI18n();
 
 const props = defineProps({
     settings: Object,

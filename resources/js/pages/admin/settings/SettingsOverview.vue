@@ -81,20 +81,28 @@
                             :key="category.id"
                             :value="category.id"
                         >
-                            <!-- Categories with a form render their tab component -->
-                            <component
-                                :is="tabComponents[category.id]"
-                                v-if="tabComponents[category.id]"
-                                :settings="settings"
-                                :errors="errors"
-                                :is-saving="isSaving"
-                                @save="saveSettings"
-                            />
+                            <!-- Categories with a form render their tab
+                                 components; a merged category has more
+                                 than one, shown in the order listed and
+                                 separated so the seam is visible -->
+                            <template
+                                v-for="(form, index) in tabForms(category.id)"
+                                :key="index"
+                            >
+                                <v-divider v-if="index > 0" class="my-8"></v-divider>
+                                <component
+                                    :is="form"
+                                    :settings="settings"
+                                    :errors="errors"
+                                    :is-saving="isSaving"
+                                    @save="saveSettings"
+                                />
+                            </template>
 
                             <!-- Pages and tools outside the form are linked as cards -->
                             <template v-if="linkedSettings(category).length">
                                 <div
-                                    v-if="tabComponents[category.id]"
+                                    v-if="hasForm(category.id)"
                                     class="text-subtitle-1 font-weight-medium mt-6 mb-3"
                                 >
                                     {{ $t('settings.overview.moreInCategory') }}
@@ -122,7 +130,7 @@
 
                     <!-- Mobile Save Button -->
                     <v-btn
-                        v-if="tabComponents[currentTab]"
+                        v-if="hasForm(currentTab)"
                         :loading="isSaving"
                         block
                         size="large"
@@ -245,33 +253,42 @@ const router = useRouter();
 const searchQuery = ref('');
 
 // Categories whose settings are edited in one form on the tabs view.
-// Every other category (and every routeName item) is linked as cards.
+// A category that took in another one keeps both forms, side by side in
+// the order given here. Every other category (and every routeName item)
+// is linked as cards.
 const tabComponents = {
-    general: GeneralTab,
-    localization: LocalizationTab,
-    branding: BrandingTab,
-    theme: ThemeTab,
-    oauth: OAuthTab,
-    seo: SeoTab,
-    homepage: HomepageTab,
-    footer: FooterTab,
-    moderation: ModerationTab,
-    sandbox: SandboxTab,
-    advanced: AdvancedTab,
+    general: [GeneralTab],
+    appearance: [BrandingTab, ThemeTab],
+    localization: [LocalizationTab],
+    layout: [HomepageTab, FooterTab],
+    access: [ModerationTab],
+    oauth: [OAuthTab],
+    seo: [SeoTab],
+    sandbox: [SandboxTab],
+    advanced: [AdvancedTab],
 };
+
+function tabForms(categoryId) {
+    return tabComponents[categoryId] || [];
+}
+
+function hasForm(categoryId) {
+    return tabForms(categoryId).length > 0;
+}
 
 // Translated tab labels where a key exists; the config title otherwise.
 const tabLabelKeys = {
     general: 'tabGeneral',
+    appearance: 'tabAppearance',
     localization: 'tabLocalization',
-    branding: 'tabBranding',
-    theme: 'tabTheme',
+    layout: 'tabLayout',
+    community: 'tabCommunity',
+    access: 'tabAccess',
     oauth: 'tabOAuth',
     seo: 'tabSEO',
-    homepage: 'tabHomepage',
-    footer: 'tabFooter',
-    moderation: 'tabModeration',
+    irc: 'tabIrc',
     sandbox: 'tabSandbox',
+    integrations: 'tabIntegrations',
     advanced: 'tabAdvanced',
 };
 
@@ -281,10 +298,12 @@ function tabLabel(category) {
 }
 
 // Items shown as cards on a tab: everything for categories without a
-// form, only the dedicated pages (routeName) for categories with one.
+// form, and for the ones with a form only what the form does not hold -
+// the pages with a route of their own, and the pages that said they
+// stand apart from it.
 function linkedSettings(category) {
-    if (!tabComponents[category.id]) return category.settings;
-    return category.settings.filter(setting => setting.routeName);
+    if (!hasForm(category.id)) return category.settings;
+    return category.settings.filter(setting => setting.routeName || setting.standalone);
 }
 
 // Settings composable for tab view

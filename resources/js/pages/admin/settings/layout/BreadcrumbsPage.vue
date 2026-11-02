@@ -4,7 +4,6 @@
         :description="$t('settings.navigation.breadcrumbs.description')"
         icon="mdi-chevron-right"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'menus' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

@@ -4,7 +4,6 @@
         :description="$t('events.admin.ircChannelsDescription')"
         icon="mdi-pound"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'irc' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >
