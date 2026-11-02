@@ -378,8 +378,8 @@ class ModelTranslationController extends Controller
             }
 
             return [
-                'id'         => $item->id,
-                'identifier' => $this->identify($item, $config),
+                'id'                 => $item->id,
+                'identifier'         => $this->identify($item, $config),
                 'translation_status' => $translationStatus,
                 'created_at'         => $item->created_at,
                 'updated_at'         => $item->updated_at,
@@ -466,6 +466,20 @@ class ModelTranslationController extends Controller
     }
 
     /**
+     * A help step reads as the tour it belongs to, where it comes in it,
+     * and what it says: "Welcome · 2. Your notifications". Translating a
+     * list of bare step titles is guesswork otherwise.
+     */
+    public static function identifyHelpTourStep(HelpTourStep $step): string
+    {
+        $title = $step->title ?: $step->translate('en', false)?->title ?: "#{$step->id}";
+        $tour  = $step->tour?->title ?: $step->tour?->translate('en', false)?->title;
+        $place = $step->sort_order + 1;
+
+        return $tour ? "{$tour} · {$place}. {$title}" : "{$place}. {$title}";
+    }
+
+    /**
      * Get available locales from config.
      */
     protected function getLocales(): array
@@ -489,20 +503,6 @@ class ModelTranslationController extends Controller
         return (string) ($item->{$config['identifier']}
             ?? $item->getTranslation('en')?->{$config['identifier']}
             ?? "#{$item->id}");
-    }
-
-    /**
-     * A help step reads as the tour it belongs to, where it comes in it,
-     * and what it says: "Welcome · 2. Your notifications". Translating a
-     * list of bare step titles is guesswork otherwise.
-     */
-    public static function identifyHelpTourStep(HelpTourStep $step): string
-    {
-        $title = $step->title ?: $step->translate('en', false)?->title ?: "#{$step->id}";
-        $tour  = $step->tour?->title ?: $step->tour?->translate('en', false)?->title;
-        $place = $step->sort_order + 1;
-
-        return $tour ? "{$tour} · {$place}. {$title}" : "{$place}. {$title}";
     }
 
     /**
