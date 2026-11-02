@@ -4,48 +4,62 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * The import tool: bringing an old community's content in.
+ *
+ * A source is a database somewhere else; a mapping says which of its
+ * columns fill which of our fields, for one of the targets registered in
+ * MigrationTargets. The rest is memory of what was imported - an id map
+ * so a second run updates rather than duplicates, and the legacy
+ * usernames so content written years ago can later be handed to the
+ * member who registered under the same name.
+ */
 return new class extends Migration
 {
     public function up(): void
     {
-        // External databases the migration tool can read from.
+        // External databases the tool can read from
         Schema::create('migration_sources', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('driver')->default('mysql'); // mysql, mariadb, pgsql, sqlite, sqlsrv
+            // mysql, mariadb, pgsql, sqlite, sqlsrv
+            $table->string('driver')->default('mysql');
             $table->string('host')->nullable();
             $table->unsignedInteger('port')->nullable();
-            $table->string('database'); // file path for sqlite
+            // A file path for sqlite
+            $table->string('database');
             $table->string('username')->nullable();
-            $table->text('password')->nullable(); // encrypted cast
+            // Encrypted cast
+            $table->text('password')->nullable();
             $table->string('charset')->nullable();
             $table->timestamps();
         });
 
-        // Column mappings from a source table onto one of our feature targets.
+        // Column mappings from a source table onto one of our targets
         Schema::create('migration_mappings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('migration_source_id')->constrained('migration_sources')->cascadeOnDelete();
             $table->string('name');
-            $table->string('target');       // key from MigrationTargets registry
+            // A key from the MigrationTargets registry
+            $table->string('target');
             $table->string('source_table');
-            $table->json('field_map');      // targetField => {source, transform, format, default}
+            // targetField => {source, transform, format, default}
+            $table->json('field_map');
             $table->json('options')->nullable();
             $table->timestamps();
         });
 
         /**
-         * Records which legacy (pre-migration) username each imported record
-         * belonged to, so old content can later be assigned to the matching
-         * registered user (via the admin Legacy Users tab / claim tickets).
+         * Which legacy username each imported record belonged to, so old
+         * content can later be assigned to the matching registered member
+         * - through the admin Legacy Users tab, or a claim ticket.
          */
-
         Schema::create('migration_attributions', function (Blueprint $table) {
             $table->id();
             $table->morphs('attributable');
             // Which legacy system the username belongs to (e.g. "wiki",
-            // "forum") — the same name in different systems can be
-            // different people, so identity is (source, username).
+            // "forum") - the same name in different systems can be
+            // different people, so identity is (source, username)
             $table->string('legacy_source')->default('legacy');
             $table->string('legacy_username');
             $table->foreignId('assigned_user_id')->nullable()->constrained('users')->nullOnDelete();
@@ -70,19 +84,40 @@ return new class extends Migration
             $table->unique(['legacy_source', 'username']);
         });
 
+        // What the old id became, so a re-run updates rather than doubles
         Schema::create('migration_id_maps', function (Blueprint $table) {
             $table->id();
-            $table->string('context'); // e.g. "forum_topic", "forum_post"
+            // e.g. "forum_topic", "forum_post"
+            $table->string('context');
             $table->string('legacy_id');
             $table->morphs('mappable');
             $table->timestamps();
 
             $table->unique(['context', 'legacy_id']);
         });
+
+        // Progress of a run, so a long import can be watched and resumed
+        Schema::create('migration_logs', function (Blueprint $table) {
+            $table->id();
+            $table->string('batch_id')->index();
+            $table->string('migration_key');
+            $table->string('migration_name');
+            $table->enum('status', ['pending', 'running', 'completed', 'failed'])->default('pending');
+            $table->integer('total_items')->default(0);
+            $table->integer('processed_items')->default(0);
+            $table->integer('error_count')->default(0);
+            $table->text('current_item')->nullable();
+            $table->text('last_error')->nullable();
+            $table->json('logs')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
+            $table->timestamps();
+        });
     }
 
     public function down(): void
     {
+        Schema::dropIfExists('migration_logs');
         Schema::dropIfExists('migration_id_maps');
         Schema::dropIfExists('migration_legacy_users');
         Schema::dropIfExists('migration_attributions');

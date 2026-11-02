@@ -9,29 +9,27 @@ use Illuminate\Support\Facades\Schema;
  * Help that an admin writes, shown on the page it is about.
  *
  * A tour is a page and an ordered list of steps. Each step points at an
- * element — a CSS selector, or the `data-help` name a component carries —
- * and says something about it. In `tour` mode the steps are walked through
- * one at a time behind a dimmed page; in `hints` mode each one becomes a
- * small marker sitting beside its element, read in any order. Same rows,
- * two ways of showing them.
+ * element - a CSS selector, or the `data-help` name a component carries -
+ * and says something about it. In `tour` mode the steps are walked
+ * through one at a time behind a dimmed page; in `hints` mode each one
+ * becomes a small marker sitting beside its element, read in any order.
+ * Same rows, two ways of showing them.
  *
  * `route_pattern` is matched against the path with Str::is, so `/wiki/*`
  * covers every page of the wiki and `/forum` only the one.
  *
- * The wording lives in help_tour_translations and
- * help_tour_step_translations, so a tour reads in the member's own
- * language like everything else. help_tour_views remembers who has
- * already been shown one, which is what stops a tour that starts by
- * itself from starting again every visit; guests are remembered in their
- * own browser instead, since there is nobody to write a row for.
+ * help_tour_views remembers who has already been shown one, which is what
+ * stops a tour that starts by itself from starting again every visit;
+ * guests are remembered in their own browser instead, since there is
+ * nobody to write a row for.
  */
 return new class extends Migration
 {
     /**
-     * One tour to arrive with, so the feature is not an empty list and the
-     * shape of a step is visible. It points at the `data-help` names the
-     * toolbar carries rather than at classes, which is the anchoring that
-     * survives a redesign. Admins edit or delete it freely.
+     * One tour to arrive with, so the feature is not an empty list and
+     * the shape of a step is visible. It points at the `data-help` names
+     * the toolbar carries rather than at classes, which is the anchoring
+     * that survives a redesign. Admins edit or delete it freely.
      */
     private const WELCOME = [
         'key'           => 'welcome',
@@ -141,7 +139,7 @@ return new class extends Migration
         /**
          * Who has already been shown which tour. `completed_at` separates
          * someone who walked it to the end from someone who closed it on
-         * the first step — both stop it starting by itself again, but only
+         * the first step - both stop it starting by itself again, but only
          * one of them means the help was read.
          */
         Schema::create('help_tour_views', function (Blueprint $table) {
@@ -156,6 +154,15 @@ return new class extends Migration
         });
 
         $this->seedWelcomeTour();
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('help_tour_views');
+        Schema::dropIfExists('help_tour_step_translations');
+        Schema::dropIfExists('help_tour_steps');
+        Schema::dropIfExists('help_tour_translations');
+        Schema::dropIfExists('help_tours');
     }
 
     private function seedWelcomeTour(): void
@@ -210,14 +217,5 @@ return new class extends Migration
                 ]);
             }
         }
-    }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('help_tour_views');
-        Schema::dropIfExists('help_tour_step_translations');
-        Schema::dropIfExists('help_tour_steps');
-        Schema::dropIfExists('help_tour_translations');
-        Schema::dropIfExists('help_tours');
     }
 };

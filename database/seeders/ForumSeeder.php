@@ -13,6 +13,11 @@ class ForumSeeder extends Seeder
      */
     public function run(): void
     {
+        // Categories are a community's own business once it has any
+        if (Taxonomy::where('taxonomy', 'forum_cat')->exists()) {
+            return;
+        }
+
         $categories = [
             [
                 'title'       => 'General Discussion',

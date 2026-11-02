@@ -6,23 +6,29 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Achievements.
+ * Achievements and the ranks they add up to.
  *
- * An achievement is a name, a look, and a rule: which tracked action earns
- * it, how many times, and optionally narrowed to certain kinds of that
- * action — organising three events, but only of the types that take real
- * effort. Anything the site cannot count for itself is handed out by hand,
- * which is how the real-world ones work.
+ * An achievement is a name, a look, and a rule: which tracked action
+ * earns it, how many times, and optionally narrowed to certain kinds of
+ * that action - organising three events, but only of the types that take
+ * real effort. Anything the site cannot count for itself is handed out by
+ * hand, which is how the real-world ones work.
  *
- * The wording lives in achievement_translations (created with the other
- * translation tables) and the kind is a taxonomy, so both read in the
- * member's own language.
+ * A member's rank is read from the points their achievements add up to:
+ * the highest rank they have reached the threshold for. Nothing is stored
+ * on the member, so editing a rank's threshold re-ranks everyone at once
+ * rather than leaving stale titles behind.
+ *
+ * The kind of an achievement is a taxonomy rather than a column, so an
+ * admin can add one without a deploy and its name is translated like
+ * everything else. The starters and the ranks are written here because
+ * the feature is nothing without something in it, and because
+ * AchievementServiceProvider looks its metrics up by key.
  */
 return new class extends Migration
 {
     /**
-     * The kinds an achievement can be, and what to call them. A taxonomy
-     * rather than a column, so an admin can add one without a deploy.
+     * The kinds an achievement can be, and what to call them.
      */
     private const TYPES = [
         'community' => ['en' => 'Community', 'de' => 'Community'],
@@ -33,8 +39,8 @@ return new class extends Migration
     ];
 
     /**
-     * A few to start with, so the feature arrives with something in it and
-     * the shape of a rule is visible. Admins edit or delete them freely.
+     * A few to start with, so the shape of a rule is visible. Admins edit
+     * or delete them freely.
      */
     private const STARTERS = [
         [
@@ -58,8 +64,8 @@ return new class extends Migration
         [
             'key' => 'marked-helpful', 'type' => 'community', 'icon' => 'mdi-check-decagram-outline',
             'color' => 'green', 'points' => 30, 'trigger' => 'metric', 'metric' => 'forum.post.solution', 'threshold' => 1,
-            'en' => ['Marked Helpful', 'One of your replies was marked as the solution.'],
-            'de' => ['Als hilfreich markiert', 'Eine deiner Antworten wurde als Lösung markiert.'],
+            'en' => ['Marked Helpful', 'One of your replies was marked as the helpful one.'],
+            'de' => ['Als hilfreich markiert', 'Eine deiner Antworten wurde als hilfreich markiert.'],
         ],
         [
             'key' => 'wiki-writer', 'type' => 'content', 'icon' => 'mdi-book-edit-outline',
@@ -89,14 +95,25 @@ return new class extends Migration
         ],
     ];
 
+    /**
+     * Spread so the early ones come quickly and the last is a long haul.
+     */
+    private const RANKS = [
+        ['newcomer', 0, 'mdi-sprout-outline', 'blue-grey', ['Newcomer', 'Just arrived.'], ['Neuling', 'Gerade angekommen.']],
+        ['member', 50, 'mdi-account-outline', 'teal', ['Member', 'Part of the furniture.'], ['Mitglied', 'Gehört dazu.']],
+        ['regular', 150, 'mdi-account-star-outline', 'blue', ['Regular', 'Around often, and it shows.'], ['Stammgast', 'Oft da — und man merkt es.']],
+        ['veteran', 300, 'mdi-shield-star-outline', 'deep-purple', ['Veteran', 'Has been here a while, and done a lot.'], ['Veteran', 'Schon lange dabei und viel bewegt.']],
+        ['elder', 600, 'mdi-crown-outline', 'amber', ['Elder', 'One of the people who built this place.'], ['Ältester', 'Einer von denen, die das hier aufgebaut haben.']],
+        ['legend', 1000, 'mdi-trophy-variant-outline', 'orange', ['Legend', 'There is a story about you.'], ['Legende', 'Über dich gibt es Geschichten.']],
+    ];
+
     public function up(): void
     {
         Schema::create('achievements', function (Blueprint $table) {
             $table->id();
             $table->string('key')->unique();
-            // What kind of achievement it is — a taxonomy, so its name is
-            // translated and admins can add a kind without a deploy.
-            // taxonomies.id is an unsigned integer, not a bigint.
+            // What kind it is. taxonomies.id is an unsigned integer, not a
+            // bigint.
             $table->unsignedInteger('taxonomy_id')->nullable();
             $table->string('icon')->default('mdi-trophy-outline');
             // A badge can wear a picture instead of the icon
@@ -123,10 +140,15 @@ return new class extends Migration
             $table->foreign('taxonomy_id')->references('id')->on('taxonomies')->nullOnDelete();
         });
 
-        // The wording table is created with the other translation tables,
-        // before this one exists, so its constraint belongs here
-        Schema::table('achievement_translations', function (Blueprint $table) {
-            $table->foreign('achievement_id')->references('id')->on('achievements')->cascadeOnDelete();
+        Schema::create('achievement_translations', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('achievement_id')->constrained()->cascadeOnDelete();
+            $table->string('locale')->index();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->timestamps();
+
+            $table->unique(['achievement_id', 'locale']);
         });
 
         Schema::create('achievement_user', function (Blueprint $table) {
@@ -148,7 +170,7 @@ return new class extends Migration
         /**
          * One row per member per tracked action, so progress toward an
          * achievement is a lookup rather than a scan over the whole site.
-         * `scope` holds the narrowing value — an event type id, say — with
+         * `scope` holds the narrowing value - an event type id, say - with
          * an empty string for the plain, unnarrowed count.
          */
         Schema::create('achievement_progress', function (Blueprint $table) {
@@ -164,21 +186,55 @@ return new class extends Migration
             $table->index(['metric', 'scope']);
         });
 
-        $this->seedPermission();
+        Schema::create('ranks', function (Blueprint $table) {
+            $table->id();
+            $table->string('key')->unique();
+            // What the member's achievement points have to reach
+            $table->unsignedInteger('points_required')->default(0);
+            $table->string('icon')->default('mdi-shield-outline');
+            // A rank can wear a picture instead of the icon, like a badge
+            $table->string('image_path')->nullable();
+            $table->string('color')->default('blue-grey');
+            $table->boolean('is_enabled')->default(true);
+            $table->timestamps();
+
+            $table->index(['is_enabled', 'points_required']);
+        });
+
+        Schema::create('rank_translations', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('rank_id')->constrained()->cascadeOnDelete();
+            $table->string('locale')->index();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->timestamps();
+
+            $table->unique(['rank_id', 'locale']);
+        });
+
+        $this->seedAwardPermission();
         $this->seedStarterAchievements($this->seedTypes());
+        $this->seedRanks();
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('rank_translations');
+        Schema::dropIfExists('ranks');
+        Schema::dropIfExists('achievement_progress');
+        Schema::dropIfExists('achievement_user');
+        Schema::dropIfExists('achievement_translations');
+        Schema::dropIfExists('achievements');
     }
 
     /**
-     * Handing out an achievement for something that happened away from the
-     * site can be delegated, so it gets a permission of its own rather than
-     * belonging to admins alone.
+     * Handing out an achievement for something that happened away from
+     * the site can be delegated, so it gets a permission of its own
+     * rather than belonging to admins alone. PermissionsTableSeeder lists
+     * it too, for an install that is seeded rather than migrated.
      */
-    private function seedPermission(): void
+    private function seedAwardPermission(): void
     {
-        if (! Schema::hasTable('permissions')) {
-            return;
-        }
-
         if (DB::table('permissions')->where('name', 'award-achievements')->exists()) {
             return;
         }
@@ -197,7 +253,7 @@ return new class extends Migration
 
     /**
      * The kinds, each a term for the name and the taxonomy row that makes
-     * it a kind of achievement — the shape the forum uses for categories.
+     * it a kind of achievement - the shape the forum uses for categories.
      *
      * @return array<string, int> kind => taxonomy id
      */
@@ -275,18 +331,31 @@ return new class extends Migration
         }
     }
 
-    public function down(): void
+    private function seedRanks(): void
     {
-        Schema::dropIfExists('achievement_progress');
-        Schema::dropIfExists('achievement_user');
+        $now = now();
 
-        // The wording table outlives this migration, so only its link goes
-        if (Schema::hasTable('achievement_translations')) {
-            Schema::table('achievement_translations', function (Blueprint $table) {
-                $table->dropForeign(['achievement_id']);
-            });
+        foreach (self::RANKS as [$key, $points, $icon, $color, $en, $de]) {
+            $id = DB::table('ranks')->insertGetId([
+                'key'             => $key,
+                'points_required' => $points,
+                'icon'            => $icon,
+                'color'           => $color,
+                'is_enabled'      => true,
+                'created_at'      => $now,
+                'updated_at'      => $now,
+            ]);
+
+            foreach (['en' => $en, 'de' => $de] as $locale => $wording) {
+                DB::table('rank_translations')->insert([
+                    'rank_id'     => $id,
+                    'locale'      => $locale,
+                    'name'        => $wording[0],
+                    'description' => $wording[1],
+                    'created_at'  => $now,
+                    'updated_at'  => $now,
+                ]);
+            }
         }
-
-        Schema::dropIfExists('achievements');
     }
 };

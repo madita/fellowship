@@ -13,6 +13,11 @@ class FooterSeeder extends Seeder
      */
     public function run(): void
     {
+        // Leave a footer that already exists alone
+        if (FooterSection::query()->exists()) {
+            return;
+        }
+
         // Create footer section with 3 columns
         $footerSection = FooterSection::create([
             'title'   => 'Main Footer',

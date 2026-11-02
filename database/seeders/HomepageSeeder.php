@@ -13,6 +13,12 @@ class HomepageSeeder extends Seeder
      */
     public function run(): void
     {
+        // A homepage somebody has already built - or already edited - is
+        // not replaced by this one
+        if (Section::query()->exists()) {
+            return;
+        }
+
         // Create sections first with unique anchors
         $section1 = Section::create([
             'title'     => 'Hero Section',
