@@ -248,6 +248,16 @@ export const settingsCategories = [
         ]
     },
     {
+        id: 'help',
+        title: 'Help & Tours',
+        description: 'Guided tours and help hints written for individual pages',
+        icon: 'mdi-help-circle-outline',
+        color: 'light-blue',
+        settings: [
+            { id: 'tours', title: 'Tours & Hints', description: 'Walk members through a page, or put a hint beside the things on it', icon: 'mdi-map-marker-path', component: 'HelpToursPage' },
+        ]
+    },
+    {
         id: 'tools',
         title: 'Tools & Data',
         description: 'Imports and maintenance tools',

@@ -84,6 +84,17 @@ export const FEATURES = [
         icon: 'mdi-podcast',
         routePrefixes: ['/podcast'],
     },
+    {
+        key: 'help',
+        label: 'Help & Tours',
+        description: 'Guided tours and help hints written for individual pages',
+        icon: 'mdi-help-circle-outline',
+        // Help lives on other people's pages rather than having any of its
+        // own, so there is nothing for the route guard to block. Turning it
+        // off takes away the tours and the help button, and leaves the
+        // admin screen where they are written reachable.
+        routePrefixes: [],
+    },
 ];
 
 export const featureSettingKey = (key) => `feature_${key}_enabled`;

@@ -3492,6 +3492,110 @@ export default {
             'markerTitle': 'Markierungstitel'
         }
     },
+    'help': {
+        'title': 'Hilfe zu dieser Seite',
+        'noneForPage': 'Für diese Seite wurde noch keine Hilfe geschrieben',
+        'showAgain': 'Bereits gesehene Hilfe erneut anzeigen',
+        'skip': 'Schließen',
+        'back': 'Zurück',
+        'next': 'Weiter',
+        'done': 'Fertig',
+        'goToStep': 'Zu Schritt {number}',
+        'targetMissing': 'Das, worauf dieser Schritt zeigt, ist gerade nicht auf der Seite.',
+        'picker': {
+            'title': 'Klicke das an, worum es in diesem Schritt geht',
+            'hint': 'Zum Hervorheben darüberfahren, zum Auswählen klicken. Escape bricht ab.'
+        },
+        'admin': {
+            'feature': 'Hilfe & Rundgänge',
+            'featureLabel': 'Hilfe auf der Seite anbieten',
+            'featureOnHint': 'Der Hilfe-Knopf ist in der Leiste, und die unten geschriebenen Rundgänge werden auf ihren Seiten gezeigt.',
+            'featureOffHint': 'Der Hilfe-Knopf ist ausgeblendet, und kein Rundgang und kein Hinweis wird gezeigt. Die Rundgänge unten bleiben erhalten und bearbeitbar.',
+            'featureSaveFailed': 'Die Einstellung konnte nicht gespeichert werden.',
+            'title': 'Rundgänge & Hinweise',
+            'description': 'Mitglieder durch eine Seite führen oder einen Hinweis neben die Dinge darauf setzen',
+            'tours': 'Rundgänge & Hinweise',
+            'hint': 'Jeder gehört zu einer Seite und wird denen gezeigt, für die er geschrieben ist.',
+            'add': 'Neuer Rundgang',
+            'edit': 'Rundgang bearbeiten',
+            'empty': 'Noch keine Rundgänge',
+            'emptyHint': 'Ein Rundgang ist eine Seite und ein paar Dinge, die es dazu zu sagen gibt.',
+            'preview': 'Auf der eigenen Seite ausprobieren',
+            'previewNeedsLive': 'Aktiv schalten, um ihn auszuprobieren',
+            'duplicate': 'Duplizieren',
+            'startsItself': 'startet von selbst',
+            'saved': 'Der Rundgang wurde gespeichert.',
+            'saveFailed': 'Der Rundgang konnte nicht gespeichert werden.',
+            'loadFailed': 'Die Rundgänge konnten nicht geladen werden.',
+            'deleteConfirm': 'Soll „{name}" gelöscht werden? Was Mitglieder davon gesehen haben, wird mitgelöscht.',
+            'deleteFailed': 'Der Rundgang konnte nicht gelöscht werden.',
+            'duplicateFailed': 'Der Rundgang konnte nicht dupliziert werden.',
+            'previewFailed': 'Dieser Rundgang hat keine einzelne Seite, auf der er laufen könnte.',
+            'mode': {
+                'tour': 'Geführter Rundgang',
+                'hints': 'Hilfe-Hinweise'
+            },
+            'modeHint': {
+                'tour': 'Die Schritte werden hinter einer abgedunkelten Seite einzeln durchgegangen.',
+                'hints': 'Jeder Schritt wird zu einem Marker neben seinem Element, in beliebiger Reihenfolge lesbar.'
+            },
+            'audience': {
+                'everyone': 'Alle',
+                'members': 'Angemeldete Mitglieder',
+                'guests': 'Nicht angemeldete Besucher'
+            },
+            'placement': {
+                'auto': 'Wo es passt',
+                'top': 'Darüber',
+                'bottom': 'Darunter',
+                'left': 'Links',
+                'right': 'Rechts'
+            },
+            'table': {
+                'tour': 'Rundgang',
+                'page': 'Seite',
+                'mode': 'Angezeigt als',
+                'steps': 'Schritte',
+                'enabled': 'Aktiv'
+            },
+            'form': {
+                'where': 'Wo er gezeigt wird und wem',
+                'wording': 'Was er sagt',
+                'page': 'Seite',
+                'pageHint': 'Eine Seite wählen oder ein Muster schreiben, etwa /wiki/*',
+                'mode': 'Angezeigt als',
+                'audience': 'Wer ihn sieht',
+                'roles': 'Nur diese Rollen',
+                'rolesHint': 'Leer lassen für alle, die die Zielgruppe abdeckt',
+                'icon': 'Symbol',
+                'color': 'Farbe',
+                'order': 'Reihenfolge',
+                'autoStart': 'Beim ersten Besuch von selbst starten',
+                'autoStartHints': 'Hinweise stehen schon auf der Seite; es gibt nichts zu starten.',
+                'showLauncher': 'Über den Hilfe-Knopf anbieten',
+                'enabled': 'Aktiv',
+                'tourTitle': 'Titel',
+                'tourDescription': 'Beschreibung',
+                'fallsBack': 'Leer gelassen, greift {locale}',
+                'steps': '{count} Schritt | {count} Schritte',
+                'addStep': 'Schritt hinzufügen',
+                'noSteps': 'Ein Rundgang braucht mindestens einen Schritt',
+                'untitledStep': 'Schritt ohne Titel',
+                'stepTitle': 'Titel des Schritts',
+                'stepContent': 'Was er sagt',
+                'removeStep': 'Entfernen',
+                'moveUp': 'Nach oben',
+                'moveDown': 'Nach unten',
+                'target': 'Zeigt auf',
+                'targetHint': 'Ein CSS-Selektor. Leer lassen für einen Schritt über die ganze Seite.',
+                'targetElsewhere': 'Worauf er zeigt, wird im Tab {locale} festgelegt.',
+                'placement': 'Karte steht',
+                'pick': 'Auf der Seite auswählen',
+                'pickNeedsPage': 'Wähle zuerst, zu welcher Seite der Rundgang gehört.',
+                'pickUnavailable': 'Dieser Browser lässt den Entwurf nicht zwischenspeichern, daher ist das Auswählen nicht verfügbar.'
+            }
+        }
+    },
     'notifications': {
         'statusMention': '{name} hat dich in einem Beitrag erwähnt',
         'statusCommentMention': '{name} hat dich in einem Kommentar erwähnt',

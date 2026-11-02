@@ -1,7 +1,7 @@
 <template>
     <v-menu transition="slide-y-transition" :close-on-content-click="false">
         <template v-slot:activator="{ props }">
-            <v-btn icon variant="text" size="small" v-bind="props" :title="$t('notifications.title')" :aria-label="$t('notifications.title')">
+            <v-btn icon variant="text" size="small" data-help="toolbar-notifications" v-bind="props" :title="$t('notifications.title')" :aria-label="$t('notifications.title')">
                 <!-- The badge sits on the icon, not the button around it, so it stays close and inside the bar -->
                 <v-badge
                     :content="notifications.length"

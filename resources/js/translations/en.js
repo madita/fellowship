@@ -3329,6 +3329,110 @@ export default {
             'markerTitle': 'Marker Title'
         }
     },
+    'help': {
+        'title': 'Help for this page',
+        'noneForPage': 'No help has been written for this page yet',
+        'showAgain': 'Show the help I have already seen',
+        'skip': 'Close',
+        'back': 'Back',
+        'next': 'Next',
+        'done': 'Done',
+        'goToStep': 'Go to step {number}',
+        'targetMissing': 'What this step points at is not on the page right now.',
+        'picker': {
+            'title': 'Click the thing this step is about',
+            'hint': 'Hover to highlight, click to choose. Escape to give up.'
+        },
+        'admin': {
+            'feature': 'Help & Tours',
+            'featureLabel': 'Offer help on the site',
+            'featureOnHint': 'The help button is in the toolbar, and the tours written below are shown on their pages.',
+            'featureOffHint': 'The help button is hidden and no tour or hint is shown. The tours below are kept and stay editable.',
+            'featureSaveFailed': 'The setting could not be saved.',
+            'title': 'Tours & Hints',
+            'description': 'Walk members through a page, or put a hint beside the things on it',
+            'tours': 'Tours & hints',
+            'hint': 'Each one belongs to a page and is shown to whoever it is written for.',
+            'add': 'New tour',
+            'edit': 'Edit tour',
+            'empty': 'No tours yet',
+            'emptyHint': 'A tour is a page and a few things to say about what is on it.',
+            'preview': 'Run it on its page',
+            'previewNeedsLive': 'Make it live to try it out',
+            'duplicate': 'Duplicate',
+            'startsItself': 'starts by itself',
+            'saved': 'The tour was saved.',
+            'saveFailed': 'The tour could not be saved.',
+            'loadFailed': 'The tours could not be loaded.',
+            'deleteConfirm': 'Delete "{name}"? What members have seen of it is forgotten with it.',
+            'deleteFailed': 'The tour could not be deleted.',
+            'duplicateFailed': 'The tour could not be duplicated.',
+            'previewFailed': 'This tour has no single page to run on.',
+            'mode': {
+                'tour': 'Guided tour',
+                'hints': 'Help hints'
+            },
+            'modeHint': {
+                'tour': 'The steps are walked through one at a time behind a dimmed page.',
+                'hints': 'Each step becomes a marker beside its element, read in any order.'
+            },
+            'audience': {
+                'everyone': 'Everyone',
+                'members': 'Signed-in members',
+                'guests': 'Visitors who are not signed in'
+            },
+            'placement': {
+                'auto': 'Wherever it fits',
+                'top': 'Above',
+                'bottom': 'Below',
+                'left': 'Left',
+                'right': 'Right'
+            },
+            'table': {
+                'tour': 'Tour',
+                'page': 'Page',
+                'mode': 'Shown as',
+                'steps': 'Steps',
+                'enabled': 'Live'
+            },
+            'form': {
+                'where': 'Where it is shown, and to whom',
+                'wording': 'What it says',
+                'page': 'Page',
+                'pageHint': 'Pick a page, or write a pattern such as /wiki/*',
+                'mode': 'Shown as',
+                'audience': 'Who sees it',
+                'roles': 'Only these roles',
+                'rolesHint': 'Leave empty for everybody the audience covers',
+                'icon': 'Icon',
+                'color': 'Colour',
+                'order': 'Order',
+                'autoStart': 'Start it on the first visit',
+                'autoStartHints': 'Hints are already on the page; there is nothing to start.',
+                'showLauncher': 'Offer it on the help button',
+                'enabled': 'Live',
+                'tourTitle': 'Title',
+                'tourDescription': 'Description',
+                'fallsBack': 'Left empty, it falls back to {locale}',
+                'steps': '{count} step | {count} steps',
+                'addStep': 'Add a step',
+                'noSteps': 'A tour needs at least one step',
+                'untitledStep': 'Untitled step',
+                'stepTitle': 'Step title',
+                'stepContent': 'What it says',
+                'removeStep': 'Remove',
+                'moveUp': 'Move up',
+                'moveDown': 'Move down',
+                'target': 'Points at',
+                'targetHint': 'A CSS selector. Leave it empty for a step about the page as a whole.',
+                'targetElsewhere': 'What it points at is set on the {locale} tab.',
+                'placement': 'Card sits',
+                'pick': 'Pick on page',
+                'pickNeedsPage': 'Choose which page the tour belongs to first.',
+                'pickUnavailable': 'This browser will not let the draft be put aside, so picking is not available.'
+            }
+        }
+    },
     'notifications': {
         'statusMention': '{name} mentioned you in a post',
         'statusCommentMention': '{name} mentioned you in a comment',

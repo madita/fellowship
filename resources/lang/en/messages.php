@@ -346,6 +346,14 @@ return [
         'image_uploaded' => 'The picture was saved.',
         'image_removed'  => 'The picture was removed.',
     ],
+    // Help tours
+    'help' => [
+        'seen'    => 'Noted.',
+        'reset'   => 'The help will be offered again.',
+        'deleted' => 'The tour was deleted.',
+        'copy'    => 'copy',
+    ],
+
 
     // SPA
     'spa' => [

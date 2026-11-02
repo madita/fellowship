@@ -378,6 +378,8 @@ const getModelIcon = (modelKey) => {
         section: 'mdi-view-dashboard',
         widget: 'mdi-widgets',
         homepage_menu_item: 'mdi-menu',
+        help_tour: 'mdi-help-circle-outline',
+        help_tour_step: 'mdi-map-marker-path',
     };
     return icons[modelKey] || 'mdi-database';
 };

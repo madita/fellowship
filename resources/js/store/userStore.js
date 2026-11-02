@@ -110,32 +110,21 @@ export const useUserStore = defineStore('user', {
             }
         },
 
-        // Fetch and store user information
+        /**
+         * Fetch who the member is, and what they are allowed to do.
+         *
+         * One request, and the state is only ever replaced by an answer —
+         * never emptied on the way to one. It used to fetch twice with a
+         * $reset() in between, which left the store (and the cached copy
+         * in localStorage) blank for the length of the second request.
+         * App start-up calls this without waiting for it, so the router's
+         * first navigation ran straight through that gap: the permission
+         * middleware found no permissions and the page never rendered.
+         */
         async storeInfo() {
-            // try {
-            //     const data = await axios.get('api/user')
-            //     this.user = data.user
-            //     // this.roles = data.roles
-            //     // this.permissions = data.permissions
-            //     // console.log('user',this.user)
-            //
-            // }
-            // catch (error) {
-            //     //alert(error)
-            //     console.log('error userstore', error)
-            // }
-            let { data: userInfo } = await api.get('/user')
-            // let { data:  userInfo } = await axios.get('/api/user')
-
-            this.updateState(userInfo)
-            // this.user = userInfo.user;
-            // this.roles = userInfo.roles;
-            localStorage.setItem('USER_INFO', JSON.stringify(userInfo))
-            this.$reset()
             try {
                 const { data: userInfo } = await api.get('/user')
 
-                // Update state with received user info
                 this.updateState({
                     user: userInfo.user || userInfo, // Handle different response structures
                     roles: userInfo.roles || null,
@@ -146,8 +135,14 @@ export const useUserStore = defineStore('user', {
                 return userInfo
             } catch (error) {
                 log.error('Failed to fetch user info:', error)
-                // Clear state on failure
-                this.clearState()
+                // Only a refusal means this member is nobody. Anything
+                // else — offline, a 500, a timeout — says nothing about
+                // them, and throwing away what we already knew would sign
+                // them out of a working session.
+                if (error?.response?.status === 401 || error?.response?.status === 419) {
+                    this.clearState()
+                }
+
                 throw error
             }
         },

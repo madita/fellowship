@@ -42,6 +42,10 @@
          member's notification channel that the bell listens to as well -->
     <NotificationToastHost v-if="authenticated" />
 
+    <!-- Guided tours and help hints for the page being looked at, and the
+         admin's element picker when a step is being pointed at something -->
+    <HelpHost />
+
     <!-- The one <audio> element, above the layout and the router view so
          an episode survives every navigation and every layout, including
          the ones with no toolbar. Renders nothing. -->
@@ -71,6 +75,7 @@ import CookieConsent from './components/common/CookieConsent.vue'
 import SessionTimeoutModal from './components/common/SessionTimeoutModal.vue'
 import DialogHost from './components/common/DialogHost.vue'
 import NotificationToastHost from './components/common/NotificationToastHost.vue'
+import HelpHost from './components/help/HelpHost.vue'
 import PodcastAudioHost from './components/podcast/PodcastAudioHost.vue'
 import PodcastPlayerBar from './components/podcast/PodcastPlayerBar.vue'
 // import { mapGetters } from 'vuex'
@@ -101,6 +106,7 @@ export default {
     SessionTimeoutModal,
     DialogHost,
     NotificationToastHost,
+    HelpHost,
     PodcastAudioHost,
     PodcastPlayerBar
   },

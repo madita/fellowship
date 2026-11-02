@@ -290,6 +290,14 @@ return [
         'image_uploaded' => 'Das Bild wurde gespeichert.',
         'image_removed'  => 'Das Bild wurde entfernt.',
     ],
+    // Hilfe-Rundgänge
+    'help' => [
+        'seen'    => 'Notiert.',
+        'reset'   => 'Die Hilfe wird wieder angeboten.',
+        'deleted' => 'Der Rundgang wurde gelöscht.',
+        'copy'    => 'Kopie',
+    ],
+
 
     // SPA
     'spa' => [

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Chat\Message;
 use App\Models\Conversation\Conversation;
 use App\Models\Event\Event;
+use App\Models\Help\HelpTourView;
 use App\Support\Ranks;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -424,5 +425,14 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function likes(): HasMany
     {
         return $this->hasMany(Like::class);
+    }
+
+    /**
+     * The help tours this member has already been shown — what keeps one
+     * that starts by itself from starting again every visit.
+     */
+    public function helpTourViews(): HasMany
+    {
+        return $this->hasMany(HelpTourView::class);
     }
 }

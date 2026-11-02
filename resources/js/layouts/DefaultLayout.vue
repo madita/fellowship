@@ -94,6 +94,8 @@
                                  podcast pages -->
                             <podcast-toolbar-player v-if="podcastEnabled" />
                             <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-block"/>
+                            <!-- Whatever help was written for this page -->
+                            <toolbar-help/>
 
 <!--                                                <toolbar-apps/>-->
 
@@ -104,7 +106,7 @@
                                 <v-btn icon variant="text" size="small" class="d-none d-md-flex" @click="showUsersDrawer = !showUsersDrawer" :title="$t ? $t('toolbar.users') : 'Users'">
                                     <v-icon>mdi-account-group</v-icon>
                                 </v-btn>
-                                <v-btn icon variant="text" size="small" class="d-none d-md-flex" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t ? $t('toolbar.settings') : 'Settings'">
+                                <v-btn icon variant="text" size="small" class="d-none d-md-flex" data-help="toolbar-settings" @click="showSettingsDrawer = !showSettingsDrawer" :title="$t ? $t('toolbar.settings') : 'Settings'">
                                     <v-icon>mdi-cog</v-icon>
                                 </v-btn>
                                 <toolbar-user/>
@@ -217,6 +219,7 @@ import LocationMenu from '../components/navigation/LocationMenu.vue'
 import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
 import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
+import ToolbarHelp from '../components/toolbar/ToolbarHelp.vue'
 import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue'
 import ConversationsNotification from '../components/conversation/ConversationsNotification.vue'
 import SandboxNotifications from '../components/sandbox/SandboxNotifications.vue'
@@ -236,6 +239,7 @@ export default {
         ToolbarUser,
         ToolbarApps,
         ToolbarLanguage,
+        ToolbarHelp,
         ToolbarNotifications,
         ConversationBox,
         ConversationBoxManager,

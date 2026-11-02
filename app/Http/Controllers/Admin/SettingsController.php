@@ -209,6 +209,7 @@ class SettingsController extends Controller
             'feature_tickets_enabled',
             'feature_feedback_enabled',
             'feature_podcast_enabled',
+            'feature_help_enabled',
         ];
 
         $settings = [];

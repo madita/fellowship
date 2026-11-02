@@ -20,6 +20,8 @@
                     <podcast-toolbar-player v-if="podcastEnabled" />
                     <!-- Language Switcher -->
                     <toolbar-language v-if="languageChangeEnabled" class="d-none d-sm-flex"/>
+                    <!-- Whatever help was written for this page -->
+                    <toolbar-help/>
                     <v-btn
                         icon
                         variant="text"
@@ -184,6 +186,7 @@ import LocationMenu from '../components/navigation/LocationMenu.vue'
 import ToolbarUser from '../components/toolbar/ToolbarUser.vue'
 import ToolbarApps from '../components/toolbar/ToolbarApps.vue'
 import ToolbarLanguage from '../components/toolbar/ToolbarLanguage.vue'
+import ToolbarHelp from '../components/toolbar/ToolbarHelp.vue'
 import ToolbarNotifications from '../components/toolbar/ToolbarNotifications.vue'
 import ConversationsNotification from '../components/conversation/ConversationsNotification.vue'
 import SandboxNotifications from '../components/sandbox/SandboxNotifications.vue'
@@ -201,6 +204,7 @@ export default {
     components: {
         ToolbarUser,
         ToolbarLanguage,
+        ToolbarHelp,
         ToolbarNotifications,
         ConversationsNotification,
         SandboxNotifications,
