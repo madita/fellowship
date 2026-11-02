@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Traits\Helpful;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Comment extends Model
 {
     use HasFactory;
+    use Helpful;
     use SoftDeletes;
 
     /**
@@ -64,6 +67,31 @@ class Comment extends Model
     public function isReply(): bool
     {
         return $this->parent_id !== null;
+    }
+
+    /**
+     * The other comments on the same thing: one answer per discussion,
+     * as in a thread. A reply counts, because the answer is as likely
+     * to be under a comment as beside it.
+     */
+    protected function helpfulSiblings(): ?Builder
+    {
+        return static::where('commentable_type', $this->commentable_type)
+            ->where('commentable_id', $this->commentable_id)
+            ->whereKeyNot($this->getKey());
+    }
+
+    /**
+     * Whoever the commented-on thing belongs to decides, which is the
+     * thing's own business - see the Commentable trait.
+     */
+    public function canBeMarkedHelpfulBy(?User $user): bool
+    {
+        $subject = $this->commentable;
+
+        return $subject !== null
+            && method_exists($subject, 'isHelpfulMarkableBy')
+            && $subject->isHelpfulMarkableBy($user);
     }
 
     public function getTimeAgoAttribute(): ?string

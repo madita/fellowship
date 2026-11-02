@@ -142,8 +142,8 @@
                                                     {{ $t('forum.replyIn') }}
                                                 </span>
                                                 <span class="font-weight-bold">{{ post.thread_title }}</span>
-                                                <v-chip v-if="post.is_solution" size="x-small" color="success" variant="tonal" prepend-icon="mdi-check-circle">
-                                                    {{ $t('forum.solution') }}
+                                                <v-chip v-if="post.is_helpful" size="x-small" color="success" variant="tonal" prepend-icon="mdi-check-circle">
+                                                    {{ $t('forum.helpful') }}
                                                 </v-chip>
                                             </div>
                                             <div class="text-body-2 text-medium-emphasis body-snippet">

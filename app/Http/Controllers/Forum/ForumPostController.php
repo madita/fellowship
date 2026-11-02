@@ -136,9 +136,16 @@ class ForumPostController extends Controller
     }
 
     /**
-     * Mark a post as the solution (thread author or admin only).
+     * Mark the reply that answered the thread, or take the mark away.
+     *
+     * One request does both, because a thread has one answer at a time.
+     * It used to only ever set the flag, which is why the button that
+     * said "Unmark Helpful" did nothing at all.
+     *
+     * Who may decide is the post's own question - it knows its thread,
+     * and the thread knows its category's moderators.
      */
-    public function markAsSolution(ForumPost $post): JsonResponse
+    public function toggleHelpful(ForumPost $post): JsonResponse
     {
         $user = Auth::user();
 
@@ -146,22 +153,14 @@ class ForumPostController extends Controller
             abort(401, 'You must be logged in.');
         }
 
-        $thread = $post->thread;
-
-        // Only thread author, admin, or users with moderate roles can mark solutions
-        $canMark = $user->id === $thread->user_id || $user->isAdmin();
-        if ( ! $canMark) {
-            $moderateRoles = $thread->category->properties['moderate_roles'] ?? [];
-            $canMark       = ! empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
-        }
-        if ( ! $canMark) {
-            abort(403, 'Only the thread author or a moderator can mark a solution.');
+        if ( ! $post->canBeMarkedHelpfulBy($user)) {
+            abort(403, 'Only the thread author or a moderator can mark an answer helpful.');
         }
 
-        $post->markAsSolution();
+        $helpful = $post->toggleHelpful($user);
 
         return response()->json([
-            'message' => 'Post marked as solution',
+            'helpful' => $helpful,
             'post'    => $post->fresh(),
         ]);
     }

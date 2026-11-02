@@ -138,7 +138,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/threads/{thread}/posts', 'App\Http\Controllers\Forum\ForumPostController@store');
     Route::patch('/posts/{post}', 'App\Http\Controllers\Forum\ForumPostController@update');
     Route::delete('/posts/{post}', 'App\Http\Controllers\Forum\ForumPostController@destroy');
-    Route::post('/posts/{post}/mark-as-solution', 'App\Http\Controllers\Forum\ForumPostController@markAsSolution');
+    Route::post('/posts/{post}/helpful', 'App\Http\Controllers\Forum\ForumPostController@toggleHelpful');
 
     // Watching anything: forum threads, tickets, whatever is registered in
     // App\Support\Watchables. The kind is a registry slug, not a class name.
@@ -281,6 +281,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/comments/{kind}/{id}', 'App\Http\Controllers\CommentController@store')->whereNumber('id');
     Route::patch('/comments/{comment}', 'App\Http\Controllers\CommentController@update')->whereNumber('comment');
     Route::delete('/comments/{comment}', 'App\Http\Controllers\CommentController@destroy')->whereNumber('comment');
+    // Marking the comment that answered it, which only whoever owns the
+    // commented-on thing may do
+    Route::post('/comments/{comment}/helpful', 'App\Http\Controllers\CommentController@toggleHelpful')->whereNumber('comment');
 });
 
 Route::get('/tag/taxonomies', '\App\Http\Controllers\TaxonomyController@getTaxonomies');

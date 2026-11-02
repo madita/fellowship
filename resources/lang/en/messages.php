@@ -76,6 +76,7 @@ return [
         'cannot_edit'    => 'You can no longer edit this comment.',
         'cannot_delete'  => 'You do not have permission to delete this comment.',
         'deleted'        => 'Comment deleted',
+        'cannot_mark_helpful' => 'Only whoever this belongs to can mark a comment as helpful.',
     ],
     'watch' => [
         'not_found' => 'That is not something you can watch.',

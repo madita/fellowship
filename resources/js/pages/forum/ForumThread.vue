@@ -137,7 +137,7 @@
                         :can-moderate="forumStore.threadPermissions.can_moderate"
                         :can-delete-others="forumStore.threadPermissions.can_delete_others"
                         :busy-post-id="busyPostId"
-                        @mark-solution="onMarkSolution"
+                        @toggle-helpful="onToggleHelpful"
                         @delete-post="onDeletePost"
                         @quote-reply="onQuoteReply"
                         @update-post="onUpdatePost"
@@ -410,8 +410,8 @@ export default {
         onToggleLike(postId) {
             return this.runPostAction(postId, () => this.forumStore.toggleLike(postId), 'forum.errorSubmitting')
         },
-        onMarkSolution(postId) {
-            return this.runPostAction(postId, () => this.forumStore.markAsSolution(postId), 'forum.errorSubmitting')
+        onToggleHelpful(postId) {
+            return this.runPostAction(postId, () => this.forumStore.toggleHelpful(postId), 'forum.errorSubmitting')
         },
         // Keep the store's thread in step with the poll card
         onPollChanged(poll) {

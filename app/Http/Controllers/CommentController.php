@@ -43,6 +43,9 @@ class CommentController extends Controller
         return response()->json([
             'data'  => $subject->comments()->with('replies')->get(),
             'count' => $subject->allComments()->count(),
+            // Sent with the discussion rather than guessed at by the
+            // client, which cannot know a host's ownership rules
+            'can_mark_helpful' => $subject->isHelpfulMarkableBy($request->user()),
         ]);
     }
 
@@ -117,6 +120,30 @@ class CommentController extends Controller
         $comment->delete();
 
         return response()->json(['message' => __('messages.comments.deleted')]);
+    }
+
+    /**
+     * Mark the comment that answered this, or take the mark away.
+     *
+     * Whoever wrote the thing being discussed decides, the same way the
+     * thread author decides in the forum. One comment per discussion
+     * holds the mark, so marking another moves it.
+     */
+    public function toggleHelpful(Request $request, Comment $comment): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        if ( ! $comment->canBeMarkedHelpfulBy($user)) {
+            abort(403, __('messages.comments.cannot_mark_helpful'));
+        }
+
+        $helpful = $comment->toggleHelpful($user);
+
+        return response()->json([
+            'helpful' => $helpful,
+            'comment' => $comment->fresh(),
+        ]);
     }
 
     /**

@@ -1,5 +1,5 @@
 <template>
-    <div class="d-flex align-start py-2">
+    <div class="d-flex align-start py-2" :class="{ 'comment-helpful': comment.is_helpful }">
         <user-avatar :user="comment.user" size="32" link-to-profile class="mr-3 mt-1" />
 
         <div class="flex-grow-1" style="min-width: 0;">
@@ -10,6 +10,15 @@
                 <span class="text-caption text-medium-emphasis">
                     {{ comment.time_ago }}
                 </span>
+                <v-chip
+                    v-if="comment.is_helpful"
+                    color="success"
+                    variant="tonal"
+                    size="x-small"
+                    prepend-icon="mdi-check-circle"
+                >
+                    {{ $t('comments.helpful') }}
+                </v-chip>
             </div>
 
             <div class="comment-body text-body-2 mt-1" v-html="rendered"></div>
@@ -24,6 +33,18 @@
                     @click="$emit('reply', comment)"
                 >
                     {{ $t('comments.reply') }}
+                </v-btn>
+                <v-btn
+                    v-if="canMarkHelpful"
+                    variant="text"
+                    size="x-small"
+                    density="comfortable"
+                    color="success"
+                    :prepend-icon="comment.is_helpful ? 'mdi-close-circle' : 'mdi-check-circle'"
+                    :loading="busyId === comment.id"
+                    @click="$emit('toggle-helpful', comment)"
+                >
+                    {{ comment.is_helpful ? $t('comments.unmarkHelpful') : $t('comments.markHelpful') }}
                 </v-btn>
                 <v-btn
                     v-if="canRemove"
@@ -51,10 +72,15 @@ const props = defineProps({
     comment: { type: Object, required: true },
     currentUser: { type: Object, default: null },
     canReply: { type: Boolean, default: false },
+    // Whether this reader may say which comment answered the thing
+    // being discussed. The server decides and sends it down with the
+    // discussion, because a host's ownership rule is not the client's
+    // to guess at.
+    canMarkHelpful: { type: Boolean, default: false },
     busyId: { type: [Number, String], default: null },
 });
 
-defineEmits(['reply', 'remove']);
+defineEmits(['reply', 'remove', 'toggle-helpful']);
 
 const rendered = computed(() => renderRichText(props.comment.content));
 
@@ -75,5 +101,13 @@ const canRemove = computed(() => {
 <style scoped>
 .comment-body :deep(p:last-child) {
     margin-bottom: 0;
+}
+
+/* The answer stands out without a card of its own, which would break
+   the indent the replies are read by */
+.comment-helpful {
+    border-left: 3px solid rgb(var(--v-theme-success));
+    margin-left: -12px;
+    padding-left: 9px;
 }
 </style>

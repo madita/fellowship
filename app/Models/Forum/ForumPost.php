@@ -3,8 +3,10 @@
 namespace App\Models\Forum;
 
 use App\Models\User;
+use App\Traits\Helpful;
 use App\Traits\Likeable;
 use App\Traits\SafeSearchable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,20 +15,18 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ForumPost extends Model
 {
-    use HasFactory, Likeable, SafeSearchable, SoftDeletes;
+    use HasFactory, Helpful, Likeable, SafeSearchable, SoftDeletes;
 
     protected $fillable = [
         'thread_id',
         'user_id',
         'parent_id',
         'body',
-        'is_solution',
         'like_count',
         'meta',
     ];
 
     protected $casts = [
-        'is_solution' => 'boolean',
         'like_count'  => 'integer',
         'meta'        => 'array',
     ];
@@ -109,10 +109,7 @@ class ForumPost extends Model
             return true;
         }
 
-        // Check forum-level moderate roles
-        $moderateRoles = $this->thread->category->properties['moderate_roles'] ?? [];
-
-        return ! empty($moderateRoles) && $user->hasAnyRole($moderateRoles);
+        return $this->moderatedBy($user);
     }
 
     /**
@@ -135,14 +132,40 @@ class ForumPost extends Model
     }
 
     /**
-     * Mark this post as the solution.
+     * Whether the member looks after the category this post sits in.
+     * Asked by canEdit() and by canBeMarkedHelpfulBy(), which used to
+     * spell the same lookup out one each.
      */
-    public function markAsSolution(): void
+    private function moderatedBy(User $user): bool
     {
-        // Unmark other solutions in this thread
-        $this->thread->posts()->where('id', '!=', $this->id)->update(['is_solution' => false]);
+        $roles = $this->thread?->category?->properties['moderate_roles'] ?? [];
 
-        $this->update(['is_solution' => true]);
+        return ! empty($roles) && $user->hasAnyRole($roles);
+    }
+
+    /**
+     * The other replies in the same thread: a thread has one answer.
+     */
+    protected function helpfulSiblings(): ?Builder
+    {
+        // By thread_id, rather than through the thread relation, which
+        // would be loaded only to be thrown away again
+        return static::where('thread_id', $this->thread_id)->whereKeyNot($this->getKey());
+    }
+
+    /**
+     * Whoever asked decides what answered it. So do the people who look
+     * after the category, and the admins.
+     */
+    public function canBeMarkedHelpfulBy(?User $user): bool
+    {
+        if ( ! $user) {
+            return false;
+        }
+
+        return (int) $user->id === (int) $this->thread?->user_id
+            || $user->isAdmin()
+            || $this->moderatedBy($user);
     }
 
     public function searchableAs(): string
@@ -164,7 +187,7 @@ class ForumPost extends Model
             'category_name' => $this->thread?->category?->term?->title ?? '',
             'category_slug' => $this->thread?->category?->term?->slug ?? '',
             'taxonomy_id'   => $this->thread?->taxonomy_id,
-            'is_solution'   => $this->is_solution,
+            'is_helpful'    => $this->is_helpful,
             'created_at'    => $this->created_at?->timestamp,
         ];
     }

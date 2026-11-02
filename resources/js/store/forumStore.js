@@ -228,21 +228,24 @@ export const useForumStore = defineStore('forum', {
             }
         },
 
-        async markAsSolution(postId) {
+        // Marking the reply that answered the thread, and unmarking it:
+        // one request, because a thread has one answer at a time. It used
+        // to only ever mark, so "Unmark Helpful" did nothing.
+        async toggleHelpful(postId) {
             this.submitting = true
             this.error = null
             try {
-                const response = await axios.post(`/api/posts/${postId}/mark-as-solution`)
-                const updatedPost = response.data.post
+                const { data } = await axios.post(`/api/posts/${postId}/helpful`)
 
-                // Clear previous solution and set new one
+                // The server moves the mark rather than adding one, so every
+                // post hears about it, not only the one that was clicked
                 for (const post of this.posts) {
-                    post.is_solution = post.id === updatedPost.id ? updatedPost.is_solution : false
+                    post.is_helpful = post.id === data.post.id && data.helpful
                 }
 
-                return updatedPost
+                return data.post
             } catch (error) {
-                this.error = error.response?.data?.message || 'Failed to mark as solution'
+                this.error = error.response?.data?.message || 'Failed to mark the answer helpful'
                 throw error
             } finally {
                 this.submitting = false
