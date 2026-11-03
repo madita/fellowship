@@ -132,28 +132,6 @@ class ForumPost extends Model
     }
 
     /**
-     * Whether the member looks after the category this post sits in.
-     * Asked by canEdit() and by canBeMarkedHelpfulBy(), which used to
-     * spell the same lookup out one each.
-     */
-    private function moderatedBy(User $user): bool
-    {
-        $roles = $this->thread?->category?->properties['moderate_roles'] ?? [];
-
-        return ! empty($roles) && $user->hasAnyRole($roles);
-    }
-
-    /**
-     * The other replies in the same thread: a thread has one answer.
-     */
-    protected function helpfulSiblings(): ?Builder
-    {
-        // By thread_id, rather than through the thread relation, which
-        // would be loaded only to be thrown away again
-        return static::where('thread_id', $this->thread_id)->whereKeyNot($this->getKey());
-    }
-
-    /**
      * Whoever asked decides what answered it. So do the people who look
      * after the category, and the admins.
      */
@@ -197,6 +175,16 @@ class ForumPost extends Model
         return ! $this->trashed();
     }
 
+    /**
+     * The other replies in the same thread: a thread has one answer.
+     */
+    protected function helpfulSiblings(): ?Builder
+    {
+        // By thread_id, rather than through the thread relation, which
+        // would be loaded only to be thrown away again
+        return static::where('thread_id', $this->thread_id)->whereKeyNot($this->getKey());
+    }
+
     // likes(), likers(), isLikedBy(), like(), unlike() and toggleLike()
     // all come from the Likeable trait.
 
@@ -225,5 +213,17 @@ class ForumPost extends Model
                 'reply_count' => $post->thread->posts()->count(),
             ]);
         });
+    }
+
+    /**
+     * Whether the member looks after the category this post sits in.
+     * Asked by canEdit() and by canBeMarkedHelpfulBy(), which used to
+     * spell the same lookup out one each.
+     */
+    private function moderatedBy(User $user): bool
+    {
+        $roles = $this->thread?->category?->properties['moderate_roles'] ?? [];
+
+        return ! empty($roles) && $user->hasAnyRole($roles);
     }
 }

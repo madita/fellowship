@@ -24,7 +24,7 @@ use Spatie\Permission\PermissionRegistrar;
 class PermissionsTableSeeder extends Seeder
 {
     /**
-     * name => [display name, category, default for a new role?, why]
+     * name => [display name, category, default for a new role?, why].
      */
     private const PERMISSIONS = [
         'manage-permission'  => ['Manage Permission', 'permission', true, null],

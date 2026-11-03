@@ -124,17 +124,6 @@ trait Commentable
     }
 
     /**
-     * Who the thing being discussed belongs to. Most hosts keep that in
-     * `user_id`; the ones that do not say where it is instead.
-     */
-    protected function commentOwnerId(): ?int
-    {
-        $owner = $this->getAttribute('user_id');
-
-        return $owner === null ? null : (int) $owner;
-    }
-
-    /**
      * Called by Comment when one is added or removed, so the total is
      * maintained in one place whatever route created the comment.
      */
@@ -149,6 +138,17 @@ trait Commentable
         $by > 0
             ? $this->increment($column, $by)
             : $this->decrement($column, abs($by));
+    }
+
+    /**
+     * Who the thing being discussed belongs to. Most hosts keep that in
+     * `user_id`; the ones that do not say where it is instead.
+     */
+    protected function commentOwnerId(): ?int
+    {
+        $owner = $this->getAttribute('user_id');
+
+        return $owner === null ? null : (int) $owner;
     }
 
     /**

@@ -21,7 +21,7 @@ use Illuminate\Database\Seeder;
 class MenuSeeder extends Seeder
 {
     /**
-     * slug => [name, location, description, items]
+     * slug => [name, location, description, items].
      *
      * An item may carry `children`, which is one level deep - all the
      * header renders.
