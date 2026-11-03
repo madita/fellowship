@@ -109,21 +109,21 @@ trait Helpful
     }
 
     /**
-     * The other answers to the same question. Null where there is no such
-     * thing, and then more than one answer may be marked.
-     */
-    protected function helpfulSiblings(): ?Builder
-    {
-        return null;
-    }
-
-    /**
      * Who may decide. False until the model says, because the wrong answer
      * to this is "anybody who asks".
      */
     public function canBeMarkedHelpfulBy(?User $user): bool
     {
         return false;
+    }
+
+    /**
+     * The other answers to the same question. Null where there is no such
+     * thing, and then more than one answer may be marked.
+     */
+    protected function helpfulSiblings(): ?Builder
+    {
+        return null;
     }
 
     private function unmarkSiblings(): void

@@ -70,18 +70,6 @@ class Comment extends Model
     }
 
     /**
-     * The other comments on the same thing: one answer per discussion,
-     * as in a thread. A reply counts, because the answer is as likely
-     * to be under a comment as beside it.
-     */
-    protected function helpfulSiblings(): ?Builder
-    {
-        return static::where('commentable_type', $this->commentable_type)
-            ->where('commentable_id', $this->commentable_id)
-            ->whereKeyNot($this->getKey());
-    }
-
-    /**
      * Whoever the commented-on thing belongs to decides, which is the
      * thing's own business - see the Commentable trait.
      */
@@ -120,6 +108,18 @@ class Comment extends Model
         }
 
         return (int) $user->id === (int) $this->user_id || $user->isAdmin();
+    }
+
+    /**
+     * The other comments on the same thing: one answer per discussion,
+     * as in a thread. A reply counts, because the answer is as likely
+     * to be under a comment as beside it.
+     */
+    protected function helpfulSiblings(): ?Builder
+    {
+        return static::where('commentable_type', $this->commentable_type)
+            ->where('commentable_id', $this->commentable_id)
+            ->whereKeyNot($this->getKey());
     }
 
     /**
