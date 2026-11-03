@@ -4,7 +4,6 @@
         :description="$t('settings.advanced.api.description')"
         icon="mdi-api"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'advanced' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

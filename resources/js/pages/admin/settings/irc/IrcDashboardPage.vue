@@ -4,7 +4,6 @@
         :description="$t('irc.admin.dashboardDescription')"
         icon="mdi-monitor-dashboard"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'irc' } }"
         :show-save-button="false"
     >
         <!-- Daemon Status -->

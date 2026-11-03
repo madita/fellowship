@@ -70,12 +70,13 @@ class ActivityServiceProvider extends ServiceProvider
 
         // Being marked helpful is worth a line; an ordinary edit is not
         ForumPost::updated(function (ForumPost $post): void {
-            if ($post->wasChanged('is_solution') && $post->is_solution) {
+            if ($post->wasChanged('helpful_at') && $post->is_helpful) {
                 Activities::record(
                     Activities::FORUM,
                     'solution_marked',
                     $post,
-                    null,
+                    // Who decided is recorded now, so the line can say so
+                    $post->markedHelpfulBy,
                     ['thread_title' => $post->thread?->title]
                 );
             }

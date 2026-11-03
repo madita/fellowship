@@ -1,6 +1,6 @@
 <template>
-    <div class="forum-post-item" :class="{ 'is-solution': post.is_solution }">
-        <v-card variant="outlined" rounded="lg" class="mb-3" :color="post.is_solution ? 'success' : undefined">
+    <div class="forum-post-item" :class="{ 'is-helpful': post.is_helpful }">
+        <v-card variant="outlined" rounded="lg" class="mb-3" :color="post.is_helpful ? 'success' : undefined">
             <!-- Post Header -->
             <v-card-text class="pb-2">
                 <div class="d-flex align-center mb-3">
@@ -27,13 +27,13 @@
                     </div>
                     <v-spacer />
                     <v-chip
-                        v-if="post.is_solution"
+                        v-if="post.is_helpful"
                         color="success"
                         variant="tonal"
                         size="small"
                         prepend-icon="mdi-check-circle"
                     >
-                        {{ $t('forum.solution') }}
+                        {{ $t('forum.helpful') }}
                     </v-chip>
                 </div>
 
@@ -99,16 +99,16 @@
                     {{ $t('forum.edit') }}
                 </v-btn>
                 <v-btn
-                    v-if="canMarkSolution"
+                    v-if="canMarkHelpful"
                     size="small"
                     variant="text"
-                    :prepend-icon="post.is_solution ? 'mdi-close-circle' : 'mdi-check-circle'"
+                    :prepend-icon="post.is_helpful ? 'mdi-close-circle' : 'mdi-check-circle'"
                     color="success"
-                    :loading="busy && busyAction === 'solution'"
-                    :disabled="busy && busyAction !== 'solution'"
-                    @click="emitAction('solution', 'mark-solution')"
+                    :loading="busy && busyAction === 'helpful'"
+                    :disabled="busy && busyAction !== 'helpful'"
+                    @click="emitAction('helpful', 'toggle-helpful')"
                 >
-                    {{ post.is_solution ? $t('forum.unmarkSolution') : $t('forum.markAsSolution') }}
+                    {{ post.is_helpful ? $t('forum.unmarkHelpful') : $t('forum.markHelpful') }}
                 </v-btn>
                 <v-spacer />
                 <v-btn
@@ -140,7 +140,7 @@
                 :can-delete-others="canDeleteOthers"
                 :busy-post-id="busyPostId"
                 :depth="depth + 1"
-                @mark-solution="$emit('mark-solution', $event)"
+                @toggle-helpful="$emit('toggle-helpful', $event)"
                 @delete-post="$emit('delete-post', $event)"
                 @quote-reply="$emit('quote-reply', $event)"
                 @update-post="$emit('update-post', $event)"
@@ -171,7 +171,7 @@ export default {
         busyPostId: { type: [Number, String], default: null },
         depth: { type: Number, default: 0 }
     },
-    emits: ['mark-solution', 'delete-post', 'quote-reply', 'update-post', 'toggle-like'],
+    emits: ['toggle-helpful', 'delete-post', 'quote-reply', 'update-post', 'toggle-like'],
     data() {
         return {
             editing: false,
@@ -202,7 +202,7 @@ export default {
         canDelete() {
             return this.isAuthor || this.isAdmin || this.canDeleteOthers
         },
-        canMarkSolution() {
+        canMarkHelpful() {
             return (this.isThreadAuthor || this.isAdmin || this.canModerate) && !this.threadLocked
         }
     },
@@ -250,7 +250,7 @@ export default {
 </script>
 
 <style scoped>
-.forum-post-item.is-solution > .v-card {
+.forum-post-item.is-helpful > .v-card {
     border-color: rgb(var(--v-theme-success));
     background: rgba(var(--v-theme-success), 0.05);
 }

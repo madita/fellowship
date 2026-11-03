@@ -4,7 +4,6 @@
         :description="$t('sandbox.admin.statisticsDescription')"
         icon="mdi-chart-bar"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'sandbox' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

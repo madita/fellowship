@@ -17,10 +17,12 @@
                     <comment-row
                         :comment="topic"
                         :current-user="currentUser"
+                        :can-mark-helpful="canMarkHelpful"
                         :busy-id="busyId"
                         can-reply
                         @reply="startReply"
                         @remove="remove"
+                        @toggle-helpful="toggleHelpful"
                     />
 
                     <div v-if="topic.replies?.length" class="comment-replies">
@@ -29,8 +31,10 @@
                             :key="reply.id"
                             :comment="reply"
                             :current-user="currentUser"
+                            :can-mark-helpful="canMarkHelpful"
                             :busy-id="busyId"
                             @remove="remove"
+                            @toggle-helpful="toggleHelpful"
                         />
                     </div>
 
@@ -134,6 +138,9 @@ const body = ref('');
 const replyBody = ref('');
 const replyingTo = ref(null);
 const busyId = ref(null);
+// Sent with the discussion: whether this reader is the one who gets to
+// say which comment answered it
+const canMarkHelpful = ref(false);
 
 const hasText = value => hasRichText(value);
 
@@ -148,6 +155,7 @@ const load = async () => {
         const { data } = await axios.get(`/api/comments/${props.kind}/${props.id}`);
 
         topics.value = data.data ?? [];
+        canMarkHelpful.value = Boolean(data.can_mark_helpful);
         emit('count', data.count ?? total.value);
     } catch (error) {
         await dialog.requestError(error, t('comments.loadFailed'));
@@ -188,6 +196,34 @@ const submit = async (parentId) => {
         await dialog.requestError(error, t('comments.postFailed'));
     } finally {
         posting.value = false;
+    }
+};
+
+/**
+ * Mark the comment that answered this, or take the mark away.
+ *
+ * One comment per discussion holds it, so the server moving the mark
+ * has to be reflected on all of them - including the replies, where the
+ * answer is as likely to be as beside them.
+ */
+const toggleHelpful = async (comment) => {
+    if (busyId.value) return;
+
+    busyId.value = comment.id;
+    try {
+        const { data } = await axios.post(`/api/comments/${comment.id}/helpful`);
+
+        for (const topic of topics.value) {
+            topic.is_helpful = topic.id === comment.id && data.helpful;
+
+            for (const reply of topic.replies ?? []) {
+                reply.is_helpful = reply.id === comment.id && data.helpful;
+            }
+        }
+    } catch (error) {
+        await dialog.requestError(error, t('comments.helpfulFailed'));
+    } finally {
+        busyId.value = null;
     }
 };
 

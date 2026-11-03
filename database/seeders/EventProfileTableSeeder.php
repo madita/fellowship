@@ -14,6 +14,10 @@ class EventProfileTableSeeder extends Seeder
      */
     public function run()
     {
+        if (EventProfile::query()->exists()) {
+            return;
+        }
+
         $eventProfile = EventProfile::create([
             'name'    => 'Treffen',
             'options' => '{

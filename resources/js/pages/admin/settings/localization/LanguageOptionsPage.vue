@@ -4,7 +4,6 @@
         :description="$t('settings.localization.languageOptions.description')"
         icon="mdi-translate"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'localization' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

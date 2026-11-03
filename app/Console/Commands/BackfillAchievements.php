@@ -147,7 +147,7 @@ class BackfillAchievements extends Command
         return array_filter([
             'forum.thread.created' => $this->count('forum_threads', 'user_id'),
             'forum.post.created'   => $this->count('forum_posts', 'user_id'),
-            'forum.post.solution'  => $this->count('forum_posts', 'user_id', fn ($q) => $q->where('is_solution', true)),
+            'forum.post.solution'  => $this->count('forum_posts', 'user_id', fn ($q) => $q->whereNotNull('helpful_at')),
             // Likes share a table with the timeline's, so only the ones
             // left on a forum post count — and they count for whoever
             // wrote the post, which is what the join is for

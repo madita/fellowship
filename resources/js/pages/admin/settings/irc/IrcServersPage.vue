@@ -4,7 +4,6 @@
         :description="$t('irc.admin.serversDescription')"
         icon="mdi-server-network"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'irc' } }"
         :show-save-button="false"
     >
         <settings-card icon="mdi-server-network" :title="$t('irc.admin.servers')">

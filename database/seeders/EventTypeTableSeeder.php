@@ -14,6 +14,10 @@ class EventTypeTableSeeder extends Seeder
      */
     public function run()
     {
+        if (EventType::query()->exists()) {
+            return;
+        }
+
         $eventType = EventType::create([
             'event_profile_id' => 1,
             'name'             => 'Treffen',

@@ -321,6 +321,7 @@ return [
         'cannot_edit'    => 'Dieser Kommentar kann nicht mehr bearbeitet werden.',
         'cannot_delete'  => 'Sie haben keine Berechtigung, diesen Kommentar zu löschen.',
         'deleted'        => 'Kommentar gelöscht',
+        'cannot_mark_helpful' => 'Nur wem dies gehört, kann einen Kommentar als hilfreich markieren.',
     ],
     'watch' => [
         'not_found' => 'Das kann nicht beobachtet werden.',

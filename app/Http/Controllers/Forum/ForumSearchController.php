@@ -283,7 +283,7 @@ class ForumSearchController extends Controller
             'thread_slug'   => $post->thread?->slug,
             'category_name' => $post->thread?->category?->term?->title,
             'category_slug' => $post->thread?->category?->term?->slug,
-            'is_solution'   => $post->is_solution,
+            'is_helpful'    => $post->is_helpful,
             'created_at'    => $post->created_at,
         ];
     }

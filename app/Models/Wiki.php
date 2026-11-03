@@ -171,6 +171,19 @@ class Wiki extends Model implements TranslatableContract
     }
 
     /**
+     * A wiki page has no author of its own: the text, and so whoever
+     * wrote it, lives on the wikiable. Asked when somebody marks a
+     * comment in the discussion as the one that helped.
+     */
+    protected function commentOwnerId(): ?int
+    {
+        $model = $this->wikiable_type;
+        $owner = $model ? $model::find($this->wikiable_id)?->user_id : null;
+
+        return $owner === null ? null : (int) $owner;
+    }
+
+    /**
      * Boot the model.
      */
     protected static function boot()

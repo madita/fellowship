@@ -84,7 +84,7 @@ class AchievementServiceProvider extends ServiceProvider
         // Being marked helpful is the author's achievement, not the
         // marker's, and it counts the once — when the flag goes up.
         ForumPost::updated(function (ForumPost $post) {
-            if ($post->wasChanged('is_solution') && $post->is_solution) {
+            if ($post->wasChanged('helpful_at') && $post->is_helpful) {
                 Achievements::record($post->author, 'forum.post.solution');
             }
         });

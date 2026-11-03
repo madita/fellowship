@@ -6,6 +6,7 @@ use App\Models\Comment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 /**
  * Lets members comment on this model, and reply to each other.
@@ -55,6 +56,14 @@ trait Commentable
     }
 
     /**
+     * The comment that answered this, where one has been marked.
+     */
+    public function helpfulComment(): MorphOne
+    {
+        return $this->morphOne(Comment::class, 'commentable')->whereNotNull('helpful_at');
+    }
+
+    /**
      * Say something, or reply to something already said.
      */
     public function addComment(User $user, string $content, ?int $parentId = null): Comment
@@ -92,6 +101,29 @@ trait Commentable
     }
 
     /**
+     * Whether the member may mark one of these comments as the one that
+     * helped. Whoever wrote the thing being discussed decides, the same
+     * way the thread author decides in the forum, and an admin may too.
+     *
+     * A model with no single owner - or one that does not want the
+     * feature at all - overrides this and says so.
+     */
+    public function isHelpfulMarkableBy(?User $user): bool
+    {
+        if ( ! $user) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        $owner = $this->commentOwnerId();
+
+        return $owner !== null && (int) $user->id === $owner;
+    }
+
+    /**
      * Called by Comment when one is added or removed, so the total is
      * maintained in one place whatever route created the comment.
      */
@@ -106,6 +138,17 @@ trait Commentable
         $by > 0
             ? $this->increment($column, $by)
             : $this->decrement($column, abs($by));
+    }
+
+    /**
+     * Who the thing being discussed belongs to. Most hosts keep that in
+     * `user_id`; the ones that do not say where it is instead.
+     */
+    protected function commentOwnerId(): ?int
+    {
+        $owner = $this->getAttribute('user_id');
+
+        return $owner === null ? null : (int) $owner;
     }
 
     /**

@@ -148,7 +148,7 @@ class ForumController extends Controller
                 break;
             case 'solved':
                 $query->whereHas('posts', function ($q) {
-                    $q->where('is_solution', true);
+                    $q->helpful();
                 });
                 break;
         }

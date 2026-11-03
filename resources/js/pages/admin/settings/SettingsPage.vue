@@ -68,91 +68,11 @@ const dynamicComponent = shallowRef(null);
 const category = computed(() => getCategoryBySlug(route.params.category));
 const setting = computed(() => getSettingBySlug(route.params.category, route.params.setting));
 
-// Component mapping for dynamic imports
-const componentMap = {
-    // General
-    'general/AppInfoPage': () => import('@/pages/admin/settings/general/AppInfoPage.vue'),
-    'general/MaintenanceModePage': () => import('@/pages/admin/settings/general/MaintenanceModePage.vue'),
-    'general/AdminContactPage': () => import('@/pages/admin/settings/general/AdminContactPage.vue'),
-    'general/PublicContactPage': () => import('@/pages/admin/settings/general/PublicContactPage.vue'),
-    'general/SocialMediaPage': () => import('@/pages/admin/settings/general/SocialMediaPage.vue'),
-    'general/MapsPage': () => import('@/pages/admin/settings/general/MapsPage.vue'),
-
-    // Features
-    'features/FeatureTogglesPage': () => import('@/pages/admin/settings/features/FeatureTogglesPage.vue'),
-
-    // Localization
-    'localization/RegionalSettingsPage': () => import('@/pages/admin/settings/localization/RegionalSettingsPage.vue'),
-    'localization/LanguageOptionsPage': () => import('@/pages/admin/settings/localization/LanguageOptionsPage.vue'),
-
-    // Branding
-    'branding/LogosIconsPage': () => import('@/pages/admin/settings/branding/LogosIconsPage.vue'),
-    'branding/BrandingOptionsPage': () => import('@/pages/admin/settings/branding/BrandingOptionsPage.vue'),
-
-    // Theme
-    'theme/ThemeModePage': () => import('@/pages/admin/settings/theme/ThemeModePage.vue'),
-    'theme/LightColorsPage': () => import('@/pages/admin/settings/theme/LightColorsPage.vue'),
-    'theme/DarkColorsPage': () => import('@/pages/admin/settings/theme/DarkColorsPage.vue'),
-    'theme/BackgroundImagesPage': () => import('@/pages/admin/settings/theme/BackgroundImagesPage.vue'),
-    'theme/TypographyPage': () => import('@/pages/admin/settings/theme/TypographyPage.vue'),
-
-    // OAuth
-    'oauth/GoogleOAuthPage': () => import('@/pages/admin/settings/oauth/GoogleOAuthPage.vue'),
-    'oauth/DiscordOAuthPage': () => import('@/pages/admin/settings/oauth/DiscordOAuthPage.vue'),
-    'oauth/GitHubOAuthPage': () => import('@/pages/admin/settings/oauth/GitHubOAuthPage.vue'),
-    'oauth/FacebookOAuthPage': () => import('@/pages/admin/settings/oauth/FacebookOAuthPage.vue'),
-    'oauth/OAuthGeneralPage': () => import('@/pages/admin/settings/oauth/OAuthGeneralPage.vue'),
-
-    // SEO
-    'seo/MetadataPage': () => import('@/pages/admin/settings/seo/MetadataPage.vue'),
-    'seo/OpenGraphPage': () => import('@/pages/admin/settings/seo/OpenGraphPage.vue'),
-    'seo/TwitterCardPage': () => import('@/pages/admin/settings/seo/TwitterCardPage.vue'),
-    'seo/SearchEnginePage': () => import('@/pages/admin/settings/seo/SearchEnginePage.vue'),
-
-    // Homepage
-    'homepage/SectionsPage': () => import('@/pages/admin/settings/homepage/SectionsPage.vue'),
-    'homepage/WidgetsPage': () => import('@/pages/admin/settings/homepage/WidgetsPage.vue'),
-    'homepage/MenuPage': () => import('@/pages/admin/settings/homepage/MenuPage.vue'),
-
-    // Navigation
-    'menus/BreadcrumbsPage': () => import('@/pages/admin/settings/menus/BreadcrumbsPage.vue'),
-
-    // Footer
-    'footer/FooterSectionsPage': () => import('@/pages/admin/settings/footer/FooterSectionsPage.vue'),
-    'footer/FooterWidgetsPage': () => import('@/pages/admin/settings/footer/FooterWidgetsPage.vue'),
-    'footer/CustomHtmlPage': () => import('@/pages/admin/settings/footer/CustomHtmlPage.vue'),
-
-    // Achievements
-    'achievements/AchievementsSettingsPage': () => import('@/pages/admin/settings/achievements/AchievementsSettingsPage.vue'),
-    'achievements/RanksSettingsPage': () => import('@/pages/admin/settings/achievements/RanksSettingsPage.vue'),
-
-    // Help & Tours
-    'help/HelpToursPage': () => import('@/pages/admin/settings/help/HelpToursPage.vue'),
-
-    // IRC
-    'irc/IrcClientSettingsPage': () => import('@/pages/admin/settings/irc/IrcClientSettingsPage.vue'),
-    'irc/IrcEventChannelsPage': () => import('@/pages/admin/settings/irc/IrcEventChannelsPage.vue'),
-    'irc/IrcDashboardPage': () => import('@/pages/admin/settings/irc/IrcDashboardPage.vue'),
-    'irc/IrcServersPage': () => import('@/pages/admin/settings/irc/IrcServersPage.vue'),
-    'irc/IrcConnectionsPage': () => import('@/pages/admin/settings/irc/IrcConnectionsPage.vue'),
-    'irc/IrcCharactersPage': () => import('@/pages/admin/settings/irc/IrcCharactersPage.vue'),
-    // Moderation
-    'moderation/AutoApprovalPage': () => import('@/pages/admin/settings/moderation/AutoApprovalPage.vue'),
-    // Sandbox
-    'sandbox/ServerStatusPage': () => import('@/pages/admin/settings/sandbox/ServerStatusPage.vue'),
-    'sandbox/FeatureSettingsPage': () => import('@/pages/admin/settings/sandbox/FeatureSettingsPage.vue'),
-    'sandbox/LimitsPage': () => import('@/pages/admin/settings/sandbox/LimitsPage.vue'),
-    'sandbox/StatisticsPage': () => import('@/pages/admin/settings/sandbox/StatisticsPage.vue'),
-
-    // Advanced
-    'advanced/CachingPage': () => import('@/pages/admin/settings/advanced/CachingPage.vue'),
-    'advanced/PwaPage': () => import('@/pages/admin/settings/advanced/PwaPage.vue'),
-    'advanced/NewsletterPage': () => import('@/pages/admin/settings/advanced/NewsletterPage.vue'),
-    'advanced/ApiSettingsPage': () => import('@/pages/admin/settings/advanced/ApiSettingsPage.vue'),
-    'advanced/CookieConsentPage': () => import('@/pages/admin/settings/advanced/CookieConsentPage.vue'),
-    'advanced/CustomScriptsPage': () => import('@/pages/admin/settings/advanced/CustomScriptsPage.vue'),
-    'advanced/LegalCompliancePage': () => import('@/pages/admin/settings/advanced/LegalCompliancePage.vue'),
-};
+// Every settings page, found by where it lives rather than listed here
+// one by one. A page belongs to the category whose folder it sits in,
+// so adding one - or moving it to another category - needs no entry in
+// this file. Still lazy: each value is an import waiting to be called.
+const pageModules = import.meta.glob('./*/*.vue');
 
 async function loadComponent() {
     isLoading.value = true;
@@ -164,8 +84,8 @@ async function loadComponent() {
 
         // Load the dynamic component
         if (setting.value && category.value) {
-            const componentKey = `${route.params.category}/${setting.value.component}`;
-            const importFn = componentMap[componentKey];
+            const componentKey = `./${route.params.category}/${setting.value.component}.vue`;
+            const importFn = pageModules[componentKey];
 
             if (importFn) {
                 dynamicComponent.value = defineAsyncComponent({

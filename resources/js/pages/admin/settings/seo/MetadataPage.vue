@@ -4,7 +4,6 @@
         :description="$t('settings.seo.metadata.description')"
         icon="mdi-tag-text-outline"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'seo' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

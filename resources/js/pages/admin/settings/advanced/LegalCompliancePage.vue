@@ -4,7 +4,6 @@
         :description="$t('settings.advanced.legal.description')"
         icon="mdi-scale-balance"
         :category-title="category?.title"
-        :back-route="{ name: 'admin-settings-category', params: { category: 'advanced' } }"
         :is-saving="isSaving"
         @save="$emit('save')"
     >

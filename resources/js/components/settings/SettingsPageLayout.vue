@@ -93,7 +93,16 @@ defineEmits(['save']);
 
 const route = useRoute();
 
-const backTo = computed(() => props.backRoute || { name: 'admin-settings' });
+// Back goes to the category the page was opened under, which the route
+// already says. Pages used to name their own category here, which meant
+// every one of them had to be edited whenever the grouping changed.
+const backTo = computed(() => {
+    if (props.backRoute) return props.backRoute;
+
+    return route.params.category
+        ? { name: 'admin-settings-category', params: { category: route.params.category } }
+        : { name: 'admin-settings' };
+});
 
 const breadcrumbs = computed(() => {
     const items = [

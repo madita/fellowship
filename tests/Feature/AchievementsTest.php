@@ -251,7 +251,7 @@ class AchievementsTest extends TestCase
             'body'      => '<p>A reply</p>',
         ]);
 
-        $post->update(['is_solution' => true]);
+        $post->markHelpful($this->member);
 
         $held = $this->member->fresh()->achievements()->pluck('achievements.id');
 

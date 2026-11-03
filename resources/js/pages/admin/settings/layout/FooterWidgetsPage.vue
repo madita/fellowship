@@ -1,0 +1,372 @@
+<template>
+    <settings-page-layout
+        :title="$t('settings.footer.allWidgets')"
+        :description="$t('settings.footer.description')"
+        icon="mdi-widgets-outline"
+        :category-title="category?.title"
+        :show-save-button="false"
+    >
+        <!-- Action Buttons -->
+        <div class="d-flex justify-space-between align-center flex-wrap ga-2 mb-4">
+            <div class="d-flex flex-wrap ga-2">
+                <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">
+                    {{ $t('settings.footer.addWidget') }}
+                </v-btn>
+                <v-btn variant="tonal" prepend-icon="mdi-refresh" @click="loadWidgets" :loading="isLoading">
+                    {{ $t('settings.footer.refresh') }}
+                </v-btn>
+            </div>
+            <v-chip v-if="hasChanges" color="warning" variant="tonal" size="small">
+                {{ $t('settings.footer.unsavedChanges') }}
+            </v-chip>
+        </div>
+
+        <!-- Quick Stats -->
+        <v-row class="mb-4">
+            <v-col cols="6" md="3">
+                <v-card>
+                    <v-card-text class="text-center">
+                        <div class="text-h4">{{ widgets.length }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('settings.footer.totalWidgets') }}</div>
+                    </v-card-text>
+                </v-card>
+            </v-col>
+            <v-col cols="6" md="3">
+                <v-card>
+                    <v-card-text class="text-center">
+                        <div class="text-h4 text-success">{{ enabledCount }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ $t('settings.footer.enabled') }}</div>
+                    </v-card-text>
+                </v-card>
+            </v-col>
+        </v-row>
+
+        <!-- Widgets List with Drag and Drop -->
+        <v-card>
+            <v-card-title class="text-subtitle-1 font-weight-medium">
+                <v-icon class="mr-2">mdi-drag</v-icon>
+                {{ $t('settings.footer.dragToReorder') }}
+            </v-card-title>
+            <v-divider></v-divider>
+
+            <loading-state v-if="isLoading" compact :text="$t('settings.footer.loadingWidgets')" />
+            <empty-state
+                v-else-if="widgets.length === 0"
+                compact
+                icon="mdi-widgets-outline"
+                :title="$t('settings.footer.noWidgetsYet')"
+                :text="$t('settings.footer.clickAddWidget')"
+            >
+                <template #actions>
+                    <v-btn color="primary" variant="flat" prepend-icon="mdi-plus" @click="showWidgetLibrary = true">{{ $t('settings.footer.addFirstWidget') }}</v-btn>
+                </template>
+            </empty-state>
+
+            <draggable
+                v-else
+                v-model="localWidgets"
+                item-key="id"
+                handle=".drag-handle"
+                @end="onDragEnd"
+                class="widget-list"
+            >
+                <template #item="{ element: widget }">
+                    <v-list-item
+                        :key="widget.id"
+                        class="widget-item mb-2"
+                        :class="{ 'widget-disabled': !widget.enabled }"
+                    >
+                        <template #prepend>
+                            <v-icon class="drag-handle mr-3" style="cursor: grab;">mdi-drag-vertical</v-icon>
+                            <v-avatar :color="widget.enabled ? 'success' : 'grey'" size="32" class="mr-3">
+                                <v-icon size="18" color="white">
+                                    {{ getWidgetIcon(widget.type) }}
+                                </v-icon>
+                            </v-avatar>
+                        </template>
+
+                        <v-list-item-title>
+                            {{ getWidgetTitle(widget) }}
+                            <v-chip size="x-small" class="ml-2" variant="outlined">{{ getWidgetName(widget.type) }}</v-chip>
+                        </v-list-item-title>
+
+                        <v-list-item-subtitle>
+                            {{ $t('settings.footer.order') }}: {{ widget.order }}
+                            <span v-if="widget.section_id"> | {{ $t('settings.footer.section') }}: {{ widget.section_id }} | {{ $t('settings.footer.column') }}: {{ widget.column }}</span>
+                        </v-list-item-subtitle>
+
+                        <template #append>
+                            <div class="d-flex align-center">
+                                <v-switch
+                                    v-model="widget.enabled"
+                                    hide-details
+                                    density="compact"
+                                    color="success"
+                                    class="mr-2"
+                                    :loading="togglingIds.includes(widget.id)"
+                                    :disabled="isRowBusy(widget)"
+                                    @change="toggleWidget(widget)"
+                                ></v-switch>
+
+                                <v-btn
+                                    icon="mdi-pencil"
+                                    size="small"
+                                    variant="text"
+                                    :disabled="isRowBusy(widget)"
+                                    @click="editWidget(widget)"
+                                    :title="$t('settings.footer.editWidget')"
+                                ></v-btn>
+
+                                <v-btn
+                                    icon="mdi-delete"
+                                    size="small"
+                                    variant="text"
+                                    color="error"
+                                    :loading="deletingId === widget.id"
+                                    :disabled="togglingIds.includes(widget.id)"
+                                    @click="confirmDelete(widget)"
+                                    :title="$t('settings.footer.deleteWidget')"
+                                ></v-btn>
+                            </div>
+                        </template>
+                    </v-list-item>
+                </template>
+            </draggable>
+        </v-card>
+
+        <!-- Widget Editor Dialog -->
+        <footer-widget-editor
+            v-model="showEditor"
+            :widget="selectedWidget"
+            :saving="savingWidget"
+            @save="saveWidget"
+        />
+
+        <!-- Widget Library Dialog -->
+        <footer-widget-library
+            v-model="showWidgetLibrary"
+            :adding="addingWidget"
+            @select="addWidget"
+        />
+
+        <!-- Success Snackbar -->
+        <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000">
+            {{ snackbarMessage }}
+        </v-snackbar>
+    </settings-page-layout>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useFooterStore } from '@/store/footerStore';
+import { getWidgetDefinition } from '@/configs/footerWidgetTypes';
+import { useDialog } from '@/composables/useDialog.js';
+import draggable from 'vuedraggable';
+import LoadingState from '@/components/common/LoadingState.vue';
+import EmptyState from '@/components/common/EmptyState.vue';
+import SettingsPageLayout from '@/components/settings/SettingsPageLayout.vue';
+import FooterWidgetEditor from '@/components/settings/footer/FooterWidgetEditor.vue';
+import FooterWidgetLibrary from '@/components/settings/footer/FooterWidgetLibrary.vue';
+
+const { t } = useI18n();
+const dialog = useDialog();
+
+const props = defineProps({
+    settings: Object,
+    errors: Object,
+    isSaving: Boolean,
+    category: Object,
+    setting: Object,
+});
+
+const footerStore = useFooterStore();
+const isLoading = ref(true);
+const hasChanges = ref(false);
+
+const widgets = computed(() => footerStore.orderedWidgets || []);
+const localWidgets = ref([]);
+const enabledCount = computed(() => localWidgets.value.filter(w => w.enabled).length);
+
+const showEditor = ref(false);
+const showWidgetLibrary = ref(false);
+const selectedWidget = ref(null);
+
+// Request state per control
+const savingWidget = ref(false);
+const addingWidget = ref(false);
+const togglingIds = ref([]);
+const deletingId = ref(null);
+
+function isRowBusy(widget) {
+    return togglingIds.value.includes(widget.id) || deletingId.value === widget.id;
+}
+
+const snackbar = ref(false);
+const snackbarMessage = ref('');
+const snackbarColor = ref('success');
+
+function getWidgetIcon(type) {
+    const definition = getWidgetDefinition(type);
+    return definition?.icon || 'mdi-widgets';
+}
+
+function getWidgetName(type) {
+    const definition = getWidgetDefinition(type);
+    return definition?.name || type;
+}
+
+function getWidgetTitle(widget) {
+    return widget.config?.title || getWidgetName(widget.type);
+}
+
+async function loadWidgets() {
+    isLoading.value = true;
+    try {
+        await footerStore.fetchWidgets();
+        localWidgets.value = [...widgets.value];
+        hasChanges.value = false;
+    } catch (error) {
+        showSnackbar(t('settings.footer.failedToLoadData'), 'error');
+    } finally {
+        isLoading.value = false;
+    }
+}
+
+async function onDragEnd() {
+    try {
+        const newOrder = localWidgets.value.map((widget, index) => ({
+            id: widget.id,
+            order: index + 1
+        }));
+        await footerStore.reorderWidgets(newOrder);
+        hasChanges.value = false;
+        showSnackbar(t('settings.footer.orderUpdated'), 'success');
+    } catch (error) {
+        showSnackbar(t('settings.footer.failedToUpdateOrder'), 'error');
+        await loadWidgets();
+    }
+}
+
+function editWidget(widget) {
+    selectedWidget.value = { ...widget };
+    showEditor.value = true;
+}
+
+async function saveWidget(updatedWidget) {
+    if (savingWidget.value) return;
+    savingWidget.value = true;
+    try {
+        await footerStore.updateWidget(updatedWidget.id, updatedWidget);
+        showSnackbar(t('settings.footer.widgetUpdated'), 'success');
+        showEditor.value = false;
+        await loadWidgets();
+    } catch (error) {
+        showSnackbar(t('settings.footer.failedToUpdateWidget'), 'error');
+    } finally {
+        savingWidget.value = false;
+    }
+}
+
+async function addWidget(widgetType) {
+    if (addingWidget.value) return;
+    addingWidget.value = true;
+    try {
+        const definition = getWidgetDefinition(widgetType);
+        if (!definition) {
+            showSnackbar(t('settings.footer.widgetTypeNotFound', { type: widgetType }), 'error');
+            return;
+        }
+
+        const newWidget = {
+            type: widgetType,
+            enabled: true,
+            order: localWidgets.value.length + 1,
+            config: definition.defaultConfig || {},
+        };
+
+        await footerStore.createWidget(newWidget);
+        showSnackbar(t('settings.footer.widgetAdded'), 'success');
+        showWidgetLibrary.value = false;
+        await loadWidgets();
+    } catch (error) {
+        showSnackbar(t('settings.footer.failedToAddWidget'), 'error');
+    } finally {
+        addingWidget.value = false;
+    }
+}
+
+async function toggleWidget(widget) {
+    if (togglingIds.value.includes(widget.id)) return;
+    togglingIds.value.push(widget.id);
+    try {
+        await footerStore.toggleWidget(widget.id);
+        showSnackbar(widget.enabled ? t('settings.footer.widgetEnabled') : t('settings.footer.widgetDisabled'), 'success');
+    } catch (error) {
+        showSnackbar(t('settings.footer.failedToToggleWidget'), 'error');
+        widget.enabled = !widget.enabled;
+    } finally {
+        togglingIds.value = togglingIds.value.filter(id => id !== widget.id);
+    }
+}
+
+async function confirmDelete(widget) {
+    if (deletingId.value !== null) return;
+    const ok = await dialog.confirmDelete(
+        t('settings.footer.deleteConfirmMessage', { name: getWidgetTitle(widget) }),
+        { title: t('settings.footer.confirmDelete') }
+    );
+    if (!ok) return;
+
+    deletingId.value = widget.id;
+    try {
+        await footerStore.deleteWidget(widget.id);
+        showSnackbar(t('settings.footer.widgetDeleted'), 'success');
+        await loadWidgets();
+    } catch (error) {
+        showSnackbar(t('settings.footer.failedToDeleteWidget'), 'error');
+    } finally {
+        deletingId.value = null;
+    }
+}
+
+function showSnackbar(message, color = 'success') {
+    snackbarMessage.value = message;
+    snackbarColor.value = color;
+    snackbar.value = true;
+}
+
+onMounted(async () => {
+    await loadWidgets();
+});
+</script>
+
+<style scoped>
+.widget-list {
+    padding: 16px;
+}
+
+.widget-item {
+    background: rgba(var(--v-theme-surface-variant), 0.4);
+    border-radius: 8px;
+    border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+    transition: all 0.2s;
+}
+
+.widget-item:hover {
+    background: rgba(var(--v-theme-surface-variant), 0.6);
+    box-shadow: 0 2px 8px rgba(var(--v-theme-on-surface), 0.1);
+}
+
+.widget-disabled {
+    opacity: 0.6;
+}
+
+.drag-handle:hover {
+    cursor: grab;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+</style>
