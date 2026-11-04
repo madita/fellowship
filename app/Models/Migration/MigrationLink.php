@@ -31,6 +31,16 @@ class MigrationLink extends Model
     public const KIND_LINK  = 'link';
     public const KIND_IMAGE = 'image';
 
+    /**
+     * How long a host may be to be stored as one.
+     *
+     * The width of a string column in this schema
+     * (Schema::defaultStringLength), and well past the 253 characters a
+     * hostname may have by specification: anything longer came out of a
+     * malformed address rather than off a server.
+     */
+    public const MAX_HOST = 191;
+
     protected $fillable = [
         'url_hash',
         'url',

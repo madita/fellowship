@@ -36,7 +36,10 @@ return new class extends Migration
             $table->unsignedSmallInteger('http_status')->nullable();
             // Where it ended up, when that is somewhere else than asked
             $table->text('redirect_url')->nullable();
-            $table->string('reason')->nullable();
+            // Not a string: a cURL error names the host, the URL it was
+            // asked for and a page to read about it, which is longer
+            // than a varchar in this schema holds
+            $table->text('reason')->nullable();
             // [{place, id, title, url, text, kind}] - capped, because a
             // navigation link copied onto every page needs no full list
             $table->json('occurrences')->nullable();

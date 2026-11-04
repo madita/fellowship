@@ -16,6 +16,7 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Request as PsrRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -219,6 +220,54 @@ class MigrationLinkAuditTest extends TestCase
         $this->assertSame(MigrationLink::STATUS_BROKEN, $link->status);
         $this->assertNull($link->http_status);
         $this->assertStringContainsString('Could not resolve host', $link->reason);
+    }
+
+    public function test_a_whole_curl_error_is_written_down(): void
+    {
+        // What cURL says about a host that no longer resolves names the
+        // host, the URL it was asked for and a page to read about it,
+        // which is longer than a string column in this schema holds -
+        // this is the message that first overflowed it
+        $url     = 'http://wachetreffen.goddy-online.example/uploads/Hanau%20Juni%202004/305.jpg';
+        $message = 'cURL error 6: Could not resolve host: wachetreffen.goddy-online.example'
+            . ' (see https://curl.haxx.se/libcurl/c/libcurl-errors.html) for ' . $url;
+
+        $this->assertGreaterThan(191, strlen($message));
+
+        Http::fake(fn () => throw new ConnectException($message, new PsrRequest('HEAD', $url)));
+
+        $this->page('Links', '<a href="' . $url . '">a photo of Hanau</a>');
+
+        $this->audit()->scan();
+        $this->audit()->check();
+
+        $link = MigrationLink::first();
+        $this->assertSame(MigrationLink::STATUS_BROKEN, $link->status);
+        // Whole, because the useful half is at the end of it
+        $this->assertSame($message, $link->reason);
+
+        // Asserted against the schema as well: these tests run on
+        // sqlite, which lets a varchar hold whatever it is given, so
+        // storing the message proves nothing on its own about the
+        // column it has to fit into on MySQL
+        $this->assertSame('text', Schema::getColumnType('migration_links', 'reason'));
+    }
+
+    public function test_a_host_too_long_to_store_does_not_stop_the_scan(): void
+    {
+        $host = str_repeat('a', MigrationLink::MAX_HOST + 20) . '.example';
+
+        $this->page('Links', '<a href="https://' . $host . '/page">nonsense</a>');
+
+        $this->audit()->scan();
+
+        // The address is still reported - it just does not group under a
+        // host, because what is in front of the slash is not one
+        $link = MigrationLink::first();
+        $this->assertNotNull($link);
+        $this->assertSame('https://' . $host . '/page', $link->url);
+        $this->assertNull($link->host);
+        $this->assertSame(MigrationLink::SCOPE_EXTERNAL, $link->scope);
     }
 
     public function test_a_timeout_is_not_a_verdict(): void

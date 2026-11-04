@@ -504,8 +504,11 @@ class LinkAudit
         }
 
         return [
-            'url'   => $url,
-            'host'  => $host,
+            'url' => $url,
+            // A name longer than the column holds is not a hostname at
+            // all - the link is still worth reporting, it just does not
+            // group under a host
+            'host'  => strlen($host) > MigrationLink::MAX_HOST ? null : $host,
             'scope' => match (true) {
                 $this->hostMatches($host, [$this->siteHost()]) => MigrationLink::SCOPE_INTERNAL,
                 $this->hostMatches($host, $legacyHosts)        => MigrationLink::SCOPE_LEGACY,
@@ -653,7 +656,9 @@ class LinkAudit
             return [
                 'status'      => $gone ? MigrationLink::STATUS_BROKEN : MigrationLink::STATUS_UNSURE,
                 'http_status' => null,
-                'reason'      => Str::limit($message, 200, ''),
+                // Kept whole enough to be read, capped so a server that
+                // answers with a wall of text does not fill the report
+                'reason' => Str::limit($message, 500, ''),
             ];
         }
 
