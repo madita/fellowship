@@ -49,6 +49,11 @@ export default async function permission({ to, next }) {
         "podcast-edit": "manage-podcast",
         "podcast-episode-new": "manage-podcast",
         "podcast-episode-edit": "manage-podcast",
+        // Writing to every member. Matches the API, which guards the same
+        // work with permission.any:manage-mailings — a member let onto
+        // the page by a permission the API does not accept would reach
+        // the composer and be refused by it.
+        "admin-mailings": "manage-mailings",
     };
 
     const requiredPermission = permissionsMap[to.name];

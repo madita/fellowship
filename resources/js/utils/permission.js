@@ -28,6 +28,30 @@ export default {
         return permissions.includes(permission)
     },
 
+    /**
+     * Whether a whole section of the menu should be drawn.
+     *
+     * A section carries its own gate — Administration is role: 'admin' —
+     * and that stays the main answer. But a section may also hold one
+     * item that names a permission of its own, for work an admin can
+     * delegate: writing the newsletter is the first of those. Whoever
+     * holds that permission sees the section, and sees only the items in
+     * it they are allowed (NavMenuItem gates each one).
+     *
+     * Only an item that explicitly names a permission can open a section
+     * this way. An item with no gate of its own would otherwise open
+     * Administration to everybody.
+     */
+    sectionVisible(section) {
+        if (this.applyPermissions(section)) {
+            return true
+        }
+
+        return (section.items || []).some(
+            (item) => item.permission && this.applyPermissions(item)
+        )
+    },
+
     applyPermissions(menuItem) {
         // const auth = useAuthStore()
 

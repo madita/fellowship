@@ -29,6 +29,11 @@ class Kernel extends ConsoleKernel
         // The activity log grows forever otherwise — nothing was pruning
         // it. How long is kept is config/activitylog.php.
         $schedule->command('activitylog:clean')->daily();
+
+        // A mailing scheduled for a time goes out at about that time.
+        // Every minute, and overlapping runs cannot double-send — see the
+        // command, which claims each mailing before starting it.
+        $schedule->command('mailings:send-due')->everyMinute()->withoutOverlapping();
     }
 
     /**

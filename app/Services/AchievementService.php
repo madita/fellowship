@@ -8,6 +8,7 @@ use App\Models\Rank;
 use App\Models\User;
 use App\Notifications\AchievementEarned;
 use App\Notifications\RankReached;
+use App\Services\Mail\TemplatedMailer;
 use App\Support\AchievementMetrics;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -97,6 +98,19 @@ class AchievementService
 
         if ($inserted) {
             $user->notify(new AchievementEarned($achievement, $awardedBy, $note));
+
+            // And by mail, if they want to hear about achievements that
+            // way. Two templates rather than one: a badge the site
+            // counted for you and a badge a person decided to hand you
+            // are not the same thing to read about.
+            $this->mail($user, $awardedBy ? 'achievement_awarded' : 'achievement_earned', [
+                'achievement'             => $achievement->name,
+                'achievement_description' => (string) $achievement->description,
+                'points'                  => (string) $achievement->points,
+                'awarded_by'              => $awardedBy?->name ?: $awardedBy?->username,
+                'note'                    => $note,
+            ]);
+
             $this->announceRank($user, $rankBefore);
         }
 
@@ -216,5 +230,34 @@ class AchievementService
         }
 
         $user->notify(new RankReached($now, $points));
+
+        $this->mail($user, 'rank_reached', [
+            'rank'   => $now->name,
+            'points' => (string) $points,
+        ]);
+    }
+
+    /**
+     * Mail a member about something they earned, if they said they wanted
+     * mail about it.
+     *
+     * Whether it went out is not interesting here and a failure must not
+     * be: the award has already happened, and somebody who posted a forum
+     * reply should not see an error because a mail server was busy. The
+     * mailer logs its own failures.
+     *
+     * @param  array<string, string|null>  $variables
+     */
+    private function mail(User $user, string $template, array $variables): void
+    {
+        try {
+            app(TemplatedMailer::class)->send($user, $template, $variables);
+        } catch (\Throwable $e) {
+            Log::warning('Achievement mail failed', [
+                'template' => $template,
+                'user_id'  => $user->id,
+                'error'    => $e->getMessage(),
+            ]);
+        }
     }
 }

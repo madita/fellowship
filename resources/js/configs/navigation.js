@@ -45,6 +45,11 @@ export default {
                 {icon: 'mdi-poll', key: 'menu.adminPolls', text: 'Polls', link: '/admin/polls'},
                 {icon: 'mdi-link-variant', key: 'menu.adminRelations', text: 'Related Content', link: '/admin/related-content'},
                 {icon: 'mdi-bullhorn-outline', key: 'menu.adminAnnouncement', text: 'Announcement', link: '/admin/announcements'},
+                // Writing to the members by mail. Gated by its own
+                // permission rather than by the section's role, so an
+                // admin can hand the newsletter to whoever writes it —
+                // see sectionVisible in utils/permission.js.
+                {icon: 'mdi-email-multiple-outline', key: 'menu.adminMailings', text: 'Mailings', link: '/admin/mailings', permission: 'manage-mailings'},
                 // Roles, permissions, taxonomies, forum categories, translations and the migration tool live in the settings overview.
                 {icon: 'mdi-cog-outline', key: 'menu.adminSettings', text: 'Settings', link: '/admin/settings'},
             ]

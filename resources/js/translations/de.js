@@ -657,6 +657,7 @@ export default {
         'adminTaxonomie': 'Taxonomie',
         'adminTerms': 'Begriffe',
         'adminAnnouncement': 'Ankündigungen',
+        'adminMailings': 'Mailings',
         'adminSettings': 'Einstellungen',
         'adminEvents': 'Termine',
         'adminEventsList': 'Liste',
@@ -4433,6 +4434,7 @@ export default {
                 'account': 'Konto',
                 'information': 'Informationen',
                 'socialAccounts': 'Soziale Konten',
+                'mail': 'E-Mail',
                 'apiKeys': 'API-Schlüssel'
             }
         },
@@ -7186,5 +7188,195 @@ export default {
             'messageHint': 'Alles, was hilft zu bestätigen, dass das Konto dir gehört',
             'submit': 'Übertragung anfragen'
         }
+    },
+    'mailings': {
+        'title': 'Mailings',
+        'subtitle': 'An die Mitglieder schreiben und die Vorlagen pflegen, die die Seite verschickt',
+        'tabs': {
+            'mailings': 'Versände',
+            'templates': 'Vorlagen',
+            'categories': 'Mail-Arten'
+        },
+        'status': {
+            'draft': 'Entwurf',
+            'scheduled': 'Eingeplant',
+            'sending': 'Wird gesendet',
+            'sent': 'Gesendet',
+            'failed': 'Fehlgeschlagen',
+            'cancelled': 'Abgebrochen'
+        },
+        'actions': {
+            'write': 'Mailing schreiben',
+            'saveDraft': 'Entwurf speichern',
+            'sendNow': 'Jetzt senden',
+            'schedule': 'Einplanen',
+            'cancel': 'Versand abbrechen',
+            'preview': 'Vorschau',
+            'sendTest': 'Test an mich'
+        },
+        'filters': {
+            'search': 'Nach Betreff suchen'
+        },
+        'emptyTitle': 'Noch nichts verschickt',
+        'emptyText': 'Ein Mailing ist ein Betreff, ein Text und eine Gruppe von Mitgliedern. Fang mit einer Vorlage an oder schreib frei.',
+        'reached': 'erreicht',
+        'goesOut': 'geht {when} heraus',
+        'fields': {
+            'category': 'Mail-Art',
+            'startFrom': 'Mit einer Vorlage anfangen',
+            'startFromHint': 'Der Wortlaut wird hereinkopiert und ist dann deiner',
+            'language': 'Sprache',
+            'subject': 'Betreff',
+            'subjectHint': 'Platzhalter gehen hier auch',
+            'body': 'Text',
+            'bodyPlaceholder': 'Was du sagen willst …',
+            'placeholders': 'Platzhalter:',
+            'copyPlaceholder': 'Klicken zum Kopieren',
+            'actionLabel': 'Knopftext',
+            'actionUrl': 'Knopf-Link',
+            'actionHint': 'Beides oder keins — ein Knopf ohne Link wird nicht gezeichnet',
+            'scheduledFor': 'Senden am',
+            'scheduledForHint': 'Leer lassen, um beim Druck auf Senden sofort zu senden'
+        },
+        'source': {
+            'title': {
+                'event': 'Aus einer Veranstaltung übernehmen',
+                'post': 'Aus einem Beitrag übernehmen',
+                'achievement': 'Aus einer Auszeichnung übernehmen',
+                'rank': 'Aus einem Rang übernehmen'
+            },
+            'pick': {
+                'event': 'Veranstaltung',
+                'post': 'Beitrag',
+                'achievement': 'Auszeichnung',
+                'rank': 'Rang'
+            },
+            'about': 'Worum es geht',
+            'aboutHint': 'Wähl eins, dann bekommt eine Mail aus dieser Vorlage dafür eine Auswahl',
+            'fill': 'Übernehmen',
+            'nothing': 'Tippen, um zu suchen',
+            'filled': 'Aus {label} übernommen: {names}',
+            'nonePresent': 'In diesem Text steht keiner dieser Platzhalter. Setz einen ein und drück noch einmal auf Übernehmen.'
+        },
+        'composer': {
+            'title': 'Mailing schreiben',
+            'editTitle': 'Mailing',
+            'useTemplate': 'Diese Vorlage laden'
+        },
+        'audience': {
+            'title': 'An wen es geht',
+            'types': {
+                'all': 'Alle',
+                'roles': 'Nach Rolle',
+                'users': 'Ausgewählte Mitglieder',
+                'achievement': 'Wer einen Erfolg hat'
+            },
+            'roles': 'Rollen',
+            'users': 'Mitglieder',
+            'searchUsers': 'Zwei Buchstaben tippen, um zu suchen',
+            'achievement': 'Erfolg',
+            'locales': 'Nur diese Sprachen',
+            'localesHint': 'Ein Mailing ist in einer Sprache geschrieben — grenze es auf die Mitglieder ein, die sie lesen',
+            'verifiedOnly': 'Nur bestätigte Adressen',
+            'verifiedOnlyHint': 'Unbestätigte Adressen sind meist Tippfehler und tote Postfächer',
+            'counting': 'Wird gezählt …',
+            'count': '{total} Mitglieder, {receiving} davon bekommen es.',
+            'optedOut': '{count} wollen über diese Art Mail nichts hören.',
+            'notCountedYet': 'Wähle eine Mail-Art, um zu sehen, wie viele das erreicht.',
+            'summary': {
+                'all': 'alle',
+                'roles': 'Rollen: {roles}',
+                'users': '{count} ausgewählte Mitglieder',
+                'achievement': 'wer {name} hat'
+            }
+        },
+        'confirm': {
+            'sendTitle': 'Dieses Mailing senden?',
+            'send': 'Es geht jetzt an {count} Mitglieder. Eine Mail lässt sich nicht zurückholen.',
+            'scheduleTitle': 'Dieses Mailing einplanen?',
+            'schedule': 'Es geht am {when} an etwa {count} Mitglieder. Bis dahin kannst du es noch ändern oder abbrechen.',
+            'cancelTitle': 'Versand abbrechen?',
+            'cancel': 'Was schon heraus ist, ist heraus. Der Rest wird nicht gesendet.',
+            'delete': '„{subject}“ löschen? Die Aufzeichnung, wer es bekommen hat, geht mit.',
+            'deleteTemplate': 'Die Vorlage „{subject}“ löschen?',
+            'deleteCategory': '„{name}“ löschen? Mitglieder verlieren den Schalter dafür, und die Vorlagen dazu gehen mit.'
+        },
+        'recipients': {
+            'title': 'Wer es bekommen hat',
+            'empty': 'Keine Empfänger zu zeigen',
+            'goneAccount': 'Ein gelöschtes Konto',
+            'sent': 'Gesendet',
+            'pending': 'Wartet',
+            'skipped': 'Übersprungen',
+            'failed': 'Fehlgeschlagen',
+            'reasons': {
+                'opted_out': 'will diese Art Mail nicht',
+                'unsubscribed_all': 'hat alle Mails abgeschaltet',
+                'cancelled': 'der Versand wurde abgebrochen'
+            }
+        },
+        'templates': {
+            'intro': 'Der Wortlaut der Mails, die immer wieder herausgehen. Einige davon verschickt die Seite selbst.',
+            'add': 'Neue Vorlage',
+            'editTitle': 'Vorlage',
+            'newTitle': 'Neue Vorlage',
+            'systemBadge': 'Von der Seite verschickt',
+            'systemHint': 'Die Seite verschickt diese selbst, unter dem Namen {key}. Schreib sie ruhig um — der Name ist fest, und löschen geht nicht. Schalte sie aus, damit sie nicht mehr herausgeht.',
+            'key': 'Name im Code',
+            'keyHint': 'Nur zum Finden der Vorlage; Mitglieder sehen ihn nie',
+            'enabled': 'An',
+            'disabledHint': 'Solange das aus ist, wird die zugehörige Mail überhaupt nicht gesendet.',
+            'requiredLocale': 'Muss gefüllt sein — das liest ein Mitglied, dessen Sprache fehlt',
+            'off': 'Aus',
+            'writeFrom': 'Mailing daraus schreiben',
+            'noWording': 'noch nichts geschrieben',
+            'unknownPlaceholders': 'Diese füllt nichts, sie bleiben also leer: {names}',
+            'actionUrlHint': 'Platzhalter gehen hier auch, z. B. die Seitenadresse gefolgt von /events'
+        },
+        'categories': {
+            'intro': 'Die Mail-Arten — die Schalter auf der Einstellungsseite jedes Mitglieds.',
+            'add': 'Neue Art',
+            'editTitle': 'Mail-Art',
+            'newTitle': 'Neue Mail-Art',
+            'mandatory': 'Nicht abschaltbar',
+            'mandatoryHint': 'Passwort-Zurücksetzungen und Adressbestätigungen. Wer das abschalten könnte, würde sich selbst aussperren.',
+            'onByDefault': 'Standardmäßig an',
+            'offByDefault': 'Standardmäßig aus',
+            'counts': '{templates} Vorlagen · {mailings} Versände',
+            'icon': 'Symbol',
+            'color': 'Farbe',
+            'name': 'Name',
+            'description': 'Worum es geht',
+            'descriptionHint': 'Mitglieder lesen das neben dem Schalter — sag also, was wirklich ankommt',
+            'defaultOptIn': 'Standardmäßig an',
+            'defaultOnHint': 'Mitglieder bekommen das, solange sie es nicht abschalten.',
+            'defaultOffHint': 'Mitglieder bekommen das nur, wenn sie es einschalten.'
+        }
+    },
+    'mailPreferences': {
+        'title': 'Welche Mails dich erreichen',
+        'intro': 'Wähle, worüber wir dir schreiben dürfen. Jede Art ist einzeln — wenn du den Newsletter abbestellst, erfährst du trotzdem, wenn eine Veranstaltung verlegt wird, auf die du geantwortet hast.',
+        'allOffNotice': 'Du hast alle Mails abgeschaltet. Außer Konto-Mails erreicht dich nichts, egal was die Schalter unten sagen.',
+        'turnBackOn': 'Mails wieder einschalten',
+        'alwaysOn': 'Immer an',
+        'alwaysOnHint': 'Passwort-Zurücksetzungen und Adressbestätigungen — ohne die kämst du nicht mehr in dein eigenes Konto.',
+        'turnEverythingOff': 'Alle Mails abschalten',
+        'confirmAllOffTitle': 'Alle Mails abschalten?',
+        'confirmAllOff': 'Wir schreiben dir nicht mehr — außer wenn du zurück in dein Konto musst. Du kannst es hier jederzeit wieder einschalten.'
+    },
+    'unsubscribe': {
+        'title': 'Mail-Einstellungen',
+        'forAddress': 'für {email}',
+        'badLinkTitle': 'Dieser Link gilt nicht mehr',
+        'badLink': 'Er stammt vielleicht aus einer alten Mail. Melde dich an und ändere die Mail-Einstellungen in deinem Konto.',
+        'goToAccount': 'Mein Konto öffnen',
+        'categoryIntro': 'Diese Mail kam unter „{category}“. Du kannst nur die abschalten und den Rest behalten.',
+        'stopThese': 'Diese abschalten',
+        'pickTitle': 'Oder wähle selbst',
+        'pickIntro': 'Jede Art ist einzeln. Nichts wird gespeichert, bis du auf Speichern drückst.',
+        'saveChoices': 'Auswahl speichern',
+        'stopEverything': 'Alle Mails abschalten',
+        'undo': 'Das rückgängig machen',
+        'alreadyAllOff': 'Alle Mails an dich sind bereits abgeschaltet — außer dem, was du brauchst, um zurück in dein Konto zu kommen.'
     }
 }

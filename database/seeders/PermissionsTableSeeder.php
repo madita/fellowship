@@ -14,9 +14,10 @@ use Spatie\Permission\PermissionRegistrar;
  * permission.js) and the API against the same ones, so a permission that
  * is missing from the database is a page nobody but an admin can open.
  *
- * Two of them - award-achievements and manage-podcast - are also written
- * by the migration of the feature they belong to, so an install that is
- * migrated without being seeded still has them. They are repeated here
+ * Three of them - award-achievements, manage-podcast and manage-mailings
+ * - are also written by the migration of the feature they belong to, so
+ * an install that is migrated without being seeded still has them. They
+ * are repeated here
  * because this is the list somebody reads to find out what exists, and a
  * half-list is worse than a repeated row. Everything here is written with
  * firstOrCreate, so running it again changes nothing.
@@ -39,6 +40,10 @@ class PermissionsTableSeeder extends Seeder
         'manage-podcast'     => [
             'Manage Podcast', 'podcast', false,
             'Create shows, write episodes and upload their audio, without the admin panel',
+        ],
+        'manage-mailings'    => [
+            'Manage Mailings', 'mailing', false,
+            'Write and send mail to the members, and edit the templates the site sends',
         ],
     ];
 
