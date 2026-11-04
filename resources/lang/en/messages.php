@@ -355,6 +355,39 @@ return [
         'copy'    => 'copy',
     ],
 
+    // Mailings: writing to the members
+    'mailings' => [
+        'saved'              => 'Saved.',
+        'deleted'            => 'The mailing was deleted.',
+        'not_editable'       => 'This mailing has already gone out, so it can no longer be changed.',
+        'already_sent'       => 'This mailing has already been sent.',
+        'sending'            => 'This mailing is being sent — cancel it first.',
+        'nothing_to_cancel'  => 'There is nothing left to cancel.',
+        'cancelled'          => 'Cancelled. What had already gone out has gone out.',
+        'scheduled'          => 'Scheduled. It will go out by itself.',
+        'sending_started'    => 'On its way to :count members.',
+        'test_sent'          => 'A test went to :email.',
+        'test_failed'        => 'The test could not be sent: :error',
+        'no_own_address'     => 'Your account has no email address to send a test to.',
+        'template_saved'     => 'The template was saved.',
+        'template_deleted'   => 'The template was deleted.',
+        'template_locked'    => 'The site sends this template itself, so it cannot be deleted. Switch it off instead.',
+        'category_saved'     => 'The category was saved.',
+        'category_deleted'   => 'The category was deleted.',
+        'category_locked'    => 'This category cannot be removed — members have to be able to get back into their accounts.',
+        'category_in_use'    => 'A template the site sends itself belongs to this category. Move it first.',
+        'reordered'          => 'The order was saved.',
+    ],
+
+    // Which mail may reach a member
+    'mail_preferences' => [
+        'saved'        => 'Your mail settings were saved.',
+        'all_off'       => 'Done — we will not mail you again, except about your account.',
+        'category_off'  => 'Done — no more mail about :category.',
+        'restored'      => 'Your mail settings are back to the defaults.',
+        'unknown_link'  => 'This link is no longer valid. Sign in and change your mail settings in your account.',
+    ],
+
 
     // SPA
     'spa' => [

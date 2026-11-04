@@ -50,6 +50,7 @@
             >
                 <v-tab value="account">{{ $t('users.edit.tabs.account') }}</v-tab>
                 <v-tab value="info">{{ $t('users.edit.tabs.information') }}</v-tab>
+                <v-tab value="mail">{{ $t('users.edit.tabs.mail') }}</v-tab>
                 <v-tab value="social">{{ $t('users.edit.tabs.socialAccounts') }}</v-tab>
                 <v-tab value="api-keys">{{ $t('users.edit.tabs.apiKeys') }}</v-tab>
                 <v-tab value="legacy">{{ $t('account.legacyClaim.tab') }}</v-tab>
@@ -64,6 +65,10 @@
 
                         <v-window-item value="info">
                             <information-tab :user="user"></information-tab>
+                        </v-window-item>
+
+                        <v-window-item value="mail">
+                            <mail-preferences-tab></mail-preferences-tab>
                         </v-window-item>
 
                         <v-window-item value="social">
@@ -92,6 +97,7 @@ import CopyLabel from '../../components/common/CopyLabel.vue';
 import PageHeader from '@/components/common/PageHeader.vue';
 import AccountTab from './EditUser/AccountTab.vue';
 import InformationTab from './EditUser/InformationTab.vue';
+import MailPreferencesTab from './EditUser/MailPreferencesTab.vue';
 import SocialAccountsTab from './EditUser/SocialAccountsTab.vue';
 import ApiKeysTab from './EditUser/ApiKeysTab.vue';
 import LegacyClaimTab from './EditUser/LegacyClaimTab.vue';
@@ -102,6 +108,7 @@ export default {
         PageHeader,
         AccountTab,
         InformationTab,
+        MailPreferencesTab,
         SocialAccountsTab,
         ApiKeysTab,
         LegacyClaimTab,

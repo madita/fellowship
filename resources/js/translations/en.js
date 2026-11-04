@@ -657,6 +657,7 @@ export default {
         'adminTaxonomie': 'Taxonomie',
         'adminTerms': 'Terms',
         'adminAnnouncement': 'Announcement',
+        'adminMailings': 'Mailings',
         'adminSettings': 'Settings',
         'adminEvents': 'Events',
         'adminEventsList': 'List',
@@ -4274,6 +4275,7 @@ export default {
                 'account': 'Account',
                 'information': 'Information',
                 'socialAccounts': 'Social Accounts',
+                'mail': 'Email',
                 'apiKeys': 'API Keys'
             }
         },
@@ -7011,5 +7013,175 @@ export default {
             'messageHint': 'Anything that helps verify the account is yours',
             'submit': 'Request transfer'
         }
+    },
+    'mailings': {
+        'title': 'Mailings',
+        'subtitle': 'Write to the members, and keep the wording of the mails the site sends',
+        'tabs': {
+            'mailings': 'Mailings',
+            'templates': 'Templates',
+            'categories': 'Kinds of mail'
+        },
+        'status': {
+            'draft': 'Draft',
+            'scheduled': 'Scheduled',
+            'sending': 'Sending',
+            'sent': 'Sent',
+            'failed': 'Failed',
+            'cancelled': 'Cancelled'
+        },
+        'actions': {
+            'write': 'Write a mailing',
+            'saveDraft': 'Save draft',
+            'sendNow': 'Send now',
+            'schedule': 'Schedule',
+            'cancel': 'Cancel the send',
+            'preview': 'Preview',
+            'sendTest': 'Send me a test'
+        },
+        'filters': {
+            'search': 'Search by subject'
+        },
+        'emptyTitle': 'Nothing has been sent yet',
+        'emptyText': 'A mailing is a subject, a body and a group of members. Start from a template, or write one from scratch.',
+        'reached': 'reached',
+        'goesOut': 'goes out {when}',
+        'fields': {
+            'category': 'Kind of mail',
+            'startFrom': 'Start from a template',
+            'startFromHint': 'Its wording is copied in and yours to edit',
+            'language': 'Language',
+            'subject': 'Subject',
+            'subjectHint': 'Placeholders work here too',
+            'body': 'Body',
+            'bodyPlaceholder': 'What you want to say…',
+            'placeholders': 'Placeholders:',
+            'copyPlaceholder': 'Click to copy',
+            'actionLabel': 'Button text',
+            'actionUrl': 'Button link',
+            'actionHint': 'Both halves or neither — a button with no link is not drawn',
+            'scheduledFor': 'Send at',
+            'scheduledForHint': 'Leave empty to send as soon as you press send'
+        },
+        'composer': {
+            'title': 'Write a mailing',
+            'editTitle': 'Mailing',
+            'useTemplate': 'Load this template'
+        },
+        'audience': {
+            'title': 'Who it goes to',
+            'types': {
+                'all': 'Everyone',
+                'roles': 'By role',
+                'users': 'Picked members',
+                'achievement': 'Holders of an achievement'
+            },
+            'roles': 'Roles',
+            'users': 'Members',
+            'searchUsers': 'Type two letters to search',
+            'achievement': 'Achievement',
+            'locales': 'Only these languages',
+            'localesHint': 'A mailing is written in one language — narrow it to the members who read that one',
+            'verifiedOnly': 'Confirmed addresses only',
+            'verifiedOnlyHint': 'Unconfirmed addresses are mostly typos and dead mailboxes',
+            'counting': 'Counting…',
+            'count': '{total} members, {receiving} of them will get it.',
+            'optedOut': '{count} have asked not to hear about this kind of mail.',
+            'notCountedYet': 'Pick a kind of mail to see how many this reaches.',
+            'summary': {
+                'all': 'everyone',
+                'roles': 'roles: {roles}',
+                'users': '{count} picked members',
+                'achievement': 'holders of {name}'
+            }
+        },
+        'confirm': {
+            'sendTitle': 'Send this mailing?',
+            'send': 'It goes to {count} members now. There is no taking a mail back once it has left.',
+            'scheduleTitle': 'Schedule this mailing?',
+            'schedule': 'It goes to about {count} members at {when}. You can still change or cancel it until then.',
+            'cancelTitle': 'Cancel the send?',
+            'cancel': 'Whatever has already gone out has gone out. The rest will not be sent.',
+            'delete': 'Delete “{subject}”? The record of who received it goes with it.',
+            'deleteTemplate': 'Delete the template “{subject}”?',
+            'deleteCategory': 'Delete “{name}”? Members lose the switch for it, and its templates go with it.'
+        },
+        'recipients': {
+            'title': 'Who got it',
+            'empty': 'No recipients to show',
+            'goneAccount': 'A deleted account',
+            'sent': 'Sent',
+            'pending': 'Waiting',
+            'skipped': 'Skipped',
+            'failed': 'Failed',
+            'reasons': {
+                'opted_out': 'asked not to get this kind of mail',
+                'unsubscribed_all': 'turned off all mail',
+                'cancelled': 'the send was cancelled'
+            }
+        },
+        'templates': {
+            'intro': 'The wording of the mails that go out again and again. The site sends some of these itself.',
+            'add': 'New template',
+            'editTitle': 'Template',
+            'newTitle': 'New template',
+            'systemBadge': 'Sent by the site',
+            'systemHint': 'The site sends this one itself, under the name {key}. Rewrite it freely — the name is fixed, and it cannot be deleted. Switch it off to stop it going out.',
+            'key': 'Name in the code',
+            'keyHint': 'Only used to find the template; members never see it',
+            'enabled': 'On',
+            'disabledHint': 'While this is off, the mail it belongs to is not sent at all.',
+            'requiredLocale': 'Has to be filled in — this is what a member whose language is missing reads',
+            'off': 'Off',
+            'writeFrom': 'Write a mailing from this',
+            'noWording': 'nothing written yet',
+            'unknownPlaceholders': 'Nothing fills these, so they will come out empty: {names}',
+            'actionUrlHint': 'Placeholders work here too, e.g. the site address followed by /events'
+        },
+        'categories': {
+            'intro': 'The kinds of mail, which are the switches on every member’s preferences page.',
+            'add': 'New kind',
+            'editTitle': 'Kind of mail',
+            'newTitle': 'New kind of mail',
+            'mandatory': 'Cannot be turned off',
+            'mandatoryHint': 'Password resets and address confirmations. A member who could turn this off would lock themselves out.',
+            'onByDefault': 'On by default',
+            'offByDefault': 'Off by default',
+            'counts': '{templates} templates · {mailings} mailings',
+            'icon': 'Icon',
+            'color': 'Colour',
+            'name': 'Name',
+            'description': 'What it is',
+            'descriptionHint': 'Members read this beside the switch, so say what actually arrives',
+            'defaultOptIn': 'On by default',
+            'defaultOnHint': 'Members get this unless they turn it off.',
+            'defaultOffHint': 'Members get this only if they turn it on.'
+        }
+    },
+    'mailPreferences': {
+        'title': 'Which mail reaches you',
+        'intro': 'Pick what we may write to you about. Each kind is separate, so leaving the newsletter does not stop an event you answered from letting you know it moved.',
+        'allOffNotice': 'You turned off all mail. Nothing but account mail will reach you, whatever the switches below say.',
+        'turnBackOn': 'Turn mail back on',
+        'alwaysOn': 'Always on',
+        'alwaysOnHint': 'Password resets and address confirmations — turning these off would lock you out of your own account.',
+        'turnEverythingOff': 'Turn off all mail',
+        'confirmAllOffTitle': 'Turn off all mail?',
+        'confirmAllOff': 'We will not write to you again, except when you need to get back into your account. You can turn it back on here at any time.'
+    },
+    'unsubscribe': {
+        'title': 'Mail settings',
+        'forAddress': 'for {email}',
+        'badLinkTitle': 'This link no longer works',
+        'badLink': 'It may be from an old mail. Sign in and change your mail settings in your account.',
+        'goToAccount': 'Open my account',
+        'categoryIntro': 'This mail came under “{category}”. You can stop just these and keep the rest.',
+        'stopThese': 'Stop these',
+        'pickTitle': 'Or pick what you want',
+        'pickIntro': 'Each kind is separate. Nothing is saved until you press save.',
+        'saveChoices': 'Save my choices',
+        'stopEverything': 'Stop all mail',
+        'undo': 'Undo this',
+        'alreadyAllOff': 'All mail to you is already turned off, except what you need to get back into your account.'
     }
 }

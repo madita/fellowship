@@ -6,6 +6,7 @@ use App\Models\Chat\Message;
 use App\Models\Conversation\Conversation;
 use App\Models\Event\Event;
 use App\Models\Help\HelpTourView;
+use App\Models\Mail\MailPreference;
 use App\Support\Ranks;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -48,6 +49,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'language',
         'notification_toasts',
         'email_verified_at',
+        'mail_unsubscribed_at',
     ];
 
     /**
@@ -81,6 +83,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         // default and made visible where it is genuinely wanted: the
         // owner's own account, and the admin screens.
         'email',
+        // What an unsubscribe link carries. Anyone holding it can turn
+        // off somebody else's mail, so it never travels with the user.
+        'mail_token',
     ];
 
     /**
@@ -99,9 +104,10 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
      * @var array
      */
     protected $casts = [
-        'email_verified_at'   => 'datetime',
-        'dashboard_layout'    => 'array',
-        'notification_toasts' => 'boolean',
+        'email_verified_at'    => 'datetime',
+        'dashboard_layout'     => 'array',
+        'notification_toasts'  => 'boolean',
+        'mail_unsubscribed_at' => 'datetime',
     ];
 
     /**
@@ -434,5 +440,19 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     public function helpTourViews(): HasMany
     {
         return $this->hasMany(HelpTourView::class);
+    }
+
+    /**
+     * What this member said about each kind of mail.
+     *
+     * Only the answers that differ from a category's own default are
+     * stored, so this being empty means "never asked", not "wants
+     * nothing". Read it through App\Services\Mail\MailPreferences rather
+     * than here — that is where the defaults and the blanket unsubscribe
+     * are taken into account.
+     */
+    public function mailPreferences(): HasMany
+    {
+        return $this->hasMany(MailPreference::class);
     }
 }

@@ -200,6 +200,15 @@ Route::group(['prefix' => '/account', 'middleware' => ['auth:sanctum'], 'as' => 
 
     Route::post('/avatar', 'App\Http\Controllers\UserController@uploadAvatar');
     Route::patch('/preferences', 'App\Http\Controllers\UserController@updatePreferences');
+
+    // Which kinds of mail may reach them. The same answers the
+    // unsubscribe link in a mail footer writes — one set of preferences,
+    // reachable two ways.
+    Route::get('/mail-preferences', 'App\Http\Controllers\MailPreferenceController@index');
+    Route::patch('/mail-preferences', 'App\Http\Controllers\MailPreferenceController@update');
+    Route::post('/mail-preferences/unsubscribe-all', 'App\Http\Controllers\MailPreferenceController@unsubscribeAll');
+    Route::post('/mail-preferences/resubscribe', 'App\Http\Controllers\MailPreferenceController@resubscribe');
+
     Route::patch('/profile', 'App\Http\Controllers\UserController@updateProfile');
     // The rest a member may tell us about themselves, and what of it they
     // let others see
@@ -483,8 +492,69 @@ Route::middleware(['cache.control'])->group(function () {
     Route::get('/footer/sections', 'App\Http\Controllers\Admin\FooterSectionController@getActiveSections');
 });
 
-// Newsletter Subscription
+// Newsletter Subscription — the footer form, which hands an address to
+// whichever outside provider an admin configured. Nothing to do with the
+// site's own mailings below, which go to members from here.
 Route::post('/newsletter/subscribe', 'App\Http\Controllers\NewsletterController@subscribe');
+
+// The unsubscribe link at the bottom of every mail.
+//
+// Open on purpose: somebody who wants the mail to stop should not have to
+// remember a password first, and the random token in the link is what
+// stands in for one. Throttled because it is open, and by token rather
+// than by address so a GET cannot be used to find out who is a member.
+//
+// GET is the page a person lands on; POST is what a mail client's own
+// unsubscribe button posts to, with nobody watching — see the
+// List-Unsubscribe header in App\Mail\TemplatedMail.
+Route::prefix('mail/unsubscribe')->middleware('throttle:30,1')->group(function () {
+    Route::get('/{token}', 'App\Http\Controllers\MailUnsubscribeController@show');
+    Route::post('/{token}', 'App\Http\Controllers\MailUnsubscribeController@store');
+    Route::patch('/{token}', 'App\Http\Controllers\MailUnsubscribeController@update');
+    Route::post('/{token}/resubscribe', 'App\Http\Controllers\MailUnsubscribeController@resubscribe');
+});
+
+// Mailings: writing to the members, the templates the site sends, and the
+// kinds of mail somebody can say no to.
+//
+// Its own permission rather than the admin middleware the rest of /admin
+// uses: writing to four hundred people is worth delegating to whoever
+// actually writes the newsletter, without handing them everything else.
+// Admins pass too — see EnsureUserHasPermission.
+Route::middleware(['auth:sanctum', 'permission.any:manage-mailings'])
+    ->prefix('admin')
+    ->group(function () {
+        Route::get('/mailings', 'App\Http\Controllers\Admin\MailingController@index');
+        Route::post('/mailings', 'App\Http\Controllers\Admin\MailingController@store');
+        // Declared above /mailings/{mailing}, which would otherwise read
+        // "estimate" and "options" as the id of a mailing
+        Route::post('/mailings/estimate', 'App\Http\Controllers\Admin\MailingController@estimate');
+        Route::get('/mailings/options', 'App\Http\Controllers\Admin\MailingController@options');
+        Route::get('/mailings/{mailing}', 'App\Http\Controllers\Admin\MailingController@show');
+        Route::patch('/mailings/{mailing}', 'App\Http\Controllers\Admin\MailingController@update');
+        Route::delete('/mailings/{mailing}', 'App\Http\Controllers\Admin\MailingController@destroy');
+        Route::get('/mailings/{mailing}/recipients', 'App\Http\Controllers\Admin\MailingController@recipients');
+        Route::get('/mailings/{mailing}/preview', 'App\Http\Controllers\Admin\MailingController@preview');
+        Route::post('/mailings/{mailing}/test', 'App\Http\Controllers\Admin\MailingController@test');
+        Route::post('/mailings/{mailing}/send', 'App\Http\Controllers\Admin\MailingController@send');
+        Route::post('/mailings/{mailing}/cancel', 'App\Http\Controllers\Admin\MailingController@cancel');
+
+        // Templates
+        Route::get('/mail-templates', 'App\Http\Controllers\Admin\MailTemplateController@index');
+        Route::post('/mail-templates', 'App\Http\Controllers\Admin\MailTemplateController@store');
+        Route::patch('/mail-templates/{template}', 'App\Http\Controllers\Admin\MailTemplateController@update');
+        Route::delete('/mail-templates/{template}', 'App\Http\Controllers\Admin\MailTemplateController@destroy');
+        Route::post('/mail-templates/{template}/preview', 'App\Http\Controllers\Admin\MailTemplateController@preview');
+        // The wording of a template, as the starting point for a mailing
+        Route::post('/mail-templates/{template}/draft', 'App\Http\Controllers\Admin\MailingController@fromTemplate');
+
+        // Categories
+        Route::get('/mail-categories', 'App\Http\Controllers\Admin\MailCategoryController@index');
+        Route::post('/mail-categories', 'App\Http\Controllers\Admin\MailCategoryController@store');
+        Route::post('/mail-categories/reorder', 'App\Http\Controllers\Admin\MailCategoryController@reorder');
+        Route::patch('/mail-categories/{category}', 'App\Http\Controllers\Admin\MailCategoryController@update');
+        Route::delete('/mail-categories/{category}', 'App\Http\Controllers\Admin\MailCategoryController@destroy');
+    });
 
 // API Keys Management (for users to manage their own API keys)
 Route::group(['prefix' => 'api-keys', 'middleware' => ['auth:sanctum']], function () {

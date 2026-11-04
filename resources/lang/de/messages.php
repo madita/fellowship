@@ -360,4 +360,37 @@ return [
     'taxonomy' => [
         'no_data' => 'Keine Daten gefunden',
     ],
+
+    // Mailings: an die Mitglieder schreiben
+    'mailings' => [
+        'saved'             => 'Gespeichert.',
+        'deleted'           => 'Der Versand wurde gelöscht.',
+        'not_editable'      => 'Dieser Versand ist schon heraus — er lässt sich nicht mehr ändern.',
+        'already_sent'      => 'Dieser Versand ist schon erfolgt.',
+        'sending'           => 'Dieser Versand läuft gerade — brich ihn erst ab.',
+        'nothing_to_cancel' => 'Es ist nichts mehr abzubrechen.',
+        'cancelled'         => 'Abgebrochen. Was schon heraus war, ist heraus.',
+        'scheduled'         => 'Eingeplant. Es geht von selbst heraus.',
+        'sending_started'   => 'Unterwegs an :count Mitglieder.',
+        'test_sent'         => 'Ein Test ging an :email.',
+        'test_failed'       => 'Der Test konnte nicht gesendet werden: :error',
+        'no_own_address'    => 'Dein Konto hat keine Adresse, an die ein Test gehen könnte.',
+        'template_saved'    => 'Die Vorlage wurde gespeichert.',
+        'template_deleted'  => 'Die Vorlage wurde gelöscht.',
+        'template_locked'   => 'Die Seite verschickt diese Vorlage selbst — löschen geht nicht. Schalte sie stattdessen aus.',
+        'category_saved'    => 'Die Kategorie wurde gespeichert.',
+        'category_deleted'  => 'Die Kategorie wurde gelöscht.',
+        'category_locked'   => 'Diese Kategorie bleibt — Mitglieder müssen wieder in ihr Konto kommen können.',
+        'category_in_use'   => 'Zu dieser Kategorie gehört eine Vorlage, die die Seite selbst verschickt. Verschiebe sie erst.',
+        'reordered'         => 'Die Reihenfolge wurde gespeichert.',
+    ],
+
+    // Welche Mails ein Mitglied erreichen dürfen
+    'mail_preferences' => [
+        'saved'        => 'Deine Mail-Einstellungen wurden gespeichert.',
+        'all_off'      => 'Erledigt — wir schreiben dir nicht mehr, außer es geht um dein Konto.',
+        'category_off' => 'Erledigt — keine Mails mehr zu :category.',
+        'restored'     => 'Deine Mail-Einstellungen stehen wieder auf den Voreinstellungen.',
+        'unknown_link' => 'Dieser Link gilt nicht mehr. Melde dich an und ändere die Mail-Einstellungen in deinem Konto.',
+    ],
 ];

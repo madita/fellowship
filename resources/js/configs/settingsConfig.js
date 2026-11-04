@@ -164,6 +164,10 @@ export const settingsCategories = [
         color: 'blue-grey',
         settings: [
             { id: 'discord-webhooks', title: 'Discord Webhooks', description: 'Post new wiki pages, tickets and more into Discord channels', icon: 'mdi-discord', routeName: 'admin-settings-discord' },
+            // The site's own mail. Listed here as well as in the menu
+            // because "newsletter" below is the other thing entirely —
+            // handing an address to an outside provider.
+            { id: 'mailings', title: 'Mailings', description: 'Write to the members, the templates the site sends, and the kinds of mail they can refuse', icon: 'mdi-email-multiple-outline', routeName: 'admin-mailings' },
             { id: 'migrations', title: 'Migration Tool', description: 'Import content and users from legacy databases', icon: 'mdi-database-arrow-right-outline', routeName: 'admin-migrations' },
         ]
     },

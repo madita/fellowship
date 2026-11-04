@@ -309,6 +309,20 @@ export const admin = [{
         component: () => import(/* webpackChunkName: "admin-polls" */ '@/pages/admin/PollsDashboard.vue')
     },
     {
+        // Writing to the members, the templates the site sends, and the
+        // kinds of mail somebody can say no to. Guarded by
+        // manage-mailings rather than by being an admin, so whoever
+        // writes the newsletter can be let in on its own.
+        path: '/admin/mailings',
+        name: 'admin-mailings',
+        meta: {
+            middleware: [
+                auth, permission, verified
+            ]
+        },
+        component: () => import(/* webpackChunkName: "admin-mailings" */ '@/pages/admin/MailingManager.vue')
+    },
+    {
         // Stays reachable with the podcast feature switched off, so an
         // admin can still get at the episodes to switch it back on.
         path: '/admin/podcast',
